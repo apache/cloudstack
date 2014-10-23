@@ -167,22 +167,22 @@ public class VolumeServiceImpl implements VolumeService {
     }
 
     @Override
-    public boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore) {
+    public boolean connectVolumeToHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) {
         DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
 
         if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
-            return ((PrimaryDataStoreDriver)dataStoreDriver).grantAccess(dataObject, host, dataStore);
+            return ((PrimaryDataStoreDriver)dataStoreDriver).connectVolumeToHost(volumeInfo, host, dataStore);
         }
 
         return false;
     }
 
     @Override
-    public void revokeAccess(DataObject dataObject, Host host, DataStore dataStore) {
+    public void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) {
         DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
 
         if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
-            ((PrimaryDataStoreDriver)dataStoreDriver).revokeAccess(dataObject, host, dataStore);
+            ((PrimaryDataStoreDriver)dataStoreDriver).disconnectVolumeFromHost(volumeInfo, host, dataStore);
         }
     }
 
@@ -677,7 +677,7 @@ public class VolumeServiceImpl implements VolumeService {
             // refresh the volume from the DB
             volumeInfo = volFactory.getVolume(volumeInfo.getId(), destPrimaryDataStore);
 
-            grantAccess(volumeInfo, destHost, destPrimaryDataStore);
+            connectVolumeToHost(volumeInfo, destHost, destPrimaryDataStore);
 
             ManagedCreateBaseImageContext<CreateCmdResult> context = new ManagedCreateBaseImageContext<CreateCmdResult>(null, volumeInfo,
                     destPrimaryDataStore, srcTemplateInfo, future);
@@ -712,7 +712,7 @@ public class VolumeServiceImpl implements VolumeService {
 
             volumeInfo.processEvent(Event.DestroyRequested);
 
-            revokeAccess(volumeInfo, destHost, destPrimaryDataStore);
+            disconnectVolumeFromHost(volumeInfo, destHost, destPrimaryDataStore);
 
             try {
                 AsyncCallFuture<VolumeApiResult> expungeVolumeFuture = expungeVolumeAsync(volumeInfo);

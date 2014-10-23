@@ -72,6 +72,17 @@ def setup_iscsi(session, args):
  
 
 @echo
+def getgateway(session, args):
+    mgmt_ip = args['mgmtIP']
+    try:
+        cmd = ["bash", "/opt/cloud/bin/network_info.sh", "-g", mgmt_ip]
+        txt = util.pread2(cmd)
+    except:
+        txt = ''
+
+    return txt
+    
+@echo
 def preparemigration(session, args):
     uuid = args['uuid']
     try:
@@ -1476,7 +1487,7 @@ def network_rules(session, args):
 
 if __name__ == "__main__":
      XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi,
-                            "preparemigration": preparemigration, 
+                            "getgateway": getgateway, "preparemigration": preparemigration, 
                             "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
                             "createFile": createFile, "deleteFile": deleteFile,
                             "network_rules":network_rules, 

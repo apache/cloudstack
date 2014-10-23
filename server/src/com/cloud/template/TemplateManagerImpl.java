@@ -54,7 +54,6 @@ import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissions
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
@@ -1377,20 +1376,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 throw new CloudRuntimeException("cannot find an image store for zone " + zoneId);
             }
             AsyncCallFuture<TemplateApiResult> future = null;
-
             if (snapshotId != null) {
-                DataStoreRole dataStoreRole = getDataStoreRole(snapshot);
-
-                SnapshotInfo snapInfo = _snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
-
-                if (dataStoreRole == DataStoreRole.Image) {
-                    DataStore snapStore = snapInfo.getDataStore();
-
-                    if (snapStore != null) {
-                        store = snapStore; // pick snapshot image store to create template
-                    }
+                SnapshotInfo snapInfo = _snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Image);
+                DataStore snapStore = snapInfo.getDataStore();
+                if (snapStore != null) {
+                    store = snapStore; // pick snapshot image store to create template
                 }
-
                 future = _tmpltSvr.createTemplateFromSnapshotAsync(snapInfo, tmplInfo, store);
             } else if (volumeId != null) {
                 VolumeInfo volInfo = _volFactory.getVolume(volumeId);
@@ -1418,6 +1409,29 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 }
 
                 privateTemplate = _tmpltDao.findById(templateId);
+                if (snapshotId != null) {
+                    //getting the parent volume
+                    long parentVolumeId = _snapshotDao.findById(snapshotId).getVolumeId();
+                    //Volume can be removed
+                    VolumeVO parentVolume = _volumeDao.findByIdIncludingRemoved(parentVolumeId);
+
+                    if (parentVolume != null && parentVolume.getIsoId() != null && parentVolume.getIsoId() != 0) {
+                        privateTemplate.setSourceTemplateId(parentVolume.getIsoId());
+                        _tmpltDao.update(privateTemplate.getId(), privateTemplate);
+                    } else if (parentVolume != null && parentVolume.getTemplateId() != null) {
+                        privateTemplate.setSourceTemplateId(parentVolume.getTemplateId());
+                        _tmpltDao.update(privateTemplate.getId(), privateTemplate);
+                    }
+                } else if (volumeId != null) {
+                    VolumeVO parentVolume = _volumeDao.findById(volumeId);
+                    if (parentVolume.getIsoId() != null && parentVolume.getIsoId() != 0) {
+                        privateTemplate.setSourceTemplateId(parentVolume.getIsoId());
+                        _tmpltDao.update(privateTemplate.getId(), privateTemplate);
+                    } else if (parentVolume.getTemplateId() != null) {
+                        privateTemplate.setSourceTemplateId(parentVolume.getTemplateId());
+                        _tmpltDao.update(privateTemplate.getId(), privateTemplate);
+                    }
+                }
                 TemplateDataStoreVO srcTmpltStore = _tmplStoreDao.findByStoreTemplate(store.getId(), templateId);
                 UsageEventVO usageEvent =
                         new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, privateTemplate.getAccountId(), zoneId, privateTemplate.getId(), privateTemplate.getName(), null,
@@ -1472,25 +1486,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         } else {
             throw new CloudRuntimeException("Failed to create a template");
         }
-    }
-
-    private DataStoreRole getDataStoreRole(Snapshot snapshot) {
-        long volumeId = snapshot.getVolumeId();
-        VolumeVO volumeVO = _volumeDao.findById(volumeId);
-
-        long storagePoolId = volumeVO.getPoolId();
-        DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
-
-        Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
-
-        String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
-        Boolean supportsStorageSystemSnapshots = new Boolean(value);
-
-        if (supportsStorageSystemSnapshots) {
-            return DataStoreRole.Primary;
-        }
-
-        return DataStoreRole.Image;
     }
 
     @Override
@@ -1570,8 +1565,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             if (snapshot == null) {
                 throw new InvalidParameterValueException("Failed to create private template record, unable to find snapshot " + snapshotId);
             }
-            // Volume could be removed so find including removed to record source template id.
-            volume = _volumeDao.findByIdIncludingRemoved(snapshot.getVolumeId());
+
+            volume = _volumeDao.findById(snapshot.getVolumeId());
 
             // check permissions
             _accountMgr.checkAccess(caller, null, true, snapshot);
@@ -1612,10 +1607,15 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (volume != null) {
             VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
             isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
-            if (volume.getIsoId() != null && volume.getIsoId() != 0) {
-                sourceTemplateId = volume.getIsoId();
-            } else if (volume.getTemplateId() != null) {
-                sourceTemplateId = volume.getTemplateId();
+            if (template != null) {
+                sourceTemplateId = template.getId();
+            } else if (volume.getVolumeType() == Volume.Type.ROOT) { // vm
+                // created
+                // out
+                // of blank
+                // template
+                UserVm userVm = ApiDBUtils.findUserVmById(volume.getInstanceId());
+                sourceTemplateId = userVm.getIsoId();
             }
         }
         String templateTag = cmd.getTemplateTag();

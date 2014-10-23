@@ -34,7 +34,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -872,16 +871,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @Override
-    public void revokeAccess(DataObject dataObject, Host host, DataStore dataStore) {
+    public void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) {
         DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
 
         if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
-            ((PrimaryDataStoreDriver)dataStoreDriver).revokeAccess(dataObject, host, dataStore);
+            ((PrimaryDataStoreDriver)dataStoreDriver).disconnectVolumeFromHost(volumeInfo, host, dataStore);
         }
     }
 
     @Override
-    public void revokeAccess(long vmId, long hostId) {
+    public void disconnectVolumesFromHost(long vmId, long hostId) {
         HostVO host = _hostDao.findById(hostId);
 
         List<VolumeVO> volumesForVm = _volsDao.findByInstance(vmId);
@@ -889,12 +888,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (volumesForVm != null) {
             for (VolumeVO volumeForVm : volumesForVm) {
                 VolumeInfo volumeInfo = volFactory.getVolume(volumeForVm.getId());
-
                 // pool id can be null for the VM's volumes in Allocated state
                 if (volumeForVm.getPoolId() != null) {
                     DataStore dataStore = dataStoreMgr.getDataStore(volumeForVm.getPoolId(), DataStoreRole.Primary);
-
-                    volService.revokeAccess(volumeInfo, host, dataStore);
+                    volService.disconnectVolumeFromHost(volumeInfo, host, dataStore);
                 }
             }
         }
@@ -1249,7 +1246,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     long hostId = vm.getVirtualMachine().getHostId();
                     Host host = _hostDao.findById(hostId);
 
-                    volService.grantAccess(volFactory.getVolume(newVol.getId()), host, destPool);
+                    volService.connectVolumeToHost(volFactory.getVolume(newVol.getId()), host, destPool);
                 }
 
                 newVol = _volsDao.findById(newVol.getId());

@@ -26,7 +26,6 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
-import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 
 import com.cloud.agent.api.Answer;
 
@@ -63,9 +62,7 @@ public interface StorageProcessor {
 
     public Answer deleteSnapshot(DeleteCommand cmd);
 
-    public Answer introduceObject(IntroduceObjectCmd cmd);
+    Answer introduceObject(IntroduceObjectCmd cmd);
 
-    public Answer forgetObject(ForgetObjectCmd cmd);
-
-    public Answer snapshotAndCopy(SnapshotAndCopyCommand cmd);
+    Answer forgetObject(ForgetObjectCmd cmd);
 }

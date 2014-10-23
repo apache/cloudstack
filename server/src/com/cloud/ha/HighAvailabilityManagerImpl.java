@@ -202,7 +202,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     public Status investigate(final long hostId) {
         final HostVO host = _hostDao.findById(hostId);
         if (host == null) {
-            return Status.Alert;
+            return null;
         }
 
         Status hostState = null;
@@ -219,7 +219,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             }
         }
 
-        return Status.Alert;
+        return null;
     }
 
     @Override

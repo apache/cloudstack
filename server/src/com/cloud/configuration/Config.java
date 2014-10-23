@@ -511,14 +511,14 @@ public enum Config {
             null),
     SnapshotDeltaMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.delta.max", "16", "max delta snapshots between two full snapshots.", null),
     BackupSnapshotAfterTakingSnapshot(
-            "Hidden",
+            "Snapshots",
             SnapshotManager.class,
             Boolean.class,
             "snapshot.backup.rightafter",
             "true",
             "backup snapshot right after snapshot is taken",
             null),
-    KVMSnapshotEnabled("Hidden", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "false", "whether snapshot is enabled for KVM hosts", null),
+    KVMSnapshotEnabled("Snapshots", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "false", "whether snapshot is enabled for KVM hosts", null),
 
     // Advanced
     EventPurgeInterval(

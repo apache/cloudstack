@@ -58,12 +58,12 @@ public class NexentaPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final Logger logger = Logger.getLogger(NexentaPrimaryDataStoreDriver.class);
 
     @Override
-    public boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore) {
+    public boolean connectVolumeToHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) {
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
-    public void revokeAccess(DataObject dataObject, Host host, DataStore dataStore) {
+    public void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 

@@ -1654,7 +1654,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             // volume.getPoolId() should be null if the VM we are detaching the disk from has never been started before
             DataStore dataStore = volume.getPoolId() != null ? dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary) : null;
 
-            volService.revokeAccess(volFactory.getVolume(volume.getId()), host, dataStore);
+            volService.disconnectVolumeFromHost(volFactory.getVolume(volume.getId()), host, dataStore);
 
             return _volsDao.findById(volumeId);
         } else {
@@ -2163,10 +2163,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // if we don't have a host, the VM we are attaching the disk to has never been started before
         if (host != null) {
             try {
-                volService.grantAccess(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
+                volService.connectVolumeToHost(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
             }
             catch (Exception e) {
-                volService.revokeAccess(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
+                volService.disconnectVolumeFromHost(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
 
                 throw new CloudRuntimeException(e.getMessage());
             }
@@ -2211,7 +2211,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 answer = (AttachAnswer)_agentMgr.send(hostId, cmd);
             } catch (Exception e) {
                 if(host!=null) {
-                    volService.revokeAccess(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
+                    volService.disconnectVolumeFromHost(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
                 }
                 throw new CloudRuntimeException(errorMsg + " due to: " + e.getMessage());
             }
@@ -2250,7 +2250,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             }
             if(host!= null) {
-                volService.revokeAccess(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
+                volService.disconnectVolumeFromHost(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
             }
             throw new CloudRuntimeException(errorMsg);
         }

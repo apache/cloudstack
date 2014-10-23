@@ -401,13 +401,13 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
     }
 
     @Override
-    public boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore) {
+    public boolean connectVolumeToHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public void revokeAccess(DataObject dataObject, Host host, DataStore dataStore) {
+    public void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) {
         // TODO Auto-generated method stub
 
     }
