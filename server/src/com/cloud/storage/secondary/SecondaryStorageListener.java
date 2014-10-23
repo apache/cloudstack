@@ -88,7 +88,6 @@ public class SecondaryStorageListener implements Listener {
 
     @Override
     public boolean processDisconnect(long agentId, Status state) {
-        _ssVmMgr.onAgentDisconnect(agentId, state);
         return true;
     }
 

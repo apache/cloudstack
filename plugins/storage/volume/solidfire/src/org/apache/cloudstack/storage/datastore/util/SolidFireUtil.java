@@ -92,13 +92,10 @@ public class SolidFireUtil {
 
     public static final String ACCOUNT_ID = "accountId";
     public static final String VOLUME_ID = "volumeId";
-    public static final String SNAPSHOT_ID = "snapshotId";
-    public static final String CLONE_ID = "cloneId";
 
     public static final String VOLUME_SIZE = "sfVolumeSize";
-    public static final String SNAPSHOT_SIZE = "sfSnapshotSize";
 
-    public static final String SNAPSHOT_STORAGE_POOL_ID = "sfSnapshotStoragePoolId";
+    public static final String STORAGE_POOL_ID = "sfStoragePoolId";
 
     public static final String CHAP_INITIATOR_USERNAME = "chapInitiatorUsername";
     public static final String CHAP_INITIATOR_SECRET = "chapInitiatorSecret";
@@ -513,9 +510,14 @@ public class SolidFireUtil {
         String strVolumeIqn = getVolumeIqn(volumeGetResult, lVolumeId);
         long lAccountId = getVolumeAccountId(volumeGetResult, lVolumeId);
         String strVolumeStatus = getVolumeStatus(volumeGetResult, lVolumeId);
+        boolean enable512e = getVolumeEnable512e(volumeGetResult, lVolumeId);
+        long lMinIops = getVolumeMinIops(volumeGetResult, lVolumeId);
+        long lMaxIops = getVolumeMaxIops(volumeGetResult, lVolumeId);
+        long lBurstIops = getVolumeBurstIops(volumeGetResult, lVolumeId);
         long lTotalSize = getVolumeTotalSize(volumeGetResult, lVolumeId);
 
-        return new SolidFireVolume(lVolumeId, strVolumeName, strVolumeIqn, lAccountId, strVolumeStatus, lTotalSize);
+        return new SolidFireVolume(lVolumeId, strVolumeName, strVolumeIqn, lAccountId, strVolumeStatus, enable512e,
+                lMinIops, lMaxIops, lBurstIops, lTotalSize);
     }
 
     public static List<SolidFireVolume> getSolidFireVolumesForAccountId(SolidFireConnection sfConnection, long lAccountId) {
@@ -534,7 +536,8 @@ public class SolidFireUtil {
         List<SolidFireVolume> sfVolumes = new ArrayList<SolidFireVolume>();
 
         for (VolumeGetResult.Result.Volume volume : volumeGetResult.result.volumes) {
-            sfVolumes.add(new SolidFireVolume(volume.volumeID, volume.name, volume.iqn, volume.accountID, volume.status, volume.totalSize));
+            sfVolumes.add(new SolidFireVolume(volume.volumeID, volume.name, volume.iqn, volume.accountID, volume.status, volume.enable512e,
+                    volume.qos.minIOPS, volume.qos.maxIOPS, volume.qos.burstIOPS, volume.totalSize));
         }
 
         return sfVolumes;
@@ -557,7 +560,8 @@ public class SolidFireUtil {
         List<SolidFireVolume> deletedVolumes = new ArrayList<SolidFireVolume> ();
 
         for (VolumeGetResult.Result.Volume volume : volumeGetResult.result.volumes) {
-            deletedVolumes.add(new SolidFireVolume(volume.volumeID, volume.name, volume.iqn, volume.accountID, volume.status, volume.totalSize));
+            deletedVolumes.add(new SolidFireVolume(volume.volumeID, volume.name, volume.iqn, volume.accountID, volume.status, volume.enable512e,
+                    volume.qos.minIOPS, volume.qos.maxIOPS, volume.qos.burstIOPS, volume.totalSize));
         }
 
         return deletedVolumes;
@@ -593,16 +597,25 @@ public class SolidFireUtil {
         private final String _iqn;
         private final long _accountId;
         private final String _status;
+        private final boolean _enable512e;
+        private final long _minIops;
+        private final long _maxIops;
+        private final long _burstIops;
         private final long _totalSize;
 
         public SolidFireVolume(long id, String name, String iqn,
-                long accountId, String status, long totalSize)
+                long accountId, String status, boolean enable512e,
+                long minIops, long maxIops, long burstIops, long totalSize)
         {
             _id = id;
             _name = name;
             _iqn = "/" + iqn + "/0";
             _accountId = accountId;
             _status = status;
+            _enable512e = enable512e;
+            _minIops = minIops;
+            _maxIops = maxIops;
+            _burstIops = burstIops;
             _totalSize = totalSize;
         }
 
@@ -624,6 +637,22 @@ public class SolidFireUtil {
 
         public boolean isActive() {
             return ACTIVE.equalsIgnoreCase(_status);
+        }
+
+        public boolean isEnable512e() {
+            return _enable512e;
+        }
+
+        public long getMinIops() {
+            return _minIops;
+        }
+
+        public long getMaxIops() {
+            return _maxIops;
+        }
+
+        public long getBurstIops() {
+            return _burstIops;
         }
 
         public long getTotalSize() {
@@ -703,10 +732,10 @@ public class SolidFireUtil {
         verifyResult(rollbackInitiatedResult.result, strRollbackInitiatedResultJson, gson);
     }
 
-    public static long createSolidFireClone(SolidFireConnection sfConnection, long lVolumeId, String cloneName) {
+    public static long createSolidFireClone(SolidFireConnection sfConnection, long lVolumeId, long lSnapshotId, String cloneName) {
         final Gson gson = new GsonBuilder().create();
 
-        CloneToCreate cloneToCreate = new CloneToCreate(lVolumeId, cloneName);
+        CloneToCreate cloneToCreate = new CloneToCreate(lVolumeId, lSnapshotId, cloneName);
 
         String strCloneToCreateJson = gson.toJson(cloneToCreate);
 
@@ -1332,16 +1361,18 @@ public class SolidFireUtil {
         private final String method = "CloneVolume";
         private final CloneToCreateParams params;
 
-        private CloneToCreate(final long lVolumeId, final String cloneName) {
-            params = new CloneToCreateParams(lVolumeId, cloneName);
+        private CloneToCreate(final long lVolumeId, final long lSnapshotId, final String cloneName) {
+            params = new CloneToCreateParams(lVolumeId, lSnapshotId, cloneName);
         }
 
         private static final class CloneToCreateParams {
             private long volumeID;
+            private long snapshotID;
             private String name;
 
-            private CloneToCreateParams(final long lVolumeId, final String cloneName) {
+            private CloneToCreateParams(final long lVolumeId, final long lSnapshotId, final String cloneName) {
                 volumeID = lVolumeId;
+                snapshotID = lSnapshotId;
                 name = cloneName;
             }
         }
@@ -1560,7 +1591,15 @@ public class SolidFireUtil {
                 private String iqn;
                 private long accountID;
                 private String status;
+                private boolean enable512e;
+                private Qos qos;
                 private long totalSize;
+
+                private static final class Qos {
+                    private long minIOPS;
+                    private long maxIOPS;
+                    private long burstIOPS;
+                }
             }
         }
     }
@@ -1786,6 +1825,50 @@ public class SolidFireUtil {
         }
 
         throw new CloudRuntimeException("Could not determine the status of the volume for volume ID of " + lVolumeId + ".");
+    }
+
+    private static boolean getVolumeEnable512e(VolumeGetResult volumeGetResult, long lVolumeId)
+    {
+        if (volumeGetResult.result.volumes != null && volumeGetResult.result.volumes.length == 1 &&
+            volumeGetResult.result.volumes[0].volumeID == lVolumeId)
+        {
+            return volumeGetResult.result.volumes[0].enable512e;
+        }
+
+        throw new CloudRuntimeException("Could not determine the enable 512 emulation of the volume for volume ID of " + lVolumeId + ".");
+    }
+
+    private static long getVolumeMinIops(VolumeGetResult volumeGetResult, long lVolumeId)
+    {
+        if (volumeGetResult.result.volumes != null && volumeGetResult.result.volumes.length == 1 &&
+            volumeGetResult.result.volumes[0].volumeID == lVolumeId && volumeGetResult.result.volumes[0].qos != null)
+        {
+            return volumeGetResult.result.volumes[0].qos.minIOPS;
+        }
+
+        throw new CloudRuntimeException("Could not determine the min IOPS of the volume for volume ID of " + lVolumeId + ".");
+    }
+
+    private static long getVolumeMaxIops(VolumeGetResult volumeGetResult, long lVolumeId)
+    {
+        if (volumeGetResult.result.volumes != null && volumeGetResult.result.volumes.length == 1 &&
+            volumeGetResult.result.volumes[0].volumeID == lVolumeId && volumeGetResult.result.volumes[0].qos != null)
+        {
+            return volumeGetResult.result.volumes[0].qos.maxIOPS;
+        }
+
+        throw new CloudRuntimeException("Could not determine the max IOPS of the volume for volume ID of " + lVolumeId + ".");
+    }
+
+    private static long getVolumeBurstIops(VolumeGetResult volumeGetResult, long lVolumeId)
+    {
+        if (volumeGetResult.result.volumes != null && volumeGetResult.result.volumes.length == 1 &&
+            volumeGetResult.result.volumes[0].volumeID == lVolumeId && volumeGetResult.result.volumes[0].qos != null)
+        {
+            return volumeGetResult.result.volumes[0].qos.burstIOPS;
+        }
+
+        throw new CloudRuntimeException("Could not determine the burst IOPS of the volume for volume ID of " + lVolumeId + ".");
     }
 
     private static long getVolumeTotalSize(VolumeGetResult volumeGetResult, long lVolumeId)

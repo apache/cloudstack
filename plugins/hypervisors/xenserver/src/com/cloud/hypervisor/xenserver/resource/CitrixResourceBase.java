@@ -80,7 +80,6 @@ import com.xensource.xenapi.VGPU;
 import com.xensource.xenapi.VIF;
 import com.xensource.xenapi.VLAN;
 import com.xensource.xenapi.VM;
-import com.xensource.xenapi.VMGuestMetrics;
 import com.xensource.xenapi.XenAPIObject;
 
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -1912,7 +1911,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String chapInitiatorUsername = details.get(DiskTO.CHAP_INITIATOR_USERNAME);
         String chapInitiatorSecret = details.get(DiskTO.CHAP_INITIATOR_SECRET);
         String mountpoint = details.get(DiskTO.MOUNT_POINT);
-        String protocoltype=details.get(DiskTO.PROTOCOL_TYPE);
+        String protocoltype = details.get(DiskTO.PROTOCOL_TYPE);
 
         if (StoragePoolType.NetworkFilesystem.toString().equalsIgnoreCase(protocoltype)) {
             String poolid = storageHost + ":" + mountpoint;
@@ -6125,8 +6124,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             VDI vdi = null;
 
             if (cmd.getAttach() && cmd.isManaged()) {
-                SR sr =
-                        getIscsiSR(conn, cmd.get_iScsiName(), cmd.getStorageHost(), cmd.get_iScsiName(), cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword(), true);
+                SR sr = getIscsiSR(conn, cmd.get_iScsiName(), cmd.getStorageHost(), cmd.get_iScsiName(), cmd.getChapInitiatorUsername(), cmd.getChapInitiatorPassword(), true);
 
                 vdi = getVDIbyUuid(conn, cmd.getVolumePath(), false);
 
@@ -6139,23 +6137,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             // Look up the VM
             VM vm = getVM(conn, vmName);
-            /* For HVM guest, if no pv driver installed, no attach/detach */
-            boolean isHVM;
-            if (vm.getPVBootloader(conn).equalsIgnoreCase("")) {
-                isHVM = true;
-            } else {
-                isHVM = false;
-            }
-            VMGuestMetrics vgm = vm.getGuestMetrics(conn);
-            boolean pvDrvInstalled = false;
-            if (!isRefNull(vgm) && vgm.getPVDriversUpToDate(conn)) {
-                pvDrvInstalled = true;
-            }
-            if (isHVM && !pvDrvInstalled) {
-                s_logger.warn(errorMsg + ": You attempted an operation on a VM which requires PV drivers to be installed but the drivers were not detected");
-                return new AttachVolumeAnswer(cmd,
-                        "You attempted an operation that requires PV drivers to be installed on the VM. Please install them by inserting xen-pv-drv.iso.");
-            }
             if (attach) {
                 // Figure out the disk number to attach the VM to
                 String diskNumber = null;

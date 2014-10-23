@@ -28,9 +28,9 @@ import com.cloud.storage.Volume;
 public interface PrimaryDataStoreDriver extends DataStoreDriver {
     public ChapInfo getChapInfo(VolumeInfo volumeInfo);
 
-    public boolean connectVolumeToHost(VolumeInfo volumeInfo, Host host, DataStore dataStore);
+    public boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore);
 
-    public void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore);
+    public void revokeAccess(DataObject dataObject, Host host, DataStore dataStore);
 
     // intended for managed storage (cloud.storage_pool.managed = true)
     // if not managed, return volume.getSize()

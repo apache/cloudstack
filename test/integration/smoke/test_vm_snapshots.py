@@ -202,6 +202,9 @@ class TestVmSnapshot(cloudstackTestCase):
             "Check the snapshot of vm is ready!"
         )
 
+	# Stop Virtual machine befor reverting VM to a snapshot taken without memory  	
+	self.virtual_machine.stop(self.apiclient)
+
         VmSnapshot.revertToSnapshot(self.apiclient, list_snapshot_response[0].id)
 
         list_vm_response = list_virtual_machines(

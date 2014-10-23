@@ -44,9 +44,9 @@ public interface VolumeService {
 
     ChapInfo getChapInfo(VolumeInfo volumeInfo, DataStore dataStore);
 
-    boolean connectVolumeToHost(VolumeInfo volumeInfo, Host host, DataStore dataStore);
+    boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore);
 
-    void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore);
+    void revokeAccess(DataObject dataObject, Host host, DataStore dataStore);
 
     /**
      * Creates the volume based on the given criteria

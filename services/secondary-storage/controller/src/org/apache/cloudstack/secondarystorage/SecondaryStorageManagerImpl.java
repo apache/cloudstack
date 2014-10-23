@@ -79,7 +79,6 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.Host.Type;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
@@ -1002,20 +1001,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Override
     public void onAgentConnect(Long dcId, StartupCommand cmd) {
-    }
-
-    @Override
-    public void onAgentDisconnect(long agentId, Status state) {
-        HostVO host = _hostDao.findById(agentId);
-        if (host == null || !Type.SecondaryStorageVM.equals(host.getType())) {
-            return;
-        }
-        if (state == Status.Alert || state == Status.Disconnected) {
-            SecondaryStorageVmVO ssvm = getSSVMfromHost(host);
-            if ( ssvm != null ) {
-                stopSecStorageVm(ssvm.getId());
-            }
-        }
     }
 
     private String getAllocLockName() {

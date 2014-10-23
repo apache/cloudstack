@@ -324,7 +324,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                         final ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
                         if (proxy != null) {
 
-                            stopProxy(proxyVmId);
                             // Disable this feature for now, as it conflicts
                             // with
                             // the case of allowing user to reboot console proxy
