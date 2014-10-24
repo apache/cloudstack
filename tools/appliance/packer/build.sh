@@ -1,21 +1,121 @@
 #!/bin/bash
 
+#set -x
+
 btimestamp=$(date +%s)
-echo "Timestamp = $btimestamp"
+echo "Vagrant Timestamp = $btimestamp"
+bptstamp=$btimestamp
 bboxname="packer_"$btimestamp"_FEATURE-CENIK123-VPCVRR_virtualbox"
+qbboxname=\"$bboxname\"
 echo "Virtualbox Name = $bboxname"
+echo "QBBox Name = $qbboxname"
 bboxtitle="TVM$btimestamp"
 echo "Virtualbox Title = $bboxtitle"
-boutputfolder="output_"$btimestamp"_FEATURE-CENIK123-VPCRR_virtualbox"
+boutputfolder="output_"$btimestamp"_FEATURE-CENIK123-VPCVRR_virtualbox"
 echo "Output folder = $boutputfolder"
-
+packerjsonfile="./packertemplates/cssysvm_template"$btimestamp".json"
+echo "Packer .json file = "$packerjsonfile
 #************************
 #Build the vargrant image for Cloudstack SystemVM's
+cat <<"EOF1" > $packerjsonfile
+
+{
+
+  "provisioners": [
+    {	
+      "type": "shell","scripts": [
+        "scripts/baseTest.sh"
+
+      ]
+    },
+  {
+      "type":"file",
+      "source":"./../../../../cloudstack/systemvm/patches/debian/config",
+      "destination":"/opt/cloudstack/systemvm/patches/debian"
+  }, 
+ {
+      "type":"file",
+      "source":"./../../../../cloudstack/systemvm/patches/debian/vpn",
+      "destination":"/opt/cloudstack/systemvm/patches/debian"
+},
+    {	
+      "type": "shell",
+      "scripts": [
+        "scripts/postinstall.sh",
+      	"scripts/vagrant.sh",
+        "scripts/cleanup.sh",
+        "scripts/zerodisk.sh"
+      ]
+    }
+
+],
+
+  "variables": {
+     "ptstamp":"",
+     "dummy":"dummy"
+   },
+
+  "builders": [
+     {
+      "type": "virtualbox-iso",
+      "name": "{{user `ptstamp` }}_FEATURE-CENIK123-VPCVRR",
+      "boot_wait": "10s",
+      "disk_size": 2500,
+      "guest_os_type": "Debian",
+      "http_directory": "http",
+      "iso_checksum": "7339b668a81b417ac023d73739dc6a03",
+      "iso_checksum_type": "md5",
+      "iso_url": "http://ftp.cae.tntech.edu/debian-cd/debian-7.4.0-i386-netinst.iso",
+      "ssh_username": "root",
+      "ssh_password": "password",
+      "ssh_port": 22,
+      "ssh_wait_timeout": "10000s",
+      "guest_additions_mode":"attach",
+      "shutdown_command": "echo 'halt -p' > shutdown.sh; echo 'password'|sudo -S sh 'shutdown.sh'",
+      "virtualbox_version_file": ".vbox_version",
+      "boot_command": [
+        "<esc><wait>",
+        "install <wait>",
+        "preseed/url=http://{{.HTTPIP}}:{{.HTTPPort}}/preseed.cfg.txt <wait>",
+	"ignore_loglevel <wait>",
+        "debian-installer=en_US <wait>",
+        "auto <wait>",
+        "locale=en_US <wait>",
+        "kbd-chooser/method=us <wait>",
+        "netcfg/get_hostname=systemvm <wait>",
+        "netcfg/get_domain=apache.org <wait>",
+	"fb=false <wait>",
+        "debconf/frontend=noninteractive <wait>",
+	"boot_debug=2 <wait>",
+        "console-setup/ask_detect=false <wait>",
+        "console-keymaps-at/keymap=us <wait>",
+        "keyboard-configuration/xkb-keymap=us <wait>",
+        "<enter><wait>"
+      ],
+       "vboxmanage": [
+        ["modifyvm","{{.Name}}","--memory","256"],
+        ["modifyvm","{{.Name}}","--cpus","1"]
+
+
+      ]
+   }
+],
+    "Post-processors":[
+	{
+	    "type":"vagrant",
+	    "keep_input_artifact":true,
+	    "output":"./vm/output_{{.BuildName}}_{{.Provider}}/packer_{{.BuildName}}_{{.Provider}}.box"
+	}
+]
+
+}
+EOF1
+
 #but first put a customized vagrantfile in the timestamped
 #directory
 
 mkdir ./vm/$boutputfolder
-cat <<EOF > ./vm/$boutputfolder/Vagrantfile
+cat <<EOF2 > ./vm/$boutputfolder/Vagrantfile
 
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
@@ -23,7 +123,7 @@ cat <<EOF > ./vm/$boutputfolder/Vagrantfile
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 #TIMESTAMP = (((Time.now.getutc).to_i).to_s)
-BOX_NAME = $bboxname
+BOX_NAME = $qbboxname
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = BOX_NAME+".box"
 
@@ -36,7 +136,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
 #	config.ssh.username = "vagrant"
 #	config.ssh.password = "vagrant"
-	config.ssh.private_key_path ="./validation/vagrant"
+	config.ssh.private_key_path ="../../validation/vagrant"
         config.ssh.host = "169.254.2.214"
         config.ssh.port = "3922"
 
@@ -61,18 +161,26 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
  #	 vb.customize("post-boot", ["guestcontrol", :id, "exec", "--username", "vagrant", "--password", "vagrant", "touch /home/vagrant/tpp.test"]) 
   end
 
-   config.vm.provision "shell", path: "./provision/enablevagrant.sh"
-   config.vm.provision "shell", path: "./provision/proc_cmdline.sh"
-   config.vm.provision "shell", path: "./provision/overlay_scripts.sh"   
-EOF
+   config.vm.provision "shell", path: "../../provision/enablevagrant.sh"
+   config.vm.provision "shell", path: "../../provision/proc_cmdline.sh"
+   config.vm.provision "shell", path: "../../provision/overlay_scripts.sh"   
+end
+EOF2
 
 #************************
 
+v=ptstamp=$bptstamp
 
-packer build cssysvm_template.json 2>./log/build{$timestamp}.txt | tee ./log/packerbuild{$timestamp}_vagrant.log
+echo "This is v --> "$v
+
+packer build \
+-var $v \
+$packerjsonfile \
+2> ./log/build-$btimestamp.txt | tee ./log/packerbuild_$btimestamp-vagrant.log
 
 #ok let's bring the systemvm up
-echo"Starting system vm ("$vboxname") in "$boutputfolder "using "$vboxtitle" as a title"
-cd /vm/$boutputfolder/
+echo "Starting system vm \("$bboxname"\) in folder "$boutputfolder", using "$bboxtitle" as a title"
+chmod 777 ./vm/$boutputfolder
+cd ./vm/$boutputfolder/
 vagrant up
 
