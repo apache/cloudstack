@@ -1,121 +1,45 @@
 #!/bin/bash
 
-#set -x
+
+set -x
+
+bbuildheader="FEATURE-CENIK123-VPCVRR"
+echo "Packer/Vagrant Build Header/Directory for this project ==> "$bbuildheader
 
 btimestamp=$(date +%s)
-echo "Vagrant Timestamp = $btimestamp"
+echo "Packer/Vagrant Timestamp for this build => $btimestamp"
+
 bptstamp=$btimestamp
-bboxname="packer_"$btimestamp"_FEATURE-CENIK123-VPCVRR_virtualbox"
+
+bboxname="packerbuilt_"$btimestamp"_"$bbuildheader"_virtualbox"
+
 qbboxname=\"$bboxname\"
-echo "Virtualbox Name = $bboxname"
-echo "QBBox Name = $qbboxname"
+
+echo "Virtualbox Name is ==> $bboxname"
+echo "QBBox Name(virtual box name with quotes) ==> $qbboxname"
+
 bboxtitle="TVM$btimestamp"
-echo "Virtualbox Title = $bboxtitle"
-boutputfolder="output_"$btimestamp"_FEATURE-CENIK123-VPCVRR_virtualbox"
-echo "Output folder = $boutputfolder"
-packerjsonfile="./packertemplates/cssysvm_template"$btimestamp".json"
-echo "Packer .json file = "$packerjsonfile
+echo "Virtualbox Title is (used for vagrant up) => $bboxtitle"
+
+xofn="output_"$btimestamp"_"$bbuildheader"_virtualbox"
+echo "Virtualbox output folder name is ==> $xofn"
+
+xfolder="./vm/"$xofn"/"
+echo "Output folder is here ==> $xfolder"
+
+packerjsonfile="./packertemplates/cssysvm_template$btimestamp.json"
+echo "Packer json file goes here ==> $packerjsonfile"
+
+bvagrantoutput=$xfolder"Vagrantfile"
+echo "Vagrantfile goes here ==> $bvagrantoutput"
+
 #************************
-#Build the vargrant image for Cloudstack SystemVM's
-cat <<"EOF1" > $packerjsonfile
-
-{
-
-  "provisioners": [
-    {	
-      "type": "shell","scripts": [
-        "scripts/baseTest.sh"
-
-      ]
-    },
-  {
-      "type":"file",
-      "source":"./../../../../cloudstack/systemvm/patches/debian/config",
-      "destination":"/opt/cloudstack/systemvm/patches/debian"
-  }, 
- {
-      "type":"file",
-      "source":"./../../../../cloudstack/systemvm/patches/debian/vpn",
-      "destination":"/opt/cloudstack/systemvm/patches/debian"
-},
-    {	
-      "type": "shell",
-      "scripts": [
-        "scripts/postinstall.sh",
-      	"scripts/vagrant.sh",
-        "scripts/cleanup.sh",
-        "scripts/zerodisk.sh"
-      ]
-    }
-
-],
-
-  "variables": {
-     "ptstamp":"",
-     "dummy":"dummy"
-   },
-
-  "builders": [
-     {
-      "type": "virtualbox-iso",
-      "name": "{{user `ptstamp` }}_FEATURE-CENIK123-VPCVRR",
-      "boot_wait": "10s",
-      "disk_size": 2500,
-      "guest_os_type": "Debian",
-      "http_directory": "http",
-      "iso_checksum": "7339b668a81b417ac023d73739dc6a03",
-      "iso_checksum_type": "md5",
-      "iso_url": "http://ftp.cae.tntech.edu/debian-cd/debian-7.4.0-i386-netinst.iso",
-      "ssh_username": "root",
-      "ssh_password": "password",
-      "ssh_port": 22,
-      "ssh_wait_timeout": "10000s",
-      "guest_additions_mode":"attach",
-      "shutdown_command": "echo 'halt -p' > shutdown.sh; echo 'password'|sudo -S sh 'shutdown.sh'",
-      "virtualbox_version_file": ".vbox_version",
-      "boot_command": [
-        "<esc><wait>",
-        "install <wait>",
-        "preseed/url=http://{{.HTTPIP}}:{{.HTTPPort}}/preseed.cfg.txt <wait>",
-	"ignore_loglevel <wait>",
-        "debian-installer=en_US <wait>",
-        "auto <wait>",
-        "locale=en_US <wait>",
-        "kbd-chooser/method=us <wait>",
-        "netcfg/get_hostname=systemvm <wait>",
-        "netcfg/get_domain=apache.org <wait>",
-	"fb=false <wait>",
-        "debconf/frontend=noninteractive <wait>",
-	"boot_debug=2 <wait>",
-        "console-setup/ask_detect=false <wait>",
-        "console-keymaps-at/keymap=us <wait>",
-        "keyboard-configuration/xkb-keymap=us <wait>",
-        "<enter><wait>"
-      ],
-       "vboxmanage": [
-        ["modifyvm","{{.Name}}","--memory","256"],
-        ["modifyvm","{{.Name}}","--cpus","1"]
-
-
-      ]
-   }
-],
-    "Post-processors":[
-	{
-	    "type":"vagrant",
-	    "keep_input_artifact":true,
-	    "output":"./vm/output_{{.BuildName}}_{{.Provider}}/packer_{{.BuildName}}_{{.Provider}}.box"
-	}
-]
-
-}
-EOF1
-
 #but first put a customized vagrantfile in the timestamped
-#directory
+#directory pointed to by xfolder.
 
-mkdir ./vm/$boutputfolder
-cat <<EOF2 > ./vm/$boutputfolder/Vagrantfile
+mkdir $xfolder
+
+cat <<EOF2 > $bvagrantoutput
 
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
@@ -168,13 +92,114 @@ end
 EOF2
 
 #************************
+#Build the packer.json image for Cloudstack SystemVM's
+cat <<"EOF1" > $packerjsonfile
 
+{
+
+  "provisioners": [
+    {	
+      "type": "shell","scripts": [
+        "scripts/baseTest.sh"
+
+      ]
+    },
+  {
+      "type":"file",
+      "source":"./../../../../cloudstack/systemvm/patches/debian/config",
+      "destination":"/opt/cloudstack/systemvm/patches/debian"
+  }, 
+ {
+      "type":"file",
+      "source":"./../../../../cloudstack/systemvm/patches/debian/vpn",
+      "destination":"/opt/cloudstack/systemvm/patches/debian"
+},
+    {	
+      "type": "shell",
+      "scripts": [
+        "scripts/postinstall.sh",
+      	"scripts/vagrant.sh",
+        "scripts/cleanup.sh",
+        "scripts/zerodisk.sh"
+      ]
+    }
+
+],
+
+  "variables": {
+     "ptstamp":"",
+     "voutput":"",
+     "buildheader":"",
+     "dummy":"dummy"
+   },
+
+  "builders": [
+     {
+      "type": "virtualbox-iso",
+      "name": "{{user `ptstamp` }}_{{user `buildheader`}}",
+      "output_directory": "{{user `voutput`}}output/",
+      "boot_wait": "10s",
+      "disk_size": 2500,
+      "guest_os_type": "Debian",
+      "http_directory": "http",
+      "iso_checksum": "7339b668a81b417ac023d73739dc6a03",
+      "iso_checksum_type": "md5",
+      "iso_url": "http://ftp.cae.tntech.edu/debian-cd/debian-7.4.0-i386-netinst.iso",
+      "ssh_username": "root",
+      "ssh_password": "password",
+      "ssh_port": 22,
+      "ssh_wait_timeout": "10000s",
+      "guest_additions_mode":"attach",
+      "shutdown_command": "echo 'halt -p' > shutdown.sh; echo 'password'|sudo -S sh 'shutdown.sh'",
+      "virtualbox_version_file": ".vbox_version",
+      "boot_command": [
+        "<esc><wait>",
+        "install <wait>",
+        "preseed/url=http://{{.HTTPIP}}:{{.HTTPPort}}/preseed.cfg.txt <wait>",
+	"ignore_loglevel <wait>",
+        "debian-installer=en_US <wait>",
+        "auto <wait>",
+        "locale=en_US <wait>",
+        "kbd-chooser/method=us <wait>",
+        "netcfg/get_hostname=systemvm <wait>",
+        "netcfg/get_domain=apache.org <wait>",
+	"fb=false <wait>",
+        "debconf/frontend=noninteractive <wait>",
+	"boot_debug=2 <wait>",
+        "console-setup/ask_detect=false <wait>",
+        "console-keymaps-at/keymap=us <wait>",
+        "keyboard-configuration/xkb-keymap=us <wait>",
+        "<enter><wait>"
+      ],
+       "vboxmanage": [
+        ["modifyvm","{{.Name}}","--memory","256"],
+        ["modifyvm","{{.Name}}","--cpus","1"]
+
+
+      ]
+   }
+],
+    "Post-processors":[
+	{
+	    "type":"vagrant",
+	    "keep_input_artifact":true,
+            "vagrantfile_template" : "./vm/output_{{.BuildName}}_{{.Provider}}/Vagrantfile",
+	    "output": "./vm/output_{{.BuildName}}_{{.Provider}}/packer_{{.BuildName}}_{{.Provider}}.box"
+	}
+]
+
+}
+EOF1
+#************************
 v=ptstamp=$bptstamp
-
-echo "This is v --> "$v
+b=buildheader=$bbuildheader
+vo=voutput=$xfolder
+echo "Var's --> $v, $b, $vo"
 
 packer build \
 -var $v \
+-var $b \
+-var $vo \
 $packerjsonfile \
 2> ./log/build-$btimestamp.txt | tee ./log/packerbuild_$btimestamp-vagrant.log
 
