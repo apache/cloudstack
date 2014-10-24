@@ -904,11 +904,6 @@
                                                         hypervisor: args.context.volumes[0].hypervisor
                                                     });
                                                 }
-
-                                                var volumeDrEnabled = false;                                               
-                                                if (isModuleIncluded("dr")) {
-                                                    volumeDrEnabled = cloudStack.dr.sharedFunctions.isVolumeDrEnabled(args.context.volumes[0]);                                                    
-                                                }    
                                                 
                                                 $(['Running', 'Stopped']).each(function() {
                                                     $.ajax({
@@ -919,21 +914,11 @@
                                                         async: false,
                                                         success: function(json) {
                                                             var instanceObjs = json.listvirtualmachinesresponse.virtualmachine;
-                                                            $(instanceObjs).each(function() {
-                                                                if (isModuleIncluded("dr")) {
-                                                                    var vmDrEnabled = cloudStack.dr.sharedFunctions.isVmDrEnabled(this);
-                                                                    if (vmDrEnabled == volumeDrEnabled) {
+                                                            $(instanceObjs).each(function() {                                                                
                                                                 items.push({
                                                                     id: this.id,
                                                                     description: this.displayname ? this.displayname : this.name
-                                                                });
-                                                                    } 
-                                                                } else {
-                                                                    items.push({
-                                                                        id: this.id,
-                                                                        description: this.displayname ? this.displayname : this.name
-                                                                    });
-                                                                }                                                                
+                                                                });                                                                                                                                
                                                             });
                                                         }
                                                     });
@@ -1546,12 +1531,7 @@
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
-                                            var jsonObj = json.listvolumesresponse.volume[0];
-                                            
-                                            if (isModuleIncluded("dr")) {
-                                                cloudStack.dr.sharedFunctions.addExtraProperties(jsonObj, "Volume");
-                                            }                                            
-                                            
+                                            var jsonObj = json.listvolumesresponse.volume[0];                                            
                                             args.response.success({
                                                 actionFilter: volumeActionfilter,
                                                 data: jsonObj
@@ -2017,7 +1997,7 @@
     };
 
 
-    var volumeActionfilter = function(args) {
+    var volumeActionfilter = cloudStack.actionFilter.volumeActionfilter = function(args) {
         var jsonObj = args.context.item;
         var allowedActions = [];
 
@@ -2084,7 +2064,7 @@
         return allowedActions;
     };
 
-    var snapshotActionfilter = function(args) {
+    var snapshotActionfilter = cloudStack.actionFilter.snapshotActionfilter = function(args) {
         var jsonObj = args.context.item;
 
         if (jsonObj.state == 'Destroyed') {
