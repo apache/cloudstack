@@ -756,7 +756,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         if (command.equals("createSSHKeyPair")) {
             auditTrailSb.append("This result was not logged because it contains sensitive data.");
         } else {
-            auditTrailSb.append(StringUtils.cleanString(result));
+            auditTrailSb.append(result);
         }
     }
 
