@@ -757,7 +757,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["basic","advanced"],required_hardware="true")
     def test_change_so_running_vm_static_to_static(self, value):
         """Test scale running VM from static offering to static offering"""
 
@@ -817,7 +817,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["basic","advanced"],required_hardware="true")
     def test_change_so_running_vm_static_to_dynamic(self, value):
         """Test scale running VM from static offering to dynamic offering"""
 
@@ -900,7 +900,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["basic","advanced"],required_hardware="true")
     def test_change_so_running_vm_dynamic_to_static(self, value):
         """Test scale running VM from dynamic offering to static offering"""
 
@@ -963,7 +963,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["basic","advanced"],required_hardware="true")
     def test_change_so_running_vm_dynamic_to_dynamic(self, value):
         """Test scale running VM from dynamic offering to dynamic offering"""
 
@@ -1378,7 +1378,7 @@ class TestAffinityGroup(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic","advanced"], BugId="7180")
+    @attr(tags=["basic","advanced"], BugId="7180", required_hardware="true")
     def test_deploy_VM_with_affinity_group(self, value):
         """Test deploy VMs with affinity group and dynamic compute offering"""
 
