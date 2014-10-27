@@ -1,7 +1,11 @@
 #!/bin/bash
 
 
-set -x
+#set -x
+
+export PACKER_LOG=true
+csroot="/Users/karl.harris/Development/GitRepositories/SungardASCloudstack3/cloudstack"
+
 
 bbuildheader="FEATURE-CENIK123-VPCVRR"
 echo "Packer/Vagrant Build Header/Directory for this project ==> "$bbuildheader
@@ -24,22 +28,33 @@ echo "Virtualbox Title is (used for vagrant up) => $bboxtitle"
 xofn="output_"$btimestamp"_"$bbuildheader"_virtualbox"
 echo "Virtualbox output folder name is ==> $xofn"
 
-xfolder="./vm/"$xofn"/"
+xfolder="./"$xofn"/"
 echo "Output folder is here ==> $xfolder"
 
-packerjsonfile="./packertemplates/cssysvm_template$btimestamp.json"
+packertemplatefolder="packertemplate/"
+
+packerjsonfile=$packertemplatefolder"cssysvm_template"$btimestamp.json
 echo "Packer json file goes here ==> $packerjsonfile"
 
-bvagrantoutput=$xfolder"Vagrantfile"
+bvagrantoutput="Vagrantfile"
 echo "Vagrantfile goes here ==> $bvagrantoutput"
 
+bbuildoutput="build.sh"
+echo "build.sh file goes here ==> $bbuildoutput"
+
 #************************
-#but first put a customized vagrantfile in the timestamped
-#directory pointed to by xfolder.
+
+export PACKER_CACHE_DIR=$PWD"/iso"
+echo "ISO CACHE ==>$PACKER_CACHE_DIR"
+cd ./vm/
 
 mkdir $xfolder
+chmod -R 777 $xfolder
+cd $xfolder
 
-cat <<EOF2 > $bvagrantoutput
+#but first put a customized vagrantfile in the timestamped
+#directory pointed to by xfolder.
+cat <<EOF2 > ./$bvagrantoutput
 
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
@@ -93,55 +108,59 @@ EOF2
 
 #************************
 #Build the packer.json image for Cloudstack SystemVM's
-cat <<"EOF1" > $packerjsonfile
 
+mkdir -m 777 ./$packertemplatefolder
+ cat <<"EOF1" > ./$packerjsonfile
 {
 
-  "provisioners": [
-    {	
-      "type": "shell","scripts": [
-        "scripts/baseTest.sh"
-
-      ]
-    },
-  {
-      "type":"file",
-      "source":"./../../../../cloudstack/systemvm/patches/debian/config",
-      "destination":"/opt/cloudstack/systemvm/patches/debian"
-  }, 
- {
-      "type":"file",
-      "source":"./../../../../cloudstack/systemvm/patches/debian/vpn",
-      "destination":"/opt/cloudstack/systemvm/patches/debian"
-},
-    {	
-      "type": "shell",
-      "scripts": [
-        "scripts/postinstall.sh",
-      	"scripts/vagrant.sh",
-        "scripts/cleanup.sh",
-        "scripts/zerodisk.sh"
-      ]
-    }
-
-],
-
   "variables": {
+     "cloudstackroot" : "",
      "ptstamp":"",
      "voutput":"",
      "buildheader":"",
      "dummy":"dummy"
    },
 
+
+  "provisioners": [
+    {	
+      "type": "shell","scripts": [
+        "{{user `cloudstackroot`}}/tools/appliance/packer/scripts/baseTest.sh"
+
+      ]
+    },
+  {
+      "type":"file",
+      "source":"{{user `cloudstackroot`}}/systemvm/patches/debian/config",
+      "destination":"/opt/cloudstack/systemvm/patches/debian"
+  }, 
+ {
+      "type":"file",
+      "source":"{{user `cloudstackroot`}}/systemvm/patches/debian/vpn",
+      "destination":"/opt/cloudstack/systemvm/patches/debian"
+},
+    {	
+      "type": "shell",
+      "scripts": [
+        "{{user `cloudstackroot`}}/tools/appliance/packer/scripts/postinstall.sh",
+      	"{{user `cloudstackroot`}}/tools/appliance/packer/scripts/vagrant.sh",
+        "{{user `cloudstackroot`}}/tools/appliance/packer/scripts/cleanup.sh",
+        "{{user `cloudstackroot`}}/tools/appliance/packer/scripts/zerodisk.sh"
+      ]
+    }
+
+],
+
+
   "builders": [
      {
       "type": "virtualbox-iso",
       "name": "{{user `ptstamp` }}_{{user `buildheader`}}",
-      "output_directory": "{{user `voutput`}}output/",
+      "output_directory": "output/",
       "boot_wait": "10s",
       "disk_size": 2500,
       "guest_os_type": "Debian",
-      "http_directory": "http",
+      "http_directory": "{{user `cloudstackroot`}}/tools/appliance/packer/http",
       "iso_checksum": "7339b668a81b417ac023d73739dc6a03",
       "iso_checksum_type": "md5",
       "iso_url": "http://ftp.cae.tntech.edu/debian-cd/debian-7.4.0-i386-netinst.iso",
@@ -183,8 +202,7 @@ cat <<"EOF1" > $packerjsonfile
 	{
 	    "type":"vagrant",
 	    "keep_input_artifact":true,
-            "vagrantfile_template" : "./vm/output_{{.BuildName}}_{{.Provider}}/Vagrantfile",
-	    "output": "./vm/output_{{.BuildName}}_{{.Provider}}/packer_{{.BuildName}}_{{.Provider}}.box"
+	    "output": "packerbuilt_{{.BuildName}}_{{.Provider}}.box"
 	}
 ]
 
@@ -194,18 +212,33 @@ EOF1
 v=ptstamp=$bptstamp
 b=buildheader=$bbuildheader
 vo=voutput=$xfolder
+csr=cloudstackroot=$csroot
 echo "Var's --> $v, $b, $vo"
 
+logoutput="log/"
+echo "Log output directory ==> $logoutput"
+
+cat <<EOF3 > ./$bbuildoutput
+mkdir -m 777 ./${logoutput}
 packer build \
 -var $v \
 -var $b \
 -var $vo \
-$packerjsonfile \
-2> ./log/build-$btimestamp.txt | tee ./log/packerbuild_$btimestamp-vagrant.log
+-var $csr \
+./${packerjsonfile} \
+2> ./${logoutput}build-$btimestamp.txt | tee ./${logoutput}packerbuild_$btimestamp-vagrant.log
+
+EOF3
+
+
+cat ./$bbuildoutput
+chmod -R 777 $bbuildoutput
+
+# build the system.
+./$bbuildoutput
 
 #ok let's bring the systemvm up
 echo "Starting system vm \("$bboxname"\) in folder "$boutputfolder", using "$bboxtitle" as a title"
-chmod 777 ./vm/$boutputfolder
-cd ./vm/$boutputfolder/
+
 vagrant up
 
