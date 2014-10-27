@@ -2097,12 +2097,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     networkUsage(conn, routerIp, "addVif", "eth" + correctVif.getDevice(conn));
                 }
 
-                if (correctVif == null) {
+                if (ip.isAdd() && correctVif == null) {
                     throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
                 }
-
-                ip.setNicDevId(Integer.valueOf(correctVif.getDevice(conn)));
-                ip.setNewNic(addVif);
+                if (correctVif != null ) {
+                    ip.setNicDevId(Integer.valueOf(correctVif.getDevice(conn)));
+                    ip.setNewNic(addVif);
+                }
             }
         } catch (InternalErrorException e) {
             s_logger.error("Ip Assoc failure on applying one ip due to exception:  ", e);
@@ -2140,9 +2141,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                 Network network = getNetwork(conn, nic);
 
-                // Determine the correct VIF on DomR to associate/disassociate the
-                // IP address with
-                VIF correctVif = getCorrectVif(conn, router, network);
 
                 // If we are disassociating the last IP address in the VLAN, we need
                 // to remove a VIF
@@ -2153,28 +2151,28 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     removeVif = true;
                 }
 
-                if (correctVif == null) {
-                    throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
-                }
-
                 if (removeVif) {
-                    network = correctVif.getNetwork(conn);
 
-                    // Mark this vif to be removed from network usage
-                    networkUsage(conn, routerIp, "deleteVif", "eth" + correctVif.getDevice(conn));
+                    // Determine the correct VIF on DomR to associate/disassociate the
+                    // IP address with
+                    VIF correctVif = getCorrectVif(conn, router, network);
+                    if (correctVif != null) {
+                         network = correctVif.getNetwork(conn);
 
-                    // Remove the VIF from DomR
-                    correctVif.unplug(conn);
-                    correctVif.destroy(conn);
+                        // Mark this vif to be removed from network usage
+                        networkUsage(conn, routerIp, "deleteVif", "eth" + correctVif.getDevice(conn));
 
-                    // Disable the VLAN network if necessary
-                    disableVlanNetwork(conn, network);
+                        // Remove the VIF from DomR
+                        correctVif.unplug(conn);
+                        correctVif.destroy(conn);
+
+                        // Disable the VLAN network if necessary
+                        disableVlanNetwork(conn, network);
+                    }
                 }
             }
-        } catch (InternalErrorException e) {
-            s_logger.error("Ip Assoc failure on applying one ip due to exception:  ", e);
-            return new ExecutionResult(false, e.getMessage());
         } catch (Exception e) {
+            s_logger.debug("Ip Assoc failure on applying one ip due to exception:  ", e);
             return new ExecutionResult(false, e.getMessage());
         }
         return new ExecutionResult(true, null);
