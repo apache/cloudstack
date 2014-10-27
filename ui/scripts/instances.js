@@ -1910,11 +1910,7 @@
                                         else
                                             jsonObj.xenserverToolsVersion61plus = false;
                                     }
-                                                                       
-                                    if (isModuleIncluded("dr")) {
-                                        cloudStack.dr.sharedFunctions.addExtraProperties(jsonObj, "UserVM");
-                                    }                                    
-                                                                        
+                                                                   
                                     args.response.success({
                                         actionFilter: vmActionfilter,
                                         data: jsonObj
