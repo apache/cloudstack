@@ -2165,7 +2165,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                     List<? extends Vlan> vlans = _vlanDao.listVlansForPod(podId);
                     for (Vlan vlan : vlans) {
                         if (nic.getIp4Address() != null) {
-                            IpAddress ip = _ipAddressDao.findByIpAndNetworkId(network.getId(), nic.getIp4Address());
+                            IpAddress ip = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), nic.getIp4Address());
                             if (ip != null && ip.getVlanId() == vlan.getId()) {
                                 return nic;
                             }
