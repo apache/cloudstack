@@ -25,6 +25,7 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.api.AddBaremetalRctCmd;
+import org.apache.cloudstack.api.DeleteBaremetalRctCmd;
 
 /**
  * Created by frank on 4/30/14.
@@ -39,6 +40,8 @@ public interface BaremetalVlanManager extends Manager, PluggableService {
     void releaseVlan(Network nw, VirtualMachineProfile vm);
 
     void registerSwitchBackend(BaremetalSwitchBackend backend);
+
+    void deleteRct(DeleteBaremetalRctCmd cmd);
 
     BaremetalRctResponse listRct();
 }

@@ -40,6 +40,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineProfile;
 import com.google.gson.Gson;
 import org.apache.cloudstack.api.AddBaremetalRctCmd;
+import org.apache.cloudstack.api.DeleteBaremetalRctCmd;
 import org.apache.cloudstack.api.ListBaremetalRctCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.springframework.web.client.RestTemplate;
@@ -83,6 +84,10 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
     @Override
     public BaremetalRctResponse addRct(AddBaremetalRctCmd cmd) {
         try {
+            List<BaremetalRctVO> existings = rctDao.listAll();
+            if (!existings.isEmpty()) {
+                throw new CloudRuntimeException(String.format("there is some RCT existing. A CloudStack deployment accepts only one RCT"));
+            }
             URL url = new URL(cmd.getRctUrl());
             RestTemplate rest = new RestTemplate();
             String rctStr = rest.getForObject(url.toString(), String.class);
@@ -172,6 +177,11 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
     }
 
     @Override
+    public void deleteRct(DeleteBaremetalRctCmd cmd) {
+        rctDao.remove(cmd.getId());
+    }
+
+    @Override
     public BaremetalRctResponse listRct() {
         List<BaremetalRctVO> vos = rctDao.listAll();
         if (!vos.isEmpty()) {
@@ -218,6 +228,7 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
         List<Class<?>> cmds = new ArrayList<Class<?>>();
         cmds.add(AddBaremetalRctCmd.class);
         cmds.add(ListBaremetalRctCmd.class);
+        cmds.add(DeleteBaremetalRctCmd.class);
         return cmds;
     }
 
