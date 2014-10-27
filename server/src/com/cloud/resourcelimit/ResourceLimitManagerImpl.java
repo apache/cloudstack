@@ -888,7 +888,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
         _resourceCountDao.setResourceCount(accountId, ResourceOwnerType.Account, type, (newCount == null) ? 0 : newCount.longValue());
 
-                if (!Long.valueOf(oldCount).equals(newCount)) {
+                // No need to log message for primary and secondary storage because both are recalculating the resource count which will not lead to any discrepancy.
+                if (!Long.valueOf(oldCount).equals(newCount) && (type != Resource.ResourceType.primary_storage && type != Resource.ResourceType.secondary_storage)) {
                     s_logger.info("Discrepency in the resource count " + "(original count=" + oldCount + " correct count = " + newCount + ") for type " + type +
                         " for account ID " + accountId + " is fixed during resource count recalculation.");
         }
