@@ -34,8 +34,10 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "startVirtualMachine", responseObject = UserVmResponse.class, description = "Starts a virtual machine.", responseView = ResponseView.Full)
+@APICommand(name = "startVirtualMachine", responseObject = UserVmResponse.class, description = "Starts a virtual machine.", responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class StartVMCmdByAdmin extends StartVMCmd {
     public static final Logger s_logger = Logger.getLogger(StartVMCmdByAdmin.class.getName());
 

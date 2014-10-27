@@ -32,7 +32,8 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
 
-@APICommand(name = "registerTemplate", description = "Registers an existing template into the CloudStack cloud. ", responseObject = TemplateResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "registerTemplate", description = "Registers an existing template into the CloudStack cloud. ", responseObject = TemplateResponse.class, responseView = ResponseView.Full,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RegisterTemplateCmdByAdmin extends RegisterTemplateCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterTemplateCmdByAdmin.class.getName());
 

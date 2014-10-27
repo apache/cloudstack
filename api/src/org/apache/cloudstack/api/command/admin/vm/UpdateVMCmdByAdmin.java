@@ -29,11 +29,13 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.VirtualMachine;
 
 
 @APICommand(name = "updateVirtualMachine", description="Updates properties of a virtual machine. The VM has to be stopped and restarted for the " +
         "new properties to take effect. UpdateVirtualMachine does not first check whether the VM is stopped. " +
-        "Therefore, stop the VM manually before issuing this call.", responseObject = UserVmResponse.class, responseView = ResponseView.Full)
+        "Therefore, stop the VM manually before issuing this call.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class UpdateVMCmdByAdmin extends UpdateVMCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVMCmdByAdmin.class.getName());
 

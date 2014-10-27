@@ -30,9 +30,11 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "resetSSHKeyForVirtualMachine", responseObject = UserVmResponse.class, description = "Resets the SSH Key for virtual machine. " +
-        "The virtual machine must be in a \"Stopped\" state. [async]", responseView = ResponseView.Full)
+        "The virtual machine must be in a \"Stopped\" state. [async]", responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ResetVMSSHKeyCmdByAdmin extends ResetVMSSHKeyCmd {
 
     public static final Logger s_logger = Logger.getLogger(ResetVMSSHKeyCmdByAdmin.class.getName());

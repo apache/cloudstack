@@ -33,9 +33,11 @@ import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.VirtualMachine;
 
 
-@APICommand(name = "scaleVirtualMachine", description = "Scales the virtual machine to a new service offering.", responseObject = SuccessResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "scaleVirtualMachine", description = "Scales the virtual machine to a new service offering.", responseObject = SuccessResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ScaleVMCmdByAdmin extends ScaleVMCmd {
     public static final Logger s_logger = Logger.getLogger(ScaleVMCmdByAdmin.class.getName());
 

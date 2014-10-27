@@ -32,7 +32,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.Volume;
 
-@APICommand(name = "uploadVolume", description = "Uploads a data disk.", responseObject = VolumeResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "uploadVolume", description = "Uploads a data disk.", responseObject = VolumeResponse.class, responseView = ResponseView.Full, entityType = {Volume.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UploadVolumeCmdByAdmin extends UploadVolumeCmd {
     public static final Logger s_logger = Logger.getLogger(UploadVolumeCmdByAdmin.class.getName());
 

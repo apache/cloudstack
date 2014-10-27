@@ -30,7 +30,8 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.utils.Pair;
 
 
-@APICommand(name = "listVPCs", description = "Lists VPCs", responseObject = VpcResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "listVPCs", description = "Lists VPCs", responseObject = VpcResponse.class, responseView = ResponseView.Full, entityType = {Vpc.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVPCsCmdByAdmin extends ListVPCsCmd {
     public static final Logger s_logger = Logger.getLogger(ListVPCsCmdByAdmin.class.getName());
 

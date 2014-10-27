@@ -28,9 +28,11 @@ import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 
+import com.cloud.storage.Volume;
 
 
-@APICommand(name = "listVolumes", description = "Lists all volumes.", responseObject = VolumeResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "listVolumes", description = "Lists all volumes.", responseObject = VolumeResponse.class, responseView = ResponseView.Full, entityType = {Volume.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVolumesCmdByAdmin extends ListVolumesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVolumesCmdByAdmin.class.getName());
 

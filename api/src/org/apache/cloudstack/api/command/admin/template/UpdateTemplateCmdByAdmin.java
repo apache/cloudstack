@@ -27,7 +27,8 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 
 import com.cloud.template.VirtualMachineTemplate;
 
-@APICommand(name = "updateTemplate", description = "Updates attributes of a template.", responseObject = TemplateResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "updateTemplate", description = "Updates attributes of a template.", responseObject = TemplateResponse.class, responseView = ResponseView.Full,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateTemplateCmdByAdmin extends UpdateTemplateCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateTemplateCmdByAdmin.class.getName());
 

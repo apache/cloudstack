@@ -31,9 +31,11 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.VirtualMachine;
 
 
-@APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class DeployVMCmdByAdmin extends DeployVMCmd {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmdByAdmin.class.getName());
 

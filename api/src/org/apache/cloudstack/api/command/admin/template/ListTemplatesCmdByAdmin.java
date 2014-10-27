@@ -23,7 +23,8 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 
 import com.cloud.template.VirtualMachineTemplate;
 
-@APICommand(name = "listTemplates", description = "List all public, private, and privileged templates.", responseObject = TemplateResponse.class, entityType = {VirtualMachineTemplate.class}, responseView = ResponseView.Full)
+@APICommand(name = "listTemplates", description = "List all public, private, and privileged templates.", responseObject = TemplateResponse.class, entityType = {VirtualMachineTemplate.class}, responseView = ResponseView.Full,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTemplatesCmdByAdmin extends ListTemplatesCmd {
 
 }
