@@ -27,8 +27,10 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.storage.Volume;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "attachVolume", description = "Attaches a disk volume to a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "attachVolume", description = "Attaches a disk volume to a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AttachVolumeCmdByAdmin extends AttachVolumeCmd {
     public static final Logger s_logger = Logger.getLogger(AttachVolumeCmdByAdmin.class.getName());
 

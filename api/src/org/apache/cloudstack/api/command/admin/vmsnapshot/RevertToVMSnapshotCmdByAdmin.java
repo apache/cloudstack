@@ -32,7 +32,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "revertToVMSnapshot", description = "Revert VM from a vmsnapshot.", responseObject = UserVmResponse.class, since = "4.2.0", responseView = ResponseView.Full)
+@APICommand(name = "revertToVMSnapshot", description = "Revert VM from a vmsnapshot.", responseObject = UserVmResponse.class, since = "4.2.0", responseView = ResponseView.Full,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class RevertToVMSnapshotCmdByAdmin extends RevertToVMSnapshotCmd {
     public static final Logger s_logger = Logger
             .getLogger(RevertToVMSnapshotCmdByAdmin.class.getName());

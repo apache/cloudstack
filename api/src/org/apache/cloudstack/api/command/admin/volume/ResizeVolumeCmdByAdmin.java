@@ -29,7 +29,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Volume;
 
 
-@APICommand(name = "resizeVolume", description = "Resizes a volume", responseObject = VolumeResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "resizeVolume", description = "Resizes a volume", responseObject = VolumeResponse.class, responseView = ResponseView.Full, entityType = {Volume.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ResizeVolumeCmdByAdmin extends ResizeVolumeCmd {
 
     @Override

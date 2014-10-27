@@ -31,9 +31,10 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "updateDefaultNicForVirtualMachine", description = "Changes the default NIC on a VM", responseObject = UserVmResponse.class, responseView = ResponseView.Full)
-
+@APICommand(name = "updateDefaultNicForVirtualMachine", description = "Changes the default NIC on a VM", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class UpdateDefaultNicForVMCmdByAdmin extends UpdateDefaultNicForVMCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateDefaultNicForVMCmdByAdmin.class);
 

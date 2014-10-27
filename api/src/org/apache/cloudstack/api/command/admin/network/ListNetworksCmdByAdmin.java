@@ -30,7 +30,8 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import com.cloud.network.Network;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class, responseView = ResponseView.Full, entityType = {Network.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNetworksCmdByAdmin extends ListNetworksCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworksCmdByAdmin.class.getName());
 

@@ -29,8 +29,10 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "rebootVirtualMachine", description = "Reboots a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "rebootVirtualMachine", description = "Reboots a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class RebootVMCmdByAdmin extends RebootVMCmd {
     public static final Logger s_logger = Logger.getLogger(RebootVMCmdByAdmin.class.getName());
 

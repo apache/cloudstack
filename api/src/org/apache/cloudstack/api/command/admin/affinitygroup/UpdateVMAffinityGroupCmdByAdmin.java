@@ -33,10 +33,14 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.VirtualMachine;
 
 
 @APICommand(name = "updateVMAffinityGroup", description = "Updates the affinity/anti-affinity group associations of a virtual machine. The VM has to be stopped and restarted for the "
-        + "new properties to take effect.", responseObject = UserVmResponse.class, responseView = ResponseView.Full)
+        + "new properties to take effect.", responseObject = UserVmResponse.class, responseView = ResponseView.Full,
+        entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = true)
 public class UpdateVMAffinityGroupCmdByAdmin extends UpdateVMAffinityGroupCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVMAffinityGroupCmdByAdmin.class.getName());
 

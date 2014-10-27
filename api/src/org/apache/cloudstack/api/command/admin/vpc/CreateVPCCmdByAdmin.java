@@ -31,7 +31,8 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.Vpc;
 
-@APICommand(name = "createVPC", description = "Creates a VPC", responseObject = VpcResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "createVPC", description = "Creates a VPC", responseObject = VpcResponse.class, responseView = ResponseView.Full, entityType = {Vpc.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVPCCmdByAdmin extends CreateVPCCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVPCCmdByAdmin.class.getName());
 

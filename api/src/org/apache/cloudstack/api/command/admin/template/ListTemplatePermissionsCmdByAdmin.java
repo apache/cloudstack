@@ -21,7 +21,9 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCmd;
 import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 
-@APICommand(name = "listTemplatePermissions", description = "List template visibility and all accounts that have permissions to view this template.", responseObject = TemplatePermissionsResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "listTemplatePermissions", description = "List template visibility and all accounts that have permissions to view this template.", responseObject = TemplatePermissionsResponse.class, responseView = ResponseView.Full,
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false)
 public class ListTemplatePermissionsCmdByAdmin extends ListTemplatePermissionsCmd {
 
     @Override

@@ -33,7 +33,8 @@ import com.cloud.network.Network;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 
-@APICommand(name = "updateNetwork", description = "Updates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "updateNetwork", description = "Updates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Full, entityType = {Network.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateNetworkCmdByAdmin extends UpdateNetworkCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkCmdByAdmin.class.getName());
 

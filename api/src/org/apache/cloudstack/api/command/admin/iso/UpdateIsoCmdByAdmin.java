@@ -27,7 +27,8 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 
 import com.cloud.template.VirtualMachineTemplate;
 
-@APICommand(name = "updateIso", description = "Updates an ISO file.", responseObject = TemplateResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "updateIso", description = "Updates an ISO file.", responseObject = TemplateResponse.class, responseView = ResponseView.Full,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateIsoCmdByAdmin extends UpdateIsoCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIsoCmdByAdmin.class.getName());
 

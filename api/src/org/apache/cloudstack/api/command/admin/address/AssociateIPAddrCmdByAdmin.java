@@ -32,7 +32,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 
-@APICommand(name = "associateIpAddress", description = "Acquires and associates a public IP to an account.", responseObject = IPAddressResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "associateIpAddress", description = "Acquires and associates a public IP to an account.", responseObject = IPAddressResponse.class, responseView = ResponseView.Full,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AssociateIPAddrCmdByAdmin extends AssociateIPAddrCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateIPAddrCmdByAdmin.class.getName());
 

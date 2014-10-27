@@ -28,8 +28,10 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "stopVirtualMachine", responseObject = UserVmResponse.class, description = "Stops a virtual machine.", responseView = ResponseView.Full)
+@APICommand(name = "stopVirtualMachine", responseObject = UserVmResponse.class, description = "Stops a virtual machine.", responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class StopVMCmdByAdmin extends StopVMCmd {
     public static final Logger s_logger = Logger.getLogger(StopVMCmdByAdmin.class.getName());
 

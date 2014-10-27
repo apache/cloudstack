@@ -26,7 +26,8 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.storage.Volume;
 
-@APICommand(name = "updateVolume", description = "Updates the volume.", responseObject = VolumeResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "updateVolume", description = "Updates the volume.", responseObject = VolumeResponse.class, responseView = ResponseView.Full, entityType = {Volume.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateVolumeCmdByAdmin extends UpdateVolumeCmd {
 
     @Override

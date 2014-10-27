@@ -27,7 +27,8 @@ import org.apache.cloudstack.api.response.VpcResponse;
 
 import com.cloud.network.vpc.Vpc;
 
-@APICommand(name = "updateVPC", description = "Updates a VPC", responseObject = VpcResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "updateVPC", description = "Updates a VPC", responseObject = VpcResponse.class, responseView = ResponseView.Full, entityType = {Vpc.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateVPCCmdByAdmin extends UpdateVPCCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVPCCmdByAdmin.class.getName());
 
