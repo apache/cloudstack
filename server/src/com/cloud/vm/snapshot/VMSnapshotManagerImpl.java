@@ -263,7 +263,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
         // VM snapshot with memory is not supported for VGPU Vms
         if (snapshotMemory && _serviceOfferingDetailsDao.findDetail(userVmVo.getServiceOfferingId(), GPU.Keys.vgpuType.toString()) != null) {
-            throw new InvalidParameterValueException("VM snapshot with MEMORY is not supported for VGU enabled VMs.");
+            throw new InvalidParameterValueException("VM snapshot with MEMORY is not supported for vGPU enabled VMs.");
         }
 
         // check hypervisor capabilities
