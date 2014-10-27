@@ -37,6 +37,59 @@ class LdapAuthenticatorSpec extends spock.lang.Specification {
 		result == false
     }
 
+    def "Test a failed authentication due to empty username"() {
+        given: "We have an LdapManager, userAccountDao and ldapAuthenticator and the user doesn't exist within cloudstack."
+        LdapManager ldapManager = Mock(LdapManager)
+        ldapManager.isLdapEnabled() >> true
+        ldapManager.canAuthenticate(_, _) >> true
+
+        UserAccountDao userAccountDao = Mock(UserAccountDao)
+        userAccountDao.getUserAccount(_, _) >> new UserAccountVO()
+
+        def ldapAuthenticator = new LdapAuthenticator(ldapManager, userAccountDao)
+
+        when: "A user authenticates"
+        def result = ldapAuthenticator.authenticate("", "password", 0, null)
+        then: "their authentication fails"
+        result.first() == false
+
+        when: "A user authenticates"
+        result = ldapAuthenticator.authenticate(null, "password", 0, null)
+        then: "their authentication fails"
+        result.first() == false
+
+        when: "A user authenticates"
+        result = ldapAuthenticator.authenticate(null, null, 0, null)
+        then: "their authentication fails"
+        result.first() == false
+
+        when: "A user authenticates"
+        result = ldapAuthenticator.authenticate("", "", 0, null)
+        then: "their authentication fails"
+        result.first() == false
+    }
+
+    def "Test failed authentication due to empty password"() {
+        given: "We have an LdapManager, LdapConfiguration, userAccountDao and LdapAuthenticator"
+        def ldapManager = Mock(LdapManager)
+        ldapManager.isLdapEnabled() >> true
+        ldapManager.canAuthenticate(_, _) >> true
+
+        UserAccountDao userAccountDao = Mock(UserAccountDao)
+        userAccountDao.getUserAccount(_, _) >> new UserAccountVO()
+        def ldapAuthenticator = new LdapAuthenticator(ldapManager, userAccountDao)
+
+        when: "The user authenticates with empty password"
+        def result = ldapAuthenticator.authenticate("rmurphy", "", 0, null)
+        then: "their authentication fails"
+        result.first() == false
+
+        when: "The user authenticates with null password"
+        result = ldapAuthenticator.authenticate("rmurphy", null, 0, null)
+        then: "their authentication fails"
+        result.first() == false
+    }
+
     def "Test failed authentication due to ldap bind being unsuccessful"() {
 		given: "We have an LdapManager, LdapConfiguration, userAccountDao and LdapAuthenticator"
 		def ldapManager = Mock(LdapManager)

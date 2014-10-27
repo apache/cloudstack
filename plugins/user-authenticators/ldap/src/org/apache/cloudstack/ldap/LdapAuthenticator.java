@@ -20,6 +20,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.server.auth.DefaultUserAuthenticator;
@@ -48,6 +49,14 @@ public class LdapAuthenticator extends DefaultUserAuthenticator {
     @Override
     public Pair<Boolean, ActionOnFailedAuthentication> authenticate(final String username, final String password, final Long domainId, final Map<String, Object[]> requestParameters) {
 
+        if (StringUtils.isEmpty(username)) {
+            s_logger.debug("username cannot be empty");
+            return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+        }
+        if (StringUtils.isEmpty(password)) {
+            s_logger.debug("password cannot be empty");
+            return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+        }
         final UserAccount user = _userAccountDao.getUserAccount(username, domainId);
 
         if (user == null) {
