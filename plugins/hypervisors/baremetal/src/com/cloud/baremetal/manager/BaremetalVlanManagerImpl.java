@@ -40,6 +40,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineProfile;
 import com.google.gson.Gson;
 import org.apache.cloudstack.api.AddBaremetalRctCmd;
+import org.apache.cloudstack.api.DeleteBaremetalRctCmd;
+import org.apache.cloudstack.api.ListBaremetalRctCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.springframework.web.client.RestTemplate;
 
@@ -76,9 +78,17 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
         BaremetalRct.HostEntry host;
     }
 
+    public void setBackends(Map<String, BaremetalSwitchBackend> backends) {
+        this.backends = backends;
+    }
+
     @Override
     public BaremetalRctResponse addRct(AddBaremetalRctCmd cmd) {
         try {
+            List<BaremetalRctVO> existings = rctDao.listAll();
+            if (!existings.isEmpty()) {
+                throw new CloudRuntimeException(String.format("there is some RCT existing. A CloudStack deployment accepts only one RCT"));
+            }
             URL url = new URL(cmd.getRctUrl());
             RestTemplate rest = new RestTemplate();
             String rctStr = rest.getForObject(url.toString(), String.class);
@@ -161,6 +171,30 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
         backend.removePortFromVlan(struct);
     }
 
+    @Override
+    public void registerSwitchBackend(BaremetalSwitchBackend backend) {
+        backends.put(backend.getSwitchBackendType(), backend);
+    }
+
+    @Override
+    public void deleteRct(DeleteBaremetalRctCmd cmd) {
+        rctDao.remove(cmd.getId());
+    }
+
+    @Override
+    public BaremetalRctResponse listRct() {
+        List<BaremetalRctVO> vos = rctDao.listAll();
+        if (!vos.isEmpty()) {
+            BaremetalRctVO vo = vos.get(0);
+            BaremetalRctResponse rsp = new BaremetalRctResponse();
+            rsp.setId(vo.getUuid());
+            rsp.setUrl(vo.getUrl());
+            rsp.setObjectName("baremetalrct");
+            return rsp;
+        }
+        return null;
+    }
+
     private BaremetalSwitchBackend getSwitchBackend(String type) {
         BaremetalSwitchBackend backend = backends.get(type);
         if (backend == null) {
@@ -193,6 +227,8 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
     public List<Class<?>> getCommands() {
         List<Class<?>> cmds = new ArrayList<Class<?>>();
         cmds.add(AddBaremetalRctCmd.class);
+        cmds.add(ListBaremetalRctCmd.class);
+        cmds.add(DeleteBaremetalRctCmd.class);
         return cmds;
     }
 
