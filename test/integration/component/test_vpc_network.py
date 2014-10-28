@@ -1934,7 +1934,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
         # When all Vms ain network are stopped, network state changes from Implemented --> Shutdown --> Allocated
         # We can't update the network when it is in Shutodown state, hence we should wait for the state to change to
         # Allocated and then update the network
-        retriesCount = 10
+        retriesCount = 20
         while True:
             networks = list_networks(self.apiclient, id=network_1.id)
             self.assertEqual(validateList(networks)[0], PASS, "networks list validation failed, list id %s" % networks)
