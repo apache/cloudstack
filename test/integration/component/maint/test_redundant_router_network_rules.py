@@ -196,7 +196,7 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
             #raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh"])
+    @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="true")
     def test_networkRules_afterRebootRouters(self):
         """Test network rules after master & backup routers rebooted
         """
@@ -501,7 +501,7 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh"])
+    @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="true")
     def test_applyRules_restartRvRNetwork(self):
         """Test apply rules after network restart
         """
@@ -863,7 +863,7 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
             self.fail("SSH to guest VM failed: %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh"])
+    @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="true")
     def test_apply_and__delete_NetworkRulesOnRvR(self):
         """Test apply and delete network rules on redundant router
         """
@@ -1113,7 +1113,7 @@ class TestRedundantRouterRulesLifeCycle(cloudstackTestCase):
             self.fail("SSH to guest VM failed: %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "ssh", "needle"])
+    @attr(tags=["advanced", "advancedns", "ssh", "needle"], required_hardware="true")
     def test_applyNetworkRules_MasterDown_deleteNetworkRules(self):
         """Test apply network rules when master down and delete network rules
         """
