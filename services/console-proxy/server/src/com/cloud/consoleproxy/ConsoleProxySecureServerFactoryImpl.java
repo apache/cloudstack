@@ -16,12 +16,12 @@
 // under the License.
 package com.cloud.consoleproxy;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.security.KeyStore;
-import java.util.Properties;
+import com.cloud.utils.db.DbProperties;
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsParameters;
+import com.sun.net.httpserver.HttpsServer;
+import org.apache.log4j.Logger;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -29,14 +29,11 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
-
-import org.apache.log4j.Logger;
-
-import com.cloud.utils.db.DbProperties;
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsParameters;
-import com.sun.net.httpserver.HttpsServer;
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.security.KeyStore;
 
 public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFactory {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxySecureServerFactoryImpl.class);
@@ -54,8 +51,11 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
             try {
                 s_logger.info("Initializing SSL from built-in default certificate");
 
-                final Properties dbProps = DbProperties.getDbProperties();
-                char[] passphrase = dbProps.getProperty("db.cloud.keyStorePassphrase").toCharArray();
+                final String pass = DbProperties.getDbProperties().getProperty("db.cloud.keyStorePassphrase");
+                char[] passphrase = "vmops.com".toCharArray();
+                if (pass != null) {
+                    passphrase = pass.toCharArray();
+                }
                 KeyStore ks = KeyStore.getInstance("JKS");
 
                 ks.load(new FileInputStream("certs/realhostip.keystore"), passphrase);

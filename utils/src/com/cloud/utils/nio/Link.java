@@ -33,7 +33,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -418,8 +417,11 @@ public class Link {
 
         File confFile = PropertiesUtil.findConfigFile("db.properties");
         if (null != confFile && !isClient) {
-            final Properties dbProps = DbProperties.getDbProperties();
-            char[] passphrase = dbProps.getProperty("db.cloud.keyStorePassphrase").toCharArray();
+            final String pass = DbProperties.getDbProperties().getProperty("db.cloud.keyStorePassphrase");
+            char[] passphrase = "vmops.com".toCharArray();
+            if (pass != null) {
+                passphrase = pass.toCharArray();
+            }
             String confPath = confFile.getParent();
             String keystorePath = confPath + keystoreFile;
             if (new File(keystorePath).exists()) {
@@ -427,6 +429,7 @@ public class Link {
             } else {
                 s_logger.warn("SSL: Fail to find the generated keystore. Loading fail-safe one to continue.");
                 stream = NioConnection.class.getResourceAsStream("/cloud.keystore");
+                passphrase = "vmops.com".toCharArray();
             }
             ks.load(stream, passphrase);
             stream.close();
