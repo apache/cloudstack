@@ -8237,11 +8237,7 @@
                                                         }
                                                         //override default error handling: cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)});
                                                     });
-                                                    
-                                                    if (isModuleIncluded("dr")) {
-                                                        cloudStack.dr.sharedFunctions.addExtraProperties(selectedZoneObj, "Zone");
-                                                    }
-                                                    
+                                                   
                                                     args.response.success({
                                                         actionFilter: zoneActionfilter,
                                                         data: selectedZoneObj
