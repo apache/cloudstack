@@ -172,37 +172,15 @@
                     dataType: "json",
                     async: false,
                     success: function(json) {
-                        g_capabilities = json.listcapabilitiesresponse.capability;
-                        $.cookie('capabilities', g_capabilities, {
-                            expires: 1
-                        });
-
-                        g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
-                        $.cookie('supportELB', g_supportELB, {
-                            expires: 1
-                        });
-
-                        g_kvmsnapshotenabled = json.listcapabilitiesresponse.capability.kvmsnapshotenabled; //boolean
-                        $.cookie('kvmsnapshotenabled', g_kvmsnapshotenabled, {
-                            expires: 1
-                        });                        
-                                               
-                        g_regionsecondaryenabled = json.listcapabilitiesresponse.capability.regionsecondaryenabled; //boolean
-                        $.cookie('regionsecondaryenabled', g_regionsecondaryenabled, {
-                            expires: 1
-                        }); 
-                                              
+                        g_capabilities = json.listcapabilitiesresponse.capability;                        
+                        g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean   
+                        g_kvmsnapshotenabled = json.listcapabilitiesresponse.capability.kvmsnapshotenabled; //boolean          
+                        g_regionsecondaryenabled = json.listcapabilitiesresponse.capability.regionsecondaryenabled; //boolean    
                         if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
-                            g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
-                            $.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, {
-                                expires: 1
-                            });
+                            g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean                            
                         }
-
                         g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;
-                        $.cookie('userProjectsEnabled', g_userProjectsEnabled, {
-                            expires: 1
-                        });
+                       
 
                         g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;
 
@@ -314,36 +292,14 @@
                             async: false,
                             success: function(json) {
                                 g_capabilities = json.listcapabilitiesresponse.capability;
-                                $.cookie('capabilities', g_capabilities, {
-                                    expires: 1
-                                });
-
-                                g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
-                                $.cookie('supportELB', g_supportELB, {
-                                    expires: 1
-                                });
-
-                                g_kvmsnapshotenabled = json.listcapabilitiesresponse.capability.kvmsnapshotenabled; //boolean
-                                $.cookie('kvmsnapshotenabled', g_kvmsnapshotenabled, {
-                                    expires: 1
-                                });   
-                                
-                                g_regionsecondaryenabled = json.listcapabilitiesresponse.capability.regionsecondaryenabled; //boolean
-                                $.cookie('regionsecondaryenabled', g_regionsecondaryenabled, {
-                                    expires: 1
-                                }); 
-                                
+                                g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean      
+                                g_kvmsnapshotenabled = json.listcapabilitiesresponse.capability.kvmsnapshotenabled; //boolean           
+                                g_regionsecondaryenabled = json.listcapabilitiesresponse.capability.regionsecondaryenabled; //boolean                               
                                 if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
-                                    g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
-                                    $.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, {
-                                        expires: 1
-                                    });
+                                    g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean                                    
                                 }
-
                                 g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;
-                                $.cookie('userProjectsEnabled', g_userProjectsEnabled, {
-                                    expires: 1
-                                });
+                                
 
                                 g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;
 
@@ -413,8 +369,7 @@
                         $.cookie('networktype', null);
                         $.cookie('timezoneoffset', null);
                         $.cookie('timezone', null);
-                        $.cookie('supportELB', null);
-
+                        
                         if (onLogoutCallback()) { //onLogoutCallback() will set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
                             document.location.reload(); //when onLogoutCallback() returns true, reload the current document.
                         }
