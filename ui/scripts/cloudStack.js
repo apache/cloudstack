@@ -145,11 +145,7 @@
                     g_account = unBoxCookieValue('account');
                     g_username = unBoxCookieValue('username');
                     g_userfullname = unBoxCookieValue('userfullname');
-                    g_timezone = unBoxCookieValue('timezone');
-                    if ($.cookie('timezoneoffset') != null)
-                        g_timezoneoffset = isNaN(unBoxCookieValue('timezoneoffset')) ? null : parseFloat(unBoxCookieValue('timezoneoffset'));
-                    else
-                        g_timezoneoffset = null;
+                    g_timezone = unBoxCookieValue('timezone');                    
                 } else { //single-sign-on	(bypass login screen)
                     g_mySession = $.cookie('JSESSIONID');
                     g_sessionKey = encodeURIComponent(g_loginResponse.sessionkey);
@@ -159,11 +155,7 @@
                     g_account = g_loginResponse.account;
                     g_domainid = g_loginResponse.domainid;
                     g_userfullname = g_loginResponse.firstname + ' ' + g_loginResponse.lastname;
-                    g_timezone = g_loginResponse.timezone;
-                    if (g_loginResponse.timezoneoffset != null)
-                        g_timezoneoffset = isNaN(g_loginResponse.timezoneoffset) ? null : parseFloat(g_loginResponse.timezoneoffset);
-                    else
-                        g_timezoneoffset = null;
+                    g_timezone = g_loginResponse.timezone;                    
                 }
 
                 var userValid = false;
@@ -254,8 +246,7 @@
                         g_userid = loginresponse.userid;
                         g_account = loginresponse.account;
                         g_domainid = loginresponse.domainid;
-                        g_timezone = loginresponse.timezone;
-                        g_timezoneoffset = loginresponse.timezoneoffset;
+                        g_timezone = loginresponse.timezone;                        
                         g_userfullname = loginresponse.firstname + ' ' + loginresponse.lastname;
 
                         $.cookie('sessionKey', g_sessionKey, {
@@ -272,10 +263,7 @@
                         });
                         $.cookie('role', g_role, {
                             expires: 1
-                        });
-                        $.cookie('timezoneoffset', g_timezoneoffset, {
-                            expires: 1
-                        });
+                        });                        
                         $.cookie('timezone', g_timezone, {
                             expires: 1
                         });
@@ -365,8 +353,7 @@
                         $.cookie('username', null);
                         $.cookie('account', null);
                         $.cookie('domainid', null);
-                        $.cookie('role', null);                        
-                        $.cookie('timezoneoffset', null);
+                        $.cookie('role', null);  
                         $.cookie('timezone', null);
                         
                         if (onLogoutCallback()) { //onLogoutCallback() will set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
