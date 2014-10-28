@@ -2921,7 +2921,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         VirtualMachineTO vmTo = cmd.getVirtualMachine();
-        final String vmName = vmTo.getName();
+        String vmName = vmTo.getName();
 
         VmwareHypervisorHost srcHyperHost = null;
         VmwareHypervisorHost tgtHyperHost = null;
@@ -2971,6 +2971,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
+            vmName = vmMo.getName();
 
             // Get details of each target datastore & attach to source host.
             for (Entry<VolumeTO, StorageFilerTO> entry : volToFiler.entrySet()) {
@@ -3100,7 +3101,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.info("Executing resource MigrateVolumeCommand: " + _gson.toJson(cmd));
         }
 
-        final String vmName = cmd.getAttachedVmName();
+        String vmName = cmd.getAttachedVmName();
 
         VirtualMachineMO vmMo = null;
         VmwareHypervisorHost srcHyperHost = null;
@@ -3127,6 +3128,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
+            vmName = vmMo.getName();
             morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(srcHyperHost, tgtDsName);
             if (morDs == null) {
                 String msg = "Unable to find the mounted datastore with name " + tgtDsName + " to execute MigrateVolumeCommand";
