@@ -44,14 +44,17 @@ unset OPTIONS
 [ -r @SYSCONFDIR@/sysconfig/"$SHORTNAME" ] && source @SYSCONFDIR@/sysconfig/"$SHORTNAME"
 
 # The first existing directory is used for JAVA_HOME (if JAVA_HOME is not defined in $DEFAULT)
-JDK_DIRS="/usr/lib/jvm/jre /usr/lib/jvm/java-6-openjdk /usr/lib/jvm/java-6-openjdk-i386 /usr/lib/jvm/java-6-openjdk-amd64 /usr/lib/jvm/java-6-sun /usr/lib/jvm/java-1.5.0-sun /usr/lib/j2sdk1.5-sun /usr/lib/j2sdk1.5-ibm"
+JDK_DIRS="/usr/lib/jvm/jre /usr/lib/jvm/java-6-openjdk /usr/lib/jvm/java-6-openjdk-i386 /usr/lib/jvm/java-6-openjdk-amd64 /usr/lib/jvm/java-6-sun /usr/lib/jvm/java-1.5.0-sun /usr/lib/j2sdk1.5-sun /usr/lib/j2sdk1.5-ibm /usr/lib/jvm/jre-1.7.0"
 
+jhome=""
 for jdir in $JDK_DIRS; do
     if [ -r "$jdir/bin/java" -a -z "${JAVA_HOME}" ]; then
-        JAVA_HOME="$jdir"
+        jhome="$jdir"
     fi
 done
-export JAVA_HOME
+if [ ! -z $jhome ];then
+export JAVA_HOME="$jhome"
+fi
 
 SCP="@SYSTEMCLASSPATH@"
 DCP="@DEPSCLASSPATH@"
