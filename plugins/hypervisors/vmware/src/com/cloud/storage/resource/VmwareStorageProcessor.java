@@ -1299,6 +1299,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
+            vmName = vmMo.getName();
 
             ManagedObjectReference morDs = null;
 
