@@ -365,8 +365,7 @@
                         $.cookie('username', null);
                         $.cookie('account', null);
                         $.cookie('domainid', null);
-                        $.cookie('role', null);
-                        $.cookie('networktype', null);
+                        $.cookie('role', null);                        
                         $.cookie('timezoneoffset', null);
                         $.cookie('timezone', null);
                         
