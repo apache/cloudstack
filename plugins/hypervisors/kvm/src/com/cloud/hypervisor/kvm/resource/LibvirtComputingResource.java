@@ -966,7 +966,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String[] kernelVersions = unameKernelVersion.split("[\\.\\-]");
         _kernelVersion = Integer.parseInt(kernelVersions[0]) * 1000 * 1000 + (long)Integer.parseInt(kernelVersions[1]) * 1000 + Integer.parseInt(kernelVersions[2]);
 
-        getOsVersion();
+        /* Disable this, the code using this is pretty bad and non portable
+         * getOsVersion();
+         */
         return true;
     }
 
@@ -3611,7 +3613,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private void getOsVersion() {
         String version = Script.runSimpleBashScript("cat /etc/redhat-release | awk '{print $7}'");
         if (version != null) {
-            String[] versions = version.split(".");
+            String[] versions = version.split("\\.");
             if (versions.length == 2) {
                 String major = versions[0];
                 String minor = versions[1];
@@ -3705,11 +3707,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         features.addFeatures("apic");
         features.addFeatures("acpi");
         //for rhel 6.5 and above, hyperv enlightment feature is added
-        if (vmTO.getOs().contains("Windows Server 2008") && hostOsVersion != null && ((hostOsVersion.first() == 6 && hostOsVersion.second() >= 5) || (hostOsVersion.first() >= 7))) {
-            LibvirtVMDef.HyperVEnlightenmentFeatureDef hyv = new LibvirtVMDef.HyperVEnlightenmentFeatureDef();
-            hyv.setRelaxed(true);
-            features.addHyperVFeature(hyv);
-        }
+        /*
+         * if (vmTO.getOs().contains("Windows Server 2008") && hostOsVersion != null && ((hostOsVersion.first() == 6 && hostOsVersion.second() >= 5) || (hostOsVersion.first() >= 7))) {
+         *    LibvirtVMDef.HyperVEnlightenmentFeatureDef hyv = new LibvirtVMDef.HyperVEnlightenmentFeatureDef();
+         *    hyv.setRelaxed(true);
+         *    features.addHyperVFeature(hyv);
+         * }
+         */
         vm.addComp(features);
 
         TermPolicy term = new TermPolicy();
