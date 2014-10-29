@@ -21,13 +21,13 @@ import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
 import com.cloud.network.Networks.TrafficType;
 
 public class VmwareTrafficLabel implements TrafficLabel {
-	public static final String DEFAULT_VSWITCH_NAME = "vSwitch0";
-	public static final String DEFAULT_DVSWITCH_NAME = "dvSwitch0";
-	public static final String DEFAULT_NDVSWITCH_NAME = "epp0";
-	public static final int MAX_FIELDS_VMWARE_LABEL = 3;
-	public static final int VMWARE_LABEL_FIELD_INDEX_NAME = 0;
-	public static final int VMWARE_LABEL_FIELD_INDEX_VLANID = 1;
-	public static final int VMWARE_LABEL_FIELD_INDEX_VSWITCH_TYPE = 2;
+    public static final String DEFAULT_VSWITCH_NAME = "vSwitch0";
+    public static final String DEFAULT_DVSWITCH_NAME = "dvSwitch0";
+    public static final String DEFAULT_NDVSWITCH_NAME = "epp0";
+    public static final int MAX_FIELDS_VMWARE_LABEL = 3;
+    public static final int VMWARE_LABEL_FIELD_INDEX_NAME = 0;
+    public static final int VMWARE_LABEL_FIELD_INDEX_VLANID = 1;
+    public static final int VMWARE_LABEL_FIELD_INDEX_VSWITCH_TYPE = 2;
 
     TrafficType _trafficType = TrafficType.None;
     VirtualSwitchType _vSwitchType = VirtualSwitchType.StandardVirtualSwitch;
@@ -81,11 +81,11 @@ public class VmwareTrafficLabel implements TrafficLabel {
         }
         if (tokens.length > VMWARE_LABEL_FIELD_INDEX_VSWITCH_TYPE) {
             _vSwitchType = VirtualSwitchType.getType(tokens[VMWARE_LABEL_FIELD_INDEX_VSWITCH_TYPE].trim());
-            if(VirtualSwitchType.None == _vSwitchType) {
+            if (VirtualSwitchType.None == _vSwitchType) {
                 throw new InvalidParameterValueException("Invalid virtual switch type : " + tokens[VMWARE_LABEL_FIELD_INDEX_VSWITCH_TYPE].trim());
             }
         }
-        if (tokens.length > MAX_FIELDS_VMWARE_LABEL ) {
+        if (tokens.length > MAX_FIELDS_VMWARE_LABEL) {
             throw new InvalidParameterValueException("Found extraneous fields in vmware traffic label : " + networkLabel);
         }
     }
@@ -111,6 +111,7 @@ public class VmwareTrafficLabel implements TrafficLabel {
     public String getVlanId() {
         return _vlanId;
     }
+
     public void setVirtualSwitchName(String vSwitchName) {
         _vSwitchName = vSwitchName;
     }

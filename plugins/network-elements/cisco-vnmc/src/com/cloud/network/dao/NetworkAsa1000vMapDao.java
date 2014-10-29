@@ -19,7 +19,7 @@ package com.cloud.network.dao;
 import com.cloud.network.cisco.NetworkAsa1000vMapVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface NetworkAsa1000vMapDao extends GenericDao<NetworkAsa1000vMapVO, Long>{
+public interface NetworkAsa1000vMapDao extends GenericDao<NetworkAsa1000vMapVO, Long> {
 
     NetworkAsa1000vMapVO findByNetworkId(long networkId);
 

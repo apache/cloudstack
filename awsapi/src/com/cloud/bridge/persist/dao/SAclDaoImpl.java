@@ -31,101 +31,100 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={SAclDao.class})
+@Local(value = {SAclDao.class})
 public class SAclDaoImpl extends GenericDaoBase<SAclVO, Long> implements SAclDao {
 
-	public SAclDaoImpl() {}
-	
-	@Override
-	public List<SAclVO> listGrants(String target, long targetId) {
-	    SearchBuilder<SAclVO> SearchByTarget = createSearchBuilder();
-	    SearchByTarget.and("Target", SearchByTarget.entity().getTarget(), SearchCriteria.Op.EQ);
-	    SearchByTarget.and("TargetID", SearchByTarget.entity().getTargetId(), SearchCriteria.Op.EQ);
-	    SearchByTarget.done();
-	    Filter filter = new Filter(SAclVO.class, "grantOrder", Boolean.TRUE, null, null);
-	    TransactionLegacy txn = TransactionLegacy.open( TransactionLegacy.AWSAPI_DB);
-	    try {
-		txn.start();
-		SearchCriteria<SAclVO> sc = SearchByTarget.create();
-		sc.setParameters("Target", target);
-		sc.setParameters("TargetID", targetId);
-		return listBy(sc, filter);
-		
-	    } finally {
-		txn.close();
-	    }
-	}
-	
-	@Override
-	public List<SAclVO> listGrants(String target, long targetId, String userCanonicalId) {
-	    SearchBuilder<SAclVO> SearchByAcl = createSearchBuilder();
-	    SearchByAcl.and("Target", SearchByAcl.entity().getTarget(), SearchCriteria.Op.EQ);
-	    SearchByAcl.and("TargetID", SearchByAcl.entity().getTargetId(), SearchCriteria.Op.EQ);
-	    SearchByAcl.and("GranteeCanonicalID", SearchByAcl.entity().getGranteeCanonicalId(), SearchCriteria.Op.EQ);
-	    Filter filter = new Filter(SAclVO.class, "grantOrder", Boolean.TRUE, null, null);
-	    TransactionLegacy txn = TransactionLegacy.open( TransactionLegacy.AWSAPI_DB);
-	    try {
-    		txn.start();
-    		SearchCriteria<SAclVO> sc = SearchByAcl.create();
-    		sc.setParameters("Target", target);
-    		sc.setParameters("TargetID", targetId);
-    		sc.setParameters("GranteeCanonicalID", userCanonicalId);
-    		return listBy(sc, filter);
-	    } finally {
-		txn.close();
-	    }
-	}
+    public SAclDaoImpl() {
+    }
 
-	@Override
-	public void save(String target, long targetId, S3AccessControlList acl) {
-	    SearchBuilder<SAclVO> SearchByTarget = createSearchBuilder();
-	    SearchByTarget.and("Target", SearchByTarget.entity().getTarget(), SearchCriteria.Op.EQ);
-	    SearchByTarget.and("TargetID", SearchByTarget.entity().getTargetId(), SearchCriteria.Op.EQ);
+    @Override
+    public List<SAclVO> listGrants(String target, long targetId) {
+        SearchBuilder<SAclVO> SearchByTarget = createSearchBuilder();
+        SearchByTarget.and("Target", SearchByTarget.entity().getTarget(), SearchCriteria.Op.EQ);
+        SearchByTarget.and("TargetID", SearchByTarget.entity().getTargetId(), SearchCriteria.Op.EQ);
+        SearchByTarget.done();
+        Filter filter = new Filter(SAclVO.class, "grantOrder", Boolean.TRUE, null, null);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
+        try {
+            txn.start();
+            SearchCriteria<SAclVO> sc = SearchByTarget.create();
+            sc.setParameters("Target", target);
+            sc.setParameters("TargetID", targetId);
+            return listBy(sc, filter);
 
-	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
-	    try {
-		txn.start();
-		SearchCriteria<SAclVO> sc = SearchByTarget.create();
-		sc.setParameters("Target", target);
-		sc.setParameters("TargetID", targetId);
-		this.remove(sc);
-		if(acl != null) {
-			S3Grant[] grants = acl.getGrants();
-			if(grants != null && grants.length > 0) {
-				int grantOrder = 1;
-				for(S3Grant grant : grants) {
-					save(target, targetId, grant, grantOrder++);
-				}
-			}
-		}
-		txn.commit();
-	    } finally {
-		txn.close();
-	    }
-	    
-	    
-	}
-	
-	@Override
-	public SAcl save(String target, long targetId, S3Grant grant, int grantOrder) {
-		SAclVO aclEntry = new SAclVO();
-		aclEntry.setTarget(target);
-		aclEntry.setTargetId(targetId);
-		aclEntry.setGrantOrder(grantOrder);
-		
-		int grantee = grant.getGrantee();
-		aclEntry.setGranteeType(grantee);
-		aclEntry.setPermission(grant.getPermission());
-		aclEntry.setGranteeCanonicalId(grant.getCanonicalUserID());
-		
-		Date ts = new Date();
-		aclEntry.setCreateTime(ts);
-		aclEntry.setLastModifiedTime(ts);
-		aclEntry = this.persist(aclEntry);
-		return aclEntry;
-	}
+        } finally {
+            txn.close();
+        }
+    }
+
+    @Override
+    public List<SAclVO> listGrants(String target, long targetId, String userCanonicalId) {
+        SearchBuilder<SAclVO> SearchByAcl = createSearchBuilder();
+        SearchByAcl.and("Target", SearchByAcl.entity().getTarget(), SearchCriteria.Op.EQ);
+        SearchByAcl.and("TargetID", SearchByAcl.entity().getTargetId(), SearchCriteria.Op.EQ);
+        SearchByAcl.and("GranteeCanonicalID", SearchByAcl.entity().getGranteeCanonicalId(), SearchCriteria.Op.EQ);
+        Filter filter = new Filter(SAclVO.class, "grantOrder", Boolean.TRUE, null, null);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
+        try {
+            txn.start();
+            SearchCriteria<SAclVO> sc = SearchByAcl.create();
+            sc.setParameters("Target", target);
+            sc.setParameters("TargetID", targetId);
+            sc.setParameters("GranteeCanonicalID", userCanonicalId);
+            return listBy(sc, filter);
+        } finally {
+            txn.close();
+        }
+    }
+
+    @Override
+    public void save(String target, long targetId, S3AccessControlList acl) {
+        SearchBuilder<SAclVO> SearchByTarget = createSearchBuilder();
+        SearchByTarget.and("Target", SearchByTarget.entity().getTarget(), SearchCriteria.Op.EQ);
+        SearchByTarget.and("TargetID", SearchByTarget.entity().getTargetId(), SearchCriteria.Op.EQ);
+
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
+        try {
+            txn.start();
+            SearchCriteria<SAclVO> sc = SearchByTarget.create();
+            sc.setParameters("Target", target);
+            sc.setParameters("TargetID", targetId);
+            this.remove(sc);
+            if (acl != null) {
+                S3Grant[] grants = acl.getGrants();
+                if (grants != null && grants.length > 0) {
+                    int grantOrder = 1;
+                    for (S3Grant grant : grants) {
+                        save(target, targetId, grant, grantOrder++);
+                    }
+                }
+            }
+            txn.commit();
+        } finally {
+            txn.close();
+        }
+
+    }
+
+    @Override
+    public SAcl save(String target, long targetId, S3Grant grant, int grantOrder) {
+        SAclVO aclEntry = new SAclVO();
+        aclEntry.setTarget(target);
+        aclEntry.setTargetId(targetId);
+        aclEntry.setGrantOrder(grantOrder);
+
+        int grantee = grant.getGrantee();
+        aclEntry.setGranteeType(grantee);
+        aclEntry.setPermission(grant.getPermission());
+        aclEntry.setGranteeCanonicalId(grant.getCanonicalUserID());
+
+        Date ts = new Date();
+        aclEntry.setCreateTime(ts);
+        aclEntry.setLastModifiedTime(ts);
+        aclEntry = this.persist(aclEntry);
+        return aclEntry;
+    }
 }

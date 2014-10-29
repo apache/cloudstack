@@ -16,8 +16,14 @@
 // under the License.
 package com.cloud.network.resource;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,35 +48,36 @@ import com.cloud.agent.api.UpdateVnsPortAnswer;
 import com.cloud.agent.api.UpdateVnsPortCommand;
 import com.cloud.host.Host;
 import com.cloud.network.bigswitch.AttachmentData;
+import com.cloud.network.bigswitch.BigSwitchVnsApi;
+import com.cloud.network.bigswitch.BigSwitchVnsApiException;
 import com.cloud.network.bigswitch.ControlClusterStatus;
 import com.cloud.network.bigswitch.NetworkData;
 import com.cloud.network.bigswitch.PortData;
-import com.cloud.network.bigswitch.BigSwitchVnsApi;
-import com.cloud.network.bigswitch.BigSwitchVnsApiException;
 
 public class BigSwitchVnsResourceTest {
     BigSwitchVnsApi _bigswitchVnsApi = mock(BigSwitchVnsApi.class);
     BigSwitchVnsResource _resource;
-    Map<String,Object> _parameters;
+    Map<String, Object> _parameters;
 
     @Before
     public void setUp() throws ConfigurationException {
         _resource = new BigSwitchVnsResource() {
+            @Override
             protected BigSwitchVnsApi createBigSwitchVnsApi() {
                 return _bigswitchVnsApi;
             }
         };
 
-        _parameters = new HashMap<String,Object>();
-        _parameters.put("name","bigswitchvnstestdevice");
-        _parameters.put("ip","127.0.0.1");
+        _parameters = new HashMap<String, Object>();
+        _parameters.put("name", "bigswitchvnstestdevice");
+        _parameters.put("ip", "127.0.0.1");
         _parameters.put("guid", "aaaaa-bbbbb-ccccc");
         _parameters.put("zoneId", "blublub");
     }
 
-    @Test (expected=ConfigurationException.class)
+    @Test(expected = ConfigurationException.class)
     public void resourceConfigureFailure() throws ConfigurationException {
-        _resource.configure("BigSwitchVnsResource", Collections.<String,Object>emptyMap());
+        _resource.configure("BigSwitchVnsResource", Collections.<String, Object> emptyMap());
     }
 
     @Test
@@ -92,7 +99,7 @@ public class BigSwitchVnsResourceTest {
         _resource.configure("BigSwitchVnsResource", _parameters);
 
         StartupCommand[] sc = _resource.initialize();
-        assertTrue(sc.length ==1);
+        assertTrue(sc.length == 1);
         assertTrue("aaaaa-bbbbb-ccccc".equals(sc[0].getGuid()));
         assertTrue("bigswitchvnstestdevice".equals(sc[0].getName()));
         assertTrue("blublub".equals(sc[0].getDataCenter()));
@@ -146,7 +153,7 @@ public class BigSwitchVnsResourceTest {
         when(network.getUuid()).thenReturn("cccc").thenReturn("cccc");
 
         CreateVnsNetworkCommand cntkc = new CreateVnsNetworkCommand((String)_parameters.get("guid"), "networkName", "tenantid", 1);
-        CreateVnsNetworkAnswer cntka = (CreateVnsNetworkAnswer) _resource.executeRequest(cntkc);
+        CreateVnsNetworkAnswer cntka = (CreateVnsNetworkAnswer)_resource.executeRequest(cntkc);
         assertTrue(cntka.getResult());
     }
 
@@ -160,7 +167,7 @@ public class BigSwitchVnsResourceTest {
         when(network.getUuid()).thenReturn("cccc").thenReturn("cccc");
 
         CreateVnsNetworkCommand cntkc = new CreateVnsNetworkCommand((String)_parameters.get("guid"), "networkName", "tenantid", 1);
-        CreateVnsNetworkAnswer cntka = (CreateVnsNetworkAnswer) _resource.executeRequest(cntkc);
+        CreateVnsNetworkAnswer cntka = (CreateVnsNetworkAnswer)_resource.executeRequest(cntkc);
         assertTrue(cntka.getResult());
     }
 
@@ -175,7 +182,7 @@ public class BigSwitchVnsResourceTest {
         doThrow(new BigSwitchVnsApiException()).when(_bigswitchVnsApi).createNetwork((NetworkData)any());
 
         CreateVnsNetworkCommand cntkc = new CreateVnsNetworkCommand((String)_parameters.get("guid"), "networkName", "tenantid", 1);
-        CreateVnsNetworkAnswer cntka = (CreateVnsNetworkAnswer) _resource.executeRequest(cntkc);
+        CreateVnsNetworkAnswer cntka = (CreateVnsNetworkAnswer)_resource.executeRequest(cntkc);
         assertFalse(cntka.getResult());
     }
 
@@ -184,7 +191,7 @@ public class BigSwitchVnsResourceTest {
         _resource.configure("BigSwitchVnsResource", _parameters);
 
         DeleteVnsNetworkCommand dntkc = new DeleteVnsNetworkCommand("tenantid", "networkid");
-        DeleteVnsNetworkAnswer dntka = (DeleteVnsNetworkAnswer) _resource.executeRequest(dntkc);
+        DeleteVnsNetworkAnswer dntka = (DeleteVnsNetworkAnswer)_resource.executeRequest(dntkc);
         assertTrue(dntka.getResult());
     }
 
@@ -195,7 +202,7 @@ public class BigSwitchVnsResourceTest {
         doThrow(new BigSwitchVnsApiException()).when(_bigswitchVnsApi).deleteNetwork((String)any(), (String)any());
 
         DeleteVnsNetworkCommand dntkc = new DeleteVnsNetworkCommand("tenantid", "networkid");
-        DeleteVnsNetworkAnswer dntka = (DeleteVnsNetworkAnswer) _resource.executeRequest(dntkc);
+        DeleteVnsNetworkAnswer dntka = (DeleteVnsNetworkAnswer)_resource.executeRequest(dntkc);
         assertFalse(dntka.getResult());
     }
 
@@ -209,7 +216,7 @@ public class BigSwitchVnsResourceTest {
         when(port.getId()).thenReturn("eeee");
 
         CreateVnsPortCommand cntkc = new CreateVnsPortCommand("networkid", "portid", "tenantid", "portname", "aa:bb:cc:dd:ee:ff");
-        CreateVnsPortAnswer cntka = (CreateVnsPortAnswer) _resource.executeRequest(cntkc);
+        CreateVnsPortAnswer cntka = (CreateVnsPortAnswer)_resource.executeRequest(cntkc);
         assertTrue(cntka.getResult());
     }
 
@@ -224,7 +231,7 @@ public class BigSwitchVnsResourceTest {
         doThrow(new BigSwitchVnsApiException()).when(_bigswitchVnsApi).createPort((String)any(), (PortData)any());
 
         CreateVnsPortCommand cntkc = new CreateVnsPortCommand("networkid", "portid", "tenantid", "portname", "aa:bb:cc:dd:ee:ff");
-        CreateVnsPortAnswer cntka = (CreateVnsPortAnswer) _resource.executeRequest(cntkc);
+        CreateVnsPortAnswer cntka = (CreateVnsPortAnswer)_resource.executeRequest(cntkc);
         assertFalse(cntka.getResult());
     }
 
@@ -239,18 +246,17 @@ public class BigSwitchVnsResourceTest {
         doThrow(new BigSwitchVnsApiException()).when(_bigswitchVnsApi).modifyPortAttachment((String)any(), (String)any(), (String)any(), (AttachmentData)any());
 
         CreateVnsPortCommand cntkc = new CreateVnsPortCommand("networkid", "portid", "tenantid", "portname", "aa:bb:cc:dd:ee:ff");
-        CreateVnsPortAnswer cntka = (CreateVnsPortAnswer) _resource.executeRequest(cntkc);
+        CreateVnsPortAnswer cntka = (CreateVnsPortAnswer)_resource.executeRequest(cntkc);
         assertFalse(cntka.getResult());
-        verify(_bigswitchVnsApi, atLeastOnce()).deletePort((String) any(), (String) any(), (String) any());
+        verify(_bigswitchVnsApi, atLeastOnce()).deletePort((String)any(), (String)any(), (String)any());
     }
 
     @Test
     public void testDeletePortException() throws ConfigurationException, BigSwitchVnsApiException {
         _resource.configure("BigSwitchVnsResource", _parameters);
 
-        doThrow(new BigSwitchVnsApiException()).when(_bigswitchVnsApi).deletePort((String) any(), (String) any(), (String) any());
-        DeleteVnsPortAnswer dntkpa = (DeleteVnsPortAnswer) _resource.executeRequest(new DeleteVnsPortCommand("networkId",
-                "portid", "tenantid"));
+        doThrow(new BigSwitchVnsApiException()).when(_bigswitchVnsApi).deletePort((String)any(), (String)any(), (String)any());
+        DeleteVnsPortAnswer dntkpa = (DeleteVnsPortAnswer)_resource.executeRequest(new DeleteVnsPortCommand("networkId", "portid", "tenantid"));
         assertFalse(dntkpa.getResult());
     }
 
@@ -258,9 +264,8 @@ public class BigSwitchVnsResourceTest {
     public void testUpdatePortException() throws ConfigurationException, BigSwitchVnsApiException {
         _resource.configure("BigSwitchVnsResource", _parameters);
 
-        doThrow(new BigSwitchVnsApiException()).when(_bigswitchVnsApi).modifyPort((String) any(), (PortData)any());
-        UpdateVnsPortAnswer dntkpa = (UpdateVnsPortAnswer) _resource.executeRequest(
-                new UpdateVnsPortCommand("networkId","portId","tenantId","portname"));
+        doThrow(new BigSwitchVnsApiException()).when(_bigswitchVnsApi).modifyPort((String)any(), (PortData)any());
+        UpdateVnsPortAnswer dntkpa = (UpdateVnsPortAnswer)_resource.executeRequest(new UpdateVnsPortCommand("networkId", "portId", "tenantId", "portname"));
         assertFalse(dntkpa.getResult());
     }
 }

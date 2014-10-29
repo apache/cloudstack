@@ -30,12 +30,10 @@ addVlan() {
 	local pif=$2
 	local vlanDev=$pif.$vlanId
 	local vlanBr=$3
-    
-    vconfig set_name_type DEV_PLUS_VID_NO_PAD	
 
 	if [ ! -d /sys/class/net/$vlanDev ]
 	then
-		vconfig add $pif $vlanId > /dev/null
+		ip link add link $pif name $vlanDev type vlan id $vlanId > /dev/null
 		
 		if [ $? -gt 0 ]
 		then
@@ -102,7 +100,7 @@ deleteVlan() {
 	local vlanDev=$pif.$vlanId
         local vlanBr=$3
 
-	vconfig rem $vlanDev > /dev/null
+	ip link delete $vlanDev type vlan > /dev/null
 	
 	if [ $? -gt 0 ]
 	then

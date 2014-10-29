@@ -61,10 +61,12 @@ import com.cloud.vm.dao.NicDao;
 public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProvider {
     private static final Logger s_logger = Logger.getLogger(BaremetalDhcpElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities;
-    
-    @Inject NicDao _nicDao;
-    @Inject BaremetalDhcpManager _dhcpMgr;
-    
+
+    @Inject
+    NicDao _nicDao;
+    @Inject
+    BaremetalDhcpManager _dhcpMgr;
+
     static {
         Capability cap = new Capability(BaremetalDhcpManager.BAREMETAL_DHCP_SERVICE_CAPABITLITY);
         Map<Capability, String> baremetalCaps = new HashMap<Capability, String>();
@@ -73,7 +75,7 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
         capabilities = new HashMap<Service, Map<Capability, String>>();
         capabilities.put(Service.Dhcp, baremetalCaps);
     }
-    
+
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
         return capabilities;
@@ -88,16 +90,16 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
         Pod pod = dest.getPod();
         if (pod != null && dest.getDataCenter().getNetworkType() == NetworkType.Basic && trafficType == TrafficType.Guest) {
             QueryBuilder<BaremetalDhcpVO> sc = QueryBuilder.create(BaremetalDhcpVO.class);
-            sc.and(sc.entity().getPodId(), Op.EQ,pod.getId());
+            sc.and(sc.entity().getPodId(), Op.EQ, pod.getId());
             return sc.find() != null;
         }
-        
+
         return false;
     }
-    
+
     @Override
-    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException, InsufficientCapacityException {
         if (offering.isSystemOnly() || !canHandle(dest, offering.getTrafficType(), network.getGuestType())) {
             s_logger.debug("BaremetalDhcpElement can not handle networkoffering: " + offering.getName());
             return false;
@@ -107,13 +109,13 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
 
     @Override
     @DB
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest,
-            ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         Host host = dest.getHost();
         if (vm.getType() != Type.User || vm.getHypervisorType() != HypervisorType.BareMetal) {
             return false;
         }
-        
+
         nic.setMacAddress(host.getPrivateMacAddress());
         NicVO vo = _nicDao.findById(nic.getId());
         assert vo != null : "Where ths nic " + nic.getId() + " going???";
@@ -123,8 +125,8 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
     }
 
     @Override
-    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         return true;
     }
 
@@ -145,7 +147,7 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
 
     @Override
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
-            ResourceUnavailableException {
+        ResourceUnavailableException {
         return true;
     }
 
@@ -158,10 +160,10 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
     public boolean verifyServicesCombination(Set<Service> services) {
         return true;
     }
-    
+
     @Override
-    public boolean addDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest,
-            ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+    public boolean addDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (vm.getHypervisorType() != HypervisorType.BareMetal || !canHandle(dest, network.getTrafficType(), network.getGuestType())) {
             return false;
         }
@@ -169,14 +171,15 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
     }
 
     @Override
-    public boolean configDhcpSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-    	//TODO Add support for baremetal
+    public boolean configDhcpSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        //TODO Add support for baremetal
         return true;
     }
 
     @Override
     public boolean removeDhcpSupportForSubnet(Network network) {
-    	//TODO Add support for baremetal
+        //TODO Add support for baremetal
         return true;
     }
 

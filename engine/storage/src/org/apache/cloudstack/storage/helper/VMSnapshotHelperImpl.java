@@ -62,10 +62,12 @@ public class VMSnapshotHelperImpl implements VMSnapshotHelper {
     @Inject
     VolumeDataFactory volumeDataFactory;
 
-    StateMachine2<VMSnapshot.State, VMSnapshot.Event, VMSnapshot> _vmSnapshottateMachine ;
+    StateMachine2<VMSnapshot.State, VMSnapshot.Event, VMSnapshot> _vmSnapshottateMachine;
+
     public VMSnapshotHelperImpl() {
-        _vmSnapshottateMachine   = VMSnapshot.State.getStateMachine();
+        _vmSnapshottateMachine = VMSnapshot.State.getStateMachine();
     }
+
     @Override
     public boolean vmSnapshotStateTransitTo(VMSnapshot vsnp, VMSnapshot.Event event) throws NoTransitionException {
         return _vmSnapshottateMachine.transitTo(vsnp, event, null, _vmSnapshotDao);
@@ -75,13 +77,13 @@ public class VMSnapshotHelperImpl implements VMSnapshotHelper {
     public Long pickRunningHost(Long vmId) {
         UserVmVO vm = userVmDao.findById(vmId);
         // use VM's host if VM is running
-        if(vm.getState() == VirtualMachine.State.Running)
+        if (vm.getState() == VirtualMachine.State.Running)
             return vm.getHostId();
 
         // check if lastHostId is available
-        if(vm.getLastHostId() != null){
-            HostVO lastHost =  hostDao.findById(vm.getLastHostId());
-            if(lastHost.getStatus() == com.cloud.host.Status.Up && !lastHost.isInMaintenanceStates())
+        if (vm.getLastHostId() != null) {
+            HostVO lastHost = hostDao.findById(vm.getLastHostId());
+            if (lastHost.getStatus() == com.cloud.host.Status.Up && !lastHost.isInMaintenanceStates())
                 return lastHost.getId();
         }
 
@@ -98,8 +100,8 @@ public class VMSnapshotHelperImpl implements VMSnapshotHelper {
         if (storagePool == null) {
             throw new InvalidParameterValueException("storage pool is not found");
         }
-        List<HostVO> listHost = hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, storagePool.getClusterId(), storagePool.getPodId(),
-                storagePool.getDataCenterId(), null);
+        List<HostVO> listHost =
+            hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, storagePool.getClusterId(), storagePool.getPodId(), storagePool.getDataCenterId(), null);
         if (listHost == null || listHost.size() == 0) {
             throw new InvalidParameterValueException("no host in up state is found");
         }
@@ -119,10 +121,8 @@ public class VMSnapshotHelperImpl implements VMSnapshotHelper {
         return volumeTOs;
     }
 
-
     private VMSnapshotTO convert2VMSnapshotTO(VMSnapshotVO vo) {
-        return new VMSnapshotTO(vo.getId(), vo.getName(),  vo.getType(), vo.getCreated().getTime(), vo.getDescription(),
-                vo.getCurrent(), null);
+        return new VMSnapshotTO(vo.getId(), vo.getName(), vo.getType(), vo.getCreated().getTime(), vo.getDescription(), vo.getCurrent(), null, true);
     }
 
     @Override

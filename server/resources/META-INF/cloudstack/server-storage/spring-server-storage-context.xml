@@ -29,6 +29,7 @@
 
     <bean id="secondaryStorageVmDefaultAllocator"
         class="com.cloud.storage.secondary.SecondaryStorageVmDefaultAllocator" />
-
+    <bean id="snapshotStateListener"
+        class="com.cloud.storage.listener.SnapshotStateListener" />
 
 </beans>

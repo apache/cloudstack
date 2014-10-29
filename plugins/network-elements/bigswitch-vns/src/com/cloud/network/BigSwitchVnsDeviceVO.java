@@ -28,35 +28,34 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="external_bigswitch_vns_devices")
+@Table(name = "external_bigswitch_vns_devices")
 public class BigSwitchVnsDeviceVO implements InternalIdentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="id")
+    @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="host_id")
+    @Column(name = "host_id")
     private long hostId;
 
-    @Column(name="physical_network_id")
+    @Column(name = "physical_network_id")
     private long physicalNetworkId;
 
-    @Column(name="provider_name")
+    @Column(name = "provider_name")
     private String providerName;
 
-    @Column(name="device_name")
+    @Column(name = "device_name")
     private String deviceName;
 
     public BigSwitchVnsDeviceVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public BigSwitchVnsDeviceVO(long hostId, long physicalNetworkId,
-            String providerName, String deviceName) {
+    public BigSwitchVnsDeviceVO(long hostId, long physicalNetworkId, String providerName, String deviceName) {
         super();
         this.hostId = hostId;
         this.physicalNetworkId = physicalNetworkId;
@@ -65,6 +64,7 @@ public class BigSwitchVnsDeviceVO implements InternalIdentity {
         this.uuid = UUID.randomUUID().toString();
     }
 
+    @Override
     public long getId() {
         return id;
     }

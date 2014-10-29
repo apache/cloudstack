@@ -24,7 +24,6 @@ import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO;
 
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
-import com.cloud.host.Status;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.db.GenericDao;
@@ -34,18 +33,19 @@ import com.cloud.utils.fsm.StateDao;
  * Data Access Object for server
  *
  */
-public interface EngineHostDao extends GenericDao<EngineHostVO, Long>, StateDao<DataCenterResourceEntity.State, DataCenterResourceEntity.State.Event, DataCenterResourceEntity> {
-    long countBy(long clusterId,  ResourceState... states);
+public interface EngineHostDao extends GenericDao<EngineHostVO, Long>,
+        StateDao<DataCenterResourceEntity.State, DataCenterResourceEntity.State.Event, DataCenterResourceEntity> {
+    long countBy(long clusterId, ResourceState... states);
 
     /**
      * Mark all hosts associated with a certain management server
      * as disconnected.
-     * 
+     *
      * @param msId management server id.
      */
     void markHostsAsDisconnected(long msId, long lastPing);
 
-	List<EngineHostVO> findLostHosts(long timeout);
+    List<EngineHostVO> findLostHosts(long timeout);
 
     List<EngineHostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId);
 
@@ -63,15 +63,15 @@ public interface EngineHostDao extends GenericDao<EngineHostVO, Long>, StateDao<
 
     long countRoutingHostsByDataCenter(long dcId);
 
-	List<EngineHostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId);
+    List<EngineHostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId);
 
     boolean updateResourceState(ResourceState oldState, ResourceState.Event event, ResourceState newState, Host vo);
 
-	EngineHostVO findByGuid(String guid);
-	
-	EngineHostVO findByTypeNameAndZoneId(long zoneId, String name, Host.Type type);
-	List<EngineHostVO> findHypervisorHostInCluster(long clusterId);
+    EngineHostVO findByGuid(String guid);
 
+    EngineHostVO findByTypeNameAndZoneId(long zoneId, String name, Host.Type type);
+
+    List<EngineHostVO> findHypervisorHostInCluster(long clusterId);
 
     /**
      * @param type

@@ -16,24 +16,32 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
 import com.cloud.storage.GuestOS;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=GuestOS.class)
+@EntityReference(value = GuestOS.class)
 public class GuestOSResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the ID of the OS type")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the ID of the OS type")
     private String id;
 
-    @SerializedName(ApiConstants.OS_CATEGORY_ID) @Param(description="the ID of the OS category")
+    @SerializedName(ApiConstants.OS_CATEGORY_ID)
+    @Param(description = "the ID of the OS category")
     private String osCategoryId;
 
-    @SerializedName(ApiConstants.DESCRIPTION) @Param(description="the name/description of the OS type")
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "the name/description of the OS type")
     private String description;
+
+    @SerializedName(ApiConstants.IS_USER_DEFINED)
+    @Param(description = "is the guest OS user defined")
+    private String isUserDefined;
 
     public String getId() {
         return id;
@@ -58,4 +66,13 @@ public class GuestOSResponse extends BaseResponse {
     public void setDescription(String description) {
         this.description = description;
     }
+
+    public String getIsUserDefined() {
+        return isUserDefined;
+    }
+
+    public void setIsUserDefined(String isUserDefined) {
+        this.isUserDefined = isUserDefined;
+    }
+
 }

@@ -27,8 +27,8 @@ public class EC2DescribeTagsResponse {
     public EC2DescribeTagsResponse() {
     }
 
-    public void addTags( EC2ResourceTag param ) {
-        tagsSet.add( param );
+    public void addTags(EC2ResourceTag param) {
+        tagsSet.add(param);
     }
 
     public EC2ResourceTag[] getTagsSet() {

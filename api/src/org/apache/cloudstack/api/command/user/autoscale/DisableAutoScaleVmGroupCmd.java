@@ -17,6 +17,10 @@
 
 package org.apache.cloudstack.api.command.user.autoscale;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -25,13 +29,13 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.user.Account;
 
-@APICommand(name = "disableAutoScaleVmGroup", description = "Disables an AutoScale Vm Group", responseObject = AutoScaleVmGroupResponse.class)
+@APICommand(name = "disableAutoScaleVmGroup", description = "Disables an AutoScale Vm Group", responseObject = AutoScaleVmGroupResponse.class, entityType = {AutoScaleVmGroup.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DisableAutoScaleVmGroupCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DisableAutoScaleVmGroupCmd.class.getName());
     private static final String s_name = "disableautoscalevmGroupresponse";
@@ -40,8 +44,12 @@ public class DisableAutoScaleVmGroupCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = AutoScaleVmGroupResponse.class,
-            required=true, description="the ID of the autoscale group")
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = AutoScaleVmGroupResponse.class,
+               required = true,
+               description = "the ID of the autoscale group")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -54,7 +62,7 @@ public class DisableAutoScaleVmGroupCmd extends BaseAsyncCmd {
         if (result != null) {
             AutoScaleVmGroupResponse response = _responseGenerator.createAutoScaleVmGroupResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to disable AutoScale Vm Group");
         }

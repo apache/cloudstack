@@ -23,23 +23,31 @@ import org.apache.cloudstack.api.InternalIdentity;
 /** Each entry represents the alis ip of a perticular nic.
  *
  */
-public interface NicIpAlias extends ControlledEntity, Identity, InternalIdentity{
+public interface NicIpAlias extends ControlledEntity, Identity, InternalIdentity {
     /**
      * @return id in the CloudStack database
      */
-     enum  state {
-        active,
-        revoked,
+    enum state {
+        active, revoked,
     }
-    long getId();
-    long getNicId();
-    String getIp4Address();
-    String getIp6Address();
-    long getNetworkId();
-    long getVmId();
-    Long getAliasCount();
-    String getNetmask();
-    String getGateway();
 
+    @Override
+    long getId();
+
+    long getNicId();
+
+    String getIp4Address();
+
+    String getIp6Address();
+
+    long getNetworkId();
+
+    long getVmId();
+
+    Long getAliasCount();
+
+    String getNetmask();
+
+    String getGateway();
 
 }

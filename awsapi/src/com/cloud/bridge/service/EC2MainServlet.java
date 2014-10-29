@@ -17,7 +17,6 @@
 package com.cloud.bridge.service;
 
 import java.io.IOException;
-
 import java.io.OutputStreamWriter;
 import java.util.UUID;
 
@@ -41,40 +40,41 @@ import com.cloud.utils.db.DB;
 
 @Component("EC2MainServlet")
 @DB
-public class EC2MainServlet extends HttpServlet{
+public class EC2MainServlet extends HttpServlet {
 
     private static final long serialVersionUID = 2201599478145974479L;
 
-    public static final String EC2_REST_SERVLET_PATH="/rest/AmazonEC2/";
-    public static final String EC2_SOAP_SERVLET_PATH="/services/AmazonEC2/";
-    public static final String ENABLE_EC2_API="enable.ec2.api";
+    public static final String EC2_REST_SERVLET_PATH = "/rest/AmazonEC2/";
+    public static final String EC2_SOAP_SERVLET_PATH = "/services/AmazonEC2/";
+    public static final String ENABLE_EC2_API = "enable.ec2.api";
     private static boolean isEC2APIEnabled = false;
     public static final Logger logger = Logger.getLogger(EC2MainServlet.class);
-    @Inject CloudStackConfigurationDao csDao;
-    
+    @Inject
+    CloudStackConfigurationDao csDao;
+
     public EC2MainServlet() {
     }
-    
+
     /**
      * We build the path to where the keystore holding the WS-Security X509 certificates
      * are stored.
      */
     @Override
     @DB
-    public void init( ServletConfig config ) throws ServletException {
-        try{
-        	LogUtils.initLog4j("log4j-cloud.xml");
-        	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());       	
-        	ConfigurationHelper.preConfigureConfigPathFromServletContext(config.getServletContext());
-        	ComponentContext.initComponentsLifeCycle();
-        	
+    public void init(ServletConfig config) throws ServletException {
+        try {
+            LogUtils.initLog4j("log4j-cloud.xml");
+            SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());
+            ConfigurationHelper.preConfigureConfigPathFromServletContext(config.getServletContext());
+            ComponentContext.initComponentsLifeCycle();
+
             // check if API is enabled
             String value = csDao.getConfigValue(ENABLE_EC2_API);
-            if(value != null){
+            if (value != null) {
                 isEC2APIEnabled = Boolean.valueOf(value);
             }
             logger.info("Value of EC2 API Flag ::" + value);
-        }catch(Exception e){
+        } catch (Exception e) {
             throw new ServletException("Error initializing awsapi: " + e.getMessage(), e);
         }
     }
@@ -90,15 +90,15 @@ public class EC2MainServlet extends HttpServlet{
     }
 
     protected void doGetOrPost(HttpServletRequest request, HttpServletResponse response) {
-        String action = request.getParameter( "Action" );
-        if(!isEC2APIEnabled){
+        String action = request.getParameter("Action");
+        if (!isEC2APIEnabled) {
             //response.sendError(404, "EC2 API is disabled.");
             response.setStatus(404);
-            faultResponse(response, "Unavailable" , "EC2 API is disabled");
+            faultResponse(response, "Unavailable", "EC2 API is disabled");
             return;
         }
 
-        if(action != null){
+        if (action != null) {
             //We presume it's a Query/Rest call
             try {
                 RequestDispatcher dispatcher = request.getRequestDispatcher(EC2_REST_SERVLET_PATH);
@@ -108,8 +108,7 @@ public class EC2MainServlet extends HttpServlet{
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }
-        else {
+        } else {
             try {
                 request.getRequestDispatcher(EC2_SOAP_SERVLET_PATH).forward(request, response);
             } catch (ServletException e) {
@@ -138,5 +137,5 @@ public class EC2MainServlet extends HttpServlet{
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }    
+    }
 }

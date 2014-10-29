@@ -26,7 +26,7 @@ public interface LaunchPermissionDao extends GenericDao<LaunchPermissionVO, Long
     /**
      * remove the ability to launch vms from the given template for the given
      * account names which are valid in the given domain
-     * 
+     *
      * @param templateId
      *            id of the template to modify launch permissions
      * @param accountIds
@@ -36,14 +36,14 @@ public interface LaunchPermissionDao extends GenericDao<LaunchPermissionVO, Long
 
     /**
      * remove all launch permissions associated with a template
-     * 
+     *
      * @param templateId
      */
     void removeAllPermissions(long templateId);
 
     /**
      * Find a launch permission by templateId, accountName, and domainId
-     * 
+     *
      * @param templateId
      *            the id of the template to search for
      * @param accountId
@@ -54,7 +54,7 @@ public interface LaunchPermissionDao extends GenericDao<LaunchPermissionVO, Long
 
     /**
      * List all launch permissions for the given template
-     * 
+     *
      * @param templateId
      *            id of the template for which launch permissions will be
      *            queried
@@ -65,7 +65,7 @@ public interface LaunchPermissionDao extends GenericDao<LaunchPermissionVO, Long
     /**
      * List all templates for which permission to launch instances has been
      * granted to the given account
-     * 
+     *
      * @param accountId
      * @return
      */

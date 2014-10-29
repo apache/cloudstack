@@ -23,22 +23,25 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.utils.db.Encrypt;
+
 @Entity
-@Table(name="external_stratosphere_ssp_credentials")
+@Table(name = "external_stratosphere_ssp_credentials")
 public class SspCredentialVO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="id")
+    @Column(name = "id")
     private long id;
 
-    @Column(name="data_center_id")
+    @Column(name = "data_center_id")
     private long zoneId; // Actually, this is zoneId
 
     // XXX: We might want to restrict access to this by cloudstack privileges.
-    @Column(name="username")
+    @Column(name = "username")
     private String username;
 
-    @Column(name="password")
+    @Encrypt
+    @Column(name = "password")
     private String password;
 
     public long getZoneId() {

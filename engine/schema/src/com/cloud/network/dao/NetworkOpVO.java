@@ -16,60 +16,61 @@
 // under the License.
 package com.cloud.network.dao;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 @Entity
-@Table(name="op_networks")
+@Table(name = "op_networks")
 public class NetworkOpVO implements InternalIdentity {
-    
+
     @Id
-    @Column(name="id")
+    @Column(name = "id")
     long id;
-    
-    @Column(name="nics_count")
+
+    @Column(name = "nics_count")
     int activeNicsCount;
-    
-    @Column(name="gc")
+
+    @Column(name = "gc")
     boolean garbageCollected;
-    
-    @Column(name="check_for_gc")
+
+    @Column(name = "check_for_gc")
     boolean checkForGc;
 
     protected NetworkOpVO() {
     }
-    
+
     public NetworkOpVO(long id, boolean gc) {
         this.id = id;
         this.garbageCollected = gc;
         this.checkForGc = gc;
         this.activeNicsCount = 0;
     }
-    
+
+    @Override
     public long getId() {
         return id;
     }
-    
+
     public long getActiveNicsCount() {
         return activeNicsCount;
     }
-    
+
     public void setActiveNicsCount(int number) {
         activeNicsCount += number;
     }
-    
+
     public boolean isGarbageCollected() {
         return garbageCollected;
     }
-    
+
     public boolean isCheckForGc() {
         return checkForGc;
     }
-    
+
     public void setCheckForGc(boolean check) {
         checkForGc = check;
     }

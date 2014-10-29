@@ -22,36 +22,36 @@ import java.util.List;
 
 public class RegionClassifier {
     private List<Region> regionList;
-    
+
     public RegionClassifier() {
         regionList = new ArrayList<Region>();
     }
-    
+
     public void add(Rectangle rect) {
         boolean newRegion = true;
         Rectangle rcInflated = new Rectangle(rect.x - 1, rect.y - 1, rect.width + 2, rect.height + 2);
-        for(Region region : regionList) {
-            if(region.getBound().intersects(rcInflated)) {
+        for (Region region : regionList) {
+            if (region.getBound().intersects(rcInflated)) {
                 newRegion = false;
                 break;
             }
         }
-        
-        if(newRegion) {
+
+        if (newRegion) {
             regionList.add(new Region(rect));
         } else {
-            for(Region region : regionList) {
-                if(region.add(rect))
+            for (Region region : regionList) {
+                if (region.add(rect))
                     return;
             }
             regionList.add(new Region(rect));
         }
     }
-    
+
     public List<Region> getRegionList() {
         return regionList;
     }
-    
+
     public void clear() {
         regionList.clear();
     }

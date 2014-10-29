@@ -23,5 +23,5 @@ import com.cloud.utils.component.Adapter;
 import com.cloud.vm.SecondaryStorageVmVO;
 
 public interface SecondaryStorageVmAllocator extends Adapter {
-	public SecondaryStorageVmVO allocSecondaryStorageVm(List<SecondaryStorageVmVO> candidates, Map<Long, Integer> loadInfo, long dataCenterId);
+    public SecondaryStorageVmVO allocSecondaryStorageVm(List<SecondaryStorageVmVO> candidates, Map<Long, Integer> loadInfo, long dataCenterId);
 }

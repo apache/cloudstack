@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,13 +15,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.storage.template;
+
+import java.io.File;
+import java.io.IOException;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.component.Adapter;
-
-import java.io.File;
 
 /**
  * Generic interface to process different types of image formats
@@ -29,17 +33,17 @@ import java.io.File;
  *
  */
 public interface Processor extends Adapter {
-    
+
     /**
      * Returns image format if it was able to process the original file and
-     * 
+     *
      * @param templatePath path to the templates to process.
      * @param format Format of the original file.  If null, it means unknown.  If not null,
      *        there is already a file with thte template name and image format extension
      *        that exists in case a conversion can be done.
      */
     FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException;
-    
+
     public static class FormatInfo {
         public ImageFormat format;
         public long size;
@@ -48,6 +52,6 @@ public interface Processor extends Adapter {
         public boolean isCorrupted;
     }
 
-    Long getVirtualSize(File file);
+    long getVirtualSize(File file) throws IOException;
 
 }

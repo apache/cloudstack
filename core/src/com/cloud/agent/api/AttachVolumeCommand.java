@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import com.cloud.storage.Storage.StoragePoolType;
@@ -40,13 +43,13 @@ public class AttachVolumeCommand extends Command {
     private Long bytesWriteRate;
     private Long iopsReadRate;
     private Long iopsWriteRate;
+    private String cacheMode;
 
     protected AttachVolumeCommand() {
     }
 
-    public AttachVolumeCommand(boolean attach, boolean managed, String vmName,
-            StoragePoolType pooltype, String volumePath, String volumeName,
-            Long volumeSize, Long deviceId, String chainInfo) {
+    public AttachVolumeCommand(boolean attach, boolean managed, String vmName, StoragePoolType pooltype, String volumePath, String volumeName, Long volumeSize,
+            Long deviceId, String chainInfo) {
         this.attach = attach;
         this._managed = managed;
         this.vmName = vmName;
@@ -84,7 +87,7 @@ public class AttachVolumeCommand extends Command {
     }
 
     public String getVolumeName() {
-	    return volumeName;
+        return volumeName;
     }
 
     public Long getVolumeSize() {
@@ -201,5 +204,13 @@ public class AttachVolumeCommand extends Command {
 
     public Long getIopsWriteRate() {
         return iopsWriteRate;
+    }
+
+    public void setCacheMode(String cacheMode) {
+        this.cacheMode = cacheMode;
+    }
+
+    public String getCacheMode() {
+        return cacheMode;
     }
 }

@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.configuration;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;

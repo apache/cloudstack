@@ -19,26 +19,26 @@ package com.cloud.bridge.service.core.s3;
 import java.util.Calendar;
 
 public class S3PutObjectResponse extends S3Response {
-	protected String ETag;
-	protected Calendar lastModified;
-	
-	public S3PutObjectResponse() {
-		super();
-	}
+    protected String ETag;
+    protected Calendar lastModified;
 
-	public String getETag() {
-		return ETag;
-	}
+    public S3PutObjectResponse() {
+        super();
+    }
 
-	public void setETag(String eTag) {
-		this.ETag = eTag;
-	}
+    public String getETag() {
+        return ETag;
+    }
 
-	public Calendar getLastModified() {
-		return lastModified;
-	}
+    public void setETag(String eTag) {
+        this.ETag = eTag;
+    }
 
-	public void setLastModified(Calendar lastModified) {
-		this.lastModified = lastModified;
-	}
+    public Calendar getLastModified() {
+        return lastModified;
+    }
+
+    public void setLastModified(Calendar lastModified) {
+        this.lastModified = lastModified;
+    }
 }

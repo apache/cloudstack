@@ -21,7 +21,7 @@ import java.util.List;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackUserVm {
-	@SerializedName(ApiConstants.ID)
+    @SerializedName(ApiConstants.ID)
     private String id;
     @SerializedName(ApiConstants.ACCOUNT)
     private String accountName;
@@ -51,10 +51,10 @@ public class CloudStackUserVm {
     private Boolean haEnable;
     @SerializedName(ApiConstants.HOST_ID)
     private String hostId;
-    @SerializedName(ApiConstants.HOST_NAME) 
+    @SerializedName(ApiConstants.HOST_NAME)
     private String hostName;
     @SerializedName(ApiConstants.HYPERVISOR)
-    private String hypervisor;    
+    private String hypervisor;
     @SerializedName(ApiConstants.PUBLIC_IP)
     private String ipAddress;
     @SerializedName(ApiConstants.ISO_DISPLAY_TEXT)
@@ -101,246 +101,246 @@ public class CloudStackUserVm {
     private String zoneId;
     @SerializedName(ApiConstants.ZONE_NAME)
     private String zoneName;
-    @SerializedName(ApiConstants.NIC) 
+    @SerializedName(ApiConstants.NIC)
     private List<CloudStackNic> nics;
     @SerializedName(ApiConstants.SECURITY_GROUP)
     private List<CloudStackSecurityGroup> securityGroupList;
     @SerializedName(ApiConstants.TAGS)
     private List<CloudStackKeyValue> tags;
-    
-	public CloudStackUserVm() {
-	}
 
-	/**
-	 * @return the id
-	 */
-	public String getId() {
-		return id;
-	}
+    public CloudStackUserVm() {
+    }
 
-	/**
-	 * @return the accountName
-	 */
-	public String getAccountName() {
-		return accountName;
-	}
+    /**
+     * @return the id
+     */
+    public String getId() {
+        return id;
+    }
 
-	/**
-	 * @return the cpuNumber
-	 */
-	public Integer getCpuNumber() {
-		return cpuNumber;
-	}
+    /**
+     * @return the accountName
+     */
+    public String getAccountName() {
+        return accountName;
+    }
 
-	/**
-	 * @return the cpuSpeed
-	 */
-	public Integer getCpuSpeed() {
-		return cpuSpeed;
-	}
+    /**
+     * @return the cpuNumber
+     */
+    public Integer getCpuNumber() {
+        return cpuNumber;
+    }
 
-	/**
-	 * @return the cpuUsed
-	 */
-	public String getCpuUsed() {
-		return cpuUsed;
-	}
+    /**
+     * @return the cpuSpeed
+     */
+    public Integer getCpuSpeed() {
+        return cpuSpeed;
+    }
 
-	/**
-	 * @return the created
-	 */
-	public String getCreated() {
-		return created;
-	}
+    /**
+     * @return the cpuUsed
+     */
+    public String getCpuUsed() {
+        return cpuUsed;
+    }
 
-	/**
-	 * @return the displayName
-	 */
-	public String getDisplayName() {
-		return displayName;
-	}
+    /**
+     * @return the created
+     */
+    public String getCreated() {
+        return created;
+    }
 
-	/**
-	 * @return the domainName
-	 */
-	public String getDomainName() {
-		return domainName;
-	}
+    /**
+     * @return the displayName
+     */
+    public String getDisplayName() {
+        return displayName;
+    }
 
-	/**
-	 * @return the domainId
-	 */
-	public String getDomainId() {
-		return domainId;
-	}
+    /**
+     * @return the domainName
+     */
+    public String getDomainName() {
+        return domainName;
+    }
 
-	/**
-	 * @return the forVirtualNetwork
-	 */
-	public Boolean getForVirtualNetwork() {
-		return forVirtualNetwork;
-	}
+    /**
+     * @return the domainId
+     */
+    public String getDomainId() {
+        return domainId;
+    }
 
-	/**
-	 * @return the group
-	 */
-	public String getGroup() {
-		return group;
-	}
+    /**
+     * @return the forVirtualNetwork
+     */
+    public Boolean getForVirtualNetwork() {
+        return forVirtualNetwork;
+    }
 
-	/**
-	 * @return the groupId
-	 */
-	public String getGroupId() {
-		return groupId;
-	}
+    /**
+     * @return the group
+     */
+    public String getGroup() {
+        return group;
+    }
 
-	/**
-	 * @return the guestOsId
-	 */
-	public String getGuestOsId() {
-		return guestOsId;
-	}
+    /**
+     * @return the groupId
+     */
+    public String getGroupId() {
+        return groupId;
+    }
 
-	/**
-	 * @return the haEnable
-	 */
-	public Boolean getHaEnable() {
-		return haEnable;
-	}
+    /**
+     * @return the guestOsId
+     */
+    public String getGuestOsId() {
+        return guestOsId;
+    }
 
-	/**
-	 * @return the hostId
-	 */
-	public String getHostId() {
-		return hostId;
-	}
+    /**
+     * @return the haEnable
+     */
+    public Boolean getHaEnable() {
+        return haEnable;
+    }
 
-	/**
-	 * @return the hostName
-	 */
-	public String getHostName() {
-		return hostName;
-	}
+    /**
+     * @return the hostId
+     */
+    public String getHostId() {
+        return hostId;
+    }
 
-	/**
-	 * @return the hypervisor
-	 */
-	public String getHypervisor() {
-		return hypervisor;
-	}
+    /**
+     * @return the hostName
+     */
+    public String getHostName() {
+        return hostName;
+    }
 
-	/**
-	 * @return the ipAddress
-	 */
-	public String getIpAddress() {
-		return ipAddress;
-	}
+    /**
+     * @return the hypervisor
+     */
+    public String getHypervisor() {
+        return hypervisor;
+    }
 
-	/**
-	 * @return the isoDisplayText
-	 */
-	public String getIsoDisplayText() {
-		return isoDisplayText;
-	}
+    /**
+     * @return the ipAddress
+     */
+    public String getIpAddress() {
+        return ipAddress;
+    }
 
-	/**
-	 * @return the isoId
-	 */
-	public String getIsoId() {
-		return isoId;
-	}
+    /**
+     * @return the isoDisplayText
+     */
+    public String getIsoDisplayText() {
+        return isoDisplayText;
+    }
 
-	/**
-	 * @return the isoName
-	 */
-	public String getIsoName() {
-		return isoName;
-	}
+    /**
+     * @return the isoId
+     */
+    public String getIsoId() {
+        return isoId;
+    }
 
-	/**
-	 * @return the jobId
-	 */
-	public String getJobId() {
-		return jobId;
-	}
+    /**
+     * @return the isoName
+     */
+    public String getIsoName() {
+        return isoName;
+    }
 
-	/**
-	 * @return the jobStatus
-	 */
-	public Integer getJobStatus() {
-		return jobStatus;
-	}
+    /**
+     * @return the jobId
+     */
+    public String getJobId() {
+        return jobId;
+    }
 
-	/**
-	 * @return the memory
-	 */
-	public Integer getMemory() {
-		return memory;
-	}
+    /**
+     * @return the jobStatus
+     */
+    public Integer getJobStatus() {
+        return jobStatus;
+    }
 
-	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
+    /**
+     * @return the memory
+     */
+    public Integer getMemory() {
+        return memory;
+    }
 
-	/**
-	 * @return the networkKbsRead
-	 */
-	public Long getNetworkKbsRead() {
-		return networkKbsRead;
-	}
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
 
-	/**
-	 * @return the networkKbsWrite
-	 */
-	public Long getNetworkKbsWrite() {
-		return networkKbsWrite;
-	}
+    /**
+     * @return the networkKbsRead
+     */
+    public Long getNetworkKbsRead() {
+        return networkKbsRead;
+    }
 
-	/**
-	 * @return the password
-	 */
-	public String getPassword() {
-		return password;
-	}
+    /**
+     * @return the networkKbsWrite
+     */
+    public Long getNetworkKbsWrite() {
+        return networkKbsWrite;
+    }
 
-	/**
-	 * @return the passwordEnabled
-	 */
-	public Boolean getPasswordEnabled() {
-		return passwordEnabled;
-	}
+    /**
+     * @return the password
+     */
+    public String getPassword() {
+        return password;
+    }
 
-	/**
-	 * @return the rootDeviceId
-	 */
-	public String getRootDeviceId() {
-		return rootDeviceId;
-	}
+    /**
+     * @return the passwordEnabled
+     */
+    public Boolean getPasswordEnabled() {
+        return passwordEnabled;
+    }
 
-	/**
-	 * @return the rootDeviceType
-	 */
-	public String getRootDeviceType() {
-		return rootDeviceType;
-	}
+    /**
+     * @return the rootDeviceId
+     */
+    public String getRootDeviceId() {
+        return rootDeviceId;
+    }
 
-	/**
-	 * @return the serviceOfferingId
-	 */
-	public String getServiceOfferingId() {
-		return serviceOfferingId;
-	}
+    /**
+     * @return the rootDeviceType
+     */
+    public String getRootDeviceType() {
+        return rootDeviceType;
+    }
 
-	/**
-	 * @return the serviceOfferingName
-	 */
-	public String getServiceOfferingName() {
-		return serviceOfferingName;
-	}
+    /**
+     * @return the serviceOfferingId
+     */
+    public String getServiceOfferingId() {
+        return serviceOfferingId;
+    }
+
+    /**
+     * @return the serviceOfferingName
+     */
+    public String getServiceOfferingName() {
+        return serviceOfferingName;
+    }
 
     /**
       * @return the sshKeyPairName
@@ -349,61 +349,61 @@ public class CloudStackUserVm {
         return keyPairName;
     }
 
-	/**
-	 * @return the state
-	 */
-	public String getState() {
-		return state;
-	}
+    /**
+     * @return the state
+     */
+    public String getState() {
+        return state;
+    }
 
-	/**
-	 * @return the templateDisplayText
-	 */
-	public String getTemplateDisplayText() {
-		return templateDisplayText;
-	}
+    /**
+     * @return the templateDisplayText
+     */
+    public String getTemplateDisplayText() {
+        return templateDisplayText;
+    }
 
-	/**
-	 * @return the templateId
-	 */
-	public String getTemplateId() {
-		return templateId;
-	}
+    /**
+     * @return the templateId
+     */
+    public String getTemplateId() {
+        return templateId;
+    }
 
-	/**
-	 * @return the templateName
-	 */
-	public String getTemplateName() {
-		return templateName;
-	}
+    /**
+     * @return the templateName
+     */
+    public String getTemplateName() {
+        return templateName;
+    }
 
-	/**
-	 * @return the zoneId
-	 */
-	public String getZoneId() {
-		return zoneId;
-	}
+    /**
+     * @return the zoneId
+     */
+    public String getZoneId() {
+        return zoneId;
+    }
 
-	/**
-	 * @return the zoneName
-	 */
-	public String getZoneName() {
-		return zoneName;
-	}
+    /**
+     * @return the zoneName
+     */
+    public String getZoneName() {
+        return zoneName;
+    }
 
-	/**
-	 * @return the nics
-	 */
-	public List<CloudStackNic> getNics() {
-		return nics;
-	}
+    /**
+     * @return the nics
+     */
+    public List<CloudStackNic> getNics() {
+        return nics;
+    }
 
-	/**
-	 * @return the securityGroupList
-	 */
-	public List<CloudStackSecurityGroup> getSecurityGroupList() {
-		return securityGroupList;
-	}
+    /**
+     * @return the securityGroupList
+     */
+    public List<CloudStackSecurityGroup> getSecurityGroupList() {
+        return securityGroupList;
+    }
 
     /**
      * @return all tags
@@ -413,4 +413,3 @@ public class CloudStackUserVm {
     }
 
 }
-

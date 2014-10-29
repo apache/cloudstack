@@ -26,6 +26,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkDeviceCmd;
@@ -33,9 +36,6 @@ import org.apache.cloudstack.api.command.admin.network.ListNetworkDeviceCmd;
 import org.apache.cloudstack.api.response.NetworkDeviceResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.dc.dao.DataCenterDao;
@@ -68,36 +68,60 @@ import com.cloud.vm.dao.NicDao;
 @Local(value = {ExternalNetworkDeviceManager.class})
 public class ExternalNetworkDeviceManagerImpl extends ManagerBase implements ExternalNetworkDeviceManager {
 
-    @Inject AgentManager _agentMgr;
-    @Inject NetworkModel _networkMgr;
-    @Inject HostDao _hostDao;
-    @Inject DataCenterDao _dcDao;
-    @Inject AccountDao _accountDao;
-    @Inject DomainRouterDao _routerDao;
-    @Inject IPAddressDao _ipAddressDao;
-    @Inject VlanDao _vlanDao;
-    @Inject UserStatisticsDao _userStatsDao;
-    @Inject NetworkDao _networkDao;
-    @Inject PortForwardingRulesDao _portForwardingRulesDao;
-    @Inject LoadBalancerDao _loadBalancerDao;
-    @Inject ConfigurationDao _configDao;
-    @Inject NetworkOfferingDao _networkOfferingDao;
-    @Inject NicDao _nicDao;
-    @Inject VpnUserDao _vpnUsersDao;
-    @Inject InlineLoadBalancerNicMapDao _inlineLoadBalancerNicMapDao;
-    @Inject AccountManager _accountMgr;
-    @Inject PhysicalNetworkDao _physicalNetworkDao;
-    @Inject PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
-    @Inject ExternalLoadBalancerDeviceDao _externalLoadBalancerDeviceDao;
-    @Inject ExternalFirewallDeviceDao _externalFirewallDeviceDao;
-    @Inject NetworkExternalLoadBalancerDao _networkExternalLBDao;
-    @Inject NetworkExternalFirewallDao _networkExternalFirewallDao;
+    @Inject
+    AgentManager _agentMgr;
+    @Inject
+    NetworkModel _networkMgr;
+    @Inject
+    HostDao _hostDao;
+    @Inject
+    DataCenterDao _dcDao;
+    @Inject
+    AccountDao _accountDao;
+    @Inject
+    DomainRouterDao _routerDao;
+    @Inject
+    IPAddressDao _ipAddressDao;
+    @Inject
+    VlanDao _vlanDao;
+    @Inject
+    UserStatisticsDao _userStatsDao;
+    @Inject
+    NetworkDao _networkDao;
+    @Inject
+    PortForwardingRulesDao _portForwardingRulesDao;
+    @Inject
+    LoadBalancerDao _loadBalancerDao;
+    @Inject
+    ConfigurationDao _configDao;
+    @Inject
+    NetworkOfferingDao _networkOfferingDao;
+    @Inject
+    NicDao _nicDao;
+    @Inject
+    VpnUserDao _vpnUsersDao;
+    @Inject
+    InlineLoadBalancerNicMapDao _inlineLoadBalancerNicMapDao;
+    @Inject
+    AccountManager _accountMgr;
+    @Inject
+    PhysicalNetworkDao _physicalNetworkDao;
+    @Inject
+    PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
+    @Inject
+    ExternalLoadBalancerDeviceDao _externalLoadBalancerDeviceDao;
+    @Inject
+    ExternalFirewallDeviceDao _externalFirewallDeviceDao;
+    @Inject
+    NetworkExternalLoadBalancerDao _networkExternalLBDao;
+    @Inject
+    NetworkExternalFirewallDao _networkExternalFirewallDao;
 
     ScheduledExecutorService _executor;
     int _externalNetworkStatsInterval;
 
     // obsolete
-    // private final static IdentityService _identityService = (IdentityService)ComponentLocator.getLocator(ManagementServer.Name).getManager(IdentityService.class); 
+    // private final static IdentityService _identityService = (IdentityService)ComponentLocator.getLocator(ManagementServer.Name).getManager(IdentityService.class);
 
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalNetworkDeviceManagerImpl.class);
 
@@ -109,7 +133,7 @@ public class ExternalNetworkDeviceManagerImpl extends ManagerBase implements Ext
         }
 
         Collection paramsCollection = paramList.values();
-        HashMap params = (HashMap) (paramsCollection.toArray())[0];
+        HashMap params = (HashMap)(paramsCollection.toArray())[0];
         return null;
     }
 
@@ -145,19 +169,19 @@ public class ExternalNetworkDeviceManagerImpl extends ManagerBase implements Ext
 
         List<Host> res;
         Collection paramsCollection = paramList.values();
-        HashMap params = (HashMap) (paramsCollection.toArray())[0];
+        HashMap params = (HashMap)(paramsCollection.toArray())[0];
         if (NetworkDevice.ExternalDhcp.getName().equalsIgnoreCase(cmd.getDeviceType())) {
-            Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
+            Long zoneId = Long.parseLong((String)params.get(ApiConstants.ZONE_ID));
             Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
             res = listNetworkDevice(zoneId, null, podId, Host.Type.ExternalDhcp);
         } else if (NetworkDevice.PxeServer.getName().equalsIgnoreCase(cmd.getDeviceType())) {
-            Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
+            Long zoneId = Long.parseLong((String)params.get(ApiConstants.ZONE_ID));
             Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
             res = listNetworkDevice(zoneId, null, podId, Host.Type.PxeServer);
-        } else if (cmd.getDeviceType() == null){
-            Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
+        } else if (cmd.getDeviceType() == null) {
+            Long zoneId = Long.parseLong((String)params.get(ApiConstants.ZONE_ID));
             Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
-            Long physicalNetworkId = (params.get(ApiConstants.PHYSICAL_NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.PHYSICAL_NETWORK_ID)):null;            
+            Long physicalNetworkId = (params.get(ApiConstants.PHYSICAL_NETWORK_ID) == null) ? Long.parseLong((String)params.get(ApiConstants.PHYSICAL_NETWORK_ID)) : null;
             List<Host> res1 = listNetworkDevice(zoneId, physicalNetworkId, podId, Host.Type.PxeServer);
             List<Host> res2 = listNetworkDevice(zoneId, physicalNetworkId, podId, Host.Type.ExternalDhcp);
             List<Host> res3 = listNetworkDevice(zoneId, physicalNetworkId, podId, Host.Type.ExternalLoadBalancer);

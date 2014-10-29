@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.vpn;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -36,7 +37,9 @@ import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.vpc.Vpc;
 
-@APICommand(name = "createVpnConnection", description="Create site to site vpn connection", responseObject=Site2SiteVpnConnectionResponse.class)
+
+@APICommand(name = "createVpnConnection", description = "Create site to site vpn connection", responseObject = Site2SiteVpnConnectionResponse.class, entityType = {Site2SiteVpnConnection.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVpnConnectionCmd.class.getName());
 
@@ -45,21 +48,29 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.S2S_VPN_GATEWAY_ID, type=CommandType.UUID, entityType=Site2SiteVpnGatewayResponse.class,
-            required=true, description="id of the vpn gateway")
+    @Parameter(name = ApiConstants.S2S_VPN_GATEWAY_ID,
+               type = CommandType.UUID,
+               entityType = Site2SiteVpnGatewayResponse.class,
+               required = true,
+               description = "id of the vpn gateway")
     private Long vpnGatewayId;
 
-    @Parameter(name=ApiConstants.S2S_CUSTOMER_GATEWAY_ID, type=CommandType.UUID, entityType=Site2SiteCustomerGatewayResponse.class,
-            required=true, description="id of the customer gateway")
+    @Parameter(name = ApiConstants.S2S_CUSTOMER_GATEWAY_ID,
+               type = CommandType.UUID,
+               entityType = Site2SiteCustomerGatewayResponse.class,
+               required = true,
+               description = "id of the customer gateway")
     private Long customerGatewayId;
 
-    @Parameter(name=ApiConstants.PASSIVE, type=CommandType.BOOLEAN, required=false, description="connection is passive or not")
+    @Parameter(name = ApiConstants.PASSIVE, type = CommandType.BOOLEAN, required = false, description = "connection is passive or not")
     private Boolean passive;
+
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vpn to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public Long getVpnGatewayId() {
         return vpnGatewayId;
@@ -68,18 +79,31 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
     public Long getCustomerGatewayId() {
         return customerGatewayId;
     }
-    
+
     public boolean isPassive() {
-    	if (passive == null) {
-    		return false;
-    	}
-    	return passive;
+        if (passive == null) {
+            return false;
+        }
+        return passive;
+    }
+
+    @Deprecated
+    public Boolean getDisplay() {
+        return display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        if (display != null) {
+            return display;
+        } else {
+            return true;
+        }
     }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
 
     @Override
     public String getCommandName() {
@@ -88,8 +112,12 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Vpc vpc = _entityMgr.findById(Vpc.class, getVpnGateway().getVpcId());
-        return vpc.getAccountId();
+        Site2SiteVpnGateway  vpnGw = getVpnGateway();
+        if (vpnGw != null) {
+            Vpc vpc = _entityMgr.findById(Vpc.class, getVpnGateway().getVpcId());
+            return vpc.getAccountId();
+        }
+        return -1;
     }
 
     @Override
@@ -120,7 +148,7 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         try {
             Site2SiteVpnConnection result = _s2sVpnService.startVpnConnection(getEntityId());
             if (result != null) {
@@ -136,7 +164,6 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
         }
     }
 
-
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.vpcSyncObject;
@@ -144,7 +171,12 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
 
     @Override
     public Long getSyncObjId() {
-        return getVpnGateway().getVpcId();
+        Site2SiteVpnGateway vpnGw = getVpnGateway();
+        if (vpnGw != null)
+        {
+          return vpnGw.getVpcId();
+        }
+        return null;
     }
 
     private Site2SiteVpnGateway getVpnGateway() {

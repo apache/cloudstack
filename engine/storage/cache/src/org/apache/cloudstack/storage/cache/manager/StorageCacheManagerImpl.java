@@ -90,9 +90,22 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
         return null;
     }
 
+
+    @Override
+    public DataStore getCacheStorage(DataObject data, Scope scope) {
+        for (StorageCacheAllocator allocator : storageCacheAllocator) {
+            DataStore store = allocator.getCacheStore(data, scope);
+            if (store != null) {
+                return store;
+            }
+        }
+        return null;
+    }
+
+
     protected List<DataStore> getCacheStores() {
         QueryBuilder<ImageStoreVO> sc = QueryBuilder.create(ImageStoreVO.class);
-        sc.and(sc.entity().getRole(), SearchCriteria.Op.EQ,DataStoreRole.ImageCache);
+        sc.and(sc.entity().getRole(), SearchCriteria.Op.EQ, DataStoreRole.ImageCache);
         List<ImageStoreVO> imageStoreVOs = sc.list();
         List<DataStore> stores = new ArrayList<DataStore>();
         for (ImageStoreVO vo : imageStoreVOs) {
@@ -170,7 +183,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
                         return;
                     }
 
-                    while(object != null) {
+                    while (object != null) {
                         object.delete();
                         object = cacheReplacementAlgorithm.chooseOneToBeReplaced(findAStore);
                     }
@@ -246,8 +259,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
     public DataObject createCacheObject(DataObject data, Scope scope) {
         DataStore cacheStore = getCacheStorage(scope);
 
-        if (cacheStore == null)
-        {
+        if (cacheStore == null) {
             String errMsg = "No cache DataStore in scope id " + scope.getScopeId() + " type " + scope.getScopeType().toString();
             throw new CloudRuntimeException(errMsg);
         }

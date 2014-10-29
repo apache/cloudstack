@@ -1,12 +1,13 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// the License.  You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils.component;
 
 import java.beans.PropertyDescriptor;
@@ -41,79 +44,73 @@ public class ComponentInstantiationPostProcessor implements InstantiationAwareBe
     private List<ComponentMethodInterceptor> _interceptors = new ArrayList<ComponentMethodInterceptor>();
     private Callback[] _callbacks;
     private CallbackFilter _callbackFilter;
-    
-	public ComponentInstantiationPostProcessor() {
-		_callbacks = new Callback[2];
-		_callbacks[0] = NoOp.INSTANCE;
-		_callbacks[1] = new InterceptorDispatcher();
 
-		_callbackFilter = new InterceptorFilter();
-	}
-	
-	public List<ComponentMethodInterceptor> getInterceptors() {
-		return _interceptors;
-	}
-	
-	public void setInterceptors(List<ComponentMethodInterceptor> interceptors) {
-		_interceptors = interceptors;
-	}
-	
-	private Callback[] getCallbacks() {
-		return _callbacks;
-	}
-	
-	private CallbackFilter getCallbackFilter() {
-		return _callbackFilter;
-	}
-	
-	@Override
-	public Object postProcessBeforeInitialization(Object bean, String beanName)
-			throws BeansException {
-		return bean;
-	}
+    public ComponentInstantiationPostProcessor() {
+        _callbacks = new Callback[2];
+        _callbacks[0] = NoOp.INSTANCE;
+        _callbacks[1] = new InterceptorDispatcher();
 
-	@Override
-	public Object postProcessAfterInitialization(Object bean, String beanName)
-			throws BeansException {
-		return bean;
-	}
+        _callbackFilter = new InterceptorFilter();
+    }
 
-	@Override
-	public Object postProcessBeforeInstantiation(Class<?> beanClass,
-			String beanName) throws BeansException {
-		if(_interceptors != null && _interceptors.size() > 0) {
-			if(ComponentMethodInterceptable.class.isAssignableFrom(beanClass)) {
-		        Enhancer enhancer = new Enhancer();
-		        enhancer.setSuperclass(beanClass);
-		        enhancer.setCallbacks(getCallbacks());
-		        enhancer.setCallbackFilter(getCallbackFilter());
-		        enhancer.setNamingPolicy(ComponentNamingPolicy.INSTANCE);
-		        
-		        Object bean = enhancer.create();
-		        return bean;
-			}
-		}
-		return null;
-	}
+    public List<ComponentMethodInterceptor> getInterceptors() {
+        return _interceptors;
+    }
 
-	@Override
-	public boolean postProcessAfterInstantiation(Object bean, String beanName)
-			throws BeansException {
-		return true;
-	}
+    public void setInterceptors(List<ComponentMethodInterceptor> interceptors) {
+        _interceptors = interceptors;
+    }
 
-	@Override
-	public PropertyValues postProcessPropertyValues(PropertyValues pvs,
-			PropertyDescriptor[] pds, Object bean, String beanName)
-			throws BeansException {
-		return pvs;
-	}
-	
+    private Callback[] getCallbacks() {
+        return _callbacks;
+    }
+
+    private CallbackFilter getCallbackFilter() {
+        return _callbackFilter;
+    }
+
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+        return bean;
+    }
+
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        return bean;
+    }
+
+    @Override
+    public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) throws BeansException {
+        if (_interceptors != null && _interceptors.size() > 0) {
+            if (ComponentMethodInterceptable.class.isAssignableFrom(beanClass)) {
+                Enhancer enhancer = new Enhancer();
+                enhancer.setSuperclass(beanClass);
+                enhancer.setCallbacks(getCallbacks());
+                enhancer.setCallbackFilter(getCallbackFilter());
+                enhancer.setNamingPolicy(ComponentNamingPolicy.INSTANCE);
+
+                Object bean = enhancer.create();
+                return bean;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public boolean postProcessAfterInstantiation(Object bean, String beanName) throws BeansException {
+        return true;
+    }
+
+    @Override
+    public PropertyValues postProcessPropertyValues(PropertyValues pvs, PropertyDescriptor[] pds, Object bean, String beanName) throws BeansException {
+        return pvs;
+    }
+
     protected class InterceptorDispatcher implements MethodInterceptor {
         @Override
         public Object intercept(Object target, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
             ArrayList<Pair<ComponentMethodInterceptor, Object>> interceptors = new ArrayList<Pair<ComponentMethodInterceptor, Object>>();
-            
+
             for (ComponentMethodInterceptor interceptor : getInterceptors()) {
                 if (interceptor.needToIntercept(method)) {
                     Object objReturnedInInterceptStart = interceptor.interceptStart(method, target);
@@ -136,14 +133,14 @@ public class ComponentInstantiationPostProcessor implements InstantiationAwareBe
             }
         }
     }
-    
+
     protected class InterceptorFilter implements CallbackFilter {
         @Override
         public int accept(Method method) {
-            for(ComponentMethodInterceptor interceptor : getInterceptors()) {
-            
+            for (ComponentMethodInterceptor interceptor : getInterceptors()) {
+
                 if (interceptor.needToIntercept(method)) {
-                	return 1;
+                    return 1;
                 }
             }
             return 0;

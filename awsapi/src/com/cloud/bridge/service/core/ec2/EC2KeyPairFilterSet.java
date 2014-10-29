@@ -29,77 +29,77 @@ import com.cloud.bridge.service.exception.EC2ServiceException;
 import com.cloud.bridge.service.exception.EC2ServiceException.ClientError;
 
 public class EC2KeyPairFilterSet {
-	protected final static Logger logger = Logger.getLogger(EC2KeyPairFilterSet.class);
-	
-	protected List<EC2Filter> filterSet = new ArrayList<EC2Filter>();    
-	
-	private Map<String,String> filterTypes = new HashMap<String,String>();
-	
-	public EC2KeyPairFilterSet() {
-		// -> use these values to check that the proper filter is passed to this type of filter set
-		filterTypes.put( "fingerprint", "String" );
-		filterTypes.put( "key-name", "String" );
-	}
+    protected final static Logger logger = Logger.getLogger(EC2KeyPairFilterSet.class);
 
-	public void addFilter( EC2Filter param ) {	
-		String filterName = param.getName();
-		String value = (String) filterTypes.get( filterName );
-		
-        if ( value == null || value.equalsIgnoreCase("null") ) {
-            throw new EC2ServiceException( ClientError.InvalidFilter, "Filter '" + filterName + "' is invalid");
+    protected List<EC2Filter> filterSet = new ArrayList<EC2Filter>();
+
+    private Map<String, String> filterTypes = new HashMap<String, String>();
+
+    public EC2KeyPairFilterSet() {
+        // -> use these values to check that the proper filter is passed to this type of filter set
+        filterTypes.put("fingerprint", "String");
+        filterTypes.put("key-name", "String");
+    }
+
+    public void addFilter(EC2Filter param) {
+        String filterName = param.getName();
+        String value = (String)filterTypes.get(filterName);
+
+        if (value == null || value.equalsIgnoreCase("null")) {
+            throw new EC2ServiceException(ClientError.InvalidFilter, "Filter '" + filterName + "' is invalid");
         }
 
-		// ToDo we could add checks to make sure the type of a filters value is correct (e.g., an integer)
-		filterSet.add( param );
-	}
-	
-	public EC2Filter[] getFilterSet() {
-		return filterSet.toArray(new EC2Filter[0]);
-	}
+        // ToDo we could add checks to make sure the type of a filters value is correct (e.g., an integer)
+        filterSet.add(param);
+    }
 
+    public EC2Filter[] getFilterSet() {
+        return filterSet.toArray(new EC2Filter[0]);
+    }
 
-    public EC2DescribeKeyPairsResponse evaluate( EC2DescribeKeyPairsResponse response ) throws ParseException {
-		EC2DescribeKeyPairsResponse resultList = new EC2DescribeKeyPairsResponse();
-		
-		boolean matched;
-		
+    public EC2DescribeKeyPairsResponse evaluate(EC2DescribeKeyPairsResponse response) throws ParseException {
+        EC2DescribeKeyPairsResponse resultList = new EC2DescribeKeyPairsResponse();
+
+        boolean matched;
+
         EC2SSHKeyPair[] keyPairSet = response.getKeyPairSet();
-		EC2Filter[] filterSet = getFilterSet();
+        EC2Filter[] filterSet = getFilterSet();
         for (EC2SSHKeyPair keyPair : keyPairSet) {
-			matched = true;
-			for (EC2Filter filter : filterSet) {
-				if (!filterMatched(keyPair, filter)) {
-					matched = false;
-					break;
-				}
-			}
-			if (matched == true)
-				resultList.addKeyPair(keyPair);
+            matched = true;
+            for (EC2Filter filter : filterSet) {
+                if (!filterMatched(keyPair, filter)) {
+                    matched = false;
+                    break;
+                }
+            }
+            if (matched == true)
+                resultList.addKeyPair(keyPair);
 
-		}
-		return resultList;
-	}
+        }
+        return resultList;
+    }
 
-	private boolean filterMatched( EC2SSHKeyPair keypair, EC2Filter filter ) throws ParseException {
-		String filterName = filter.getName();
-		String[] valueSet = filter.getValueSet();
-		
-		if ( filterName.equalsIgnoreCase("fingerprint")) {
-			return containsString(keypair.getFingerprint(), valueSet);
-		} else if ( filterName.equalsIgnoreCase("key-name")) {
-			return containsString(keypair.getKeyName(), valueSet);
-		}
-		return false;
-	}
-	
-	private boolean containsString( String lookingFor, String[] set ){
-		if (lookingFor == null) 
-			return false;
-		
-		for (String filter: set) {
-			if (lookingFor.matches( filter )) return true;
-		}
-		return false;
-	}
+    private boolean filterMatched(EC2SSHKeyPair keypair, EC2Filter filter) throws ParseException {
+        String filterName = filter.getName();
+        String[] valueSet = filter.getValueSet();
+
+        if (filterName.equalsIgnoreCase("fingerprint")) {
+            return containsString(keypair.getFingerprint(), valueSet);
+        } else if (filterName.equalsIgnoreCase("key-name")) {
+            return containsString(keypair.getKeyName(), valueSet);
+        }
+        return false;
+    }
+
+    private boolean containsString(String lookingFor, String[] set) {
+        if (lookingFor == null)
+            return false;
+
+        for (String filter : set) {
+            if (lookingFor.matches(filter))
+                return true;
+        }
+        return false;
+    }
 
 }

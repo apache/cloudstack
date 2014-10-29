@@ -27,8 +27,6 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
@@ -37,17 +35,23 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+
 import com.cloud.event.dao.EventDao;
 import com.cloud.server.ManagementServerImpl;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 
-public class EventControlsUnitTest extends TestCase{
+public class EventControlsUnitTest extends TestCase {
     private static final Logger s_logger = Logger.getLogger(EventControlsUnitTest.class);
 
-    @Spy ManagementServerImpl _mgmtServer = new ManagementServerImpl();
-    @Mock AccountManager _accountMgr;
-    @Mock EventDao _eventDao;
+    @Spy
+    ManagementServerImpl _mgmtServer = new ManagementServerImpl();
+    @Mock
+    AccountManager _accountMgr;
+    @Mock
+    EventDao _eventDao;
     List<EventVO> _events = null;
 
     @Override
@@ -60,6 +64,7 @@ public class EventControlsUnitTest extends TestCase{
         when(_eventDao.listToArchiveOrDeleteEvents(anyList(), anyString(), any(Date.class), any(Date.class), anyList())).thenReturn(_events);
     }
 
+    @Override
     @After
     public void tearDown() throws Exception {
     }
@@ -75,7 +80,7 @@ public class EventControlsUnitTest extends TestCase{
     protected void archiveEvents() {
         // archive alerts
         doNothing().when(_eventDao).archiveEvents(_events);
-        }
+    }
 
     protected void deleteEvents() {
         // delete alerts

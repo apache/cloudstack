@@ -21,15 +21,16 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -40,19 +41,26 @@ import com.cloud.network.Network;
 import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listNetscalerLoadBalancerNetworks", responseObject=NetworkResponse.class, description="lists network that are using a netscaler load balancer device")
+@APICommand(name = "listNetscalerLoadBalancerNetworks",
+            responseObject = NetworkResponse.class,
+            description = "lists network that are using a netscaler load balancer device",
+            requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListNetscalerLoadBalancerNetworksCmd.class.getName());
     private static final String s_name = "listnetscalerloadbalancernetworksresponse";
-    @Inject NetscalerLoadBalancerElementService _netsclarLbService;
+    @Inject
+    NetscalerLoadBalancerElementService _netsclarLbService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.UUID, entityType = NetscalerLoadBalancerResponse.class,
-            required = true, description="netscaler load balancer device ID")
+    @Parameter(name = ApiConstants.LOAD_BALANCER_DEVICE_ID,
+               type = CommandType.UUID,
+               entityType = NetscalerLoadBalancerResponse.class,
+               required = true,
+               description = "netscaler load balancer device ID")
     private Long lbDeviceId;
 
     /////////////////////////////////////////////////////
@@ -68,7 +76,8 @@ public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             List<? extends Network> networks  = _netsclarLbService.listNetworks(this);
             ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
@@ -76,14 +85,14 @@ public class ListNetscalerLoadBalancerNetworksCmd extends BaseListCmd {
 
             if (networks != null && !networks.isEmpty()) {
                 for (Network network : networks) {
-                    NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(network);
+                    NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(ResponseView.Full, network);
                     networkResponses.add(networkResponse);
                 }
             }
 
             response.setResponses(networkResponses);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         }  catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {

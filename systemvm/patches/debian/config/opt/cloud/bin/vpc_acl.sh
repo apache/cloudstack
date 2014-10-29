@@ -155,11 +155,13 @@ acl_entry_for_guest_network() {
 dflag=0
 gflag=0
 aflag=0
+Mflag=0
 rules=""
 rules_list=""
 ip=""
 dev=""
-while getopts 'd:i:m:a:' OPTION
+mac=""
+while getopts 'd:i:m:M:a:' OPTION
 do
   case $OPTION in
   d)    dflag=1
@@ -170,6 +172,9 @@ do
                 ;;
   m)    mflag=1
                 mask="$OPTARG"
+                ;;
+  M)    Mflag=1
+                mac="$OPTARG"
                 ;;
   a)	aflag=1
 		rules="$OPTARG"
@@ -184,6 +189,18 @@ if [ "$dflag$iflag$mflag$aflag" != "1111" ]
 then
   usage
   unlock_exit 2 $lock $locked
+fi
+
+# override dev with mac address match, if provided
+if [[ ! -z "$mac" ]]; then
+  logger -t cloud "$(basename $0): mac $mac passed, trying to match to device"
+  for i in `ls /sys/class/net`; do
+    if grep -q $mac /sys/class/net/$i/address; then
+      dev=$i
+      logger -t cloud "$(basename $0): matched dev $i to mac $mac, dev is now $dev"
+      break
+    fi
+  done
 fi
 
 gcidr="$ip/$mask"

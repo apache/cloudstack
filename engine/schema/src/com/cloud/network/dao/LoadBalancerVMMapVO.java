@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.network.dao;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,19 +23,24 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 @Entity
-@Table(name=("load_balancer_vm_map"))
+@Table(name = ("load_balancer_vm_map"))
 public class LoadBalancerVMMapVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="load_balancer_id")
+    @Column(name = "load_balancer_id")
     private long loadBalancerId;
 
-    @Column(name="instance_id")
+    @Column(name = "instance_id")
     private long instanceId;
+
+    @Column(name = "instance_ip")
+    private String instanceIp;
 
     @Column(name = "revoke")
     private boolean revoke = false;
@@ -59,6 +62,14 @@ public class LoadBalancerVMMapVO implements InternalIdentity {
         this.revoke = revoke;
     }
 
+    public LoadBalancerVMMapVO(long loadBalancerId, long instanceId, String vmIp, boolean revoke) {
+        this.loadBalancerId = loadBalancerId;
+        this.instanceId = instanceId;
+        this.instanceIp = vmIp;
+        this.revoke = revoke;
+    }
+
+    @Override
     public long getId() {
         return id;
     }
@@ -86,4 +97,13 @@ public class LoadBalancerVMMapVO implements InternalIdentity {
     public void setState(String state) {
         this.state = state;
     }
+
+    public String getInstanceIp() {
+        return instanceIp;
+    }
+
+    public void setInstanceIp(String instanceIp) {
+        this.instanceIp = instanceIp;
+    }
+
 }

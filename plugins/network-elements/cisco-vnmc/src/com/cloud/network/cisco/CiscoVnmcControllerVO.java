@@ -26,36 +26,34 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="external_cisco_vnmc_devices")
+@Table(name = "external_cisco_vnmc_devices")
 public class CiscoVnmcControllerVO implements CiscoVnmcController {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="id")
+    @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="host_id")
+    @Column(name = "host_id")
     private long hostId;
 
-    @Column(name="physical_network_id")
+    @Column(name = "physical_network_id")
     private long physicalNetworkId;
 
-    @Column(name="provider_name")
+    @Column(name = "provider_name")
     private String providerName;
 
-    @Column(name="device_name")
+    @Column(name = "device_name")
     private String deviceName;
-
 
     public CiscoVnmcControllerVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public CiscoVnmcControllerVO(long hostId, long physicalNetworkId,
-            String providerName, String deviceName) {
+    public CiscoVnmcControllerVO(long hostId, long physicalNetworkId, String providerName, String deviceName) {
         super();
         this.hostId = hostId;
         this.physicalNetworkId = physicalNetworkId;

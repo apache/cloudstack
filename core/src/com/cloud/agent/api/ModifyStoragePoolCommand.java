@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import java.io.File;
@@ -24,27 +27,26 @@ import com.cloud.storage.StoragePool;
 
 public class ModifyStoragePoolCommand extends Command {
 
-	boolean add;
-	StorageFilerTO pool;
+    boolean add;
+    StorageFilerTO pool;
     String localPath;
-	String [] options;
-	public static final String LOCAL_PATH_PREFIX="/mnt/";
+    String[] options;
+    public static final String LOCAL_PATH_PREFIX = "/mnt/";
 
+    public ModifyStoragePoolCommand() {
 
-	public ModifyStoragePoolCommand() {
-
-	}
+    }
 
     public ModifyStoragePoolCommand(boolean add, StoragePool pool, String localPath) {
-    	this.add = add;
-    	this.pool = new StorageFilerTO(pool);
+        this.add = add;
+        this.pool = new StorageFilerTO(pool);
         this.localPath = localPath;
 
     }
 
     public ModifyStoragePoolCommand(boolean add, StoragePool pool) {
-		this(add, pool, LOCAL_PATH_PREFIX + File.separator + UUID.nameUUIDFromBytes((pool.getHostAddress() + pool.getPath()).getBytes()));
-	}
+        this(add, pool, LOCAL_PATH_PREFIX + File.separator + UUID.nameUUIDFromBytes((pool.getHostAddress() + pool.getPath()).getBytes()));
+    }
 
     public StorageFilerTO getPool() {
         return pool;
@@ -54,22 +56,21 @@ public class ModifyStoragePoolCommand extends Command {
         this.pool = new StorageFilerTO(pool);
     }
 
-	public boolean getAdd() {
-    	return add;
+    public boolean getAdd() {
+        return add;
     }
 
-	@Override
+    @Override
     public boolean executeInSequence() {
         return false;
     }
 
-	public String getLocalPath() {
-		return localPath;
-	}
+    public String getLocalPath() {
+        return localPath;
+    }
 
-	public void setOptions(String[] options) {
-		this.options = options;
-	}
-
+    public void setOptions(String[] options) {
+        this.options = options;
+    }
 
 }

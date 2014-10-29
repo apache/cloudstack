@@ -21,31 +21,31 @@ import java.util.List;
 
 public class EC2DescribeInstances {
 
-	private List<String> instancesSet = new ArrayList<String>();    // a list of strings identifying instances
-	private EC2InstanceFilterSet ifs = null;
+    private List<String> instancesSet = new ArrayList<String>();    // a list of strings identifying instances
+    private EC2InstanceFilterSet ifs = null;
     private List<EC2TagKeyValue> resourceTagSet = new ArrayList<EC2TagKeyValue>();
 
-	public EC2DescribeInstances() {
-	}
+    public EC2DescribeInstances() {
+    }
 
-	public void addInstanceId( String param ) {
-		instancesSet.add( param );
-	}
-	
-	public String[] getInstancesSet() {
-		return instancesSet.toArray(new String[0]);
-	}
-	
-	public EC2InstanceFilterSet getFilterSet() {
-		return ifs;
-	}
-	
-	public void setFilterSet( EC2InstanceFilterSet param ) {
-		ifs = param;
-	}
+    public void addInstanceId(String param) {
+        instancesSet.add(param);
+    }
 
-    public void addResourceTag( EC2TagKeyValue param ) {
-        resourceTagSet.add( param );
+    public String[] getInstancesSet() {
+        return instancesSet.toArray(new String[0]);
+    }
+
+    public EC2InstanceFilterSet getFilterSet() {
+        return ifs;
+    }
+
+    public void setFilterSet(EC2InstanceFilterSet param) {
+        ifs = param;
+    }
+
+    public void addResourceTag(EC2TagKeyValue param) {
+        resourceTagSet.add(param);
     }
 
     public EC2TagKeyValue[] getResourceTagSet() {

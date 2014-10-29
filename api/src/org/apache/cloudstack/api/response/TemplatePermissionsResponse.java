@@ -18,32 +18,37 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
 import com.cloud.template.VirtualMachineTemplate;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=VirtualMachineTemplate.class)
+@EntityReference(value = VirtualMachineTemplate.class)
 @SuppressWarnings("unused")
 public class TemplatePermissionsResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the template ID")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the template ID")
     private String id;
 
-    @SerializedName(ApiConstants.IS_PUBLIC) @Param(description="true if this template is a public template, false otherwise")
+    @SerializedName(ApiConstants.IS_PUBLIC)
+    @Param(description = "true if this template is a public template, false otherwise")
     private Boolean publicTemplate;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the domain to which the template belongs")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the ID of the domain to which the template belongs")
     private String domainId;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the list of accounts the template is available for")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the list of accounts the template is available for")
     private List<String> accountNames;
 
-    @SerializedName(ApiConstants.PROJECT_IDS) @Param(description="the list of projects the template is available for")
+    @SerializedName(ApiConstants.PROJECT_IDS)
+    @Param(description = "the list of projects the template is available for")
     private List<String> projectIds;
-
 
     public void setId(String id) {
         this.id = id;

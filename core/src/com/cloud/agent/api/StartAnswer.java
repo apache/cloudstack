@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import java.util.Map;
@@ -22,7 +25,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 
 public class StartAnswer extends Answer {
     VirtualMachineTO vm;
-    String host_guid;
+    String hostGuid;
     Map<String, String> _iqnToPath;
 
     protected StartAnswer() {
@@ -30,24 +33,24 @@ public class StartAnswer extends Answer {
 
     public StartAnswer(StartCommand cmd, String msg) {
         super(cmd, false, msg);
-        this.vm  = cmd.getVirtualMachine();
+        this.vm = cmd.getVirtualMachine();
     }
 
     public StartAnswer(StartCommand cmd, Exception e) {
         super(cmd, false, e.getMessage());
-        this.vm  = cmd.getVirtualMachine();
+        this.vm = cmd.getVirtualMachine();
     }
 
     public StartAnswer(StartCommand cmd) {
         super(cmd, true, null);
-        this.vm  = cmd.getVirtualMachine();
-        this.host_guid = null;
+        this.vm = cmd.getVirtualMachine();
+        this.hostGuid = null;
     }
 
     public StartAnswer(StartCommand cmd, String msg, String guid) {
         super(cmd, true, msg);
-        this.vm  = cmd.getVirtualMachine();
-        this.host_guid = guid;
+        this.vm = cmd.getVirtualMachine();
+        this.hostGuid = guid;
     }
 
     public VirtualMachineTO getVirtualMachine() {
@@ -55,7 +58,7 @@ public class StartAnswer extends Answer {
     }
 
     public String getHost_guid() {
-        return host_guid;
+        return hostGuid;
     }
 
     public void setIqnToPath(Map<String, String> iqnToPath) {

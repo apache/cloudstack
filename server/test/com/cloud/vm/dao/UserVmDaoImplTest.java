@@ -28,24 +28,27 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 
 public class UserVmDaoImplTest extends TestCase {
-    @Inject UserVmDao dao;
+    @Inject
+    UserVmDao dao;
 
     public void makeAndVerifyEntry(Long vmId, String instanceName, String displayName, long templateId, boolean userdataFlag, Hypervisor.HypervisorType hypervisor,
-            long guestOsId, boolean haEnabled, boolean limitCpuUse, long domainId, long accountId, long serviceOfferingId, String name, Long diskOfferingId) {
+        long guestOsId, boolean haEnabled, boolean limitCpuUse, long domainId, long accountId, long serviceOfferingId, String name, Long diskOfferingId) {
 
         dao.expunge(vmId);
         String userdata;
 
         if (userdataFlag) {
             // Generate large userdata to simulate 32k of random string data for userdata submitted through HTTP POST requests.
-            userdata = RandomStringUtils.randomAlphanumeric(32*1024);
+            userdata = RandomStringUtils.randomAlphanumeric(32 * 1024);
         } else {
             // Generate normal sized userdata to simulate 2k of random string data.
-            userdata = RandomStringUtils.randomAlphanumeric(2*1024);
+            userdata = RandomStringUtils.randomAlphanumeric(2 * 1024);
         }
 
         // Persist the data.
-        UserVmVO vo = new UserVmVO(vmId, instanceName, displayName, templateId, hypervisor, guestOsId, haEnabled, limitCpuUse, domainId, accountId, serviceOfferingId, userdata, name, diskOfferingId);
+        UserVmVO vo =
+            new UserVmVO(vmId, instanceName, displayName, templateId, hypervisor, guestOsId, haEnabled, limitCpuUse, domainId, accountId, serviceOfferingId, userdata,
+                name, diskOfferingId);
         dao.persist(vo);
 
         vo = dao.findById(vmId);

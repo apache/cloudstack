@@ -16,12 +16,11 @@
 // under the License.
 package com.cloud.utils.db;
 
-
 /**
  * SearchBuilder is meant as a static query construct.  Often times in DAO code,
  * we write static sql that just assumes the database table does not change.
  * change by hand.  SearchBuilder is meant to replace that.  It provides load-time
- * 
+ *
  *   1. SearchBuilder is declared as final because it should not change after load time.
  *   2. search.entity().getHostId() allows you to declare which field you are searching
  *      on.  By doing this, we take advantage of the compiler to check that we
@@ -33,7 +32,7 @@ package com.cloud.utils.db;
  *   4. Note that the same field (getHostId()) was specified with two param
  *      names.  This is basically allowing you to reuse the same field in two
  *      parts of the search.
- * 
+ *
  * {@code
  * final SearchBuilder<UserVmVO> search = _userVmDao.createSearchBuilder();
  * final String param1 = "param1";
@@ -44,18 +43,18 @@ package com.cloud.utils.db;
  * SearchCriteria sc = search.create();
  * sc.setParameters(param1, 3);
  * sc.setParameters(param2, 1);
- * 
+ *
  * ...
- * 
+ *
  * SearchCriteria sc2 = search.create();
  * sc2.setParameters(param1, 4);
  * sc2.setParameters(param2, 1);
  * }
- * 
+ *
  * @param <T> VO object.
  */
 public class SearchBuilder<T> extends GenericSearchBuilder<T, T> {
-    
+
     public SearchBuilder(Class<T> entityType) {
         super(entityType, entityType);
     }

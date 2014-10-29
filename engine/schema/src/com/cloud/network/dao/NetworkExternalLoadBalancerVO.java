@@ -26,15 +26,16 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.db.GenericDao;
 
 /**
  * NetworkExternalLoadBalancerVO contains mapping of a network and the external load balancer device id assigned to the network
   */
 
 @Entity
-@Table(name="network_external_lb_device_map")
+@Table(name = "network_external_lb_device_map")
 public class NetworkExternalLoadBalancerVO implements InternalIdentity {
 
     @Id
@@ -42,7 +43,7 @@ public class NetworkExternalLoadBalancerVO implements InternalIdentity {
     @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
     @Column(name = "network_id")
@@ -51,10 +52,10 @@ public class NetworkExternalLoadBalancerVO implements InternalIdentity {
     @Column(name = "external_load_balancer_device_id")
     private long externalLBDeviceId;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
 
     public NetworkExternalLoadBalancerVO(long networkId, long externalLBDeviceID) {
@@ -63,10 +64,11 @@ public class NetworkExternalLoadBalancerVO implements InternalIdentity {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public NetworkExternalLoadBalancerVO(){
+    public NetworkExternalLoadBalancerVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
+    @Override
     public long getId() {
         return id;
     }

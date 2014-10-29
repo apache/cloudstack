@@ -17,20 +17,20 @@
 package com.cloud.bridge.service.exception;
 
 public class OutOfStorageException extends RuntimeException {
-	private static final long serialVersionUID = -2236697888220815218L;
-	
-	public OutOfStorageException() {
-	}
-	
-	public OutOfStorageException(String message) {
-		super(message);
-	}
-	
-	public OutOfStorageException(Throwable e) {
-		super(e);
-	}
+    private static final long serialVersionUID = -2236697888220815218L;
 
-	public OutOfStorageException(String message, Throwable e) {
-		super(message, e);
-	}
+    public OutOfStorageException() {
+    }
+
+    public OutOfStorageException(String message) {
+        super(message);
+    }
+
+    public OutOfStorageException(Throwable e) {
+        super(e);
+    }
+
+    public OutOfStorageException(String message, Throwable e) {
+        super(message, e);
+    }
 }

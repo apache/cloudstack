@@ -28,8 +28,6 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectVO;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.tags.dao.ResourceTagsDaoImpl;
-
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -39,14 +37,15 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = { ProjectDao.class })
+@Local(value = {ProjectDao.class})
 public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements ProjectDao {
     private static final Logger s_logger = Logger.getLogger(ProjectDaoImpl.class);
     protected final SearchBuilder<ProjectVO> AllFieldsSearch;
     protected GenericSearchBuilder<ProjectVO, Long> CountByDomain;
     protected GenericSearchBuilder<ProjectVO, Long> ProjectAccountSearch;
     // ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
-    @Inject ResourceTagDao _tagsDao;
+    @Inject
+    ResourceTagDao _tagsDao;
 
     protected ProjectDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -82,8 +81,8 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
         if (!update(projectId, projectToRemove)) {
             s_logger.warn("Failed to reset name for the project id=" + projectId + " as a part of project remove");
             return false;
-        } 
-        
+        }
+
         _tagsDao.removeByIdAndType(projectId, ResourceObjectType.Project);
         result = super.remove(projectId);
         txn.commit();
@@ -113,7 +112,7 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
         sc.setParameters("state", state);
         return listBy(sc);
     }
-    
+
     @Override
     public ProjectVO findByProjectAccountIdIncludingRemoved(long projectAccountId) {
         SearchCriteria<ProjectVO> sc = AllFieldsSearch.create();

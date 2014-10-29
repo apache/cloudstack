@@ -24,13 +24,21 @@ import com.cloud.utils.SerialVersionUID;
  */
 public class OperationTimedoutException extends CloudException {
     private static final long serialVersionUID = SerialVersionUID.OperationTimedoutException;
-    
+
     long _agentId;
     long _seqId;
     int _time;
-    Command[] _cmds;
+
+    // TODO
+    // I did a reference search on usage of getCommands() and found none
+    //
+    // to prevent serialization problems across boundaries, I'm disabling serialization of _cmds here
+    // getCommands() will still be available within the same serialization boundary, but it will be lost
+    // when exception is propagated across job boundaries.
+    //
+    transient Command[] _cmds;
     boolean _isActive;
-    
+
     public OperationTimedoutException(Command[] cmds, long agentId, long seqId, int time, boolean isActive) {
         super("Commands " + seqId + " to Host " + agentId + " timed out after " + time);
         _agentId = agentId;
@@ -39,24 +47,24 @@ public class OperationTimedoutException extends CloudException {
         _cmds = cmds;
         _isActive = isActive;
     }
-    
+
     public long getAgentId() {
         return _agentId;
     }
-    
+
     public long getSequenceId() {
         return _seqId;
     }
-    
+
     public int getWaitTime() {
         return _time;
     }
-    
+
     public Command[] getCommands() {
         return _cmds;
     }
-    
+
     public boolean isActive() {
-    	return _isActive;
+        return _isActive;
     }
 }

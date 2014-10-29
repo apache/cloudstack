@@ -30,35 +30,35 @@ public class Upgrade217to218 implements DbUpgrade {
         if (schemaFile == null) {
             throw new CloudRuntimeException("Unable to find the upgrade script, schema-217to218.sql");
         }
-        
+
         String dataFile = Script.findScript("", "db/data-217to218.sql");
         if (dataFile == null) {
             throw new CloudRuntimeException("Unable to find the upgrade script, data-217to218.sql");
         }
-        
+
         return new File[] {new File(schemaFile), new File(dataFile)};
     }
-        
+
     @Override
     public void performDataMigration(Connection conn) {
-        
+
     }
 
     @Override
     public File[] getCleanupScripts() {
-       return null;
+        return null;
     }
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "2.1.7", "2.1.7" };
+        return new String[] {"2.1.7", "2.1.7"};
     }
 
     @Override
     public String getUpgradedVersion() {
         return "2.1.8";
     }
-    
+
     @Override
     public boolean supportsRollingUpgrade() {
         return false;

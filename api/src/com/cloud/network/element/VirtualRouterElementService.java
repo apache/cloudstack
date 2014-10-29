@@ -18,16 +18,26 @@ package com.cloud.network.element;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
 import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
+import org.apache.cloudstack.api.command.admin.router.ListOvsElementsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
 
+import com.cloud.network.OvsProvider;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.utils.component.PluggableService;
 
-public interface VirtualRouterElementService extends PluggableService{
+public interface VirtualRouterElementService extends PluggableService {
     VirtualRouterProvider configure(ConfigureVirtualRouterElementCmd cmd);
+
+    OvsProvider configure(ConfigureOvsElementCmd cmd);
+
     VirtualRouterProvider addElement(Long nspId, Type providerType);
+
     VirtualRouterProvider getCreatedElement(long id);
+
     List<? extends VirtualRouterProvider> searchForVirtualRouterElement(ListVirtualRouterElementsCmd cmd);
+
+    List<? extends OvsProvider> searchForOvsElement(ListOvsElementsCmd cmd);
 }

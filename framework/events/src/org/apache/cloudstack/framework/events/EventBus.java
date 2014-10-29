@@ -41,7 +41,7 @@ public interface EventBus {
      * @param subscriber subscriber that intends to receive event notification
      * @return UUID returns the subscription ID
      */
-     UUID subscribe(EventTopic topic, EventSubscriber subscriber) throws EventBusException;
+    UUID subscribe(EventTopic topic, EventSubscriber subscriber) throws EventBusException;
 
     /**
      * unsubscribe to events of a category and a type

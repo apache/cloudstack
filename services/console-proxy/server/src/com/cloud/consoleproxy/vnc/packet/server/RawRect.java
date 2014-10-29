@@ -50,26 +50,27 @@ public class RawRect extends AbstractRect {
 
         switch (dataBuf.getDataType()) {
 
-        case DataBuffer.TYPE_INT: {
-            // We chose RGB888 model, so Raster will use DataBufferInt type
-            DataBufferInt dataBuffer = (DataBufferInt) dataBuf;
+            case DataBuffer.TYPE_INT: {
+                // We chose RGB888 model, so Raster will use DataBufferInt type
+                DataBufferInt dataBuffer = (DataBufferInt)dataBuf;
 
-            int imageWidth = image.getWidth();
-            int imageHeight = image.getHeight();
+                int imageWidth = image.getWidth();
+                int imageHeight = image.getHeight();
 
-            // Paint rectangle directly on buffer, line by line
-            int[] imageBuffer = dataBuffer.getData();
-            for (int srcLine = 0, dstLine = y; srcLine < height && dstLine < imageHeight; srcLine++, dstLine++) {
-                try {
-                    System.arraycopy(buf, srcLine * width, imageBuffer, x + dstLine * imageWidth, width);
-                } catch (IndexOutOfBoundsException e) {
+                // Paint rectangle directly on buffer, line by line
+                int[] imageBuffer = dataBuffer.getData();
+                for (int srcLine = 0, dstLine = y; srcLine < height && dstLine < imageHeight; srcLine++, dstLine++) {
+                    try {
+                        System.arraycopy(buf, srcLine * width, imageBuffer, x + dstLine * imageWidth, width);
+                    } catch (IndexOutOfBoundsException e) {
+                    }
                 }
+                break;
             }
-            break;
-        }
 
-        default:
-            throw new RuntimeException("Unsupported data buffer in buffered image: expected data buffer of type int (DataBufferInt). Actual data buffer type: " + dataBuf.getClass().getSimpleName());
+            default:
+                throw new RuntimeException("Unsupported data buffer in buffered image: expected data buffer of type int (DataBufferInt). Actual data buffer type: " +
+                    dataBuf.getClass().getSimpleName());
         }
     }
 }

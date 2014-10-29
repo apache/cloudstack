@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api.storage;
 
 import java.util.Map;
@@ -22,26 +25,26 @@ import com.cloud.agent.api.Answer;
 import com.cloud.storage.template.TemplateProp;
 
 public class ListVolumeAnswer extends Answer {
-	private String secUrl;
+    private String secUrl;
     private Map<Long, TemplateProp> templateInfos;
 
-	public ListVolumeAnswer() {
-	    super();
-	}
+    public ListVolumeAnswer() {
+        super();
+    }
 
-	public ListVolumeAnswer(String secUrl, Map<Long, TemplateProp> templateInfos) {
-	    super(null, true, "success");
-	    this.setSecUrl(secUrl);
-	    this.templateInfos = templateInfos;
-	}
+    public ListVolumeAnswer(String secUrl, Map<Long, TemplateProp> templateInfos) {
+        super(null, true, "success");
+        this.setSecUrl(secUrl);
+        this.templateInfos = templateInfos;
+    }
 
-	public Map<Long, TemplateProp> getTemplateInfo() {
-	    return templateInfos;
-	}
+    public Map<Long, TemplateProp> getTemplateInfo() {
+        return templateInfos;
+    }
 
-	public void setTemplateInfo(Map<Long, TemplateProp> templateInfos) {
-	    this.templateInfos = templateInfos;
-	}
+    public void setTemplateInfo(Map<Long, TemplateProp> templateInfos) {
+        this.templateInfos = templateInfos;
+    }
 
     public void setSecUrl(String secUrl) {
         this.secUrl = secUrl;

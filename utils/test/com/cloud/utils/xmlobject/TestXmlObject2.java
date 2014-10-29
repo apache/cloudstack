@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,9 +15,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.utils.xmlobject;
+//
 
-import static org.junit.Assert.*;
+package com.cloud.utils.xmlobject;
 
 import org.junit.Test;
 
@@ -42,10 +43,10 @@ public class TestXmlObject2 {
         root.putElement(c1.getTag(), c1);
         p(root.dump());
 
-        root = xo("test2").putElement("key1", "value1").putElement("child1", xo("child1").setText("yyy"))
-                .putElement("child1", xo("child1")
-                    .putElement("child2", xo("child2")
-                            .putElement("child3", xo("child3").putElement("key3", "value3").setText("xxxxx"))));
+        root =
+            xo("test2").putElement("key1", "value1")
+                .putElement("child1", xo("child1").setText("yyy"))
+                .putElement("child1", xo("child1").putElement("child2", xo("child2").putElement("child3", xo("child3").putElement("key3", "value3").setText("xxxxx"))));
 
         p(root.dump());
     }

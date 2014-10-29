@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,41 +15,42 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Command;
 
 public class ManageVolumeAvailabilityCommand extends Command {
 
-	boolean attach;
-	String primaryStorageSRUuid;
-	String volumeUuid;
+    boolean attach;
+    String primaryStorageSRUuid;
+    String volumeUuid;
 
+    public ManageVolumeAvailabilityCommand() {
+    }
 
-	public ManageVolumeAvailabilityCommand() {
-	}
-
-	public ManageVolumeAvailabilityCommand(boolean attach, String primaryStorageSRUuid, String volumeUuid) {
-    	this.attach = attach;
-    	this.primaryStorageSRUuid = primaryStorageSRUuid;
+    public ManageVolumeAvailabilityCommand(boolean attach, String primaryStorageSRUuid, String volumeUuid) {
+        this.attach = attach;
+        this.primaryStorageSRUuid = primaryStorageSRUuid;
         this.volumeUuid = volumeUuid;
     }
 
-	@Override
+    @Override
     public boolean executeInSequence() {
         return false;
     }
 
-	public boolean getAttach() {
-		return attach;
-	}
+    public boolean getAttach() {
+        return attach;
+    }
 
-	public String getPrimaryStorageSRUuid() {
-		return primaryStorageSRUuid;
-	}
+    public String getPrimaryStorageSRUuid() {
+        return primaryStorageSRUuid;
+    }
 
-	public String getVolumeUuid() {
-		return volumeUuid;
-	}
+    public String getVolumeUuid() {
+        return volumeUuid;
+    }
 
 }

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.dao;
 
 import com.cloud.network.NiciraNvpNicMappingVO;
@@ -21,12 +24,9 @@ import com.cloud.utils.db.GenericDao;
 
 public interface NiciraNvpNicMappingDao extends GenericDao<NiciraNvpNicMappingVO, Long> {
 
-    /**
-     * find the mapping for a nic
-     * @param nicUuid
-     *            the Uuid of a nic attached to a logical switch port
-     * @return NiciraNvpNicMapping for this nic uuid or null if it does not
-     *         exist
+    /** find the mapping for a nic
+     * @param nicUuid the Uuid of a nic attached to a logical switch port
+     * @return NiciraNvpNicMapping for this nic uuid or null if it does not exist
      */
     public NiciraNvpNicMappingVO findByNicUuid(String nicUuid);
 }

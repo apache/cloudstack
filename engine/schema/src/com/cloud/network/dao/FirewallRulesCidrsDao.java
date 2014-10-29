@@ -18,12 +18,15 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDao;
 
 public interface FirewallRulesCidrsDao extends GenericDao<FirewallRulesCidrsVO, Long> {
-    
+
     void persist(long firewallRuleId, List<String> sourceCidrs);
-    
+
     List<String> getSourceCidrs(long firewallRuleId);
-    
+
+    @DB
+    List<FirewallRulesCidrsVO> listByFirewallRuleId(long firewallRuleId);
 }

@@ -23,28 +23,29 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.user.OwnedBy;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import com.cloud.user.OwnedBy;
+
 @Entity
-@Table(name="account_network_ref")
+@Table(name = "account_network_ref")
 public class NetworkAccountVO implements OwnedBy, InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id;
-    
-    @Column(name="account_id")
+
+    @Column(name = "account_id")
     long accountId;
-    
-    @Column(name="network_id")
+
+    @Column(name = "network_id")
     long networkId;
-    
-    @Column(name="is_owner")
+
+    @Column(name = "is_owner")
     boolean owner;
 
     protected NetworkAccountVO() {
     }
-    
+
     public NetworkAccountVO(long networkId, long accountId, boolean owner) {
         this.networkId = networkId;
         this.accountId = accountId;
@@ -60,11 +61,11 @@ public class NetworkAccountVO implements OwnedBy, InternalIdentity {
     public long getAccountId() {
         return accountId;
     }
-    
+
     public long getNetworkId() {
         return networkId;
     }
-    
+
     public boolean isOwner() {
         return owner;
     }

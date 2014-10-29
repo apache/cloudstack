@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,23 +15,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api.routing;
+
 import java.util.List;
+
 public class CreateIpAliasCommand extends NetworkElementCommand {
     String routerip;
     List<IpAliasTO> ipAliasTOs;
 
-
-    public CreateIpAliasCommand(String routerip, List<IpAliasTO> ipAliasTOs){
-    this.routerip = routerip;
-    this.ipAliasTOs = ipAliasTOs;
+    public CreateIpAliasCommand(String routerip, List<IpAliasTO> ipAliasTOs) {
+        this.routerip = routerip;
+        this.ipAliasTOs = ipAliasTOs;
     }
 
-    public  String getRouterip (){
-         return  routerip;
+    public String getRouterip() {
+        return routerip;
     }
 
     public List<IpAliasTO> getIpAliasList() {
-         return ipAliasTOs;
+        return ipAliasTOs;
     }
 }

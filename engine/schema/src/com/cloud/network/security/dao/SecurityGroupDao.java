@@ -23,8 +23,12 @@ import com.cloud.utils.db.GenericDao;
 
 public interface SecurityGroupDao extends GenericDao<SecurityGroupVO, Long> {
     List<SecurityGroupVO> listByAccountId(long accountId);
+
     boolean isNameInUse(Long accountId, Long domainId, String name);
+
     SecurityGroupVO findByAccountAndName(Long accountId, String name);
+
     List<SecurityGroupVO> findByAccountAndNames(Long accountId, String... names);
-    int removeByAccountId(long accountId); 
+
+    int removeByAccountId(long accountId);
 }

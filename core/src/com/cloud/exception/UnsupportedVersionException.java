@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.exception;
 
 import com.cloud.utils.SerialVersionUID;
@@ -23,17 +26,17 @@ import com.cloud.utils.SerialVersionUID;
 public class UnsupportedVersionException extends CloudException {
 
     private static final long serialVersionUID = SerialVersionUID.UnsupportedVersionException;
-    
+
     public static final String UnknownVersion = "unknown.version";
     public static final String IncompatibleVersion = "incompatible.version";
-    
+
     String _reason;
-    
+
     public UnsupportedVersionException(String message, String reason) {
         super(message);
         _reason = reason;
     }
-    
+
     public String getReason() {
         return _reason;
     }

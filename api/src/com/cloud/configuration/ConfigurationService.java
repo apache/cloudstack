@@ -18,8 +18,6 @@ package com.cloud.configuration;
 
 import java.util.List;
 
-import javax.naming.NamingException;
-
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
@@ -60,6 +58,7 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 public interface ConfigurationService {
 
@@ -226,7 +225,8 @@ public interface ConfigurationService {
      * @throws
      * @return The new Vlan object
      */
-    Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException;
+    Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException,
+        ResourceAllocationException;
 
     /**
      * Marks the the account with the default zone-id.
@@ -249,7 +249,7 @@ public interface ConfigurationService {
 
     NetworkOffering updateNetworkOffering(UpdateNetworkOfferingCmd cmd);
 
-    List<? extends NetworkOffering> searchForNetworkOfferings(ListNetworkOfferingsCmd cmd);
+    Pair<List<? extends NetworkOffering>, Integer> searchForNetworkOfferings(ListNetworkOfferingsCmd cmd);
 
     boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd);
 

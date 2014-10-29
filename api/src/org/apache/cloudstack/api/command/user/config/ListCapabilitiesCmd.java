@@ -26,7 +26,8 @@ import org.apache.cloudstack.api.response.CapabilitiesResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "listCapabilities", description="Lists capabilities", responseObject=CapabilitiesResponse.class)
+@APICommand(name = "listCapabilities", description = "Lists capabilities", responseObject = CapabilitiesResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListCapabilitiesCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ListCapabilitiesCmd.class.getName());
 
@@ -43,7 +44,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Map<String, Object> capabilities = _mgr.listCapabilities(this);
         CapabilitiesResponse response = new CapabilitiesResponse();
         response.setSecurityGroupsEnabled((Boolean)capabilities.get("securityGroupsEnabled"));
@@ -52,13 +53,15 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setSupportELB((String)capabilities.get("supportELB"));
         response.setProjectInviteRequired((Boolean)capabilities.get("projectInviteRequired"));
         response.setAllowUsersCreateProjects((Boolean)capabilities.get("allowusercreateprojects"));
+        response.setDiskOffMinSize((Long)capabilities.get("customDiskOffMinSize"));
         response.setDiskOffMaxSize((Long)capabilities.get("customDiskOffMaxSize"));
         response.setRegionSecondaryEnabled((Boolean)capabilities.get("regionSecondaryEnabled"));
+        response.setKVMSnapshotEnabled((Boolean)capabilities.get("KVMSnapshotEnabled"));
         if (capabilities.containsKey("apiLimitInterval")) {
-            response.setApiLimitInterval((Integer) capabilities.get("apiLimitInterval"));
+            response.setApiLimitInterval((Integer)capabilities.get("apiLimitInterval"));
         }
         if (capabilities.containsKey("apiLimitMax")) {
-            response.setApiLimitMax((Integer) capabilities.get("apiLimitMax"));
+            response.setApiLimitMax((Integer)capabilities.get("apiLimitMax"));
         }
         response.setObjectName("capability");
         response.setResponseName(getCommandName());

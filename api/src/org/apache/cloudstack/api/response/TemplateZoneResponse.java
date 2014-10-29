@@ -18,40 +18,44 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 public class TemplateZoneResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the ID of the zone for the template")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "the ID of the zone for the template")
     private String zoneId;
 
-    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone for the template")
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "the name of the zone for the template")
     private String zoneName;
 
-    @SerializedName(ApiConstants.STATUS) @Param(description="the status of the template")
+    @SerializedName(ApiConstants.STATUS)
+    @Param(description = "the status of the template")
     private String status;
 
-    @SerializedName(ApiConstants.IS_READY) // propName="ready"  (FIXME:  this used to be part of Param annotation, do we need it?)
-    @Param(description="true if the template is ready to be deployed from, false otherwise.")
+    @SerializedName(ApiConstants.IS_READY)
+    // propName="ready"  (FIXME:  this used to be part of Param annotation, do we need it?)
+    @Param(description = "true if the template is ready to be deployed from, false otherwise.")
     private boolean isReady;
 
-    @SerializedName(ApiConstants.CREATED) @Param(description="the date this template was created")
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "the date this template was created")
     private Date created;
 
-    public TemplateZoneResponse(){
+    public TemplateZoneResponse() {
         super();
     }
 
-    public TemplateZoneResponse(String zoneId, String zoneName){
+    public TemplateZoneResponse(String zoneId, String zoneName) {
         super();
         this.zoneId = zoneId;
         this.zoneName = zoneName;
     }
-
-
 
     public String getZoneId() {
         return zoneId;
@@ -68,7 +72,6 @@ public class TemplateZoneResponse extends BaseResponse {
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
     }
-
 
     public String getStatus() {
         return status;
@@ -99,7 +102,7 @@ public class TemplateZoneResponse extends BaseResponse {
         final int prime = 31;
         int result = 1;
         String oid = this.getZoneId();
-        result = prime * result + ((oid== null) ? 0 : oid.hashCode());
+        result = prime * result + ((oid == null) ? 0 : oid.hashCode());
         return result;
     }
 
@@ -114,7 +117,7 @@ public class TemplateZoneResponse extends BaseResponse {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        TemplateZoneResponse other = (TemplateZoneResponse) obj;
+        TemplateZoneResponse other = (TemplateZoneResponse)obj;
         String oid = this.getZoneId();
         if (oid == null) {
             if (other.getZoneId() != null) {
@@ -122,7 +125,7 @@ public class TemplateZoneResponse extends BaseResponse {
             }
         } else if (!oid.equals(other.getZoneId())) {
             return false;
-        } else if ( this.getZoneName().equals(other.getZoneName())) {
+        } else if (this.getZoneName().equals(other.getZoneName())) {
             return false;
         }
         return true;

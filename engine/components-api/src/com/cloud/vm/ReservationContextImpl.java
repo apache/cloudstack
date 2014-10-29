@@ -28,16 +28,16 @@ public class ReservationContextImpl implements ReservationContext {
     Domain _domain;
     Journal _journal;
     String _reservationId;
-    
+
     public ReservationContextImpl(String reservationId, Journal journal, User caller) {
         this(reservationId, journal, caller, null, null);
     }
-    
+
     public ReservationContextImpl(String reservationId, Journal journal, User caller, Account account) {
         this(reservationId, journal, caller, account, null);
-        
+
     }
-    
+
     public ReservationContextImpl(String reservationId, Journal journal, User caller, Account account, Domain domain) {
         _caller = caller;
         _account = account;
@@ -45,7 +45,7 @@ public class ReservationContextImpl implements ReservationContext {
         _journal = journal;
         _reservationId = reservationId;
     }
-    
+
     @Override
     public long getDomainId() {
         return 0;
@@ -87,9 +87,9 @@ public class ReservationContextImpl implements ReservationContext {
     public String getReservationId() {
         return _reservationId;
     }
-    
+
     static EntityManager s_entityMgr;
-    
+
     static public void init(EntityManager entityMgr) {
         s_entityMgr = entityMgr;
     }

@@ -16,9 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.firewall;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
@@ -27,37 +29,52 @@ import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.IpAddress;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.Account;
 
-@APICommand(name = "updatePortForwardingRule", responseObject=FirewallRuleResponse.class, description="Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.")
-public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
+@APICommand(name = "updatePortForwardingRule",
+            responseObject = FirewallRuleResponse.class,
+        description = "Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.", entityType = {PortForwardingRule.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdatePortForwardingRuleCmd.class.getName());
     private static final String s_name = "updateportforwardingruleresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the port forwarding rule", since = "4.4")
+    private Long id;
 
-    @Parameter(name=ApiConstants.PRIVATE_IP, type=CommandType.STRING, description="the private IP address of the port forwarding rule")
+    @Parameter(name = ApiConstants.PRIVATE_IP, type = CommandType.STRING, description = "the private IP address of the port forwarding rule")
     private String privateIp;
 
-    @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.STRING, required=true, description="the private port of the port forwarding rule")
+    @Parameter(name = ApiConstants.PRIVATE_PORT, type = CommandType.STRING, description = "the private port of the port forwarding rule")
     private String privatePort;
 
-    @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, required=true, description="the protocol for the port fowarding rule. Valid values are TCP or UDP.")
+    @Parameter(name = ApiConstants.PROTOCOL,
+               type = CommandType.STRING,
+               description = "the protocol for the port fowarding rule. Valid values are TCP or UDP.")
     private String protocol;
 
-    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.UUID, entityType = IPAddressResponse.class,
-            required=true, description="the IP address id of the port forwarding rule")
+    @Parameter(name = ApiConstants.IP_ADDRESS_ID,
+               type = CommandType.UUID,
+               entityType = IPAddressResponse.class,
+               description = "the IP address id of the port forwarding rule")
     private Long publicIpId;
 
-    @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.STRING, required=true, description="the public port of the port forwarding rule")
+    @Parameter(name = ApiConstants.PUBLIC_PORT, type = CommandType.STRING, description = "the public port of the port forwarding rule")
     private String publicPort;
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
-            description="the ID of the virtual machine for the port forwarding rule")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+               type = CommandType.UUID,
+               entityType = UserVmResponse.class,
+               description = "the ID of the virtual machine for the port forwarding rule")
     private Long virtualMachineId;
+
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -75,10 +92,6 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
         return protocol;
     }
 
-    public Long getPublicIpId() {
-        return publicIpId;
-    }
-
     public String getPublicPort() {
         return publicPort;
     }
@@ -87,9 +100,18 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
         return virtualMachineId;
     }
 
+    public Boolean getDisplay() {
+        return display;
+    }
+    public Long getId() {
+        return id;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
+
 
     @Override
     public String getCommandName() {
@@ -98,9 +120,9 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        IpAddress addr = _entityMgr.findById(IpAddress.class, getPublicIpId());
-        if (addr != null) {
-            return addr.getAccountId();
+        PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, getId());
+        if (rule != null) {
+            return rule.getAccountId();
         }
 
         // bad address given, parent this command to SYSTEM so ERROR events are tracked
@@ -114,11 +136,25 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "updating port forwarding rule";
+        return "updating port forwarding rule";
     }
 
     @Override
-    public void execute(){
+    public void checkUuid() {
+        if (getCustomId() != null) {
+            _uuidMgr.checkUuid(getCustomId(), FirewallRule.class);
+        }
+    }
+
+    @Override
+    public void execute() {
+        PortForwardingRule rule = _rulesService.updatePortForwardingRule(id, getCustomId(), getDisplay());
+        FirewallRuleResponse fwResponse = new FirewallRuleResponse();
+        if (rule != null) {
+            fwResponse = _responseGenerator.createPortForwardingRuleResponse(rule);
+            setResponseObject(fwResponse);
+        }
+        fwResponse.setResponseName(getCommandName());
 //FIXME:        PortForwardingRule result = _mgr.updatePortForwardingRule(this);
 //        if (result != null) {
 //            FirewallRuleResponse response = _responseGenerator.createFirewallRuleResponse(result);
@@ -136,14 +172,11 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public Long getSyncObjId() {
-        return getIp().getAssociatedWithNetworkId();
-    }
-
-    private IpAddress getIp() {
-        IpAddress ip = _networkService.getIp(publicIpId);
-        if (ip == null) {
-            throw new InvalidParameterValueException("Unable to find ip address by id " + publicIpId);
+        PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, getId());
+        if (rule != null) {
+            return rule.getNetworkId();
+        } else {
+            throw new InvalidParameterValueException("Unable to find the rule by id");
         }
-        return ip;
     }
 }

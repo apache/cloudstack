@@ -101,10 +101,16 @@
                     var clickAction = function() {
                         $('#user-options a').eq(0).trigger('click');
                     };
+
+                    if ($('.notification-box:visible').size()) {
+                        $('.notification-box, div.overlay:first').remove();
+                    }
+
                     cloudStack.dialog.notice({
                         message: _l('label.session.expired'),
                         clickAction: clickAction
-                    });
+                    }).closest('.ui-dialog').overlay();
+
                     return false;
                 }
             }
@@ -123,19 +129,23 @@
            i.e. calling listCapabilities API with g_sessionKey from $.cookie('sessionKey') will succeed,
            then userValid will be set to true, then an user object (instead of "false") will be returned, then login screen will be bypassed.
            */
+                    var unBoxCookieValue = function (cookieName) {
+                        var cookieValue = $.cookie(cookieName);
+                        if (cookieValue && cookieValue.length > 2 && cookieValue[0] === '"' && cookieValue[cookieValue.length-1] === '"') {
+                            cookieValue = cookieValue.slice(1, cookieValue.length-1);
+                            $.cookie(cookieName, cookieValue, { expires: 1 });
+                        }
+                        return cookieValue;
+                    };
                     g_mySession = $.cookie('JSESSIONID');
-                    g_sessionKey = $.cookie('sessionKey');
-                    g_role = $.cookie('role');
-                    g_username = $.cookie('username');
-                    g_userid = $.cookie('userid');
-                    g_account = $.cookie('account');
-                    g_domainid = $.cookie('domainid');
-                    g_userfullname = $.cookie('userfullname');
-                    g_timezone = $.cookie('timezone');
-                    if ($.cookie('timezoneoffset') != null)
-                        g_timezoneoffset = isNaN($.cookie('timezoneoffset')) ? null : parseFloat($.cookie('timezoneoffset'));
-                    else
-                        g_timezoneoffset = null;
+                    g_sessionKey = unBoxCookieValue('sessionKey');
+                    g_role = unBoxCookieValue('role');
+                    g_userid = unBoxCookieValue('userid');
+                    g_domainid = unBoxCookieValue('domainid');
+                    g_account = unBoxCookieValue('account');
+                    g_username = unBoxCookieValue('username');
+                    g_userfullname = unBoxCookieValue('userfullname');
+                    g_timezone = unBoxCookieValue('timezone');                    
                 } else { //single-sign-on	(bypass login screen)
                     g_mySession = $.cookie('JSESSIONID');
                     g_sessionKey = encodeURIComponent(g_loginResponse.sessionkey);
@@ -145,11 +155,7 @@
                     g_account = g_loginResponse.account;
                     g_domainid = g_loginResponse.domainid;
                     g_userfullname = g_loginResponse.firstname + ' ' + g_loginResponse.lastname;
-                    g_timezone = g_loginResponse.timezone;
-                    if (g_loginResponse.timezoneoffset != null)
-                        g_timezoneoffset = isNaN(g_loginResponse.timezoneoffset) ? null : parseFloat(g_loginResponse.timezoneoffset);
-                    else
-                        g_timezoneoffset = null;
+                    g_timezone = g_loginResponse.timezone;                    
                 }
 
                 var userValid = false;
@@ -158,37 +164,15 @@
                     dataType: "json",
                     async: false,
                     success: function(json) {
-                        g_capabilities = json.listcapabilitiesresponse.capability;
-                        $.cookie('capabilities', g_capabilities, {
-                            expires: 1
-                        });
-
-                        g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
-                        $.cookie('supportELB', g_supportELB, {
-                            expires: 1
-                        });
-
-                        g_KVMsnapshotenabled = json.listcapabilitiesresponse.capability.KVMsnapshotenabled; //boolean
-                        $.cookie('KVMsnapshotenabled', g_KVMsnapshotenabled, {
-                            expires: 1
-                        });                        
-                                               
-                        g_regionsecondaryenabled = json.listcapabilitiesresponse.capability.regionsecondaryenabled; //boolean
-                        $.cookie('regionsecondaryenabled', g_regionsecondaryenabled, {
-                            expires: 1
-                        }); 
-                                              
+                        g_capabilities = json.listcapabilitiesresponse.capability;                        
+                        g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean   
+                        g_kvmsnapshotenabled = json.listcapabilitiesresponse.capability.kvmsnapshotenabled; //boolean          
+                        g_regionsecondaryenabled = json.listcapabilitiesresponse.capability.regionsecondaryenabled; //boolean    
                         if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
-                            g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
-                            $.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, {
-                                expires: 1
-                            });
+                            g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean                            
                         }
-
                         g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;
-                        $.cookie('userProjectsEnabled', g_userProjectsEnabled, {
-                            expires: 1
-                        });
+                       
 
                         g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;
 
@@ -262,8 +246,7 @@
                         g_userid = loginresponse.userid;
                         g_account = loginresponse.account;
                         g_domainid = loginresponse.domainid;
-                        g_timezone = loginresponse.timezone;
-                        g_timezoneoffset = loginresponse.timezoneoffset;
+                        g_timezone = loginresponse.timezone;                        
                         g_userfullname = loginresponse.firstname + ' ' + loginresponse.lastname;
 
                         $.cookie('sessionKey', g_sessionKey, {
@@ -280,10 +263,7 @@
                         });
                         $.cookie('role', g_role, {
                             expires: 1
-                        });
-                        $.cookie('timezoneoffset', g_timezoneoffset, {
-                            expires: 1
-                        });
+                        });                        
                         $.cookie('timezone', g_timezone, {
                             expires: 1
                         });
@@ -300,36 +280,14 @@
                             async: false,
                             success: function(json) {
                                 g_capabilities = json.listcapabilitiesresponse.capability;
-                                $.cookie('capabilities', g_capabilities, {
-                                    expires: 1
-                                });
-
-                                g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean
-                                $.cookie('supportELB', g_supportELB, {
-                                    expires: 1
-                                });
-
-                                g_KVMsnapshotenabled = json.listcapabilitiesresponse.capability.KVMsnapshotenabled; //boolean
-                                $.cookie('KVMsnapshotenabled', g_KVMsnapshotenabled, {
-                                    expires: 1
-                                });   
-                                
-                                g_regionsecondaryenabled = json.listcapabilitiesresponse.capability.regionsecondaryenabled; //boolean
-                                $.cookie('regionsecondaryenabled', g_regionsecondaryenabled, {
-                                    expires: 1
-                                }); 
-                                
+                                g_supportELB = json.listcapabilitiesresponse.capability.supportELB.toString(); //convert boolean to string if it's boolean      
+                                g_kvmsnapshotenabled = json.listcapabilitiesresponse.capability.kvmsnapshotenabled; //boolean           
+                                g_regionsecondaryenabled = json.listcapabilitiesresponse.capability.regionsecondaryenabled; //boolean                               
                                 if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
-                                    g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean
-                                    $.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, {
-                                        expires: 1
-                                    });
+                                    g_userPublicTemplateEnabled = json.listcapabilitiesresponse.capability.userpublictemplateenabled.toString(); //convert boolean to string if it's boolean                                    
                                 }
-
                                 g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;
-                                $.cookie('userProjectsEnabled', g_userProjectsEnabled, {
-                                    expires: 1
-                                });
+                                
 
                                 g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;
 
@@ -386,7 +344,7 @@
                         g_timezoneoffset = null;
                         g_timezone = null;
                         g_supportELB = null;
-                        g_KVMsnapshotenabled = null;
+                        g_kvmsnapshotenabled = null;
                         g_regionsecondaryenabled = null;
                         g_loginCmdText = null;
 
@@ -395,12 +353,9 @@
                         $.cookie('username', null);
                         $.cookie('account', null);
                         $.cookie('domainid', null);
-                        $.cookie('role', null);
-                        $.cookie('networktype', null);
-                        $.cookie('timezoneoffset', null);
+                        $.cookie('role', null);  
                         $.cookie('timezone', null);
-                        $.cookie('supportELB', null);
-
+                        
                         if (onLogoutCallback()) { //onLogoutCallback() will set g_loginResponse(single-sign-on variable) to null, then bypassLoginCheck() will show login screen.
                             document.location.reload(); //when onLogoutCallback() returns true, reload the current document.
                         }
@@ -474,15 +429,23 @@
             loginArgs.hideLoginScreen = true;
         }
 
-        cloudStack.uiCustom.login(loginArgs);
-
         // Localization
         if (!$.isFunction(cloudStack.localizationFn)) { // i.e., localize is overridden by a plugin/module
             cloudStack.localizationFn = function(str) {
                 return dictionary[str];
             };
         }
+        
+        //added for dictionary split up
+        if (dictionary != undefined && dictionary2 != undefined) {
+            $.extend(dictionary,dictionary2);
+        }
 
-        document.title = _l('label.app.name');
+        // Localize validation messages
+        cloudStack.localizeValidatorMessages();
+
+        cloudStack.uiCustom.login(loginArgs);
+
+        document.title = _l('label.app.name');            
     });
 })(cloudStack, jQuery);

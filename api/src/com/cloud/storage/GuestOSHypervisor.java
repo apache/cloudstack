@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.storage;
 
+import java.util.Date;
+
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface GuestOSHypervisor extends InternalIdentity {
@@ -25,4 +27,14 @@ public interface GuestOSHypervisor extends InternalIdentity {
     String getGuestOsName();
 
     long getGuestOsId();
+
+    String getHypervisorVersion();
+
+    String getUuid();
+
+    Date getRemoved();
+
+    Date getCreated();
+
+    boolean getIsUserDefined();
 }

@@ -28,48 +28,48 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={AccountVlanMapDao.class})
+@Local(value = {AccountVlanMapDao.class})
 public class AccountVlanMapDaoImpl extends GenericDaoBase<AccountVlanMapVO, Long> implements AccountVlanMapDao {
-    
-	protected SearchBuilder<AccountVlanMapVO> AccountSearch;
-	protected SearchBuilder<AccountVlanMapVO> VlanSearch;
-	protected SearchBuilder<AccountVlanMapVO> AccountVlanSearch;
-	
-	@Override
-	public List<AccountVlanMapVO> listAccountVlanMapsByAccount(long accountId) {
-		SearchCriteria<AccountVlanMapVO> sc = AccountSearch.create();
-    	sc.setParameters("accountId", accountId);
-    	return listIncludingRemovedBy(sc);
-	}
-	
-	@Override
-	public List<AccountVlanMapVO> listAccountVlanMapsByVlan(long vlanDbId) {
-		SearchCriteria<AccountVlanMapVO> sc = VlanSearch.create();
-    	sc.setParameters("vlanDbId", vlanDbId);
-    	return listIncludingRemovedBy(sc);
-	}
-	
-	@Override
-	public AccountVlanMapVO findAccountVlanMap(long accountId, long vlanDbId) {
-		SearchCriteria<AccountVlanMapVO> sc = AccountVlanSearch.create();
-		sc.setParameters("accountId", accountId);
-		sc.setParameters("vlanDbId", vlanDbId);
-		return findOneIncludingRemovedBy(sc);
-	}
-	
+
+    protected SearchBuilder<AccountVlanMapVO> AccountSearch;
+    protected SearchBuilder<AccountVlanMapVO> VlanSearch;
+    protected SearchBuilder<AccountVlanMapVO> AccountVlanSearch;
+
+    @Override
+    public List<AccountVlanMapVO> listAccountVlanMapsByAccount(long accountId) {
+        SearchCriteria<AccountVlanMapVO> sc = AccountSearch.create();
+        sc.setParameters("accountId", accountId);
+        return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<AccountVlanMapVO> listAccountVlanMapsByVlan(long vlanDbId) {
+        SearchCriteria<AccountVlanMapVO> sc = VlanSearch.create();
+        sc.setParameters("vlanDbId", vlanDbId);
+        return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public AccountVlanMapVO findAccountVlanMap(long accountId, long vlanDbId) {
+        SearchCriteria<AccountVlanMapVO> sc = AccountVlanSearch.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("vlanDbId", vlanDbId);
+        return findOneIncludingRemovedBy(sc);
+    }
+
     public AccountVlanMapDaoImpl() {
-    	AccountSearch = createSearchBuilder();
-    	AccountSearch.and("accountId", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AccountSearch = createSearchBuilder();
+        AccountSearch.and("accountId", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountSearch.done();
-        
+
         VlanSearch = createSearchBuilder();
-    	VlanSearch.and("vlanDbId", VlanSearch.entity().getVlanDbId(), SearchCriteria.Op.EQ);
+        VlanSearch.and("vlanDbId", VlanSearch.entity().getVlanDbId(), SearchCriteria.Op.EQ);
         VlanSearch.done();
-        
+
         AccountVlanSearch = createSearchBuilder();
         AccountVlanSearch.and("accountId", AccountVlanSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountVlanSearch.and("vlanDbId", AccountVlanSearch.entity().getVlanDbId(), SearchCriteria.Op.EQ);
         AccountVlanSearch.done();
     }
-    
+
 }

@@ -28,27 +28,27 @@ public class TileInfo {
         this.col = col;
         this.tileRect = tileRect;
     }
-    
+
     public int getRow() {
         return row;
     }
-    
+
     public void setRow(int row) {
         this.row = row;
     }
-    
+
     public int getCol() {
         return col;
     }
-    
+
     public void setCol(int col) {
         this.col = col;
     }
-    
+
     public Rectangle getTileRect() {
         return tileRect;
     }
-    
+
     public void setTileRect(Rectangle tileRect) {
         this.tileRect = tileRect;
     }

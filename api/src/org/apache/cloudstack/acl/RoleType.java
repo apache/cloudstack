@@ -18,12 +18,7 @@ package org.apache.cloudstack.acl;
 
 // Enum for default roles in CloudStack
 public enum RoleType {
-
-    Admin(1),
-    ResourceAdmin(2),
-    DomainAdmin(4),
-    User(8),
-    Unknown(0);
+    Admin(1), ResourceAdmin(2), DomainAdmin(4), User(8), Unknown(0);
 
     private int mask;
 
@@ -35,3 +30,4 @@ public enum RoleType {
         return mask;
     }
 }
+

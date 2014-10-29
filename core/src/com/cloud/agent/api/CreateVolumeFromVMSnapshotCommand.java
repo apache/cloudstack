@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import com.cloud.agent.api.to.StorageFilerTO;
@@ -45,17 +48,15 @@ public class CreateVolumeFromVMSnapshotCommand extends Command {
 
     }
 
-    public CreateVolumeFromVMSnapshotCommand(String path, String name,
-            Boolean fullClone, String storagePoolUuid) {
+    public CreateVolumeFromVMSnapshotCommand(String path, String name, Boolean fullClone, String storagePoolUuid) {
         this.path = path;
         this.name = name;
         this.fullClone = fullClone;
         this.storagePoolUuid = storagePoolUuid;
     }
 
-    public CreateVolumeFromVMSnapshotCommand(String path, String name,
-            Boolean fullClone, String storagePoolUuid, StorageFilerTO pool,
-            DiskProfile diskProfile, Long volumeId) {
+    public CreateVolumeFromVMSnapshotCommand(String path, String name, Boolean fullClone, String storagePoolUuid, StorageFilerTO pool, DiskProfile diskProfile,
+            Long volumeId) {
         this.path = path;
         this.name = name;
         this.fullClone = fullClone;

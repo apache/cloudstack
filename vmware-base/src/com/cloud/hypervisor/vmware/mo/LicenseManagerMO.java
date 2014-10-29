@@ -24,9 +24,10 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class LicenseManagerMO extends BaseMO {
 
+    @SuppressWarnings("unused")
     private static final Logger s_logger = Logger.getLogger(LicenseManagerMO.class);
     private ManagedObjectReference _licenseAssignmentManager = null;
-    
+
     public LicenseManagerMO(VmwareContext context, ManagedObjectReference mor) {
         super(context, mor);
     }
@@ -42,4 +43,3 @@ public class LicenseManagerMO extends BaseMO {
         return _licenseAssignmentManager;
     }
 }
-

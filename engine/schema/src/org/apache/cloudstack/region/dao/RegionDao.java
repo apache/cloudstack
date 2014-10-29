@@ -22,6 +22,7 @@ import com.cloud.utils.db.GenericDao;
 
 public interface RegionDao extends GenericDao<RegionVO, Integer> {
 
-	RegionVO findByName(String name);
+    RegionVO findByName(String name);
+
     int getRegionId();
 }

@@ -17,3 +17,5 @@
 
 
 configureSimulator=com.cloud.api.commands.ConfigureSimulatorCmd;1
+querySimulatorMock=com.cloud.api.commands.QuerySimulatorMockCmd;1
+cleanupSimulatorMock=com.cloud.api.commands.CleanupSimulatorMockCmd;1

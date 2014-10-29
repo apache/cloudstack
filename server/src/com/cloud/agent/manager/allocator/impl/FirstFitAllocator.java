@@ -26,10 +26,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.CapacityManager;
@@ -38,6 +37,7 @@ import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.gpu.GPU;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -47,21 +47,17 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
-import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.service.ServiceOfferingDetailsVO;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.ConsoleProxyDao;
-import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.SecondaryStorageVmDao;
-import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 /**
@@ -72,19 +68,9 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     private static final Logger s_logger = Logger.getLogger(FirstFitAllocator.class);
     @Inject
-    HostDao _hostDao = null;
+    protected HostDao _hostDao = null;
     @Inject
     HostDetailsDao _hostDetailsDao = null;
-    @Inject
-    UserVmDao _vmDao = null;
-    @Inject
-    ServiceOfferingDao _offeringDao = null;
-    @Inject
-    DomainRouterDao _routerDao = null;
-    @Inject
-    ConsoleProxyDao _consoleProxyDao = null;
-    @Inject
-    SecondaryStorageVmDao _secStorgaeVmDao = null;
     @Inject
     ConfigurationDao _configDao = null;
     @Inject
@@ -94,26 +80,27 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     @Inject
     VMInstanceDao _vmInstanceDao = null;
     @Inject
-    ResourceManager _resourceMgr;
+    protected ResourceManager _resourceMgr;
     @Inject
     ClusterDao _clusterDao;
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
-    float _factor = 1;
-    boolean _checkHvm = true;
-    protected String _allocationAlgorithm = "random";
+    @Inject
+    ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     CapacityManager _capacityMgr;
 
+    boolean _checkHvm = true;
+    protected String _allocationAlgorithm = "random";
+
+
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type,
-            ExcludeList avoid, int returnUpTo) {
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo) {
         return allocateTo(vmProfile, plan, type, avoid, returnUpTo, true);
     }
 
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo,
-            boolean considerReservedCapacity) {
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
 
         long dcId = plan.getDataCenterId();
         Long podId = plan.getPodId();
@@ -196,8 +183,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     }
 
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan,
-            Type type, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo, boolean considerReservedCapacity) {
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
+        boolean considerReservedCapacity) {
         long dcId = plan.getDataCenterId();
         Long podId = plan.getPodId();
         Long clusterId = plan.getClusterId();
@@ -235,15 +222,14 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         }
 
         if (!hosts.isEmpty()) {
-            suitableHosts = allocateTo(plan, offering, template, avoid, hosts, returnUpTo, considerReservedCapacity,
-                    account);
+            suitableHosts = allocateTo(plan, offering, template, avoid, hosts, returnUpTo, considerReservedCapacity, account);
         }
 
         return suitableHosts;
     }
 
     protected List<Host> allocateTo(DeploymentPlan plan, ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
-            boolean considerReservedCapacity, Account account) {
+        boolean considerReservedCapacity, Account account) {
         if (_allocationAlgorithm.equals("random") || _allocationAlgorithm.equals("userconcentratedpod_random")) {
             // Shuffle this so that we don't check the hosts in the same order.
             Collections.shuffle(hosts);
@@ -257,7 +243,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
         // We will try to reorder the host lists such that we give priority to hosts that have
         // the minimums to support a VM's requirements
-        hosts = prioritizeHosts(template, hosts);
+        hosts = prioritizeHosts(template, offering, hosts);
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Found " + hosts.size() + " hosts for allocation after prioritization: " + hosts);
@@ -267,7 +253,9 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             s_logger.debug("Looking for speed=" + (offering.getCpu() * offering.getSpeed()) + "Mhz, Ram=" + offering.getRamSize());
         }
 
+        long serviceOfferingId = offering.getId();
         List<Host> suitableHosts = new ArrayList<Host>();
+        ServiceOfferingDetailsVO offeringDetails = null;
 
         for (Host host : hosts) {
             if (suitableHosts.size() == returnUpTo) {
@@ -283,14 +271,21 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             //find number of guest VMs occupying capacity on this host.
             if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId()
-                            + " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
+                    s_logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() +
+                        " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
                 }
                 continue;
             }
 
-            boolean numCpusGood = host.getCpus().intValue() >= offering.getCpu();
-            boolean cpuFreqGood = host.getSpeed().intValue() >= offering.getSpeed();
+            // Check if GPU device is required by offering and host has the availability
+            if ((offeringDetails   = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.vgpuType.toString())) != null) {
+                ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.pciDevice.toString());
+                if(!_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())){
+                    s_logger.info("Host name: " + host.getName() + ", hostId: "+ host.getId() +" does not have required GPU devices available");
+                    continue;
+                }
+            }
+
             int cpu_requested = offering.getCpu() * offering.getSpeed();
             long ram_requested = offering.getRamSize() * 1024L * 1024L;
             Cluster cluster = _clusterDao.findById(host.getClusterId());
@@ -299,17 +294,18 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             Float cpuOvercommitRatio = Float.parseFloat(clusterDetailsCpuOvercommit.getValue());
             Float memoryOvercommitRatio = Float.parseFloat(clusterDetailsRamOvercommmt.getValue());
 
+            boolean hostHasCpuCapability = _capacityMgr.checkIfHostHasCpuCapability(host.getId(), offering.getCpu(), offering.getSpeed());
             boolean hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio,
-                    considerReservedCapacity);
+                considerReservedCapacity);
 
-            if (numCpusGood && cpuFreqGood && hostHasCapacity) {
+            if (hostHasCpuCapability && hostHasCapacity) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Found a suitable host, adding to list: " + host.getId());
                 }
                 suitableHosts.add(host);
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Not using host " + host.getId() + "; numCpusGood: " + numCpusGood + "; cpuFreqGood: " + cpuFreqGood + ", host has capacity?" + hostHasCapacity);
+                    s_logger.debug("Not using host " + host.getId() + "; host has cpu capability? " + hostHasCpuCapability + ", host has capacity?" + hostHasCapacity);
                 }
                 avoid.addHost(host.getId());
             }
@@ -359,7 +355,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         return true;
     }
 
-    protected List<? extends Host> prioritizeHosts(VMTemplateVO template, List<? extends Host> hosts) {
+    protected List<? extends Host> prioritizeHosts(VMTemplateVO template, ServiceOffering offering, List<? extends Host> hosts) {
         if (template == null) {
             return hosts;
         }
@@ -422,6 +418,22 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         prioritizedHosts.addAll(0, highPriorityHosts);
         prioritizedHosts.addAll(lowPriorityHosts);
 
+        // if service offering is not GPU enabled then move all the GPU enabled hosts to the end of priority list.
+        if (_serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) == null) {
+
+            List<Host> gpuEnabledHosts = new ArrayList<Host>();
+            // Check for GPU enabled hosts.
+            for (Host host : prioritizedHosts) {
+                if (_resourceMgr.isHostGpuEnabled(host.getId())) {
+                    gpuEnabledHosts.add(host);
+                }
+            }
+            // Move GPU enabled hosts to the end of list
+            if(!gpuEnabledHosts.isEmpty()) {
+                prioritizedHosts.removeAll(gpuEnabledHosts);
+                prioritizedHosts.addAll(gpuEnabledHosts);
+            }
+        }
         return prioritizedHosts;
     }
 
@@ -480,14 +492,12 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         if (_configDao != null) {
             Map<String, String> configs = _configDao.getConfiguration(params);
-            String opFactor = configs.get("cpu.overprovisioning.factor");
-            _factor = NumbersUtil.parseFloat(opFactor, 1);
 
             String allocationAlgorithm = configs.get("vm.allocation.algorithm");
             if (allocationAlgorithm != null) {
                 _allocationAlgorithm = allocationAlgorithm;
             }
-            String value = configs.get("xen.check.hvm");
+            String value = configs.get("xenserver.check.hvm");
             _checkHvm = value == null ? true : Boolean.parseBoolean(value);
         }
         return true;

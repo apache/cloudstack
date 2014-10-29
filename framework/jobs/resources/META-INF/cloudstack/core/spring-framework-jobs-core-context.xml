@@ -43,6 +43,6 @@
         class="org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDaoImpl" />
     <bean id="syncQueueManagerImpl"
         class="org.apache.cloudstack.framework.jobs.impl.SyncQueueManagerImpl" />
-
-    
+    <bean id="vmWorkJobDaoImpl"
+        class="org.apache.cloudstack.framework.jobs.dao.VmWorkJobDaoImpl" />
 </beans>

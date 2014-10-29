@@ -19,6 +19,9 @@ package org.apache.cloudstack.api.command.user.snapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -26,12 +29,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listSnapshotPolicies", description="Lists snapshot policies.", responseObject=SnapshotPolicyResponse.class)
+@APICommand(name = "listSnapshotPolicies", description = "Lists snapshot policies.", responseObject = SnapshotPolicyResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListSnapshotPoliciesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSnapshotPoliciesCmd.class.getName());
 
@@ -41,9 +44,14 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.UUID, entityType = VolumeResponse.class,
-            required=true, description="the ID of the disk volume")
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, description = "the ID of the disk volume")
     private Long volumeId;
+
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SnapshotPolicyResponse.class, description = "the ID of the snapshot policy")
+    private Long id;
+
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -53,6 +61,17 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
         return volumeId;
     }
 
+    @Override
+    public boolean isDisplay() {
+        if (display != null) {
+            return display;
+        }
+        return true;
+    }
+
+    public Long getId() {
+        return id;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -63,7 +82,7 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends SnapshotPolicy>, Integer> result = _snapshotService.listPoliciesforVolume(this);
         ListResponse<SnapshotPolicyResponse> response = new ListResponse<SnapshotPolicyResponse>();
         List<SnapshotPolicyResponse> policyResponses = new ArrayList<SnapshotPolicyResponse>();

@@ -28,6 +28,14 @@
                       >
 
     <bean id="BaremetalManager" class="com.cloud.baremetal.manager.BaremetalManagerImpl" />
+    <bean id="BaremetalVlanManager" class="com.cloud.baremetal.manager.BaremetalVlanManagerImpl" >
+       <property name="backends">
+           <map>
+               <entry key="Force10" value-ref="Force10BaremetalSwitchBackend"/>
+           </map>
+       </property>
+    </bean>
+    <bean id="Force10BaremetalSwitchBackend" class="com.cloud.baremetal.networkservice.Force10BaremetalSwitchBackend" />
 
     <bean id="BaremetalKickStartPxeService"
         class="com.cloud.baremetal.networkservice.BaremetalKickStartServiceImpl" />
@@ -38,5 +46,6 @@
 
     <bean id="baremetalDhcpDaoImpl" class="com.cloud.baremetal.database.BaremetalDhcpDaoImpl" />
     <bean id="baremetalPxeDaoImpl" class="com.cloud.baremetal.database.BaremetalPxeDaoImpl" />
-    
+    <bean id="BaremetalRctDaoImpl" class="com.cloud.baremetal.database.BaremetalRctDaoImpl" />
+
 </beans>

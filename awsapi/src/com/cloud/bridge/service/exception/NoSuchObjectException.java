@@ -18,20 +18,20 @@ package com.cloud.bridge.service.exception;
 
 public class NoSuchObjectException extends RuntimeException {
 
-	private static final long serialVersionUID = -5727022800215753259L;
+    private static final long serialVersionUID = -5727022800215753259L;
 
-	public NoSuchObjectException() {
-	}
-	
-	public NoSuchObjectException(String message) {
-		super(message);
-	}
-	
-	public NoSuchObjectException(Throwable e) {
-		super(e);
-	}
-	
-	public NoSuchObjectException(String message, Throwable e) {
-		super(message, e);
-	}
+    public NoSuchObjectException() {
+    }
+
+    public NoSuchObjectException(String message) {
+        super(message);
+    }
+
+    public NoSuchObjectException(Throwable e) {
+        super(e);
+    }
+
+    public NoSuchObjectException(String message, Throwable e) {
+        super(message, e);
+    }
 }

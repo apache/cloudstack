@@ -17,42 +17,43 @@
 package org.apache.cloudstack.affinity;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
+
+import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
-import org.apache.cloudstack.api.response.ControlledEntityResponse;
 import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
 
-import com.cloud.network.security.SecurityGroup;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = AffinityGroup.class)
 public class AffinityGroupResponse extends BaseResponse implements ControlledViewEntityResponse {
 
-    @SerializedName(ApiConstants.ID) @Param(description="the ID of the affinity group")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the ID of the affinity group")
     private String id;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the name of the affinity group")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the name of the affinity group")
     private String name;
 
-    @SerializedName(ApiConstants.DESCRIPTION) @Param(description="the description of the affinity group")
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "the description of the affinity group")
     private String description;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account owning the affinity group")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account owning the affinity group")
     private String accountName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the affinity group")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain ID of the affinity group")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the affinity group")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain name of the affinity group")
     private String domainName;
 
     @SerializedName(ApiConstants.TYPE)
@@ -71,15 +72,13 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
         return this.getId();
     }
 
-
     public String getId() {
         return id;
-     }
+    }
 
     public void setId(String id) {
         this.id = id;
     }
-
 
     public void setName(String name) {
         this.name = name;
@@ -89,6 +88,7 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
         this.description = description;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
@@ -102,6 +102,7 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
         this.domainId = domainId;
     }
 
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
@@ -122,7 +123,7 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
             return false;
         if (getClass() != obj.getClass())
             return false;
-        AffinityGroupResponse other = (AffinityGroupResponse) obj;
+        AffinityGroupResponse other = (AffinityGroupResponse)obj;
         if (id == null) {
             if (other.id != null)
                 return false;

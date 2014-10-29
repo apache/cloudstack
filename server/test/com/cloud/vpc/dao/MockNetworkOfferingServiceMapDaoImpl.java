@@ -25,8 +25,8 @@ import com.cloud.utils.db.DB;
 
 @Local(value = NetworkOfferingServiceMapDao.class)
 @DB()
-public class MockNetworkOfferingServiceMapDaoImpl extends NetworkOfferingServiceMapDaoImpl{
-    
+public class MockNetworkOfferingServiceMapDaoImpl extends NetworkOfferingServiceMapDaoImpl {
+
     @Override
     public boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services) {
         if (services.length > 0 && services[0] == Service.SourceNat && networkOfferingId != 2) {
@@ -36,5 +36,5 @@ public class MockNetworkOfferingServiceMapDaoImpl extends NetworkOfferingService
         }
         return false;
     }
-    
+
 }

@@ -56,18 +56,18 @@ public class SecurityGroupRuleVO implements SecurityRule {
 
     @Column(name = "uuid")
     private String uuid;
-    
+
     public SecurityGroupRuleVO() {
-    	uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
-    public SecurityGroupRuleVO(SecurityRuleType type,long securityGroupId, int fromPort, int toPort, String protocol, long allowedNetworkId ) {
+    public SecurityGroupRuleVO(SecurityRuleType type, long securityGroupId, int fromPort, int toPort, String protocol, long allowedNetworkId) {
         this.securityGroupId = securityGroupId;
         startPort = fromPort;
         endPort = toPort;
         this.protocol = protocol;
         this.allowedNetworkId = allowedNetworkId;
-    	uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         if (type == SecurityRuleType.IngressRule) {
             this.type = SecurityRuleType.IngressRule.getType();
         } else {
@@ -75,13 +75,13 @@ public class SecurityGroupRuleVO implements SecurityRule {
         }
     }
 
-    public SecurityGroupRuleVO(SecurityRuleType type,long securityGroupId, int fromPort, int toPort, String protocol, String allowedIpCidr) {
+    public SecurityGroupRuleVO(SecurityRuleType type, long securityGroupId, int fromPort, int toPort, String protocol, String allowedIpCidr) {
         this.securityGroupId = securityGroupId;
         startPort = fromPort;
         endPort = toPort;
         this.protocol = protocol;
         allowedSourceIpCidr = allowedIpCidr;
-    	uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
         if (type == SecurityRuleType.IngressRule) {
             this.type = SecurityRuleType.IngressRule.getType();
         } else {
@@ -93,7 +93,7 @@ public class SecurityGroupRuleVO implements SecurityRule {
     public long getId() {
         return id;
     }
-    
+
     @Override
     public String getType() {
         return type;
@@ -103,7 +103,7 @@ public class SecurityGroupRuleVO implements SecurityRule {
     public long getSecurityGroupId() {
         return securityGroupId;
     }
-    
+
     @Override
     public SecurityRuleType getRuleType() {
         if ("ingress".equalsIgnoreCase(type))
@@ -111,7 +111,7 @@ public class SecurityGroupRuleVO implements SecurityRule {
         else
             return SecurityRuleType.EgressRule;
     }
-    
+
     @Override
     public int getStartPort() {
         return startPort;
@@ -136,13 +136,13 @@ public class SecurityGroupRuleVO implements SecurityRule {
     public String getAllowedSourceIpCidr() {
         return allowedSourceIpCidr;
     }
-    
+
     @Override
     public String getUuid() {
-    	return uuid;
+        return uuid;
     }
-    
+
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
 }

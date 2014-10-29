@@ -19,12 +19,14 @@ package com.cloud.api.query.dao;
 import java.util.List;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
-import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
@@ -32,18 +34,19 @@ import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.server.ResourceTag.ResourceObjectType;
-import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={DataCenterJoinDao.class})
+@Local(value = {DataCenterJoinDao.class})
 public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long> implements DataCenterJoinDao {
     public static final Logger s_logger = Logger.getLogger(DataCenterJoinDaoImpl.class);
 
-
     private SearchBuilder<DataCenterJoinVO> dofIdSearch;
+    @Inject
+    public AccountManager _accountMgr;
 
     protected DataCenterJoinDaoImpl() {
 
@@ -51,15 +54,11 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         dofIdSearch.and("id", dofIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         dofIdSearch.done();
 
-        this._count = "select count(distinct id) from data_center_view WHERE ";
+        _count = "select count(distinct id) from data_center_view WHERE ";
     }
 
-
-
     @Override
-    public ZoneResponse newDataCenterResponse(DataCenterJoinVO dataCenter, Boolean showCapacities) {
-
-        Account account = CallContext.current().getCallingAccount();
+    public ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dataCenter, Boolean showCapacities) {
         ZoneResponse zoneResponse = new ZoneResponse();
         zoneResponse.setId(dataCenter.getUuid());
         zoneResponse.setName(dataCenter.getName());
@@ -70,7 +69,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
             zoneResponse.setDescription(dataCenter.getDescription());
         }
 
-        if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
+        if (view == ResponseView.Full) {
             zoneResponse.setDns1(dataCenter.getDns1());
             zoneResponse.setDns2(dataCenter.getDns2());
             zoneResponse.setIp6Dns1(dataCenter.getIp6Dns1());
@@ -97,20 +96,19 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         zoneResponse.setAllocationState(dataCenter.getAllocationState().toString());
         zoneResponse.setZoneToken(dataCenter.getZoneToken());
         zoneResponse.setDhcpProvider(dataCenter.getDhcpProvider());
-        
+
         // update tag information
         List<ResourceTagJoinVO> resourceTags = ApiDBUtils.listResourceTagViewByResourceUUID(dataCenter.getUuid(), ResourceObjectType.Zone);
-        for (ResourceTagJoinVO resourceTag : resourceTags) {            
+        for (ResourceTagJoinVO resourceTag : resourceTags) {
             ResourceTagResponse tagResponse = ApiDBUtils.newResourceTagResponse(resourceTag, false);
             zoneResponse.addTag(tagResponse);
         }
-        
+
         zoneResponse.setResourceDetails(ApiDBUtils.getResourceDetails(dataCenter.getId(), ResourceObjectType.Zone));
-        
+
         zoneResponse.setObjectName("zone");
         return zoneResponse;
     }
-
 
     @Override
     public DataCenterJoinVO newDataCenterView(DataCenter dataCenter) {
@@ -120,6 +118,5 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         assert dcs != null && dcs.size() == 1 : "No data center found for data center id " + dataCenter.getId();
         return dcs.get(0);
     }
-
 
 }

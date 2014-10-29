@@ -42,6 +42,7 @@ import com.cloud.storage.Storage;
 public class MockStorageMotionStrategy implements DataMotionStrategy {
 
     boolean success = true;
+
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
         return StrategyPriority.HIGHEST;
@@ -54,6 +55,11 @@ public class MockStorageMotionStrategy implements DataMotionStrategy {
     @Override
     public StrategyPriority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
         return StrategyPriority.HIGHEST;
+    }
+
+    @Override
+    public Void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -89,8 +95,7 @@ public class MockStorageMotionStrategy implements DataMotionStrategy {
     }
 
     @Override
-    public Void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost,
-            AsyncCompletionCallback<CopyCommandResult> callback) {
+    public Void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
         CopyCommandResult result = new CopyCommandResult("something", null);
         callback.complete(result);
         return null;

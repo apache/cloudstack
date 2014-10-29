@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -29,36 +29,38 @@ import javax.persistence.Table;
 import com.cloud.utils.net.Ip;
 
 @Entity
-@Table(name=("port_forwarding_rules"))
-@DiscriminatorValue(value="PortForwarding")
-@PrimaryKeyJoinColumn(name="id")
+@Table(name = ("port_forwarding_rules"))
+@DiscriminatorValue(value = "PortForwarding")
+@PrimaryKeyJoinColumn(name = "id")
 public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardingRule {
 
-    @Enumerated(value=EnumType.STRING)
-    @Column(name="dest_ip_address")
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "dest_ip_address")
     private Ip destinationIpAddress = null;
 
-    @Column(name="dest_port_start")
+    @Column(name = "dest_port_start")
     private int destinationPortStart;
-    
-    @Column(name="dest_port_end")
+
+    @Column(name = "dest_port_end")
     private int destinationPortEnd;
-    
-    @Column(name="instance_id")
+
+    @Column(name = "instance_id")
     private long virtualMachineId;
-    
+
     public PortForwardingRuleVO() {
     }
 
-    public PortForwardingRuleVO(String xId, long srcIpId, int srcPortStart, int srcPortEnd, Ip dstIp, int dstPortStart, int dstPortEnd, String protocol, long networkId, long accountId, long domainId, long instanceId) {
+    public PortForwardingRuleVO(String xId, long srcIpId, int srcPortStart, int srcPortEnd, Ip dstIp, int dstPortStart, int dstPortEnd, String protocol, long networkId,
+            long accountId, long domainId, long instanceId) {
         super(xId, srcIpId, srcPortStart, srcPortEnd, protocol, networkId, accountId, domainId, Purpose.PortForwarding, null, null, null, null, null);
         this.destinationIpAddress = dstIp;
         this.virtualMachineId = instanceId;
         this.destinationPortStart = dstPortStart;
         this.destinationPortEnd = dstPortEnd;
     }
-    
-    public PortForwardingRuleVO(String xId, long srcIpId, int srcPort, Ip dstIp, int dstPort, String protocol, List<String> sourceCidrs, long networkId, long accountId, long domainId, long instanceId) {
+
+    public PortForwardingRuleVO(String xId, long srcIpId, int srcPort, Ip dstIp, int dstPort, String protocol, List<String> sourceCidrs, long networkId, long accountId,
+            long domainId, long instanceId) {
         this(xId, srcIpId, srcPort, srcPort, dstIp, dstPort, dstPort, protocol.toLowerCase(), networkId, accountId, domainId, instanceId);
     }
 
@@ -66,31 +68,30 @@ public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardi
     public Ip getDestinationIpAddress() {
         return destinationIpAddress;
     }
-    
+
     @Override
     public void setDestinationIpAddress(Ip destinationIpAddress) {
-    	this.destinationIpAddress = destinationIpAddress;
+        this.destinationIpAddress = destinationIpAddress;
     }
 
     @Override
     public int getDestinationPortStart() {
         return destinationPortStart;
     }
-    
+
     @Override
     public int getDestinationPortEnd() {
         return destinationPortEnd;
     }
-    
+
     @Override
     public long getVirtualMachineId() {
         return virtualMachineId;
     }
-    
+
     @Override
     public Long getRelated() {
         return null;
     }
 
 }
-

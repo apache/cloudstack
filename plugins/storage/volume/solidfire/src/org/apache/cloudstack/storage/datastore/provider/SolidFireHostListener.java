@@ -20,9 +20,10 @@ package org.apache.cloudstack.storage.datastore.provider;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -41,11 +42,16 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class SolidFireHostListener implements HypervisorHostListener {
     private static final Logger s_logger = Logger.getLogger(SolidFireHostListener.class);
 
-    @Inject private AgentManager _agentMgr;
-    @Inject private AlertManager _alertMgr;
-    @Inject private DataStoreManager _dataStoreMgr;
-    @Inject private HostDao _hostDao;
-    @Inject private StoragePoolHostDao storagePoolHostDao;
+    @Inject
+    private AgentManager _agentMgr;
+    @Inject
+    private AlertManager _alertMgr;
+    @Inject
+    private DataStoreManager _dataStoreMgr;
+    @Inject
+    private HostDao _hostDao;
+    @Inject
+    private StoragePoolHostDao storagePoolHostDao;
 
     @Override
     public boolean hostConnect(long hostId, long storagePoolId) {
@@ -76,10 +82,10 @@ public class SolidFireHostListener implements HypervisorHostListener {
         if (!answer.getResult()) {
             String msg = "Unable to attach storage pool " + storagePoolId + " to host " + hostId;
 
-            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
 
-            throw new CloudRuntimeException("Unable to establish a connection from agent to storage pool " + storagePool.getId() +
-                    " due to " + answer.getDetails() + " (" + storagePool.getId() + ")");
+            throw new CloudRuntimeException("Unable to establish a connection from agent to storage pool " + storagePool.getId() + " due to " + answer.getDetails() +
+                " (" + storagePool.getId() + ")");
         }
 
         assert (answer instanceof ModifyStoragePoolAnswer) : "ModifyStoragePoolAnswer expected ; Pool = " + storagePool.getId() + " Host = " + hostId;

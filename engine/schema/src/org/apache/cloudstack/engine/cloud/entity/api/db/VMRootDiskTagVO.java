@@ -52,6 +52,7 @@ public class VMRootDiskTagVO implements InternalIdentity {
         this.rootDiskTag = rootDiskTag;
     }
 
+    @Override
     public long getId() {
         return id;
     }

@@ -30,8 +30,7 @@ public class Event {
     String resourceUUID;
     String description;
 
-    public Event(String eventSource, String eventCategory, String eventType, String resourceType,
-                 String resourceUUID) {
+    public Event(String eventSource, String eventCategory, String eventType, String resourceType, String resourceUUID) {
         this.eventCategory = eventCategory;
         this.eventType = eventType;
         this.eventSource = eventSource;
@@ -67,7 +66,7 @@ public class Event {
         return description;
     }
 
-    public void setDescription (Object message) {
+    public void setDescription(Object message) {
         Gson gson = new Gson();
         this.description = gson.toJson(message).toString();
     }
@@ -88,7 +87,7 @@ public class Event {
         this.resourceUUID = uuid;
     }
 
-    public String getResourceUUID () {
+    public String getResourceUUID() {
         return resourceUUID;
     }
 }

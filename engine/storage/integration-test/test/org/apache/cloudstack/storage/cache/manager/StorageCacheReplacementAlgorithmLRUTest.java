@@ -18,13 +18,20 @@
  */
 package org.apache.cloudstack.storage.cache.manager;
 
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.Storage;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.utils.DateUtil;
-import com.cloud.utils.component.ComponentContext;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
 import junit.framework.Assert;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -33,16 +40,13 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import javax.inject.Inject;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.UUID;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Storage;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.utils.DateUtil;
+import com.cloud.utils.component.ComponentContext;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/storageContext.xml")
@@ -57,10 +61,12 @@ public class StorageCacheReplacementAlgorithmLRUTest {
     StorageCacheReplacementAlgorithmLRU cacheReplacementAlgorithm;
     @Inject
     DataStoreManager dataStoreManager;
+
     @Before
     public void setup() throws Exception {
         ComponentContext.initComponentsLifeCycle();
     }
+
     @Test
     public void testSelectObject() {
         cacheReplacementAlgorithm.setUnusedTimeInterval(1);
@@ -138,10 +144,9 @@ public class StorageCacheReplacementAlgorithmLRUTest {
             Assert.assertNotNull(cacheReplacementAlgorithm.chooseOneToBeReplaced(store));
 
         } catch (Exception e) {
-           Assert.fail();
+            Assert.fail();
         }
     }
-
 
     @Test
     public void testSelectObjectFailed() {
@@ -193,7 +198,6 @@ public class StorageCacheReplacementAlgorithmLRUTest {
             imageStoreVO.setUrl(UUID.randomUUID().toString());
             imageStoreVO = imageStoreDao.persist(imageStoreVO);
 
-
             Date date = DateUtil.now();
 
             TemplateDataStoreVO templateStoreVO1 = new TemplateDataStoreVO();
@@ -221,6 +225,5 @@ public class StorageCacheReplacementAlgorithmLRUTest {
             Assert.fail();
         }
     }
-
 
 }

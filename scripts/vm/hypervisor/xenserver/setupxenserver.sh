@@ -55,7 +55,7 @@ mv -n /etc/cron.daily/logrotate /etc/cron.hourly 2>&1
 echo 1048576 >/proc/sys/fs/aio-max-nr
 
 # empty heartbeat
-cat /dev/null > /opt/xensource/bin/heartbeat
+cat /dev/null > /opt/cloud/bin/heartbeat
 # empty knownhost
 cat /dev/null > /root/.ssh/known_hosts
 

@@ -37,7 +37,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
  * Since Mysql does not have sequence support, we have
  * table retrieval was inside a transaction, the value
  * gets locked until the transaction is over.
- * 
+ *
  * allocation size.
  *
  */
@@ -45,19 +45,19 @@ public class SequenceFetcher {
     private final static Logger s_logger = Logger.getLogger(SequenceFetcher.class);
     ExecutorService _executors;
     private final static Random random = new Random();
-    
+
     public <T> T getNextSequence(Class<T> clazz, TableGenerator tg) {
         return getNextSequence(clazz, tg, null, false);
     }
-    
+
     public <T> T getNextSequence(Class<T> clazz, TableGenerator tg, Object key) {
-    	return getNextSequence(clazz, tg, key, false);
+        return getNextSequence(clazz, tg, key, false);
     }
-    
+
     public <T> T getRandomNextSequence(Class<T> clazz, TableGenerator tg) {
         return getNextSequence(clazz, tg, null, true);
     }
-    
+
     public <T> T getNextSequence(Class<T> clazz, TableGenerator tg, Object key, boolean isRandom) {
         Future<T> future = _executors.submit(new Fetcher<T>(clazz, tg, key, isRandom));
         try {
@@ -67,39 +67,41 @@ public class SequenceFetcher {
             return null;
         }
     }
-    
+
     protected SequenceFetcher() {
         _executors = new ThreadPoolExecutor(100, 100, 120l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(250), new NamedThreadFactory("SequenceFetcher"));
     }
 
     protected static final SequenceFetcher s_instance = new SequenceFetcher();
+
     public static SequenceFetcher getInstance() {
         return s_instance;
     }
-    
+
     protected class Fetcher<T> implements Callable<T> {
         TableGenerator _tg;
         Class<T> _clazz;
         Object _key;
         boolean isRandom = false;
-        
+
         protected Fetcher(Class<T> clazz, TableGenerator tg, Object key, boolean isRandom) {
             _tg = tg;
             _clazz = clazz;
             _key = key;
             this.isRandom = isRandom;
         }
-        
-        @Override @SuppressWarnings("unchecked")
+
+        @Override
+        @SuppressWarnings("unchecked")
         public T call() throws Exception {
             try {
                 PreparedStatement stmt = null;
                 StringBuilder sql = new StringBuilder("SELECT ");
                 sql.append(_tg.valueColumnName()).append(" FROM ").append(_tg.table());
                 sql.append(" WHERE ").append(_tg.pkColumnName()).append(" = ? FOR UPDATE");
-                
+
                 TransactionLegacy txn = TransactionLegacy.open("Sequence");
-                
+
                 PreparedStatement selectStmt = txn.prepareStatement(sql.toString());
                 if (_key == null) {
                     selectStmt.setString(1, _tg.pkColumnValue());
@@ -110,23 +112,23 @@ public class SequenceFetcher {
                 sql = new StringBuilder("UPDATE ");
                 sql.append(_tg.table()).append(" SET ").append(_tg.valueColumnName()).append("=").append("?+?");
                 sql.append(" WHERE ").append(_tg.pkColumnName()).append("=?");
-                
+
                 PreparedStatement updateStmt = txn.prepareStatement(sql.toString());
-                if(isRandom){
-                	updateStmt.setInt(2, random.nextInt(10) + 1);
+                if (isRandom) {
+                    updateStmt.setInt(2, random.nextInt(10) + 1);
                 } else {
-                	updateStmt.setInt(2, _tg.allocationSize());
+                    updateStmt.setInt(2, _tg.allocationSize());
                 }
                 if (_key == null) {
                     updateStmt.setString(3, _tg.pkColumnValue());
                 } else {
                     updateStmt.setObject(3, _key);
                 }
-                
+
                 ResultSet rs = null;
                 try {
                     txn.start();
-                    
+
                     stmt = selectStmt;
                     rs = stmt.executeQuery();
                     Object obj = null;
@@ -139,12 +141,12 @@ public class SequenceFetcher {
                             obj = rs.getObject(1);
                         }
                     }
-                    
+
                     if (obj == null) {
                         s_logger.warn("Unable to get a sequence: " + updateStmt.toString());
                         return null;
                     }
-                    
+
                     updateStmt.setObject(1, obj);
                     stmt = updateStmt;
                     int rows = stmt.executeUpdate();
@@ -167,5 +169,5 @@ public class SequenceFetcher {
             return null;
         }
     }
-    
+
 }

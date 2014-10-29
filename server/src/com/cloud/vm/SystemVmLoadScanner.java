@@ -21,6 +21,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.utils.Pair;
@@ -31,7 +33,9 @@ import com.cloud.utils.db.GlobalLock;
 // TODO: simple load scanner, to minimize code changes required in console proxy manager and SSVM, we still leave most of work at handler
 //
 public class SystemVmLoadScanner<T> {
-    public enum AfterScanAction { nop, expand, shrink }
+    public enum AfterScanAction {
+        nop, expand, shrink
+    }
 
     private static final Logger s_logger = Logger.getLogger(SystemVmLoadScanner.class);
 
@@ -68,7 +72,15 @@ public class SystemVmLoadScanner<T> {
             @Override
             protected void runInContext() {
                 try {
+                    CallContext callContext = CallContext.current();
+                    assert (callContext != null);
+
+                    AsyncJobExecutionContext.registerPseudoExecutionContext(
+                        callContext.getCallingAccountId(), callContext.getCallingUserId());
+
                     reallyRun();
+
+                    AsyncJobExecutionContext.unregister();
                 } catch (Throwable e) {
                     s_logger.warn("Unexpected exception " + e.getMessage(), e);
                 }
@@ -81,7 +93,7 @@ public class SystemVmLoadScanner<T> {
     }
 
     private void loadScan() {
-        if(!_scanHandler.canScan()) {
+        if (!_scanHandler.canScan()) {
             return;
         }
 
@@ -96,21 +108,21 @@ public class SystemVmLoadScanner<T> {
             _scanHandler.onScanStart();
 
             T[] pools = _scanHandler.getScannablePools();
-            for(T p : pools) {
-                if(_scanHandler.isPoolReadyForScan(p)) {
+            for (T p : pools) {
+                if (_scanHandler.isPoolReadyForScan(p)) {
                     Pair<AfterScanAction, Object> actionInfo = _scanHandler.scanPool(p);
 
-                    switch(actionInfo.first()) {
-                    case nop:
-                        break;
+                    switch (actionInfo.first()) {
+                        case nop:
+                            break;
 
-                    case expand:
-                        _scanHandler.expandPool(p, actionInfo.second());
-                        break;
+                        case expand:
+                            _scanHandler.expandPool(p, actionInfo.second());
+                            break;
 
-                    case shrink:
-                        _scanHandler.shrinkPool(p, actionInfo.second());
-                        break;
+                        case shrink:
+                            _scanHandler.shrinkPool(p, actionInfo.second());
+                            break;
                     }
                 }
             }
@@ -122,4 +134,3 @@ public class SystemVmLoadScanner<T> {
         }
     }
 }
-

@@ -17,20 +17,20 @@
 package com.cloud.bridge.service.exception;
 
 public class InvalidRequestContentException extends RuntimeException {
-	private static final long serialVersionUID = -3047694313765739359L;
+    private static final long serialVersionUID = -3047694313765739359L;
 
-	public InvalidRequestContentException() {
-	}
-	
-	public InvalidRequestContentException(String message) {
-		super(message);
-	}
+    public InvalidRequestContentException() {
+    }
 
-	public InvalidRequestContentException(Throwable e) {
-		super(e);
-	}
-	
-	public InvalidRequestContentException(String message, Throwable e) {
-		super(message, e);
-	}
+    public InvalidRequestContentException(String message) {
+        super(message);
+    }
+
+    public InvalidRequestContentException(Throwable e) {
+        super(e);
+    }
+
+    public InvalidRequestContentException(String message, Throwable e) {
+        super(message, e);
+    }
 }

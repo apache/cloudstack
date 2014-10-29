@@ -24,7 +24,7 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.utils.db.GenericDaoBase;
 
 @Component
-@Local(value = { GuestOSCategoryDao.class })
+@Local(value = {GuestOSCategoryDao.class})
 public class GuestOSCategoryDaoImpl extends GenericDaoBase<GuestOSCategoryVO, Long> implements GuestOSCategoryDao {
 
     protected GuestOSCategoryDaoImpl() {

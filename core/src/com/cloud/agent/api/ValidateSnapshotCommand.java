@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 public class ValidateSnapshotCommand extends Command {
@@ -35,17 +38,12 @@ public class ValidateSnapshotCommand extends Command {
      * @param templateUuid      If this is a root volume and no snapshot has been taken for it,
      *                          this is the UUID of the template VDI.
      */
-    public ValidateSnapshotCommand(String primaryStoragePoolNameLabel,
-                                                 String volumeUuid,
-                                                 String firstBackupUuid,
-                                                 String previousSnapshotUuid,
-                                                 String templateUuid)
-    {
+    public ValidateSnapshotCommand(String primaryStoragePoolNameLabel, String volumeUuid, String firstBackupUuid, String previousSnapshotUuid, String templateUuid) {
         this.primaryStoragePoolNameLabel = primaryStoragePoolNameLabel;
-        this.volumeUuid                  = volumeUuid;
-        this.firstBackupUuid             = firstBackupUuid;
-        this.previousSnapshotUuid        = previousSnapshotUuid;
-        this.templateUuid                = templateUuid;
+        this.volumeUuid = volumeUuid;
+        this.firstBackupUuid = firstBackupUuid;
+        this.previousSnapshotUuid = previousSnapshotUuid;
+        this.templateUuid = templateUuid;
     }
 
     public String getPrimaryStoragePoolNameLabel() {

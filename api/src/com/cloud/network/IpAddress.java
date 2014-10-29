@@ -19,6 +19,7 @@ package com.cloud.network;
 import java.util.Date;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -35,7 +36,7 @@ import com.cloud.utils.net.Ip;
  * - DomainId = domain of the account owner.
  * - Allocated = time it was allocated.
  */
-public interface IpAddress extends ControlledEntity, Identity, InternalIdentity {
+public interface IpAddress extends ControlledEntity, Identity, InternalIdentity, Displayable {
     enum State {
         Allocating, // The IP Address is being propagated to other network elements and is not ready for use yet.
         Allocated, // The IP address is in used.
@@ -44,8 +45,7 @@ public interface IpAddress extends ControlledEntity, Identity, InternalIdentity 
     }
 
     enum Purpose {
-        StaticNat,
-        Lb
+        StaticNat, Lb
     }
 
     long getDataCenterId();
@@ -85,5 +85,11 @@ public interface IpAddress extends ControlledEntity, Identity, InternalIdentity 
     boolean isPortable();
 
     Long getNetworkId();
+
+    boolean isDisplay();
+
+    public Date getRemoved();
+
+    public Date getCreated();
 
 }

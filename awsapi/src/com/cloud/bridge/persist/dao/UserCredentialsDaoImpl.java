@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.bridge.persist.dao;
 
-import java.sql.*;
-
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -28,50 +26,49 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={UserCredentialsDao.class})
+@Local(value = {UserCredentialsDao.class})
 public class UserCredentialsDaoImpl extends GenericDaoBase<UserCredentialsVO, Long> implements UserCredentialsDao {
-	public static final Logger logger = Logger.getLogger(UserCredentialsDaoImpl.class);
+    public static final Logger logger = Logger.getLogger(UserCredentialsDaoImpl.class);
 
-	public UserCredentialsDaoImpl() {}
-	
-	@DB
-	@Override
-	public UserCredentialsVO getByAccessKey( String cloudAccessKey ) {
-	        SearchBuilder<UserCredentialsVO> SearchByAccessKey = createSearchBuilder();
-	        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
-	    try {
+    public UserCredentialsDaoImpl() {
+    }
+
+    @DB
+    @Override
+    public UserCredentialsVO getByAccessKey(String cloudAccessKey) {
+        SearchBuilder<UserCredentialsVO> SearchByAccessKey = createSearchBuilder();
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
+        try {
             txn.start();
-            SearchByAccessKey.and("AccessKey", SearchByAccessKey.entity()
-                    .getAccessKey(), SearchCriteria.Op.EQ);
+            SearchByAccessKey.and("AccessKey", SearchByAccessKey.entity().getAccessKey(), SearchCriteria.Op.EQ);
             SearchByAccessKey.done();
             SearchCriteria<UserCredentialsVO> sc = SearchByAccessKey.create();
             sc.setParameters("AccessKey", cloudAccessKey);
             return findOneBy(sc);
-	    }finally {
+        } finally {
             txn.commit();
             txn.close();
-	    }
-	}
-	
-	@Override
-	public UserCredentialsVO getByCertUniqueId( String certId ) {
-	    SearchBuilder<UserCredentialsVO> SearchByCertID = createSearchBuilder();
-	    SearchByCertID.and("CertUniqueId", SearchByCertID.entity().getCertUniqueId(), SearchCriteria.Op.EQ);
-	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
-	    try {
+        }
+    }
+
+    @Override
+    public UserCredentialsVO getByCertUniqueId(String certId) {
+        SearchBuilder<UserCredentialsVO> SearchByCertID = createSearchBuilder();
+        SearchByCertID.and("CertUniqueId", SearchByCertID.entity().getCertUniqueId(), SearchCriteria.Op.EQ);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
+        try {
             txn.start();
             SearchCriteria<UserCredentialsVO> sc = SearchByCertID.create();
             sc.setParameters("CertUniqueId", certId);
             return findOneBy(sc);
-	    }finally {
+        } finally {
             txn.commit();
-	        txn.close();
-	    }
-	    
-	}
+            txn.close();
+        }
+
+    }
 
 }

@@ -25,11 +25,8 @@ import com.cloud.vm.VirtualMachine.State;
 public interface VmMgr {
     public Set<String> getCurrentVMs();
 
-    public String startVM(String vmName, String vnetId, String gateway,
-            String dns, String privateIP, String privateMac,
-            String privateMask, String publicIP, String publicMac,
-            String publicMask, int cpuCount, int cpuUtilization, long ramSize,
-            String localPath, String vncPassword);
+    public String startVM(String vmName, String vnetId, String gateway, String dns, String privateIP, String privateMac, String privateMask, String publicIP,
+        String publicMac, String publicMask, int cpuCount, int cpuUtilization, long ramSize, String localPath, String vncPassword);
 
     public String stopVM(String vmName, boolean force);
 

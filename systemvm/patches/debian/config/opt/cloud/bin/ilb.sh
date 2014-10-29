@@ -113,7 +113,8 @@ fw_entry() {
 
 #Hot reconfigure HA Proxy in the routing domain
 reconfig_lb() {
-  /root/reconfigLB.sh
+  logger -t cloud "Reconfiguring ilb using $1"
+  /root/reconfigLB.sh $1
   return $?
 }
 
@@ -126,7 +127,7 @@ restore_lb() {
   if [ $? -eq 0 ]
   then
     # Run reconfigLB.sh again
-    /root/reconfigLB.sh
+    /root/reconfigLB.sh /etc/haproxy/haproxy.cfg.new
   fi
 }
 
@@ -136,9 +137,10 @@ logger -t cloud "$(basename $0): Entering $(dirname $0)/$(basename $0)"
 iflag=
 aflag=
 dflag=
+fflag=
 sflag=
 
-while getopts 'i:a:d:s:' OPTION
+while getopts 'i:a:d:f:s:' OPTION
 do
   case $OPTION in
   i)	iflag=1
@@ -150,7 +152,9 @@ do
   d)	dflag=1
 		removedIps="$OPTARG"
 		;;
-
+  f)	fflag=1
+		cfgfile="$OPTARG"
+		;;
   s)	sflag=1
 		statsIp="$OPTARG"
 		;;

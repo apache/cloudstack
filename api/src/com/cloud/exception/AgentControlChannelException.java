@@ -16,12 +16,10 @@
 // under the License.
 package com.cloud.exception;
 
-import com.cloud.exception.CloudException;
-
 public class AgentControlChannelException extends CloudException {
-	private static final long serialVersionUID = -310647782960500466L;
-	
-	public AgentControlChannelException(String msg) {
-		super(msg);
-	}
+    private static final long serialVersionUID = -310647782960500466L;
+
+    public AgentControlChannelException(String msg) {
+        super(msg);
+    }
 }

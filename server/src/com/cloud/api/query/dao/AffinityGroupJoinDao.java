@@ -20,8 +20,8 @@ import java.util.List;
 
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
+
 import com.cloud.api.query.vo.AffinityGroupJoinVO;
-import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 
 public interface AffinityGroupJoinDao extends GenericDao<AffinityGroupJoinVO, Long> {
@@ -34,4 +34,3 @@ public interface AffinityGroupJoinDao extends GenericDao<AffinityGroupJoinVO, Lo
 
     List<AffinityGroupJoinVO> searchByIds(Long... ids);
 }
-

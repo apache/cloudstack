@@ -70,6 +70,10 @@
                         add: {
                             label: 'label.add.volume',
 
+                            preFilter: function(args) {
+                                return !args.context.instances;
+                            },
+
                             messages: {
                                 confirm: function(args) {
                                     return 'message.add.volume';
@@ -252,6 +256,9 @@
                         uploadVolume: {
                             isHeader: true,
                             label: 'label.upload.volume',
+                            preFilter: function(args) {
+                                return !args.context.instances;
+                            },
                             messages: {
                                 notification: function() {
                                     return 'label.upload.volume';
@@ -299,6 +306,10 @@
                                                 description: 'VHD'
                                             });
                                             items.push({
+                                                id: 'VHDX',
+                                                description: 'VHDX'
+                                            });
+                                            items.push({
                                                 id: 'OVA',
                                                 description: 'OVA'
                                             });
@@ -320,7 +331,7 @@
                                     },
                                     checksum: {
                                         docID: 'helpUploadVolumeChecksum',
-                                        label: 'label.checksum'
+                                        label: 'label.md5.checksum'
                                     }
                                 }
                             },
@@ -370,10 +381,10 @@
 
                     advSearchFields: {
                         name: {
-                            label: 'Name'
+                            label: 'label.name'
                         },
                         zoneid: {
-                            label: 'Zone',
+                            label: 'label.zone',
                             select: function(args) {
                                 $.ajax({
                                     url: createURL('listZones'),
@@ -397,7 +408,7 @@
                         },
 
                         domainid: {
-                            label: 'Domain',
+                            label: 'label.domain',
                             select: function(args) {
                                 if (isAdmin() || isDomainAdmin()) {
                                     $.ajax({
@@ -440,7 +451,7 @@
                         },
 
                         account: {
-                            label: 'Account',
+                            label: 'label.account',
                             isHidden: function(args) {
                                 if (isAdmin() || isDomainAdmin())
                                     return false;
@@ -450,10 +461,10 @@
                         },
 
                         tagKey: {
-                            label: 'Tag Key'
+                            label: 'label.tag.key'
                         },
                         tagValue: {
-                            label: 'Tag Value'
+                            label: 'label.tag.value'
                         }
                     },
 
@@ -483,7 +494,7 @@
                     },
 
                     detailView: {
-                        name: 'Volume details',
+                        name: 'label.volume.details',
                         viewAll: {
                             path: 'storage.snapshots',
                             label: 'label.snapshots'
@@ -491,22 +502,22 @@
                         actions: {
 
                             migrateVolume: {
-                                label: 'Migrate Volume',
+                                label: 'label.migrate.volume',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Do you want to migrate this volume ?';
+                                        return 'message.confirm.migrate.volume';
                                     },
                                     notification: function(args) {
-                                        return 'Volume migrated';
+                                        return 'label.volume.migrated';
                                     }
                                 },
 
                                 createForm: {
-                                    title: 'Migrate Volume',
+                                    title: 'label.migrate.volume',
                                     desc: '',
                                     fields: {
                                         storagePool: {
-                                            label: 'Storage Pool',
+                                            label: 'label.storage.pool',
                                             validation: {
                                                 required: true
                                             },
@@ -560,16 +571,29 @@
                             takeSnapshot: {
                                 label: 'label.action.take.snapshot',
                                 messages: {
-                                    confirm: function(args) {
-                                        return 'message.action.take.snapshot';
-                                    },
                                     notification: function(args) {
                                         return 'label.action.take.snapshot';
                                     }
                                 },
+                                createForm: {
+                                    title: 'label.action.take.snapshot',
+                                    desc: 'message.action.take.snapshot',
+                                    fields: {
+                                        quiescevm: {
+                                            label: 'label.quiesce.vm',
+                                            isBoolean: true,
+                                            isHidden: function(args) {
+                                                if (args.context.volumes[0].quiescevm == true)
+                                                    return false;   
+                                                        else
+                                                	return true;
+                                            }
+                                        }
+                                    }
+                                },
                                 action: function(args) {
                                     $.ajax({
-                                        url: createURL("createSnapshot&volumeid=" + args.context.volumes[0].id),
+                                        url: createURL("createSnapshot&volumeid=" + args.context.volumes[0].id + "&quiescevm=" + (args.data.quiescevm=='on')),
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
@@ -845,7 +869,7 @@
                                 label: 'label.action.attach.disk',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Are you sure you want to attach disk?';
+                                        return 'message.confirm.attach.disk';
                                     },
                                     notification: function(args) {
                                         return 'label.action.attach.disk';
@@ -880,7 +904,7 @@
                                                         hypervisor: args.context.volumes[0].hypervisor
                                                     });
                                                 }
-
+                                                
                                                 $(['Running', 'Stopped']).each(function() {
                                                     $.ajax({
                                                         url: createURL('listVirtualMachines'),
@@ -890,11 +914,11 @@
                                                         async: false,
                                                         success: function(json) {
                                                             var instanceObjs = json.listvirtualmachinesresponse.virtualmachine;
-                                                            $(instanceObjs).each(function() {
+                                                            $(instanceObjs).each(function() {                                                                
                                                                 items.push({
                                                                     id: this.id,
                                                                     description: this.displayname ? this.displayname : this.name
-                                                                });
+                                                                });                                                                                                                                
                                                             });
                                                         }
                                                     });
@@ -955,7 +979,7 @@
                                                     getUpdatedItem: function(json) {
                                                         return {
                                                             virtualmachineid: null,
-                                                            vmname: null
+                                                            vmdisplayname: null
                                                         };
                                                     },
                                                     getActionFilter: function() {
@@ -1073,11 +1097,11 @@
                                             isBoolean: true
                                         },
                                         isFeatured: {
-                                            label: "label.featured",
+                                            label: 'label.featured',
                                             isBoolean: true
                                         },
                                         isdynamicallyscalable: {
-                                            label: "Dynamically Scalable",
+                                            label: 'label.dynamically.scalable',
                                             isBoolean: true
                                         }
                                     }
@@ -1125,17 +1149,17 @@
                             },
 
                             migrateToAnotherStorage: {
-                                label: 'label.migrate.volume',
+                                label: 'label.migrate.volume.to.primary.storage',
                                 messages: {
                                     confirm: function(args) {
                                         return 'message.migrate.volume';
                                     },
                                     notification: function(args) {
-                                        return 'label.migrate.volume';
+                                        return 'label.migrate.volume.to.primary.storage';
                                     }
                                 },
                                 createForm: {
-                                    title: 'label.migrate.volume',
+                                    title: 'label.migrate.volume.to.primary.storage',
                                     desc: '',
                                     fields: {
                                         storageId: {
@@ -1269,6 +1293,16 @@
                                                     } else {
                                                         $newsize.hide();
                                                     }
+
+                                                    var $minIops = $form.find('.form-item[rel=minIops]');
+                                                    var $maxIops = $form.find('.form-item[rel=maxIops]');
+                                                    if (selectedDiskOfferingObj.iscustomizediops == true) {
+                                                        $minIops.css('display', 'inline-block');
+                                                        $maxIops.css('display', 'inline-block');
+                                                    } else {
+                                                        $minIops.hide();
+                                                        $maxIops.hide();
+                                                    }
                                                 });
                                             }
                                         },
@@ -1284,6 +1318,22 @@
                                             label: 'label.resize.shrink.ok',
                                             isBoolean: true,
                                             isChecked: false
+                                        },
+                                        minIops: {
+                                            label: 'label.disk.iops.min',
+                                            validation: {
+                                                required: false,
+                                                number: true
+                                            },
+                                            isHidden: true
+                                        },
+                                        maxIops: {
+                                            label: 'label.disk.iops.max',
+                                            validation: {
+                                                required: false,
+                                                number: true
+                                            },
+                                            isHidden: true
                                         }
                                     }
                                 },
@@ -1301,6 +1351,23 @@
                                     if (newSize != null && newSize.length > 0) {
                                         array1.push("&size=" + todb(newSize));
                                     }
+
+                                    var minIops;
+                                    var maxIops
+
+                                    if (selectedDiskOfferingObj.iscustomizediops == true) {
+                                        minIops = args.data.minIops;
+                                        maxIops = args.data.maxIops;
+                                    }
+
+                                    if (minIops != null && minIops.length > 0) {
+                                        array1.push("&miniops=" + todb(minIops));
+                                    }
+
+                                    if (maxIops != null && maxIops.length > 0) {
+                                        array1.push("&maxiops=" + todb(maxIops));
+                                    }
+
                                     $.ajax({
                                         url: createURL("resizeVolume&id=" + args.context.volumes[0].id + array1.join("")),
                                         dataType: "json",
@@ -1347,7 +1414,7 @@
                                     }
                                 }, {
                                     id: {
-                                        label: 'ID'
+                                        label: 'label.id'
                                     },
                                     zonename: {
                                         label: 'label.zone'
@@ -1376,17 +1443,23 @@
                                     status: {
                                         label: 'label.status'
                                     },
+                                    diskofferingdisplaytext: {
+                                    	label: 'Disk Offering'
+                                    },
                                     type: {
                                         label: 'label.type'
                                     },
                                     storagetype: {
                                         label: 'label.storage.type'
                                     },
+                                    provisioningtype: {
+                                        label: 'label.disk.provisioningtype'
+                                    },
                                     hypervisor: {
                                         label: 'label.hypervisor'
                                     },
                                     size: {
-                                        label: 'Size ',
+                                        label: 'label.size',
                                         converter: function(args) {
                                             if (args == null || args == 0)
                                                 return "";
@@ -1413,10 +1486,10 @@
                                         }
                                     },
                                     virtualmachineid: {
-                                        label: 'VM ID',
+                                        label: 'label.vm.id',
                                         converter: function(args) {
                                             if (args == null)
-                                                return "detached";
+                                                return _l('state.detached');
                                             else
                                                 return args;
                                         }
@@ -1458,7 +1531,7 @@
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
-                                            var jsonObj = json.listvolumesresponse.volume[0];
+                                            var jsonObj = json.listvolumesresponse.volume[0];                                            
                                             args.response.success({
                                                 actionFilter: volumeActionfilter,
                                                 data: jsonObj
@@ -1503,11 +1576,11 @@
 
                     advSearchFields: {
                         name: {
-                            label: 'Name'
+                            label: 'label.name'
                         },
 
                         domainid: {
-                            label: 'Domain',
+                            label: 'label.domain',
                             select: function(args) {
                                 if (isAdmin() || isDomainAdmin()) {
                                     $.ajax({
@@ -1550,7 +1623,7 @@
                         },
 
                         account: {
-                            label: 'Account',
+                            label: 'label.account',
                             isHidden: function(args) {
                                 if (isAdmin() || isDomainAdmin())
                                     return false;
@@ -1559,10 +1632,10 @@
                             }
                         },
                         tagKey: {
-                            label: 'Tag Key'
+                            label: 'label.tag.key'
                         },
                         tagValue: {
-                            label: 'Tag Value'
+                            label: 'label.tag.value'
                         }
                     },
 
@@ -1668,7 +1741,7 @@
                                             isBoolean: true
                                         },
                                         isdynamicallyscalable: {
-                                            label: "Dynamically Scalable",
+                                            label: 'label.dynamically.scalable',
                                             isBoolean: true
                                         }
                                     }
@@ -1712,7 +1785,7 @@
                                 label: 'label.action.create.volume',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Are you sure you want to create volume?';
+                                        return 'message.confirm.create.volume';
                                     },
                                     notification: function(args) {
                                         return 'label.action.create.volume';
@@ -1721,13 +1794,49 @@
                                 createForm: {
                                     title: 'label.action.create.volume',
                                     desc: '',
+                                    preFilter: function(args) {
+                                	    if (g_regionsecondaryenabled == true) {
+                                	    	args.$form.find('.form-item[rel=zoneid]').css('display', 'inline-block');
+                                	    } else {
+                                	    	args.$form.find('.form-item[rel=zoneid]').hide();
+                                	    }
+                                    },
                                     fields: {
                                         name: {
                                             label: 'label.name',
                                             validation: {
                                                 required: true
                                             }
-                                        }
+                                        },                                        
+                                        zoneid: {
+                                            label: 'label.availability.zone',  
+                                            isHidden: true,
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL("listZones&available=true"),
+                                                    dataType: "json",
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var zoneObjs = json.listzonesresponse.zone;                                                        
+                                                        var items = [{
+                                                            id: '',
+                                                            description: ''
+                                                        }];                                                        
+                                                        if (zoneObjs != null) {
+                                                        	for (i = 0; i < zoneObjs.length; i++) {
+                                                        		items.push({
+                                                        			id: zoneObjs[i].id,
+                                                        			description: zoneObjs[i].name
+                                                        		});
+                                                        	}
+                                                        }     
+                                                        args.response.success({                                                            
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        }                                        
                                     }
                                 },
                                 action: function(args) {
@@ -1735,7 +1844,13 @@
                                         snapshotid: args.context.snapshots[0].id,
                                         name: args.data.name
                                     };
-
+                                    
+                                    if (args.$form.find('.form-item[rel=zoneid]').css("display") != "none" && args.data.zoneid != '') {                                    
+	                                    $.extend(data, {
+	                                    	zoneId: args.data.zoneid
+	                                    });   
+                                    }                                    
+                                    
                                     $.ajax({
                                         url: createURL('createVolume'),
                                         data: data,
@@ -1882,7 +1997,7 @@
     };
 
 
-    var volumeActionfilter = function(args) {
+    var volumeActionfilter = cloudStack.actionFilter.volumeActionfilter = function(args) {
         var jsonObj = args.context.item;
         var allowedActions = [];
 
@@ -1896,14 +2011,15 @@
 
         if (jsonObj.hypervisor != "Ovm" && jsonObj.state == "Ready") {        	
         	if (jsonObj.hypervisor == 'KVM') { 
-        		if (g_KVMsnapshotenabled == true) {
+        		if (jsonObj.vmstate == 'Running') {        			
+        			if (g_kvmsnapshotenabled == true) { //"kvm.snapshot.enabled" flag should be taken to account only when snapshot is being created for Running vm (CLOUDSTACK-4428)
+            			allowedActions.push("takeSnapshot");
+        	            allowedActions.push("recurringSnapshot");
+            		}         			
+        		} else {
         			allowedActions.push("takeSnapshot");
     	            allowedActions.push("recurringSnapshot");
-        		} else {        			
-        			if(jsonObj.vmstate == 'Stopped') {
-        				allowedActions.push("takeSnapshot");
-        			}
-        		}
+        		}        		
         	} else {
         		allowedActions.push("takeSnapshot");
 	            allowedActions.push("recurringSnapshot");
@@ -1948,7 +2064,7 @@
         return allowedActions;
     };
 
-    var snapshotActionfilter = function(args) {
+    var snapshotActionfilter = cloudStack.actionFilter.snapshotActionfilter = function(args) {
         var jsonObj = args.context.item;
 
         if (jsonObj.state == 'Destroyed') {
@@ -1960,7 +2076,7 @@
             allowedActions.push("createTemplate");
             allowedActions.push("createVolume");
 
-            if (jsonObj.revertable && args.context.volumes[0].vmstate == "Stopped") {
+            if (jsonObj.revertable) {
                 allowedActions.push("revertSnapshot");
             }
         }

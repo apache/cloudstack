@@ -5,9 +5,9 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,17 +17,7 @@
 //
 package com.cloud.ucs.database;
 
-import java.util.List;
-import java.util.Map;
-
-import javax.naming.ConfigurationException;
-
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.GenericSearchBuilder;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.GenericQueryBuilder;
 
 public interface UcsManagerDao extends GenericDao<UcsManagerVO, Long> {
 }

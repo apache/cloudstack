@@ -25,13 +25,19 @@ import com.cloud.vm.DomainRouterVO;
 
 public interface ElasticLbVmMapDao extends GenericDao<ElasticLbVmMapVO, Long> {
     ElasticLbVmMapVO findOneByLbIdAndElbVmId(long lbId, long elbVmId);
+
     ElasticLbVmMapVO findOneByIpIdAndElbVmId(long ipId, long elbVmId);
+
     ElasticLbVmMapVO findOneByIp(long ipId);
 
     List<ElasticLbVmMapVO> listByElbVmId(long elbVmId);
+
     List<ElasticLbVmMapVO> listByLbId(long lbId);
+
     int deleteLB(long lbId);
+
     List<DomainRouterVO> listUnusedElbVms();
+
     List<LoadBalancerVO> listLbsForElbVm(long elbVmId);
-	
+
 }

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Command;
@@ -22,53 +25,54 @@ import com.cloud.storage.StoragePool;
 
 public class CopyVolumeCommand extends Command {
 
-	long volumeId;
-	String volumePath;
-	StorageFilerTO pool;
-	String secondaryStorageURL;
-	boolean toSecondaryStorage;
-	String vmName;
-	boolean executeInSequence = false;
+    long volumeId;
+    String volumePath;
+    StorageFilerTO pool;
+    String secondaryStorageURL;
+    boolean toSecondaryStorage;
+    String vmName;
+    boolean executeInSequence = false;
 
-	public CopyVolumeCommand() {
-	}
+    public CopyVolumeCommand() {
+    }
 
-	public CopyVolumeCommand(long volumeId, String volumePath, StoragePool pool, String secondaryStorageURL, boolean toSecondaryStorage, int wait, boolean executeInSequence) {
-		this.volumeId = volumeId;
-		this.volumePath = volumePath;
-		this.pool = new StorageFilerTO(pool);
-		this.secondaryStorageURL = secondaryStorageURL;
-		this.toSecondaryStorage = toSecondaryStorage;
-		setWait(wait);
-		this.executeInSequence = executeInSequence;
-	}
+    public CopyVolumeCommand(long volumeId, String volumePath, StoragePool pool, String secondaryStorageURL, boolean toSecondaryStorage, int wait,
+            boolean executeInSequence) {
+        this.volumeId = volumeId;
+        this.volumePath = volumePath;
+        this.pool = new StorageFilerTO(pool);
+        this.secondaryStorageURL = secondaryStorageURL;
+        this.toSecondaryStorage = toSecondaryStorage;
+        setWait(wait);
+        this.executeInSequence = executeInSequence;
+    }
 
     @Override
     public boolean executeInSequence() {
         return executeInSequence;
     }
 
-	public String getVolumePath() {
-		return volumePath;
-	}
+    public String getVolumePath() {
+        return volumePath;
+    }
 
-	public long getVolumeId() {
-		return volumeId;
-	}
+    public long getVolumeId() {
+        return volumeId;
+    }
 
-	public StorageFilerTO getPool() {
-		return pool;
-	}
+    public StorageFilerTO getPool() {
+        return pool;
+    }
 
-	public String getSecondaryStorageURL() {
-		return secondaryStorageURL;
-	}
+    public String getSecondaryStorageURL() {
+        return secondaryStorageURL;
+    }
 
-	public boolean toSecondaryStorage() {
-		return toSecondaryStorage;
-	}
+    public boolean toSecondaryStorage() {
+        return toSecondaryStorage;
+    }
 
-	public String getVmName() {
-		return vmName;
-	}
+    public String getVmName() {
+        return vmName;
+    }
 }

@@ -18,18 +18,21 @@
  */
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 public class StorageProviderResponse extends BaseResponse {
-    @SerializedName("name") @Param(description="the name of the storage provider")
+    @SerializedName("name")
+    @Param(description = "the name of the storage provider")
     private String name;
-    
-    @SerializedName("type") @Param(description="the type of the storage provider: primary or image provider")
+
+    @SerializedName("type")
+    @Param(description = "the type of the storage provider: primary or image provider")
     private String type;
-    
+
     /**
      * @return the type
      */
@@ -58,5 +61,4 @@ public class StorageProviderResponse extends BaseResponse {
         this.name = name;
     }
 
-  
 }

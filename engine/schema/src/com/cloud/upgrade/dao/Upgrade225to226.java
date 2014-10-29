@@ -37,7 +37,7 @@ public class Upgrade225to226 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find the upgrade script, schema-225to226.sql");
         }
 
-        return new File[] { new File(file) };
+        return new File[] {new File(file)};
     }
 
     @Override
@@ -53,7 +53,7 @@ public class Upgrade225to226 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "2.2.5", "2.2.5" };
+        return new String[] {"2.2.5", "2.2.5"};
     }
 
     @Override

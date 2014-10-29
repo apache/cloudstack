@@ -18,6 +18,13 @@
  */
 package com.cloud.ha;
 
+import java.util.List;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckOnHostCommand;
@@ -28,13 +35,8 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
-import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
-import javax.inject.Inject;
-import java.util.List;
-
-@Local(value=Investigator.class)
+@Local(value = Investigator.class)
 public class KVMInvestigator extends AdapterBase implements Investigator {
     private final static Logger s_logger = Logger.getLogger(KVMInvestigator.class);
     @Inject
@@ -43,6 +45,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
     AgentManager _agentMgr;
     @Inject
     ResourceManager _resourceMgr;
+
     @Override
     public Boolean isVmAlive(com.cloud.vm.VirtualMachine vm, Host host) {
         Status status = isAgentAlive(host);
@@ -54,13 +57,13 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
 
     @Override
     public Status isAgentAlive(Host agent) {
-        if (agent.getHypervisorType() != Hypervisor.HypervisorType.KVM) {
+        if (agent.getHypervisorType() != Hypervisor.HypervisorType.KVM && agent.getHypervisorType() != Hypervisor.HypervisorType.LXC) {
             return null;
         }
         CheckOnHostCommand cmd = new CheckOnHostCommand(agent);
         List<HostVO> neighbors = _resourceMgr.listHostsInClusterByStatus(agent.getClusterId(), Status.Up);
         for (HostVO neighbor : neighbors) {
-            if (neighbor.getId() == agent.getId() || neighbor.getHypervisorType() != Hypervisor.HypervisorType.KVM) {
+            if (neighbor.getId() == agent.getId() || (neighbor.getHypervisorType() != Hypervisor.HypervisorType.KVM && neighbor.getHypervisorType() != Hypervisor.HypervisorType.LXC)) {
                 continue;
             }
             try {

@@ -20,28 +20,28 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackNetworkServiceCapability {
-	@SerializedName(ApiConstants.NAME)
-	private String name;
-	@SerializedName(ApiConstants.VALUE)
-	private String value;
-	
-	/**
-	 * 
-	 */
-	public CloudStackNetworkServiceCapability() {
-	}
+    @SerializedName(ApiConstants.NAME)
+    private String name;
+    @SerializedName(ApiConstants.VALUE)
+    private String value;
 
-	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
+    /**
+     *
+     */
+    public CloudStackNetworkServiceCapability() {
+    }
 
-	/**
-	 * @return the value
-	 */
-	public String getValue() {
-		return value;
-	}
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * @return the value
+     */
+    public String getValue() {
+        return value;
+    }
 }

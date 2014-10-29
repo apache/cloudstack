@@ -17,43 +17,43 @@
 package com.cloud.bridge.service;
 
 public class UserInfo {
-	private String accessKey;
-	private String secretKey;
-	private String canonicalUserId;
-	private String description;
+    private String accessKey;
+    private String secretKey;
+    private String canonicalUserId;
+    private String description;
 
-	public UserInfo() {
-	}
-	
-	public String getAccessKey() {
-		return accessKey;
-	}
-	
-	public void setAccessKey(String accessKey) {
-		this.accessKey = accessKey;
-	}
-	
-	public String getSecretKey() {
-		return secretKey;
-	}
-	
-	public void setSecretKey(String secretKey) {
-		this.secretKey = secretKey;
-	}
-	
-	public String getCanonicalUserId() {
-		return canonicalUserId;
-	}
-	
-	public void setCanonicalUserId(String canonicalUserId) {
-		this.canonicalUserId = canonicalUserId;
-	}
-	
-	public String getDescription() {
-		return description;
-	}
-	
-	public void setDescription(String discription) {
-		this.description = discription;
-	}
+    public UserInfo() {
+    }
+
+    public String getAccessKey() {
+        return accessKey;
+    }
+
+    public void setAccessKey(String accessKey) {
+        this.accessKey = accessKey;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
+    }
+
+    public String getCanonicalUserId() {
+        return canonicalUserId;
+    }
+
+    public void setCanonicalUserId(String canonicalUserId) {
+        this.canonicalUserId = canonicalUserId;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String discription) {
+        this.description = discription;
+    }
 }

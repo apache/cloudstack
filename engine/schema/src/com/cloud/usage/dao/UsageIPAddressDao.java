@@ -23,6 +23,7 @@ import com.cloud.usage.UsageIPAddressVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface UsageIPAddressDao extends GenericDao<UsageIPAddressVO, Long> {
-	public void update(UsageIPAddressVO usage);
-	public List<UsageIPAddressVO> getUsageRecords(Long accountId, Long domainId, Date startDate, Date endDate);
+    public void update(UsageIPAddressVO usage);
+
+    public List<UsageIPAddressVO> getUsageRecords(Long accountId, Long domainId, Date startDate, Date endDate);
 }

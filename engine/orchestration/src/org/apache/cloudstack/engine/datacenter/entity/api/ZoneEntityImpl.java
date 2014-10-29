@@ -23,29 +23,29 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineDataCenterVO;
+
 import com.cloud.utils.fsm.FiniteStateObject;
 import com.cloud.utils.fsm.NoTransitionException;
-
 
 @Path("/zone/{id}")
 public class ZoneEntityImpl implements ZoneEntity, FiniteStateObject<DataCenterResourceEntity.State, DataCenterResourceEntity.State.Event> {
 
+    private DataCenterResourceManager manager;
 
-	private DataCenterResourceManager manager;
+    private EngineDataCenterVO dataCenterVO;
 
-	private EngineDataCenterVO dataCenterVO;
-
-
-	public ZoneEntityImpl(String dataCenterId, DataCenterResourceManager manager) {
-		this.manager = manager;
-	this.dataCenterVO = this.manager.loadDataCenter(dataCenterId);
+    public ZoneEntityImpl(String dataCenterId, DataCenterResourceManager manager) {
+        this.manager = manager;
+        this.dataCenterVO = this.manager.loadDataCenter(dataCenterId);
     }
 
-	@Override
+    @Override
     @GET
     public String getUuid() {
         return dataCenterVO.getUuid();
@@ -53,47 +53,47 @@ public class ZoneEntityImpl implements ZoneEntity, FiniteStateObject<DataCenterR
 
     @Override
     public long getId() {
-	return dataCenterVO.getId();
+        return dataCenterVO.getId();
     }
 
     @Override
     public boolean enable() {
-	try {
-			manager.changeState(this, Event.EnableRequest);
-		} catch (NoTransitionException e) {
-			return false;
-		}
-	return true;
+        try {
+            manager.changeState(this, Event.EnableRequest);
+        } catch (NoTransitionException e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean disable() {
-	try {
-			manager.changeState(this, Event.DisableRequest);
-		} catch (NoTransitionException e) {
-			return false;
-		}
-	return true;
+        try {
+            manager.changeState(this, Event.DisableRequest);
+        } catch (NoTransitionException e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean deactivate() {
-	try {
-			manager.changeState(this, Event.DeactivateRequest);
-		} catch (NoTransitionException e) {
-			return false;
-		}
-	return true;
+        try {
+            manager.changeState(this, Event.DeactivateRequest);
+        } catch (NoTransitionException e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean reactivate() {
-	try {
-			manager.changeState(this, Event.ActivatedRequest);
-		} catch (NoTransitionException e) {
-			return false;
-		}
-	return true;
+        try {
+            manager.changeState(this, Event.ActivatedRequest);
+        } catch (NoTransitionException e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -115,7 +115,7 @@ public class ZoneEntityImpl implements ZoneEntity, FiniteStateObject<DataCenterR
 
     @Override
     public Date getLastUpdatedTime() {
-        return  dataCenterVO.getLastUpdated();
+        return dataCenterVO.getLastUpdated();
     }
 
     @Override
@@ -123,24 +123,22 @@ public class ZoneEntityImpl implements ZoneEntity, FiniteStateObject<DataCenterR
         return dataCenterVO.getOwner();
     }
 
-
     public void setOwner(String owner) {
-	dataCenterVO.setOwner(owner);
+        dataCenterVO.setOwner(owner);
     }
 
     @Override
     public Map<String, String> getDetails() {
-	return dataCenterVO.getDetails();
-	}
-
-    public void setDetails(Map<String,String> details) {
-	dataCenterVO.setDetails(details);
+        return dataCenterVO.getDetails();
     }
 
+    public void setDetails(Map<String, String> details) {
+        dataCenterVO.setDetails(details);
+    }
 
     @Override
     public void addDetail(String name, String value) {
-	dataCenterVO.setDetail(name, value);
+        dataCenterVO.setDetail(name, value);
     }
 
     @Override
@@ -165,22 +163,21 @@ public class ZoneEntityImpl implements ZoneEntity, FiniteStateObject<DataCenterR
         return dataCenterVO.getState();
     }
 
-
     @Override
     public List<PodEntity> listPods() {
         // TODO Auto-generated method stub
         return null;
     }
 
-	@Override
-	public void setState(State state) {
-		//use FSM to set state.
-	}
+    @Override
+    public void setState(State state) {
+        //use FSM to set state.
+    }
 
-	@Override
-	public void persist() {
-		manager.saveDataCenter(dataCenterVO);
-	}
+    @Override
+    public void persist() {
+        manager.saveDataCenter(dataCenterVO);
+    }
 
     @Override
     public String getName() {
@@ -195,7 +192,7 @@ public class ZoneEntityImpl implements ZoneEntity, FiniteStateObject<DataCenterR
         return podIds;
     }
 
-	public void setName(String name) {
-		dataCenterVO.setName(name);
-	}
+    public void setName(String name) {
+        dataCenterVO.setName(name);
+    }
 }

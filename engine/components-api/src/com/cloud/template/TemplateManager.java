@@ -24,7 +24,6 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.dc.DataCenterVO;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.StoragePool;
@@ -32,6 +31,7 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.Pair;
+import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * TemplateManager manages the templates stored on secondary storage. It is responsible for creating private/public templates.
@@ -61,7 +61,6 @@ public interface TemplateManager {
      * @param srcSecStore
      * @param destZone
      * @return true if success
-     * @throws InternalErrorException
      * @throws StorageUnavailableException
      * @throws ResourceAllocationException
      */
@@ -103,6 +102,8 @@ public interface TemplateManager {
 
     DataStore getImageStore(long zoneId, long tmpltId);
 
+    DataStore getImageStore(long tmpltId);
+
     Long getTemplateSize(long templateId, long zoneId);
 
     DataStore getImageStore(String storeUuid, Long zoneId);
@@ -114,6 +115,14 @@ public interface TemplateManager {
     TemplateInfo prepareIso(long isoId, long dcId);
 
 
+    /**
+     * Adds ISO definition to given vm profile
+     *
+     * @param VirtualMachineProfile
+     */
+    void prepareIsoForVmProfile(VirtualMachineProfile profile);
 
+    public static final String MESSAGE_REGISTER_PUBLIC_TEMPLATE_EVENT = "Message.RegisterPublicTemplate.Event";
+    public static final String MESSAGE_RESET_TEMPLATE_PERMISSION_EVENT = "Message.ResetTemplatePermission.Event";
 
 }

@@ -22,6 +22,9 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
+import com.cloud.host.dao.HostDao;
+import com.cloud.storage.Upload;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -47,12 +50,13 @@ public class CloudStackImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     @Inject
     ConfigurationDao _configDao;
     @Inject
+    HostDao _hostDao;
+    @Inject
     EndPointSelector _epSelector;
-
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
-        ImageStoreImpl nfsStore = (ImageStoreImpl) store;
+        ImageStoreImpl nfsStore = (ImageStoreImpl)store;
         NfsTO nfsTO = new NfsTO();
         nfsTO.setRole(store.getRole());
         nfsTO.setUrl(nfsStore.getUri());
@@ -66,7 +70,7 @@ public class CloudStackImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         // Create Symlink at ssvm
         String path = installPath;
         String uuid = UUID.randomUUID().toString() + "." + format.getFileExtension();
-        CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity) store).getMountPoint(), path, uuid, dataObject.getTO());
+        CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)store).getMountPoint(), path, uuid, dataObject.getTO());
         Answer ans = null;
         if (ep == null) {
             String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
@@ -84,21 +88,54 @@ public class CloudStackImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         return generateCopyUrl(ep.getPublicAddr(), uuid);
     }
 
-    private String generateCopyUrl(String ipAddress, String uuid){
+    private String generateCopyUrl(String ipAddress, String uuid) {
 
         String hostname = ipAddress;
         String scheme = "http";
         boolean _sslCopy = false;
         String sslCfg = _configDao.getValue(Config.SecStorageEncryptCopy.toString());
-        if ( sslCfg != null ){
+        String _ssvmUrlDomain = _configDao.getValue("secstorage.ssl.cert.domain");
+        if (sslCfg != null) {
             _sslCopy = Boolean.parseBoolean(sslCfg);
         }
+        if(_sslCopy && (_ssvmUrlDomain == null || _ssvmUrlDomain.isEmpty())){
+            s_logger.warn("Empty secondary storage url domain, ignoring SSL");
+            _sslCopy = false;
+        }
         if (_sslCopy) {
-            hostname = ipAddress.replace(".", "-");
-            hostname = hostname + ".realhostip.com";
+            if(_ssvmUrlDomain.startsWith("*")) {
+                hostname = ipAddress.replace(".", "-");
+                hostname = hostname + _ssvmUrlDomain.substring(1);
+            } else {
+                hostname = _ssvmUrlDomain;
+            }
             scheme = "https";
         }
         return scheme + "://" + hostname + "/userdata/" + uuid;
+    }
+
+    @Override
+    public void deleteEntityExtractUrl(DataStore store, String installPath, String downloadUrl, Upload.Type entityType) {
+        // find an endpoint to send command based on the ssvm on which the url was created.
+        EndPoint ep = _epSelector.select(store, downloadUrl);
+
+        // Delete Symlink at ssvm. In case of volume also delete the volume.
+        DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(installPath, entityType, downloadUrl, ((ImageStoreEntity) store).getMountPoint());
+
+        Answer ans = null;
+        if (ep == null) {
+            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            ans = new Answer(cmd, false, errMsg);
+        } else {
+            ans = ep.sendMessage(cmd);
+        }
+        if (ans == null || !ans.getResult()) {
+            String errorString = "Unable to delete the url " + downloadUrl + " for path " + installPath + " on ssvm, " + ans.getDetails();
+            s_logger.error(errorString);
+            throw new CloudRuntimeException(errorString);
+        }
+
     }
 
 }

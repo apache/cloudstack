@@ -17,7 +17,8 @@
 
 import json
 import uuid
-from flask import Flask
+from flask import Flask,request,make_response
+from beaker.middleware import SessionMiddleware
 app = Flask(__name__)
 
 tenant_networks = []
@@ -25,50 +26,59 @@ tenant_ports = []
 
 @app.route("/ws.v1/login", methods=["POST",])
 def login():
-	response.content_type = "application/json"
-	return ""
+	assert "username" in request.form
+	assert "password" in request.form
+        request.environ["beaker.session"]["login"] = True
+	res = make_response("", 200)
+	res.headers["Content-type"] = "application/json"
+	return res
 
 @app.route("/ssp.v1/tenant-networks", methods=["POST",])
 def create_tenant_network():
-	response.content_type = "application/json"
-	response.status = 201
+        if "login" not in request.environ["beaker.session"]:
+                return make_response("", 401)
 	obj = request.json
 	obj["uuid"] = str(uuid.uuid1())
 	tenant_networks.append(obj)
-	return json.dumps(obj)
+	res = make_response(json.dumps(obj), 201)
+	res.headers["Content-type"] = "application/json"
+	return res
 
 @app.route("/ssp.v1/tenant-networks/<tenant_net_uuid>", methods=["DELETE",])
 def delete_tenant_network(tenant_net_uuid):
+        if "login" not in request.environ["beaker.session"]:
+                return make_response("", 401)
 	for net in tenant_networks:
 		if net["uuid"] == tenant_net_uuid:
 			tenant_networks.remove(net)
-			response.status = 204
-			return ""
-	response.status = 404
-	return ""
+			return make_response("", 204)
+	return make_response("", 404)
 
 @app.route("/ssp.v1/tenant-ports", methods=["POST",])
 def create_tenant_port():
-	response.content_type = "application/json"
-	response.status = 201
+        if "login" not in request.environ["beaker.session"]:
+                return make_response("", 401)
 	obj = request.json
 	obj["uuid"] = str(uuid.uuid1())
 	tenant_ports.append(obj)
-	return json.dumps(obj)
+	res = make_response(json.dumps(obj), 201)
+	res.headers["Content-type"] = "application/json"
+	return res
 
 @app.route("/ssp.v1/tenant-ports/<tenant_port_uuid>", methods=["DELETE",])
 def delete_tenant_port(tenant_port_uuid):
+        if "login" not in request.environ["beaker.session"]:
+                return make_response("", 401)
 	for port in tenant_ports:
 		if port["uuid"] == tenant_port_uuid:
 			tenant_ports.remove(port)
-			response.status = 204
-			return ""
-	response.status = 404
-	return ""
+			return make_response("", 204)
+	return make_response("", 404)
 
 @app.route("/ssp.v1/tenant-ports/<tenant_port_uuid>", methods=["PUT",])
 def update_tenant_port(tenant_port_uuid):
-	response.content_type = "application/json"
+        if "login" not in request.environ["beaker.session"]:
+                return make_response("", 401)
 	for port in tenant_ports:
 		if port["uuid"] == tenant_port_uuid:
 			obj = request.json
@@ -76,10 +86,14 @@ def update_tenant_port(tenant_port_uuid):
 			obj["vlan_id"] = 100
 			tenant_ports.remove(port)
 			tenant_ports.append(obj)
-			response.status = 200
-			return json.dumps(obj)
-	response.status = 404
-	return ""
+			res = make_response(json.dumps(obj), 200)
+			res.headers["Content-type"] = "application/json"
+			return res
+	return make_response("", 404)
 
 if __name__=="__main__":
+    app.wsgi_app = SessionMiddleware(app.wsgi_app, {
+       "session.auto":True,
+       "session.type":"cookie",
+       "session.validate_key":"hoge"})
     app.run(host="0.0.0.0", port=9080, debug=True)

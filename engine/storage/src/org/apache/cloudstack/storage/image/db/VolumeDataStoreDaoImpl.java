@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.image.db;
 
+import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -50,7 +51,10 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     private SearchBuilder<VolumeDataStoreVO> storeSearch;
     private SearchBuilder<VolumeDataStoreVO> cacheSearch;
     private SearchBuilder<VolumeDataStoreVO> storeVolumeSearch;
-    
+    private SearchBuilder<VolumeDataStoreVO> downloadVolumeSearch;
+    private static final String EXPIRE_DOWNLOAD_URLS_FOR_ZONE = "update volume_store_ref set download_url_created=? where store_id in (select id from image_store where data_center_id=?)";
+
+
     @Inject
     DataStoreManager storeMgr;
 
@@ -85,12 +89,18 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         updateStateSearch.and("state", updateStateSearch.entity().getState(), Op.EQ);
         updateStateSearch.and("updatedCount", updateStateSearch.entity().getUpdatedCount(), Op.EQ);
         updateStateSearch.done();
+
+        downloadVolumeSearch = createSearchBuilder();
+        downloadVolumeSearch.and("download_url", downloadVolumeSearch.entity().getExtractUrl(), Op.NNULL);
+        downloadVolumeSearch.and("destroyed", downloadVolumeSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        downloadVolumeSearch.done();
+
         return true;
     }
 
     @Override
     public boolean updateState(State currentState, Event event, State nextState, DataObjectInStore vo, Object data) {
-        VolumeDataStoreVO dataObj = (VolumeDataStoreVO) vo;
+        VolumeDataStoreVO dataObj = (VolumeDataStoreVO)vo;
         Long oldUpdated = dataObj.getUpdatedCount();
         Date oldUpdatedTime = dataObj.getUpdated();
 
@@ -113,18 +123,36 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
             VolumeDataStoreVO dbVol = findByIdIncludingRemoved(dataObj.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(dataObj.toString());
-                str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState())
-                .append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
-                .append(dbVol.getUpdated());
-                str.append(": New Data={id=").append(dataObj.getId()).append("; state=").append(nextState)
-                .append("; event=").append(event).append("; updatecount=").append(dataObj.getUpdatedCount())
-                .append("; updatedTime=").append(dataObj.getUpdated());
-                str.append(": stale Data={id=").append(dataObj.getId()).append("; state=").append(currentState)
-                .append("; event=").append(event).append("; updatecount=").append(oldUpdated)
-                .append("; updatedTime=").append(oldUpdatedTime);
+                str.append(": DB Data={id=")
+                    .append(dbVol.getId())
+                    .append("; state=")
+                    .append(dbVol.getState())
+                    .append("; updatecount=")
+                    .append(dbVol.getUpdatedCount())
+                    .append(";updatedTime=")
+                    .append(dbVol.getUpdated());
+                str.append(": New Data={id=")
+                    .append(dataObj.getId())
+                    .append("; state=")
+                    .append(nextState)
+                    .append("; event=")
+                    .append(event)
+                    .append("; updatecount=")
+                    .append(dataObj.getUpdatedCount())
+                    .append("; updatedTime=")
+                    .append(dataObj.getUpdated());
+                str.append(": stale Data={id=")
+                    .append(dataObj.getId())
+                    .append("; state=")
+                    .append(currentState)
+                    .append("; event=")
+                    .append(event)
+                    .append("; updatecount=")
+                    .append(oldUpdated)
+                    .append("; updatedTime=")
+                    .append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update objectIndatastore: id=" + dataObj.getId()
-                        + ", as there is no such object exists in the database anymore");
+                s_logger.debug("Unable to update objectIndatastore: id=" + dataObj.getId() + ", as there is no such object exists in the database anymore");
             }
         }
         return rows > 0;
@@ -232,6 +260,31 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
                 vol.incrRefCnt();
                 this.update(vol.getId(), vol);
             }
+        }
+
+    }
+
+    @Override
+    public List<VolumeDataStoreVO> listVolumeDownloadUrls() {
+        SearchCriteria<VolumeDataStoreVO> sc = downloadVolumeSearch.create();
+        sc.setParameters("destroyed", false);
+        return listBy(sc);
+    }
+
+    @Override
+    public void expireDnldUrlsForZone(Long dcId){
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        try {
+            txn.start();
+            pstmt = txn.prepareAutoCloseStatement(EXPIRE_DOWNLOAD_URLS_FOR_ZONE);
+            pstmt.setDate(1, new java.sql.Date(-1l));// Set the time before the epoch time.
+            pstmt.setLong(2, dcId);
+            pstmt.executeUpdate();
+            txn.commit();
+        } catch (Exception e) {
+            txn.rollback();
+            s_logger.warn("Failed expiring download urls for dcId: " + dcId, e);
         }
 
     }

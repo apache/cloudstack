@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.spring.module.context;
 
+import java.util.Arrays;
+
 import org.springframework.context.support.AbstractXmlApplicationContext;
 import org.springframework.core.io.Resource;
 
@@ -50,6 +52,11 @@ public class ResourceApplicationContext extends AbstractXmlApplicationContext {
 
     public void setApplicationName(String applicationName) {
         this.applicationName = applicationName;
+    }
+
+    @Override
+    public String toString() {
+        return "ResourceApplicationContext [applicationName=" + applicationName + ", configResources=" + Arrays.toString(configResources) + "]";
     }
 
 }

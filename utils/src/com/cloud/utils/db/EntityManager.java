@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils.db;
 
 import java.io.Serializable;
@@ -44,6 +47,15 @@ public interface EntityManager {
     public <T> T findByUuid(Class<T> entityType, String uuid);
 
     /**
+     * Finds a unique entity by uuid string, including those removed entries
+     * @param <T> entity class
+     * @param entityType type of entity you're looking for.
+     * @param uuid the unique id
+     * @return T if found, null if not.
+     */
+    public <T> T findByUuidIncludingRemoved(Class<T> entityType, String uuid);
+
+    /**
      * Finds an entity by external id which is always String
      * @param <T> entity class
      * @param entityType type of entity you're looking for.
@@ -61,5 +73,12 @@ public interface EntityManager {
     public <T> List<? extends T> list(Class<T> entityType);
 
     public <T, K extends Serializable> void remove(Class<T> entityType, K id);
-}
 
+    public <T, K extends Serializable> T findByIdIncludingRemoved(Class<T> entityType, K id);
+
+    public static final String MESSAGE_REMOVE_ENTITY_EVENT = "Message.RemoveEntity.Event";
+
+    public static final String MESSAGE_GRANT_ENTITY_EVENT = "Message.GrantEntity.Event";
+    public static final String MESSAGE_REVOKE_ENTITY_EVENT = "Message.RevokeEntity.Event";
+    public static final String MESSAGE_ADD_DOMAIN_WIDE_ENTITY_EVENT = "Message.AddDomainWideEntity.Event";
+}

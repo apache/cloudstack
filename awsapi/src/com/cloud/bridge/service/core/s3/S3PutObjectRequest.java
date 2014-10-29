@@ -19,89 +19,89 @@ package com.cloud.bridge.service.core.s3;
 import java.io.InputStream;
 
 public class S3PutObjectRequest extends S3Request {
-	protected String bucketName;
-	protected String key;
-	protected String rawTimestamp;   // -> original is needed for authentication
-	protected String storageClass;
-	protected String credential;
-	protected long contentLength;
-	protected S3MetaDataEntry[] metaEntries;
-	protected S3AccessControlList acl;
-	protected InputStream data;
-	
-	public S3PutObjectRequest() {
-		super();
-	}
-	
-	public String getBucketName() {
-		return bucketName;
-	}
-	
-	public void setBucketName(String bucketName) {
-		this.bucketName = bucketName;
-	}
-	
-	public String getKey() {
-		return key;
-	}
-	
-	public void setKey(String key) {
-		this.key = key;
-	}
-	
-	public long getContentLength() {
-		return contentLength;
-	}
-	
-	public void setContentLength(long contentLength) {
-		this.contentLength = contentLength;
-	}
-	
-	public S3MetaDataEntry[] getMetaEntries() {
-		return metaEntries;
-	}
-	
-	public void setMetaEntries(S3MetaDataEntry[] metaEntries) {
-		this.metaEntries = metaEntries;
-	}
-	
-	public S3AccessControlList getAcl() {
-		return acl;
-	}
-	
-	public void setAcl(S3AccessControlList acl) {
-		this.acl = acl;
-	}
-	
-	public InputStream getInputStream() {
-		return data;
-	}
-	
-	public void setData(InputStream is) {
-		this.data = is;
-	}
-	
-	public String getStorageClass() {
-		return storageClass;
-	}
-	
-	public void setStorageClass(String storageClass) {
-		this.storageClass = storageClass;
-	}
+    protected String bucketName;
+    protected String key;
+    protected String rawTimestamp;   // -> original is needed for authentication
+    protected String storageClass;
+    protected String credential;
+    protected long contentLength;
+    protected S3MetaDataEntry[] metaEntries;
+    protected S3AccessControlList acl;
+    protected InputStream data;
 
-	public String getCredential() {
-		return credential;
-	}
-	
-	public void setCredential(String credential) {
-		this.credential = credential;
-	}
-	
-	public String getRawTimestamp() {
-		return rawTimestamp;
-	}
-	
-	public void setRawTimestamp(String rawTimestamp) {
-		this.rawTimestamp = rawTimestamp;
-	}
+    public S3PutObjectRequest() {
+        super();
+    }
+
+    public String getBucketName() {
+        return bucketName;
+    }
+
+    public void setBucketName(String bucketName) {
+        this.bucketName = bucketName;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public long getContentLength() {
+        return contentLength;
+    }
+
+    public void setContentLength(long contentLength) {
+        this.contentLength = contentLength;
+    }
+
+    public S3MetaDataEntry[] getMetaEntries() {
+        return metaEntries;
+    }
+
+    public void setMetaEntries(S3MetaDataEntry[] metaEntries) {
+        this.metaEntries = metaEntries;
+    }
+
+    public S3AccessControlList getAcl() {
+        return acl;
+    }
+
+    public void setAcl(S3AccessControlList acl) {
+        this.acl = acl;
+    }
+
+    public InputStream getInputStream() {
+        return data;
+    }
+
+    public void setData(InputStream is) {
+        this.data = is;
+    }
+
+    public String getStorageClass() {
+        return storageClass;
+    }
+
+    public void setStorageClass(String storageClass) {
+        this.storageClass = storageClass;
+    }
+
+    public String getCredential() {
+        return credential;
+    }
+
+    public void setCredential(String credential) {
+        this.credential = credential;
+    }
+
+    public String getRawTimestamp() {
+        return rawTimestamp;
+    }
+
+    public void setRawTimestamp(String rawTimestamp) {
+        this.rawTimestamp = rawTimestamp;
+    }
 }

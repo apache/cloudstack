@@ -18,8 +18,9 @@ package org.apache.cloudstack.storage.test;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;

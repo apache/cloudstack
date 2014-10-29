@@ -30,73 +30,86 @@ import org.apache.cloudstack.api.InternalIdentity;
 import com.cloud.utils.db.Encrypt;
 
 @Entity
-@Table(name="ucs_manager")
+@Table(name = "ucs_manager")
 public class UcsManagerVO implements InternalIdentity, Identity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
-	private long id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private long id;
 
-    @Column(name="zone_id")
-	private long zoneId;
+    @Column(name = "zone_id")
+    private long zoneId;
 
-    @Column(name="uuid")
-	private String uuid;
+    @Column(name = "uuid")
+    private String uuid;
 
-    @Column(name="name")
-	private String name;
+    @Column(name = "name")
+    private String name;
 
-    @Column(name="url")
-	private String url;
+    @Column(name = "url")
+    private String url;
 
-    @Column(name="username")
-	private String username;
+    @Column(name = "username")
+    private String username;
 
     @Encrypt
-    @Column(name="password")
-	private String password;
+    @Column(name = "password")
+    private String password;
 
-	@Override
+    @Override
     public long getId() {
-		return id;
-	}
-	public void setId(long id) {
-		this.id = id;
-	}
-	@Override
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    @Override
     public String getUuid() {
-		return uuid;
-	}
-	public void setUuid(String uuid) {
-		this.uuid = uuid;
-	}
-	public String getUrl() {
-		return url;
-	}
-	public void setUrl(String url) {
-		this.url = url;
-	}
-	public String getUsername() {
-		return username;
-	}
-	public void setUsername(String username) {
-		this.username = username;
-	}
-	public String getPassword() {
-		return password;
-	}
-	public void setPassword(String password) {
-		this.password = password;
-	}
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     public long getZoneId() {
         return zoneId;
     }
+
     public void setZoneId(long zoneId) {
         this.zoneId = zoneId;
     }
+
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }

@@ -19,11 +19,11 @@
 
 package org.apache.cloudstack.storage.datastore.driver;
 
-
 import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -63,13 +63,12 @@ public class SimulatorImageStoreDriverImpl extends BaseImageStoreDriverImpl {
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
-        ImageStoreImpl nfsStore = (ImageStoreImpl) store;
+        ImageStoreImpl nfsStore = (ImageStoreImpl)store;
         NfsTO nfsTO = new NfsTO();
         nfsTO.setRole(store.getRole());
         nfsTO.setUrl(nfsStore.getUri());
         return nfsTO;
     }
-
 
     @Override
     public void createAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
@@ -80,30 +79,31 @@ public class SimulatorImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         }
     }
 
+    @Override
+    public void deleteAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CommandResult> callback) {
+        callback.complete(new CommandResult());
+    }
+
     protected void createTemplate(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
         CreateContext<CreateCmdResult> context = new CreateContext<CreateCmdResult>(callback, data);
-        AsyncCallbackDispatcher<SimulatorImageStoreDriverImpl, DownloadAnswer> caller = AsyncCallbackDispatcher
-                .create(this);
+        AsyncCallbackDispatcher<SimulatorImageStoreDriverImpl, DownloadAnswer> caller = AsyncCallbackDispatcher.create(this);
         caller.setContext(context);
         caller.setCallback(caller.getTarget().createTemplateAsyncCallback(null, null));
-        String path =  UUID.randomUUID().toString();
+        String path = UUID.randomUUID().toString();
         Long size = new Long(5 * 1024L * 1024L);
-        DownloadAnswer answer = new DownloadAnswer(null, 100, null, VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
-                path, path, size, size, null);
+        DownloadAnswer answer = new DownloadAnswer(null, 100, null, VMTemplateStorageResourceAssoc.Status.DOWNLOADED, path, path, size, size, null);
         caller.complete(answer);
         return;
     }
 
     protected void createVolume(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
         CreateContext<CreateCmdResult> context = new CreateContext<CreateCmdResult>(callback, data);
-        AsyncCallbackDispatcher<SimulatorImageStoreDriverImpl, DownloadAnswer> caller = AsyncCallbackDispatcher
-                .create(this);
+        AsyncCallbackDispatcher<SimulatorImageStoreDriverImpl, DownloadAnswer> caller = AsyncCallbackDispatcher.create(this);
         caller.setContext(context);
         caller.setCallback(caller.getTarget().createVolumeAsyncCallback(null, null));
-        String path =  UUID.randomUUID().toString();
+        String path = UUID.randomUUID().toString();
         Long size = new Long(5 * 1024L * 1024L);
-        DownloadAnswer answer = new DownloadAnswer(null, 100, null, VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
-                path, path, size, size, null);
+        DownloadAnswer answer = new DownloadAnswer(null, 100, null, VMTemplateStorageResourceAssoc.Status.DOWNLOADED, path, path, size, size, null);
         caller.complete(answer);
         return;
     }
@@ -123,7 +123,7 @@ public class SimulatorImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         return generateCopyUrl(ep.getPublicAddr(), uuid);
     }
 
-    private String generateCopyUrl(String ipAddress, String uuid){
+    private String generateCopyUrl(String ipAddress, String uuid) {
         String hostname = ipAddress;
         String scheme = "http";
         return scheme + "://" + hostname + "/userdata/" + uuid;

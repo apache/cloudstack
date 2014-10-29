@@ -27,55 +27,52 @@ import org.apache.cloudstack.framework.transport.TransportConnectResponsePdu;
 import org.apache.cloudstack.framework.transport.TransportPdu;
 
 public class ClientTransportConnection {
-	enum State {
-		Idle,
-		Connecting,
-		Open,
-		Closing
-	}
-	
-	private ClientTransportProvider _provider;
+    enum State {
+        Idle, Connecting, Open, Closing
+    }
 
-	// TODO, use state machine
-	private State _state = State.Idle;
-	
-	private TransportAddress _connectionTpAddress;
-	private List<TransportPdu> _outputQueue = new ArrayList<TransportPdu>(); 
-	
-	public ClientTransportConnection(ClientTransportProvider provider) {
-		_provider = provider;
-	}
-	
-	public void connect(String serverAddress, int serverPort) {
-		boolean doConnect = false;
-		synchronized(this) {
-			if(_state == State.Idle) {
-				setState(State.Connecting);
-				doConnect = true;
-			}
-		}
-		
-		if(doConnect) {
-			// ???
-		}
-	}
-	
-	public void handleConnectResponsePdu(TransportConnectResponsePdu pdu) {
-		// TODO assume it is always succeeds
-		_connectionTpAddress = TransportAddress.fromAddressString(pdu.getDestAddress());
-		
-		// ???
-	}
-	
-	public void handleAttachResponsePdu(TransportAttachResponsePdu pdu) {
-		// ???
-	}
-	
-	private void setState(State state) {
-		synchronized(this) {
-			if(_state != state) {
-				_state = state;
-			}
-		}
-	}
+    private ClientTransportProvider _provider;
+
+    // TODO, use state machine
+    private State _state = State.Idle;
+
+    private TransportAddress _connectionTpAddress;
+    private List<TransportPdu> _outputQueue = new ArrayList<TransportPdu>();
+
+    public ClientTransportConnection(ClientTransportProvider provider) {
+        _provider = provider;
+    }
+
+    public void connect(String serverAddress, int serverPort) {
+        boolean doConnect = false;
+        synchronized (this) {
+            if (_state == State.Idle) {
+                setState(State.Connecting);
+                doConnect = true;
+            }
+        }
+
+        if (doConnect) {
+            // ???
+        }
+    }
+
+    public void handleConnectResponsePdu(TransportConnectResponsePdu pdu) {
+        // TODO assume it is always succeeds
+        _connectionTpAddress = TransportAddress.fromAddressString(pdu.getDestAddress());
+
+        // ???
+    }
+
+    public void handleAttachResponsePdu(TransportAttachResponsePdu pdu) {
+        // ???
+    }
+
+    private void setState(State state) {
+        synchronized (this) {
+            if (_state != state) {
+                _state = state;
+            }
+        }
+    }
 }

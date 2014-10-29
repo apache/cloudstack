@@ -36,13 +36,12 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value=NetworkElement.class)
+@Local(value = NetworkElement.class)
 public class SecurityGroupElement extends AdapterBase implements NetworkElement {
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
-    
+
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
         return capabilities;
@@ -52,30 +51,31 @@ public class SecurityGroupElement extends AdapterBase implements NetworkElement 
     public Provider getProvider() {
         return Provider.SecurityGroupProvider;
     }
-    
+
     private static Map<Service, Map<Capability, String>> setCapabilities() {
         Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
 
         capabilities.put(Service.SecurityGroup, null);
-       
+
         return capabilities;
     }
 
     @Override
-    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException, InsufficientCapacityException {
         return true;
     }
 
-    @Override @DB
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest,
-            ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-       return true;
+    @Override
+    @DB
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        return true;
     }
 
     @Override
-    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         return true;
     }
 
@@ -95,7 +95,8 @@ public class SecurityGroupElement extends AdapterBase implements NetworkElement 
     }
 
     @Override
-    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         return true;
     }
 
@@ -103,7 +104,7 @@ public class SecurityGroupElement extends AdapterBase implements NetworkElement 
     public boolean canEnableIndividualServices() {
         return false;
     }
-    
+
     @Override
     public boolean verifyServicesCombination(Set<Service> services) {
         return true;

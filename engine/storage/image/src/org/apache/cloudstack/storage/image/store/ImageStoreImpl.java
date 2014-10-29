@@ -24,6 +24,9 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.Upload;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
@@ -39,7 +42,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.ImageStoreTO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -64,15 +66,13 @@ public class ImageStoreImpl implements ImageStoreEntity {
         super();
     }
 
-    protected void configure(ImageStoreVO dataStoreVO, ImageStoreDriver imageDataStoreDriver,
-            ImageStoreProvider provider) {
+    protected void configure(ImageStoreVO dataStoreVO, ImageStoreDriver imageDataStoreDriver, ImageStoreProvider provider) {
         this.driver = imageDataStoreDriver;
         this.imageDataStoreVO = dataStoreVO;
         this.provider = provider;
     }
 
-    public static ImageStoreEntity getDataStore(ImageStoreVO dataStoreVO, ImageStoreDriver imageDataStoreDriver,
-            ImageStoreProvider provider) {
+    public static ImageStoreEntity getDataStore(ImageStoreVO dataStoreVO, ImageStoreDriver imageDataStoreDriver, ImageStoreProvider provider) {
         ImageStoreImpl instance = ComponentContext.inject(ImageStoreImpl.class);
         instance.configure(dataStoreVO, imageDataStoreDriver, provider);
         return instance;
@@ -202,6 +202,11 @@ public class ImageStoreImpl implements ImageStoreEntity {
     @Override
     public String createEntityExtractUrl(String installPath, ImageFormat format, DataObject dataObject) {
         return driver.createEntityExtractUrl(this, installPath, format, dataObject);
+    }
+
+    @Override
+    public void deleteExtractUrl(String installPath, String url, Upload.Type entityType) {
+        driver.deleteEntityExtractUrl(this, installPath, url, entityType);
     }
 
 

@@ -75,31 +75,31 @@ public class UserVmData {
     private String publicIp;
     private String instanceName;
     private String sshPublicKey;
-    
+
     private boolean initialized;
-    
-    public UserVmData(){
+
+    public UserVmData() {
         securityGroupList = new HashSet<SecurityGroupData>();
         nics = new HashSet<NicData>();
         initialized = false;
     }
-    
-    public void setInitialized(){
+
+    public void setInitialized() {
         initialized = true;
     }
-    
-    public boolean isInitialized(){
+
+    public boolean isInitialized() {
         return initialized;
     }
-    
-    public NicData newNicData(){
+
+    public NicData newNicData() {
         return new NicData();
     }
-    
-    public SecurityGroupData newSecurityGroupData(){
+
+    public SecurityGroupData newSecurityGroupData() {
         return new SecurityGroupData();
     }
-        
+
     public String getHypervisor() {
         return hypervisor;
     }
@@ -111,7 +111,7 @@ public class UserVmData {
     public Long getObjectId() {
         return getId();
     }
-    
+
     public Long getId() {
         return id;
     }
@@ -127,13 +127,13 @@ public class UserVmData {
     public void setName(String name) {
         this.name = name;
     }
-    
+
     public String getUuid() {
-    	return this.uuid;
+        return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
 
     public String getDisplayName() {
@@ -375,7 +375,7 @@ public class UserVmData {
     public void setDiskKbsRead(Long diskKbsRead) {
         this.diskKbsRead = diskKbsRead;
     }
-    
+
     public Long getDiskKbsWrite() {
         return diskKbsWrite;
     }
@@ -383,7 +383,7 @@ public class UserVmData {
     public void setDiskKbsWrite(Long diskKbsWrite) {
         this.diskKbsWrite = diskKbsWrite;
     }
-    
+
     public Long getDiskIORead() {
         return diskIORead;
     }
@@ -391,7 +391,7 @@ public class UserVmData {
     public void setDiskIORead(Long diskIORead) {
         this.diskIORead = diskIORead;
     }
-    
+
     public Long getDiskIOWrite() {
         return diskIOWrite;
     }
@@ -399,7 +399,7 @@ public class UserVmData {
     public void setDiskIOWrite(Long diskIOWrite) {
         this.diskIOWrite = diskIOWrite;
     }
-    
+
     public Long getGuestOsId() {
         return guestOsId;
     }
@@ -463,7 +463,7 @@ public class UserVmData {
     public void addNic(NicData nics) {
         this.nics.add(nics);
     }
-    
+
     public Set<SecurityGroupData> getSecurityGroupList() {
         return securityGroupList;
     }
@@ -471,7 +471,6 @@ public class UserVmData {
     public void addSecurityGroup(SecurityGroupData securityGroups) {
         this.securityGroupList.add(securityGroups);
     }
-    
 
     public class NicData {
         private String objectName;
@@ -494,7 +493,7 @@ public class UserVmData {
         public void setObjectName(String objectName) {
             this.objectName = objectName;
         }
-        
+
         public Long getId() {
             return id;
         }
@@ -599,7 +598,7 @@ public class UserVmData {
                 return false;
             if (getClass() != obj.getClass())
                 return false;
-            NicData other = (NicData) obj;
+            NicData other = (NicData)obj;
             if (id == null) {
                 if (other.id != null)
                     return false;
@@ -620,7 +619,7 @@ public class UserVmData {
         private Long jobId;
         private Integer jobStatus;
         private List<SecurityGroupRuleResponse> securityGroupRules;
-        
+
         public String getObjectName() {
             return objectName;
         }
@@ -676,14 +675,15 @@ public class UserVmData {
         public void setDomainName(String domainName) {
             this.domainName = domainName;
         }
-/* FIXME : the below functions are not used, so commenting out later need to include egress list 
-        public List<SecurityGroupRuleResponse> getIngressRules() {
-            return securityGroupRules;
-        }
 
-        public void setIngressRules(List<SecurityGroupRuleResponse> securityGroupRules) {
-            this.securityGroupRules = securityGroupRules;
-        } */
+        /* FIXME : the below functions are not used, so commenting out later need to include egress list
+                public List<SecurityGroupRuleResponse> getIngressRules() {
+                    return securityGroupRules;
+                }
+
+                public void setIngressRules(List<SecurityGroupRuleResponse> securityGroupRules) {
+                    this.securityGroupRules = securityGroupRules;
+                } */
 
         @Override
         public int hashCode() {
@@ -701,7 +701,7 @@ public class UserVmData {
                 return false;
             if (getClass() != obj.getClass())
                 return false;
-            SecurityGroupData other = (SecurityGroupData) obj;
+            SecurityGroupData other = (SecurityGroupData)obj;
             if (id == null) {
                 if (other.id != null)
                     return false;
@@ -709,10 +709,11 @@ public class UserVmData {
                 return false;
             return true;
         }
-        
+
     }
-    
-    public String toString(){
+
+    @Override
+    public String toString() {
         return "id=" + id + ", name=" + name;
     }
 
@@ -756,4 +757,3 @@ public class UserVmData {
         this.sshPublicKey = sshPublicKey;
     }
 }
-

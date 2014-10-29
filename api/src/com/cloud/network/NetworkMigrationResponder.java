@@ -19,17 +19,16 @@ package com.cloud.network;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
- * NetworkGuru and NetworkElements that implement this interface 
+ * NetworkGuru and NetworkElements that implement this interface
  * will be called during Virtual Machine migration.
  */
 public interface NetworkMigrationResponder {
     /**
      * Prepare for migration.
-     * 
+     *
      * This method will be called per nic before the vm migration.
      * @param nic
      * @param network
@@ -42,9 +41,9 @@ public interface NetworkMigrationResponder {
 
     /**
      * Cancel for migration preparation.
-     * 
-     * This method will be called per nic when the entire vm migration 
-     * process failed and need to release the resouces that was 
+     *
+     * This method will be called per nic when the entire vm migration
+     * process failed and need to release the resouces that was
      * allocated at the migration preparation.
      * @param nic destination nic
      * @param network destination network
@@ -56,9 +55,9 @@ public interface NetworkMigrationResponder {
 
     /**
      * Commit the migration resource.
-     * 
-     * This method will be called per nic when the entire vm migration 
-     * process was successful. This is useful to release the resource of 
+     *
+     * This method will be called per nic when the entire vm migration
+     * process was successful. This is useful to release the resource of
      * source deployment where vm has left.
      * @param nic source nic
      * @param network source network

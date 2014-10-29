@@ -19,18 +19,22 @@ package org.apache.cloudstack.api.command.user.network;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.network.vpc.NetworkACLItem;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.*;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.NetworkACLItemResponse;
+import org.apache.cloudstack.api.response.NetworkACLResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listNetworkACLs", description="Lists all network ACL items", responseObject=NetworkACLItemResponse.class)
+@APICommand(name = "listNetworkACLs", description = "Lists all network ACL items", responseObject = NetworkACLItemResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkACLsCmd.class.getName());
 
@@ -39,26 +43,27 @@ public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = FirewallRuleResponse.class,
-            description="Lists network ACL Item with the specified ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkACLItemResponse.class,
+               description = "Lists network ACL Item with the specified ID")
     private Long id;
 
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class,
-            description="list network ACL Items by network Id")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list network ACL Items by network Id")
     private Long networkId;
 
-    @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, description="list network ACL Items by traffic type - Ingress or Egress")
+    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "list network ACL Items by traffic type - Ingress or Egress")
     private String trafficType;
 
-    @Parameter(name=ApiConstants.ACL_ID, type=CommandType.UUID, entityType = NetworkACLResponse.class,
-            description="list network ACL Items by ACL Id")
+    @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, description = "list network ACL Items by ACL Id")
     private Long aclId;
 
-    @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, description="list network ACL Items by Protocol")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "list network ACL Items by Protocol")
     private String protocol;
 
-    @Parameter(name=ApiConstants.ACTION, type=CommandType.STRING, description="list network ACL Items by Action")
+    @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "list network ACL Items by Action")
     private String action;
+
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -76,7 +81,7 @@ public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
         return trafficType;
     }
 
-    public Long getAclId(){
+    public Long getAclId() {
         return aclId;
     }
 
@@ -86,6 +91,14 @@ public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
 
     public String getAction() {
         return action;
+    }
+
+    @Override
+    public Boolean getDisplay() {
+        if (display != null) {
+            return display;
+        }
+        return super.getDisplay();
     }
 
     /////////////////////////////////////////////////////
@@ -98,8 +111,8 @@ public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
     }
 
     @Override
-    public void execute(){
-        Pair<List<? extends NetworkACLItem>,Integer> result = _networkACLService.listNetworkACLItems(this);
+    public void execute() {
+        Pair<List<? extends NetworkACLItem>, Integer> result = _networkACLService.listNetworkACLItems(this);
         ListResponse<NetworkACLItemResponse> response = new ListResponse<NetworkACLItemResponse>();
         List<NetworkACLItemResponse> aclResponses = new ArrayList<NetworkACLItemResponse>();
 
@@ -109,6 +122,6 @@ public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
         }
         response.setResponses(aclResponses, result.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

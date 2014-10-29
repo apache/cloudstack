@@ -22,36 +22,36 @@ import java.util.List;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackNetworkService {
-	
-	@SerializedName(ApiConstants.NAME)
-	private String name;
 
-	// this is annoying, why is this stored as a list of objects with a name/value  
-	// the json looks like this
-	// "capability" : [ { "name" : "val"},{ "name" : "val" }, ],
-	// would be better if it were presented as:
-	// "capability" : { "name" : "val", "name" : "val", "name" : "val" },
-	@SerializedName(ApiConstants.CAPABILITY)
-	private List<CloudStackNetworkServiceCapability> capabilities;
+    @SerializedName(ApiConstants.NAME)
+    private String name;
 
-	/**
-	 * 
-	 */
-	public CloudStackNetworkService() {
-		// TODO Auto-generated constructor stub
-	}
+    // this is annoying, why is this stored as a list of objects with a name/value
+    // the json looks like this
+    // "capability" : [ { "name" : "val"},{ "name" : "val" }, ],
+    // would be better if it were presented as:
+    // "capability" : { "name" : "val", "name" : "val", "name" : "val" },
+    @SerializedName(ApiConstants.CAPABILITY)
+    private List<CloudStackNetworkServiceCapability> capabilities;
 
-	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
+    /**
+     *
+     */
+    public CloudStackNetworkService() {
+        // TODO Auto-generated constructor stub
+    }
 
-	/**
-	 * @return the capabilities
-	 */
-	public List<CloudStackNetworkServiceCapability> getCapabilities() {
-		return capabilities;
-	}
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * @return the capabilities
+     */
+    public List<CloudStackNetworkServiceCapability> getCapabilities() {
+        return capabilities;
+    }
 }

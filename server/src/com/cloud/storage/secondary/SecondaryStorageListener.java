@@ -18,7 +18,6 @@ package com.cloud.storage.secondary;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
@@ -33,14 +32,13 @@ import com.cloud.storage.Storage;
 
 public class SecondaryStorageListener implements Listener {
     private final static Logger s_logger = Logger.getLogger(SecondaryStorageListener.class);
-    
+
     SecondaryStorageVmManager _ssVmMgr = null;
-    AgentManager _agentMgr = null;
-    public SecondaryStorageListener(SecondaryStorageVmManager ssVmMgr, AgentManager agentMgr) {
+
+    public SecondaryStorageListener(SecondaryStorageVmManager ssVmMgr) {
         _ssVmMgr = ssVmMgr;
-        _agentMgr = agentMgr;
     }
-    
+
     @Override
     public boolean isRecurring() {
         return true;
@@ -48,12 +46,12 @@ public class SecondaryStorageListener implements Listener {
 
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
-    	boolean processed = false;
-    	if(answers != null) {
-    		for(int i = 0; i < answers.length; i++) {
-    		}
-    	}
-    	
+        boolean processed = false;
+        if (answers != null) {
+            for (int i = 0; i < answers.length; i++) {
+            }
+        }
+
         return processed;
     }
 
@@ -61,22 +59,22 @@ public class SecondaryStorageListener implements Listener {
     public boolean processCommands(long agentId, long seq, Command[] commands) {
         return false;
     }
-    
+
     @Override
     public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
-    	return null;
+        return null;
     }
 
     @Override
     public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) {
-        if ((cmd instanceof StartupStorageCommand) ) {
+        if ((cmd instanceof StartupStorageCommand)) {
             StartupStorageCommand scmd = (StartupStorageCommand)cmd;
-            if (scmd.getResourceType() ==  Storage.StorageResourceType.SECONDARY_STORAGE ) {
+            if (scmd.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
                 _ssVmMgr.generateSetupCommand(agent.getId());
                 return;
             }
         } else if (cmd instanceof StartupSecondaryStorageCommand) {
-            if(s_logger.isInfoEnabled()) {
+            if (s_logger.isInfoEnabled()) {
                 s_logger.info("Received a host startup notification " + cmd);
             }
             _ssVmMgr.onAgentConnect(agent.getDataCenterId(), cmd);
@@ -84,22 +82,22 @@ public class SecondaryStorageListener implements Listener {
             _ssVmMgr.generateFirewallConfiguration(agent.getId());
             _ssVmMgr.generateVMSetupCommand(agent.getId());
             return;
-        } 
+        }
         return;
     }
-    
+
     @Override
     public boolean processDisconnect(long agentId, Status state) {
         return true;
     }
-    
+
     @Override
     public boolean processTimeout(long agentId, long seq) {
-    	return true;
+        return true;
     }
-    
+
     @Override
     public int getTimeout() {
-    	return -1;
+        return -1;
     }
 }

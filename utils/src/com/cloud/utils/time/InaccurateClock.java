@@ -1,12 +1,13 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// the License.  You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils.time;
 
 import java.util.concurrent.Executors;
@@ -47,7 +50,8 @@ public class InaccurateClock extends StandardMBean implements InaccurateClockMBe
         }
     }
 
-    @Override public long[] getCurrentTimes() {
+    @Override
+    public long[] getCurrentTimes() {
         long[] results = new long[2];
         results[0] = time;
         results[1] = System.currentTimeMillis();
@@ -63,7 +67,8 @@ public class InaccurateClock extends StandardMBean implements InaccurateClockMBe
         return "Restarted";
     }
 
-    @Override public String turnOff() {
+    @Override
+    public String turnOff() {
         if (s_executor != null) {
             try {
                 s_executor.shutdown();
@@ -85,7 +90,8 @@ public class InaccurateClock extends StandardMBean implements InaccurateClockMBe
     }
 
     protected class SetTimeTask implements Runnable {
-        @Override public void run() {
+        @Override
+        public void run() {
             try {
                 time = System.currentTimeMillis();
             } catch (Throwable th) {

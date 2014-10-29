@@ -27,86 +27,88 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import com.cloud.utils.DateUtil;
+
 @Entity
-@Table(name="cmd_exec_log")
+@Table(name = "cmd_exec_log")
 public class CommandExecLogVO implements InternalIdentity {
-	
+
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
-	private long id;
-    
-    @Column(name="host_id")
-	private long hostId;
-    
-    @Column(name="instance_id")
-	private long instanceId;
-	
-    @Column(name="command_name")
-	private String commandName;
-    
-    @Column(name="weight")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private long id;
+
+    @Column(name = "host_id")
+    private long hostId;
+
+    @Column(name = "instance_id")
+    private long instanceId;
+
+    @Column(name = "command_name")
+    private String commandName;
+
+    @Column(name = "weight")
     private int weight;
-	
-    @Column(name="created")
-    @Temporal(value=TemporalType.TIMESTAMP)
+
+    @Column(name = "created")
+    @Temporal(value = TemporalType.TIMESTAMP)
     private Date created;
-    
+
     public CommandExecLogVO() {
     }
-    
+
     public CommandExecLogVO(long hostId, long instanceId, String commandName, int weight) {
-    	this.hostId = hostId;
-    	this.instanceId = instanceId;
-    	this.commandName = commandName;
-    	this.weight = weight;
-    	this.created = DateUtil.currentGMTTime();
+        this.hostId = hostId;
+        this.instanceId = instanceId;
+        this.commandName = commandName;
+        this.weight = weight;
+        this.created = DateUtil.currentGMTTime();
     }
-    
+
+    @Override
     public long getId() {
-    	return this.id;
+        return this.id;
     }
-    
+
     public long getHostId() {
-    	return this.hostId;
+        return this.hostId;
     }
-    
+
     public void setHostId(long hostId) {
-    	this.hostId = hostId;
+        this.hostId = hostId;
     }
-    
+
     public long getInstanceId() {
-    	return this.instanceId;
+        return this.instanceId;
     }
-    
+
     public void setInstanceId(long instanceId) {
-    	this.instanceId = instanceId;
+        this.instanceId = instanceId;
     }
-    
+
     public String getCommandName() {
-    	return this.commandName;
+        return this.commandName;
     }
-    
+
     public void setCommandName(String commandName) {
-    	this.commandName = commandName;
+        this.commandName = commandName;
     }
-    
+
     public int getWeight() {
-    	return weight;
+        return weight;
     }
-    
+
     public void setWeight(int weight) {
-    	this.weight = weight;
+        this.weight = weight;
     }
-    
+
     public Date getCreated() {
-    	return this.created;
+        return this.created;
     }
-    
+
     public void setCreated(Date created) {
-    	this.created = created;
+        this.created = created;
     }
 }

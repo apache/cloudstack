@@ -46,38 +46,31 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.dao.DomainRouterDao;
 
 @Configuration
-@ComponentScan(
-    basePackageClasses={
-            NetUtils.class
-    },
-    includeFilters={@Filter(value=ElementChildTestConfiguration.Library.class, type=FilterType.CUSTOM)},
-    useDefaultFilters=false
-    )
-
+@ComponentScan(basePackageClasses = {NetUtils.class},
+               includeFilters = {@Filter(value = ElementChildTestConfiguration.Library.class, type = FilterType.CUSTOM)},
+               useDefaultFilters = false)
 public class ElementChildTestConfiguration {
     public static class Library implements TypeFilter {
         @Bean
         public AccountManager accountManager() {
             return Mockito.mock(AccountManager.class);
         }
-        
-       
+
         @Bean
         public DomainRouterDao domainRouterDao() {
             return Mockito.mock(DomainRouterDao.class);
         }
-        
+
         @Bean
         public VirtualRouterProviderDao virtualRouterProviderDao() {
             return Mockito.mock(VirtualRouterProviderDao.class);
         }
-        
+
         @Bean
         public NetworkModel networkModel() {
             return Mockito.mock(NetworkModel.class);
         }
-        
-        
+
         @Bean
         public NetworkOrchestrationService networkManager() {
             return Mockito.mock(NetworkOrchestrationService.class);
@@ -87,44 +80,42 @@ public class ElementChildTestConfiguration {
         public IpAddressManager ipAddressManager() {
             return Mockito.mock(IpAddressManager.class);
         }
-        
+
         @Bean
         public PhysicalNetworkServiceProviderDao physicalNetworkServiceProviderDao() {
             return Mockito.mock(PhysicalNetworkServiceProviderDao.class);
         }
-        
+
         @Bean
         public NetworkServiceMapDao networkServiceMapDao() {
             return Mockito.mock(NetworkServiceMapDao.class);
         }
-        
+
         @Bean
         public InternalLoadBalancerVMManager internalLoadBalancerVMManager() {
             return Mockito.mock(InternalLoadBalancerVMManager.class);
         }
-        
+
         @Bean
         public ConfigurationManager confugurationManager() {
             return Mockito.mock(ConfigurationManager.class);
         }
-        
+
         @Bean
         public EntityManager entityManager() {
             return Mockito.mock(EntityManager.class);
         }
-        
+
         @Bean
         public ApplicationLoadBalancerRuleDao applicationLoadBalancerRuleDao() {
             return Mockito.mock(ApplicationLoadBalancerRuleDao.class);
         }
-        
+
         @Bean
         public DataCenterDao dataCenterDao() {
             return Mockito.mock(DataCenterDao.class);
         }
-        
-        
-        
+
         @Override
         public boolean match(MetadataReader mdr, MetadataReaderFactory arg1) throws IOException {
             mdr.getClassMetadata().getClassName();

@@ -22,10 +22,10 @@ import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.vm.ReservationContext;
 
-public class MockVpcVirtualRouterElement extends VpcVirtualRouterElement{
+public class MockVpcVirtualRouterElement extends VpcVirtualRouterElement {
     @Override
     public boolean shutdownVpc(Vpc vpc, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         return true;
     }
-    
+
 }

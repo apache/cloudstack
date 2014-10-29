@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,11 +15,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api.routing;
 
-import com.cloud.agent.api.to.DhcpTO;
-
 import java.util.List;
+
+import com.cloud.agent.api.to.DhcpTO;
 
 public class DnsMasqConfigCommand extends NetworkElementCommand {
     List<DhcpTO> dhcpTOs;

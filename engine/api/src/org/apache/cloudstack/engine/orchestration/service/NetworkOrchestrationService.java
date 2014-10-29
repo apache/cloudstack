@@ -29,7 +29,7 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
@@ -56,7 +56,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * NetworkManager manages the network for the different end users.
- * 
+ *
  */
 public interface NetworkOrchestrationService {
     static final String NetworkLockTimeoutCK = "network.lock.timeout";
@@ -74,9 +74,11 @@ public interface NetworkOrchestrationService {
         throws ConcurrentOperationException;
 
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, Network predefined, DeploymentPlan plan, String name, String displayText,
-        boolean errorIfAlreadySetup, Long domainId, ACLType aclType, Boolean subdomainAccess, Long vpcId, Boolean isDisplayNetworkEnabled) throws ConcurrentOperationException;
+        boolean errorIfAlreadySetup, Long domainId, ACLType aclType, Boolean subdomainAccess, Long vpcId, Boolean isDisplayNetworkEnabled)
+        throws ConcurrentOperationException;
 
-    void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, ? extends NicProfile> networks) throws InsufficientCapacityException, ConcurrentOperationException;
+    void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, List<? extends NicProfile>> networks) throws InsufficientCapacityException,
+        ConcurrentOperationException;
 
     void prepare(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException,
         ResourceUnavailableException;
@@ -89,12 +91,12 @@ public interface NetworkOrchestrationService {
 
     List<NicProfile> getNicProfiles(VirtualMachine vm);
 
-    Pair<? extends NetworkGuru, ? extends Network> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-        ResourceUnavailableException, InsufficientCapacityException;
+    Pair<? extends NetworkGuru, ? extends Network> implementNetwork(long networkId, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * prepares vm nic change for migration
-     * 
+     *
      * This method will be called in migration transaction before the vm migration.
      * @param vm
      * @param dest
@@ -103,7 +105,7 @@ public interface NetworkOrchestrationService {
 
     /**
      * commit vm nic change for migration
-     * 
+     *
      * This method will be called in migration transaction after the successful
      * vm migration.
      * @param src
@@ -113,7 +115,7 @@ public interface NetworkOrchestrationService {
 
     /**
      * rollback vm nic change for migration
-     * 
+     *
      * This method will be called in migaration transaction after vm migration
      * failure.
      * @param src
@@ -123,7 +125,7 @@ public interface NetworkOrchestrationService {
 
     boolean shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements);
 
-    boolean destroyNetwork(long networkId, ReservationContext context);
+    boolean destroyNetwork(long networkId, ReservationContext context, boolean forced);
 
     Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
         Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr,
@@ -145,12 +147,12 @@ public interface NetworkOrchestrationService {
      * @param deviceId
      * @param vm
      * @return
-     * @throws InsufficientVirtualNetworkCapcityException
+     * @throws InsufficientVirtualNetworkCapacityException
      * @throws InsufficientAddressCapacityException
      * @throws ConcurrentOperationException
      */
     Pair<NicProfile, Integer> allocateNic(NicProfile requested, Network network, Boolean isDefaultNic, int deviceId, VirtualMachineProfile vm)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException;
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException;
 
     /**
      * @param vmProfile
@@ -159,14 +161,14 @@ public interface NetworkOrchestrationService {
      * @param nicId
      * @param network
      * @return
-     * @throws InsufficientVirtualNetworkCapcityException
+     * @throws InsufficientVirtualNetworkCapacityException
      * @throws InsufficientAddressCapacityException
      * @throws ConcurrentOperationException
      * @throws InsufficientCapacityException
      * @throws ResourceUnavailableException
      */
     NicProfile prepareNic(VirtualMachineProfile vmProfile, DeployDestination dest, ReservationContext context, long nicId, Network network)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
         ResourceUnavailableException;
 
     void removeNic(VirtualMachineProfile vm, Nic nic);
@@ -181,7 +183,7 @@ public interface NetworkOrchestrationService {
     void releaseNic(VirtualMachineProfile vmProfile, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException;
 
     NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfile vmProfile, boolean prepare)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
         ResourceUnavailableException;
 
     NetworkProfile convertNetworkToNetworkProfile(long networkId);
@@ -191,8 +193,8 @@ public interface NetworkOrchestrationService {
 
     boolean shutdownNetworkElementsAndResources(ReservationContext context, boolean b, Network network);
 
-    void implementNetworkElementsAndResources(DeployDestination dest, ReservationContext context, Network network, NetworkOffering findById) throws ConcurrentOperationException,
-        InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException;
+    void implementNetworkElementsAndResources(DeployDestination dest, ReservationContext context, Network network, NetworkOffering findById)
+        throws ConcurrentOperationException, InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException;
 
     Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering, Long physicalNetworkId);
 
@@ -206,11 +208,13 @@ public interface NetworkOrchestrationService {
 
     boolean isSecondaryIpSetForNic(long nicId);
 
-    List<? extends Nic> listVmNics(Long vmId, Long nicId);
+    List<? extends Nic> listVmNics(long vmId, Long nicId, Long networkId);
 
     Nic savePlaceholderNic(Network network, String ip4Address, String ip6Address, Type vmType);
 
     DhcpServiceProvider getDhcpServiceProvider(Network network);
 
     void removeDhcpServiceInSubnet(Nic nic);
+
+    boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType);
 }

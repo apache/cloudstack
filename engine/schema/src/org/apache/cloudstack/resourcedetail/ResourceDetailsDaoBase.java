@@ -27,15 +27,18 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
-
-public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends GenericDaoBase<R, Long>{
+public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends GenericDaoBase<R, Long> {
     private SearchBuilder<R> AllFieldsSearch;
-    
+
     public ResourceDetailsDaoBase() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("resourceId", AllFieldsSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("display", AllFieldsSearch.entity().isDisplay(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("value", AllFieldsSearch.entity().getValue(), SearchCriteria.Op.EQ);
+        // FIXME SnapshotDetailsVO doesn't have a display field
+        if (_allAttributes.containsKey("display")) {
+            AllFieldsSearch.and("display", AllFieldsSearch.entity().isDisplay(), SearchCriteria.Op.EQ);
+        }
         AllFieldsSearch.done();
     }
 
@@ -43,15 +46,33 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         SearchCriteria<R> sc = AllFieldsSearch.create();
         sc.setParameters("resourceId", resourceId);
         sc.setParameters("name", name);
-        
+
         return findOneBy(sc);
     }
 
+    public List<R> findDetails(String name, String value, Boolean display) {
+        SearchCriteria<R> sc = AllFieldsSearch.create();
+
+        if(display != null){
+            sc.setParameters("display", display);
+        }
+
+        if(name != null){
+            sc.setParameters("name", name);
+        }
+
+        if(value != null){
+            sc.setParameters("value", value);
+        }
+
+        List<R> results = search(sc, null);
+        return results;
+    }
 
     public Map<String, String> listDetailsKeyPairs(long resourceId) {
         SearchCriteria<R> sc = AllFieldsSearch.create();
         sc.setParameters("resourceId", resourceId);
-        
+
         List<R> results = search(sc, null);
         Map<String, String> details = new HashMap<String, String>(results.size());
         for (R result : results) {
@@ -68,22 +89,20 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         return results;
     }
 
-
     public void removeDetails(long resourceId) {
         SearchCriteria<R> sc = AllFieldsSearch.create();
         sc.setParameters("resourceId", resourceId);
         remove(sc);
     }
 
-    
     public void removeDetail(long resourceId, String key) {
-        if (key != null){
+        if (key != null) {
             SearchCriteria<R> sc = AllFieldsSearch.create();
+            sc.setParameters("resourceId", resourceId);
             sc.setParameters("name", key);
             remove(sc);
         }
     }
-
 
     public void saveDetails(List<R> details) {
         if (details.isEmpty()) {
@@ -94,14 +113,13 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         SearchCriteria<R> sc = AllFieldsSearch.create();
         sc.setParameters("resourceId", details.get(0).getResourceId());
         expunge(sc);
-        
+
         for (R detail : details) {
             persist(detail);
         }
-        
+
         txn.commit();
     }
-    
 
     protected void addDetail(R detail) {
         if (detail == null) {
@@ -113,12 +131,12 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         }
         persist(detail);
     }
-    
+
     public Map<String, String> listDetailsKeyPairs(long resourceId, boolean forDisplay) {
         SearchCriteria<R> sc = AllFieldsSearch.create();
         sc.setParameters("resourceId", resourceId);
         sc.setParameters("display", forDisplay);
-        
+
         List<R> results = search(sc, null);
         Map<String, String> details = new HashMap<String, String>(results.size());
         for (R result : results) {
@@ -126,7 +144,6 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         }
         return details;
     }
-    
 
     public List<R> listDetails(long resourceId, boolean forDisplay) {
         SearchCriteria<R> sc = AllFieldsSearch.create();

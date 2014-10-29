@@ -22,5 +22,6 @@ import com.cloud.utils.db.GenericDao;
 
 public interface NetworkRuleConfigDao extends GenericDao<NetworkRuleConfigVO, Long> {
     List<NetworkRuleConfigVO> listBySecurityGroupId(long securityGroupId);
+
     void deleteBySecurityGroup(long securityGroupId);
 }

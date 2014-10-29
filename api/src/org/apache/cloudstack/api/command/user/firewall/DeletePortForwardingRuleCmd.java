@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.user.firewall;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,7 +36,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.PortForwardingRule;
 
-@APICommand(name = "deletePortForwardingRule", description="Deletes a port forwarding rule", responseObject=SuccessResponse.class)
+@APICommand(name = "deletePortForwardingRule", description = "Deletes a port forwarding rule", responseObject = SuccessResponse.class, entityType = {PortForwardingRule.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePortForwardingRuleCmd.class.getName());
     private static final String s_name = "deleteportforwardingruleresponse";
@@ -43,14 +46,18 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = FirewallRuleResponse.class,
-            required=true, description="the ID of the port forwarding rule")
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = FirewallRuleResponse.class,
+               required = true,
+               description = "the ID of the port forwarding rule")
     private Long id;
 
     // unexposed parameter needed for events logging
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.UUID, entityType = AccountResponse.class,
-            expose=false)
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, expose = false)
     private Long ownerId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -74,7 +81,7 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  ("Deleting port forwarding rule for id=" + id);
+        return ("Deleting port forwarding rule for id=" + id);
     }
 
     @Override
@@ -92,11 +99,11 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Rule Id: "+id);
+    public void execute() {
+        CallContext.current().setEventDetails("Rule Id: " + id);
         //revoke corresponding firewall rule first
-        boolean result  = _firewallService.revokeRelatedFirewallRule(id, true);
-        result = result &&  _rulesService.revokePortForwardingRule(id, true);
+        boolean result = _firewallService.revokeRelatedFirewallRule(id, true);
+        result = result && _rulesService.revokePortForwardingRule(id, true);
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -105,7 +112,6 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete port forwarding rule");
         }
     }
-
 
     @Override
     public String getSyncObjType() {

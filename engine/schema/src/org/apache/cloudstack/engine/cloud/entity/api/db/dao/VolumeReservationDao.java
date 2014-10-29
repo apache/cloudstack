@@ -22,10 +22,10 @@ import org.apache.cloudstack.engine.cloud.entity.api.db.VolumeReservationVO;
 
 import com.cloud.utils.db.GenericDao;
 
-public interface VolumeReservationDao extends GenericDao<VolumeReservationVO, Long>{
+public interface VolumeReservationDao extends GenericDao<VolumeReservationVO, Long> {
 
-   VolumeReservationVO findByVmId(long vmId);
+    VolumeReservationVO findByVmId(long vmId);
 
-   List<VolumeReservationVO> listVolumeReservation(long vmReservationId);
+    List<VolumeReservationVO> listVolumeReservation(long vmReservationId);
 
 }

@@ -24,7 +24,6 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.PodVlanVO;
-import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -39,16 +38,18 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements P
     private final SearchBuilder<PodVlanVO> FreeVlanSearch;
     private final SearchBuilder<PodVlanVO> VlanPodSearch;
     private final SearchBuilder<PodVlanVO> PodSearchAllocated;
-    
+
+    @Override
     public List<PodVlanVO> listAllocatedVnets(long podId) {
-    	SearchCriteria<PodVlanVO> sc = PodSearchAllocated.create();
-    	sc.setParameters("podId", podId);
-    	return listBy(sc);
+        SearchCriteria<PodVlanVO> sc = PodSearchAllocated.create();
+        sc.setParameters("podId", podId);
+        return listBy(sc);
     }
-    
+
+    @Override
     public void add(long podId, int start, int end) {
         String insertVnet = "INSERT INTO `cloud`.`op_pod_vlan_alloc` (vlan, pod_id) VALUES ( ?, ?)";
-        
+
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
@@ -64,9 +65,10 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements P
             throw new CloudRuntimeException("Exception caught adding vnet ", e);
         }
     }
-    
+
+    @Override
     public void delete(long podId) {
-    	String deleteVnet = "DELETE FROM `cloud`.`op_pod_vlan_alloc` WHERE pod_id = ?";
+        String deleteVnet = "DELETE FROM `cloud`.`op_pod_vlan_alloc` WHERE pod_id = ?";
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
@@ -74,10 +76,11 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements P
             stmt.setLong(1, podId);
             stmt.executeUpdate();
         } catch (SQLException e) {
-        	throw new CloudRuntimeException("Exception caught deleting vnet ", e);
+            throw new CloudRuntimeException("Exception caught deleting vnet ", e);
         }
     }
 
+    @Override
     public PodVlanVO take(long podId, long accountId) {
         SearchCriteria<PodVlanVO> sc = FreeVlanSearch.create();
         sc.setParameters("podId", podId);
@@ -101,6 +104,7 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements P
         }
     }
 
+    @Override
     public void release(String vlan, long podId, long accountId) {
         SearchCriteria<PodVlanVO> sc = VlanPodSearch.create();
         sc.setParameters("vlan", vlan);
@@ -116,14 +120,14 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements P
         vo.setAccountId(null);
         update(vo.getId(), vo);
     }
-    
+
     public PodVlanDaoImpl() {
-    	super();
-    	PodSearchAllocated = createSearchBuilder();
-    	PodSearchAllocated.and("podId", PodSearchAllocated.entity().getPodId(), SearchCriteria.Op.EQ);
-    	PodSearchAllocated.and("allocated", PodSearchAllocated.entity().getTakenAt(), SearchCriteria.Op.NNULL);
-    	PodSearchAllocated.done();
-        
+        super();
+        PodSearchAllocated = createSearchBuilder();
+        PodSearchAllocated.and("podId", PodSearchAllocated.entity().getPodId(), SearchCriteria.Op.EQ);
+        PodSearchAllocated.and("allocated", PodSearchAllocated.entity().getTakenAt(), SearchCriteria.Op.NNULL);
+        PodSearchAllocated.done();
+
         FreeVlanSearch = createSearchBuilder();
         FreeVlanSearch.and("podId", FreeVlanSearch.entity().getPodId(), SearchCriteria.Op.EQ);
         FreeVlanSearch.and("taken", FreeVlanSearch.entity().getTakenAt(), SearchCriteria.Op.NULL);

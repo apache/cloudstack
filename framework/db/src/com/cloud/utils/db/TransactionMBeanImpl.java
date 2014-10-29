@@ -28,26 +28,26 @@ import javax.management.StandardMBean;
 import com.cloud.utils.db.TransactionLegacy.StackElement;
 
 public class TransactionMBeanImpl extends StandardMBean implements TransactionMBean {
-    
+
     Map<Long, TransactionLegacy> _txns = new ConcurrentHashMap<Long, TransactionLegacy>();
-    
+
     public TransactionMBeanImpl() {
         super(TransactionMBean.class, false);
     }
-    
+
     public void addTransaction(TransactionLegacy txn) {
         _txns.put(txn.getId(), txn);
     }
-    
+
     public void removeTransaction(TransactionLegacy txn) {
         _txns.remove(txn.getId());
     }
-    
+
     @Override
     public int getTransactionCount() {
         return _txns.size();
     }
-    
+
     @Override
     public int[] getActiveTransactionCount() {
         int[] count = new int[2];
@@ -63,7 +63,7 @@ public class TransactionMBeanImpl extends StandardMBean implements TransactionMB
         }
         return count;
     }
-    
+
     @Override
     public List<Map<String, String>> getTransactions() {
         ArrayList<Map<String, String>> txns = new ArrayList<Map<String, String>>();
@@ -72,7 +72,7 @@ public class TransactionMBeanImpl extends StandardMBean implements TransactionMB
         }
         return txns;
     }
-    
+
     @Override
     public List<Map<String, String>> getActiveTransactions() {
         ArrayList<Map<String, String>> txns = new ArrayList<Map<String, String>>();
@@ -83,7 +83,7 @@ public class TransactionMBeanImpl extends StandardMBean implements TransactionMB
         }
         return txns;
     }
-    
+
     protected Map<String, String> toMap(TransactionLegacy txn) {
         Map<String, String> map = new HashMap<String, String>();
         map.put("name", txn.getName());
@@ -96,7 +96,7 @@ public class TransactionMBeanImpl extends StandardMBean implements TransactionMB
             buff.append(element.toString()).append(",");
         }
         map.put("stack", buff.toString());
-        
+
         return map;
     }
 

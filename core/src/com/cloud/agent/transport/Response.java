@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.transport;
 
 import com.cloud.agent.api.Answer;
@@ -27,11 +30,11 @@ public class Response extends Request {
     }
 
     public Response(Request request, Answer answer) {
-        this(request, new Answer[] { answer });
+        this(request, new Answer[] {answer});
     }
 
     public Response(Request request, Answer answer, long mgmtId, long agentId) {
-        this(request, new Answer[] { answer }, mgmtId, agentId);
+        this(request, new Answer[] {answer}, mgmtId, agentId);
     }
 
     public Response(Request request, Answer[] answers) {
@@ -64,7 +67,6 @@ public class Response extends Request {
     protected String getType() {
         return "Ans: ";
     }
-
 
     public static Response parse(byte[] bytes) throws ClassNotFoundException, UnsupportedVersionException {
         return (Response)Request.parse(bytes);

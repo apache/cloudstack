@@ -16,9 +16,9 @@
 # under the License.
 
 from nose.plugins.attrib import attr
-from marvin.integration.lib.base import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.common import *
+from marvin.lib.base import *
+from marvin.lib.utils import *
+from marvin.lib.common import *
 
 #Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -94,11 +94,6 @@ class Services:
                                         },
                                     },
                         },
-                        "host": {
-                                 "username": "root",
-                                 "password": "password",
-                                 "publicport": 22,
-                        },
                         "network": {
                                   "name": "Test Network",
                                   "displaytext": "Test Network",
@@ -137,14 +132,13 @@ class TestCreateRvRNetworkOffering(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestCreateRvRNetworkOffering,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestCreateRvRNetworkOffering, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls._cleanup = []
         return
 
@@ -231,14 +225,13 @@ class TestCreateRvRNetwork(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestCreateRvRNetwork,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestCreateRvRNetwork, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -433,14 +426,13 @@ class TestCreateRvRNetworkNonDefaultGuestCidr(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestCreateRvRNetworkNonDefaultGuestCidr,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestCreateRvRNetworkNonDefaultGuestCidr, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -642,14 +634,13 @@ class TestRVRInternals(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestRVRInternals,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRVRInternals, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -685,6 +676,7 @@ class TestRVRInternals(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
         self.account = Account.create(
                                      self.apiclient,
@@ -846,7 +838,7 @@ class TestRVRInternals(cloudstackTestCase):
         self.debug(master_router.linklocalip)
 
         # Check eth2 port for master router
-        if self.apiclient.hypervisor.lower() == 'vmware':
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
             result = get_process_status(
                                 self.apiclient.connection.mgtSvr,
                                 22,
@@ -854,17 +846,23 @@ class TestRVRInternals(cloudstackTestCase):
                                 self.apiclient.connection.passwd,
                                 master_router.linklocalip,
                                 'ip addr show eth2',
-                                hypervisor=self.apiclient.hypervisor
+                                hypervisor=self.hypervisor
                                 )
         else:
-            result = get_process_status(
-                                master_host.ipaddress,
-                                self.services['host']["publicport"],
-                                self.services['host']["username"],
-                                self.services['host']["password"],
-                                master_router.linklocalip,
-                                'ip addr show eth2'
+            try:
+                host = {}
+                host.user, host.passwd = get_host_credentials(self.config, master_host.ipaddress)
+                result = get_process_status(
+                                    master_host.ipaddress,
+                                    22,
+                                    host.user,
+                                    host.passwd,
+                                    master_router.linklocalip,
+                                    "ip addr show eth2"
                                 )
+
+            except KeyError:
+                self.skipTest("Marvin configuration has no host credentials to check router services")
 
         res = str(result)
 
@@ -882,7 +880,7 @@ class TestRVRInternals(cloudstackTestCase):
                          )
 
         # Check eth2 port for backup router
-        if self.apiclient.hypervisor.lower() == 'vmware':
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
             result = get_process_status(
                                 self.apiclient.connection.mgtSvr,
                                 22,
@@ -890,17 +888,24 @@ class TestRVRInternals(cloudstackTestCase):
                                 self.apiclient.connction.passwd,
                                 backup_router.linklocalip,
                                 'ip addr show eth2',
-                                hypervisor=self.apiclient.hypervisor
+                                hypervisor=self.hypervisor
                                 )
         else:
-            result = get_process_status(
-                                backup_host.ipaddress,
-                                self.services['host']["publicport"],
-                                self.services['host']["username"],
-                                self.services['host']["password"],
-                                backup_router.linklocalip,
-                                'ip addr show eth2',
+            try:
+                host = {}
+                host.user, host.passwd = get_host_credentials(self.config, backup_host.ipaddress)
+                result = get_process_status(
+                                    master_host.ipaddress,
+                                    22,
+                                    host.user,
+                                    host.passwd,
+                                    backup_router.linklocalip,
+                                    "ip addr show eth2"
                                 )
+
+            except KeyError:
+                self.skipTest("Marvin configuration has no host credentials to check router services")
+
         res = str(result)
 
         self.debug("Command 'ip addr show eth2': %s" % result)
@@ -945,14 +950,13 @@ class TestRvRRedundancy(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestRvRRedundancy,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestRvRRedundancy, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1569,6 +1573,9 @@ class TestRvRRedundancy(cloudstackTestCase):
                          "Running",
                          "Vm should be in running state after deployment"
                          )
+
+        # wait for VR to update state
+        time.sleep(self.services["sleep"])
 
         self.debug("Checking state of the backup router in %s" % self.network.name)
         routers = Router.list(

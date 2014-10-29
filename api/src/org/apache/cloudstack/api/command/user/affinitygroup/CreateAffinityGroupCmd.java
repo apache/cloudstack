@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.affinitygroup;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
@@ -28,13 +30,12 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 
-@APICommand(name = "createAffinityGroup", responseObject = AffinityGroupResponse.class, description = "Creates an affinity/anti-affinity group")
+@APICommand(name = "createAffinityGroup", responseObject = AffinityGroupResponse.class, description = "Creates an affinity/anti-affinity group", entityType = {AffinityGroup.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAffinityGroupCmd.class.getName());
 
@@ -47,7 +48,10 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an account for the affinity group. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, description = "domainId of the account owning the affinity group", entityType = DomainResponse.class)
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               description = "domainId of the account owning the affinity group",
+               entityType = DomainResponse.class)
     private Long domainId;
 
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "optional description of the affinity group")
@@ -56,9 +60,11 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the affinity group")
     private String affinityGroupName;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "Type of the affinity group from the available affinity/anti-affinity group types")
+    @Parameter(name = ApiConstants.TYPE,
+               type = CommandType.STRING,
+               required = true,
+               description = "Type of the affinity group from the available affinity/anti-affinity group types")
     private String affinityGroupType;
-
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -96,7 +102,7 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
     @Override
     public long getEntityOwnerId() {
         Account account = CallContext.current().getCallingAccount();
-        if ((account == null) || isAdmin(account.getType())) {
+        if ((account == null) || _accountService.isAdmin(account.getId())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
                 if (userAccount != null) {
@@ -120,17 +126,15 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
         if (group != null) {
             AffinityGroupResponse response = _responseGenerator.createAffinityGroupResponse(group);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create affinity group:"
-                    + affinityGroupName);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create affinity group:" + affinityGroupName);
         }
     }
 
     @Override
     public void create() throws ResourceAllocationException {
-        AffinityGroup result = _affinityGroupService.createAffinityGroup(accountName, domainId, affinityGroupName,
-                affinityGroupType, description);
+        AffinityGroup result = _affinityGroupService.createAffinityGroup(accountName, domainId, affinityGroupName, affinityGroupType, description);
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());

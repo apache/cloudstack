@@ -29,9 +29,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=BigSwitchVnsDao.class)
-public class BigSwitchVnsDaoImpl extends GenericDaoBase<BigSwitchVnsDeviceVO, Long>
-        implements BigSwitchVnsDao {
+@Local(value = BigSwitchVnsDao.class)
+public class BigSwitchVnsDaoImpl extends GenericDaoBase<BigSwitchVnsDeviceVO, Long> implements BigSwitchVnsDao {
 
     protected final SearchBuilder<BigSwitchVnsDeviceVO> physicalNetworkIdSearch;
 

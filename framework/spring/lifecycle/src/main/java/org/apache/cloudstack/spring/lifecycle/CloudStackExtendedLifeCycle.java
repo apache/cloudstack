@@ -41,34 +41,31 @@ import com.cloud.utils.mgmt.ManagementBean;
 public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
 
     private static final Logger log = LoggerFactory.getLogger(CloudStackExtendedLifeCycle.class);
-    
+
     Map<Integer, Set<ComponentLifecycle>> sorted = new TreeMap<Integer, Set<ComponentLifecycle>>();
-    
+
     public CloudStackExtendedLifeCycle() {
         super();
-        setTypeClasses(new Class<?>[] {
-            ComponentLifecycle.class,
-            SystemIntegrityChecker.class
-        });
+        setTypeClasses(new Class<?>[] {ComponentLifecycle.class, SystemIntegrityChecker.class});
     }
-    
+
     @Override
     public void start() {
         sortBeans();
         checkIntegrity();
         configure();
-        
+
         super.start();
     }
 
     protected void checkIntegrity() {
-        for ( SystemIntegrityChecker checker : getBeans(SystemIntegrityChecker.class) ) {
+        for (SystemIntegrityChecker checker : getBeans(SystemIntegrityChecker.class)) {
             log.info("Running system integrity checker {}", checker);
-            
+
             checker.check();
         }
     }
-    
+
     public void startBeans() {
         log.info("Starting CloudStack Components");
 
@@ -76,8 +73,8 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
             @Override
             public void with(ComponentLifecycle lifecycle) {
                 lifecycle.start();
-                
-                if ( lifecycle instanceof ManagementBean ) {
+
+                if (lifecycle instanceof ManagementBean) {
                     ManagementBean mbean = (ManagementBean)lifecycle;
                     try {
                         JmxUtil.registerMBean(mbean);
@@ -97,7 +94,7 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
 
         log.info("Done Starting CloudStack Components");
     }
-    
+
     public void stopBeans() {
         with(new WithComponentLifeCycle() {
             @Override
@@ -109,7 +106,7 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
 
     private void configure() {
         log.info("Configuring CloudStack Components");
-        
+
         with(new WithComponentLifeCycle() {
             @Override
             public void with(ComponentLifecycle lifecycle) {
@@ -121,19 +118,19 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
                 }
             }
         });
-        
+
         log.info("Done Configuring CloudStack Components");
     }
 
     private void sortBeans() {
-        for ( ComponentLifecycle lifecycle : getBeans(ComponentLifecycle.class) ) {
+        for (ComponentLifecycle lifecycle : getBeans(ComponentLifecycle.class)) {
             Set<ComponentLifecycle> set = sorted.get(lifecycle.getRunLevel());
-            
-            if ( set == null ) {
+
+            if (set == null) {
                 set = new HashSet<ComponentLifecycle>();
                 sorted.put(lifecycle.getRunLevel(), set);
             }
-            
+
             set.add(lifecycle);
         }
     }
@@ -146,24 +143,24 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
                 lifecycle.stop();
             }
         });
-        
+
         super.stop();
     }
 
     protected void with(WithComponentLifeCycle with) {
-        for ( Set<ComponentLifecycle> lifecycles : sorted.values() ) {
-            for ( ComponentLifecycle lifecycle : lifecycles ) {
+        for (Set<ComponentLifecycle> lifecycles : sorted.values()) {
+            for (ComponentLifecycle lifecycle : lifecycles) {
                 with.with(lifecycle);
             }
         }
     }
-    
+
     @Override
     public int getPhase() {
         return 2000;
     }
 
     private static interface WithComponentLifeCycle {
-       public void with(ComponentLifecycle lifecycle);
+        public void with(ComponentLifecycle lifecycle);
     }
 }

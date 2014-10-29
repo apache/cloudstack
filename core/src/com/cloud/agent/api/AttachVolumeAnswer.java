@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,8 +15,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api;
+//
 
+package com.cloud.agent.api;
 
 public class AttachVolumeAnswer extends Answer {
     private Long deviceId;
@@ -49,14 +51,14 @@ public class AttachVolumeAnswer extends Answer {
     }
 
     public String getVdiUuid() {
-    	return vdiUuid;
+        return vdiUuid;
     }
-    
+
     public void setChainInfo(String chainInfo) {
-    	this.chainInfo = chainInfo;
+        this.chainInfo = chainInfo;
     }
 
     public String getChainInfo() {
-    	return chainInfo;
+        return chainInfo;
     }
 }

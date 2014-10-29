@@ -32,8 +32,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 public class LibvirtStorageVolumeXMLParser {
-    private static final Logger s_logger = Logger
-            .getLogger(LibvirtStorageVolumeXMLParser.class);
+    private static final Logger s_logger = Logger.getLogger(LibvirtStorageVolumeXMLParser.class);
 
     public LibvirtStorageVolumeDef parseStorageVolumeXML(String volXML) {
         DocumentBuilder builder;
@@ -47,14 +46,10 @@ public class LibvirtStorageVolumeXMLParser {
             Element rootElement = doc.getDocumentElement();
 
             String VolName = getTagValue("name", rootElement);
-            Element target = (Element) rootElement.getElementsByTagName(
-                    "target").item(0);
+            Element target = (Element)rootElement.getElementsByTagName("target").item(0);
             String format = getAttrValue("type", "format", target);
-            Long capacity = Long
-                    .parseLong(getTagValue("capacity", rootElement));
-            return new LibvirtStorageVolumeDef(VolName, capacity,
-                    LibvirtStorageVolumeDef.volFormat.getFormat(format), null,
-                    null);
+            Long capacity = Long.parseLong(getTagValue("capacity", rootElement));
+            return new LibvirtStorageVolumeDef(VolName, capacity, LibvirtStorageVolumeDef.volFormat.getFormat(format), null, null);
         } catch (ParserConfigurationException e) {
             s_logger.debug(e.toString());
         } catch (SAXException e) {
@@ -66,9 +61,8 @@ public class LibvirtStorageVolumeXMLParser {
     }
 
     private static String getTagValue(String tag, Element eElement) {
-        NodeList nlList = eElement.getElementsByTagName(tag).item(0)
-                .getChildNodes();
-        Node nValue = (Node) nlList.item(0);
+        NodeList nlList = eElement.getElementsByTagName(tag).item(0).getChildNodes();
+        Node nValue = nlList.item(0);
 
         return nValue.getNodeValue();
     }
@@ -78,7 +72,7 @@ public class LibvirtStorageVolumeXMLParser {
         if (tagNode.getLength() == 0) {
             return null;
         }
-        Element node = (Element) tagNode.item(0);
+        Element node = (Element)tagNode.item(0);
         return node.getAttribute(attr);
     }
 }

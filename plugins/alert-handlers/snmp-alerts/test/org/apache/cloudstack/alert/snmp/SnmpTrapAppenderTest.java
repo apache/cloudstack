@@ -17,15 +17,15 @@
 
 package org.apache.cloudstack.alert.snmp;
 
-import org.apache.log4j.spi.LoggingEvent;
-import org.junit.Test;
-import org.mockito.Mock;
-
-import java.util.List;
-
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+
+import java.util.List;
+
+import org.apache.log4j.spi.LoggingEvent;
+import org.junit.Test;
+import org.mockito.Mock;
 
 public class SnmpTrapAppenderTest {
     SnmpTrapAppender _appender = new SnmpTrapAppender();

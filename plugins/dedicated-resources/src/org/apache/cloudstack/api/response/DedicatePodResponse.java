@@ -16,28 +16,34 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.dc.DedicatedResources;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = DedicatedResources.class)
 public class DedicatePodResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the ID of the dedicated resource")
+    @SerializedName("id")
+    @Param(description = "the ID of the dedicated resource")
     private String id;
 
-    @SerializedName("podid") @Param(description="the ID of the Pod")
+    @SerializedName("podid")
+    @Param(description = "the ID of the Pod")
     private String podId;
 
-    @SerializedName("podname") @Param(description="the Name of the Pod")
+    @SerializedName("podname")
+    @Param(description = "the Name of the Pod")
     private String podName;
 
-    @SerializedName("domainid") @Param(description="the domain ID to which the Pod is dedicated")
+    @SerializedName("domainid")
+    @Param(description = "the domain ID to which the Pod is dedicated")
     private String domainId;
 
-    @SerializedName("accountid") @Param(description="the Account Id to which the Pod is dedicated")
+    @SerializedName("accountid")
+    @Param(description = "the Account Id to which the Pod is dedicated")
     private String accountId;
 
     @SerializedName("affinitygroupid")

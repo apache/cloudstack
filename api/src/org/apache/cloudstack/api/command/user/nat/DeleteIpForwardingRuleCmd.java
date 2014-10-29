@@ -34,7 +34,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.FirewallRule;
 
-@APICommand(name = "deleteIpForwardingRule", description="Deletes an ip forwarding rule", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteIpForwardingRule", description = "Deletes an ip forwarding rule", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteIpForwardingRuleCmd.class.getName());
 
@@ -44,14 +45,13 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = FirewallRuleResponse.class,
-            required=true, description="the id of the forwarding rule")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the id of the forwarding rule")
     private Long id;
 
     // unexposed parameter needed for events logging
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.UUID, entityType = AccountResponse.class,
-            expose=false)
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, expose = false)
     private Long ownerId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -70,8 +70,8 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Rule Id: "+id);
+    public void execute() {
+        CallContext.current().setEventDetails("Rule Id: " + id);
         boolean result = _firewallService.revokeRelatedFirewallRule(id, true);
         result = result && _rulesService.revokeStaticNatRule(id, true);
 
@@ -103,7 +103,7 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  ("Deleting an ipforwarding 1:1 NAT rule id:"+id);
+        return ("Deleting an ipforwarding 1:1 NAT rule id:" + id);
     }
 
     @Override

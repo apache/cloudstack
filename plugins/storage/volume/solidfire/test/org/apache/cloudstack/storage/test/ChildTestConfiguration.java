@@ -16,9 +16,10 @@
 // under the License.
 package org.apache.cloudstack.storage.test;
 
-import org.apache.cloudstack.storage.image.motion.ImageMotionService;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
+
+import org.apache.cloudstack.storage.image.motion.ImageMotionService;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.host.dao.HostDao;
@@ -45,7 +46,7 @@ public class ChildTestConfiguration extends TestConfiguration {
 
     /*
      * @Override
-     * 
+     *
      * @Bean public PrimaryDataStoreDao primaryDataStoreDao() { return
      * Mockito.mock(PrimaryDataStoreDaoImpl.class); }
      */

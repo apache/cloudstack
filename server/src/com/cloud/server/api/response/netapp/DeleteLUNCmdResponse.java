@@ -18,5 +18,5 @@ package com.cloud.server.api.response.netapp;
 
 import org.apache.cloudstack.api.BaseResponse;
 
-public class DeleteLUNCmdResponse extends BaseResponse{
+public class DeleteLUNCmdResponse extends BaseResponse {
 }

@@ -32,5 +32,5 @@ import org.apache.cloudstack.spring.module.model.ModuleDefinition;
 public interface ModuleDefinitionLocator {
 
     Collection<ModuleDefinition> locateModules(String context) throws IOException;
-    
+
 }

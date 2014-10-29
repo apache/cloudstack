@@ -18,50 +18,45 @@
 package com.cloud.bridge.service.core.ec2;
 
 public class EC2ImportKeyPair {
-	
-	private String keyName;
-	private String publicKeyMaterial;
-	
 
-	/**
-	 * 
-	 */
-	public EC2ImportKeyPair() {
-		// TODO Auto-generated constructor stub
-		setKeyName(null);
-		setPublicKeyMaterial(null);
-	}
+    private String keyName;
+    private String publicKeyMaterial;
 
+    /**
+     *
+     */
+    public EC2ImportKeyPair() {
+        // TODO Auto-generated constructor stub
+        setKeyName(null);
+        setPublicKeyMaterial(null);
+    }
 
-	/**
-	 * @return the keyName
-	 */
-	public String getKeyName() {
-		return keyName;
-	}
+    /**
+     * @return the keyName
+     */
+    public String getKeyName() {
+        return keyName;
+    }
 
+    /**
+     * @param keyName the keyName to set
+     */
+    public void setKeyName(String keyName) {
+        this.keyName = keyName;
+    }
 
-	/**
-	 * @param keyName the keyName to set
-	 */
-	public void setKeyName(String keyName) {
-		this.keyName = keyName;
-	}
+    /**
+     * @return the publicKeyMaterial
+     */
+    public String getPublicKeyMaterial() {
+        return publicKeyMaterial;
+    }
 
-
-	/**
-	 * @return the publicKeyMaterial
-	 */
-	public String getPublicKeyMaterial() {
-		return publicKeyMaterial;
-	}
-
-
-	/**
-	 * @param publicKeyMaterial the publicKeyMaterial to set
-	 */
-	public void setPublicKeyMaterial(String publicKeyMaterial) {
-		this.publicKeyMaterial = publicKeyMaterial;
-	}
+    /**
+     * @param publicKeyMaterial the publicKeyMaterial to set
+     */
+    public void setPublicKeyMaterial(String publicKeyMaterial) {
+        this.publicKeyMaterial = publicKeyMaterial;
+    }
 
 }

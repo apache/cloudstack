@@ -19,20 +19,21 @@ package org.apache.cloudstack.api.command.user.affinitygroup;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.AffinityGroupTypeResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "listAffinityGroupTypes", description = "Lists affinity group types available", responseObject = AffinityGroupTypeResponse.class)
+@APICommand(name = "listAffinityGroupTypes", description = "Lists affinity group types available", responseObject = AffinityGroupTypeResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAffinityGroupTypesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListAffinityGroupTypesCmd.class.getName());
 
     private static final String s_name = "listaffinitygrouptypesresponse";
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -43,6 +44,7 @@ public class ListAffinityGroupTypesCmd extends BaseListCmd {
         return s_name;
     }
 
+    @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }

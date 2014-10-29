@@ -17,7 +17,7 @@
 
 package com.cloud.bridge.service.core.ec2;
 
-public class IpForwardingRuleResponse /* extends BaseResponse */ {
+public class IpForwardingRuleResponse /* extends BaseResponse */{
 
     // @SerializedName(ApiConstants.ID) @Param(description="the ID of the port forwarding rule")
     private Long id;

@@ -20,9 +20,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 import javax.ejb.Local;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -40,20 +42,27 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value={UsageEventDao.class})
+@Local(value = {UsageEventDao.class})
 public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implements UsageEventDao {
     public static final Logger s_logger = Logger.getLogger(UsageEventDaoImpl.class.getName());
 
     private final SearchBuilder<UsageEventVO> latestEventsSearch;
     private final SearchBuilder<UsageEventVO> IpeventsSearch;
-    private static final String COPY_EVENTS = "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size) " +
-            "SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size FROM cloud.usage_event vmevt WHERE vmevt.id > ? and vmevt.id <= ? ";
-    private static final String COPY_ALL_EVENTS = "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size) " +
-            "SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size FROM cloud.usage_event vmevt WHERE vmevt.id <= ?";
+    private static final String COPY_EVENTS =
+        "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size) "
+            + "SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size FROM cloud.usage_event vmevt WHERE vmevt.id > ? and vmevt.id <= ? ";
+    private static final String COPY_ALL_EVENTS =
+        "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size) "
+            + "SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size FROM cloud.usage_event vmevt WHERE vmevt.id <= ?";
+    private static final String COPY_EVENT_DETAILS = "INSERT INTO cloud_usage.usage_event_details (id, usage_event_id, name, value) "
+            + "SELECT id, usage_event_id, name, value FROM cloud.usage_event_details vmevtDetails WHERE vmevtDetails.usage_event_id > ? and vmevtDetails.usage_event_id <= ? ";
+    private static final String COPY_ALL_EVENT_DETAILS = "INSERT INTO cloud_usage.usage_event_details (id, usage_event_id, name, value) "
+            + "SELECT id, usage_event_id, name, value FROM cloud.usage_event_details vmevtDetails WHERE vmevtDetails.usage_event_id <= ?";
     private static final String MAX_EVENT = "select max(id) from cloud.usage_event where created <= ?";
+    @Inject
+    protected UsageEventDetailsDao usageEventDetailsDao;
 
-
-    public UsageEventDaoImpl () {
+    public UsageEventDaoImpl() {
         latestEventsSearch = createSearchBuilder();
         latestEventsSearch.and("processed", latestEventsSearch.entity().isProcessed(), SearchCriteria.Op.EQ);
         latestEventsSearch.and("enddate", latestEventsSearch.entity().getCreateDate(), SearchCriteria.Op.LTEQ);
@@ -91,6 +100,7 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
         long recentEventId = getMostRecentEventId();
         long maxEventId = getMaxEventId(endDate);
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        // Copy events from cloud db to usage db
         String sql = COPY_EVENTS;
         if (recentEventId == 0) {
             if (s_logger.isDebugEnabled()) {
@@ -110,12 +120,39 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
             pstmt.setLong(i++, maxEventId);
             pstmt.executeUpdate();
             txn.commit();
-            return findRecentEvents(endDate);
         } catch (Exception ex) {
             txn.rollback();
             s_logger.error("error copying events from cloud db to usage db", ex);
             throw new CloudRuntimeException(ex.getMessage());
         }
+
+        // Copy event details from cloud db to usage db
+        sql = COPY_EVENT_DETAILS;
+        if (recentEventId == 0) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("no recent event date, copying all event detailss");
+            }
+            sql = COPY_ALL_EVENT_DETAILS;
+        }
+
+        pstmt = null;
+        try {
+            txn.start();
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            int i = 1;
+            if (recentEventId != 0) {
+                pstmt.setLong(i++, recentEventId);
+            }
+            pstmt.setLong(i++, maxEventId);
+            pstmt.executeUpdate();
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            s_logger.error("error copying event details from cloud db to usage db", ex);
+            throw new CloudRuntimeException(ex.getMessage());
+        }
+
+        return findRecentEvents(endDate);
     }
 
     @DB
@@ -124,9 +161,9 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
         try {
             List<UsageEventVO> latestEvents = getLatestEvent();
 
-            if(latestEvents !=null && latestEvents.size() == 1){
+            if (latestEvents != null && latestEvents.size() == 1) {
                 UsageEventVO latestEvent = latestEvents.get(0);
-                if(latestEvent != null){
+                if (latestEvent != null) {
                     return latestEvent.getId();
                 }
             }
@@ -182,6 +219,11 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
         sc.setParameters("zoneid", zoneId);
         sc.setParameters("networktype", Vlan.VlanType.DirectAttached.toString());
         return listBy(sc, filter);
+    }
+
+    @Override
+    public void saveDetails(long eventId, Map<String, String> details) {
+        usageEventDetailsDao.persist(eventId, details);
     }
 
 }

@@ -27,13 +27,7 @@ import com.cloud.utils.fsm.StateObject;
 
 public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, StateObject<Snapshot.State> {
     public enum Type {
-        MANUAL,
-        RECURRING,
-        TEMPLATE,
-        HOURLY,
-        DAILY,
-        WEEKLY,
-        MONTHLY;
+        MANUAL, RECURRING, TEMPLATE, HOURLY, DAILY, WEEKLY, MONTHLY;
         private int max = 8;
 
         public void setMax(int max) {
@@ -55,16 +49,11 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, 
     }
 
     public enum State {
-        Allocated,
-        Creating,
-        CreatedOnPrimary,
-        BackingUp,
-        BackedUp,
-        Copying,
-        Destroying,
-        Destroyed,//it's a state, user can't see the snapshot from ui, while the snapshot may still exist on the storage
+        Allocated, Creating, CreatedOnPrimary, BackingUp, BackedUp, Copying, Destroying, Destroyed,
+        //it's a state, user can't see the snapshot from ui, while the snapshot may still exist on the storage
         Error;
 
+        @Override
         public String toString() {
             return this.name();
         }
@@ -75,18 +64,12 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, 
     }
 
     enum Event {
-        CreateRequested,
-        OperationNotPerformed,
-        BackupToSecondary,
-        BackedupToSecondary,
-        DestroyRequested,
-        CopyingRequested,
-        OperationSucceeded,
-        OperationFailed
+        CreateRequested, OperationNotPerformed, BackupToSecondary, BackedupToSecondary, DestroyRequested, CopyingRequested, OperationSucceeded, OperationFailed
     }
 
     public static final long MANUAL_POLICY_ID = 0L;
 
+    @Override
     long getAccountId();
 
     long getVolumeId();
@@ -97,6 +80,7 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, 
 
     Type getRecurringType();
 
+    @Override
     State getState();
 
     HypervisorType getHypervisorType();

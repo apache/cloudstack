@@ -27,79 +27,80 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 
-import com.cloud.utils.db.Encrypt;
-import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import com.cloud.utils.db.Encrypt;
+import com.cloud.utils.db.GenericDao;
+
 @Entity
-@Table(name="user")
-@SecondaryTable(name="account",
-pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
+@Table(name = "user")
+@SecondaryTable(name = "account", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "account_id", referencedColumnName = "id")})
 public class UserAccountVO implements UserAccount, InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id = null;
 
-    @Column(name="username")
+    @Column(name = "username")
     private String username = null;
 
-    @Column(name="password")
+    @Column(name = "password")
     private String password = null;
 
-    @Column(name="firstname")
+    @Column(name = "firstname")
     private String firstname = null;
 
-    @Column(name="lastname")
+    @Column(name = "lastname")
     private String lastname = null;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="email")
+    @Column(name = "email")
     private String email = null;
 
-    @Column(name="state")
+    @Column(name = "state")
     private String state;
 
-    @Column(name="api_key")
+    @Column(name = "api_key")
     private String apiKey = null;
 
     @Encrypt
-    @Column(name="secret_key")
+    @Column(name = "secret_key")
     private String secretKey = null;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    @Column(name="timezone")
+    @Column(name = "timezone")
     private String timezone;
 
-    @Column(name="registration_token")
+    @Column(name = "registration_token")
     private String registrationToken = null;
 
-    @Column(name="is_registered")
+    @Column(name = "is_registered")
     boolean registered;
 
-    @Column (name="incorrect_login_attempts")
+    @Column(name = "incorrect_login_attempts")
     int loginAttempts;
 
-    @Column(name="account_name", table="account", insertable=false, updatable=false)
+    @Column(name = "account_name", table = "account", insertable = false, updatable = false)
     private String accountName = null;
 
-    @Column(name="type", table="account", insertable=false, updatable=false)
+    @Column(name = "type", table = "account", insertable = false, updatable = false)
     private short type;
 
-    @Column(name="domain_id", table="account", insertable=false, updatable=false)
+    @Column(name = "domain_id", table = "account", insertable = false, updatable = false)
     private Long domainId = null;
 
-    @Column(name="state", table="account", insertable=false, updatable=false)
+    @Column(name = "state", table = "account", insertable = false, updatable = false)
     private String accountState;
 
-    public UserAccountVO() {}
+    public UserAccountVO() {
+    }
 
     @Override
     public long getId() {
@@ -246,26 +247,24 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
     }
 
     @Override
-    public String getTimezone(){
+    public String getTimezone() {
         return timezone;
     }
 
-    public void setTimezone(String timezone)
-    {
-        this.timezone = timezone; 
+    public void setTimezone(String timezone) {
+        this.timezone = timezone;
     }
 
     @Override
-    public String getRegistrationToken(){
+    public String getRegistrationToken() {
         return registrationToken;
     }
 
-    public void setRegistrationToken(String registrationToken)
-    {
-        this.registrationToken = registrationToken; 
+    public void setRegistrationToken(String registrationToken) {
+        this.registrationToken = registrationToken;
     }
 
-    @Override 
+    @Override
     public boolean isRegistered() {
         return registered;
     }
@@ -278,6 +277,7 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
         this.loginAttempts = loginAttempts;
     }
 
+    @Override
     public int getLoginAttempts() {
         return loginAttempts;
     }

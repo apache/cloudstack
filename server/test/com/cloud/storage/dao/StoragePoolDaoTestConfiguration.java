@@ -19,8 +19,6 @@ package com.cloud.storage.dao;
 
 import java.io.IOException;
 
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
-import org.apache.cloudstack.test.utils.SpringUtils;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Configuration;
@@ -29,16 +27,14 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
+import org.apache.cloudstack.test.utils.SpringUtils;
 
 @Configuration
-@ComponentScan(basePackageClasses={
-        PrimaryDataStoreDaoImpl.class,
-        StoragePoolDetailsDaoImpl.class},
-        includeFilters={@Filter(value=StoragePoolDaoTestConfiguration.Library.class, type=FilterType.CUSTOM)},
-        useDefaultFilters=false
-        )
+@ComponentScan(basePackageClasses = {PrimaryDataStoreDaoImpl.class, StoragePoolDetailsDaoImpl.class},
+               includeFilters = {@Filter(value = StoragePoolDaoTestConfiguration.Library.class, type = FilterType.CUSTOM)},
+               useDefaultFilters = false)
 public class StoragePoolDaoTestConfiguration {
-
 
     public static class Library implements TypeFilter {
 

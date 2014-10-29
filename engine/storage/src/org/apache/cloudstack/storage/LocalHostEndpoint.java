@@ -53,7 +53,7 @@ public class LocalHostEndpoint implements EndPoint {
         // around permission issue for default /mnt folder
         String mountParent = configDao.getValue(Config.MountParent.key());
 
-        String path =  mountParent + File.separator + "secStorage";
+        String path = mountParent + File.separator + "secStorage";
 
         LocalNfsSecondaryStorageResource localResource = new LocalNfsSecondaryStorageResource();
         localResource.setParentPath(path);

@@ -20,23 +20,19 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 
 import javax.net.ssl.SSLEngine;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.transport.Request;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
 import com.cloud.utils.nio.Link;
-
 
 public class ClusteredAgentAttache extends ConnectedAgentAttache implements Routable {
     private final static Logger s_logger = Logger.getLogger(ClusteredAgentAttache.class);
@@ -46,17 +42,17 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
     protected final LinkedList<Request> _transferRequests;
     protected boolean _transferMode = false;
 
-    static public void initialize(ClusteredAgentManagerImpl agentMgr) {
+    static public void initialize(final ClusteredAgentManagerImpl agentMgr) {
         s_clusteredAgentMgr = agentMgr;
     }
 
-    public ClusteredAgentAttache(AgentManagerImpl agentMgr, long id, String name) {
+    public ClusteredAgentAttache(final AgentManagerImpl agentMgr, final long id, final String name) {
         super(agentMgr, id, name, null, false);
         _forward = true;
         _transferRequests = new LinkedList<Request>();
     }
 
-    public ClusteredAgentAttache(AgentManagerImpl agentMgr, long id, String name, Link link, boolean maintenance) {
+    public ClusteredAgentAttache(final AgentManagerImpl agentMgr, final long id, final String name, final Link link, final boolean maintenance) {
         super(agentMgr, id, name, link, maintenance);
         _forward = link == null;
         _transferRequests = new LinkedList<Request>();
@@ -71,9 +67,10 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
     public boolean forForward() {
         return _forward;
     }
-    
+
+    @Override
     protected void checkAvailability(final Command[] cmds) throws AgentUnavailableException {
-        
+
         if (_transferMode) {
             // need to throw some other exception while agent is in rebalancing mode
             for (final Command cmd : cmds) {
@@ -85,10 +82,9 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
             super.checkAvailability(cmds);
         }
     }
-    
-    
+
     @Override
-    public void cancel(long seq) {
+    public void cancel(final long seq) {
         if (forForward()) {
             Listener listener = getListener(seq);
             if (listener != null && listener instanceof SynchronousListener) {
@@ -110,7 +106,7 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
     }
 
     @Override
-    public void routeToAgent(byte[] data) throws AgentUnavailableException {
+    public void routeToAgent(final byte[] data) throws AgentUnavailableException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(log(Request.getSequence(data), "Routing from " + Request.getManagementServerId(data)));
         }
@@ -140,34 +136,34 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
     }
 
     @Override
-    public void send(Request req, Listener listener) throws AgentUnavailableException {
+    public void send(final Request req, final Listener listener) throws AgentUnavailableException {
         if (_link != null) {
             super.send(req, listener);
             return;
         }
-        
+
         long seq = req.getSequence();
 
         if (listener != null) {
             registerListener(req.getSequence(), listener);
         }
-        
+
         if (_transferMode) {
 
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(log(seq, "Holding request as the corresponding agent is in transfer mode: "));
             }
-                
+
             synchronized (this) {
                 addRequestToTransfer(req);
                 return;
             }
-        } 
+        }
 
         if (s_clusteredAgentMgr == null) {
             throw new AgentUnavailableException("ClusteredAgentAttache not properly initialized", _id);
         }
-        
+
         int i = 0;
         SocketChannel ch = null;
         boolean error = true;
@@ -185,7 +181,7 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
                     }
                     continue;
                 }
-                
+
                 SSLEngine sslEngine = s_clusteredAgentMgr.getSSLEngine(peerName);
                 if (sslEngine == null) {
                     throw new AgentUnavailableException("Unable to get SSLEngine of peer " + peerName, _id);
@@ -207,7 +203,7 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
                         s_logger.debug(log(seq, "Error on connecting to management node: " + req.toString() + " try = " + i));
                     }
 
-                    if(s_logger.isInfoEnabled()) {
+                    if (s_logger.isInfoEnabled()) {
                         s_logger.info("IOException " + e.getMessage() + " when sending data to peer " + peerName + ", close peer connection and let it re-open");
                     }
                 }
@@ -219,40 +215,40 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
         }
         throw new AgentUnavailableException("Unable to reach the peer that the agent is connected", _id);
     }
-    
+
     public synchronized void setTransferMode(final boolean transfer) {
         _transferMode = transfer;
     }
-    
-    
-    public boolean getTransferMode() {
+
+    public synchronized boolean getTransferMode() {
         return _transferMode;
     }
-    
+
     public Request getRequestToTransfer() {
         if (_transferRequests.isEmpty()) {
             return null;
         } else {
             return _transferRequests.pop();
-        } 
+        }
     }
-    
-    protected synchronized void addRequestToTransfer(Request req) {
+
+    protected synchronized void addRequestToTransfer(final Request req) {
         int index = findTransferRequest(req);
         assert (index < 0) : "How can we get index again? " + index + ":" + req.toString();
         _transferRequests.add(-index - 1, req);
     }
-    
-    protected synchronized int findTransferRequest(Request req) {
+
+    protected synchronized int findTransferRequest(final Request req) {
         return Collections.binarySearch(_transferRequests, req, s_reqComparator);
     }
-    
+
     @Override
-    public void disconnect(final Status state) { 
+    public void disconnect(final Status state) {
         super.disconnect(state);
         _transferRequests.clear();
     }
-    
+
+    @Override
     public void cleanup(final Status state) {
         super.cleanup(state);
         _transferRequests.clear();

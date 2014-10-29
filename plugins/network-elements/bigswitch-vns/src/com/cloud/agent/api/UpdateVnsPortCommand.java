@@ -29,26 +29,21 @@ public class UpdateVnsPortCommand extends Command {
         this._portName = portName;
     }
 
-
     public String getNetworkUuid() {
         return _networkUuid;
     }
-
 
     public String getPortUuid() {
         return _portUuid;
     }
 
-
     public String getTenantUuid() {
         return _tenantUuid;
     }
 
-
     public String getPortName() {
         return _portName;
     }
-
 
     @Override
     public boolean executeInSequence() {

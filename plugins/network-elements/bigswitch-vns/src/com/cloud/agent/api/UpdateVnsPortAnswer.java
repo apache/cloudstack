@@ -18,8 +18,7 @@ package com.cloud.agent.api;
 
 public class UpdateVnsPortAnswer extends Answer {
 
-    public UpdateVnsPortAnswer(Command command, boolean success,
-            String details) {
+    public UpdateVnsPortAnswer(Command command, boolean success, String details) {
         super(command, success, details);
     }
 

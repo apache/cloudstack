@@ -22,16 +22,16 @@ import java.util.List;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostPodVO;
 
-
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
-public interface EngineHostPodDao extends GenericDao<EngineHostPodVO, Long>, StateDao<DataCenterResourceEntity.State, DataCenterResourceEntity.State.Event, DataCenterResourceEntity> {
-	public List<EngineHostPodVO> listByDataCenterId(long id);
+public interface EngineHostPodDao extends GenericDao<EngineHostPodVO, Long>,
+        StateDao<DataCenterResourceEntity.State, DataCenterResourceEntity.State.Event, DataCenterResourceEntity> {
+    public List<EngineHostPodVO> listByDataCenterId(long id);
 
-	public EngineHostPodVO findByName(String name, long dcId);
+    public EngineHostPodVO findByName(String name, long dcId);
 
-	public HashMap<Long, List<Object>> getCurrentPodCidrSubnets(long zoneId, long podIdToSkip);
+    public HashMap<Long, List<Object>> getCurrentPodCidrSubnets(long zoneId, long podIdToSkip);
 
     public List<Long> listDisabledPods(long zoneId);
 }

@@ -26,7 +26,7 @@ import org.junit.Test;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.vpc.MockResourceLimitManagerImpl;
 
-public class ResourceLimitManagerImplTest  extends TestCase{
+public class ResourceLimitManagerImplTest extends TestCase {
     private static final Logger s_logger = Logger.getLogger(ResourceLimitManagerImplTest.class);
 
     MockResourceLimitManagerImpl _resourceLimitService = new MockResourceLimitManagerImpl();
@@ -37,6 +37,7 @@ public class ResourceLimitManagerImplTest  extends TestCase{
 
     }
 
+    @Override
     @After
     public void tearDown() throws Exception {
     }
@@ -52,8 +53,8 @@ public class ResourceLimitManagerImplTest  extends TestCase{
 
     protected void updateResourceCount() {
         // update resource count for an account
-        Long accountId = (long) 1;
-        Long domainId = (long) 1;
+        Long accountId = (long)1;
+        Long domainId = (long)1;
         String msg = "Update Resource Count for account: TEST FAILED";
         assertNull(msg, _resourceLimitService.recalculateResourceCount(accountId, domainId, null));
 
@@ -65,28 +66,28 @@ public class ResourceLimitManagerImplTest  extends TestCase{
 
     protected void updateResourceLimit() {
         // update resource Limit for an account for resource_type = 8 (CPU)
-        resourceLimitServiceCall((long) 1, (long) 1, 8, (long) 20);
+        resourceLimitServiceCall((long)1, (long)1, 8, (long)20);
 
         // update resource Limit for a domain for resource_type = 8 (CPU)
-        resourceLimitServiceCall(null, (long) 1, 8, (long) 40);
+        resourceLimitServiceCall(null, (long)1, 8, (long)40);
 
         // update resource Limit for an account for resource_type = 9 (Memory (in MiB))
-        resourceLimitServiceCall((long) 1, (long) 1, 9, (long) 4096);
+        resourceLimitServiceCall((long)1, (long)1, 9, (long)4096);
 
         // update resource Limit for a domain for resource_type = 9 (Memory (in MiB))
-        resourceLimitServiceCall(null, (long) 1, 9, (long) 10240);
+        resourceLimitServiceCall(null, (long)1, 9, (long)10240);
 
         // update resource Limit for an account for resource_type = 10 (Primary storage (in GiB))
-        resourceLimitServiceCall((long) 1, (long) 1, 10, (long) 200);
+        resourceLimitServiceCall((long)1, (long)1, 10, (long)200);
 
         // update resource Limit for a domain for resource_type = 10 (Primary storage (in GiB))
-        resourceLimitServiceCall(null, (long) 1, 10, (long) 200);
+        resourceLimitServiceCall(null, (long)1, 10, (long)200);
 
         // update resource Limit for an account for resource_type = 11 (Secondary storage (in GiB))
-        resourceLimitServiceCall((long) 1, (long) 1, 10, (long) 400);
+        resourceLimitServiceCall((long)1, (long)1, 10, (long)400);
 
         // update resource Limit for a domain for resource_type = 11 (Secondary storage (in GiB))
-        resourceLimitServiceCall(null, (long) 1, 10, (long) 400);
+        resourceLimitServiceCall(null, (long)1, 10, (long)400);
     }
 
     private void resourceLimitServiceCall(Long accountId, Long domainId, Integer resourceType, Long max) {
@@ -95,7 +96,7 @@ public class ResourceLimitManagerImplTest  extends TestCase{
         try {
             result = _resourceLimitService.updateResourceLimit(accountId, domainId, resourceType, max);
             assertFalse(msg, (result != null || (result == null && max != null && max.longValue() == -1L)));
-        }  catch (Exception ex) {
+        } catch (Exception ex) {
             fail(msg);
         }
     }

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.simulator;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,35 +26,48 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="mockconfiguration")
+@Table(name = "mockconfiguration")
 public class MockConfigurationVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="data_center_id", nullable=false)
+    @Column(name = "data_center_id", nullable = false)
     private Long dataCenterId;
 
-    @Column(name="pod_id")
+    @Column(name = "pod_id")
     private Long podId;
 
-    @Column(name="cluster_id")
+    @Column(name = "cluster_id")
     private Long clusterId;
 
-    @Column(name="host_id")
+    @Column(name = "host_id")
     private Long hostId;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="values")
+    @Column(name = "values")
     private String values;
 
+    @Column(name="count")
+    private Integer count;
+
+    @Column(name="json_response", length=4096)
+    private String jsonResponse;
+
+    @Column(name="removed")
+    @Temporal(value=TemporalType.TIMESTAMP)
+    private Date removed;
+
+    @Override
     public long getId() {
         return this.id;
     }
@@ -118,5 +132,25 @@ public class MockConfigurationVO implements InternalIdentity {
 
     public void setValues(String values) {
         this.values = values;
+    }
+
+    public Integer getCount() {
+        return this.count;
+    }
+
+    public void setCount(Integer count) {
+        this.count = count;
+    }
+
+    public String getJsonResponse() {
+        return this.jsonResponse;
+    }
+
+    public void setJsonResponse(String jsonResponse) {
+        this.jsonResponse = jsonResponse;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
     }
 }

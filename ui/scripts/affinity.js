@@ -29,6 +29,7 @@
             },
             dataProvider: function(args) {
                 var data = {};
+                listViewDataProvider(args, data);
                 if (args.context != null) {
                     if ("instances" in args.context) {
                         $.extend(data, {
@@ -37,7 +38,7 @@
                     }
                 }
                 $.ajax({
-                    url: createURL('listAffinityGroups&listAll=true'),
+                    url: createURL('listAffinityGroups'),
                     data: data,
                     success: function(json) {
                         var items = json.listaffinitygroupsresponse.affinitygroup;
@@ -206,7 +207,7 @@
         }
     };
        
-    var affinitygroupActionfilter = function(args) {
+    var affinitygroupActionfilter = cloudStack.actionFilter.affinitygroupActionfilter = function(args) {
         var jsonObj = args.context.item;
         var allowedActions = [];       
         if (jsonObj.type != 'ExplicitDedication' || isAdmin()) {

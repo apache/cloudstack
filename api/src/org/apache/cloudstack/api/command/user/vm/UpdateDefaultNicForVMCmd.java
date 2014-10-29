@@ -21,22 +21,27 @@ import java.util.EnumSet;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NicResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "updateDefaultNicForVirtualMachine", description="Changes the default NIC on a VM", responseObject=UserVmResponse.class)
-
+@APICommand(name = "updateDefaultNicForVirtualMachine", description = "Changes the default NIC on a VM", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateDefaultNicForVMCmd.class);
     private static final String s_name = "updatedefaultnicforvirtualmachineresponse";
@@ -45,12 +50,12 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
             required=true, description="Virtual Machine ID")
     private Long vmId;
 
-    @Parameter(name=ApiConstants.NIC_ID, type=CommandType.UUID, entityType=NicResponse.class,
-            required=true, description="NIC ID")
+    @Parameter(name = ApiConstants.NIC_ID, type = CommandType.UUID, entityType = NicResponse.class, required = true, description = "NIC ID")
     private Long nicId;
 
     /////////////////////////////////////////////////////
@@ -64,7 +69,7 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
     public Long getNicId() {
         return nicId;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -73,11 +78,11 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
         return "virtualmachine";
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_NIC_UPDATE;
@@ -87,8 +92,7 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "Updating NIC " + getNicId() + " on user vm: " + getVmId();
     }
-    
-    
+
     @Override
     public long getEntityOwnerId() {
         UserVm vm = _responseGenerator.findUserVmById(getVmId());
@@ -99,16 +103,16 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Vm Id: "+getVmId() + " Nic Id: " + getNicId());
+    public void execute() {
+        CallContext.current().setEventDetails("Vm Id: " + getVmId() + " Nic Id: " + getNicId());
         UserVm result = _userVmService.updateDefaultNicForVirtualMachine(this);
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("nics"));
         EnumSet<VMDetails> details = EnumSet.copyOf(dc);
         if (result != null){
-            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", details, result).get(0);
+            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", details, result).get(0);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);                                                                                                                                                                                                                                                                              
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to set default nic for VM. Refer to server logs for details.");
         }

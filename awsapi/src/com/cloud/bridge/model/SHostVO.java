@@ -28,125 +28,125 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 @Entity
-@Table(name="shost")
-public class SHostVO implements SHost{
-	private static final long serialVersionUID = 213346565810468018L;
-	
-	public static final int STORAGE_HOST_TYPE_LOCAL = 0;
-	public static final int STORAGE_HOST_TYPE_NFS = 1;
+@Table(name = "shost")
+public class SHostVO implements SHost {
+    private static final long serialVersionUID = 213346565810468018L;
 
-	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(name="ID")
-	private Long id;
-	
-	@Column(name="Host")
-	private String host;
-	
-	@Column(name="HostType")
-	private int hostType;
-	
-	@Column(name="MHostID")
-	private long mhostid;
-	
-	@Column(name="ExportRoot")
-	private String exportRoot;
-	
-	@Column(name="UserOnHost")
-	private String userOnHost;
-	
-	@Column(name="UserPassword")
-	private String userPassword;
-	
-	@Transient
-	private MHostVO mhost;
-	
-	@Transient
-	private Set<SBucket> buckets = new HashSet<SBucket>();
-	
-	@Transient
-	private Set<MHostMountVO> mounts = new HashSet<MHostMountVO>();
-	
-	public SHostVO() {
-	}
-	
-	public Long getId() {
-		return id;
-	}
+    public static final int STORAGE_HOST_TYPE_LOCAL = 0;
+    public static final int STORAGE_HOST_TYPE_NFS = 1;
 
-	private void setId(Long id) {
-		this.id = id;
-	}
-	
-	public String getHost() {
-		return host;
-	}
-	
-	public void setHost(String host) {
-		this.host = host;
-	}
-	
-	public int getHostType() {
-		return hostType;
-	}
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ID")
+    private Long id;
 
-	public void setHostType(int hostType) {
-		this.hostType = hostType;
-	}
+    @Column(name = "Host")
+    private String host;
 
-	public long getMhostid() {
-	    return mhostid;
-	}
+    @Column(name = "HostType")
+    private int hostType;
 
-	public void setMhostid(long mhostid) {
-	    this.mhostid = mhostid;
-	}
+    @Column(name = "MHostID")
+    private long mhostid;
 
-	public String getExportRoot() {
-		return exportRoot;
-	}
+    @Column(name = "ExportRoot")
+    private String exportRoot;
 
-	public void setExportRoot(String exportRoot) {
-		this.exportRoot = exportRoot;
-	}
+    @Column(name = "UserOnHost")
+    private String userOnHost;
 
-	public String getUserOnHost() {
-		return userOnHost;
-	}
-	
-	public void setUserOnHost(String userOnHost) {
-		this.userOnHost = userOnHost;
-	}
-	
-	public String getUserPassword() {
-		return userPassword;
-	}
-	
-	public void setUserPassword(String userPassword) {
-		this.userPassword = userPassword;
-	}
-	
-	public MHostVO getMhost() {
-		return mhost;
-	}
+    @Column(name = "UserPassword")
+    private String userPassword;
 
-	public void setMhost(MHostVO mhost) {
-		this.mhost = mhost;
-	}
+    @Transient
+    private MHostVO mhost;
 
-	public Set<SBucket> getBuckets() {
-		return buckets;
-	}
+    @Transient
+    private Set<SBucket> buckets = new HashSet<SBucket>();
 
-	public void setBuckets(Set<SBucket> buckets) {
-		this.buckets = buckets;
-	}
-	
-	public Set<MHostMountVO> getMounts() {
-		return mounts;
-	}
+    @Transient
+    private Set<MHostMountVO> mounts = new HashSet<MHostMountVO>();
 
-	public void setMounts(Set<MHostMountVO> mounts) {
-		this.mounts = mounts;
-	}
+    public SHostVO() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    private void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    public int getHostType() {
+        return hostType;
+    }
+
+    public void setHostType(int hostType) {
+        this.hostType = hostType;
+    }
+
+    public long getMhostid() {
+        return mhostid;
+    }
+
+    public void setMhostid(long mhostid) {
+        this.mhostid = mhostid;
+    }
+
+    public String getExportRoot() {
+        return exportRoot;
+    }
+
+    public void setExportRoot(String exportRoot) {
+        this.exportRoot = exportRoot;
+    }
+
+    public String getUserOnHost() {
+        return userOnHost;
+    }
+
+    public void setUserOnHost(String userOnHost) {
+        this.userOnHost = userOnHost;
+    }
+
+    public String getUserPassword() {
+        return userPassword;
+    }
+
+    public void setUserPassword(String userPassword) {
+        this.userPassword = userPassword;
+    }
+
+    public MHostVO getMhost() {
+        return mhost;
+    }
+
+    public void setMhost(MHostVO mhost) {
+        this.mhost = mhost;
+    }
+
+    public Set<SBucket> getBuckets() {
+        return buckets;
+    }
+
+    public void setBuckets(Set<SBucket> buckets) {
+        this.buckets = buckets;
+    }
+
+    public Set<MHostMountVO> getMounts() {
+        return mounts;
+    }
+
+    public void setMounts(Set<MHostMountVO> mounts) {
+        this.mounts = mounts;
+    }
 }

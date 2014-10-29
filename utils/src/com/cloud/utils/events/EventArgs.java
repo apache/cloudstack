@@ -1,12 +1,13 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// the License.  You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -14,28 +15,30 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils.events;
 
 import java.io.Serializable;
 
 public class EventArgs implements Serializable {
-	private static final long serialVersionUID = 30659016120504139L;
-	public static EventArgs Empty = new EventArgs();
-	
-	private String subject;
-	
-	public EventArgs() {
-	}
-	
-	public EventArgs(String subject) {
-		this.subject = subject;
-	}
-	
-	public String getSubject() {
-		return subject;
-	}
+    private static final long serialVersionUID = 30659016120504139L;
+    public static final EventArgs Empty = new EventArgs();
 
-	public void setSubject(String subject) {
-		this.subject = subject;
-	}
+    private String subject;
+
+    public EventArgs() {
+    }
+
+    public EventArgs(String subject) {
+        this.subject = subject;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
 }

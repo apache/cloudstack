@@ -21,30 +21,35 @@ import javax.xml.namespace.QName;
 import org.apache.axis2.AxisFault;
 
 public class EC2ServiceException extends RuntimeException {
-	private static final long serialVersionUID = 8857313467757867680L;
-	
-	// ServerError & ClientError are correct as of schema version 2010-08-31
-	
-	public static enum ServerError {
+    private static final long serialVersionUID = 8857313467757867680L;
+
+    // ServerError & ClientError are correct as of schema version 2010-08-31
+
+    public static enum ServerError {
         InsufficientAddressCapacity("Server.InsufficientAddressCapacity", 500),
         InsufficientInstanceCapacity("Server.InsufficientInstanceCapacity", 500),
         InsufficientReservedInstanceCapacity("Server.InsufficientReservedInstanceCapacity", 500),
         InternalError("Server.InternalError", 500),
         Unavailable("Server.Unavailable", 501);
-		
-		private String errorString;
-		private int httpErrorCode;
-		
-		private ServerError(String errorString, int errorCode) { 
-			this.errorString = errorString;
-			this.httpErrorCode = errorCode;
-		}
-		
-		public String getErrorString() { return errorString; }
-		public int getHttpErrorCode() {return httpErrorCode; }
-	}
-	
-	public static enum ClientError {
+
+        private String errorString;
+        private int httpErrorCode;
+
+        private ServerError(String errorString, int errorCode) {
+            this.errorString = errorString;
+            this.httpErrorCode = errorCode;
+        }
+
+        public String getErrorString() {
+            return errorString;
+        }
+
+        public int getHttpErrorCode() {
+            return httpErrorCode;
+        }
+    }
+
+    public static enum ClientError {
         AddressLimitExceeded("Client.AddressLimitExceeded", 400),
         AttachmentLimitExceeded("Client.AttachmentLimitExceeded", 400),
         AuthFailure("Client.AuthFailure", 400),
@@ -81,7 +86,7 @@ public class EC2ServiceException extends RuntimeException {
         InvalidPermission_Malformed("Client.InvalidPermission.Malformed", 400),
         InvalidReservationID_Malformed("Client.InvalidReservationID.Malformed", 400),
         InvalidReservationID_NotFound("Client.InvalidReservationID.NotFound", 400),
-        InvalidSecurity_RequestHasExpired("Client.InvalidSecurity.RequestHasExpired", 400),	
+        InvalidSecurity_RequestHasExpired("Client.InvalidSecurity.RequestHasExpired", 400),
         InvalidSnapshotID_Malformed("Client.InvalidSnapshotID.Malformed", 400),
         InvalidSnapshot_NotFound("Client.InvalidSnapshot.NotFound", 400),
         InvalidUserID_Malformed("Client.InvalidUserID.Malformed", 400),
@@ -104,56 +109,61 @@ public class EC2ServiceException extends RuntimeException {
         Unsupported("Client.UnsupportedOperation", 400),
         VolumeLimitExceeded("Client.VolumeLimitExceeded", 400);
 
-		private String errorString;
-		private int httpErrorCode;
-		
-		private ClientError(String errorString, int errorCode) { 
-			this.errorString = errorString;
-			this.httpErrorCode = errorCode;
-		}
-		
-		public String getErrorString() { return errorString; }
-		public int getHttpErrorCode() {return httpErrorCode; }
-	}
+        private String errorString;
+        private int httpErrorCode;
 
-	private int httpErrorCode = 0;
-	
-	public EC2ServiceException() {
-	}
-	
-	public EC2ServiceException(String message) {
-		super(message);
-	}
-	
-	public EC2ServiceException(Throwable e) {
-		super(e);
-	}
+        private ClientError(String errorString, int errorCode) {
+            this.errorString = errorString;
+            this.httpErrorCode = errorCode;
+        }
 
-	public EC2ServiceException(String message, Throwable e) {
-		super(message, e);
-	}
+        public String getErrorString() {
+            return errorString;
+        }
 
-	public EC2ServiceException(String message, int errorCode) {
-		super(message, new AxisFault(message, new QName("Error")));
-		this.httpErrorCode = errorCode;
-	}
-	
-	public EC2ServiceException(String message, Throwable e, int errorCode) {
-		super(message, e);
-		this.httpErrorCode = errorCode;
-	}
-	
-	public EC2ServiceException(ServerError errorCode, String message) {
-		super(message, new AxisFault(message, new QName(errorCode.getErrorString())));
-		this.httpErrorCode = errorCode.getHttpErrorCode(); 
-	}
-	
-	public EC2ServiceException(ClientError errorCode, String message) {
-		super(message, new AxisFault(message, new QName(errorCode.getErrorString())));
-		this.httpErrorCode = errorCode.getHttpErrorCode(); 
-	}
-	
-	public int getErrorCode() {
-		return this.httpErrorCode;
-	}
+        public int getHttpErrorCode() {
+            return httpErrorCode;
+        }
+    }
+
+    private int httpErrorCode = 0;
+
+    public EC2ServiceException() {
+    }
+
+    public EC2ServiceException(String message) {
+        super(message);
+    }
+
+    public EC2ServiceException(Throwable e) {
+        super(e);
+    }
+
+    public EC2ServiceException(String message, Throwable e) {
+        super(message, e);
+    }
+
+    public EC2ServiceException(String message, int errorCode) {
+        super(message, new AxisFault(message, new QName("Error")));
+        this.httpErrorCode = errorCode;
+    }
+
+    public EC2ServiceException(String message, Throwable e, int errorCode) {
+        super(message, e);
+        this.httpErrorCode = errorCode;
+    }
+
+    public EC2ServiceException(ServerError errorCode, String message) {
+        super(message, new AxisFault(message, new QName(errorCode.getErrorString())));
+        this.httpErrorCode = errorCode.getHttpErrorCode();
+    }
+
+    public EC2ServiceException(ClientError errorCode, String message) {
+        super(message, new AxisFault(message, new QName(errorCode.getErrorString())));
+        this.httpErrorCode = errorCode.getHttpErrorCode();
+    }
+
+    public int getErrorCode() {
+        return this.httpErrorCode;
+    }
 }

@@ -29,12 +29,11 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={SecurityGroupRulesDao.class})
+@Local(value = {SecurityGroupRulesDao.class})
 public class SecurityGroupRulesDaoImpl extends GenericDaoBase<SecurityGroupRulesVO, Long> implements SecurityGroupRulesDao {
     private SearchBuilder<SecurityGroupRulesVO> AccountGroupNameSearch;
     private SearchBuilder<SecurityGroupRulesVO> AccountSearch;
     private SearchBuilder<SecurityGroupRulesVO> GroupSearch;
-
 
     protected SecurityGroupRulesDaoImpl() {
         AccountGroupNameSearch = createSearchBuilder();
@@ -45,11 +44,11 @@ public class SecurityGroupRulesDaoImpl extends GenericDaoBase<SecurityGroupRules
         AccountSearch = createSearchBuilder();
         AccountSearch.and("accountId", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountSearch.done();
-        
+
         GroupSearch = createSearchBuilder();
         GroupSearch.and("groupId", GroupSearch.entity().getId(), SearchCriteria.Op.EQ);
         GroupSearch.done();
-        
+
     }
 
     @Override
@@ -76,7 +75,7 @@ public class SecurityGroupRulesDaoImpl extends GenericDaoBase<SecurityGroupRules
         sc.setParameters("accountId", accountId);
         return listBy(sc, searchFilter);
     }
-    
+
     @Override
     public List<SecurityGroupRulesVO> listSecurityRulesByGroupId(long groupId) {
         Filter searchFilter = new Filter(SecurityGroupRulesVO.class, "id", true, null, null);

@@ -23,25 +23,24 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-
 @Entity
-@Table(name="offering_bundle")
+@Table(name = "offering_bundle")
 public class OfferingBundleVO {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="ID")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ID")
     private long id;
-    
-    @Column(name="AmazonEC2Offering")
+
+    @Column(name = "AmazonEC2Offering")
     private String amazonOffering;
 
-    @Column(name="CloudStackOffering")
+    @Column(name = "CloudStackOffering")
     private String cloudstackOffering;
-    
+
     public long getID() {
         return id;
     }
-    
+
     public String getAmazonOffering() {
         return amazonOffering;
     }
@@ -57,6 +56,5 @@ public class OfferingBundleVO {
     public void setCloudstackOffering(String cloudstackOffering) {
         this.cloudstackOffering = cloudstackOffering;
     }
-    
 
 }

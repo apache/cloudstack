@@ -20,8 +20,10 @@ import java.util.List;
 
 import com.cloud.utils.db.GenericDao;
 
-public interface NetworkDomainDao extends GenericDao<NetworkDomainVO, Long>{
+public interface NetworkDomainDao extends GenericDao<NetworkDomainVO, Long> {
     List<NetworkDomainVO> listDomainNetworkMapByDomain(Object... domainId);
+
     NetworkDomainVO getDomainNetworkMapByNetworkId(long networkId);
+
     List<Long> listNetworkIdsByDomain(long domainId);
 }

@@ -27,13 +27,20 @@ import com.cloud.utils.db.GenericDao;
  * ntwk_service_map table.
  *
  */
-public interface NetworkServiceMapDao extends GenericDao<NetworkServiceMapVO, Long>{
+public interface NetworkServiceMapDao extends GenericDao<NetworkServiceMapVO, Long> {
     boolean areServicesSupportedInNetwork(long networkId, Service... services);
+
     boolean canProviderSupportServiceInNetwork(long networkId, Service service, Provider provider);
+
     List<NetworkServiceMapVO> getServicesInNetwork(long networkId);
+
     String getProviderForServiceInNetwork(long networkid, Service service);
-	void deleteByNetworkId(long networkId);
-	List<String> getDistinctProviders(long networkId);
-	String isProviderForNetwork(long networkId, Provider provider);
-	List<String> getProvidersForServiceInNetwork(long networkId, Service service);
+
+    void deleteByNetworkId(long networkId);
+
+    List<String> getDistinctProviders(long networkId);
+
+    String isProviderForNetwork(long networkId, Provider provider);
+
+    List<String> getProvidersForServiceInNetwork(long networkId, Service service);
 }

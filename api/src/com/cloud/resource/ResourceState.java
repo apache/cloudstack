@@ -22,13 +22,7 @@ import java.util.Set;
 import com.cloud.utils.fsm.StateMachine;
 
 public enum ResourceState {
-    Creating,
-    Enabled,
-    Disabled,
-    PrepareForMaintenance,
-    ErrorInMaintenance,
-    Maintenance,
-    Error;
+    Creating, Enabled, Disabled, PrepareForMaintenance, ErrorInMaintenance, Maintenance, Error;
 
     public enum Event {
         InternalCreated("Resource is created"),

@@ -44,18 +44,22 @@ public interface VolumeService {
 
     ChapInfo getChapInfo(VolumeInfo volumeInfo, DataStore dataStore);
 
+    boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore);
+
+    void revokeAccess(DataObject dataObject, Host host, DataStore dataStore);
+
     /**
      * Creates the volume based on the given criteria
-     * 
+     *
      * @param cmd
-     * 
+     *
      * @return the volume object
      */
     AsyncCallFuture<VolumeApiResult> createVolumeAsync(VolumeInfo volume, DataStore store);
 
     /**
      * Delete volume
-     * 
+     *
      * @param volumeId
      * @return
      * @throws ConcurrentOperationException
@@ -74,6 +78,9 @@ public interface VolumeService {
 
     VolumeEntity getVolumeEntity(long volumeId);
 
+    AsyncCallFuture<VolumeApiResult> createManagedStorageAndVolumeFromTemplateAsync(VolumeInfo volumeInfo, long destDataStoreId,
+            TemplateInfo srcTemplateInfo, long destHostId);
+
     AsyncCallFuture<VolumeApiResult> createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId,
             TemplateInfo template);
 
@@ -81,14 +88,15 @@ public interface VolumeService {
 
     AsyncCallFuture<VolumeApiResult> migrateVolume(VolumeInfo srcVolume, DataStore destStore);
 
-    AsyncCallFuture<CommandResult> migrateVolumes(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo,
-            Host srcHost, Host destHost);
+    AsyncCallFuture<CommandResult> migrateVolumes(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost);
 
     boolean destroyVolume(long volumeId) throws ConcurrentOperationException;
 
     AsyncCallFuture<VolumeApiResult> registerVolume(VolumeInfo volume, DataStore store);
 
     AsyncCallFuture<VolumeApiResult> resize(VolumeInfo volume);
+
+    void resizeVolumeOnHypervisor(long volumeId, long newSize, long destHostId, String instanceName);
 
     void handleVolumeSync(DataStore store);
 

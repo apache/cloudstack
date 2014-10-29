@@ -26,51 +26,51 @@ public class RegionUser extends UserVO {
     String domainid;
     String domain;
 
-	public RegionUser() {
+    public RegionUser() {
     }
-    
+
     public String getAccountuuid() {
-		return accountUuid;
-	}
+        return accountUuid;
+    }
 
-	public void setAccountuuid(String accountUuid) {
-		this.accountUuid = accountUuid;
-	}
+    public void setAccountuuid(String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
 
-	public void setCreated(String created) {
-		this.created = created;
-	}
+    public void setCreated(String created) {
+        this.created = created;
+    }
 
-	public String getAccount() {
-		return account;
-	}
+    public String getAccount() {
+        return account;
+    }
 
-	public void setAccount(String account) {
-		this.account = account;
-	}
+    public void setAccount(String account) {
+        this.account = account;
+    }
 
-	public String getAccounttype() {
-		return accounttype;
-	}
+    public String getAccounttype() {
+        return accounttype;
+    }
 
-	public void setAccounttype(String accounttype) {
-		this.accounttype = accounttype;
-	}
+    public void setAccounttype(String accounttype) {
+        this.accounttype = accounttype;
+    }
 
-	public String getDomainid() {
-		return domainid;
-	}
+    public String getDomainid() {
+        return domainid;
+    }
 
-	public void setDomainid(String domainid) {
-		this.domainid = domainid;
-	}
+    public void setDomainid(String domainid) {
+        this.domainid = domainid;
+    }
 
-	public String getDomain() {
-		return domain;
-	}
+    public String getDomain() {
+        return domain;
+    }
 
-	public void setDomain(String domain) {
-		this.domain = domain;
-	}
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
 
 }

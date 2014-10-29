@@ -54,14 +54,15 @@
         <load-on-startup>6</load-on-startup>
     </servlet>
 	
-	<servlet>
-        <servlet-name>registerCompleteServlet</servlet-name>
-        <servlet-class>com.cloud.servlet.RegisterCompleteServlet</servlet-class>
+
+    <servlet>
+        <servlet-name>staticResources</servlet-name>
+        <servlet-class>com.cloud.servlet.StaticResourceServlet</servlet-class>
     </servlet>
-    
-    <servlet-mapping>   
-         <servlet-name>apiServlet</servlet-name>   
-         <url-pattern>/api/*</url-pattern> 
+ 
+    <servlet-mapping>
+         <servlet-name>apiServlet</servlet-name>
+         <url-pattern>/api/*</url-pattern>
     </servlet-mapping>
     
     <servlet-mapping>   
@@ -69,8 +70,11 @@
          <url-pattern>/console</url-pattern> 
     </servlet-mapping>
 	
-	<servlet-mapping>   
-         <servlet-name>registerCompleteServlet</servlet-name>   
-         <url-pattern>/mycloud/complete</url-pattern> 
+
+    <servlet-mapping>
+        <servlet-name>staticResources</servlet-name>
+        <url-pattern>*.css</url-pattern>
+        <url-pattern>*.html</url-pattern>
+        <url-pattern>*.js</url-pattern>
     </servlet-mapping>
 </web-app>

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api.routing;
 
 import java.util.ArrayList;
@@ -24,11 +27,11 @@ import com.cloud.agent.api.LogLevel.Log4jLevel;
 
 public class VmDataCommand extends NetworkElementCommand {
 
-	String vmIpAddress;
-	String vmName;
-	@LogLevel(Log4jLevel.Trace)
-	List<String[]> vmData;
-	boolean executeInSequence = false;
+    String vmIpAddress;
+    String vmName;
+    @LogLevel(Log4jLevel.Trace)
+    List<String[]> vmData;
+    boolean executeInSequence = false;
 
     protected VmDataCommand() {
     }
@@ -39,7 +42,7 @@ public class VmDataCommand extends NetworkElementCommand {
     }
 
     public VmDataCommand(String vmIpAddress, boolean executeInSequence) {
-    	this(vmIpAddress, null, executeInSequence);
+        this(vmIpAddress, null, executeInSequence);
     }
 
     public String getVmName() {
@@ -53,17 +56,16 @@ public class VmDataCommand extends NetworkElementCommand {
         this.executeInSequence = executeInSequence;
     }
 
+    public String getVmIpAddress() {
+        return vmIpAddress;
+    }
 
-	public String getVmIpAddress() {
-		return vmIpAddress;
-	}
+    public List<String[]> getVmData() {
+        return vmData;
+    }
 
-	public List<String[]> getVmData() {
-		return vmData;
-	}
-
-	public void addVmData(String folder, String file, String contents) {
-		vmData.add(new String[]{folder, file, contents});
-	}
+    public void addVmData(String folder, String file, String contents) {
+        vmData.add(new String[] {folder, file, contents});
+    }
 
 }

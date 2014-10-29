@@ -19,6 +19,9 @@ package org.apache.cloudstack.api.command.user.firewall;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
@@ -27,12 +30,13 @@ import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.api.response.NetworkResponse;
 
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listFirewallRules", description="Lists all firewall rules for an IP address.", responseObject=FirewallResponse.class)
+@APICommand(name = "listFirewallRules", description = "Lists all firewall rules for an IP address.", responseObject = FirewallResponse.class, entityType = {FirewallRule.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListFirewallRulesCmd.class.getName());
     private static final String s_name = "listfirewallrulesresponse";
@@ -40,13 +44,24 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = FirewallRuleResponse.class,
-            description="Lists rule with the specified ID.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, description = "Lists rule with the specified ID.")
     private Long id;
 
-    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.UUID, entityType = IPAddressResponse.class,
-            description="the id of IP address of the firwall services")
+    @Parameter(name = ApiConstants.IP_ADDRESS_ID,
+               type = CommandType.UUID,
+               entityType = IPAddressResponse.class,
+               description = "the id of IP address of the firwall services")
     private Long ipAddressId;
+
+    @Parameter(name = ApiConstants.NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = NetworkResponse.class,
+               description = "list firewall rules for ceratin network",
+               since = "4.3")
+    private Long networkId;
+
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -56,12 +71,24 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
         return ipAddressId;
     }
 
-    public FirewallRule.TrafficType getTrafficType () {
-    	return FirewallRule.TrafficType.Ingress;
+    public FirewallRule.TrafficType getTrafficType() {
+        return FirewallRule.TrafficType.Ingress;
     }
-   
+
     public Long getId() {
         return id;
+    }
+
+    public Long getNetworkId() {
+        return networkId;
+    }
+
+    @Override
+    public Boolean getDisplay() {
+        if (display != null) {
+            return display;
+        }
+        return super.getDisplay();
     }
 
     /////////////////////////////////////////////////////
@@ -74,7 +101,7 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends FirewallRule>, Integer> result = _firewallService.listFirewallRules(this);
         ListResponse<FirewallResponse> response = new ListResponse<FirewallResponse>();
         List<FirewallResponse> fwResponses = new ArrayList<FirewallResponse>();
@@ -86,6 +113,6 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
         }
         response.setResponses(fwResponses, result.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

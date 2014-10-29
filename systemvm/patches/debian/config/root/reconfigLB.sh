@@ -18,11 +18,14 @@
 
 
 ret=0
+
+new_config=$1
+
 # save previous state
   mv /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.old
   mv /var/run/haproxy.pid /var/run/haproxy.pid.old
 
-  mv /etc/haproxy/haproxy.cfg.new /etc/haproxy/haproxy.cfg
+  mv $new_config /etc/haproxy/haproxy.cfg
   kill -TTOU $(cat /var/run/haproxy.pid.old)
   sleep 2
   if haproxy -D -p /var/run/haproxy.pid -f /etc/haproxy/haproxy.cfg; then
@@ -35,7 +38,7 @@ ret=0
     kill -TTIN $(cat /var/run/haproxy.pid.old)
     rm -f /var/run/haproxy.pid
     mv /var/run/haproxy.pid.old /var/run/haproxy.pid
-    mv /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.new
+    mv /etc/haproxy/haproxy.cfg $new_config
     mv /etc/haproxy/haproxy.cfg.old /etc/haproxy/haproxy.cfg
     ret=1
   fi

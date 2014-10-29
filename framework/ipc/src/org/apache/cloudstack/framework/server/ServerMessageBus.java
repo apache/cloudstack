@@ -23,9 +23,8 @@ import org.apache.cloudstack.framework.transport.TransportMultiplexier;
 
 public class ServerMessageBus extends MessageBusBase implements TransportMultiplexier {
 
-	@Override
-	public void onTransportMessage(String senderEndpointAddress,
-			String targetEndpointAddress, String multiplexer, String message) {
-		// TODO Auto-generated method stub
-	}
+    @Override
+    public void onTransportMessage(String senderEndpointAddress, String targetEndpointAddress, String multiplexer, String message) {
+        // TODO Auto-generated method stub
+    }
 }

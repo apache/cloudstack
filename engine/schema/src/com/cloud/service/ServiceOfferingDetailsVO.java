@@ -26,37 +26,42 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
-@Table(name="service_offering_details")
+@Table(name = "service_offering_details")
 public class ServiceOfferingDetailsVO implements ResourceDetail {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="service_offering_id")
+    @Column(name = "service_offering_id")
     private long resourceId;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="value")
+    @Column(name = "value")
     private String value;
-    
-    @Column(name="display")
-    boolean display;
+
+    @Column(name = "display")
+    private boolean display = true;
 
     protected ServiceOfferingDetailsVO() {
     }
 
-    public ServiceOfferingDetailsVO(long serviceOfferingId, String name, String value) {
+    public ServiceOfferingDetailsVO(long serviceOfferingId, String name, String value, boolean display) {
         this.resourceId = serviceOfferingId;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override
     public long getResourceId() {
         return resourceId;
+    }
+
+    public void setResourceId(long serviceOfferingId) {
+        this.resourceId = serviceOfferingId;
     }
 
     @Override
@@ -73,7 +78,7 @@ public class ServiceOfferingDetailsVO implements ResourceDetail {
     public long getId() {
         return id;
     }
-    
+
     @Override
     public boolean isDisplay() {
         return display;

@@ -51,7 +51,7 @@ public class Hypervisor {
                 return HypervisorType.VirtualBox;
             } else if (hypervisor.equalsIgnoreCase("Parralels")) {
                 return HypervisorType.Parralels;
-            }else if (hypervisor.equalsIgnoreCase("BareMetal")) {
+            } else if (hypervisor.equalsIgnoreCase("BareMetal")) {
                 return HypervisorType.BareMetal;
             } else if (hypervisor.equalsIgnoreCase("Simulator")) {
                 return HypervisorType.Simulator;
@@ -68,7 +68,7 @@ public class Hypervisor {
 
         /**
          * This method really needs to be part of the properties of the hypervisor type itself.
-         * 
+         *
          * @param hyperType
          * @return
          */

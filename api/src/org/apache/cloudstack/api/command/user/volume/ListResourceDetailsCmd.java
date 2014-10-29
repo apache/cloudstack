@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.volume;
 
 import java.util.List;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
@@ -26,27 +27,31 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ResourceDetailResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.server.ResourceTag;
 
-@APICommand(name = "listResourceDetails", description = "List resource detail(s)", responseObject = ResourceTagResponse.class, since = "4.2")
-public class ListResourceDetailsCmd extends BaseListProjectAndAccountResourcesCmd{
+@APICommand(name = "listResourceDetails", description = "List resource detail(s)", responseObject = ResourceTagResponse.class, since = "4.2",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class ListResourceDetailsCmd extends BaseListProjectAndAccountResourcesCmd {
     private static final String s_name = "listresourcedetailsresponse";
 
-    @Parameter(name=ApiConstants.RESOURCE_TYPE, type=CommandType.STRING, description="list by resource type", required=true)
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "list by resource type", required = true)
     private String resourceType;
 
-    @Parameter(name=ApiConstants.RESOURCE_ID, type=CommandType.STRING, description="list by resource id", required=true)
+    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, description = "list by resource id")
     private String resourceId;
 
-    @Parameter(name=ApiConstants.KEY, type=CommandType.STRING, description="list by key")
+    @Parameter(name = ApiConstants.KEY, type = CommandType.STRING, description = "list by key")
     private String key;
-    
-    @Parameter(name=ApiConstants.FOR_DISPLAY, type=CommandType.BOOLEAN, description="if set to true, only details marked with display=true, are returned." +
-    		" Always false is the call is made by the regular user", since="4.3")
+
+    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, description = "list by key, value. Needs to be passed only along with key" ,
+            since = "4.4", authorized = { RoleType.Admin })
+    private String value;
+
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "if set to true, only details marked with display=true, are returned."
+            + " False by default", since = "4.3", authorized = { RoleType.Admin })
     private Boolean forDisplay;
-    
+
     public String getResourceId() {
         return resourceId;
     }
@@ -55,17 +60,21 @@ public class ListResourceDetailsCmd extends BaseListProjectAndAccountResourcesCm
         return key;
     }
 
+    public String getValue() {
+        return value;
+    }
+
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
-    public Boolean forDisplay() {
-        if (!_accountService.isAdmin(CallContext.current().getCallingAccount().getType())) {
-            return true;
-        } 
-        
-        return forDisplay;
+
+    @Override
+    public Boolean getDisplay() {
+        if (forDisplay != null) {
+            return forDisplay;
+        }
+        return super.getDisplay();
     }
 
     /////////////////////////////////////////////////////
@@ -79,13 +88,11 @@ public class ListResourceDetailsCmd extends BaseListProjectAndAccountResourcesCm
         List<ResourceDetailResponse> resourceDetailResponse = _queryService.listResourceDetails(this);
         response.setResponses(resourceDetailResponse);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
     public ResourceTag.ResourceObjectType getResourceType() {
         return _taggedResourceService.getResourceType(resourceType);
     }
-
-    
 
 }

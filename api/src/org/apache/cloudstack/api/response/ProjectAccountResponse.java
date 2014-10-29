@@ -18,15 +18,16 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.projects.ProjectAccount;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=ProjectAccount.class)
+@EntityReference(value = ProjectAccount.class)
 @SuppressWarnings("unused")
 public class ProjectAccountResponse extends BaseResponse implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.PROJECT_ID)
@@ -65,10 +66,12 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
     @Param(description = "the list of users associated with account", responseObject = UserResponse.class)
     private List<UserResponse> users;
 
+    @Override
     public void setProjectId(String projectId) {
         this.projectId = projectId;
     }
 
+    @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
@@ -77,6 +80,7 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
         this.accountId = id;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
@@ -85,10 +89,12 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
         this.accountType = accountType;
     }
 
+    @Override
     public void setDomainId(String domainId) {
         this.domainId = domainId;
     }
 
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }

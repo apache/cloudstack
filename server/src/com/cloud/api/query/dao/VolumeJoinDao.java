@@ -18,8 +18,8 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.VolumeResponse;
-
 
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.storage.Volume;
@@ -27,9 +27,9 @@ import com.cloud.utils.db.GenericDao;
 
 public interface VolumeJoinDao extends GenericDao<VolumeJoinVO, Long> {
 
-    VolumeResponse newVolumeResponse(VolumeJoinVO vol);
+    VolumeResponse newVolumeResponse(ResponseView view, VolumeJoinVO vol);
 
-    VolumeResponse setVolumeResponse(VolumeResponse volData, VolumeJoinVO vol);
+    VolumeResponse setVolumeResponse(ResponseView view, VolumeResponse volData, VolumeJoinVO vol);
 
     List<VolumeJoinVO> newVolumeView(Volume vol);
 

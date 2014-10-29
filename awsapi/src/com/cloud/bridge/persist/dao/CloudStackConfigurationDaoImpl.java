@@ -26,18 +26,17 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={CloudStackConfigurationDao.class})
+@Local(value = {CloudStackConfigurationDao.class})
 public class CloudStackConfigurationDaoImpl extends GenericDaoBase<CloudStackConfigurationVO, String> implements CloudStackConfigurationDao {
     private static final Logger s_logger = Logger.getLogger(CloudStackConfigurationDaoImpl.class);
 
-    final SearchBuilder<CloudStackConfigurationVO> NameSearch= createSearchBuilder();
+    final SearchBuilder<CloudStackConfigurationVO> NameSearch = createSearchBuilder();
 
-    public CloudStackConfigurationDaoImpl() { }
-
+    public CloudStackConfigurationDaoImpl() {
+    }
 
     @Override
     @DB
@@ -54,7 +53,7 @@ public class CloudStackConfigurationDaoImpl extends GenericDaoBase<CloudStackCon
                 return null;
             }
             return configItem.getValue();
-        }finally {
+        } finally {
             txn.commit();
             txn.close();
         }

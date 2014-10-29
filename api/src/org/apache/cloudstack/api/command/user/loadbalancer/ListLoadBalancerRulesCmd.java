@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.loadbalancer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
@@ -35,7 +36,8 @@ import org.apache.log4j.Logger;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listLoadBalancerRules", description = "Lists load balancer rules.", responseObject = LoadBalancerResponse.class)
+@APICommand(name = "listLoadBalancerRules", description = "Lists load balancer rules.", responseObject = LoadBalancerResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListLoadBalancerRulesCmd.class.getName());
 
@@ -45,28 +47,32 @@ public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class,
-            description = "the ID of the load balancer rule")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, description = "the ID of the load balancer rule")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the load balancer rule")
     private String loadBalancerRuleName;
 
-    @Parameter(name = ApiConstants.PUBLIC_IP_ID, type = CommandType.UUID, entityType = IPAddressResponse.class,
-            description = "the public IP address id of the load balancer rule ")
+    @Parameter(name = ApiConstants.PUBLIC_IP_ID,
+               type = CommandType.UUID,
+               entityType = IPAddressResponse.class,
+               description = "the public IP address id of the load balancer rule ")
     private Long publicIpId;
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class,
-            description = "the ID of the virtual machine of the load balancer rule")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+               type = CommandType.UUID,
+               entityType = UserVmResponse.class,
+               description = "the ID of the virtual machine of the load balancer rule")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
-            description = "the availability zone ID")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the availability zone ID")
     private Long zoneId;
-    
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class,
-            description = "list by network id the rule belongs to")
+
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list by network id the rule belongs to")
     private Long networkId;
+
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -91,9 +97,17 @@ public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
     public Long getZoneId() {
         return zoneId;
     }
-    
+
     public Long getNetworkId() {
         return networkId;
+    }
+
+    @Override
+    public Boolean getDisplay() {
+        if (display != null) {
+            return display;
+        }
+        return super.getDisplay();
     }
 
     // ///////////////////////////////////////////////////
@@ -116,8 +130,8 @@ public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
                 lbResponse.setObjectName("loadbalancerrule");
                 lbResponses.add(lbResponse);
             }
+            response.setResponses(lbResponses, loadBalancers.second());
         }
-        response.setResponses(lbResponses, loadBalancers.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

@@ -17,70 +17,70 @@
 package com.cloud.network.bigswitch;
 
 public class NetworkData {
-	private Network network;
+    private final Network network;
 
-	public Network getNetwork() {
-		return this.network;
-	}
+    public Network getNetwork() {
+        return network;
+    }
 
-	public NetworkData() {
-		this.network = new Network();
-	}
+    public NetworkData() {
+        network = new Network();
+    }
 
-	public class Network {
-	    private String id;
-	    private String name;
-	    private String tenant_id;
-	    private int vlan;
-	    private String gateway;
-	    private String state;
+    public class Network {
+        private String id;
+        private String name;
+        private String tenantId;
+        private int vlan;
+        private String gateway;
+        private String state;
 
-	    public String getUuid() {
-	        return id;
-	    }
+        public String getUuid() {
+            return id;
+        }
 
-	    public void setUuid(String id) {
-	        this.id = id;
-	    }
+        public void setUuid(String id) {
+            this.id = id;
+        }
 
-	    public String getDisplay_name() {
-	        return name;
-	    }
+        public String getDisplayName() {
+            return name;
+        }
 
-	    public void setDisplay_name(String display_name) {
-	        this.name = display_name;
-	    }
+        public void setDisplay_name(String displayName) {
+            name = displayName;
+        }
 
-	    public String getTenant_id() {
-	        return tenant_id;
-	    }
+        public String getTenantId() {
+            return tenantId;
+        }
 
-	    public void setTenant_id(String tenant_id) {
-	        this.tenant_id = tenant_id;
-	    }
+        public void setTenantId(String tenantId) {
+            this.tenantId = tenantId;
+        }
 
-	    public int getVlan() {
-	        return vlan;
-	    }
+        public int getVlan() {
+            return vlan;
+        }
 
-	    public void setVlan(int vlan) {
-	        this.vlan = vlan;
-	    }
+        public void setVlan(int vlan) {
+            this.vlan = vlan;
+        }
 
-	    public String getGateway() {
-	        return gateway;
-	    }
+        public String getGateway() {
+            return gateway;
+        }
 
-	    public void setGateway(String gateway) {
-	        this.gateway = gateway;
-	    }
+        public void setGateway(String gateway) {
+            this.gateway = gateway;
+        }
 
-	    public String getState() {
-	        return state;
-	    }
+        public String getState() {
+            return state;
+        }
 
-	    public void setState(String state) {
-	        this.state = state;
-	    }
-	}
+        public void setState(String state) {
+            this.state = state;
+        }
+    }
 }

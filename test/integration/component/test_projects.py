@@ -21,10 +21,10 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
+from marvin.sshClient import SshClient
 import datetime
 
 
@@ -103,20 +103,14 @@ class TestMultipleProjectCreation(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestMultipleProjectCreation,
-                               cls
-                               ).getClsTestClient().getApiClient()
-        cls.services = Services().services
-        # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
-        cls.services['mode'] = cls.zone.networktype
+        cls.testClient = super(TestMultipleProjectCreation, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
-        # Create domains, account etc.
-        cls.domain = get_domain(
-                                   cls.api_client,
-                                   cls.services
-                                   )
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.services['mode'] = cls.zone.networktype
 
         configs = Configurations.list(
                                       cls.api_client,
@@ -168,7 +162,7 @@ class TestMultipleProjectCreation(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_01_create_multiple_projects_by_account(self):
         """ Verify an account can own multiple projects and can belong to multiple projects
         """
@@ -320,18 +314,14 @@ class TestCrossDomainAccountAdd(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestCrossDomainAccountAdd,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestCrossDomainAccountAdd, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
-        cls.domain = get_domain(
-                                   cls.api_client,
-                                   cls.services
-                                   )
 
         configs = Configurations.list(
                                       cls.api_client,
@@ -389,7 +379,7 @@ class TestCrossDomainAccountAdd(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_02_cross_domain_account_add(self):
         """ Verify No cross domain projects
         """
@@ -454,18 +444,14 @@ class TestDeleteAccountWithProject(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestDeleteAccountWithProject,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeleteAccountWithProject, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
-        cls.domain = get_domain(
-                                   cls.api_client,
-                                   cls.services
-                                   )
 
         configs = Configurations.list(
                                       cls.api_client,
@@ -510,7 +496,7 @@ class TestDeleteAccountWithProject(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_03_delete_account_with_project(self):
         """ Test As long as the project exists, its owner can't be removed
         """
@@ -567,13 +553,12 @@ class TestDeleteDomainWithProject(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestDeleteDomainWithProject,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestDeleteDomainWithProject, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         configs = Configurations.list(
@@ -624,7 +609,7 @@ class TestDeleteDomainWithProject(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_04_delete_domain_with_project(self):
         """ Test Verify delete domain with cleanup=true should delete projects
             belonging to the domain
@@ -708,17 +693,13 @@ class TestProjectOwners(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestProjectOwners,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestProjectOwners, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone
-        cls.domain = get_domain(
-                                   cls.api_client,
-                                   cls.services
-                                   )
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
         cls.services['mode'] = cls.zone.networktype
 
         configs = Configurations.list(
@@ -770,7 +751,7 @@ class TestProjectOwners(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_05_user_project_owner_promotion(self):
         """ Test Verify a project user can be later promoted to become a
             owner
@@ -912,7 +893,7 @@ class TestProjectOwners(cloudstackTestCase):
                             )
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_06_max_one_project_owner(self):
         """ Test Verify there can only be one owner of a project at a time
         """
@@ -1136,18 +1117,14 @@ class TestProjectResources(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestProjectResources,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestProjectResources, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
         cls.services['mode'] = cls.zone.networktype
-        cls.domain = get_domain(
-                                   cls.api_client,
-                                   cls.services
-                                   )
 
         configs = Configurations.list(
                                       cls.api_client,
@@ -1203,7 +1180,7 @@ class TestProjectResources(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_07_project_resources_account_delete(self):
         """ Test Verify after an account is removed from the project, all its resources stay with the project.
         """
@@ -1317,7 +1294,7 @@ class TestProjectResources(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_08_cleanup_after_project_delete(self):
         """ Test accounts are unassigned from project after project deletion
         """
@@ -1440,18 +1417,14 @@ class TestProjectSuspendActivate(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestProjectSuspendActivate,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestProjectSuspendActivate, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone, domain, template etc
-        cls.zone = get_zone(cls.api_client, cls.services)
+        # Get Zone
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
         cls.services['mode'] = cls.zone.networktype
-        cls.domain = get_domain(
-                                   cls.api_client,
-                                   cls.services
-                                   )
         cls.template = get_template(
                                     cls.api_client,
                                     cls.zone.id,
@@ -1501,6 +1474,7 @@ class TestProjectSuspendActivate(cloudstackTestCase):
         cls._cleanup = [
                         cls.project,
                         cls.account,
+                        cls.user,
                         cls.disk_offering,
                         cls.service_offering
                         ]
@@ -1529,7 +1503,7 @@ class TestProjectSuspendActivate(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_09_project_suspend(self):
         """ Test Verify after an account is removed from the project, all his
             resources stay with the project.
@@ -1636,7 +1610,7 @@ class TestProjectSuspendActivate(cloudstackTestCase):
         self.debug("VM start failed!")
 
         # Destroy Stopped VM
-        virtual_machine.delete(self.apiclient)
+        virtual_machine.delete(self.apiclient, expunge=False)
         self.debug("Destroying VM: %s" % virtual_machine.id)
 
         # Check status of all VMs associated with project
@@ -1666,7 +1640,7 @@ class TestProjectSuspendActivate(cloudstackTestCase):
                     )
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_10_project_activation(self):
         """ Test project activation after suspension
         """

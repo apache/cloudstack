@@ -21,6 +21,8 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -28,112 +30,144 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.serializer.Param;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=VirtualMachineTemplate.class)
+@EntityReference(value = VirtualMachineTemplate.class)
 @SuppressWarnings("unused")
 public class TemplateResponse extends BaseResponse implements ControlledViewEntityResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the template ID")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the template ID")
     private String id;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the template name")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the template name")
     private String name;
 
-    @SerializedName(ApiConstants.DISPLAY_TEXT) @Param(description="the template display text")
+    @SerializedName(ApiConstants.DISPLAY_TEXT)
+    @Param(description = "the template display text")
     private String displayText;
 
-    @SerializedName(ApiConstants.IS_PUBLIC) // propName="public"  (FIXME:  this used to be part of Param annotation, do we need it?)
-    @Param(description="true if this template is a public template, false otherwise")
+    @SerializedName(ApiConstants.IS_PUBLIC)
+    // propName="public"  (FIXME:  this used to be part of Param annotation, do we need it?)
+    @Param(description = "true if this template is a public template, false otherwise")
     private boolean isPublic;
 
-    @SerializedName(ApiConstants.CREATED) @Param(description="the date this template was created")
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "the date this template was created")
     private Date created;
 
-    @SerializedName("removed") @Param(description="the date this template was removed")
+    @SerializedName("removed")
+    @Param(description = "the date this template was removed")
     private Date removed;
 
-    @SerializedName(ApiConstants.IS_READY) // propName="ready"  (FIXME:  this used to be part of Param annotation, do we need it?)
-    @Param(description="true if the template is ready to be deployed from, false otherwise.")
+    @SerializedName(ApiConstants.IS_READY)
+    // propName="ready"  (FIXME:  this used to be part of Param annotation, do we need it?)
+    @Param(description = "true if the template is ready to be deployed from, false otherwise.")
     private boolean isReady;
 
-    @SerializedName(ApiConstants.PASSWORD_ENABLED) @Param(description="true if the reset password feature is enabled, false otherwise")
+    @SerializedName(ApiConstants.PASSWORD_ENABLED)
+    @Param(description = "true if the reset password feature is enabled, false otherwise")
     private Boolean passwordEnabled;
 
-    @SerializedName(ApiConstants.FORMAT) @Param(description="the format of the template.")
+    @SerializedName(ApiConstants.FORMAT)
+    @Param(description = "the format of the template.")
     private ImageFormat format;
 
-    @SerializedName(ApiConstants.BOOTABLE) @Param(description="true if the ISO is bootable, false otherwise")
+    @SerializedName(ApiConstants.BOOTABLE)
+    @Param(description = "true if the ISO is bootable, false otherwise")
     private Boolean bootable;
 
-    @SerializedName(ApiConstants.IS_FEATURED) @Param(description="true if this template is a featured template, false otherwise")
+    @SerializedName(ApiConstants.IS_FEATURED)
+    @Param(description = "true if this template is a featured template, false otherwise")
     private boolean featured;
 
-    @SerializedName("crossZones") @Param(description="true if the template is managed across all Zones, false otherwise")
+    @SerializedName("crossZones")
+    @Param(description = "true if the template is managed across all Zones, false otherwise")
     private boolean crossZones;
 
-    @SerializedName(ApiConstants.OS_TYPE_ID) @Param(description="the ID of the OS type for this template.")
+    @SerializedName(ApiConstants.OS_TYPE_ID)
+    @Param(description = "the ID of the OS type for this template.")
     private String osTypeId;
 
-    @SerializedName("ostypename") @Param(description="the name of the OS type for this template.")
+    @SerializedName("ostypename")
+    @Param(description = "the name of the OS type for this template.")
     private String osTypeName;
 
-    @SerializedName(ApiConstants.ACCOUNT_ID) @Param(description="the account id to which the template belongs")
+    @SerializedName(ApiConstants.ACCOUNT_ID)
+    @Param(description = "the account id to which the template belongs")
     private String accountId;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account name to which the template belongs")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account name to which the template belongs")
     private String account;
 
     //TODO: since a template can be associated to more than one zones, this model is not accurate. For backward-compatibility, keep these fields
     // here, but add a zones field to capture multiple zones.
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the ID of the zone for this template")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "the ID of the zone for this template")
     private String zoneId;
 
-    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone for this template")
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "the name of the zone for this template")
     private String zoneName;
 
-    @SerializedName(ApiConstants.STATUS) @Param(description="the status of the template")
+    @SerializedName(ApiConstants.STATUS)
+    @Param(description = "the status of the template")
     private String status;
 
-    @SerializedName(ApiConstants.SIZE) @Param(description="the size of the template")
+    @SerializedName(ApiConstants.SIZE)
+    @Param(description = "the size of the template")
     private Long size;
 
-    @SerializedName("templatetype") @Param(description="the type of the template")
+    @SerializedName("templatetype")
+    @Param(description = "the type of the template")
     private String templateType;
 
-    @SerializedName(ApiConstants.HYPERVISOR) @Param(description="the hypervisor on which the template runs")
+    @SerializedName(ApiConstants.HYPERVISOR)
+    @Param(description = "the hypervisor on which the template runs")
     private String hypervisor;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the name of the domain to which the template belongs")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the name of the domain to which the template belongs")
     private String domainName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the domain to which the template belongs")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the ID of the domain to which the template belongs")
     private String domainId;
 
-    @SerializedName(ApiConstants.IS_EXTRACTABLE) @Param(description="true if the template is extractable, false otherwise")
+    @SerializedName(ApiConstants.IS_EXTRACTABLE)
+    @Param(description = "true if the template is extractable, false otherwise")
     private Boolean extractable;
 
-    @SerializedName(ApiConstants.CHECKSUM) @Param(description="checksum of the template")
+    @SerializedName(ApiConstants.CHECKSUM)
+    @Param(description = "checksum of the template")
     private String checksum;
 
-    @SerializedName("sourcetemplateid") @Param(description="the template ID of the parent template if present")
+    @SerializedName("sourcetemplateid")
+    @Param(description = "the template ID of the parent template if present")
     private String sourcetemplateId;
 
-    @SerializedName(ApiConstants.HOST_ID) @Param(description="the ID of the secondary storage host for the template")
+    @SerializedName(ApiConstants.HOST_ID)
+    @Param(description = "the ID of the secondary storage host for the template")
     private String hostId;
 
-    @SerializedName("hostname") @Param(description="the name of the secondary storage host for the template")
+    @SerializedName("hostname")
+    @Param(description = "the name of the secondary storage host for the template")
     private String hostName;
 
-    @SerializedName(ApiConstants.TEMPLATE_TAG) @Param(description="the tag of this template")
+    @SerializedName(ApiConstants.TEMPLATE_TAG)
+    @Param(description = "the tag of this template")
     private String templateTag;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the template")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the template")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the template")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the template")
     private String projectName;
 
-    @SerializedName(ApiConstants.DETAILS) @Param(description="additional key/value details tied with template")
+    @SerializedName(ApiConstants.DETAILS)
+    @Param(description = "additional key/value details tied with template")
     private Map details;
 
     // To avoid breaking backwards compatibility, we still treat a template at different zones as different templates, so not embedding
@@ -141,20 +175,22 @@ public class TemplateResponse extends BaseResponse implements ControlledViewEnti
     //    @SerializedName("zones")  @Param(description="list of zones associated with tempate", responseObject = TemplateZoneResponse.class)
     //    private Set<TemplateZoneResponse> zones;
 
-    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with tempate", responseObject = ResourceTagResponse.class)
+    @SerializedName(ApiConstants.TAGS)
+    @Param(description = "the list of resource tags associated with tempate", responseObject = ResourceTagResponse.class)
     private Set<ResourceTagResponse> tags;
 
-    @SerializedName(ApiConstants.SSHKEY_ENABLED) @Param(description="true if template is sshkey enabled, false otherwise")
+    @SerializedName(ApiConstants.SSHKEY_ENABLED)
+    @Param(description = "true if template is sshkey enabled, false otherwise")
     private Boolean sshKeyEnabled;
 
-    @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE) @Param(description="true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+    @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE)
+    @Param(description = "true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
     private Boolean isDynamicallyScalable;
 
-    public TemplateResponse(){
+    public TemplateResponse() {
         //  zones = new LinkedHashSet<TemplateZoneResponse>();
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
-
 
     @Override
     public String getObjectId() {
@@ -310,10 +346,9 @@ public class TemplateResponse extends BaseResponse implements ControlledViewEnti
         this.tags = tags;
     }
 
-    public void addTag(ResourceTagResponse tag){
+    public void addTag(ResourceTagResponse tag) {
         this.tags.add(tag);
     }
-
 
     public void setSshKeyEnabled(boolean sshKeyEnabled) {
         this.sshKeyEnabled = sshKeyEnabled;

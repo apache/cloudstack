@@ -21,18 +21,18 @@ import java.lang.reflect.Method;
 import com.cloud.utils.component.ComponentMethodInterceptor;
 
 public class TransactionContextBuilder implements ComponentMethodInterceptor {
-	public TransactionContextBuilder() {
-	}
-	
-	@Override
-	public boolean needToIntercept(Method method) {
+    public TransactionContextBuilder() {
+    }
+
+    @Override
+    public boolean needToIntercept(Method method) {
         DB db = method.getAnnotation(DB.class);
         if (db != null) {
             return true;
         }
-        
+
         Class<?> clazz = method.getDeclaringClass();
-        
+
         do {
             db = clazz.getAnnotation(DB.class);
             if (db != null) {
@@ -40,26 +40,26 @@ public class TransactionContextBuilder implements ComponentMethodInterceptor {
             }
             clazz = clazz.getSuperclass();
         } while (clazz != Object.class && clazz != null);
-        
+
         return false;
     }
 
-	@Override
+    @Override
     public Object interceptStart(Method method, Object target) {
-    	return TransactionLegacy.open(method.getName());
+        return TransactionLegacy.open(method.getName());
     }
-    
-	@Override
+
+    @Override
     public void interceptComplete(Method method, Object target, Object objReturnedInInterceptStart) {
-    	TransactionLegacy txn = (TransactionLegacy)objReturnedInInterceptStart;
-    	if(txn != null)
-    		txn.close();
+        TransactionLegacy txn = (TransactionLegacy)objReturnedInInterceptStart;
+        if (txn != null)
+            txn.close();
     }
-    
-	@Override
+
+    @Override
     public void interceptException(Method method, Object target, Object objReturnedInInterceptStart) {
-	    TransactionLegacy txn = (TransactionLegacy)objReturnedInInterceptStart;
-    	if(txn != null)
-    		txn.close();
+        TransactionLegacy txn = (TransactionLegacy)objReturnedInInterceptStart;
+        if (txn != null)
+            txn.close();
     }
 }

@@ -18,18 +18,18 @@ package com.cloud.storage.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -42,7 +42,7 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 
 @Component
-@Local(value = { VMTemplatePoolDao.class })
+@Local(value = {VMTemplatePoolDao.class})
 public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolVO, Long> implements VMTemplatePoolDao {
     public static final Logger s_logger = Logger.getLogger(VMTemplatePoolDaoImpl.class.getName());
 
@@ -55,15 +55,17 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     protected final SearchBuilder<VMTemplateStoragePoolVO> updateStateSearch;
 
     protected static final String UPDATE_TEMPLATE_HOST_REF = "UPDATE template_spool_ref SET download_state = ?, download_pct= ?, last_updated = ? "
-            + ", error_str = ?, local_path = ?, job_id = ? " + "WHERE pool_id = ? and template_id = ?";
+        + ", error_str = ?, local_path = ?, job_id = ? " + "WHERE pool_id = ? and template_id = ?";
 
     protected static final String DOWNLOADS_STATE_DC = "SELECT * FROM template_spool_ref t, storage_pool p where t.pool_id = p.id and p.data_center_id=? "
-            + " and t.template_id=? and t.download_state = ?";
+        + " and t.template_id=? and t.download_state = ?";
 
-    protected static final String DOWNLOADS_STATE_DC_POD = "SELECT * FROM template_spool_ref tp, storage_pool_host_ref ph, host h where tp.pool_id = ph.pool_id and ph.host_id = h.id and h.data_center_id=? and h.pod_id=? "
+    protected static final String DOWNLOADS_STATE_DC_POD =
+        "SELECT * FROM template_spool_ref tp, storage_pool_host_ref ph, host h where tp.pool_id = ph.pool_id and ph.host_id = h.id and h.data_center_id=? and h.pod_id=? "
             + " and tp.template_id=? and tp.download_state=?";
 
-    protected static final String HOST_TEMPLATE_SEARCH = "SELECT * FROM template_spool_ref tp, storage_pool_host_ref ph, host h where tp.pool_id = ph.pool_id and ph.host_id = h.id and h.id=? "
+    protected static final String HOST_TEMPLATE_SEARCH =
+        "SELECT * FROM template_spool_ref tp, storage_pool_host_ref ph, host h where tp.pool_id = ph.pool_id and ph.host_id = h.id and h.id=? "
             + " and tp.template_id=? ";
 
     public VMTemplatePoolDaoImpl() {
@@ -82,16 +84,13 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
 
         TemplateStatusSearch = createSearchBuilder();
         TemplateStatusSearch.and("template_id", TemplateStatusSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
-        TemplateStatusSearch.and("download_state", TemplateStatusSearch.entity().getDownloadState(),
-                SearchCriteria.Op.EQ);
+        TemplateStatusSearch.and("download_state", TemplateStatusSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
         TemplateStatusSearch.done();
 
         TemplatePoolStatusSearch = createSearchBuilder();
         TemplatePoolStatusSearch.and("pool_id", TemplatePoolStatusSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
-        TemplatePoolStatusSearch.and("template_id", TemplatePoolStatusSearch.entity().getTemplateId(),
-                SearchCriteria.Op.EQ);
-        TemplatePoolStatusSearch.and("download_state", TemplatePoolStatusSearch.entity().getDownloadState(),
-                SearchCriteria.Op.EQ);
+        TemplatePoolStatusSearch.and("template_id", TemplatePoolStatusSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
+        TemplatePoolStatusSearch.and("download_state", TemplatePoolStatusSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
         TemplatePoolStatusSearch.done();
 
         TemplateStatesSearch = createSearchBuilder();
@@ -129,8 +128,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     }
 
     @Override
-    public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId,
-            VMTemplateStoragePoolVO.Status downloadState) {
+    public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId, VMTemplateStoragePoolVO.Status downloadState) {
         SearchCriteria<VMTemplateStoragePoolVO> sc = TemplateStatusSearch.create();
         sc.setParameters("template_id", templateId);
         sc.setParameters("download_state", downloadState.toString());
@@ -138,8 +136,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     }
 
     @Override
-    public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId,
-            VMTemplateStoragePoolVO.Status downloadState, long poolId) {
+    public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId, VMTemplateStoragePoolVO.Status downloadState, long poolId) {
         SearchCriteria<VMTemplateStoragePoolVO> sc = TemplatePoolStatusSearch.create();
         sc.setParameters("pool_id", poolId);
         sc.setParameters("template_id", templateId);
@@ -148,8 +145,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     }
 
     @Override
-    public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId, long datacenterId,
-            VMTemplateStoragePoolVO.Status downloadState) {
+    public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId, long datacenterId, VMTemplateStoragePoolVO.Status downloadState) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<VMTemplateStoragePoolVO> result = new ArrayList<VMTemplateStoragePoolVO>();
@@ -171,39 +167,27 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     }
 
     @Override
-    public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId, long datacenterId, long podId,
-            VMTemplateStoragePoolVO.Status downloadState) {
+    public List<VMTemplateStoragePoolVO> listByTemplateStatus(long templateId, long datacenterId, long podId, VMTemplateStoragePoolVO.Status downloadState) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
         List<VMTemplateStoragePoolVO> result = new ArrayList<VMTemplateStoragePoolVO>();
-        ResultSet rs = null;
-        try {
-            String sql = DOWNLOADS_STATE_DC_POD;
-            pstmt = txn.prepareStatement(sql);
-
+        String sql = DOWNLOADS_STATE_DC_POD;
+        try(PreparedStatement pstmt = txn.prepareStatement(sql);) {
             pstmt.setLong(1, datacenterId);
             pstmt.setLong(2, podId);
             pstmt.setLong(3, templateId);
             pstmt.setString(4, downloadState.toString());
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                // result.add(toEntityBean(rs, false)); TODO: this is buggy in
-                // GenericDaoBase for hand constructed queries
-                long id = rs.getLong(1); // ID column
-                result.add(findById(id));
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    // result.add(toEntityBean(rs, false)); TODO: this is buggy in
+                    // GenericDaoBase for hand constructed queries
+                    long id = rs.getLong(1); // ID column
+                    result.add(findById(id));
+                }
+            }catch (Exception e) {
+                s_logger.warn("Exception: ", e);
             }
         } catch (Exception e) {
             s_logger.warn("Exception: ", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
         return result;
 
@@ -211,34 +195,23 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
 
     public List<VMTemplateStoragePoolVO> listByHostTemplate(long hostId, long templateId) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
         List<VMTemplateStoragePoolVO> result = new ArrayList<VMTemplateStoragePoolVO>();
-        ResultSet rs = null;
-        try {
-            String sql = HOST_TEMPLATE_SEARCH;
-            pstmt = txn.prepareStatement(sql);
-
+        String sql = HOST_TEMPLATE_SEARCH;
+        try(PreparedStatement pstmt = txn.prepareStatement(sql);) {
             pstmt.setLong(1, hostId);
             pstmt.setLong(2, templateId);
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                // result.add(toEntityBean(rs, false)); TODO: this is buggy in
-                // GenericDaoBase for hand constructed queries
-                long id = rs.getLong(1); // ID column
-                result.add(findById(id));
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    // result.add(toEntityBean(rs, false)); TODO: this is buggy in
+                    // GenericDaoBase for hand constructed queries
+                    long id = rs.getLong(1); // ID column
+                    result.add(findById(id));
+                }
+            }catch (Exception e) {
+                s_logger.warn("Exception: ", e);
             }
         } catch (Exception e) {
             s_logger.warn("Exception: ", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
         return result;
 
@@ -256,7 +229,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     @Override
     public List<VMTemplateStoragePoolVO> listByTemplateStates(long templateId, VMTemplateStoragePoolVO.Status... states) {
         SearchCriteria<VMTemplateStoragePoolVO> sc = TemplateStatesSearch.create();
-        sc.setParameters("states", (Object[]) states);
+        sc.setParameters("states", (Object[])states);
         sc.setParameters("template_id", templateId);
 
         return search(sc, null);
@@ -270,7 +243,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
 
     @Override
     public boolean updateState(State currentState, Event event, State nextState, DataObjectInStore vo, Object data) {
-        VMTemplateStoragePoolVO templatePool = (VMTemplateStoragePoolVO) vo;
+        VMTemplateStoragePoolVO templatePool = (VMTemplateStoragePoolVO)vo;
         Long oldUpdated = templatePool.getUpdatedCount();
         Date oldUpdatedTime = templatePool.getUpdated();
 
@@ -285,24 +258,41 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
         builder.set(vo, "state", nextState);
         builder.set(vo, "updated", new Date());
 
-        int rows = update((VMTemplateStoragePoolVO) vo, sc);
+        int rows = update((VMTemplateStoragePoolVO)vo, sc);
         if (rows == 0 && s_logger.isDebugEnabled()) {
             VMTemplateStoragePoolVO dbVol = findByIdIncludingRemoved(templatePool.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-                str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState())
-                        .append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
-                        .append(dbVol.getUpdated());
-                str.append(": New Data={id=").append(templatePool.getId()).append("; state=").append(nextState)
-                        .append("; event=").append(event).append("; updatecount=")
-                        .append(templatePool.getUpdatedCount()).append("; updatedTime=")
-                        .append(templatePool.getUpdated());
-                str.append(": stale Data={id=").append(templatePool.getId()).append("; state=").append(currentState)
-                        .append("; event=").append(event).append("; updatecount=").append(oldUpdated)
-                        .append("; updatedTime=").append(oldUpdatedTime);
+                str.append(": DB Data={id=")
+                    .append(dbVol.getId())
+                    .append("; state=")
+                    .append(dbVol.getState())
+                    .append("; updatecount=")
+                    .append(dbVol.getUpdatedCount())
+                    .append(";updatedTime=")
+                    .append(dbVol.getUpdated());
+                str.append(": New Data={id=")
+                    .append(templatePool.getId())
+                    .append("; state=")
+                    .append(nextState)
+                    .append("; event=")
+                    .append(event)
+                    .append("; updatecount=")
+                    .append(templatePool.getUpdatedCount())
+                    .append("; updatedTime=")
+                    .append(templatePool.getUpdated());
+                str.append(": stale Data={id=")
+                    .append(templatePool.getId())
+                    .append("; state=")
+                    .append(currentState)
+                    .append("; event=")
+                    .append(event)
+                    .append("; updatecount=")
+                    .append(oldUpdated)
+                    .append("; updatedTime=")
+                    .append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update objectIndatastore: id=" + templatePool.getId()
-                        + ", as there is no such object exists in the database anymore");
+                s_logger.debug("Unable to update objectIndatastore: id=" + templatePool.getId() + ", as there is no such object exists in the database anymore");
             }
         }
         return rows > 0;

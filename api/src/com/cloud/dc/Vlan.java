@@ -20,10 +20,11 @@ import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import java.util.Date;
+
 public interface Vlan extends InfrastructureEntity, InternalIdentity, Identity {
     public enum VlanType {
-        DirectAttached,
-        VirtualNetwork
+        DirectAttached, VirtualNetwork
     }
 
     public final static String UNTAGGED = "untagged";
@@ -42,11 +43,15 @@ public interface Vlan extends InfrastructureEntity, InternalIdentity, Identity {
 
     public Long getNetworkId();
 
+    public Date getRemoved();
+
+    public Date getCreated();
+
     public Long getPhysicalNetworkId();
 
-	public String getIp6Gateway();
+    public String getIp6Gateway();
 
-	public String getIp6Cidr();
+    public String getIp6Cidr();
 
-	public String getIp6Range();
+    public String getIp6Range();
 }

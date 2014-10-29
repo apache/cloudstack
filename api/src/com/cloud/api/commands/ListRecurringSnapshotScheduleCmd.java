@@ -35,10 +35,10 @@ public class ListRecurringSnapshotScheduleCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.SNAPSHOT_POLICY_ID, type=CommandType.LONG, description="lists recurring snapshots by snapshot policy ID")
+    @Parameter(name = ApiConstants.SNAPSHOT_POLICY_ID, type = CommandType.LONG, description = "lists recurring snapshots by snapshot policy ID")
     private Long snapshotPolicyId;
 
-    @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.LONG, required=true, description="list recurring snapshots by volume ID")
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.LONG, required = true, description = "list recurring snapshots by volume ID")
     private Long volumeId;
 
     /////////////////////////////////////////////////////
@@ -63,7 +63,7 @@ public class ListRecurringSnapshotScheduleCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         List<? extends SnapshotSchedule> snapshotSchedules = _snapshotService.findRecurringSnapshotSchedule(this);
         ListResponse<SnapshotScheduleResponse> response = new ListResponse<SnapshotScheduleResponse>();
         List<SnapshotScheduleResponse> snapshotScheduleResponses = new ArrayList<SnapshotScheduleResponse>();

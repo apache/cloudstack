@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,15 +15,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api.storage;
+//
 
+package com.cloud.agent.api.storage;
 
 public class UpgradeDiskCommand extends StorageCommand {
 
     private String _imagePath;
     private String _newSize;
 
-    public UpgradeDiskCommand() {}
+    public UpgradeDiskCommand() {
+    }
 
     public UpgradeDiskCommand(String imagePath, String newSize) {
         _imagePath = imagePath;
@@ -32,6 +35,7 @@ public class UpgradeDiskCommand extends StorageCommand {
     public String getImagePath() {
         return _imagePath;
     }
+
     public void setImagePath(String imagePath) {
         _imagePath = imagePath;
     }
@@ -39,6 +43,7 @@ public class UpgradeDiskCommand extends StorageCommand {
     public String getNewSize() {
         return _newSize;
     }
+
     public void setNewSize(String newSize) {
         _newSize = newSize;
     }

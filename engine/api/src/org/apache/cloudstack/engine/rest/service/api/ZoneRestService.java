@@ -37,46 +37,52 @@ public class ZoneRestService {
 //    @Inject
     ProvisioningService _provisioningService;
 
-    @GET @Path("/zones")
+    @GET
+    @Path("/zones")
     public List<ZoneEntity> listAll() {
         return _provisioningService.listZones();
     }
 
-    @GET @Path("/zone/{zone-id}")
+    @GET
+    @Path("/zone/{zone-id}")
     public ZoneEntity get(@PathParam("zone-id") String zoneId) {
         return _provisioningService.getZone(zoneId);
     }
 
-    @POST @Path("/zone/{zone-id}/enable")
+    @POST
+    @Path("/zone/{zone-id}/enable")
     public String enable(String zoneId) {
         return null;
     }
 
-    @POST @Path("/zone/{zone-id}/disable")
+    @POST
+    @Path("/zone/{zone-id}/disable")
     public String disable(@PathParam("zone-id") String zoneId) {
         ZoneEntity zoneEntity = _provisioningService.getZone(zoneId);
         zoneEntity.disable();
         return null;
     }
 
-    @POST @Path("/zone/{zone-id}/deactivate")
+    @POST
+    @Path("/zone/{zone-id}/deactivate")
     public String deactivate(@PathParam("zone-id") String zoneId) {
         return null;
     }
 
-    @POST @Path("/zone/{zone-id}/activate")
+    @POST
+    @Path("/zone/{zone-id}/activate")
     public String reactivate(@PathParam("zone-id") String zoneId) {
         return null;
     }
 
-
-    @PUT @Path("/zone/create")
-    public ZoneEntity createZone(@QueryParam("xid") String xid,
-            @QueryParam("display-name") String displayName) {
+    @PUT
+    @Path("/zone/create")
+    public ZoneEntity createZone(@QueryParam("xid") String xid, @QueryParam("display-name") String displayName) {
         return null;
     }
 
-    @DELETE @Path("/zone/{zone-id}")
+    @DELETE
+    @Path("/zone/{zone-id}")
     public String deleteZone(@QueryParam("zone-id") String xid) {
         return null;
     }

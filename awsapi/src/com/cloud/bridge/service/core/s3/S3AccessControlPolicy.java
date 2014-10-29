@@ -16,27 +16,27 @@
 // under the License.
 package com.cloud.bridge.service.core.s3;
 
-public class S3AccessControlPolicy  extends S3Response {
-	protected S3CanonicalUser owner;
-	protected S3Grant[] grants;
-	
-	public S3AccessControlPolicy() {
-		super();
-	}
+public class S3AccessControlPolicy extends S3Response {
+    protected S3CanonicalUser owner;
+    protected S3Grant[] grants;
 
-	public S3CanonicalUser getOwner() {
-		return owner;
-	}
+    public S3AccessControlPolicy() {
+        super();
+    }
 
-	public void setOwner(S3CanonicalUser owner) {
-		this.owner = owner;
-	}
+    public S3CanonicalUser getOwner() {
+        return owner;
+    }
 
-	public S3Grant[] getGrants() {
-		return grants;
-	}
+    public void setOwner(S3CanonicalUser owner) {
+        this.owner = owner;
+    }
 
-	public void setGrants(S3Grant[] grants) {
-		this.grants = grants;
-	}
+    public S3Grant[] getGrants() {
+        return grants;
+    }
+
+    public void setGrants(S3Grant[] grants) {
+        this.grants = grants;
+    }
 }

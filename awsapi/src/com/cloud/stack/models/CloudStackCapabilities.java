@@ -20,35 +20,38 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackCapabilities {
-	@SerializedName(ApiConstants.CLOUD_STACK_VERSION)
-	private String cloudStackVersion;
-	@SerializedName(ApiConstants.SECURITY_GROUPS_ENABLED)
-	private Boolean securityGroupsEnabled;	
-	@SerializedName(ApiConstants.USER_PUBLIC_TEMPLATE_ENABLED)
-	private Boolean userPublicTemplateEnabled;
-	
-	/**
-	 * 
-	 */
-	public CloudStackCapabilities() {
-		// TODO Auto-generated constructor stub
-	}
-	/**
-	 * @return the cloudStackVersion
-	 */
-	public String getCloudStackVersion() {
-		return cloudStackVersion;
-	}
-	/**
-	 * @return the securityGroupsEnabled
-	 */
-	public Boolean getSecurityGroupsEnabled() {
-		return securityGroupsEnabled;
-	}
-	/**
-	 * @return the userPublicTemplateEnabled
-	 */
-	public Boolean getUserPublicTemplateEnabled() {
-		return userPublicTemplateEnabled;
-	}
+    @SerializedName(ApiConstants.CLOUD_STACK_VERSION)
+    private String cloudStackVersion;
+    @SerializedName(ApiConstants.SECURITY_GROUPS_ENABLED)
+    private Boolean securityGroupsEnabled;
+    @SerializedName(ApiConstants.USER_PUBLIC_TEMPLATE_ENABLED)
+    private Boolean userPublicTemplateEnabled;
+
+    /**
+     *
+     */
+    public CloudStackCapabilities() {
+        // TODO Auto-generated constructor stub
+    }
+
+    /**
+     * @return the cloudStackVersion
+     */
+    public String getCloudStackVersion() {
+        return cloudStackVersion;
+    }
+
+    /**
+     * @return the securityGroupsEnabled
+     */
+    public Boolean getSecurityGroupsEnabled() {
+        return securityGroupsEnabled;
+    }
+
+    /**
+     * @return the userPublicTemplateEnabled
+     */
+    public Boolean getUserPublicTemplateEnabled() {
+        return userPublicTemplateEnabled;
+    }
 }

@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.deploy;
 
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -25,6 +24,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.deploy.DeploymentPlanner.PlannerResourceUsage;
@@ -33,20 +33,20 @@ import com.cloud.deploy.DeploymentPlanner.PlannerResourceUsage;
 @Table(name = "op_host_planner_reservation")
 public class PlannerHostReservationVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="host_id")
+    @Column(name = "host_id")
     private Long hostId;
 
-    @Column(name="data_center_id")
+    @Column(name = "data_center_id")
     private Long dataCenterId;
 
-    @Column(name="pod_id")
+    @Column(name = "pod_id")
     private Long podId;
 
-    @Column(name="cluster_id")
+    @Column(name = "cluster_id")
     private Long clusterId;
 
     @Column(name = "resource_usage")
@@ -63,8 +63,7 @@ public class PlannerHostReservationVO implements InternalIdentity {
         this.clusterId = clusterId;
     }
 
-    public PlannerHostReservationVO(Long hostId, Long dataCenterId, Long podId, Long clusterId,
-            PlannerResourceUsage resourceUsage) {
+    public PlannerHostReservationVO(Long hostId, Long dataCenterId, Long podId, Long clusterId, PlannerResourceUsage resourceUsage) {
         this.hostId = hostId;
         this.dataCenterId = dataCenterId;
         this.podId = podId;
@@ -88,6 +87,7 @@ public class PlannerHostReservationVO implements InternalIdentity {
     public Long getDataCenterId() {
         return dataCenterId;
     }
+
     public void setDataCenterId(Long dataCenterId) {
         this.dataCenterId = dataCenterId;
     }
@@ -95,6 +95,7 @@ public class PlannerHostReservationVO implements InternalIdentity {
     public Long getPodId() {
         return podId;
     }
+
     public void setPodId(long podId) {
         this.podId = new Long(podId);
     }
@@ -102,6 +103,7 @@ public class PlannerHostReservationVO implements InternalIdentity {
     public Long getClusterId() {
         return clusterId;
     }
+
     public void setClusterId(long clusterId) {
         this.clusterId = new Long(clusterId);
     }

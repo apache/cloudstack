@@ -33,9 +33,11 @@ public class IpAddressTO {
     private Integer networkRate;
     private TrafficType trafficType;
     private String networkName;
+    private Integer nicDevId;
+    private boolean newNic;
 
-    public IpAddressTO(long accountId, String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String broadcastUri,
-            String vlanGateway, String vlanNetmask, String vifMacAddress, Integer networkRate, boolean isOneToOneNat) {
+    public IpAddressTO(long accountId, String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String broadcastUri, String vlanGateway, String vlanNetmask,
+            String vifMacAddress, Integer networkRate, boolean isOneToOneNat) {
         this.accountId = accountId;
         this.publicIp = ipAddress;
         this.add = add;
@@ -72,7 +74,6 @@ public class IpAddressTO {
         return networkName;
     }
 
-
     public void setTrafficType(TrafficType trafficType) {
         this.trafficType = trafficType;
     }
@@ -81,7 +82,7 @@ public class IpAddressTO {
         return add;
     }
 
-    public boolean isOneToOneNat(){
+    public boolean isOneToOneNat() {
         return this.oneToOneNat;
     }
 
@@ -117,4 +118,19 @@ public class IpAddressTO {
         return networkRate;
     }
 
+    public Integer getNicDevId() {
+        return nicDevId;
+    }
+
+    public void setNicDevId(Integer nicDevId) {
+        this.nicDevId = nicDevId;
+    }
+
+    public boolean isNewNic() {
+        return newNic;
+    }
+
+    public void setNewNic(boolean newNic) {
+        this.newNic = newNic;
+    }
 }

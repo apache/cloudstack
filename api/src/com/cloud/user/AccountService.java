@@ -54,8 +54,8 @@ public interface AccountService {
      *
      * @return the user if created successfully, null otherwise
      */
-    UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain,
-            Map<String, String> details, String accountUUID, String userUUID);
+    UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName,
+        short accountType, Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID);
 
     /**
      * Locks a user by userId. A locked user cannot access the API, but will still have running VMs/IP addresses
@@ -70,13 +70,18 @@ public interface AccountService {
 
     User getSystemUser();
 
-    User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID);
+        User
+        createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID);
 
-    boolean isAdmin(short accountType);
+    boolean isAdmin(Long accountId);
 
     Account finalizeOwner(Account caller, String accountName, Long domainId, Long projectId);
 
     Account getActiveAccountByName(String accountName, Long domainId);
+
+    UserAccount getActiveUserAccount(String username, Long domainId);
+
+    UserAccount updateUser(Long userId, String firstName, String lastName, String email, String userName, String password, String apiKey, String secretKey, String timeZone);
 
     Account getActiveAccountById(long accountId);
 
@@ -86,7 +91,11 @@ public interface AccountService {
 
     User getUserIncludingRemoved(long userId);
 
-    boolean isRootAdmin(short accountType);
+    boolean isRootAdmin(Long accountId);
+
+    boolean isDomainAdmin(Long accountId);
+
+    boolean isNormalUser(long accountId);
 
     User getActiveUserByRegistrationToken(String registrationToken);
 
@@ -101,5 +110,17 @@ public interface AccountService {
     void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, ControlledEntity... entities) throws PermissionDeniedException;
+
+    void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName,
+            ControlledEntity... entities) throws PermissionDeniedException;
+
+    Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
+
+    /**
+     * returns the user account object for a given user id
+     * @param userId user id
+     * @return useraccount object if it exists else null
+     */
+    UserAccount getUserAccountById(Long userId);
 
 }

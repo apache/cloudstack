@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,34 +15,36 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Answer;
 
-public class PrimaryStorageDownloadAnswer extends Answer  {
-	private String installPath;
+public class PrimaryStorageDownloadAnswer extends Answer {
+    private String installPath;
     private long templateSize = 0L;
 
-	protected PrimaryStorageDownloadAnswer() {
-	    super();
-	}
+    protected PrimaryStorageDownloadAnswer() {
+        super();
+    }
 
     public PrimaryStorageDownloadAnswer(String detail) {
         super(null, false, detail);
     }
 
-	public PrimaryStorageDownloadAnswer(String installPath, long templateSize ) {
+    public PrimaryStorageDownloadAnswer(String installPath, long templateSize) {
         super(null);
-		this.installPath = installPath;
-		this.templateSize = templateSize;
-	}
+        this.installPath = installPath;
+        this.templateSize = templateSize;
+    }
 
-	public String getInstallPath() {
-		return installPath;
-	}
+    public String getInstallPath() {
+        return installPath;
+    }
 
-	public void setInstallPath(String installPath) {
-		this.installPath = installPath;
+    public void setInstallPath(String installPath) {
+        this.installPath = installPath;
     }
 
     public void setTemplateSize(long templateSize) {

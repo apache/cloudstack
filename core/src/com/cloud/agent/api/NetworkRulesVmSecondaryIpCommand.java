@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import com.cloud.vm.VirtualMachine;
@@ -31,9 +34,7 @@ public class NetworkRulesVmSecondaryIpCommand extends Command {
         this.type = type;
     }
 
-
-    public NetworkRulesVmSecondaryIpCommand(String vmName, String vmMac,
-            String secondaryIp, boolean action) {
+    public NetworkRulesVmSecondaryIpCommand(String vmName, String vmMac, String secondaryIp, boolean action) {
         this.vmName = vmName;
         this.vmMac = vmMac;
         this.vmSecIp = secondaryIp;

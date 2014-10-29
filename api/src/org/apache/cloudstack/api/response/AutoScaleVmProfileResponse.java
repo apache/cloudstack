@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.BaseResponse;
@@ -31,7 +32,7 @@ import com.cloud.serializer.Param;
 import com.cloud.utils.Pair;
 import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=AutoScaleVmProfile.class)
+@EntityReference(value = AutoScaleVmProfile.class)
 public class AutoScaleVmProfileResponse extends BaseResponse implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
@@ -62,14 +63,18 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
 
     /* Parameters related to a running virtual machine - monitoring aspects */
     @SerializedName(ApiConstants.COUNTERPARAM_LIST)
-    @Parameter(name = ApiConstants.COUNTERPARAM_LIST, type = CommandType.MAP, description = "counterparam list. Example: counterparam[0].name=snmpcommunity&counterparam[0].value=public&counterparam[1].name=snmpport&counterparam[1].value=161")
+    @Parameter(name = ApiConstants.COUNTERPARAM_LIST,
+               type = CommandType.MAP,
+               description = "counterparam list. Example: counterparam[0].name=snmpcommunity&counterparam[0].value=public&counterparam[1].name=snmpport&counterparam[1].value=161")
     private Map<String, String> counterParams;
 
     @SerializedName(ApiConstants.AUTOSCALE_USER_ID)
     @Param(description = "the ID of the user used to launch and destroy the VMs")
     private String autoscaleUserId;
 
-    @Parameter(name = ApiConstants.CS_URL, type = CommandType.STRING, description = "the API URL including port of the CloudStack Management Server example: http://server.cloud.com:8080/client/api?")
+    @Parameter(name = ApiConstants.CS_URL,
+               type = CommandType.STRING,
+               description = "the API URL including port of the CloudStack Management Server example: http://server.cloud.com:8080/client/api?")
     private String csUrl;
 
     @SerializedName(ApiConstants.ACCOUNT)
@@ -92,16 +97,17 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     @Param(description = "the domain name of the vm profile")
     private String domainName;
 
+    @SerializedName(ApiConstants.FOR_DISPLAY)
+    @Param(description = "is profile for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean forDisplay;
+
     public AutoScaleVmProfileResponse() {
-
     }
-
 
     @Override
     public String getObjectId() {
         return this.id;
     }
-
 
     public void setId(String id) {
         this.id = id;
@@ -167,5 +173,9 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
 
     public void setCsUrl(String csUrl) {
         this.csUrl = csUrl;
+    }
+
+    public void setForDisplay(Boolean forDisplay) {
+        this.forDisplay = forDisplay;
     }
 }

@@ -20,14 +20,15 @@ package org.apache.cloudstack.network.contrail.model;
 import java.io.IOException;
 import java.util.TreeSet;
 
-import org.apache.cloudstack.network.contrail.management.ContrailManager;
+import net.juniper.contrail.api.ApiConnector;
+import net.juniper.contrail.api.types.FloatingIpPool;
+
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.network.contrail.management.ContrailManager;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.utils.exception.CloudRuntimeException;
-
-import net.juniper.contrail.api.types.FloatingIpPool;
-import net.juniper.contrail.api.ApiConnector;
 
 public class FloatingIpPoolModel extends ModelObjectBase {
     private static final Logger s_logger = Logger.getLogger(FloatingIpPoolModel.class);
@@ -54,7 +55,7 @@ public class FloatingIpPoolModel extends ModelObjectBase {
     public FloatingIpModel getFloatingIpModel(String uuid) {
         TreeSet<ModelObject> tree = successors();
         FloatingIpModel fipKey = new FloatingIpModel(uuid);
-        FloatingIpModel current = (FloatingIpModel) tree.ceiling(fipKey);
+        FloatingIpModel current = (FloatingIpModel)tree.ceiling(fipKey);
         if (current != null && current.getUuid().equals(uuid)) {
             return current;
         }
@@ -77,7 +78,7 @@ public class FloatingIpPoolModel extends ModelObjectBase {
     @Override
     public void delete(ModelController controller) throws IOException {
         ApiConnector api = controller.getApiAccessor();
-        for (ModelObject successor: successors()) {
+        for (ModelObject successor : successors()) {
             successor.delete(controller);
         }
         try {
@@ -93,7 +94,7 @@ public class FloatingIpPoolModel extends ModelObjectBase {
     @Override
     public void destroy(ModelController controller) throws IOException {
         delete(controller);
-        for (ModelObject successor: successors()) {
+        for (ModelObject successor : successors()) {
             successor.destroy(controller);
         }
         clearSuccessors();
@@ -127,7 +128,7 @@ public class FloatingIpPoolModel extends ModelObjectBase {
 
         if (fipPool == null) {
             String fipPoolName = manager.getDefaultPublicNetworkFQN() + ":PublicIpPool";
-            _fipPool = fipPool = (FloatingIpPool) controller.getApiAccessor().findByFQN(FloatingIpPool.class, fipPoolName);
+            _fipPool = fipPool = (FloatingIpPool)controller.getApiAccessor().findByFQN(FloatingIpPool.class, fipPoolName);
             if (fipPool == null) {
                 fipPool = new FloatingIpPool();
                 fipPool.setName(_name);
@@ -149,10 +150,10 @@ public class FloatingIpPoolModel extends ModelObjectBase {
             } catch (IOException ex) {
                 s_logger.warn("floating ip pool update", ex);
                 throw new CloudRuntimeException("Unable to update floating ip ppol object", ex);
-            }            
+            }
         }
 
-        for (ModelObject successor: successors()) {
+        for (ModelObject successor : successors()) {
             successor.update(controller);
         }
     }

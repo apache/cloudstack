@@ -37,7 +37,7 @@ import com.cloud.utils.db.GenericDaoBase;
 
 /**
  * Join table for storage hosts and templates
- * 
+ *
  */
 @Entity
 @Table(name = "template_host_ref")
@@ -179,8 +179,8 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc, DataObj
         this.state = ObjectInDataStoreStateMachine.State.Allocated;
     }
 
-    public VMTemplateHostVO(long hostId, long templateId, Date lastUpdated, int downloadPercent, Status downloadState,
-            String localDownloadPath, String errorString, String jobId, String installPath, String downloadUrl) {
+    public VMTemplateHostVO(long hostId, long templateId, Date lastUpdated, int downloadPercent, Status downloadState, String localDownloadPath, String errorString,
+            String jobId, String installPath, String downloadUrl) {
         super();
         this.hostId = hostId;
         this.templateId = templateId;
@@ -231,7 +231,7 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc, DataObj
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof VMTemplateHostVO) {
-            VMTemplateHostVO other = (VMTemplateHostVO) obj;
+            VMTemplateHostVO other = (VMTemplateHostVO)obj;
             return (this.templateId == other.getTemplateId() && this.hostId == other.getHostId());
         }
         return false;
@@ -291,8 +291,7 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc, DataObj
 
     @Override
     public String toString() {
-        return new StringBuilder("TmplHost[").append(id).append("-").append(templateId).append("-").append(hostId)
-                .append(installPath).append("]").toString();
+        return new StringBuilder("TmplHost[").append(id).append("-").append(templateId).append("-").append(hostId).append(installPath).append("]").toString();
     }
 
     @Override

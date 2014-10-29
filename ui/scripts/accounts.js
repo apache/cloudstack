@@ -17,13 +17,12 @@
 (function(cloudStack) {
 
     var domainObjs;
-    var rootDomainId;
-
+    
     cloudStack.sections.accounts = {
         title: 'label.accounts',
         id: 'accounts',
         sectionSelect: {
-            label: 'Select View',
+            label: 'label.select-view',
             preFilter: function() {
                 return ['accounts'];
             }
@@ -86,11 +85,45 @@
 
                             action: {
                                 custom: cloudStack.uiCustom.accountsWizard(
-                                    cloudStack.accountsWizard
+                                    cloudStack.accountsWizard,
+                                    false
                                 )
                             }
 
-                        }
+                        },
+                                                
+                        addLdapAccount: {
+                            label: 'label.add.LDAP.account',
+                            isHeader: true,
+                            preFilter: function(args) {
+                                //if (isAdmin() && true) { //for testing only
+                                if (isAdmin() && isLdapEnabled()) {
+                                    return true;
+                                } else {
+                                    return false;
+                                }
+                            },
+                            messages: {
+                                notification: function(args) {
+                                    return 'label.add.LDAP.account';
+                                }
+                            },
+                            notification: {
+                                poll: function(args) {
+                                    args.complete({
+                                        actionFilter: accountActionfilter
+                                    });
+                                }
+                            },
+
+                            action: {
+                                custom: cloudStack.uiCustom.accountsWizard(
+                                    cloudStack.accountsWizard,
+                                    true
+                                )
+                            }
+
+                        }                        
                     },
 
                     dataProvider: function(args) {
@@ -372,7 +405,59 @@
                                         data: data,
                                         async: true,
                                         success: function(json) {
-                                            //var resourcecounts= json.updateresourcecountresponse.resourcecount;   //do nothing
+                                            var resourcecounts= json.updateresourcecountresponse.resourcecount;                                               
+                                            //pop up API response in a dialog box since only updateResourceCount API returns resourcecount (listResourceLimits API does NOT return resourcecount)
+                                            var msg = '';
+                                            if (resourcecounts != null) {
+                                            	for (var i = 0; i < resourcecounts.length; i++) {                                            		
+                                            		switch (resourcecounts[i].resourcetype) {
+                                            		case '0':
+                                            			msg += 'Instance'; //vmLimit
+                                            			break;
+                                            		case '1':
+                                            			msg += 'Public IP'; //ipLimit
+                                            			break;
+                                            		case '2':
+                                            			msg += 'Volume'; //volumeLimit
+                                            			break;
+                                            		case '3':
+                                            		    msg += 'Snapshot'; //snapshotLimit
+                                            		    break;
+                                            		case '4':
+                                            			msg += 'Template'; //templateLimit
+                                            			break;
+                                            		case '5':                                            			
+                                            			continue; //resourcetype 5 is not in use. so, skip to next item.                                          			
+                                            			break;
+                                            		case '6':
+                                            			msg += 'Network'; //networkLimit
+                                            			break;
+                                            		case '7':
+                                            			msg += 'VPC'; //vpcLimit
+                                            			break;
+                                            		case '8':
+                                            			msg += 'CPU'; //cpuLimit
+                                            			break;
+                                            		case '9':
+                                            			msg += 'Memory'; //memoryLimit
+                                            			break;
+                                            		case '10':
+                                            			msg += 'Primary Storage'; //primaryStorageLimit
+                                            			break;
+                                            		case '11':
+                                            			msg += 'Secondary Storage'; //secondaryStorageLimit
+                                            			break;      
+                                            		}
+                                            		                                      		
+                                            		msg += ' Count: ' + resourcecounts[i].resourcecount + ' <br> ';
+                                            	}
+                                            }
+                                            
+                                            
+                                            cloudStack.dialog.notice({
+                                            	message: msg
+                                            });                                            
+                                            
                                             args.response.success();
                                         },
                                         error: function(json) {
@@ -574,7 +659,7 @@
                                     }
                                 }, {
                                     id: {
-                                        label: 'ID'
+                                        label: 'label.id'
                                     },
                                     accounttype: {
                                         label: 'label.role',
@@ -643,7 +728,7 @@
                                         }
                                     },
                                     vpcLimit: {
-                                        label: 'VPC limits',
+                                        label: 'label.VPC.limits',
                                         isEditable: function(context) {
                                             if (context.accounts[0].accounttype == roleTypeUser || context.accounts[0].accounttype == roleTypeDomainAdmin) //updateResourceLimits is only allowed on account whose type is user or domain-admin
                                                 return true;
@@ -799,15 +884,10 @@
                                     dataProvider: function(args) {
                                         $.ajax({
                                             url: createURL('listConfigurations&accountid=' + args.context.accounts[0].id),
-                                            data: {
-                                                page: args.page,
-                                                pageSize: pageSize,
-                                                listAll: true
-                                            },
+                                            data: listViewDataProvider(args, {}, { searchBy: 'name' }),
                                             success: function(json) {
                                                 args.response.success({
                                                     data: json.listconfigurationsresponse.configuration
-
                                                 });
 
                                             },
@@ -1083,59 +1163,62 @@
                                     }
                                 },
 
-				action: function(args) {
-				    if (isLdapEnabled()) {
-					alert(dictionary["error.could.not.change.your.password.because.ldap.is.enabled"]);
-					args.response.error({});
-				    } else {
-					cloudStack.dialog.createForm({
-					    noDialog: false,
-					    form: {
-						title: 'label.action.change.password',
-						fields: {
-						    newPassword: {
-							label: 'label.new.password',
-							isPassword: true,
-							validation: {
-							    required: true
-							},
-							id: 'newPassword'
-						    },
-						    'password-confirm': {
-							label: 'label.confirm.password',
-							validation: {
-							    required: true,
-							    equalTo: '#newPassword'
-							},
-							isPassword: true
-						    }
-						}
-					    }
-					})
-					var password = args.data.newPassword;
-					if (md5Hashed)
-					    password = $.md5(password);
+                                action: {
+                                    custom: function(args) {
+                                        var start = args.start;
+                                        var complete = args.complete;
+                                        var context = args.context;
 
-					var data = {
-					    id: args.context.users[0].id,
-					    password: password
-					};
-					$.ajax({
-					    url: createURL('updateUser'),
-					    data: data,
-					    type: "POST",
-					    success: function(json) {
-						args.response.success({
-						    data: json.updateuserresponse.user
-						});
-					    }
-					});
+                                        if (isLdapEnabled()) {
+                                            cloudStack.dialog.notice({ message: _l('error.could.not.change.your.password.because.ldap.is.enabled') });
+                                        } else {
+                                            cloudStack.dialog.createForm({
+                                                form: {
+                                                    title: 'label.action.change.password',
+                                                    fields: {
+                                                        newPassword: {
+                                                            label: 'label.new.password',
+                                                            isPassword: true,
+                                                            validation: {
+                                                                required: true
+                                                            },
+                                                            id: 'newPassword'
+                                                        },
+                                                        'password-confirm': {
+                                                            label: 'label.confirm.password',
+                                                            validation: {
+                                                                required: true,
+                                                                equalTo: '#newPassword'
+                                                            },
+                                                            isPassword: true
+                                                        }
+                                                    }
+                                                },
+                                                after: function(args) {
+                                                    start();
 
-				    }
-                                },
-                                notification: {
-                                    poll: function(args) {
-                                        args.complete();
+                                                    var password = args.data.newPassword;
+
+                                                    if (md5Hashed)
+                                                        password = $.md5(password);
+
+                                                    $.ajax({
+                                                        url: createURL('updateUser'),
+                                                        data: {
+                                                            id: context.users[0].id,
+                                                            password: password
+                                                        },
+                                                        type: "POST",
+                                                        success: function(json) {
+                                                            complete();
+                                                        },
+                                                        error: function(json) {
+                                                            complete({ error: parseXMLHttpResponse(json) });
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }
                                     }
                                 }
                             },
@@ -1286,16 +1369,10 @@
                                     }
                                 }, {
                                     id: {
-                                        label: 'ID'
+                                        label: 'label.id'
                                     },
                                     state: {
                                         label: 'label.state'
-                                    },
-                                    apikey: {
-                                        label: 'label.api.key'
-                                    },
-                                    secretkey: {
-                                        label: 'label.secret.key'
                                     },
                                     account: {
                                         label: 'label.account.name'
@@ -1308,6 +1385,14 @@
                                     },
                                     domain: {
                                         label: 'label.domain'
+                                    },
+                                    apikey: {
+                                        label: 'label.api.key',
+                                        isCopyPaste: true
+                                    },
+                                    secretkey: {
+                                        label: 'label.secret.key',
+                                        isCopyPaste: true
                                     },
                                     email: {
                                         label: 'label.email',
@@ -1442,19 +1527,21 @@
                     allowedActions.push("enable");
                 allowedActions.push("remove");
             }
-        } else {
-            if (isSelfOrChildDomainUser(jsonObj.username, jsonObj.accounttype, jsonObj.domainid, jsonObj.iscallerchilddomain)) {
-                if (isDomainAdmin() && jsonObj.username != g_username) {
-                    allowedActions.push("edit");
-                    if (jsonObj.state == "enabled")
-                        allowedActions.push("disable");
-                    if (jsonObj.state == "disabled")
-                        allowedActions.push("enable");
-                    allowedActions.push("remove");
-                }
+        } else { //domain-admin, regular-user
+        	if (jsonObj.username == g_username) { //selected user is self
+        		allowedActions.push("changePassword");
+                allowedActions.push("generateKeys");
+        	} else if (isDomainAdmin()) { //if selected user is not self, and the current login is domain-admin
+        		allowedActions.push("edit");
+                if (jsonObj.state == "enabled")
+                    allowedActions.push("disable");
+                if (jsonObj.state == "disabled")
+                    allowedActions.push("enable");
+                allowedActions.push("remove");
+                
                 allowedActions.push("changePassword");
                 allowedActions.push("generateKeys");
-            }
+        	}        	
         }
         return allowedActions;
     }

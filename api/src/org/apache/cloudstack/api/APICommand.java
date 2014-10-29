@@ -23,9 +23,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ TYPE })
+@Target({TYPE})
 public @interface APICommand {
     Class<? extends BaseResponse> responseObject();
 
@@ -39,5 +40,13 @@ public @interface APICommand {
 
     String since() default "";
 
+    ResponseView responseView() default ResponseView.Full;
+
+    boolean requestHasSensitiveInfo() default true;
+
+    boolean responseHasSensitiveInfo() default true;
+
     RoleType[] authorized() default {};
+
+    Class<?>[] entityType() default {};
 }

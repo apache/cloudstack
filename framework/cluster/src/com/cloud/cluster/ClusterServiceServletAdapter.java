@@ -23,8 +23,9 @@ import java.util.Properties;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.framework.config.ConfigDepot;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.utils.NumbersUtil;
@@ -35,7 +36,7 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
 
     private static final Logger s_logger = Logger.getLogger(ClusterServiceServletAdapter.class);
     private static final int DEFAULT_SERVICE_PORT = 9090;
-    private static final int DEFAULT_REQUEST_TIMEOUT = 300;			// 300 seconds
+    private static final int DEFAULT_REQUEST_TIMEOUT = 300;            // 300 seconds
 
     @Inject
     private ClusterManager _manager;

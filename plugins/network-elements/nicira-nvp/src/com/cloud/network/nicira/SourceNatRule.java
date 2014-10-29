@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.nicira;
 
 public class SourceNatRule extends NatRule {
@@ -29,7 +32,7 @@ public class SourceNatRule extends NatRule {
         return toSourceIpAddressMax;
     }
 
-    public void setToSourceIpAddressMax(String toSourceIpAddressMax) {
+    public void setToSourceIpAddressMax(final String toSourceIpAddressMax) {
         this.toSourceIpAddressMax = toSourceIpAddressMax;
     }
 
@@ -37,7 +40,7 @@ public class SourceNatRule extends NatRule {
         return toSourceIpAddressMin;
     }
 
-    public void setToSourceIpAddressMin(String toSourceIpAddressMin) {
+    public void setToSourceIpAddressMin(final String toSourceIpAddressMin) {
         this.toSourceIpAddressMin = toSourceIpAddressMin;
     }
 
@@ -45,7 +48,7 @@ public class SourceNatRule extends NatRule {
         return toSourcePort;
     }
 
-    public void setToSourcePort(Integer toSourcePort) {
+    public void setToSourcePort(final Integer toSourcePort) {
         this.toSourcePort = toSourcePort;
     }
 
@@ -53,28 +56,21 @@ public class SourceNatRule extends NatRule {
     public int hashCode() {
         final int prime = 31;
         int result = super.hashCode();
-        result = prime
-                * result
-                + ((toSourceIpAddressMax == null) ? 0 : toSourceIpAddressMax
-                        .hashCode());
-        result = prime
-                * result
-                + ((toSourceIpAddressMin == null) ? 0 : toSourceIpAddressMin
-                        .hashCode());
-        result = prime * result
-                + ((toSourcePort == null) ? 0 : toSourcePort.hashCode());
+        result = prime * result + ((toSourceIpAddressMax == null) ? 0 : toSourceIpAddressMax.hashCode());
+        result = prime * result + ((toSourceIpAddressMin == null) ? 0 : toSourceIpAddressMin.hashCode());
+        result = prime * result + ((toSourcePort == null) ? 0 : toSourcePort.hashCode());
         return result;
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (this == obj)
             return true;
         if (!super.equals(obj))
             return false;
         if (getClass() != obj.getClass())
             return false;
-        SourceNatRule other = (SourceNatRule) obj;
+        SourceNatRule other = (SourceNatRule)obj;
         if (toSourceIpAddressMax == null) {
             if (other.toSourceIpAddressMax != null)
                 return false;
@@ -94,14 +90,14 @@ public class SourceNatRule extends NatRule {
     }
 
     @Override
-    public boolean equalsIgnoreUuid(Object obj) {
+    public boolean equalsIgnoreUuid(final Object obj) {
         if (this == obj)
             return true;
         if (!super.equalsIgnoreUuid(obj))
             return false;
         if (getClass() != obj.getClass())
             return false;
-        SourceNatRule other = (SourceNatRule) obj;
+        SourceNatRule other = (SourceNatRule)obj;
         if (toSourceIpAddressMax == null) {
             if (other.toSourceIpAddressMax != null)
                 return false;

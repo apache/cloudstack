@@ -20,35 +20,35 @@ import java.util.Enumeration;
 import java.util.Iterator;
 
 public class IteratorHelper {
-	public static <T> Iterable<T> enumerationAsIterable(final Enumeration<T> e) {
-		return new Iterable<T> () {
-			public Iterator<T> iterator() {
-			    return new Iterator<T>() {
-			    	public boolean hasNext() {
-			    		return e.hasMoreElements();
-			    	}
+    public static <T> Iterable<T> enumerationAsIterable(final Enumeration<T> e) {
+        return new Iterable<T>() {
+            public Iterator<T> iterator() {
+                return new Iterator<T>() {
+                    public boolean hasNext() {
+                        return e.hasMoreElements();
+                    }
 
-			    	public T next() {
-			    		return e.nextElement();
-			    	}
+                    public T next() {
+                        return e.nextElement();
+                    }
 
-			    	public void remove() {
-			    		throw new UnsupportedOperationException();
-			    	}
-			    };
-			}
-		};
-	}
-	
-	public static <T> Enumeration<T> iteratorAsEnumeration(final Iterator<T> it) {
-		return new Enumeration<T>() {
-		    public boolean hasMoreElements() {
-		        return it.hasNext();
-		    }
+                    public void remove() {
+                        throw new UnsupportedOperationException();
+                    }
+                };
+            }
+        };
+    }
 
-		    public T nextElement() {
-		        return it.next();
-		    }
-		};
-	}
+    public static <T> Enumeration<T> iteratorAsEnumeration(final Iterator<T> it) {
+        return new Enumeration<T>() {
+            public boolean hasMoreElements() {
+                return it.hasNext();
+            }
+
+            public T nextElement() {
+                return it.next();
+            }
+        };
+    }
 }

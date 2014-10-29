@@ -24,8 +24,7 @@ import com.cloud.org.Managed.ManagedState;
 
 public interface Cluster extends Grouping, InternalIdentity, Identity {
     public static enum ClusterType {
-        CloudManaged,
-        ExternalManaged;
+        CloudManaged, ExternalManaged;
     };
 
     String getName();

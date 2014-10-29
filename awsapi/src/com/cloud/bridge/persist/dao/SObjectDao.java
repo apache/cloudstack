@@ -24,11 +24,9 @@ import com.cloud.utils.db.GenericDao;
 
 public interface SObjectDao extends GenericDao<SObjectVO, Long> {
 
-    List<SObjectVO> listBucketObjects(SBucketVO bucket, String prefix,
-            String marker, int maxKeys);
+    List<SObjectVO> listBucketObjects(SBucketVO bucket, String prefix, String marker, int maxKeys);
 
-    List<SObjectVO> listAllBucketObjects(SBucketVO bucket, String prefix,
-            String marker, int maxKeys);
+    List<SObjectVO> listAllBucketObjects(SBucketVO bucket, String prefix, String marker, int maxKeys);
 
     SObjectVO getByNameKey(SBucketVO bucket, String nameKey);
 

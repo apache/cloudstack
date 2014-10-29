@@ -17,8 +17,6 @@
 
 package com.cloud.network;
 
-
-
 public class NetworkManagerTestComponentLibrary {
 
     /* (non-Javadoc)
@@ -54,9 +52,6 @@ public class NetworkManagerTestComponentLibrary {
 //        //addManager("VirtualMachineManager", MockVirtualMachineManagerImpl.class);
 //        addManager("ResourceManager", MockResourceManagerImpl.class);
 //        addManager("ExternalDhcpManager", ExternalDhcpManagerImpl.class);
-
-
-
 
     }
 

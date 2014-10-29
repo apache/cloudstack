@@ -16,26 +16,32 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
+import com.cloud.serializer.Param;
 
 public class ApiLimitResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ACCOUNT_ID) @Param(description="the account uuid of the api remaining count")
+    @SerializedName(ApiConstants.ACCOUNT_ID)
+    @Param(description = "the account uuid of the api remaining count")
     private String accountId;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account name of the api remaining count")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account name of the api remaining count")
     private String accountName;
 
-    @SerializedName("apiIssued") @Param(description="number of api already issued")
+    @SerializedName("apiIssued")
+    @Param(description = "number of api already issued")
     private int apiIssued;
 
-    @SerializedName("apiAllowed") @Param(description="currently allowed number of apis")
+    @SerializedName("apiAllowed")
+    @Param(description = "currently allowed number of apis")
     private int apiAllowed;
 
-    @SerializedName("expireAfter") @Param(description="seconds left to reset counters")
+    @SerializedName("expireAfter")
+    @Param(description = "seconds left to reset counters")
     private long expireAfter;
 
     public void setAccountId(String accountId) {
@@ -77,6 +83,5 @@ public class ApiLimitResponse extends BaseResponse {
     public long getExpireAfter() {
         return expireAfter;
     }
-
 
 }

@@ -29,10 +29,8 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class LibvirtXMLParser extends DefaultHandler {
-    private static final Logger s_logger = Logger
-            .getLogger(LibvirtXMLParser.class);
-    protected static SAXParserFactory s_spf;
-
+    private static final Logger s_logger = Logger.getLogger(LibvirtXMLParser.class);
+    protected static final SAXParserFactory s_spf;
     static {
         s_spf = SAXParserFactory.newInstance();
 
@@ -67,8 +65,7 @@ public class LibvirtXMLParser extends DefaultHandler {
     }
 
     @Override
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
+    public void characters(char[] ch, int start, int length) throws SAXException {
     }
 
 }

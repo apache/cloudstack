@@ -17,62 +17,62 @@
 package com.cloud.bridge.service.core.s3;
 
 public class S3ListBucketRequest extends S3Request {
-	protected String bucketName;
-	protected String prefix;
-	protected String marker;
-	protected String delimiter;
-	protected String versionIdMarker;
-	protected int maxKeys;
+    protected String bucketName;
+    protected String prefix;
+    protected String marker;
+    protected String delimiter;
+    protected String versionIdMarker;
+    protected int maxKeys;
 
-	public S3ListBucketRequest() {
-		super();
-	}
-	
-	public String getBucketName() {
-		return bucketName;
-	}
-	
-	public void setBucketName(String bucketName) {
-		this.bucketName = bucketName;
-	}
-	
-	public String getPrefix() {
-		return prefix;
-	}
-	
-	public void setPrefix(String prefix) {
-		this.prefix = prefix;
-	}
-	
-	public String getMarker() {
-		return marker;
-	}
-	
-	public void setMarker(String marker) {
-		this.marker = marker;
-	}
-	
-	public String getDelimiter() {
-		return delimiter;
-	}
-	
-	public void setDelimiter(String delimiter) {
-		this.delimiter = delimiter;
-	}
+    public S3ListBucketRequest() {
+        super();
+    }
 
-	public String getVersionIdMarker() {
-		return versionIdMarker;
-	}
-	
-	public void setVersionIdMarker(String versionIdMarker) {
-		this.versionIdMarker = versionIdMarker;
-	}
+    public String getBucketName() {
+        return bucketName;
+    }
 
-	public int getMaxKeys() {
-		return maxKeys;
-	}
-	
-	public void setMaxKeys(int maxKeys) {
-		this.maxKeys = maxKeys;
-	}
+    public void setBucketName(String bucketName) {
+        this.bucketName = bucketName;
+    }
+
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
+
+    public String getMarker() {
+        return marker;
+    }
+
+    public void setMarker(String marker) {
+        this.marker = marker;
+    }
+
+    public String getDelimiter() {
+        return delimiter;
+    }
+
+    public void setDelimiter(String delimiter) {
+        this.delimiter = delimiter;
+    }
+
+    public String getVersionIdMarker() {
+        return versionIdMarker;
+    }
+
+    public void setVersionIdMarker(String versionIdMarker) {
+        this.versionIdMarker = versionIdMarker;
+    }
+
+    public int getMaxKeys() {
+        return maxKeys;
+    }
+
+    public void setMaxKeys(int maxKeys) {
+        this.maxKeys = maxKeys;
+    }
 }

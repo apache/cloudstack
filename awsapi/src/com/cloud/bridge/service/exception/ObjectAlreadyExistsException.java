@@ -17,20 +17,20 @@
 package com.cloud.bridge.service.exception;
 
 public class ObjectAlreadyExistsException extends RuntimeException {
-	private static final long serialVersionUID = 2705708093384620824L;
-	
-	public ObjectAlreadyExistsException() {
-	}
-	
-	public ObjectAlreadyExistsException(String message) {
-		super(message);
-	}
+    private static final long serialVersionUID = 2705708093384620824L;
 
-	public ObjectAlreadyExistsException(Throwable e) {
-		super(e);
-	}
-	
-	public ObjectAlreadyExistsException(String message, Throwable e) {
-		super(message, e);
-	}
+    public ObjectAlreadyExistsException() {
+    }
+
+    public ObjectAlreadyExistsException(String message) {
+        super(message);
+    }
+
+    public ObjectAlreadyExistsException(Throwable e) {
+        super(e);
+    }
+
+    public ObjectAlreadyExistsException(String message, Throwable e) {
+        super(message, e);
+    }
 }

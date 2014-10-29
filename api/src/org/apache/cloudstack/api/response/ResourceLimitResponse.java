@@ -16,36 +16,44 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = ResourceLimit.class)
 @SuppressWarnings("unused")
 public class ResourceLimitResponse extends BaseResponse implements ControlledEntityResponse {
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account of the resource limit")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account of the resource limit")
     private String accountName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the resource limit")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain ID of the resource limit")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the resource limit")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain name of the resource limit")
     private String domainName;
 
-    @SerializedName(ApiConstants.RESOURCE_TYPE) @Param(description="resource type. Values include 0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11. See the resourceType parameter for more information on these values.")
+    @SerializedName(ApiConstants.RESOURCE_TYPE)
+    @Param(description = "resource type. Values include 0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11. See the resourceType parameter for more information on these values.")
     private String resourceType;
 
-    @SerializedName("max") @Param(description="the maximum number of the resource. A -1 means the resource currently has no limit.")
+    @SerializedName("max")
+    @Param(description = "the maximum number of the resource. A -1 means the resource currently has no limit.")
     private Long max;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the resource limit")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the resource limit")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the resource limit")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the resource limit")
     private String projectName;
 
     @Override

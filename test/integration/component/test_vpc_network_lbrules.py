@@ -18,12 +18,9 @@
 """ Component tests for VPC network functionality - Load Balancing Rules
 """
 #Import Local Modules
-#import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-#from marvin.cloudstackAPI import
-#from marvin.integration.lib.utils import
-from marvin.integration.lib.base import (stopRouter,
+from marvin.lib.base import (stopRouter,
                                         startRouter,
                                         Account,
                                         VpcOffering,
@@ -37,11 +34,11 @@ from marvin.integration.lib.base import (stopRouter,
                                         VirtualMachine,
                                         LoadBalancerRule,
                                         StaticNATRule)
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
-                                        cleanup_resources,
                                         list_routers)
+from marvin.lib.utils import cleanup_resources
 import socket
 import time
 
@@ -184,14 +181,13 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         # We want to fail quicker if it's failure
         socket.setdefaulttimeout(60)
 
-        cls.api_client = super(
-                            TestVPCNetworkLBRules,
-                            cls
-                            ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVPCNetworkLBRules, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -510,7 +506,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
 
         return nwacl_internet_1
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="false")
     def test_01_VPC_LBRulesListing(self):
         """ Test case no 210 and 227: List Load Balancing Rules belonging to a VPC
         """
@@ -558,7 +554,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_02_VPC_CreateLBRuleInMultipleNetworks(self):
         """ Test Create LB rules for 1 network which is part of a two/multiple virtual networks of a
             VPC using a new Public IP Address available with the VPC when the Virtual Router is in Running State
@@ -583,7 +579,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_03_VPC_CreateLBRuleInMultipleNetworksVRStoppedState(self):
         """ Test case no 222 : Create LB rules for a two/multiple virtual networks of a 
             VPC using a new Public IP Address available with the VPC when the Virtual Router is in Stopped State
@@ -619,7 +615,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         return    
 
-    @attr(tags=["advanced","advancedns", "intervlan"])
+    @attr(tags=["advanced","advancedns", "intervlan"], required_hardware="true")
     def test_04_VPC_CreateLBRuleInMultipleNetworksVRStoppedState(self):
         """ Test case no 222 : Create LB rules for a two/multiple virtual networks of a
             VPC using a new Public IP Address available with the VPC when the Virtual Router is in Stopped State
@@ -649,7 +645,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=False)
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_05_VPC_CreateAndDeleteLBRule(self):
         """ Test case no 214 : Delete few(not all) LB rules for a single virtual network of a
             VPC belonging to a single Public IP Address when the Virtual Router is in Running State
@@ -680,7 +676,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_06_VPC_CreateAndDeleteLBRuleVRStopppedState(self):
         """ Test Delete few(not all) LB rules for a single virtual network of
             a VPC belonging to a single Public IP Address when the Virtual Router is in Stopped State
@@ -717,7 +713,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
         return    
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_07_VPC_CreateAndDeleteAllLBRule(self):
         """ Test Delete all LB rules for a single virtual network of a
             VPC belonging to a single Public IP Address when the Virtual Router is in Running State
@@ -750,7 +746,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_08_VPC_CreateAndDeleteAllLBRuleVRStoppedState(self):
         """ Test Delete all LB rules for a single virtual network of a
             VPC belonging to a single Public IP Address when the Virtual Router is in Stopped State
@@ -783,7 +779,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
         return
     
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_09_VPC_LBRuleCreateFailMultipleVPC(self):
         """ Test User should not be allowed to create a LB rule for a VM that belongs to a different VPC.
         """
@@ -821,7 +817,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
             self.debug('Failed to Create LB rule vm_3 and vm_4')
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="false")
     def test_10_VPC_FailedToCreateLBRuleNonVPCNetwork(self):
         """ Test User should not be allowed to create a LB rule for a VM that does not belong to any VPC.
         """
@@ -858,7 +854,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
             self.debug('Failed to Create LB rule vm_3 and vm_4 in network2')
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_11_VPC_LBRuleCreateNotAllowed(self):
         """ Test case no 217 and 236: User should not be allowed to create a LB rule for a
             VM that does not belong to the same network but belongs to the same VPC.
@@ -896,7 +892,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
             self.debug('Failed to Create LB rule vm_3 and vm_1')
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="false")
     def test_12_VPC_LBRuleCreateFailForRouterIP(self):
         """ Test User should not be allowed to create a LB rule on an Ipaddress that Source Nat enabled.
         """
@@ -924,7 +920,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
             self.debug('Failed to Create LB rule vm_2 and vm_1')
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_13_VPC_LBRuleCreateFailForPFSourceNATIP(self):
         """ Test User should not be allowed to create a LB rule on an Ipaddress that already has a PF rule.
         """
@@ -954,7 +950,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
             self.debug('Failed to Create LB rule vm_2 and vm_1')
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="false")
     def test_14_VPC_LBRuleCreateFailForStaticNatRule(self):
         """ Test User should not be allowed to create a LB rule on an Ipaddress that already has a Static Nat rule.
         """
@@ -983,7 +979,7 @@ class TestVPCNetworkLBRules(cloudstackTestCase):
             self.debug('Failed to Create LB rule vm_2 and vm_1')
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="false")
     def test_15_VPC_ReleaseIPForLBRuleCreated(self):
         """ Test release Ip address that has a LB rule assigned to it.
         """

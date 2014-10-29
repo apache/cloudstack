@@ -21,9 +21,10 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.UUID;
 
-import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
+
+import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
 
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
@@ -40,12 +41,11 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class CallContext {
     private static final Logger s_logger = Logger.getLogger(CallContext.class);
     private static ManagedThreadLocal<CallContext> s_currentContext = new ManagedThreadLocal<CallContext>();
-    private static ManagedThreadLocal<Stack<CallContext>> s_currentContextStack = 
-            new ManagedThreadLocal<Stack<CallContext>>() {
-                @Override
-                protected Stack<CallContext> initialValue() {
-                    return new Stack<CallContext>();
-                }
+    private static ManagedThreadLocal<Stack<CallContext>> s_currentContextStack = new ManagedThreadLocal<Stack<CallContext>>() {
+        @Override
+        protected Stack<CallContext> initialValue() {
+            return new Stack<CallContext>();
+        }
     };
 
     private String contextId;
@@ -55,6 +55,7 @@ public class CallContext {
     private String eventDescription;
     private String eventDetails;
     private String eventType;
+    private boolean isEventDisplayEnabled = true; // default to true unless specifically set
     private User user;
     private long userId;
     private final Map<Object, Object> context = new HashMap<Object, Object>();
@@ -76,9 +77,9 @@ public class CallContext {
 
     protected CallContext(User user, Account account, String contextId) {
         this.user = user;
-        this.userId = user.getId();
+        userId = user.getId();
         this.account = account;
-        this.accountId = account.getId();
+        accountId = account.getId();
         this.contextId = contextId;
     }
 
@@ -113,13 +114,26 @@ public class CallContext {
     }
 
     public static CallContext current() {
-        return s_currentContext.get();
+        CallContext context = s_currentContext.get();
+
+        // TODO other than async job and api dispatches, there are many system background running threads
+        // that do not setup CallContext at all, however, many places in code that are touched by these background tasks
+        // assume not-null CallContext. Following is a fix to address therefore caused NPE problems
+        //
+        // There are security implications with this. It assumes that all system background running threads are
+        // indeed have no problem in running under system context.
+        //
+        if (context == null) {
+            context = registerSystemCallContextOnceOnly();
+        }
+
+        return context;
     }
 
     /**
      * This method should only be called if you can propagate the context id
      * from another CallContext.
-     * 
+     *
      * @param callingUser calling user
      * @param callingAccount calling account
      * @param contextId context id propagated from another call context
@@ -132,7 +146,6 @@ public class CallContext {
     protected static CallContext register(User callingUser, Account callingAccount, Long userId, Long accountId, String contextId) {
         /*
                 Unit tests will have multiple times of setup/tear-down call to this, remove assertions to all unit test to run
-                 
                 assert s_currentContext.get() == null : "There's a context already so what does this new register context mean? " + s_currentContext.get().toString();
                 if (s_currentContext.get() != null) { // FIXME: This should be removed soon.  I added this check only to surface all the places that have this problem.
                     throw new CloudRuntimeException("There's a context already so what does this new register context mean? " + s_currentContext.get().toString());
@@ -149,10 +162,18 @@ public class CallContext {
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Registered: " + callingContext);
         }
-        
+
         s_currentContextStack.get().push(callingContext);
-        
+
         return callingContext;
+    }
+
+    public static CallContext registerPlaceHolderContext() {
+        CallContext context = new CallContext(0, 0, UUID.randomUUID().toString());
+        s_currentContext.set(context);
+
+        s_currentContextStack.get().push(context);
+        return context;
     }
 
     public static CallContext register(User callingUser, Account callingAccount) {
@@ -198,12 +219,24 @@ public class CallContext {
         return register(user, account);
     }
 
+    public static CallContext register(long callingUserId, long callingAccountId, String contextId) throws CloudAuthenticationException {
+        Account account = s_entityMgr.findById(Account.class, callingAccountId);
+        if (account == null) {
+            throw new CloudAuthenticationException("The account is no longer current.").add(Account.class, Long.toString(callingAccountId));
+        }
+        User user = s_entityMgr.findById(User.class, callingUserId);
+        if (user == null) {
+            throw new CloudAuthenticationException("The user is no longer current.").add(User.class, Long.toString(callingUserId));
+        }
+        return register(user, account, contextId);
+    }
+
     public static void unregisterAll() {
-        while ( unregister() != null ) {
+        while (unregister() != null) {
             // NOOP
         }
     }
-    
+
     public static CallContext unregister() {
         CallContext context = s_currentContext.get();
         if (context == null) {
@@ -217,7 +250,7 @@ public class CallContext {
         String sessionIdOnStack = null;
         String sessionIdPushedToNDC = "ctx-" + UuidUtils.first(contextId);
         while ((sessionIdOnStack = NDC.pop()) != null) {
-            if (sessionIdPushedToNDC.equals(sessionIdOnStack)) {
+            if (sessionIdOnStack.isEmpty() || sessionIdPushedToNDC.equals(sessionIdOnStack)) {
                 break;
             }
             if (s_logger.isTraceEnabled()) {
@@ -228,8 +261,10 @@ public class CallContext {
         Stack<CallContext> stack = s_currentContextStack.get();
         stack.pop();
 
-        if ( ! stack.isEmpty() ) {
+        if (!stack.isEmpty()) {
             s_currentContext.set(stack.peek());
+        } else {
+            s_currentContext.set(null);
         }
 
         return context;
@@ -262,7 +297,7 @@ public class CallContext {
     public String getEventDetails() {
         return eventDetails;
     }
-    
+
     public String getEventType() {
         return eventType;
     }
@@ -270,7 +305,7 @@ public class CallContext {
     public void setEventType(String eventType) {
         this.eventType = eventType;
     }
-    
+
     public String getEventDescription() {
         return eventDescription;
     }
@@ -279,9 +314,32 @@ public class CallContext {
         this.eventDescription = eventDescription;
     }
 
+    /**
+     * Whether to display the event to the end user.
+     * @return true - if the event is to be displayed to the end user, false otherwise.
+     */
+    public boolean isEventDisplayEnabled() {
+        return isEventDisplayEnabled;
+    }
+
+    public void setEventDisplayEnabled(boolean eventDisplayEnabled) {
+        isEventDisplayEnabled = eventDisplayEnabled;
+    }
+
+    public Map<Object, Object> getContextParameters() {
+        return context;
+    }
+
+    public void putContextParameters(Map<Object, Object> details){
+        if (details == null) return;
+        for(Map.Entry<Object,Object>entry : details.entrySet()){
+            putContextParameter(entry.getKey(), entry.getValue());
+        }
+    }
+
     public static void setActionEventInfo(String eventType, String description) {
         CallContext context = CallContext.current();
-        if ( context != null ) {
+        if (context != null) {
             context.setEventType(eventType);
             context.setEventDescription(description);
         }
@@ -290,8 +348,11 @@ public class CallContext {
     @Override
     public String toString() {
         return new StringBuilder("CCtxt[acct=").append(getCallingAccountId())
-                .append("; user=").append(getCallingUserId())
-                .append("; id=").append(contextId)
-                .append("]").toString();
+            .append("; user=")
+            .append(getCallingUserId())
+            .append("; id=")
+            .append(contextId)
+            .append("]")
+            .toString();
     }
 }

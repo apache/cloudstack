@@ -21,7 +21,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.Manager;
 
 public interface HypervisorGuruManager extends Manager {
-	HypervisorGuru getGuru(HypervisorType hypervisorType);
+    HypervisorGuru getGuru(HypervisorType hypervisorType);
+
     long getGuruProcessedCommandTargetHost(long hostId, Command cmd);
 }
-

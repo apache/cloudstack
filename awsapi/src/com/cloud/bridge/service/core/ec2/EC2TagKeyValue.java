@@ -22,11 +22,11 @@ public class EC2TagKeyValue {
     private String value;
 
     public EC2TagKeyValue() {
-        key      = null;
-        value    = null;
+        key = null;
+        value = null;
     }
 
-    public void setKey( String key ) {
+    public void setKey(String key) {
         this.key = key;
     }
 
@@ -34,7 +34,7 @@ public class EC2TagKeyValue {
         return this.key;
     }
 
-    public void setValue( String value ) {
+    public void setValue(String value) {
         this.value = value;
     }
 

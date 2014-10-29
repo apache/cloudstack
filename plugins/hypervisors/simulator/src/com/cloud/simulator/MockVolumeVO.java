@@ -30,46 +30,43 @@ import org.apache.cloudstack.api.InternalIdentity;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 
-
 @Entity
-@Table(name="mockvolume")
-
+@Table(name = "mockvolume")
 public class MockVolumeVO implements InternalIdentity {
     public enum MockVolumeType {
-        VOLUME,
-        TEMPLATE,
-        ISO,
-        SNAPSHOT;
+        VOLUME, TEMPLATE, ISO, SNAPSHOT;
     }
+
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="size")
+    @Column(name = "size")
     private long size;
 
-    @Column(name="path")
+    @Column(name = "path")
     private String path;
 
-    @Column(name="pool_id")
+    @Column(name = "pool_id")
     private long poolId;
 
-    @Column(name="type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "type")
+    @Enumerated(value = EnumType.STRING)
     private MockVolumeType type;
 
-    @Column(name="status")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "status")
+    @Enumerated(value = EnumType.STRING)
     private VMTemplateStorageResourceAssoc.Status status;
 
     @Override
     public long getId() {
         return id;
     }
+
     public String getName() {
         return this.name;
     }

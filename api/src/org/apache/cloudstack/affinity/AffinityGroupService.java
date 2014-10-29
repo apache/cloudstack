@@ -34,8 +34,7 @@ public interface AffinityGroupService {
      * @return AffinityGroup
      */
 
-    AffinityGroup createAffinityGroup(String account, Long domainId, String affinityGroupName,
-            String affinityGroupType, String description);
+    AffinityGroup createAffinityGroup(String account, Long domainId, String affinityGroupName, String affinityGroupType, String description);
 
     /**
      * Creates an affinity/anti-affinity group.
@@ -58,9 +57,8 @@ public interface AffinityGroupService {
      * @param pageSize
      * @return
      */
-    Pair<List<? extends AffinityGroup>, Integer> listAffinityGroups(Long affinityGroupId, String affinityGroupName,
-            String affinityGroupType, Long vmId, Long startIndex, Long pageSize);
-
+    Pair<List<? extends AffinityGroup>, Integer> listAffinityGroups(Long affinityGroupId, String affinityGroupName, String affinityGroupType, Long vmId, Long startIndex,
+        Long pageSize);
 
     /**
      * List group types available in deployment
@@ -79,7 +77,6 @@ public interface AffinityGroupService {
 
     boolean isAffinityGroupAvailableInDomain(long affinityGroupId, long domainId);
 
-    AffinityGroup createAffinityGroupInternal(String account, Long domainId, String affinityGroupName,
-            String affinityGroupType, String description);
+    AffinityGroup createAffinityGroupInternal(String account, Long domainId, String affinityGroupName, String affinityGroupType, String description);
 
 }

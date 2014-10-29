@@ -32,9 +32,10 @@ public interface ServiceManager {
      * @param right Right or outside network (e.g. public network).
      * @return
      */
-    public ServiceVirtualMachine createServiceInstance(DataCenter zone, Account owner, VirtualMachineTemplate template,
-            ServiceOffering serviceOffering, String name, Network left, Network right);
+    public ServiceVirtualMachine createServiceInstance(DataCenter zone, Account owner, VirtualMachineTemplate template, ServiceOffering serviceOffering, String name,
+        Network left, Network right);
 
     public void startServiceInstance(long instanceId);
+
     public ServiceInstanceResponse createServiceInstanceResponse(long instanceId);
 }

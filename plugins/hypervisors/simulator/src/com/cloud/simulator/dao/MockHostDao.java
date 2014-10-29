@@ -22,6 +22,8 @@ import com.cloud.utils.db.GenericDao;
 
 public interface MockHostDao extends GenericDao<MockHostVO, Long> {
     public MockHost findByGuid(String guid);
+
     public MockHost findByVmId(long vmId);
+
     public boolean removeByGuid(String guid);
 }

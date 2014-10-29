@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.netapp;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,99 +23,100 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 @Entity
-@Table(name="netapp_lun")
+@Table(name = "netapp_lun")
 public class LunVO implements InternalIdentity {
-		
-	@Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
-	
-	@Column(name="lun_name")
+
+    @Column(name = "lun_name")
     private String lunName;
 
-	@Column(name="target_iqn")
+    @Column(name = "target_iqn")
     private String targetIqn;
-	
-    @Column(name="path")
-	private String path;
 
-    @Column(name="volume_id")
-	private Long volumeId;
+    @Column(name = "path")
+    private String path;
+
+    @Column(name = "volume_id")
+    private Long volumeId;
 
     public Long getSize() {
-		return size;
-	}
+        return size;
+    }
 
-	public void setSize(Long size) {
-		this.size = size;
-	}
+    public void setSize(Long size) {
+        this.size = size;
+    }
 
+    @Column(name = "size")
+    private Long size;
 
-	@Column(name="size")
-	private Long size;
+    public LunVO() {
 
-	public LunVO(){
-		
-	}
-	
-	public LunVO(String path, Long volumeId, Long size, String lunName, String targetIqn) {
-		this.path = path;
-		this.volumeId = volumeId;
-		this.size = size;
-		this.lunName = lunName;
-		this.targetIqn = targetIqn;
-	}
-	
-	public String getLunName() {
-		return lunName;
-	}
+    }
 
-	public void setLunName(String lunName) {
-		this.lunName = lunName;
-	}
+    public LunVO(String path, Long volumeId, Long size, String lunName, String targetIqn) {
+        this.path = path;
+        this.volumeId = volumeId;
+        this.size = size;
+        this.lunName = lunName;
+        this.targetIqn = targetIqn;
+    }
 
-	public LunVO(Long id, String path, Long volumeId, Long size, String lunName, String targetIqn) {
-		this.id = id;
-		this.path = path;
-		this.volumeId = volumeId;
-		this.size = size;
-		this.lunName = lunName;
-		this.targetIqn = targetIqn;
-	}
+    public String getLunName() {
+        return lunName;
+    }
 
-	public long getId() {
-		return id;
-	}
+    public void setLunName(String lunName) {
+        this.lunName = lunName;
+    }
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    public LunVO(Long id, String path, Long volumeId, Long size, String lunName, String targetIqn) {
+        this.id = id;
+        this.path = path;
+        this.volumeId = volumeId;
+        this.size = size;
+        this.lunName = lunName;
+        this.targetIqn = targetIqn;
+    }
 
-	public String getPath() {
-		return path;
-	}
+    @Override
+    public long getId() {
+        return id;
+    }
 
-	public void setPath(String path) {
-		this.path = path;
-	}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	public Long getVolumeId() {
-		return volumeId;
-	}
+    public String getPath() {
+        return path;
+    }
 
-	public void setVolumeId(Long volumeId) {
-		this.volumeId = volumeId;
-	}
-	
-	public void setTargetIqn(String iqn){
-		this.targetIqn = iqn;
-	}
-	
-	public String getTargetIqn(){
-		return targetIqn;
-	}
+    public void setPath(String path) {
+        this.path = path;
+    }
 
+    public Long getVolumeId() {
+        return volumeId;
+    }
+
+    public void setVolumeId(Long volumeId) {
+        this.volumeId = volumeId;
+    }
+
+    public void setTargetIqn(String iqn) {
+        this.targetIqn = iqn;
+    }
+
+    public String getTargetIqn() {
+        return targetIqn;
+    }
 
 }

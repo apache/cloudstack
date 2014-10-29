@@ -32,6 +32,9 @@ public class DiskTO {
     public static final String STORAGE_HOST = "storageHost";
     public static final String STORAGE_PORT = "storagePort";
     public static final String VOLUME_SIZE = "volumeSize";
+    public static final String MOUNT_POINT = "mountpoint";
+    public static final String PROTOCOL_TYPE = "protocoltype";
+    public static final String PATH = "path";
 
     private DataTO data;
     private Long diskSeq;
@@ -40,9 +43,9 @@ public class DiskTO {
     private Map<String, String> _details;
 
     public DiskTO() {
-        
+
     }
-    
+
     public DiskTO(DataTO data, Long diskSeq, String path, Volume.Type type) {
         this.data = data;
         this.diskSeq = diskSeq;

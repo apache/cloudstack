@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.ssh;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -25,35 +27,33 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.user.SSHKeyPair;
 
-@APICommand(name = "createSSHKeyPair", description="Create a new keypair and returns the private key", responseObject=CreateSSHKeyPairResponse.class)
+@APICommand(name = "createSSHKeyPair", description = "Create a new keypair and returns the private key", responseObject = CreateSSHKeyPairResponse.class, entityType = {SSHKeyPair.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class CreateSSHKeyPairCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSSHKeyPairCmd.class.getName());
     private static final String s_name = "createsshkeypairresponse";
-
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="Name of the keypair")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the keypair")
     private String name;
 
     //Owner information
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the ssh key. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the ssh key. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
-            description="an optional domainId for the ssh key. If the account parameter is used, domainId must also be used.")
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               entityType = DomainResponse.class,
+               description = "an optional domainId for the ssh key. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
-            description="an optional project for the ssh key")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the ssh key")
     private Long projectId;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -80,7 +80,7 @@ public class CreateSSHKeyPairCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -94,7 +94,7 @@ public class CreateSSHKeyPairCmd extends BaseCmd {
         CreateSSHKeyPairResponse response = new CreateSSHKeyPairResponse(r.getName(), r.getFingerprint(), r.getPrivateKey());
         response.setResponseName(getCommandName());
         response.setObjectName("keypair");
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
     @Override

@@ -22,7 +22,7 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin.sshClient import SshClient
 
 from testcase.libs.utils import *
 from testcase.libs.base import *

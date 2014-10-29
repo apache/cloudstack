@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import com.cloud.agent.api.to.StorageFilerTO;
@@ -33,7 +36,8 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
     public CreatePrivateTemplateFromVolumeCommand() {
     }
 
-    public CreatePrivateTemplateFromVolumeCommand(StoragePool pool, String secondaryStorageUrl, long templateId, long accountId, String userSpecifiedName, String uniqueName, String volumePath, String vmName, int wait) {
+    public CreatePrivateTemplateFromVolumeCommand(StoragePool pool, String secondaryStorageUrl, long templateId, long accountId, String userSpecifiedName,
+            String uniqueName, String volumePath, String vmName, int wait) {
         _secondaryStorageUrl = secondaryStorageUrl;
         _templateId = templateId;
         _accountId = accountId;
@@ -51,10 +55,12 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
         return false;
     }
 
+    @Override
     public StorageFilerTO getPool() {
         return _primaryPool;
     }
 
+    @Override
     public String getSecondaryStorageUrl() {
         return _secondaryStorageUrl;
     }
@@ -75,14 +81,17 @@ public class CreatePrivateTemplateFromVolumeCommand extends SnapshotCommand {
         return _vmName;
     }
 
-    public void setVolumePath(String _volumePath) {
-        this._volumePath = _volumePath;
+    @Override
+    public void setVolumePath(String volumePath) {
+        this._volumePath = volumePath;
     }
 
+    @Override
     public String getVolumePath() {
         return _volumePath;
     }
 
+    @Override
     public Long getAccountId() {
         return _accountId;
     }

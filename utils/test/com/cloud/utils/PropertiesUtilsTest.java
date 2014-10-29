@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils;
 
 import java.io.File;
@@ -45,8 +48,7 @@ public class PropertiesUtilsTest {
     public void processConfigFile() throws IOException {
         File tempFile = File.createTempFile("temp", ".properties");
         FileUtils.writeStringToFile(tempFile, "a=b\nc=d\n");
-        Map<String, String> config = PropertiesUtil
-                .processConfigFile(new String[] { tempFile.getAbsolutePath() });
+        Map<String, String> config = PropertiesUtil.processConfigFile(new String[] {tempFile.getAbsolutePath()});
         Assert.assertEquals("b", config.get("a"));
         Assert.assertEquals("d", config.get("c"));
         tempFile.delete();

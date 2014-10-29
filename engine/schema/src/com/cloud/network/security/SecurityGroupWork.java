@@ -16,25 +16,24 @@
 // under the License.
 package com.cloud.network.security;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 /**
  * Work related to security groups for a vm
  *
  */
 public interface SecurityGroupWork {
-    
+
     public enum Step {
-        Scheduled,
-        Processing,
-        Done,
-        Error
+        Scheduled, Processing, Done, Error
     }
-    
+
     Long getInstanceId();
+
     Long getLogsequenceNumber();
+
     Step getStep();
+
     void setStep(Step step);
+
     public abstract void setLogsequenceNumber(Long logsequenceNumber);
-    
+
 }

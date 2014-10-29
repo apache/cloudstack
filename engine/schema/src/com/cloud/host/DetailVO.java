@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.host;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,26 +23,28 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 @Entity
-@Table(name="host_details")
+@Table(name = "host_details")
 public class DetailVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
-    
-    @Column(name="host_id")
+
+    @Column(name = "host_id")
     private long hostId;
-    
-    @Column(name="name")
+
+    @Column(name = "name")
     private String name;
-    
-    @Column(name="value")
+
+    @Column(name = "value")
     private String value;
-    
+
     protected DetailVO() {
     }
-    
+
     public DetailVO(long hostId, String name, String value) {
         this.hostId = hostId;
         this.name = name;
@@ -67,6 +67,7 @@ public class DetailVO implements InternalIdentity {
         this.value = value;
     }
 
+    @Override
     public long getId() {
         return id;
     }

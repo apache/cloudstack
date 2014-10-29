@@ -56,7 +56,6 @@ public interface ResponseObject {
      */
     String getJobId();
 
-
     /**
      * Sets the job id
      *
@@ -76,4 +75,9 @@ public interface ResponseObject {
      * @param jobStatus
      */
     void setJobStatus(Integer jobStatus);
+
+    public enum ResponseView {
+        Full,
+        Restricted
+    }
 }

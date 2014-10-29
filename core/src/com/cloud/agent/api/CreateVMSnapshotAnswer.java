@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,20 +15,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
 package com.cloud.agent.api;
 
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-
 import java.util.List;
+
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 public class CreateVMSnapshotAnswer extends Answer {
 
     private List<VolumeObjectTO> volumeTOs;
     private VMSnapshotTO vmSnapshotTo;
-    
- 
-	public List<VolumeObjectTO> getVolumeTOs() {
+
+    public List<VolumeObjectTO> getVolumeTOs() {
         return volumeTOs;
     }
 
@@ -47,13 +48,11 @@ public class CreateVMSnapshotAnswer extends Answer {
 
     }
 
-    public CreateVMSnapshotAnswer(CreateVMSnapshotCommand cmd, boolean success,
-            String result) {
+    public CreateVMSnapshotAnswer(CreateVMSnapshotCommand cmd, boolean success, String result) {
         super(cmd, success, result);
     }
 
-    public CreateVMSnapshotAnswer(CreateVMSnapshotCommand cmd,
-    		VMSnapshotTO vmSnapshotTo, List<VolumeObjectTO> volumeTOs) {
+    public CreateVMSnapshotAnswer(CreateVMSnapshotCommand cmd, VMSnapshotTO vmSnapshotTo, List<VolumeObjectTO> volumeTOs) {
         super(cmd, true, "");
         this.vmSnapshotTo = vmSnapshotTo;
         this.volumeTOs = volumeTOs;

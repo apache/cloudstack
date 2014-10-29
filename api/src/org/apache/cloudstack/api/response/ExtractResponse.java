@@ -18,63 +18,77 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 public class ExtractResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the id of extracted object")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the id of extracted object")
     private String id;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the name of the extracted object")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the name of the extracted object")
     private String name;
 
-    @SerializedName("extractId") @Param(description="the upload id of extracted object")
+    @SerializedName("extractId")
+    @Param(description = "the upload id of extracted object")
     private String uploadId;
 
-    @SerializedName("uploadpercentage") @Param(description="the percentage of the entity uploaded to the specified location")
+    @SerializedName("uploadpercentage")
+    @Param(description = "the percentage of the entity uploaded to the specified location")
     private Integer uploadPercent;
 
-    @SerializedName("status") @Param(description="the status of the extraction")
+    @SerializedName("status")
+    @Param(description = "the status of the extraction")
     private String status;
 
-    @SerializedName("accountid") @Param(description="the account id to which the extracted object belongs")
+    @SerializedName("accountid")
+    @Param(description = "the account id to which the extracted object belongs")
     private String accountId;
 
-    @SerializedName("resultstring") @Param(includeInApiDoc=false)
+    @SerializedName("resultstring")
+    @Param(includeInApiDoc = false)
     private String resultString;
 
-    @SerializedName(ApiConstants.CREATED) @Param(description="the time and date the object was created")
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "the time and date the object was created")
     private Date createdDate;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="the state of the extracted object")
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "the state of the extracted object")
     private String state;
 
-    @SerializedName("storagetype") @Param(description="type of the storage")
+    @SerializedName("storagetype")
+    @Param(description = "type of the storage")
     private String storageType;
 
     @SerializedName("storage")
     private String storage;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone ID the object was extracted from")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "zone ID the object was extracted from")
     private String zoneId;
 
-    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="zone name the object was extracted from")
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "zone name the object was extracted from")
     private String zoneName;
 
-    @SerializedName("extractMode") @Param(description="the mode of extraction - upload or download")
+    @SerializedName("extractMode")
+    @Param(description = "the mode of extraction - upload or download")
     private String mode;
 
-    @SerializedName(ApiConstants.URL) @Param(description="if mode = upload then url of the uploaded entity. if mode = download the url from which the entity can be downloaded")
+    @SerializedName(ApiConstants.URL)
+    @Param(description = "if mode = upload then url of the uploaded entity. if mode = download the url from which the entity can be downloaded")
     private String url;
 
-    public ExtractResponse(){
+    public ExtractResponse() {
     }
 
-    public ExtractResponse(String typeId, String typeName, String accountId,
-            String state, String uploadId) {
+    public ExtractResponse(String typeId, String typeName, String accountId, String state, String uploadId) {
         this.id = typeId;
         this.name = typeName;
         this.accountId = accountId;
@@ -89,7 +103,6 @@ public class ExtractResponse extends BaseResponse {
     public void setId(String id) {
         this.id = id;
     }
-
 
     public String getName() {
         return name;

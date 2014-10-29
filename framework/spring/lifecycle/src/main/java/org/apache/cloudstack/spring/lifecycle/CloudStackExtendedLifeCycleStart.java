@@ -21,7 +21,7 @@ package org.apache.cloudstack.spring.lifecycle;
 public class CloudStackExtendedLifeCycleStart extends AbstractSmartLifeCycle implements Runnable {
 
     CloudStackExtendedLifeCycle lifeCycle;
-    
+
     @Override
     public void stop() {
         lifeCycle.stopBeans();

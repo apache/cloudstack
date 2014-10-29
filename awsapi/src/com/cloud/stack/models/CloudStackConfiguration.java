@@ -24,7 +24,7 @@ public class CloudStackConfiguration implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @SerializedName(ApiConstants.CATEGORY) 
+    @SerializedName(ApiConstants.CATEGORY)
     private String category;
 
     @SerializedName(ApiConstants.NAME)
@@ -67,6 +67,5 @@ public class CloudStackConfiguration implements Serializable {
     public void setDescription(String description) {
         this.description = description;
     }
-    
 
 }

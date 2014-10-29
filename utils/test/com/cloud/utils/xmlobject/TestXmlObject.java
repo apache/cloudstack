@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,11 +15,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils.xmlobject;
-
-import static org.junit.Assert.*;
-
-import java.util.List;
 
 import org.junit.Test;
 
@@ -31,19 +30,24 @@ public class TestXmlObject {
     @Test
     public void test() {
 
-	// deprecated, since we no longer use component.xml.in any more
-	/*
-        XmlObject xo = XmlObjectParser.parseFromFile("z:/components.xml.in");
-        p(xo.getTag());
-        p((String) xo.get("system-integrity-checker.checker").toString());
-        List<XmlObject> lst = xo.get("management-server.adapters");
-        for (XmlObject x : lst) {
-            List<XmlObject> lst1 = x.getAsList("adapter");
-            for (XmlObject y : lst1) {
-                p(y.toString());
+        // deprecated, since we no longer use component.xml.in any more
+        /*
+            XmlObject xo = XmlObjectParser.parseFromFile("z:/components.xml.in");
+            p(xo.getTag());
+            p((String) xo.get("system-integrity-checker.checker").toString());
+            List<XmlObject> lst = xo.get("management-server.adapters");
+            for (XmlObject x : lst) {
+                List<XmlObject> lst1 = x.getAsList("adapter");
+                for (XmlObject y : lst1) {
+                    p(y.toString());
+                }
             }
-        }
-        */
+            */
+
+        XmlObject xml = new XmlObject("vlan").putElement("vlan-id", String.valueOf(19)).putElement("tagged",
+                new XmlObject("teng").putElement("name", "0/0")
+        ).putElement("shutdown", "false");
+        System.out.println(xml.toString());
     }
 
 }

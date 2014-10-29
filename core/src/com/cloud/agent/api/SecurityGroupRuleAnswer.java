@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,25 +15,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 public class SecurityGroupRuleAnswer extends Answer {
     public static enum FailureReason {
-        NONE,
-        UNKNOWN,
-        PROGRAMMING_FAILED,
-        CANNOT_BRIDGE_FIREWALL
+        NONE, UNKNOWN, PROGRAMMING_FAILED, CANNOT_BRIDGE_FIREWALL
     }
+
     Long logSequenceNumber = null;
     Long vmId = null;
     FailureReason reason = FailureReason.NONE;
-
 
     protected SecurityGroupRuleAnswer() {
     }
 
     public SecurityGroupRuleAnswer(SecurityGroupRulesCmd cmd) {
-    	super(cmd);
+        super(cmd);
         this.logSequenceNumber = cmd.getSeqNum();
         this.vmId = cmd.getVmId();
     }

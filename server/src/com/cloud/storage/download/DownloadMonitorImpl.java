@@ -31,10 +31,8 @@ import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -42,7 +40,6 @@ import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
@@ -56,12 +53,10 @@ import com.cloud.agent.api.storage.Proxy;
 import com.cloud.configuration.Config;
 import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.upload.UploadListener;
 import com.cloud.template.VirtualMachineTemplate;
@@ -70,44 +65,33 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value = { DownloadMonitor.class })
+@Local(value = {DownloadMonitor.class})
 public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor {
     static final Logger s_logger = Logger.getLogger(DownloadMonitorImpl.class);
 
     @Inject
-    TemplateDataStoreDao _vmTemplateStoreDao;
+    private TemplateDataStoreDao _vmTemplateStoreDao;
     @Inject
-    ImageStoreDao _imageStoreDao;
+    private VolumeDao _volumeDao;
     @Inject
-    VolumeDao _volumeDao;
+    private VolumeDataStoreDao _volumeStoreDao;
     @Inject
-    VolumeDataStoreDao _volumeStoreDao;
-    @Inject
-    VMTemplateDao _templateDao = null;
+    private final VMTemplateDao _templateDao = null;
     @Inject
     private AgentManager _agentMgr;
     @Inject
-    SecondaryStorageVmManager _secMgr;
+    private ConfigurationDao _configDao;
     @Inject
-    ConfigurationDao _configDao;
-    @Inject
-    EndPointSelector _epSelector;
-    @Inject
-    TemplateDataFactory tmplFactory;
+    private EndPointSelector _epSelector;
 
-    private Boolean _sslCopy = new Boolean(false);
     private String _copyAuthPasswd;
     private String _proxy = null;
 
-    Timer _timer;
-
-    @Inject
-    DataStoreManager storeMgr;
+    private Timer _timer;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) {
-        final Map<String, String> configs = _configDao.getConfiguration("ManagementServer", params);
-        _sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
+        final Map<String, String> configs = _configDao.getConfiguration("management-server", params);
         _proxy = configs.get(Config.SecStorageProxy.key());
 
         String cert = configs.get("secstorage.ssl.cert.domain");
@@ -136,8 +120,8 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
     }
 
     public boolean isTemplateUpdateable(Long templateId, Long storeId) {
-        List<TemplateDataStoreVO> downloadsInProgress = _vmTemplateStoreDao.listByTemplateStoreDownloadStatus(templateId, storeId,
-                Status.DOWNLOAD_IN_PROGRESS, Status.DOWNLOADED);
+        List<TemplateDataStoreVO> downloadsInProgress =
+            _vmTemplateStoreDao.listByTemplateStoreDownloadStatus(templateId, storeId, Status.DOWNLOAD_IN_PROGRESS, Status.DOWNLOADED);
         return (downloadsInProgress.size() == 0);
     }
 
@@ -148,8 +132,8 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
         vmTemplateStore = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
         if (vmTemplateStore == null) {
-            vmTemplateStore = new TemplateDataStoreVO(store.getId(), template.getId(), new Date(), 0,
-                    Status.NOT_DOWNLOADED, null, null, "jobid0000", null, template.getUri());
+            vmTemplateStore =
+                new TemplateDataStoreVO(store.getId(), template.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, "jobid0000", null, template.getUri());
             vmTemplateStore.setDataStoreRole(store.getRole());
             vmTemplateStore = _vmTemplateStoreDao.persist(vmTemplateStore);
         } else if ((vmTemplateStore.getJobId() != null) && (vmTemplateStore.getJobId().length() > 2)) {
@@ -174,8 +158,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 s_logger.warn(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
-            DownloadListener dl = new DownloadListener(ep, store, template, _timer, this, dcmd,
-                    callback);
+            DownloadListener dl = new DownloadListener(ep, store, template, _timer, this, dcmd, callback);
             ComponentContext.inject(dl);  // initialize those auto-wired field in download listener.
             if (downloadJobExists) {
                 // due to handling existing download job issues, we still keep
@@ -197,23 +180,25 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         }
     }
 
-
     @Override
     public void downloadTemplateToStorage(DataObject template, AsyncCompletionCallback<DownloadAnswer> callback) {
-        long templateId = template.getId();
-        DataStore store = template.getDataStore();
-        if (isTemplateUpdateable(templateId, store.getId())) {
-            if (template != null && template.getUri() != null) {
-                initiateTemplateDownload(template, callback);
+        if(template != null) {
+            long templateId = template.getId();
+            DataStore store = template.getDataStore();
+            if (isTemplateUpdateable(templateId, store.getId())) {
+                if (template.getUri() != null) {
+                    initiateTemplateDownload(template, callback);
+                } else {
+                    s_logger.info("Template url is null, cannot download");
+                    DownloadAnswer ans = new DownloadAnswer("Template url is null", Status.UNKNOWN);
+                    callback.complete(ans);
+                }
             } else {
-                s_logger.info("Template url is null, cannot download");
-                DownloadAnswer ans = new DownloadAnswer("Template url is null", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR.UNKNOWN);
+                s_logger.info("Template download is already in progress or already downloaded");
+                DownloadAnswer ans =
+                        new DownloadAnswer("Template download is already in progress or already downloaded", Status.UNKNOWN);
                 callback.complete(ans);
             }
-        } else {
-            s_logger.info("Template download is already in progress or already downloaded");
-            DownloadAnswer ans = new DownloadAnswer("Template download is already in progress or already downloaded", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR.UNKNOWN);
-            callback.complete(ans);
         }
     }
 
@@ -230,8 +215,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
         volumeHost = _volumeStoreDao.findByStoreVolume(store.getId(), volume.getId());
         if (volumeHost == null) {
-            volumeHost = new VolumeDataStoreVO(store.getId(), volume.getId(), new Date(), 0, Status.NOT_DOWNLOADED,
-                    null, null, "jobid0000", null, url, checkSum);
+            volumeHost = new VolumeDataStoreVO(store.getId(), volume.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, "jobid0000", null, url, checkSum);
             _volumeStoreDao.persist(volumeHost);
         } else if ((volumeHost.getJobId() != null) && (volumeHost.getJobId().length() > 2)) {
             downloadJobExists = true;
@@ -269,9 +253,6 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
             }
         }
     }
-
-
-
 
     private Long getMaxTemplateSizeInBytes() {
         try {

@@ -29,6 +29,7 @@ import java.lang.reflect.Type;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
@@ -40,14 +41,12 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-
 /**
  * Note: toPairList and appendPairList only support simple POJO objects currently
  */
 public class JobSerializerHelper {
     private static final Logger s_logger = Logger.getLogger(JobSerializerHelper.class);
-    public static String token = "/";
+    public static final String token = "/";
 
     private static Gson s_gson;
     static {
@@ -60,7 +59,7 @@ public class JobSerializerHelper {
     }
 
     public static String toSerializedString(Object result) {
-        if(result != null) {
+        if (result != null) {
             Class<?> clz = result.getClass();
             return clz.getName() + token + s_gson.toJson(result);
         }
@@ -69,7 +68,7 @@ public class JobSerializerHelper {
 
     public static Object fromSerializedString(String result) {
         try {
-            if(result != null && !result.isEmpty()) {
+            if (result != null && !result.isEmpty()) {
 
                 String[] serializedParts = result.split(token);
 
@@ -98,44 +97,44 @@ public class JobSerializerHelper {
                 return obj;
             }
             return null;
-        } catch(RuntimeException e) {
+        } catch (RuntimeException e) {
             throw new CloudRuntimeException("Unable to deserialize: " + result, e);
         }
     }
-    
+
     public static String toObjectSerializedString(Serializable object) {
-    	assert(object != null);
-    	
-    	ByteArrayOutputStream bs = new ByteArrayOutputStream();
-    	try {
-    		ObjectOutputStream os = new ObjectOutputStream(bs);
-    		os.writeObject(object);
-    		os.close();
-    		bs.close();
-    		
-    		return Base64.encodeBase64URLSafeString(bs.toByteArray());
-    	} catch(IOException e) {
+        assert (object != null);
+
+        ByteArrayOutputStream bs = new ByteArrayOutputStream();
+        try {
+            ObjectOutputStream os = new ObjectOutputStream(bs);
+            os.writeObject(object);
+            os.close();
+            bs.close();
+
+            return Base64.encodeBase64URLSafeString(bs.toByteArray());
+        } catch (IOException e) {
             throw new CloudRuntimeException("Unable to serialize: " + object, e);
-    	}
+        }
     }
-    
+
     public static Object fromObjectSerializedString(String base64EncodedString) {
-    	if(base64EncodedString == null)
-    		return null;
-    	
-    	byte[] content = Base64.decodeBase64(base64EncodedString);
-    	ByteArrayInputStream bs = new ByteArrayInputStream(content);
-    	try {
-    		ObjectInputStream is = new ObjectInputStream(bs);
-    		Object obj = is.readObject();
-    		is.close();
-    		bs.close();
-    		return obj;
-    	} catch(IOException e) {
+        if (base64EncodedString == null)
+            return null;
+
+        byte[] content = Base64.decodeBase64(base64EncodedString);
+        ByteArrayInputStream bs = new ByteArrayInputStream(content);
+        try {
+            ObjectInputStream is = new ObjectInputStream(bs);
+            Object obj = is.readObject();
+            is.close();
+            bs.close();
+            return obj;
+        } catch (IOException e) {
             throw new CloudRuntimeException("Unable to serialize: " + base64EncodedString, e);
         } catch (ClassNotFoundException e) {
             throw new CloudRuntimeException("Unable to serialize: " + base64EncodedString, e);
-    	}
+        }
     }
 
     public static class ClassTypeAdapter implements JsonSerializer<Class<?>>, JsonDeserializer<Class<?>> {
@@ -163,7 +162,7 @@ public class JobSerializerHelper {
 
             String className = obj.get("class").getAsString();
             try {
-                Class<Throwable> clazz  = (Class<Throwable>)Class.forName(className);
+                Class<Throwable> clazz = (Class<Throwable>)Class.forName(className);
                 Throwable cause = s_gson.fromJson(obj.get("cause"), Throwable.class);
                 String msg = obj.get("msg").getAsString();
                 Constructor<Throwable> constructor = clazz.getConstructor(String.class, Throwable.class);

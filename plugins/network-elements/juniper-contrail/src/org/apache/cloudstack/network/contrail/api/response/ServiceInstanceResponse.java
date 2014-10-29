@@ -17,38 +17,46 @@
 
 package org.apache.cloudstack.network.contrail.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.response.ControlledEntityResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-public class ServiceInstanceResponse extends BaseResponse implements
-        ControlledEntityResponse {
-    
-    @SerializedName(ApiConstants.ID) @Param(description="the ID of the virtual machine")
+public class ServiceInstanceResponse extends BaseResponse implements ControlledEntityResponse {
+
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the ID of the virtual machine")
     private String id;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the name of the virtual machine")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the name of the virtual machine")
     private String name;
 
-    @SerializedName("displayname") @Param(description="user generated name. The name of the virtual machine is returned if no displayname exists.")
+    @SerializedName("displayname")
+    @Param(description = "user generated name. The name of the virtual machine is returned if no displayname exists.")
     private String displayName;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account associated with the virtual machine")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account associated with the virtual machine")
     private String accountName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vm")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the vm")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vm")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the vm")
     private String projectName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the ID of the domain in which the virtual machine exists")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the ID of the domain in which the virtual machine exists")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the name of the domain in which the virtual machine exists")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the name of the domain in which the virtual machine exists")
     private String domainName;
 
     public void setId(String id) {

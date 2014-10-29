@@ -22,6 +22,8 @@ package org.apache.cloudstack.api;
  */
 public enum ApiErrorCode {
 
+    UNAUTHORIZED(401),
+    METHOD_NOT_ALLOWED(405),
     MALFORMED_PARAMETER_ERROR(430),
     PARAM_ERROR(431),
     UNSUPPORTED_ACTION_ERROR(432),
@@ -38,7 +40,7 @@ public enum ApiErrorCode {
 
     private int httpCode;
 
-    private ApiErrorCode(int httpStatusCode){
+    private ApiErrorCode(int httpStatusCode) {
         httpCode = httpStatusCode;
     }
 
@@ -50,9 +52,9 @@ public enum ApiErrorCode {
         this.httpCode = httpCode;
     }
 
-    public String toString(){
+    @Override
+    public String toString() {
         return String.valueOf(this.httpCode);
     }
-
 
 }

@@ -16,11 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import com.cloud.network.vpc.NetworkACL;
-import com.cloud.utils.Pair;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
@@ -28,11 +30,12 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.utils.Pair;
 
-@APICommand(name = "listNetworkACLLists", description="Lists all network ACLs", responseObject=NetworkACLResponse.class)
-public class ListNetworkACLListsCmd extends BaseListCmd {
+@APICommand(name = "listNetworkACLLists", description = "Lists all network ACLs", responseObject = NetworkACLResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class ListNetworkACLListsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkACLListsCmd.class.getName());
 
     private static final String s_name = "listnetworkacllistsresponse";
@@ -40,21 +43,20 @@ public class ListNetworkACLListsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = NetworkACLResponse.class,
-            description="Lists network ACL with the specified ID.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, description = "Lists network ACL with the specified ID.")
     private Long id;
 
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class,
-            description="list network ACLs by network Id")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list network ACLs by network Id")
     private Long networkId;
 
-    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.UUID, entityType = VpcResponse.class,
-            description="list network ACLs by Vpc Id")
+    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "list network ACLs by Vpc Id")
     private Long vpcId;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list network ACLs by specified name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list network ACLs by specified name")
     private String name;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -72,10 +74,17 @@ public class ListNetworkACLListsCmd extends BaseListCmd {
         return vpcId;
     }
 
-    public String getName(){
+    public String getName() {
         return name;
     }
 
+    @Override
+    public Boolean getDisplay() {
+        if (display != null) {
+            return display;
+        }
+        return super.getDisplay();
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -86,8 +95,8 @@ public class ListNetworkACLListsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
-        Pair<List<? extends NetworkACL>,Integer> result = _networkACLService.listNetworkACLs(getId(), getName(), getNetworkId(), getVpcId());
+    public void execute() {
+        Pair<List<? extends NetworkACL>, Integer> result = _networkACLService.listNetworkACLs(this);
         ListResponse<NetworkACLResponse> response = new ListResponse<NetworkACLResponse>();
         List<NetworkACLResponse> aclResponses = new ArrayList<NetworkACLResponse>();
 
@@ -97,6 +106,6 @@ public class ListNetworkACLListsCmd extends BaseListCmd {
         }
         response.setResponses(aclResponses, result.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

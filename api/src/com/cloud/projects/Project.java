@@ -34,8 +34,10 @@ public interface Project extends PartOf, Identity, InternalIdentity {
 
     String getDisplayText();
 
+    @Override
     long getDomainId();
 
+    @Override
     long getId();
 
     Date getCreated();

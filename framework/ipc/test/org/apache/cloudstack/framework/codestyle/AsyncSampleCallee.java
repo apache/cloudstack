@@ -22,19 +22,18 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 
 public class AsyncSampleCallee {
-	AsyncSampleCallee _driver;
+    AsyncSampleCallee _driver;
 
-	public AsyncCallFuture<String> createVolume(Object realParam) {
-		
-		String result = realParam.toString();
-		AsyncCallFuture<String> call = new AsyncCallFuture<String>();
-		
-		call.complete(result);
-		return call;
-	}
-	
-	public void createVolumeAsync(String param, AsyncCompletionCallback<String> callback) {
-	    callback.complete(param);
-	}
+    public AsyncCallFuture<String> createVolume(Object realParam) {
+
+        String result = realParam.toString();
+        AsyncCallFuture<String> call = new AsyncCallFuture<String>();
+
+        call.complete(result);
+        return call;
+    }
+
+    public void createVolumeAsync(String param, AsyncCompletionCallback<String> callback) {
+        callback.complete(param);
+    }
 }
-

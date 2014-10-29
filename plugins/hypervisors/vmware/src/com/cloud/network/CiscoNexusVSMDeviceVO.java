@@ -26,9 +26,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.Encrypt;
-import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * CiscoNexusVSMDeviceVO contains information on external Cisco Nexus 1000v VSM devices added into a deployment.
@@ -37,17 +35,19 @@ import org.apache.cloudstack.api.InternalIdentity;
  */
 
 @Entity
-@Table(name="virtual_supervisor_module")
+@Table(name = "virtual_supervisor_module")
 public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice {
 
     // We need to know what properties a VSM has. Put them here.
+
+    private static final long serialVersionUID = 3091674059522739481L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private final String uuid;
 
     @Column(name = "host_id")
@@ -169,11 +169,11 @@ public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice {
     // Setter methods
 
     public void setHostId(long hostid) {
-        this.hostId = hostid;
+        hostId = hostid;
     }
 
     public void setVsmUserName(String username) {
-        this.vsmUserName = username;
+        vsmUserName = username;
     }
 
     public void setVsmName(String vsmName) {
@@ -181,7 +181,7 @@ public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice {
     }
 
     public void setVsmPassword(String password) {
-        this.vsmPassword = password;
+        vsmPassword = password;
     }
 
     public void setMgmtIpAddr(String ipaddr) {
@@ -189,51 +189,50 @@ public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice {
     }
 
     public void setManagementVlan(int vlan) {
-        this.managementVlan = vlan;
+        managementVlan = vlan;
     }
 
     public void setControlVlan(int vlan) {
-        this.controlVlan = vlan;
+        controlVlan = vlan;
     }
 
     public void setPacketVlan(int vlan) {
-        this.packetVlan = vlan;
+        packetVlan = vlan;
     }
 
     public void setStorageVlan(int vlan) {
-        this.storageVlan = vlan;
+        storageVlan = vlan;
     }
 
     public void setVsmDomainId(long id) {
-        this.vsmDomainId = id;
+        vsmDomainId = id;
     }
 
     public void setVsmConfigMode(VSMConfigMode mode) {
-        this.vsmConfigMode = mode;
+        vsmConfigMode = mode;
     }
 
     public void setVsmConfigState(VSMConfigState state) {
-        this.vsmConfigState = state;
+        vsmConfigState = state;
     }
 
     public void setVsmDeviceState(VSMDeviceState devState) {
-        this.vsmDeviceState = devState;
+        vsmDeviceState = devState;
     }
-
 
     // Constructors.
 
     public CiscoNexusVSMDeviceVO(String vsmIpAddr, String username, String password) {
         // Set all the VSM's properties here.
-        this.uuid = UUID.randomUUID().toString();
-        this.setMgmtIpAddr(vsmIpAddr);
-        this.setVsmUserName(username);
-        this.setVsmPassword(password);
-        this.setVsmName(vsmName);
-        this.setVsmDeviceState(VSMDeviceState.Enabled);
+        uuid = UUID.randomUUID().toString();
+        setMgmtIpAddr(vsmIpAddr);
+        setVsmUserName(username);
+        setVsmPassword(password);
+        setVsmName(vsmName);
+        setVsmDeviceState(VSMDeviceState.Enabled);
     }
 
     public CiscoNexusVSMDeviceVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 }

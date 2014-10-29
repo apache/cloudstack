@@ -35,7 +35,7 @@ build: build-indep
 build-indep: build-indep-stamp
 
 build-indep-stamp: configure
-	mvn clean package -Pawsapi -DskipTests -Dsystemvm \
+	mvn -T C1.5 clean package -Pawsapi -DskipTests -Dsystemvm \
         -Dcs.replace.properties=replace.properties.tmp \
 		${ACS_BUILD_OPTS}
 	touch $@

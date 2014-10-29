@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
+import java.io.Serializable;
 import java.net.URI;
 
 import org.apache.cloudstack.api.InternalIdentity;
@@ -27,7 +28,9 @@ import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.vm.Nic.ReservationStrategy;
 
-public class NicProfile implements InternalIdentity {
+public class NicProfile implements InternalIdentity, Serializable {
+    private static final long serialVersionUID = 4997005771736090304L;
+
     long id;
     long networkId;
     BroadcastDomainType broadcastType;
@@ -57,6 +60,7 @@ public class NicProfile implements InternalIdentity {
     String name;
     String requestedIpv4;
     String requestedIpv6;
+    String uuid;
 
     public String getDns1() {
         return dns1;
@@ -142,6 +146,10 @@ public class NicProfile implements InternalIdentity {
         this.format = format;
     }
 
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
     public void setTrafficType(TrafficType trafficType) {
         this.trafficType = trafficType;
     }
@@ -162,6 +170,7 @@ public class NicProfile implements InternalIdentity {
         return vmId;
     }
 
+    @Override
     public long getId() {
         return id;
     }
@@ -214,30 +223,34 @@ public class NicProfile implements InternalIdentity {
         return strategy;
     }
 
-    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri, Integer networkRate,
-            boolean isSecurityGroupEnabled, String name) {
-        this.id = nic.getId();
-        this.networkId = network.getId();
-        this.gateway = nic.getGateway();
-        this.mode = network.getMode();
-        this.broadcastType = network.getBroadcastDomainType();
-        this.trafficType = network.getTrafficType();
-        this.ip4Address = nic.getIp4Address();
-        this.format = nic.getAddressFormat();
-        this.ip6Address = nic.getIp6Address();
-        this.macAddress = nic.getMacAddress();
-        this.reservationId = nic.getReservationId();
-        this.strategy = nic.getReservationStrategy();
-        this.deviceId = nic.getDeviceId();
-        this.defaultNic = nic.isDefaultNic();
+    public String getUuid() {
+        return uuid;
+    }
+
+    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri, Integer networkRate, boolean isSecurityGroupEnabled, String name) {
+        id = nic.getId();
+        networkId = network.getId();
+        gateway = nic.getGateway();
+        mode = network.getMode();
+        broadcastType = network.getBroadcastDomainType();
+        trafficType = network.getTrafficType();
+        ip4Address = nic.getIp4Address();
+        format = nic.getAddressFormat();
+        ip6Address = nic.getIp6Address();
+        macAddress = nic.getMacAddress();
+        reservationId = nic.getReservationId();
+        strategy = nic.getReservationStrategy();
+        deviceId = nic.getDeviceId();
+        defaultNic = nic.isDefaultNic();
         this.broadcastUri = broadcastUri;
         this.isolationUri = isolationUri;
-        this.netmask = nic.getNetmask();
+        netmask = nic.getNetmask();
         this.isSecurityGroupEnabled = isSecurityGroupEnabled;
-        this.vmId = nic.getInstanceId();
+        vmId = nic.getInstanceId();
         this.name = name;
-        this.ip6Cidr = nic.getIp6Cidr();
-        this.ip6Gateway = nic.getIp6Gateway();
+        ip6Cidr = nic.getIp6Cidr();
+        ip6Gateway = nic.getIp6Gateway();
+        uuid = nic.getUuid();
 
         if (networkRate != null) {
             this.networkRate = networkRate;
@@ -245,7 +258,7 @@ public class NicProfile implements InternalIdentity {
     }
 
     public NicProfile(ReservationStrategy strategy, String ip4Address, String macAddress, String gateway, String netmask) {
-        this.format = AddressFormat.Ip4;
+        format = AddressFormat.Ip4;
         this.ip4Address = ip4Address;
         this.macAddress = macAddress;
         this.gateway = gateway;
@@ -274,11 +287,11 @@ public class NicProfile implements InternalIdentity {
     }
 
     public boolean isSecurityGroupEnabled() {
-        return this.isSecurityGroupEnabled;
+        return isSecurityGroupEnabled;
     }
 
     public void setSecurityGroupEnabled(boolean enabled) {
-        this.isSecurityGroupEnabled = enabled;
+        isSecurityGroupEnabled = enabled;
     }
 
     public String getRequestedIpv4() {
@@ -286,68 +299,76 @@ public class NicProfile implements InternalIdentity {
     }
 
     public void deallocate() {
-        this.gateway = null;
-        this.mode = null;
-        this.format = null;
-        this.broadcastType = null;
-        this.trafficType = null;
-        this.ip4Address = null;
-        this.ip6Address = null;
-        this.macAddress = null;
-        this.reservationId = null;
-        this.strategy = null;
-        this.deviceId = null;
-        this.broadcastUri = null;
-        this.isolationUri = null;
-        this.netmask = null;
-        this.dns1 = null;
-        this.dns2 = null;
+        gateway = null;
+        mode = null;
+        format = null;
+        broadcastType = null;
+        trafficType = null;
+        ip4Address = null;
+        ip6Address = null;
+        macAddress = null;
+        reservationId = null;
+        strategy = null;
+        deviceId = null;
+        broadcastUri = null;
+        isolationUri = null;
+        netmask = null;
+        dns1 = null;
+        dns2 = null;
     }
 
     @Override
     public String toString() {
-        return new StringBuilder("NicProfile[").append(id).append("-").append(vmId).append("-").
-                append(reservationId).append("-").append(ip4Address).append("-").append(broadcastUri).toString();
+        return new StringBuilder("NicProfile[").append(id)
+                .append("-")
+                .append(vmId)
+                .append("-")
+                .append(reservationId)
+                .append("-")
+                .append(ip4Address)
+                .append("-")
+                .append(broadcastUri)
+                .toString();
     }
 
-	public String getIp6Gateway() {
-		return ip6Gateway;
-	}
+    public String getIp6Gateway() {
+        return ip6Gateway;
+    }
 
-	public void setIp6Gateway(String ip6Gateway) {
-		this.ip6Gateway = ip6Gateway;
-	}
+    public void setIp6Gateway(String ip6Gateway) {
+        this.ip6Gateway = ip6Gateway;
+    }
 
-	public String getIp6Cidr() {
-		return ip6Cidr;
-	}
+    public String getIp6Cidr() {
+        return ip6Cidr;
+    }
 
-	public void setIp6Cidr(String ip6Cidr) {
-		this.ip6Cidr = ip6Cidr;
-	}
+    public void setIp6Cidr(String ip6Cidr) {
+        this.ip6Cidr = ip6Cidr;
+    }
 
-	public String getRequestedIpv6() {
-		return requestedIpv6;
-	}
+    public String getRequestedIpv6() {
+        return requestedIpv6;
+    }
 
-	public void setRequestedIpv6(String requestedIpv6) {
-		this.requestedIpv6 = requestedIpv6;
-	}
+    public void setRequestedIpv6(String requestedIpv6) {
+        this.requestedIpv6 = requestedIpv6;
+    }
 
-	public String getIp6Dns1() {
-		return ip6Dns1;
-	}
+    public String getIp6Dns1() {
+        return ip6Dns1;
+    }
 
-	public void setIp6Dns1(String ip6Dns1) {
-		this.ip6Dns1 = ip6Dns1;
-	}
+    public void setIp6Dns1(String ip6Dns1) {
+        this.ip6Dns1 = ip6Dns1;
+    }
 
-	public String getIp6Dns2() {
-		return ip6Dns2;
-	}
+    public String getIp6Dns2() {
+        return ip6Dns2;
+    }
 
-	public void setIp6Dns2(String ip6Dns2) {
-		this.ip6Dns2 = ip6Dns2;
-	}
+    public void setIp6Dns2(String ip6Dns2) {
+        this.ip6Dns2 = ip6Dns2;
+    }
 
 }

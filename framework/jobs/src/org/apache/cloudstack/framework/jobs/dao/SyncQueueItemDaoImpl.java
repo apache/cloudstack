@@ -36,6 +36,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 
@@ -43,7 +44,8 @@ import com.cloud.utils.db.TransactionLegacy;
 public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> implements SyncQueueItemDao {
     private static final Logger s_logger = Logger.getLogger(SyncQueueItemDaoImpl.class);
     final GenericSearchBuilder<SyncQueueItemVO, Long> queueIdSearch;
-    
+    final GenericSearchBuilder<SyncQueueItemVO, Integer> queueActiveItemSearch;
+
     public SyncQueueItemDaoImpl() {
         super();
         queueIdSearch = createSearchBuilder(Long.class);
@@ -51,37 +53,52 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
         queueIdSearch.and("contentType", queueIdSearch.entity().getContentType(), Op.EQ);
         queueIdSearch.selectFields(queueIdSearch.entity().getId());
         queueIdSearch.done();
+
+        queueActiveItemSearch = createSearchBuilder(Integer.class);
+        queueActiveItemSearch.and("queueId", queueActiveItemSearch.entity().getQueueId(), Op.EQ);
+        queueActiveItemSearch.and("processNumber", queueActiveItemSearch.entity().getLastProcessNumber(), Op.NNULL);
+        queueActiveItemSearch.select(null, Func.COUNT, queueActiveItemSearch.entity().getId());
+        queueActiveItemSearch.done();
     }
 
-	@Override
-	public SyncQueueItemVO getNextQueueItem(long queueId) {
-		
-		SearchBuilder<SyncQueueItemVO> sb = createSearchBuilder();
+    @Override
+    public SyncQueueItemVO getNextQueueItem(long queueId) {
+
+        SearchBuilder<SyncQueueItemVO> sb = createSearchBuilder();
         sb.and("queueId", sb.entity().getQueueId(), SearchCriteria.Op.EQ);
-        sb.and("lastProcessNumber", sb.entity().getLastProcessNumber(),	SearchCriteria.Op.NULL);
+        sb.and("lastProcessNumber", sb.entity().getLastProcessNumber(), SearchCriteria.Op.NULL);
         sb.done();
-        
-    	SearchCriteria<SyncQueueItemVO> sc = sb.create();
-    	sc.setParameters("queueId", queueId);
-    	
-    	Filter filter = new Filter(SyncQueueItemVO.class, "created", true, 0L, 1L);
+
+        SearchCriteria<SyncQueueItemVO> sc = sb.create();
+        sc.setParameters("queueId", queueId);
+
+        Filter filter = new Filter(SyncQueueItemVO.class, "created", true, 0L, 1L);
         List<SyncQueueItemVO> l = listBy(sc, filter);
         if(l != null && l.size() > 0)
-        	return l.get(0);
-    	
-		return null;
-	}
+            return l.get(0);
 
-	@Override
-	public List<SyncQueueItemVO> getNextQueueItems(int maxItems) {
-		List<SyncQueueItemVO> l = new ArrayList<SyncQueueItemVO>();
-		
-		String sql = "SELECT i.id, i.queue_id, i.content_type, i.content_id, i.created " +
-					 " FROM sync_queue AS q JOIN sync_queue_item AS i ON q.id = i.queue_id " +
+        return null;
+    }
+
+    @Override
+    public int getActiveQueueItemCount(long queueId) {
+        SearchCriteria<Integer> sc = queueActiveItemSearch.create();
+        sc.setParameters("queueId", queueId);
+
+        List<Integer> count = customSearch(sc, null);
+        return count.get(0);
+    }
+
+    @Override
+    public List<SyncQueueItemVO> getNextQueueItems(int maxItems) {
+        List<SyncQueueItemVO> l = new ArrayList<SyncQueueItemVO>();
+
+        String sql = "SELECT i.id, i.queue_id, i.content_type, i.content_id, i.created " +
+                " FROM sync_queue AS q JOIN sync_queue_item AS i ON q.id = i.queue_id " +
                      " WHERE i.queue_proc_number IS NULL " +
-					 " GROUP BY q.id " +
-					 " ORDER BY i.id " +
-					 " LIMIT 0, ?";
+                " GROUP BY q.id " +
+                " ORDER BY i.id " +
+                " LIMIT 0, ?";
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
@@ -90,54 +107,54 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
             pstmt.setInt(1, maxItems);
             ResultSet rs = pstmt.executeQuery();
             while(rs.next()) {
-            	SyncQueueItemVO item = new SyncQueueItemVO();
-            	item.setId(rs.getLong(1));
-            	item.setQueueId(rs.getLong(2));
-            	item.setContentType(rs.getString(3));
-            	item.setContentId(rs.getLong(4));
-            	item.setCreated(DateUtil.parseDateString(TimeZone.getTimeZone("GMT"), rs.getString(5)));
-            	l.add(item);
+                SyncQueueItemVO item = new SyncQueueItemVO();
+                item.setId(rs.getLong(1));
+                item.setQueueId(rs.getLong(2));
+                item.setContentType(rs.getString(3));
+                item.setContentId(rs.getLong(4));
+                item.setCreated(DateUtil.parseDateString(TimeZone.getTimeZone("GMT"), rs.getString(5)));
+                l.add(item);
             }
         } catch (SQLException e) {
-        	s_logger.error("Unexpected sql excetpion, ", e);
+            s_logger.error("Unexpected sql excetpion, ", e);
         } catch (Throwable e) {
-        	s_logger.error("Unexpected excetpion, ", e);
+            s_logger.error("Unexpected excetpion, ", e);
         }
-		return l;
-	}
-	
-	@Override
-	public List<SyncQueueItemVO> getActiveQueueItems(Long msid, boolean exclusive) {
-		SearchBuilder<SyncQueueItemVO> sb = createSearchBuilder();
+        return l;
+    }
+
+    @Override
+    public List<SyncQueueItemVO> getActiveQueueItems(Long msid, boolean exclusive) {
+        SearchBuilder<SyncQueueItemVO> sb = createSearchBuilder();
         sb.and("lastProcessMsid", sb.entity().getLastProcessMsid(),
-    		SearchCriteria.Op.EQ);
+                SearchCriteria.Op.EQ);
         sb.done();
-        
-    	SearchCriteria<SyncQueueItemVO> sc = sb.create();
-    	sc.setParameters("lastProcessMsid", msid);
-    	
-    	Filter filter = new Filter(SyncQueueItemVO.class, "created", true, null, null);
-    	
-    	if(exclusive)
-    		return lockRows(sc, filter, true);
+
+        SearchCriteria<SyncQueueItemVO> sc = sb.create();
+        sc.setParameters("lastProcessMsid", msid);
+
+        Filter filter = new Filter(SyncQueueItemVO.class, "created", true, null, null);
+
+        if (exclusive)
+            return lockRows(sc, filter, true);
         return listBy(sc, filter);
-	}
+    }
 
     @Override
     public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, boolean exclusive) {
         Date cutTime = DateUtil.currentGMTTime();
-        
+
         SearchBuilder<SyncQueueItemVO> sbItem = createSearchBuilder();
         sbItem.and("lastProcessMsid", sbItem.entity().getLastProcessMsid(), SearchCriteria.Op.NNULL);
         sbItem.and("lastProcessNumber", sbItem.entity().getLastProcessNumber(), SearchCriteria.Op.NNULL);
-        sbItem.and("lastProcessNumber", sbItem.entity().getLastProcessTime(), SearchCriteria.Op.NNULL);
+        sbItem.and("lastProcessTime", sbItem.entity().getLastProcessTime(), SearchCriteria.Op.NNULL);
         sbItem.and("lastProcessTime2", sbItem.entity().getLastProcessTime(), SearchCriteria.Op.LT);
-        
+
         sbItem.done();
-        
+
         SearchCriteria<SyncQueueItemVO> sc = sbItem.create();
         sc.setParameters("lastProcessTime2", new Date(cutTime.getTime() - thresholdMs));
-        
+
         if(exclusive)
             return lockRows(sc, null, true);
         return listBy(sc, null);

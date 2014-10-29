@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,11 +15,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-
 import java.util.List;
+
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 public class DeleteVMSnapshotAnswer extends Answer {
     private List<VolumeObjectTO> volumeTOs;
@@ -26,13 +29,11 @@ public class DeleteVMSnapshotAnswer extends Answer {
     public DeleteVMSnapshotAnswer() {
     }
 
-    public DeleteVMSnapshotAnswer(DeleteVMSnapshotCommand cmd, boolean result,
-            String message) {
+    public DeleteVMSnapshotAnswer(DeleteVMSnapshotCommand cmd, boolean result, String message) {
         super(cmd, result, message);
     }
 
-    public DeleteVMSnapshotAnswer(DeleteVMSnapshotCommand cmd,
-            List<VolumeObjectTO> volumeTOs) {
+    public DeleteVMSnapshotAnswer(DeleteVMSnapshotCommand cmd, List<VolumeObjectTO> volumeTOs) {
         super(cmd, true, "");
         this.volumeTOs = volumeTOs;
     }
@@ -45,5 +46,4 @@ public class DeleteVMSnapshotAnswer extends Answer {
         this.volumeTOs = volumeTOs;
     }
 
- 
 }

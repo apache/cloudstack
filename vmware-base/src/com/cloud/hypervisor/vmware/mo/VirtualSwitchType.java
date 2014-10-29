@@ -17,12 +17,8 @@
 
 package com.cloud.hypervisor.vmware.mo;
 
-
 public enum VirtualSwitchType {
-    None,
-    StandardVirtualSwitch,
-    VMwareDistributedVirtualSwitch,
-    NexusDistributedVirtualSwitch;
+    None, StandardVirtualSwitch, VMwareDistributedVirtualSwitch, NexusDistributedVirtualSwitch;
 
     public final static String vmwareStandardVirtualSwitch = "vmwaresvs";
     public final static String vmwareDistributedVirtualSwitch = "vmwaredvs";

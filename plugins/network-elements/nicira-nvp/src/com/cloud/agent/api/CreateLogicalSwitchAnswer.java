@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,23 +15,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 public class CreateLogicalSwitchAnswer extends Answer {
-    private String _logicalSwitchUuid;
+    private String logicalSwitchUuid;
 
-    public CreateLogicalSwitchAnswer(Command command, boolean success,
-            String details, String logicalSwitchUuid) {
+    public CreateLogicalSwitchAnswer(final Command command, final boolean success, final String details, final String logicalSwitchUuid) {
         super(command, success, details);
-        _logicalSwitchUuid = logicalSwitchUuid;
+        this.logicalSwitchUuid = logicalSwitchUuid;
     }
 
-    public CreateLogicalSwitchAnswer(Command command, Exception e) {
+    public CreateLogicalSwitchAnswer(final Command command, final Exception e) {
         super(command, e);
     }
 
     public String getLogicalSwitchUuid() {
-        return _logicalSwitchUuid;
+        return logicalSwitchUuid;
     }
 
 }

@@ -19,15 +19,16 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.as.Condition;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=Condition.class)
+@EntityReference(value = Condition.class)
 @SuppressWarnings("unused")
 public class ConditionResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName("id")
@@ -73,7 +74,6 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
     // /////////////////////////////////////////////////
     // ///////////////// Setters ///////////////////////
     // ///////////////////////////////////////////////////
-
 
     public void setId(String id) {
         this.id = id;

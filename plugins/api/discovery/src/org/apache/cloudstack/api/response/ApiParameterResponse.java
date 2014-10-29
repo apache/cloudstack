@@ -16,34 +16,43 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
+import com.cloud.serializer.Param;
+
 public class ApiParameterResponse extends BaseResponse {
-    @SerializedName(ApiConstants.NAME) @Param(description="the name of the api parameter")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the name of the api parameter")
     private String name;
 
-    @SerializedName(ApiConstants.DESCRIPTION) @Param(description="description of the api parameter")
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "description of the api parameter")
     private String description;
 
-    @SerializedName(ApiConstants.TYPE) @Param(description="parameter type")
+    @SerializedName(ApiConstants.TYPE)
+    @Param(description = "parameter type")
     private String type;
 
-    @SerializedName(ApiConstants.LENGTH) @Param(description="length of the parameter")
+    @SerializedName(ApiConstants.LENGTH)
+    @Param(description = "length of the parameter")
     private int length;
 
-    @SerializedName(ApiConstants.REQUIRED) @Param(description="true if this parameter is required for the api request")
+    @SerializedName(ApiConstants.REQUIRED)
+    @Param(description = "true if this parameter is required for the api request")
     private Boolean required;
 
-    @SerializedName(ApiConstants.SINCE) @Param(description="version of CloudStack the api was introduced in")
+    @SerializedName(ApiConstants.SINCE)
+    @Param(description = "version of CloudStack the api was introduced in")
     private String since;
 
-    @SerializedName("related") @Param(description="comma separated related apis to get the parameter")
+    @SerializedName("related")
+    @Param(description = "comma separated related apis to get the parameter")
     private String related;
 
-    public ApiParameterResponse(){
+    public ApiParameterResponse() {
     }
 
     public void setName(String name) {
@@ -78,4 +87,4 @@ public class ApiParameterResponse extends BaseResponse {
         this.related = related;
     }
 
- }
+}

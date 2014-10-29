@@ -22,33 +22,31 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.db.DbProperties;
 
-
-
 public class BaseDao {
-	public static final Logger logger = Logger.getLogger(BaseDao.class);
+    public static final Logger logger = Logger.getLogger(BaseDao.class);
 
-	protected static String     cloud_dbName     = null;
-	protected static String     dbHost     = null;
-	protected static String     dbUser     = null;
-	protected static String     dbPassword = null;
-	protected static String     dbPort     = null;
-	protected static String     awsapi_dbName     = null;
-	
-	static{
-	    logger.info("Initializing DB props");
+    protected static String cloud_dbName = null;
+    protected static String dbHost = null;
+    protected static String dbUser = null;
+    protected static String dbPassword = null;
+    protected static String dbPort = null;
+    protected static String awsapi_dbName = null;
+
+    static {
+        logger.info("Initializing DB props");
         Properties EC2Prop = DbProperties.getDbProperties();
 
         if (EC2Prop.size() > 0) {
-            dbHost     = EC2Prop.getProperty( "db.cloud.host" );
-            awsapi_dbName     = EC2Prop.getProperty( "db.awsapi.name" );
-            cloud_dbName     = EC2Prop.getProperty( "db.cloud.name" );
-            dbUser     = EC2Prop.getProperty( "db.cloud.username" );
-            dbPassword = EC2Prop.getProperty( "db.cloud.password" );
-            dbPort     = EC2Prop.getProperty( "db.cloud.port" );
+            dbHost = EC2Prop.getProperty("db.cloud.host");
+            awsapi_dbName = EC2Prop.getProperty("db.awsapi.name");
+            cloud_dbName = EC2Prop.getProperty("db.cloud.name");
+            dbUser = EC2Prop.getProperty("db.cloud.username");
+            dbPassword = EC2Prop.getProperty("db.cloud.password");
+            dbPort = EC2Prop.getProperty("db.cloud.port");
         }
-	}
-	
-	public BaseDao() {
-	}
+    }
+
+    public BaseDao() {
+    }
 
 }

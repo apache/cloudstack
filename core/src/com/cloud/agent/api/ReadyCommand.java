@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,43 +15,46 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 public class ReadyCommand extends Command {
-	private String _details;
-	public ReadyCommand() {
-		super();
-	}
+    private String _details;
 
-	private Long dcId;
-	private Long hostId;
+    public ReadyCommand() {
+        super();
+    }
 
-	public ReadyCommand(Long dcId) {
-		super();
-		this.dcId = dcId;
-	}
+    private Long dcId;
+    private Long hostId;
 
-	public ReadyCommand(Long dcId, Long hostId) {
-	    this(dcId);
-	    this.hostId = hostId;
-	}
+    public ReadyCommand(Long dcId) {
+        super();
+        this.dcId = dcId;
+    }
 
-	public void setDetails(String details) {
-		_details = details;
-	}
+    public ReadyCommand(Long dcId, Long hostId) {
+        this(dcId);
+        this.hostId = hostId;
+    }
 
-	public String getDetails() {
-		return _details;
-	}
+    public void setDetails(String details) {
+        _details = details;
+    }
 
-	public Long getDataCenterId() {
-		return dcId;
-	}
+    public String getDetails() {
+        return _details;
+    }
 
-	@Override
-	public boolean executeInSequence() {
-		return true;
-	}
+    public Long getDataCenterId() {
+        return dcId;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 
     public Long getHostId() {
         return hostId;

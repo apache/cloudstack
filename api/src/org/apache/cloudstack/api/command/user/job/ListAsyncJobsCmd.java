@@ -25,7 +25,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
-@APICommand(name = "listAsyncJobs", description="Lists all pending asynchronous jobs for the account.", responseObject=AsyncJobResponse.class)
+@APICommand(name = "listAsyncJobs", description = "Lists all pending asynchronous jobs for the account.", responseObject = AsyncJobResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
     private static final String s_name = "listasyncjobsresponse";
 
@@ -33,9 +34,8 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.START_DATE, type=CommandType.TZDATE, description="the start date of the async job")
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.TZDATE, description = "the start date of the async job")
     private Date startDate;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -54,7 +54,7 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
 
         ListResponse<AsyncJobResponse> response = _queryService.searchForAsyncJobs(this);
         response.setResponseName(getCommandName());

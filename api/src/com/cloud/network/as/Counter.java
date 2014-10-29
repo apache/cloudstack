@@ -24,7 +24,9 @@ public interface Counter extends InternalIdentity, Identity {
 
     public static enum Source {
         netscaler,
-        snmp
+        snmp,
+        cpu,
+        memory
     }
 
     String getName();
@@ -32,4 +34,5 @@ public interface Counter extends InternalIdentity, Identity {
     String getValue();
 
     Source getSource();
+
 }

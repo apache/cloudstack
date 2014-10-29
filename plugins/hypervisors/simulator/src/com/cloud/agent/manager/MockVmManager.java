@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckRouterAnswer;
@@ -24,6 +27,7 @@ import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
+import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetVmStatsCommand;
@@ -52,14 +56,11 @@ import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.simulator.MockVMVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
-import com.cloud.vm.VirtualMachine.State;
-
-import java.util.HashMap;
-import java.util.Map;
+import com.cloud.vm.VirtualMachine.PowerState;
 
 public interface MockVmManager extends Manager {
 
-    Map<String, State> getVmStates(String hostGuid);
+    Map<String, PowerState> getVmStates(String hostGuid);
 
     Map<String, MockVMVO> getVms(String hostGuid);
 
@@ -75,7 +76,7 @@ public interface MockVmManager extends Manager {
 
     Answer getVncPort(GetVncPortCommand cmd);
 
-	Answer getVmStats(GetVmStatsCommand cmd);
+    Answer getVmStats(GetVmStatsCommand cmd);
 
     CheckSshAnswer checkSshCommand(CheckSshCommand cmd);
 
@@ -110,4 +111,6 @@ public interface MockVmManager extends Manager {
     Answer deleteVmSnapshot(DeleteVMSnapshotCommand cmd);
 
     Answer revertVmSnapshot(RevertToVMSnapshotCommand cmd);
+
+    Answer fence(FenceCommand cmd);
 }

@@ -16,23 +16,22 @@
 // under the License.
 package com.cloud.network.vpc;
 
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.user.Account;
-
 import java.util.List;
 
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.dao.NetworkVO;
 
-public interface NetworkACLManager{
+public interface NetworkACLManager {
 
     /**
      * Creates Network ACL for the specified VPC
      * @param name
      * @param description
      * @param vpcId
+     * @param forDisplay TODO
      * @return
      */
-    NetworkACL createNetworkACL(String name, String description, long vpcId);
+    NetworkACL createNetworkACL(String name, String description, long vpcId, Boolean forDisplay);
 
     /**
      * Fetches Network ACL with specified Id
@@ -76,11 +75,11 @@ public interface NetworkACLManager{
      * @param aclId
      * @param action
      * @param number
+     * @param forDisplay TODO
      * @return
      */
-    NetworkACLItem createNetworkACLItem(Integer sourcePortStart, Integer sourcePortEnd, String protocol,
-                                        List<String> sourceCidrList, Integer icmpCode, Integer icmpType,
-                                        NetworkACLItem.TrafficType trafficType, Long aclId, String action, Integer number);
+    NetworkACLItem createNetworkACLItem(Integer sourcePortStart, Integer sourcePortEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType,
+        NetworkACLItem.TrafficType trafficType, Long aclId, String action, Integer number, Boolean forDisplay);
 
     /**
      * Returns Network ACL Item with specified Id
@@ -133,12 +132,13 @@ public interface NetworkACLManager{
      * @param sourcePortEnd
      * @param icmpCode
      * @param icmpType
+     * @param customId TODO
+     * @param forDisplay TODO
      * @return
      * @throws ResourceUnavailableException
      */
-    NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType,
-                                        String action, Integer number, Integer sourcePortStart, Integer sourcePortEnd,
-                                        Integer icmpCode, Integer icmpType) throws ResourceUnavailableException;
+    NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType, String action, Integer number,
+        Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType, String customId, Boolean forDisplay) throws ResourceUnavailableException;
 
     /**
      * Associates acl with a network and applies the ACLItems

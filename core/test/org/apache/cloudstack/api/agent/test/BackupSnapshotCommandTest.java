@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package org.apache.cloudstack.api.agent.test;
 
 import static org.junit.Assert.assertEquals;
@@ -28,6 +31,7 @@ import org.junit.Test;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
@@ -58,8 +62,7 @@ public class BackupSnapshotCommandTest {
         public Date getCreated() {
             Date date = null;
             try {
-                date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
-                .parse("01/01/1970 12:12:12");
+                date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss").parse("01/01/1970 12:12:12");
             } catch (ParseException e) {
                 e.printStackTrace();
             }
@@ -146,23 +149,21 @@ public class BackupSnapshotCommandTest {
         public boolean isInMaintenance() {
             // TODO Auto-generated method stub
             return false;
-        };
+        }
+
+        @Override
+        public Hypervisor.HypervisorType getHypervisor() {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        ;
     };
 
-    BackupSnapshotCommand bsc = new BackupSnapshotCommand(
-            "http://secondary.Storage.Url",
-            101L, 102L, 103L, 104L, 105L, "vPath", pool,
-            "420fa39c-4ef1-a83c-fd93-46dc1ff515ae", "sName",
-            "9012793e-0657-11e2-bebc-0050568b0057",
-            "7167e0b2-f5b0-11e1-8414-0050568b0057", false, "vmName", 5);
+    BackupSnapshotCommand bsc = new BackupSnapshotCommand("http://secondary.Storage.Url", 101L, 102L, 103L, 104L, 105L, "vPath", pool,
+        "420fa39c-4ef1-a83c-fd93-46dc1ff515ae", "sName", "9012793e-0657-11e2-bebc-0050568b0057", "7167e0b2-f5b0-11e1-8414-0050568b0057", false, "vmName", 5);
 
-    BackupSnapshotCommand bsc1 = new BackupSnapshotCommand(
-            "http://secondary.Storage.Url",
-            101L, 102L, 103L, 104L, 105L,"vPath", pool,
-            "420fa39c-4ef1-a83c-fd93-46dc1ff515ae", "sName",
-            "9012793e-0657-11e2-bebc-0050568b0057",
-            "7167e0b2-f5b0-11e1-8414-0050568b0057", false, "vmName", 5);
-
+    BackupSnapshotCommand bsc1 = new BackupSnapshotCommand("http://secondary.Storage.Url", 101L, 102L, 103L, 104L, 105L, "vPath", pool,
+        "420fa39c-4ef1-a83c-fd93-46dc1ff515ae", "sName", "9012793e-0657-11e2-bebc-0050568b0057", "7167e0b2-f5b0-11e1-8414-0050568b0057", false, "vmName", 5);
 
     @Test
     public void testGetSecondaryStorageUrl() {
@@ -198,12 +199,10 @@ public class BackupSnapshotCommandTest {
         assertEquals(expected, ssId);
     }
 
-
     @Test
     public void testGetCreated() {
         try {
-            Date date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
-            .parse("01/01/1970 12:12:12");
+            Date date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss").parse("01/01/1970 12:12:12");
             Date d = pool.getCreated();
             assertTrue(d.compareTo(date) == 0);
         } catch (ParseException e) {

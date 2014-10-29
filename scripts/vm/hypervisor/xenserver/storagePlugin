@@ -32,13 +32,17 @@ import subprocess
 import zlib
 import urllib2
 import traceback
+import cloudstack_pluginlib as lib
+import logging
+
+lib.setup_logging("/var/log/cloud/storageplugin.log")
 
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        util.SMlog("#### xen plugin enter  %s ####" % name )
+        logging.debug("#### xen plugin enter  %s ####" % name )
         res = fn(*v, **k)
-        util.SMlog("#### xen plugin exit  %s ####" % name )
+        logging.debug("#### xen plugin exit  %s ####" % name )
         return res
     return wrapped
 
@@ -53,7 +57,7 @@ def downloadTemplateFromUrl(session, args):
         destFile.close()
         return "success"
     except:
-        util.SMlog("exception: " + str(sys.exc_info()))
+        logging.debug("exception: " + str(sys.exc_info()))
         return ""
     
 @echo

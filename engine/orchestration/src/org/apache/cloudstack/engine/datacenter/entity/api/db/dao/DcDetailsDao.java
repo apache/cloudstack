@@ -29,5 +29,5 @@ public interface DcDetailsDao extends GenericDao<DcDetailVO, Long> {
 
     DcDetailVO findDetail(long dcId, String name);
 
-	void deleteDetails(long dcId);
+    void deleteDetails(long dcId);
 }

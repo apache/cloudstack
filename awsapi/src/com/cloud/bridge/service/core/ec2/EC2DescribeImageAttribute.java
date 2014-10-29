@@ -16,17 +16,15 @@
 // under the License.
 package com.cloud.bridge.service.core.ec2;
 
-
-
 import com.cloud.bridge.service.core.ec2.EC2ImageAttributes.ImageAttribute;
 
 public class EC2DescribeImageAttribute {
 
-	private String imageId        = null;     //AMI id
-	private ImageAttribute attribute = null; 
-	
-	public EC2DescribeImageAttribute() {
-	}
+    private String imageId = null;     //AMI id
+    private ImageAttribute attribute = null;
+
+    public EC2DescribeImageAttribute() {
+    }
 
     public void setAttribute(ImageAttribute attribute) {
         this.attribute = attribute;
@@ -43,5 +41,5 @@ public class EC2DescribeImageAttribute {
     public String getImageId() {
         return imageId;
     }
-	
+
 }

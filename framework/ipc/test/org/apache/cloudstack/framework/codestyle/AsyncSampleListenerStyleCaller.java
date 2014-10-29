@@ -18,21 +18,19 @@
  */
 package org.apache.cloudstack.framework.codestyle;
 
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-
 public class AsyncSampleListenerStyleCaller {
-	AsyncSampleCallee _ds;
-	
-	public void MethodThatWillCallAsyncMethod() {
-		String vol = new String();
-		
-	/*	_ds.createVolume(vol,
-			new AsyncCompletionCallback<String>() {
-				@Override
-				public void complete(String resultObject) {
-					// TODO Auto-generated method stub
-					
-				}
-		});*/
-	}
+    AsyncSampleCallee _ds;
+
+    public void MethodThatWillCallAsyncMethod() {
+        String vol = new String();
+
+        /*    _ds.createVolume(vol,
+                new AsyncCompletionCallback<String>() {
+                    @Override
+                    public void complete(String resultObject) {
+                        // TODO Auto-generated method stub
+
+                    }
+            });*/
+    }
 }

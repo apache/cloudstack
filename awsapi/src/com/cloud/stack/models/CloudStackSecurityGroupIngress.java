@@ -20,102 +20,92 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackSecurityGroupIngress {
-	@SerializedName(ApiConstants.ACCOUNT)
-	private String account;
-	@SerializedName(ApiConstants.CIDR)
-	private String cidr;
-	@SerializedName(ApiConstants.END_PORT)
-	private Integer endPort;
-	@SerializedName(ApiConstants.ICMP_CODE)
-	private Integer icmpcode;
-	@SerializedName(ApiConstants.ICMP_TYPE)
-	private Integer icmptype;
-	@SerializedName(ApiConstants.PROTOCOL)
-	private String protocol;
-	@SerializedName(ApiConstants.RULE_ID)
-	private String ruleId;
-	@SerializedName(ApiConstants.SECURITY_GROUP_NAME)
-	private String securityGroupName;
-	@SerializedName(ApiConstants.START_PORT)
-	private Integer startPort;
-	
+    @SerializedName(ApiConstants.ACCOUNT)
+    private String account;
+    @SerializedName(ApiConstants.CIDR)
+    private String cidr;
+    @SerializedName(ApiConstants.END_PORT)
+    private Integer endPort;
+    @SerializedName(ApiConstants.ICMP_CODE)
+    private Integer icmpcode;
+    @SerializedName(ApiConstants.ICMP_TYPE)
+    private Integer icmptype;
+    @SerializedName(ApiConstants.PROTOCOL)
+    private String protocol;
+    @SerializedName(ApiConstants.RULE_ID)
+    private String ruleId;
+    @SerializedName(ApiConstants.SECURITY_GROUP_NAME)
+    private String securityGroupName;
+    @SerializedName(ApiConstants.START_PORT)
+    private Integer startPort;
 
-	/**
-	 * 
-	 */
-	public CloudStackSecurityGroupIngress() {
-		// TODO Auto-generated constructor stub
-	}
+    /**
+     *
+     */
+    public CloudStackSecurityGroupIngress() {
+        // TODO Auto-generated constructor stub
+    }
 
+    /**
+     * @return the account
+     */
+    public String getAccount() {
+        return account;
+    }
 
-	/**
-	 * @return the account
-	 */
-	public String getAccount() {
-		return account;
-	}
+    /**
+     * @return the cidr
+     */
+    public String getCidr() {
+        return cidr;
+    }
 
+    /**
+     * @return the endPort
+     */
+    public Integer getEndPort() {
+        return endPort;
+    }
 
-	/**
-	 * @return the cidr
-	 */
-	public String getCidr() {
-		return cidr;
-	}
+    /**
+     * @return the icmpcode
+     */
+    public Integer getIcmpcode() {
+        return icmpcode;
+    }
 
+    /**
+     * @return the icmptype
+     */
+    public Integer getIcmptype() {
+        return icmptype;
+    }
 
-	/**
-	 * @return the endPort
-	 */
-	public Integer getEndPort() {
-		return endPort;
-	}
+    /**
+     * @return the protocol
+     */
+    public String getProtocol() {
+        return protocol;
+    }
 
+    /**
+     * @return the ruleId
+     */
+    public String getRuleId() {
+        return ruleId;
+    }
 
-	/**
-	 * @return the icmpcode
-	 */
-	public Integer getIcmpcode() {
-		return icmpcode;
-	}
+    /**
+     * @return the securityGroupName
+     */
+    public String getSecurityGroupName() {
+        return securityGroupName;
+    }
 
-
-	/**
-	 * @return the icmptype
-	 */
-	public Integer getIcmptype() {
-		return icmptype;
-	}
-
-
-	/**
-	 * @return the protocol
-	 */
-	public String getProtocol() {
-		return protocol;
-	}
-
-
-	/**
-	 * @return the ruleId
-	 */
-	public String getRuleId() {
-		return ruleId;
-	}
-
-
-	/**
-	 * @return the securityGroupName
-	 */
-	public String getSecurityGroupName() {
-		return securityGroupName;
-	}
-
-
-	/**
-	 * @return the startPort
-	 */
-	public Integer getStartPort() {
-		return startPort;
-	}
+    /**
+     * @return the startPort
+     */
+    public Integer getStartPort() {
+        return startPort;
+    }
 }

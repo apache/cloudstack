@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -32,8 +32,7 @@ public class ConfigureNexusVsmForAsaCommand extends Command {
     private String _vsmIp;
     private String _asaInPortProfile;
 
-    public ConfigureNexusVsmForAsaCommand(long vlanId, String ipAddress,
-            String vsmUsername, String vsmPassword, String vsmIp, String asaInPortProfile) {
+    public ConfigureNexusVsmForAsaCommand(long vlanId, String ipAddress, String vsmUsername, String vsmPassword, String vsmIp, String asaInPortProfile) {
         super();
         this._vlanId = vlanId;
         this._ipAddress = ipAddress;
@@ -52,47 +51,47 @@ public class ConfigureNexusVsmForAsaCommand extends Command {
         return _vlanId;
     }
 
-    public void setVlanId(long _vlanId) {
-        this._vlanId = _vlanId;
+    public void setVlanId(long vlanId) {
+        this._vlanId = vlanId;
     }
 
     public String getIpAddress() {
         return _ipAddress;
     }
 
-    public void setIpAddress(String _ipAddress) {
-        this._ipAddress = _ipAddress;
+    public void setIpAddress(String ipAddress) {
+        this._ipAddress = ipAddress;
     }
 
     public String getVsmUsername() {
         return _vsmUsername;
     }
 
-    public void setVsmUsername(String _vsmUsername) {
-        this._vsmUsername = _vsmUsername;
+    public void setVsmUsername(String vsmUsername) {
+        this._vsmUsername = vsmUsername;
     }
 
     public String getVsmPassword() {
         return _vsmPassword;
     }
 
-    public void setVsmPassword(String _vsmPassword) {
-        this._vsmPassword = _vsmPassword;
+    public void setVsmPassword(String vsmPassword) {
+        this._vsmPassword = vsmPassword;
     }
 
     public String getVsmIp() {
         return _vsmIp;
     }
 
-    public void setVsmIp(String _vsmIp) {
-        this._vsmIp = _vsmIp;
+    public void setVsmIp(String vsmIp) {
+        this._vsmIp = vsmIp;
     }
 
     public String getAsaInPortProfile() {
         return _asaInPortProfile;
     }
 
-    public void setAsaInPortProfile(String _asaInPortProfile) {
-        this._asaInPortProfile = _asaInPortProfile;
+    public void setAsaInPortProfile(String asaInPortProfile) {
+        this._asaInPortProfile = asaInPortProfile;
     }
 }

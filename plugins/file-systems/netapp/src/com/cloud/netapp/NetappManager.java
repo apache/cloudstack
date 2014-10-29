@@ -26,42 +26,38 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
 
-public interface NetappManager  extends Manager, PluggableService {
-	enum AlgorithmType {
-		RoundRobin,
-		LeastFull
-	}
-	void destroyVolumeOnFiler(String ipAddress, String aggrName, String volName) throws ServerException, InvalidParameterValueException, ResourceInUseException;
+public interface NetappManager extends Manager, PluggableService {
+    enum AlgorithmType {
+        RoundRobin, LeastFull
+    }
 
-	void createVolumeOnFiler(String ipAddress, String aggName, String poolName,
-			String volName, String volSize, String snapshotPolicy,
-			Integer snapshotReservation, String username, String password)
-			throws UnknownHostException, ServerException, InvalidParameterValueException;
+    void destroyVolumeOnFiler(String ipAddress, String aggrName, String volName) throws ServerException, InvalidParameterValueException, ResourceInUseException;
 
-	public String[] associateLun(String guestIqn, String path) throws ServerException, InvalidParameterValueException;
+    void createVolumeOnFiler(String ipAddress, String aggName, String poolName, String volName, String volSize, String snapshotPolicy, Integer snapshotReservation,
+        String username, String password) throws UnknownHostException, ServerException, InvalidParameterValueException;
 
+    public String[] associateLun(String guestIqn, String path) throws ServerException, InvalidParameterValueException;
 
-	void disassociateLun(String iGroup, String path) throws ServerException, InvalidParameterValueException;
+    void disassociateLun(String iGroup, String path) throws ServerException, InvalidParameterValueException;
 
-	List<LunVO> listLunsOnFiler(String poolName);
+    List<LunVO> listLunsOnFiler(String poolName);
 
-	void destroyLunOnFiler(String path) throws ServerException, InvalidParameterValueException;
+    void destroyLunOnFiler(String path) throws ServerException, InvalidParameterValueException;
 
-	List<NetappVolumeVO> listVolumesOnFiler(String poolName);
+    List<NetappVolumeVO> listVolumesOnFiler(String poolName);
 
-	List<NetappVolumeVO> listVolumesAscending(String poolName);
+    List<NetappVolumeVO> listVolumesAscending(String poolName);
 
-	long returnAvailableVolumeSize(String volName, String userName,
-			String password, String serverIp) throws ServerException;
+    long returnAvailableVolumeSize(String volName, String userName, String password, String serverIp) throws ServerException;
 
-	void createPool(String poolName, String algorithm) throws InvalidParameterValueException;
+    void createPool(String poolName, String algorithm) throws InvalidParameterValueException;
 
-	void modifyPool(String poolName, String algorithm) throws InvalidParameterValueException;
+    void modifyPool(String poolName, String algorithm) throws InvalidParameterValueException;
 
-	void deletePool(String poolName) throws InvalidParameterValueException, ResourceInUseException;
+    void deletePool(String poolName) throws InvalidParameterValueException, ResourceInUseException;
 
-	List<PoolVO> listPools();
+    List<PoolVO> listPools();
 
-	public String[] createLunOnFiler(String poolName, Long lunSize) throws InvalidParameterValueException, ServerException, ResourceAllocationException;
+    public String[] createLunOnFiler(String poolName, Long lunSize) throws InvalidParameterValueException, ServerException, ResourceAllocationException;
 
 }

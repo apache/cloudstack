@@ -28,12 +28,11 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.Manager;
 
 /* ExternalLoadBalancerDeviceManager provides a abstract implementation for managing a external load balancer in device agnostic manner.
- * Device specific managers for external load balancers (like F5 and Netscaler) should be implemented as pluggable service extending 
+ * Device specific managers for external load balancers (like F5 and Netscaler) should be implemented as pluggable service extending
  * ExternalLoadBalancerDeviceManager implementation. An implementation of device specific manager can override default behaviour if needed.
  */
 
-public interface ExternalLoadBalancerDeviceManager extends Manager{
-
+public interface ExternalLoadBalancerDeviceManager extends Manager {
 
     public static final int DEFAULT_LOAD_BALANCER_CAPACITY = 50;
 
@@ -44,12 +43,11 @@ public interface ExternalLoadBalancerDeviceManager extends Manager{
      * @param username username
      * @param password password
      * @param deviceName device name
-     * @param server resource that will handle the commands specific to this device 
+     * @param server resource that will handle the commands specific to this device
      * @return Host object for the device added
      */
-    public ExternalLoadBalancerDeviceVO addExternalLoadBalancer(long physicalNetworkId, String url, String username,
-                String password, String deviceName, ServerResource resource, boolean gslbProvider,
-                String gslbSitePublicIp, String gslbSitePrivateIp);
+    public ExternalLoadBalancerDeviceVO addExternalLoadBalancer(long physicalNetworkId, String url, String username, String password, String deviceName,
+        ServerResource resource, boolean gslbProvider, boolean exclusiveGslbProvider, String gslbSitePublicIp, String gslbSitePrivateIp);
 
     /**
      * deletes load balancer device added in to a physical network
@@ -59,7 +57,7 @@ public interface ExternalLoadBalancerDeviceManager extends Manager{
     public boolean deleteExternalLoadBalancer(long hostId);
 
     /**
-     * list external load balancers of given device name type added in to a physical network 
+     * list external load balancers of given device name type added in to a physical network
      * @param physicalNetworkId
      * @param deviceName
      * @return list of host objects for the external load balancers added in to the physical network
@@ -69,7 +67,7 @@ public interface ExternalLoadBalancerDeviceManager extends Manager{
     /**
      * finds a suitable load balancer device which can be used by this network
      * @param network guest network
-     * @param dedicatedLb true if a dedicated load balancer is needed for this guest network 
+     * @param dedicatedLb true if a dedicated load balancer is needed for this guest network
      * @return ExternalLoadBalancerDeviceVO corresponding to the suitable device
      * @throws InsufficientCapacityException
      */
@@ -78,7 +76,7 @@ public interface ExternalLoadBalancerDeviceManager extends Manager{
     /**
      * returns the load balancer device allocated for the guest network
      * @param network guest network id
-     * @return ExternalLoadBalancerDeviceVO object corresponding the load balancer device assigned for this guest network 
+     * @return ExternalLoadBalancerDeviceVO object corresponding the load balancer device assigned for this guest network
      */
     public ExternalLoadBalancerDeviceVO getExternalLoadBalancerForNetwork(Network network);
 
@@ -99,9 +97,7 @@ public interface ExternalLoadBalancerDeviceManager extends Manager{
      * @throws ResourceUnavailableException
      * @throws InsufficientCapacityException
      */
-    public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException,
-            InsufficientCapacityException;
+    public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException, InsufficientCapacityException;
 
-    public List<LoadBalancerTO> getLBHealthChecks(Network network, List<LoadBalancingRule> rules)
-            throws ResourceUnavailableException;
+    public List<LoadBalancerTO> getLBHealthChecks(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException;
 }

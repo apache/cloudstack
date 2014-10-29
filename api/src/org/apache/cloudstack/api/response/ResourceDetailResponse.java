@@ -16,14 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
-public class ResourceDetailResponse extends BaseResponse{
+public class ResourceDetailResponse extends BaseResponse {
     @SerializedName(ApiConstants.RESOURCE_ID)
     @Param(description = "ID of the resource")
     private String resourceId;
@@ -36,16 +37,14 @@ public class ResourceDetailResponse extends BaseResponse{
     @Param(description = "key of the resource detail")
     private String name;
 
-
     @SerializedName(ApiConstants.VALUE)
     @Param(description = "value of the resource detail")
     private String value;
 
-    
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "if detail is returned to the regular user", since="4.3")
+    @Param(description = "if detail is returned to the regular user", since = "4.3")
     private boolean forDisplay;
-    
+
     public String getResourceId() {
         return resourceId;
     }

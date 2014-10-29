@@ -16,16 +16,14 @@
 // under the License.
 package org.apache.cloudstack.utils.qemu;
 
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.cloudstack.utils.qemu.QemuImgException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import com.cloud.storage.Storage;
 
 import com.cloud.utils.script.Script;
 import com.cloud.utils.script.OutputInterpreter;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class QemuImg {
 
@@ -42,8 +40,38 @@ public class QemuImg {
             this.format = format;
         }
 
+        @Override
         public String toString() {
             return this.format;
+        }
+    }
+
+    public static enum PreallocationType {
+        Off("off"),
+        Metadata("metadata"),
+        Full("full");
+
+        private final String preallocationType;
+
+        private PreallocationType(String preallocationType){
+            this.preallocationType = preallocationType;
+        }
+
+        public String toString(){
+            return this.preallocationType;
+        }
+
+        public static PreallocationType getPreallocationType(Storage.ProvisioningType provisioningType){
+            switch (provisioningType){
+                case THIN:
+                    return PreallocationType.Off;
+                case SPARSE:
+                    return PreallocationType.Metadata;
+                case FAT:
+                    return PreallocationType.Full;
+                default:
+                    throw new NotImplementedException();
+            }
         }
     }
 
@@ -78,7 +106,7 @@ public class QemuImg {
      * Create a new image
      *
      * This method calls 'qemu-img create'
-     * 
+     *
      * @param file
      *            The file to create
      * @param backingFile
@@ -94,11 +122,17 @@ public class QemuImg {
 
         if (options != null && !options.isEmpty()) {
             s.add("-o");
-            String optionsStr = "";
-            for (Map.Entry<String, String> option : options.entrySet()) {
-                optionsStr += option.getKey() + "=" + option.getValue() + ",";
+            final StringBuilder optionsStr = new StringBuilder();
+            Iterator<Map.Entry<String, String>> optionsIter = options.entrySet().iterator();
+            while(optionsIter.hasNext()){
+                Map.Entry option = optionsIter.next();
+                optionsStr.append(option.getKey()).append('=').append(option.getValue());
+                if(optionsIter.hasNext()){
+                    //Add "," only if there are more options
+                    optionsStr.append(',');
+                }
             }
-            s.add(optionsStr);
+            s.add(optionsStr.toString());
         }
 
         /*
@@ -115,10 +149,12 @@ public class QemuImg {
         }
 
         s.add(file.getFileName());
-
-        if (backingFile == null) {
+        if (file.getSize() != 0L) {
             s.add(Long.toString(file.getSize()));
+        } else if (backingFile == null) {
+            throw new QemuImgException("No size was passed, and no backing file was passed");
         }
+
         String result = s.execute();
         if (result != null) {
             throw new QemuImgException(result);
@@ -174,7 +210,7 @@ public class QemuImg {
      *
      * This method calls 'qemu-img convert' and takes two objects
      * as an argument.
-     * 
+     *
      *
      * @param srcFile
      *            The source file
@@ -188,8 +224,9 @@ public class QemuImg {
     public void convert(QemuImgFile srcFile, QemuImgFile destFile, Map<String, String> options) throws QemuImgException {
         Script s = new Script(_qemuImgPath, timeout);
         s.add("convert");
-        s.add("-f");
-        s.add(srcFile.getFormat().toString());
+        // autodetect source format. Sometime int he future we may teach KVMPhysicalDisk about more formats, then we can explicitly pass them if necessary
+        //s.add("-f");
+        //s.add(srcFile.getFormat().toString());
         s.add("-O");
         s.add(destFile.getFormat().toString());
 
@@ -208,6 +245,10 @@ public class QemuImg {
         String result = s.execute();
         if (result != null) {
             throw new QemuImgException(result);
+        }
+
+        if (srcFile.getSize() < destFile.getSize()) {
+            this.resize(destFile, destFile.getSize());
         }
     }
 
@@ -266,7 +307,7 @@ public class QemuImg {
             throw new QemuImgException(result);
         }
 
-        HashMap<String,String> info = new HashMap<String,String>();
+        HashMap<String, String> info = new HashMap<String, String>();
         String[] outputBuffer = parser.getLines().trim().split("\n");
         for (int i = 0; i < outputBuffer.length; i++) {
             String[] lineBuffer = outputBuffer[i].split(":", 2);

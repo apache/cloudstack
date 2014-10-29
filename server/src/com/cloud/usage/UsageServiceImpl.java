@@ -27,6 +27,29 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.network.VpnUserVO;
+import com.cloud.network.dao.LoadBalancerVO;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.VpnUserDao;
+import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
@@ -35,8 +58,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.domain.DomainVO;
@@ -48,6 +69,7 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageJobDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
@@ -58,26 +80,54 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = { UsageService.class })
+@Local(value = {UsageService.class})
 public class UsageServiceImpl extends ManagerBase implements UsageService, Manager {
     public static final Logger s_logger = Logger.getLogger(UsageServiceImpl.class);
-    
+
     //ToDo: Move implementation to ManagaerImpl
-    
-    @Inject private AccountDao _accountDao;
-    @Inject private DomainDao _domainDao;
-    @Inject private UsageDao _usageDao;
-    @Inject private UsageJobDao _usageJobDao;
-    @Inject private ConfigurationDao _configDao;
-    @Inject private ProjectManager _projectMgr;
+
+    @Inject
+    private AccountDao _accountDao;
+    @Inject
+    private DomainDao _domainDao;
+    @Inject
+    private UsageDao _usageDao;
+    @Inject
+    private UsageJobDao _usageJobDao;
+    @Inject
+    private ConfigurationDao _configDao;
+    @Inject
+    private ProjectManager _projectMgr;
     private TimeZone _usageTimezone;
+    @Inject
+    private AccountService _accountService;
+    @Inject
+    private VMInstanceDao _vmDao;
+    @Inject
+    private SnapshotDao _snapshotDao;
+    @Inject
+    private SecurityGroupDao _sgDao;
+    @Inject
+    private VpnUserDao _vpnUserDao;
+    @Inject
+    private PortForwardingRulesDao _pfDao;
+    @Inject
+    private LoadBalancerDao _lbDao;
+    @Inject
+    private VMTemplateDao _vmTemplateDao;
+    @Inject
+    private VolumeDao _volumeDao;
+    @Inject
+    private IPAddressDao _ipDao;
+    @Inject
+    private HostDao _hostDao;
 
     public UsageServiceImpl() {
     }
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-    	super.configure(name,  params);
+        super.configure(name, params);
         String timeZoneStr = _configDao.getValue(Config.UsageAggregationTimezone.toString());
         if (timeZoneStr == null) {
            timeZoneStr = "GMT";
@@ -118,10 +168,11 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Account userAccount = null;
-        Account caller = (Account)CallContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         Long usageType = cmd.getUsageType();
         Long projectId = cmd.getProjectId();
-        
+        String usageId = cmd.getUsageId();
+
         if (projectId != null) {
             if (accountId != null) {
                 throw new InvalidParameterValueException("Projectid and accountId can't be specified together");
@@ -132,13 +183,13 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             }
             accountId = project.getProjectAccountId();
         }
-        
+
         //if accountId is not specified, use accountName and domainId
         if ((accountId == null) && (accountName != null) && (domainId != null)) {
             if (_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
                 Filter filter = new Filter(AccountVO.class, "id", Boolean.FALSE, null, null);
-                List<AccountVO> accounts = _accountDao.listAccounts(accountName, domainId, filter); 
-                if(accounts.size() > 0){
+                List<AccountVO> accounts = _accountDao.listAccounts(accountName, domainId, filter);
+                if (accounts.size() > 0) {
                     userAccount = accounts.get(0);
                 }
                 if (userAccount != null) {
@@ -149,19 +200,19 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             } else {
                 throw new PermissionDeniedException("Invalid Domain Id or Account");
             }
-        } 
+        }
 
         boolean isAdmin = false;
         boolean isDomainAdmin = false;
- 
+
         //If accountId couldn't be found using accountName and domainId, get it from userContext
-        if(accountId == null){
+        if (accountId == null) {
             accountId = caller.getId();
-            //List records for all the accounts if the caller account is of type admin. 
+            //List records for all the accounts if the caller account is of type admin.
             //If account_id or account_name is explicitly mentioned, list records for the specified account only even if the caller is of type admin
-            if(caller.getType() == Account.ACCOUNT_TYPE_ADMIN){
+            if (_accountService.isRootAdmin(caller.getId())) {
                 isAdmin = true;
-            } else if(caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN){
+            } else if (_accountService.isDomainAdmin(caller.getId())) {
                 isDomainAdmin = true;
             }
             s_logger.debug("Account details not available. Using userContext accountId: " + accountId);
@@ -169,19 +220,20 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
 
         Date startDate = cmd.getStartDate();
         Date endDate = cmd.getEndDate();
-        if(startDate.after(endDate)){
-        	throw new InvalidParameterValueException("Incorrect Date Range. Start date: "+startDate+" is after end date:"+endDate);
+        if (startDate.after(endDate)) {
+            throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
         }
         TimeZone usageTZ = getUsageTimezone();
         Date adjustedStartDate = computeAdjustedTime(startDate, usageTZ, true);
         Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ, false);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId + ", between " + startDate + " and " + endDate + ", using pageSize: " + cmd.getPageSizeVal() + " and startIndex: " + cmd.getStartIndex());
+            s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId + ", between " + startDate + " and " + endDate +
+                ", using pageSize: " + cmd.getPageSizeVal() + " and startIndex: " + cmd.getStartIndex());
         }
 
-        Filter usageFilter = new Filter(UsageVO.class, "startDate", false, cmd.getStartIndex(), cmd.getPageSizeVal());
-        
+        Filter usageFilter = new Filter(UsageVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
         SearchCriteria<UsageVO> sc = _usageDao.createSearchCriteria();
 
         if (accountId != -1 && accountId != Account.ACCOUNT_ID_SYSTEM && !isAdmin && !isDomainAdmin) {
@@ -193,7 +245,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             sdc.addOr("path", SearchCriteria.Op.LIKE, _domainDao.findById(caller.getDomainId()).getPath() + "%");
             List<DomainVO> domains = _domainDao.search(sdc, null);
             List<Long> domainIds = new ArrayList<Long>();
-            for(DomainVO domain:domains)
+            for (DomainVO domain : domains)
                 domainIds.add(domain.getId());
             sc.addAnd("domainId", SearchCriteria.Op.IN, domainIds.toArray());
         }
@@ -201,9 +253,99 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         if (domainId != null) {
             sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
         }
-        
+
         if (usageType != null) {
             sc.addAnd("usageType", SearchCriteria.Op.EQ, usageType);
+        }
+
+        if (usageId != null) {
+            if (usageType == null) {
+                throw new InvalidParameterValueException("Usageid must be specified together with usageType");
+            }
+
+            Long usageDbId = null;
+
+            switch (usageType.intValue()) {
+                case UsageTypes.NETWORK_BYTES_RECEIVED:
+                case UsageTypes.NETWORK_BYTES_SENT:
+                case UsageTypes.RUNNING_VM:
+                case UsageTypes.ALLOCATED_VM:
+                case UsageTypes.VM_SNAPSHOT:
+                    VMInstanceVO vm = _vmDao.findByUuidIncludingRemoved(usageId);
+                    if (vm != null) {
+                        usageDbId = vm.getId();
+                    }
+
+                    if (vm == null && (usageType == UsageTypes.NETWORK_BYTES_RECEIVED || usageType == UsageTypes.NETWORK_BYTES_SENT)) {
+                        HostVO host = _hostDao.findByUuidIncludingRemoved(usageId);
+                        if (host != null) {
+                            usageDbId = host.getId();
+                        }
+                    }
+                    break;
+                case UsageTypes.SNAPSHOT:
+                    SnapshotVO snap = _snapshotDao.findByUuidIncludingRemoved(usageId);
+                    if (snap != null) {
+                        usageDbId = snap.getId();
+                    }
+                    break;
+                case UsageTypes.TEMPLATE:
+                case UsageTypes.ISO:
+                    VMTemplateVO tmpl = _vmTemplateDao.findByUuidIncludingRemoved(usageId);
+                    if (tmpl != null) {
+                        usageDbId = tmpl.getId();
+                    }
+                    break;
+                case UsageTypes.LOAD_BALANCER_POLICY:
+                    LoadBalancerVO lb = _lbDao.findByUuidIncludingRemoved(usageId);
+                    if (lb != null) {
+                        usageDbId = lb.getId();
+                    }
+                    break;
+                case UsageTypes.PORT_FORWARDING_RULE:
+                    PortForwardingRuleVO pf = _pfDao.findByUuidIncludingRemoved(usageId);
+                    if (pf != null) {
+                        usageDbId = pf.getId();
+                    }
+                    break;
+                case UsageTypes.VOLUME:
+                case UsageTypes.VM_DISK_IO_READ:
+                case UsageTypes.VM_DISK_IO_WRITE:
+                case UsageTypes.VM_DISK_BYTES_READ:
+                case UsageTypes.VM_DISK_BYTES_WRITE:
+                    VolumeVO volume = _volumeDao.findByUuidIncludingRemoved(usageId);
+                    if (volume != null) {
+                        usageDbId = volume.getId();
+                    }
+                    break;
+                case UsageTypes.VPN_USERS:
+                    VpnUserVO vpnUser = _vpnUserDao.findByUuidIncludingRemoved(usageId);
+                    if (vpnUser != null) {
+                        usageDbId = vpnUser.getId();
+                    }
+                    break;
+                case UsageTypes.SECURITY_GROUP:
+                    SecurityGroupVO sg = _sgDao.findByUuidIncludingRemoved(usageId);
+                    if (sg != null) {
+                        usageDbId = sg.getId();
+                    }
+                    break;
+                case UsageTypes.IP_ADDRESS:
+                    IPAddressVO ip = _ipDao.findByUuidIncludingRemoved(usageId);
+                    if (ip != null) {
+                        usageDbId = ip.getId();
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            if (usageDbId != null) {
+                sc.addAnd("usageId", SearchCriteria.Op.EQ, usageDbId);
+            } else {
+                // return an empty list if usageId was not found
+                return new Pair<List<? extends Usage>, Integer>(new ArrayList<Usage>(), new Integer(0));
+            }
         }
 
         if ((adjustedStartDate != null) && (adjustedEndDate != null) && adjustedStartDate.before(adjustedEndDate)) {
@@ -224,7 +366,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             TransactionLegacy swap = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             swap.close();
         }
-        
+
         return new Pair<List<? extends Usage>, Integer>(usageRecords.first(), usageRecords.second());
     }
 
@@ -252,7 +394,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             timezoneOffset += (60 * 60 * 1000);
         }
 
-        calTS.add(Calendar.MILLISECOND, -1*timezoneOffset);
+        calTS.add(Calendar.MILLISECOND, -1 * timezoneOffset);
         if (adjustToDayStart) {
             calTS.set(Calendar.HOUR_OF_DAY, 0);
             calTS.set(Calendar.MINUTE, 0);
@@ -268,10 +410,9 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         return calTS.getTime();
     }
 
-	@Override
-	public List<UsageTypeResponse> listUsageTypes() {
-		return UsageTypes.listUsageTypes();
-	}
-
+    @Override
+    public List<UsageTypeResponse> listUsageTypes() {
+        return UsageTypes.listUsageTypes();
+    }
 
 }

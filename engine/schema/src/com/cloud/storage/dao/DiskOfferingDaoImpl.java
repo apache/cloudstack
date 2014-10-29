@@ -34,7 +34,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value = { DiskOfferingDao.class })
+@Local(value = {DiskOfferingDao.class})
 public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> implements DiskOfferingDao {
     private final SearchBuilder<DiskOfferingVO> DomainIdSearch;
     private final SearchBuilder<DiskOfferingVO> PrivateDiskOfferingSearch;
@@ -49,13 +49,11 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         DomainIdSearch.done();
 
         PrivateDiskOfferingSearch = createSearchBuilder();
-        PrivateDiskOfferingSearch.and("diskSize", PrivateDiskOfferingSearch.entity().getDiskSize(),
-                SearchCriteria.Op.EQ);
+        PrivateDiskOfferingSearch.and("diskSize", PrivateDiskOfferingSearch.entity().getDiskSize(), SearchCriteria.Op.EQ);
         PrivateDiskOfferingSearch.done();
 
         PublicDiskOfferingSearch = createSearchBuilder();
-        PublicDiskOfferingSearch.and("domainId", PublicDiskOfferingSearch.entity().getDomainId(),
-                SearchCriteria.Op.NULL);
+        PublicDiskOfferingSearch.and("domainId", PublicDiskOfferingSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
         PublicDiskOfferingSearch.and("system", PublicDiskOfferingSearch.entity().getSystemUse(), SearchCriteria.Op.EQ);
         PublicDiskOfferingSearch.and("removed", PublicDiskOfferingSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         PublicDiskOfferingSearch.done();
@@ -84,8 +82,7 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     }
 
     @Override
-    public List<DiskOfferingVO> searchIncludingRemoved(SearchCriteria<DiskOfferingVO> sc, final Filter filter,
-            final Boolean lock, final boolean cache) {
+    public List<DiskOfferingVO> searchIncludingRemoved(SearchCriteria<DiskOfferingVO> sc, final Filter filter, final Boolean lock, final boolean cache) {
         sc.addAnd(_typeAttr, Op.EQ, Type.Disk);
         return super.searchIncludingRemoved(sc, filter, lock, cache);
     }

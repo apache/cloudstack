@@ -34,7 +34,7 @@ public interface InternalLoadBalancerVMManager {
     //RAM/CPU for the system offering used by Internal LB VMs
     public static final int DEFAULT_INTERNALLB_VM_RAMSIZE = 128;            // 128 MB
     public static final int DEFAULT_INTERNALLB_VM_CPU_MHZ = 256;            // 256 MHz
-    
+
     /**
      * Destroys Internal LB vm instance
      * @param vmId
@@ -44,9 +44,7 @@ public interface InternalLoadBalancerVMManager {
      * @throws ResourceUnavailableException
      * @throws ConcurrentOperationException
      */
-    boolean destroyInternalLbVm(long vmId, Account caller, Long callerUserId)
-            throws ResourceUnavailableException, ConcurrentOperationException;
-
+    boolean destroyInternalLbVm(long vmId, Account caller, Long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException;
 
     /**
      * Deploys internal lb vm
@@ -60,23 +58,18 @@ public interface InternalLoadBalancerVMManager {
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    List<? extends VirtualRouter> deployInternalLbVm(Network guestNetwork, Ip requestedGuestIp, DeployDestination dest, Account owner,
-            Map<Param, Object> params) throws InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException;
-
-
+    List<? extends VirtualRouter> deployInternalLbVm(Network guestNetwork, Ip requestedGuestIp, DeployDestination dest, Account owner, Map<Param, Object> params)
+        throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
 
     /**
-     * 
+     *
      * @param network
      * @param rules
      * @param internalLbVms
      * @return
      * @throws ResourceUnavailableException
      */
-    boolean applyLoadBalancingRules(Network network, List<LoadBalancingRule> rules, List<? extends VirtualRouter> internalLbVms)
-            throws ResourceUnavailableException;
-
+    boolean applyLoadBalancingRules(Network network, List<LoadBalancingRule> rules, List<? extends VirtualRouter> internalLbVms) throws ResourceUnavailableException;
 
     /**
      * Returns existing Internal Load Balancer elements based on guestNetworkId (required) and requestedIp (optional)

@@ -29,6 +29,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 
 import com.cloud.agent.AgentManager;
@@ -84,7 +85,6 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
@@ -93,8 +93,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Component
 @Local(value = {NetworkElement.class, ConnectivityProvider.class})
-public class BigSwitchVnsElement extends AdapterBase implements
-        BigSwitchVnsElementService, ConnectivityProvider, ResourceStateAdapter {
+public class BigSwitchVnsElement extends AdapterBase implements BigSwitchVnsElementService, ConnectivityProvider, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(BigSwitchVnsElement.class);
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -135,24 +134,18 @@ public class BigSwitchVnsElement extends AdapterBase implements
     }
 
     private boolean canHandle(Network network, Service service) {
-        s_logger.debug("Checking if BigSwitchVnsElement can handle service "
-                + service.getName() + " on network " + network.getDisplayText());
+        s_logger.debug("Checking if BigSwitchVnsElement can handle service " + service.getName() + " on network " + network.getDisplayText());
         if (network.getBroadcastDomainType() != BroadcastDomainType.Lswitch) {
             return false;
         }
 
-        if (!_networkModel.isProviderForNetwork(getProvider(),
-                network.getId())) {
-            s_logger.debug("BigSwitchVnsElement is not a provider for network "
-                    + network.getDisplayText());
+        if (!_networkModel.isProviderForNetwork(getProvider(), network.getId())) {
+            s_logger.debug("BigSwitchVnsElement is not a provider for network " + network.getDisplayText());
             return false;
         }
 
-        if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(),
-                service, VnsConstants.BigSwitchVns)) {
-            s_logger.debug("BigSwitchVnsElement can't provide the "
-                    + service.getName() + " service on network "
-                    + network.getDisplayText());
+        if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(), service, VnsConstants.BigSwitchVns)) {
+            s_logger.debug("BigSwitchVnsElement can't provide the " + service.getName() + " service on network " + network.getDisplayText());
             return false;
         }
 
@@ -160,34 +153,23 @@ public class BigSwitchVnsElement extends AdapterBase implements
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params)
-            throws ConfigurationException {
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        _resourceMgr.registerResourceStateAdapter(this.getClass()
-                .getSimpleName(), this);
+        _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }
 
     @Override
-    public boolean implement(Network network, NetworkOffering offering,
-            DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
-        s_logger.debug("entering BigSwitchVnsElement implement function for network "
-                + network.getDisplayText()
-                + " (state "
-                + network.getState()
-                + ")");
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException, InsufficientCapacityException {
+        s_logger.debug("entering BigSwitchVnsElement implement function for network " + network.getDisplayText() + " (state " + network.getState() + ")");
 
         return true;
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic,
-            VirtualMachineProfile vm,
-            DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
 
         if (!canHandle(network, Service.Connectivity)) {
             return false;
@@ -201,24 +183,16 @@ public class BigSwitchVnsElement extends AdapterBase implements
         String mac = nic.getMacAddress();
         String tenantId = context.getDomain().getName();
 
-        List<BigSwitchVnsDeviceVO> devices = _bigswitchVnsDao
-                .listByPhysicalNetwork(network.getPhysicalNetworkId());
+        List<BigSwitchVnsDeviceVO> devices = _bigswitchVnsDao.listByPhysicalNetwork(network.getPhysicalNetworkId());
         if (devices.isEmpty()) {
-            s_logger.error("No BigSwitch Controller on physical network "
-                    + network.getPhysicalNetworkId());
+            s_logger.error("No BigSwitch Controller on physical network " + network.getPhysicalNetworkId());
             return false;
         }
         BigSwitchVnsDeviceVO bigswitchVnsDevice = devices.get(0);
         HostVO bigswitchVnsHost = _hostDao.findById(bigswitchVnsDevice.getHostId());
 
-        CreateVnsPortCommand cmd = new CreateVnsPortCommand(
-                BroadcastDomainType.getValue(network.getBroadcastUri()),
-                vm.getUuid(),
-                tenantId,
-                nic.getName(),
-                mac);
-        CreateVnsPortAnswer answer = (CreateVnsPortAnswer)_agentMgr
-                .easySend(bigswitchVnsHost.getId(), cmd);
+        CreateVnsPortCommand cmd = new CreateVnsPortCommand(BroadcastDomainType.getValue(network.getBroadcastUri()), vm.getUuid(), tenantId, nic.getName(), mac);
+        CreateVnsPortAnswer answer = (CreateVnsPortAnswer)_agentMgr.easySend(bigswitchVnsHost.getId(), cmd);
 
         if (answer == null || !answer.getResult()) {
             s_logger.error("CreatePortCommand failed");
@@ -229,10 +203,8 @@ public class BigSwitchVnsElement extends AdapterBase implements
     }
 
     @Override
-    public boolean release(Network network, NicProfile nic,
-            VirtualMachineProfile vm,
-            ReservationContext context) throws ConcurrentOperationException,
-            ResourceUnavailableException {
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
 
         if (!canHandle(network, Service.Connectivity)) {
             return false;
@@ -245,22 +217,16 @@ public class BigSwitchVnsElement extends AdapterBase implements
 
         String tenantId = context.getDomain().getName();
 
-        List<BigSwitchVnsDeviceVO> devices = _bigswitchVnsDao
-                .listByPhysicalNetwork(network.getPhysicalNetworkId());
+        List<BigSwitchVnsDeviceVO> devices = _bigswitchVnsDao.listByPhysicalNetwork(network.getPhysicalNetworkId());
         if (devices.isEmpty()) {
-            s_logger.error("No BigSwitch Controller on physical network "
-                    + network.getPhysicalNetworkId());
+            s_logger.error("No BigSwitch Controller on physical network " + network.getPhysicalNetworkId());
             return false;
         }
         BigSwitchVnsDeviceVO bigswitchVnsDevice = devices.get(0);
         HostVO bigswitchVnsHost = _hostDao.findById(bigswitchVnsDevice.getHostId());
 
-        DeleteVnsPortCommand cmd = new DeleteVnsPortCommand(
-                BroadcastDomainType.getValue(network.getBroadcastUri()),
-                vm.getUuid(),
-                tenantId);
-        DeleteVnsPortAnswer answer = (DeleteVnsPortAnswer)_agentMgr
-                .easySend(bigswitchVnsHost.getId(), cmd);
+        DeleteVnsPortCommand cmd = new DeleteVnsPortCommand(BroadcastDomainType.getValue(network.getBroadcastUri()), vm.getUuid(), tenantId);
+        DeleteVnsPortAnswer answer = (DeleteVnsPortAnswer)_agentMgr.easySend(bigswitchVnsHost.getId(), cmd);
 
         if (answer == null || !answer.getResult()) {
             s_logger.error("DeletePortCommand failed");
@@ -271,9 +237,7 @@ public class BigSwitchVnsElement extends AdapterBase implements
     }
 
     @Override
-    public boolean shutdown(Network network, ReservationContext context,
-            boolean cleanup) throws ConcurrentOperationException,
-            ResourceUnavailableException {
+    public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
         if (!canHandle(network, Service.Connectivity)) {
             return false;
         }
@@ -282,8 +246,7 @@ public class BigSwitchVnsElement extends AdapterBase implements
     }
 
     @Override
-    public boolean destroy(Network network, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         if (!canHandle(network, Service.Connectivity)) {
             return false;
         }
@@ -297,9 +260,8 @@ public class BigSwitchVnsElement extends AdapterBase implements
     }
 
     @Override
-    public boolean shutdownProviderInstances(
-            PhysicalNetworkServiceProvider provider, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         // Nothing to do here.
         return true;
     }
@@ -332,37 +294,27 @@ public class BigSwitchVnsElement extends AdapterBase implements
     public BigSwitchVnsDeviceVO addBigSwitchVnsDevice(AddBigSwitchVnsDeviceCmd cmd) {
         ServerResource resource = new BigSwitchVnsResource();
         final String deviceName = VnsConstants.BigSwitchVns.getName();
-        NetworkDevice networkDevice = NetworkDevice
-                .getNetworkDevice(deviceName);
+        NetworkDevice networkDevice = NetworkDevice.getNetworkDevice(deviceName);
         final Long physicalNetworkId = cmd.getPhysicalNetworkId();
 
-        PhysicalNetworkVO physicalNetwork = _physicalNetworkDao
-                .findById(physicalNetworkId);
+        PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
         if (physicalNetwork == null) {
-            throw new InvalidParameterValueException(
-                    "Could not find phyical network with ID: "
-                            + physicalNetworkId);
+            throw new InvalidParameterValueException("Could not find phyical network with ID: " + physicalNetworkId);
         }
         long zoneId = physicalNetwork.getDataCenterId();
 
-        final PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao
-                .findByServiceProvider(physicalNetwork.getId(),
-                        networkDevice.getNetworkServiceProvder());
+        final PhysicalNetworkServiceProviderVO ntwkSvcProvider =
+            _physicalNetworkServiceProviderDao.findByServiceProvider(physicalNetwork.getId(), networkDevice.getNetworkServiceProvder());
         if (ntwkSvcProvider == null) {
-            throw new CloudRuntimeException("Network Service Provider: "
-                    + networkDevice.getNetworkServiceProvder()
-                    + " is not enabled in the physical network: "
-                    + physicalNetworkId + "to add this device");
+            throw new CloudRuntimeException("Network Service Provider: " + networkDevice.getNetworkServiceProvder() + " is not enabled in the physical network: " +
+                physicalNetworkId + "to add this device");
         } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
-            throw new CloudRuntimeException("Network Service Provider: "
-                    + ntwkSvcProvider.getProviderName()
-                    + " is in shutdown state in the physical network: "
-                    + physicalNetworkId + "to add this device");
+            throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() + " is in shutdown state in the physical network: " +
+                physicalNetworkId + "to add this device");
         }
 
         if (_bigswitchVnsDao.listByPhysicalNetwork(physicalNetworkId).size() != 0) {
-            throw new CloudRuntimeException(
-                    "A BigSwitch controller device is already configured on this physical network");
+            throw new CloudRuntimeException("A BigSwitch controller device is already configured on this physical network");
         }
 
         Map<String, String> params = new HashMap<String, String>();
@@ -372,8 +324,7 @@ public class BigSwitchVnsElement extends AdapterBase implements
         params.put("name", "BigSwitch Controller - " + cmd.getHost());
         params.put("ip", cmd.getHost());
         // FIXME What to do with multiple isolation types
-        params.put("transportzoneisotype",
-                physicalNetwork.getIsolationMethods().get(0).toLowerCase());
+        params.put("transportzoneisotype", physicalNetwork.getIsolationMethods().get(0).toLowerCase());
 
         Map<String, Object> hostdetails = new HashMap<String, Object>();
         hostdetails.putAll(params);
@@ -381,28 +332,23 @@ public class BigSwitchVnsElement extends AdapterBase implements
         try {
             resource.configure(cmd.getHost(), hostdetails);
 
-            final Host host = _resourceMgr.addHost(zoneId, resource,
-                    Host.Type.L2Networking, params);
+            final Host host = _resourceMgr.addHost(zoneId, resource, Host.Type.L2Networking, params);
             if (host != null) {
                 return Transaction.execute(new TransactionCallback<BigSwitchVnsDeviceVO>() {
                     @Override
                     public BigSwitchVnsDeviceVO doInTransaction(TransactionStatus status) {
-                        BigSwitchVnsDeviceVO bigswitchVnsDevice = new BigSwitchVnsDeviceVO(host.getId(),
-                                physicalNetworkId, ntwkSvcProvider.getProviderName(),
-                                deviceName);
+                        BigSwitchVnsDeviceVO bigswitchVnsDevice =
+                            new BigSwitchVnsDeviceVO(host.getId(), physicalNetworkId, ntwkSvcProvider.getProviderName(), deviceName);
                         _bigswitchVnsDao.persist(bigswitchVnsDevice);
-        
-                        DetailVO detail = new DetailVO(host.getId(),
-                                "bigswitchvnsdeviceid",
-                                String.valueOf(bigswitchVnsDevice.getId()));
+
+                        DetailVO detail = new DetailVO(host.getId(), "bigswitchvnsdeviceid", String.valueOf(bigswitchVnsDevice.getId()));
                         _hostDetailsDao.persist(detail);
-                        
+
                         return bigswitchVnsDevice;
                     }
                 });
             } else {
-                throw new CloudRuntimeException(
-                        "Failed to add BigSwitch Vns Device due to internal error.");
+                throw new CloudRuntimeException("Failed to add BigSwitch Vns Device due to internal error.");
             }
         } catch (ConfigurationException e) {
             throw new CloudRuntimeException(e.getMessage());
@@ -410,8 +356,7 @@ public class BigSwitchVnsElement extends AdapterBase implements
     }
 
     @Override
-    public BigSwitchVnsDeviceResponse createBigSwitchVnsDeviceResponse(
-            BigSwitchVnsDeviceVO bigswitchVnsDeviceVO) {
+    public BigSwitchVnsDeviceResponse createBigSwitchVnsDeviceResponse(BigSwitchVnsDeviceVO bigswitchVnsDeviceVO) {
         HostVO bigswitchVnsHost = _hostDao.findById(bigswitchVnsDeviceVO.getHostId());
         _hostDao.loadDetails(bigswitchVnsHost);
 
@@ -431,29 +376,23 @@ public class BigSwitchVnsElement extends AdapterBase implements
     @Override
     public boolean deleteBigSwitchVnsDevice(DeleteBigSwitchVnsDeviceCmd cmd) {
         Long bigswitchVnsDeviceId = cmd.getBigSwitchVnsDeviceId();
-        BigSwitchVnsDeviceVO bigswitchVnsDevice = _bigswitchVnsDao
-                .findById(bigswitchVnsDeviceId);
+        BigSwitchVnsDeviceVO bigswitchVnsDevice = _bigswitchVnsDao.findById(bigswitchVnsDeviceId);
         if (bigswitchVnsDevice == null) {
-            throw new InvalidParameterValueException(
-                    "Could not find a BigSwitch Controller with id " + bigswitchVnsDevice);
+            throw new InvalidParameterValueException("Could not find a BigSwitch Controller with id " + bigswitchVnsDevice);
         }
 
         // Find the physical network we work for
         Long physicalNetworkId = bigswitchVnsDevice.getPhysicalNetworkId();
-        PhysicalNetworkVO physicalNetwork = _physicalNetworkDao
-                .findById(physicalNetworkId);
+        PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
         if (physicalNetwork != null) {
-            List<NetworkVO> networkList = _networkDao
-                    .listByPhysicalNetwork(physicalNetworkId);
+            List<NetworkVO> networkList = _networkDao.listByPhysicalNetwork(physicalNetworkId);
 
             // Networks with broadcast type lswitch are ours
             for (NetworkVO network : networkList) {
                 if (network.getBroadcastDomainType() == Networks.BroadcastDomainType.Lswitch) {
-                    if ((network.getState() != Network.State.Shutdown)
-                            && (network.getState() != Network.State.Destroy)) {
-                        throw new CloudRuntimeException(
-                                "This BigSwitch Controller device can not be deleted as there are one or more " +
-                                        "logical networks provisioned by cloudstack.");
+                    if ((network.getState() != Network.State.Shutdown) && (network.getState() != Network.State.Destroy)) {
+                        throw new CloudRuntimeException("This BigSwitch Controller device can not be deleted as there are one or more "
+                            + "logical networks provisioned by cloudstack.");
                     }
                 }
             }
@@ -472,52 +411,40 @@ public class BigSwitchVnsElement extends AdapterBase implements
     }
 
     @Override
-    public List<BigSwitchVnsDeviceVO> listBigSwitchVnsDevices(
-            ListBigSwitchVnsDevicesCmd cmd) {
+    public List<BigSwitchVnsDeviceVO> listBigSwitchVnsDevices(ListBigSwitchVnsDevicesCmd cmd) {
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
         Long bigswitchVnsDeviceId = cmd.getBigSwitchVnsDeviceId();
         List<BigSwitchVnsDeviceVO> responseList = new ArrayList<BigSwitchVnsDeviceVO>();
 
         if (physicalNetworkId == null && bigswitchVnsDeviceId == null) {
-            throw new InvalidParameterValueException(
-                    "Either physical network Id or bigswitch device Id must be specified");
+            throw new InvalidParameterValueException("Either physical network Id or bigswitch device Id must be specified");
         }
 
         if (bigswitchVnsDeviceId != null) {
-            BigSwitchVnsDeviceVO bigswitchVnsDevice = _bigswitchVnsDao
-                    .findById(bigswitchVnsDeviceId);
+            BigSwitchVnsDeviceVO bigswitchVnsDevice = _bigswitchVnsDao.findById(bigswitchVnsDeviceId);
             if (bigswitchVnsDevice == null) {
-                throw new InvalidParameterValueException(
-                        "Could not find BigSwitch controller with id: "
-                                + bigswitchVnsDevice);
+                throw new InvalidParameterValueException("Could not find BigSwitch controller with id: " + bigswitchVnsDevice);
             }
             responseList.add(bigswitchVnsDevice);
         } else {
-            PhysicalNetworkVO physicalNetwork = _physicalNetworkDao
-                    .findById(physicalNetworkId);
+            PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
             if (physicalNetwork == null) {
-                throw new InvalidParameterValueException(
-                        "Could not find a physical network with id: "
-                                + physicalNetworkId);
+                throw new InvalidParameterValueException("Could not find a physical network with id: " + physicalNetworkId);
             }
-            responseList = _bigswitchVnsDao
-                    .listByPhysicalNetwork(physicalNetworkId);
+            responseList = _bigswitchVnsDao.listByPhysicalNetwork(physicalNetworkId);
         }
 
         return responseList;
     }
 
     @Override
-    public HostVO createHostVOForConnectedAgent(HostVO host,
-            StartupCommand[] cmd) {
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public HostVO createHostVOForDirectConnectAgent(HostVO host,
-            StartupCommand[] startup, ServerResource resource,
-            Map<String, String> details, List<String> hostTags) {
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details, List<String> hostTags) {
         if (!(startup[0] instanceof StartupBigSwitchVnsCommand)) {
             return null;
         }
@@ -526,8 +453,7 @@ public class BigSwitchVnsElement extends AdapterBase implements
     }
 
     @Override
-    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced,
-            boolean isForceDeleteStorage) throws UnableDeleteHostException {
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
         if (!(host.getType() == Host.Type.L2Networking)) {
             return null;
         }

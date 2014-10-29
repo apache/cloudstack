@@ -17,7 +17,6 @@
 package com.cloud.utils.db;
 
 import java.util.List;
-import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -29,35 +28,35 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import com.cloud.utils.component.ComponentContext;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations="classpath:/com/cloud/utils/db/transactioncontextBuilderTest.xml")
+@ContextConfiguration(locations = "classpath:/com/cloud/utils/db/transactioncontextBuilderTest.xml")
 public class TransactionContextBuilderTest {
 
-	@Inject
-	DbAnnotatedBaseDerived _derived; 
-	
-	DbAnnotatedBase _base;
-	
-	@Inject
-	List<DbAnnotatedBase> _list;
-	
-	@Test
-	public void test() {
-		// _derived.DbAnnotatedMethod();
-		// _base.MethodWithClassDbAnnotated();
-		
-		// test @DB injection on dynamically constructed objects
-		DbAnnotatedBase base = ComponentContext.inject(new DbAnnotatedBase());
-		base.MethodWithClassDbAnnotated();
+    @Inject
+    DbAnnotatedBaseDerived _derived;
 
-/*		
-		Map<String, DbAnnotatedBase> components = ComponentContext.getApplicationContext().getBeansOfType(DbAnnotatedBase.class);
-		for(Map.Entry<String, DbAnnotatedBase> entry : components.entrySet()) {
-			System.out.println(entry.getKey());
-			entry.getValue().MethodWithClassDbAnnotated();
-		}
-*/
-		for(DbAnnotatedBase entry : _list) {
-			entry.MethodWithClassDbAnnotated();
-		}
-	}
+    DbAnnotatedBase _base;
+
+    @Inject
+    List<DbAnnotatedBase> _list;
+
+    @Test
+    public void test() {
+        // _derived.DbAnnotatedMethod();
+        // _base.MethodWithClassDbAnnotated();
+
+        // test @DB injection on dynamically constructed objects
+        DbAnnotatedBase base = ComponentContext.inject(new DbAnnotatedBase());
+        base.MethodWithClassDbAnnotated();
+
+        /*
+                Map<String, DbAnnotatedBase> components = ComponentContext.getApplicationContext().getBeansOfType(DbAnnotatedBase.class);
+                for(Map.Entry<String, DbAnnotatedBase> entry : components.entrySet()) {
+                    System.out.println(entry.getKey());
+                    entry.getValue().MethodWithClassDbAnnotated();
+                }
+        */
+        for (DbAnnotatedBase entry : _list) {
+            entry.MethodWithClassDbAnnotated();
+        }
+    }
 }

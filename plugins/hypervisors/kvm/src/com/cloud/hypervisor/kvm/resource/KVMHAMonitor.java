@@ -17,23 +17,21 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
-
-import com.cloud.utils.script.Script;
-
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
-import org.libvirt.Secret;
 import org.libvirt.StoragePool;
-import org.libvirt.StoragePoolInfo;
 import org.libvirt.StoragePoolInfo.StoragePoolState;
 
-import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+
+import com.cloud.utils.script.Script;
 
 public class KVMHAMonitor extends KVMHABase implements Runnable {
     private static final Logger s_logger = Logger.getLogger(KVMHAMonitor.class);
@@ -43,24 +41,24 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
     public KVMHAMonitor(NfsStoragePool pool, String host, String scriptPath) {
         if (pool != null) {
-            this._storagePool.put(pool._poolUUID, pool);
+            _storagePool.put(pool._poolUUID, pool);
         }
-        this._hostIP = host;
-        this._heartBeatPath = scriptPath;
+        _hostIP = host;
+        KVMHABase.s_heartBeatPath = scriptPath;
     }
 
     public void addStoragePool(NfsStoragePool pool) {
         synchronized (_storagePool) {
-            this._storagePool.put(pool._poolUUID, pool);
+            _storagePool.put(pool._poolUUID, pool);
         }
     }
 
     public void removeStoragePool(String uuid) {
         synchronized (_storagePool) {
-            NfsStoragePool pool = this._storagePool.get(uuid);
+            NfsStoragePool pool = _storagePool.get(uuid);
             if (pool != null) {
                 Script.runSimpleBashScript("umount " + pool._mountDestPath);
-                this._storagePool.remove(uuid);
+                _storagePool.remove(uuid);
             }
         }
     }
@@ -76,6 +74,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         @Override
         protected void runInContext() {
             synchronized (_storagePool) {
+                Set<String> removedPools = new HashSet<String>();
                 for (String uuid : _storagePool.keySet()) {
                     NfsStoragePool primaryStoragePool = _storagePool.get(uuid);
 
@@ -87,60 +86,59 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
                         Connect conn = LibvirtConnection.getConnection();
                         storage = conn.storagePoolLookupByUUIDString(uuid);
                         if (storage == null) {
-                            s_logger.debug("Libvirt storage pool " + uuid
-                                           +" not found, removing from HA list");
-                            removeStoragePool(uuid);
+                            s_logger.debug("Libvirt storage pool " + uuid + " not found, removing from HA list");
+                            removedPools.add(uuid);
                             continue;
 
                         } else if (storage.getInfo().state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
-                            s_logger.debug("Libvirt storage pool " + uuid
-                                           +" found, but not running, removing from HA list");
-                            
-                            removeStoragePool(uuid);
+                            s_logger.debug("Libvirt storage pool " + uuid + " found, but not running, removing from HA list");
+
+                            removedPools.add(uuid);
                             continue;
                         }
                         s_logger.debug("Found NFS storage pool " + uuid + " in libvirt, continuing");
 
                     } catch (LibvirtException e) {
-                        s_logger.debug("Failed to lookup libvirt storage pool " + uuid
-                                       + " due to: " + e );
+                        s_logger.debug("Failed to lookup libvirt storage pool " + uuid + " due to: " + e);
 
                         // we only want to remove pool if it's not found, not if libvirt
                         // connection fails
                         if (e.toString().contains("pool not found")) {
                             s_logger.debug("removing pool from HA monitor since it was deleted");
-                            removeStoragePool(uuid);
+                            removedPools.add(uuid);
                             continue;
                         }
                     }
 
                     String result = null;
                     for (int i = 0; i < 5; i++) {
-                        Script cmd = new Script(_heartBeatPath,
-                                _heartBeatUpdateTimeout, s_logger);
+                        Script cmd = new Script(s_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
                         cmd.add("-i", primaryStoragePool._poolIp);
                         cmd.add("-p", primaryStoragePool._poolMountSourcePath);
                         cmd.add("-m", primaryStoragePool._mountDestPath);
                         cmd.add("-h", _hostIP);
                         result = cmd.execute();
                         if (result != null) {
-                            s_logger.warn("write heartbeat failed: " + result
-                                    + ", retry: " + i);
+                            s_logger.warn("write heartbeat failed: " + result + ", retry: " + i);
                         } else {
                             break;
                         }
                     }
 
                     if (result != null) {
-                        s_logger.warn("write heartbeat failed: " + result
-                                + "; reboot the host");
-                        Script cmd = new Script(_heartBeatPath,
-                                _heartBeatUpdateTimeout, s_logger);
+                        s_logger.warn("write heartbeat failed: " + result + "; reboot the host");
+                        Script cmd = new Script(s_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
                         cmd.add("-i", primaryStoragePool._poolIp);
                         cmd.add("-p", primaryStoragePool._poolMountSourcePath);
                         cmd.add("-m", primaryStoragePool._mountDestPath);
                         cmd.add("-c");
                         result = cmd.execute();
+                    }
+                }
+
+                if (!removedPools.isEmpty()) {
+                    for (String uuid : removedPools) {
+                        removeStoragePool(uuid);
                     }
                 }
             }

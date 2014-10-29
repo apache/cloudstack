@@ -21,6 +21,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface GuestVlan extends InternalIdentity, Identity {
 
+    @Override
     public long getId();
 
     public long getAccountId();

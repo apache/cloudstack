@@ -33,6 +33,12 @@ ENABLED=0
 
 CMDLINE=$(cat /var/cache/cloud/cmdline)
 
+if [ ! -z $CLOUD_DEBUG ];then
+  LOG_FILE=/var/log/cloud/cloud.out
+else
+  LOG_FILE=/dev/null
+fi
+
 TYPE="router"
 for i in $CMDLINE
   do
@@ -75,16 +81,14 @@ _failure() {
 }
 RETVAL=$?
 CLOUDSTACK_HOME="/usr/local/cloud"
+if [ -f  $CLOUDSTACK_HOME/systemvm/utils.sh ];
+then
+  . $CLOUDSTACK_HOME/systemvm/utils.sh
+else
+  _failure
+fi
 
 # mkdir -p /var/log/vmops
-
-get_pids() {
-  local i
-  for i in $(ps -ef| grep java | grep -v grep | awk '{print $2}'); 
-  do 
-    echo $(pwdx $i) | grep "$CLOUDSTACK_HOME"  | awk -F: '{print $1}'; 
-  done
-}
 
 start() {
    local pid=$(get_pids)
@@ -98,7 +102,7 @@ start() {
    then
      if [ "$pid" == "" ]
      then
-       (cd $CLOUDSTACK_HOME/systemvm; nohup ./run.sh > /var/log/cloud/cloud.out 2>&1 & )
+       (cd $CLOUDSTACK_HOME/systemvm; nohup ./run.sh > $LOG_FILE 2>&1 & )
        pid=$(get_pids)
        echo $pid > /var/run/cloud.pid 
      fi

@@ -29,41 +29,40 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={PoolDao.class})
+@Local(value = {PoolDao.class})
 public class PoolDaoImpl extends GenericDaoBase<PoolVO, Long> implements PoolDao {
     private static final Logger s_logger = Logger.getLogger(PoolDaoImpl.class);
-		
+
     protected final SearchBuilder<PoolVO> PoolSearch;
-    	    
-	protected PoolDaoImpl() {
-        
+
+    protected PoolDaoImpl() {
+
         PoolSearch = createSearchBuilder();
         PoolSearch.and("name", PoolSearch.entity().getName(), SearchCriteria.Op.EQ);
         PoolSearch.done();
-        
-	}
 
-	@Override
+    }
+
+    @Override
     public PoolVO findPool(String poolName) {
         SearchCriteria sc = PoolSearch.create();
         sc.setParameters("name", poolName);
         List<PoolVO> poolList = listBy(sc);
-        
-        return(poolList.size()>0?poolList.get(0):null);
+
+        return (poolList.size() > 0 ? poolList.get(0) : null);
     }
 
-	@Override
-	public List<PoolVO> listPools() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public List<PoolVO> listPools() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-    
 //    @Override
 //    public List<NetappStoragePoolVO> listVolumes(String poolName) {
 //        SearchCriteria sc = NetappListVolumeSearch.create();
 //        sc.setParameters("poolName", poolName);
 //        return listBy(sc);
 //    }
-    
+
 }

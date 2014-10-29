@@ -85,6 +85,12 @@
                     return true;
                 }
 
+                var isHidden = $multi.find('th.' + fieldName).hasClass('always-hide');
+
+                if (isHidden) {
+                    return true;
+                }
+                
                 var $td = $('<td>').addClass(fieldName).appendTo($tr);
                 var $input, val;
                 var $addButton = $multi.find('form .button.add-vm:not(.custom-action)').clone();
@@ -190,11 +196,21 @@
                     } else if (field.addButton && !options.noSelect) {
                         if (options.multipleAdd) {
                             $addButton.click(function() {
+                                var context = $.extend(true, {}, options.context);
+
                                 if ($td.hasClass('disabled')) return false;
+
+                                var $subItems = $td.closest('.data-item').find('.expandable-listing tr');
+
+                                if ($subItems.size()) {
+                                    context.subItemData = $subItems.map(function() {
+                                        return $(this).data('json-obj');
+                                    });
+                                }
 
                                 _medit.vmList($multi,
                                     options.listView,
-                                    options.context,
+                                    context,
                                     options.multipleAdd, _l('label.add.vms'),
                                     addItemAction, {
                                         multiRule: multiRule
@@ -264,7 +280,7 @@
 
                 // Align width to main header
                 _medit.refreshItemWidths($multi);
-
+                
                 if (data._hideFields &&
                     $.inArray(fieldName, data._hideFields) > -1) {
                     $td.addClass('disabled');
@@ -509,9 +525,11 @@
                 uiCustom: true
             });
 
+            instances.listView.multiSelect = false;
+
             instances.listView.actions = {
                 select: {
-                    label: 'Select instance',
+                    label: 'label.select.instance',
                     type: isMultipleAdd ? 'checkbox' : 'radio',
                     action: {
                         uiCustom: function(args) {
@@ -694,6 +712,7 @@
 
             itemRow: function(item, itemActions, multiRule, $tbody) {
                 var $tr = $('<tr>');
+                
                 var itemName = multiRule._itemName ? item[multiRule._itemName] : item.name;
                 var $itemName = $('<span>').html(_s(itemName));
 
@@ -708,6 +727,14 @@
                     });
                 });
 
+                                
+                var itemIp = multiRule._itemIp ? item[multiRule._itemIp] : null;
+                if (itemIp != null) {
+                	 var $itemIp = $('<span>').html(_s(itemIp));
+                     $tr.append($('<td>').addClass('state').appendTo($tr).append($itemIp));
+                }                        
+                
+                
                 var itemState = item._itemState ? item._itemState : item.state;
 
                 $tr.append($('<td>').addClass('state').appendTo($tr).append(
@@ -803,6 +830,8 @@
                     var field = this;
                     var $tr = _medit.multiItem.itemRow(field, itemActions, multiRule, $tbody).appendTo($tbody);
 
+                    $tr.data('json-obj', field);
+
                     cloudStack.evenOdd($tbody, 'tr', {
                         even: function($elem) {
                             $elem.addClass('even');
@@ -891,7 +920,16 @@
             $td.attr('rel', fieldName);
             $td.appendTo($inputForm);
 
-            if (field.isHidden) {
+            var isHidden = $.isFunction(field.isHidden) ?
+                    field.isHidden({ context: context }) : field.isHidden;
+
+            if (isHidden) {
+                // return true == hide only header and form column
+                // return 2 == hide header and form, as well as returned item column
+                if (isHidden === 2) {
+                    $th.addClass('always-hide');
+                }
+
                 $th.hide();
                 $td.hide();
             }
@@ -910,7 +948,7 @@
                     response: {
                         success: function(args) {
                             $(args.data).each(function() {
-                                $('<option>').val(this.name).html(_s(this.description))
+                                $('<option>').val(this.name).html(_l(_s(this.description)))
                                     .appendTo($select);
                             });
                             _medit.refreshItemWidths($multi);

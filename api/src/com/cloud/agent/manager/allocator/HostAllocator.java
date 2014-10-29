@@ -29,34 +29,34 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public interface HostAllocator extends Adapter {
 
-	/**
-	 * @param UserVm vm
-	 * @param ServiceOffering offering
-	 **/
-	boolean isVirtualMachineUpgradable(final VirtualMachine vm, final ServiceOffering offering);
+    /**
+     * @param UserVm vm
+     * @param ServiceOffering offering
+     **/
+    boolean isVirtualMachineUpgradable(final VirtualMachine vm, final ServiceOffering offering);
 
-	/**
-	* Determines which physical hosts are suitable to
-	* allocate the guest virtual machines on
-	*
-	* @param VirtualMachineProfile vmProfile
-	* @param DeploymentPlan plan
-	* @param GuestType type
-	* @param ExcludeList avoid
-	* @param int returnUpTo (use -1 to return all possible hosts)
-	* @return List<Host> List of hosts that are suitable for VM allocation
-	**/
+    /**
+    * Determines which physical hosts are suitable to
+    * allocate the guest virtual machines on
+    *
+    * @param VirtualMachineProfile vmProfile
+    * @param DeploymentPlan plan
+    * @param GuestType type
+    * @param ExcludeList avoid
+    * @param int returnUpTo (use -1 to return all possible hosts)
+    * @return List<Host> List of hosts that are suitable for VM allocation
+    **/
 
-	public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo);
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo);
 
     /**
      * Determines which physical hosts are suitable to allocate the guest
      * virtual machines on
-     * 
+     *
      * Allocators must set any other hosts not considered for allocation in the
      * ExcludeList avoid. Thus the avoid set and the list of hosts suitable,
      * together must cover the entire host set in the cluster.
-     * 
+     *
      * @param VirtualMachineProfile
      *            vmProfile
      * @param DeploymentPlan
@@ -81,8 +81,8 @@ public interface HostAllocator extends Adapter {
      * Allocators must set any other hosts not considered for allocation in the
      * ExcludeList avoid. Thus the avoid set and the list of hosts suitable,
      * together must cover the entire host set in the cluster.
-     * 
-     * 
+     *
+     *
      * @param VirtualMachineProfile
      *            vmProfile
      * @param DeploymentPlan
@@ -99,9 +99,9 @@ public interface HostAllocator extends Adapter {
      *        capacity)
      * @return List<Host> List of hosts that are suitable for VM allocation
      **/
-    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, List<? extends Host> hosts,
-            int returnUpTo, boolean considerReservedCapacity);
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
+        boolean considerReservedCapacity);
 
-     public static int RETURN_UPTO_ALL = -1;
+    public static int RETURN_UPTO_ALL = -1;
 
 }

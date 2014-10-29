@@ -18,24 +18,24 @@ package org.apache.cloudstack.api;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
-import org.apache.cloudstack.context.CallContext;
-
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-public class BaseListTemplateOrIsoPermissionsCmd extends BaseCmd {
-    public Logger s_logger = getLogger();
-    protected String s_name = "listtemplatepermissionsresponse";
+public abstract class BaseListTemplateOrIsoPermissionsCmd extends BaseCmd {
+    public Logger logger = getLogger();
+    protected static final String s_name = "listtemplatepermissionsresponse";
+
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = TemplatePermissionsResponse.class,
-            required=true, description="the template ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplatePermissionsResponse.class, required = true, description = "the template ID")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -59,6 +59,10 @@ public class BaseListTemplateOrIsoPermissionsCmd extends BaseCmd {
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
+    protected Logger getLogger() {
+        return Logger.getLogger(BaseListTemplateOrIsoPermissionsCmd.class);
+    }
+
     @Override
     public String getCommandName() {
         return s_name;
@@ -72,19 +76,14 @@ public class BaseListTemplateOrIsoPermissionsCmd extends BaseCmd {
         return "templateOrIso";
     }
 
-    protected Logger getLogger() {
-        return Logger.getLogger(BaseUpdateTemplateOrIsoPermissionsCmd.class.getName());
-    }
 
-    @Override
-    public void execute(){
+    protected void executeWithView(ResponseView view) {
         List<String> accountNames = _templateService.listTemplatePermissions(this);
 
-        Account account = CallContext.current().getCallingAccount();
-        boolean isAdmin = (isAdmin(account.getType()));
-
-        TemplatePermissionsResponse response = _responseGenerator.createTemplatePermissionsResponse(accountNames, id, isAdmin);
+        TemplatePermissionsResponse response = _responseGenerator.createTemplatePermissionsResponse(view, accountNames, id);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
+
+
 }

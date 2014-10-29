@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network;
 
 import java.util.UUID;
@@ -28,36 +31,34 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="external_nicira_nvp_devices")
+@Table(name = "external_nicira_nvp_devices")
 public class NiciraNvpDeviceVO implements InternalIdentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="id")
+    @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="host_id")
+    @Column(name = "host_id")
     private long hostId;
 
-    @Column(name="physical_network_id")
+    @Column(name = "physical_network_id")
     private long physicalNetworkId;
 
-    @Column(name="provider_name")
+    @Column(name = "provider_name")
     private String providerName;
 
-    @Column(name="device_name")
+    @Column(name = "device_name")
     private String deviceName;
-
 
     public NiciraNvpDeviceVO() {
         uuid = UUID.randomUUID().toString();
     }
 
-    public NiciraNvpDeviceVO(long hostId, long physicalNetworkId,
-            String providerName, String deviceName) {
+    public NiciraNvpDeviceVO(final long hostId, final long physicalNetworkId, final String providerName, final String deviceName) {
         super();
         this.hostId = hostId;
         this.physicalNetworkId = physicalNetworkId;

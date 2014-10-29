@@ -19,29 +19,29 @@ package com.cloud.bridge.service.core.s3;
 import com.cloud.bridge.util.XElement;
 
 public class S3CanonicalUser {
-	
-	@XElement(name="ID")
-	private String ID;
-	
-	@XElement(name="DisplayName")
-	private String displayName;
-	
-	public S3CanonicalUser() {
-	}
 
-	public String getID() {
-		return ID;
-	}
+    @XElement(name = "ID")
+    private String ID;
 
-	public void setID(String iD) {
-		ID = iD;
-	}
+    @XElement(name = "DisplayName")
+    private String displayName;
 
-	public String getDisplayName() {
-		return displayName;
-	}
+    public S3CanonicalUser() {
+    }
 
-	public void setDisplayName(String displayName) {
-		this.displayName = displayName;
-	}
+    public String getID() {
+        return ID;
+    }
+
+    public void setID(String iD) {
+        ID = iD;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
 }

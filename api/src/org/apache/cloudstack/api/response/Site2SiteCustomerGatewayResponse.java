@@ -18,66 +18,84 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=Site2SiteCustomerGateway.class)
+@EntityReference(value = Site2SiteCustomerGateway.class)
 @SuppressWarnings("unused")
 public class Site2SiteCustomerGatewayResponse extends BaseResponse implements ControlledEntityResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the vpn gateway ID")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the vpn gateway ID")
     private String id;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="name of the customer gateway")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "name of the customer gateway")
     private String name;
 
-    @SerializedName(ApiConstants.GATEWAY) @Param(description="public ip address id of the customer gateway")
+    @SerializedName(ApiConstants.GATEWAY)
+    @Param(description = "public ip address id of the customer gateway")
     private String gatewayIp;
 
-    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="guest ip of the customer gateway")
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "guest ip of the customer gateway")
     private String guestIp;
 
-    @SerializedName(ApiConstants.CIDR_LIST) @Param(description="guest cidr list of the customer gateway")
+    @SerializedName(ApiConstants.CIDR_LIST)
+    @Param(description = "guest cidr list of the customer gateway")
     private String guestCidrList;
 
-    @SerializedName(ApiConstants.IPSEC_PSK) @Param(description="IPsec preshared-key of customer gateway")
+    @SerializedName(ApiConstants.IPSEC_PSK)
+    @Param(description = "IPsec preshared-key of customer gateway")
     private String ipsecPsk;
 
-    @SerializedName(ApiConstants.IKE_POLICY) @Param(description="IKE policy of customer gateway")
+    @SerializedName(ApiConstants.IKE_POLICY)
+    @Param(description = "IKE policy of customer gateway")
     private String ikePolicy;
 
-    @SerializedName(ApiConstants.ESP_POLICY) @Param(description="IPsec policy of customer gateway")
+    @SerializedName(ApiConstants.ESP_POLICY)
+    @Param(description = "IPsec policy of customer gateway")
     private String espPolicy;
 
-    @SerializedName(ApiConstants.IKE_LIFETIME) @Param(description="Lifetime of IKE SA of customer gateway")
+    @SerializedName(ApiConstants.IKE_LIFETIME)
+    @Param(description = "Lifetime of IKE SA of customer gateway")
     private Long ikeLifetime;
 
-    @SerializedName(ApiConstants.ESP_LIFETIME) @Param(description="Lifetime of ESP SA of customer gateway")
+    @SerializedName(ApiConstants.ESP_LIFETIME)
+    @Param(description = "Lifetime of ESP SA of customer gateway")
     private Long espLifetime;
 
-    @SerializedName(ApiConstants.DPD) @Param(description="if DPD is enabled for customer gateway")
+    @SerializedName(ApiConstants.DPD)
+    @Param(description = "if DPD is enabled for customer gateway")
     private Boolean dpd;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the owner")
     private String accountName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name")
     private String projectName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the owner")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain id of the owner")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the owner")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain name of the owner")
     private String domain;
 
-    @SerializedName(ApiConstants.REMOVED) @Param(description="the date and time the host was removed")
+    @SerializedName(ApiConstants.REMOVED)
+    @Param(description = "the date and time the host was removed")
     private Date removed;
 
     public void setId(String id) {
@@ -121,7 +139,7 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse implements Co
     }
 
     public void setDpd(Boolean dpd) {
-        this.dpd= dpd;
+        this.dpd = dpd;
     }
 
     public void setRemoved(Date removed) {

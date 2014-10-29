@@ -37,12 +37,12 @@ public interface VMSnapshotService {
 
     VMSnapshot creatVMSnapshot(Long vmId, Long vmSnapshotId, Boolean quiescevm);
 
-    VMSnapshot allocVMSnapshot(Long vmId, String vsDisplayName, String vsDescription, Boolean snapshotMemory)
-            throws ResourceAllocationException;
+    VMSnapshot allocVMSnapshot(Long vmId, String vsDisplayName, String vsDescription, Boolean snapshotMemory) throws ResourceAllocationException;
 
     boolean deleteVMSnapshot(Long vmSnapshotId);
 
-    UserVm revertToSnapshot(Long vmSnapshotId) throws InsufficientServerCapacityException, InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
+    UserVm revertToSnapshot(Long vmSnapshotId) throws InsufficientServerCapacityException, InsufficientCapacityException, ResourceUnavailableException,
+        ConcurrentOperationException;
 
     VirtualMachine getVMBySnapshotId(Long id);
 }

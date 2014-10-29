@@ -21,23 +21,23 @@ import java.util.List;
 import com.cloud.utils.events.EventArgs;
 
 public class ClusterNodeJoinEventArgs extends EventArgs {
-	private static final long serialVersionUID = 6284545402661799476L;
-	
-	private List<ManagementServerHostVO> joinedNodes;
-	private Long self;
-	
-	public ClusterNodeJoinEventArgs(Long self, List<ManagementServerHostVO> joinedNodes) {
-		super(ClusterManager.ALERT_SUBJECT);
-		
-		this.self = self;
-		this.joinedNodes = joinedNodes;
-	}
-	
-	public List<ManagementServerHostVO> getJoinedNodes() {
-		return joinedNodes;
-	}
+    private static final long serialVersionUID = 6284545402661799476L;
 
-	public Long getSelf() {
-		return self;
-	}
+    private List<ManagementServerHostVO> joinedNodes;
+    private Long self;
+
+    public ClusterNodeJoinEventArgs(Long self, List<ManagementServerHostVO> joinedNodes) {
+        super(ClusterManager.ALERT_SUBJECT);
+
+        this.self = self;
+        this.joinedNodes = joinedNodes;
+    }
+
+    public List<ManagementServerHostVO> getJoinedNodes() {
+        return joinedNodes;
+    }
+
+    public Long getSelf() {
+        return self;
+    }
 }

@@ -85,6 +85,29 @@ cloudStack.docs = {
         externalLink: ''
     },
 
+    helpManaged: {
+
+        desc: 'True if CloudStack manages the storage; else, false (check with storage provider if unknown)',
+        externalLink: ''
+    },
+
+    helpCapacityBytes: {
+
+        desc: 'Number of bytes for the primary storage to have',
+        externalLink: ''
+    },
+
+    helpCapacityIops: {
+
+        desc: 'Number of IOPS for the primary storage to have',
+        externalLink: ''
+    },
+
+    helpUrl: {
+
+        desc: 'Arbitrary data to be sent to the storage provider for configuration purposes',
+        externalLink: ''
+    },
 
     //Ldap
     helpLdapQueryFilter: {
@@ -218,6 +241,10 @@ cloudStack.docs = {
         desc: 'Type of disk for the VM. Local storage is attached to the hypervisor host where the VM is running. Shared storage is accessible via NFS.',
         externalLink: ''
     },
+    helpComputeOfferingProvisioningType: {
+        desc: 'Provisioning type to create a volume. Thin and sparse is lazy allocation. fat is eager allocation.',
+        externalLink: ''
+    },
     helpComputeOfferingCPUCores: {
         desc: 'The number of cores which should be allocated to a VM with this offering',
         externalLink: ''
@@ -282,6 +309,10 @@ cloudStack.docs = {
         desc: 'A short description of the offering that can be displayed to users',
         externalLink: ''
     },
+    helpDiskOfferingProvisioningType: {
+        desc: 'Provisioning type to create a volume. Thin and sparse is lazy allocation. fat is eager allocation.',
+        externalLink: ''
+    },
     helpDiskOfferingStorageType: {
         desc: 'Type of disk for the VM. Local is attached to the hypervisor host where the VM is running. Shared is storage accessible via NFS.',
         externalLink: ''
@@ -324,6 +355,13 @@ cloudStack.docs = {
     },
     helpDiskOfferingDiskIopsMax: {
         desc: 'Appears only if Custom IOPS is not selected. Define the maximum volume IOPS.',
+        externalLink: ''
+    },
+    helpDiskOfferingHypervisorSnapshotReserve: {
+        desc: 'Hypervisor snapshot reserve space as a percent of a volume (for managed storage using XenServer or VMware) (Ex. The value 25 means 25%.)).',
+    },
+    helpDiskOfferingCacheMode: {
+        desc: 'The write caching mode to use for disks created with this disk offering. This can improve write performance.',
         externalLink: ''
     },
     helpDiskOfferingStorageTags: {
@@ -591,7 +629,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpPodNetmask: {
-        desc: 'The network prefix that defines the pod\'s subnet. Use CIDR notation.',
+        desc: 'The network prefix that defines the pod\'s subnet.',
         externalLink: ''
     },
     helpPodStartIP: {
@@ -620,7 +658,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpPrimaryStorageProtocol: {
-        desc: 'For XenServer, choose NFS, iSCSI, or PreSetup. For KVM, choose NFS or SharedMountPoint. For vSphere, choose VMFS (iSCSI or FiberChannel) or NFS.',
+        desc: 'For XenServer, choose NFS, iSCSI, or PreSetup. For KVM, choose NFS, SharedMountPoint, RDB, CLVM or Gluster. For vSphere, choose VMFS (iSCSI or FiberChannel) or NFS. For Hyper-V, choose SMB/CIFS. For LXC, choose NFS or SharedMountPoint. For OVM, choose NFS or ocfs2.',
         externalLink: ''
     },
     helpPrimaryStorageServer: {
@@ -767,6 +805,75 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpSRXCapacity: {
+        desc: 'Number of guest networks/accounts that will share this device',
+        externalLink: ''
+    },
+    // Add Palo Alto
+    helpPaloAltoIPAddress: {
+        desc: 'The IP address of the device',
+        externalLink: ''
+    },
+    helpPaloAltoUsername: {
+        desc: 'A user ID with valid authentication credentials that provide to access the device',
+        externalLink: ''
+    },
+    helpPaloAltoPassword: {
+        desc: 'The password for the user ID provided in Username',
+        externalLink: ''
+    },
+    helpPaloAltoType: {
+        desc: 'The type of device that is being added',
+        externalLink: ''
+    },
+    helpPaloAltoPublicInterface: {
+        desc: 'Interface of device that is configured to be part of the public network. For example, ge-0/0/2',
+        externalLink: ''
+    },
+    helpPaloAltoPrivateInterface: {
+        desc: 'Interface of device that is configured to be part of the private network. For example, ge-0/0/1',
+        externalLink: ''
+    },
+    helpPaloAltoUsageInterface: {
+        desc: 'Interface used to meter traffic. If you don\'t want to use the public interface, specify a different interface name here.',
+        externalLink: ''
+    },
+    helpPaloAltoRetries: {
+        desc: 'Number of times to attempt a command on the device before considering the operation failed. Default is 2.',
+        externalLink: ''
+    },
+    helpPaloAltoTimeout: {
+        desc: 'The time to wait for a command on the Palo Alto before considering it failed. Default is 300 seconds.',
+        externalLink: ''
+    },
+    helpPaloAltoMode: {
+        desc: 'Side by side mode is supported for the Palo Alto.',
+        externalLink: ''
+    },
+    helpPaloAltoPublicNetwork: {
+        desc: 'The name of the public network on the Palo Alto. For example, trust.',
+        externalLink: ''
+    },
+    helpPaloAltoPrivateNetwork: {
+        desc: 'The name of the private network on the Palo Alto. For example, untrust.',
+        externalLink: ''
+    },
+    helpPaloAltoVirtualRouter: {
+        desc: 'The name of the virtual router on the Palo Alto.',
+        externalLink: ''
+    },
+    helpPaloAltoThreatProfile: {
+        desc: 'The threat profile name/group to associate with allow firewall policies.',
+        externalLink: ''
+    },
+    helpPaloAltoLogProfile: {
+        desc: 'The log profile name/group to associate with allow firewall policies.',
+        externalLink: ''
+    },
+    helpPaloAltoDedicated: {
+        desc: 'Check this box to dedicate the device to a single account. The value in the Capacity field will be ignored.',
+        externalLink: ''
+    },
+    helpPaloAltoCapacity: {
         desc: 'Number of guest networks/accounts that will share this device',
         externalLink: ''
     },
@@ -1091,6 +1198,10 @@ cloudStack.docs = {
         desc: 'Whether the template is extractable or not',
         externalLink: ''
     },
+    helpRegisterTemplateDynamicallyScalable: {
+        desc: 'Check this if the template contains XS/VMWare tools to support dynamic scaling of VM cpu/memory.',
+        externalLink: ''
+    },
     helpRegisterTemplatePasswordEnabled: {
         desc: 'Check this if the template has the password change script installed.',
         externalLink: ''
@@ -1103,6 +1214,14 @@ cloudStack.docs = {
         desc: 'Check this to make the template more prominent for users. The template will appear in the Featured Templates list.',
         externalLink: ''
     },
+    helpRegisterTemplateRouting: {
+        desc: 'Check this if the template is used for deploying router.',
+        externalLink: ''
+    },
+    helpRegisterTemplateHvm: {
+        desc: 'Check this if the template requires hvm.',
+        externalLink: ''
+    },
     // Upload volume
     helpUploadVolumeName: {
         desc: 'A unique name for the volume. This will be visible to users, so choose something descriptive.',
@@ -1113,7 +1232,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpUploadVolumeFormat: {
-        desc: 'The disk image format of the volume. XenServer is VHD, VMware is OVA, and KVM is QCOW2.',
+        desc: 'The disk image format of the volume. XenServer is VHD, VMware is OVA, and KVM is QCOW2. Hyper-V is VHD or VHDX. OVM is RAW.',
         externalLink: ''
     },
     helpUploadVolumeURL: {
@@ -1122,6 +1241,47 @@ cloudStack.docs = {
     },
     helpUploadVolumeChecksum: {
         desc: 'Use the hash that you created at the start of the volume upload procedure',
+        externalLink: ''
+    },
+    helpLdapGroupName: {
+        desc: 'The group name from which you want to import LDAP users',
+        externalLink: ''
+    },
+    helpVpcOfferingName: {
+        desc: 'Any desired name for the VPC offering',
+        externalLink: ''
+    },
+    helpVpcOfferingDescription: {
+        desc: 'A short description of the offering that can be displayed to users',
+        externalLink: ''
+    },
+    // Add Nuage VSP
+    helpVspHostname: {
+        desc: 'The hostname/IP address of Nuage VSD',
+        externalLink: ''
+    },
+    helpVspUsername: {
+        desc: 'A name of the CMS user in Nuage VSD.',
+        externalLink: ''
+    },
+    helpVspPassword: {
+        desc: 'The password for the CMS user in Nuage VSD.',
+        externalLink: ''
+    },
+    helpVspPort: {
+        desc: 'The port to communicate with Nuage VSD. e.g. Unspecified/0 if using HAProxy for load balancing or 8443 if connecting directly to a VSD server.',
+        externalLink: ''
+    },
+    helpVspApiVersion: {
+        desc: 'The API version of Nuage VSD',
+        externalLink: ''
+    },
+    helpVspRetries: {
+        desc: 'Number of times to attempt a command on Nuage VSD before considering the operation failed.  Valid values [1 - 10].',
+        externalLink: ''
+    },
+    helpVspRetryInterval: {
+        desc: 'The interval of time in milliseconds to wait on failure before attempting to resend the command to Nuage VSD.  Valid values [0 - 10000].',
         externalLink: ''
     }
 };

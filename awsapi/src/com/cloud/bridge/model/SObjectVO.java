@@ -31,212 +31,208 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-
 @Entity
-@Table(name="sobject")
+@Table(name = "sobject")
 public class SObjectVO {
-	//private static final long serialVersionUID = 8566744941395660486L;
+    //private static final long serialVersionUID = 8566744941395660486L;
 
-	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(name="ID")
-	private Long id;
-	
-	@Column(name="SBucketID")
-	private long bucketID;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ID")
+    private Long id;
 
-	@Column(name="NameKey")
-	private String nameKey;
-	
-	@Column(name="OwnerCanonicalID")
-	private String ownerCanonicalId;
-	
-	@Column(name="NextSequence")
-	private int nextSequence;
-	
-	@Column(name="DeletionMark")
-	private String deletionMark;	// This must also a unique ID to give to the REST client
-	
-	@Column(name="CreateTime")
-	@Temporal(value=TemporalType.TIMESTAMP)
-	private Date createTime;
-	
-	@Transient
-	private SBucket bucket;
-	
-	@Transient
-	private Set<SObjectItemVO> items = new HashSet<SObjectItemVO>();
-	
-	public SObjectVO() {
-		deletionMark = null;
-	}
-	
-	public Long getId() {
-		return id;
-	}
+    @Column(name = "SBucketID")
+    private long bucketID;
 
-	private void setId(Long id) {
-		this.id = id;
-	}
-	
-	public long getBucketID() {
-	    return bucketID;
-	}
+    @Column(name = "NameKey")
+    private String nameKey;
 
-	public void setBucketID(long bucketID) {
-	    this.bucketID = bucketID;
-	}
+    @Column(name = "OwnerCanonicalID")
+    private String ownerCanonicalId;
 
-	public String getNameKey() {
-		return nameKey;
-	}
+    @Column(name = "NextSequence")
+    private int nextSequence;
 
-	public void setNameKey(String nameKey) {
-		this.nameKey = nameKey;
-	}
+    @Column(name = "DeletionMark")
+    private String deletionMark;    // This must also a unique ID to give to the REST client
 
-	public String getOwnerCanonicalId() {
-		return ownerCanonicalId;
-	}
+    @Column(name = "CreateTime")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date createTime;
 
-	public void setOwnerCanonicalId(String ownerCanonicalId) {
-		this.ownerCanonicalId = ownerCanonicalId;
-	}
+    @Transient
+    private SBucket bucket;
 
-	public int getNextSequence() {
-		return nextSequence;
-	}
+    @Transient
+    private Set<SObjectItemVO> items = new HashSet<SObjectItemVO>();
 
-	public void setNextSequence(int nextSequence) {
-		this.nextSequence = nextSequence;
-	}
+    public SObjectVO() {
+        deletionMark = null;
+    }
 
-	public String getDeletionMark() {
-		return deletionMark;
-	}
+    public Long getId() {
+        return id;
+    }
 
-	public void setDeletionMark(String deletionMark) {
-		this.deletionMark = deletionMark;
-	}
+    private void setId(Long id) {
+        this.id = id;
+    }
 
-	public Date getCreateTime() {
-		return createTime;
-	}
+    public long getBucketID() {
+        return bucketID;
+    }
 
-	public void setCreateTime(Date createTime) {
-		this.createTime = createTime;
-	}
-	
-	public SBucket getBucket() {
-		return bucket;
-	}
+    public void setBucketID(long bucketID) {
+        this.bucketID = bucketID;
+    }
 
-	public void setBucket(SBucket bucket) {
-		this.bucket = bucket;
-	}
-	
-	public Set<SObjectItemVO> getItems() {
-		return items;
-	}
+    public String getNameKey() {
+        return nameKey;
+    }
 
-	public void setItems(Set<SObjectItemVO> items) {
-		this.items = items;
-	}
-	
-	public void deleteItem( long id ) {
-		Iterator<SObjectItemVO> it = getItems().iterator();
-	
-		while( it.hasNext()) 
-		{
-			SObjectItemVO oneItem = it.next();
-			if (id == oneItem.getId()) {
-				boolean bRemoved = items.remove( oneItem );
-				System.out.println( "deleteItem from sobject: " + bRemoved );
-				return;
-			}
-		}
-	}
-	
-	public SObjectItemVO getLatestVersion( boolean versioningOff ) {
-		Iterator<SObjectItemVO> it = getItems().iterator();
-		int maxVersion = 0;
-		int curVersion = 0;
-		SObjectItemVO latestItem = null;
-		
-		while( it.hasNext()) 
-		{
-			SObjectItemVO item = it.next();
-			
-		    //    If versioning is off then return the item with the null version string (if exists)
-			//    For example, the bucket could have allowed versioning and then it was suspended
-			//    If an application wants a specific version it will need to explicitly ask for it
-			try {
+    public void setNameKey(String nameKey) {
+        this.nameKey = nameKey;
+    }
+
+    public String getOwnerCanonicalId() {
+        return ownerCanonicalId;
+    }
+
+    public void setOwnerCanonicalId(String ownerCanonicalId) {
+        this.ownerCanonicalId = ownerCanonicalId;
+    }
+
+    public int getNextSequence() {
+        return nextSequence;
+    }
+
+    public void setNextSequence(int nextSequence) {
+        this.nextSequence = nextSequence;
+    }
+
+    public String getDeletionMark() {
+        return deletionMark;
+    }
+
+    public void setDeletionMark(String deletionMark) {
+        this.deletionMark = deletionMark;
+    }
+
+    public Date getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(Date createTime) {
+        this.createTime = createTime;
+    }
+
+    public SBucket getBucket() {
+        return bucket;
+    }
+
+    public void setBucket(SBucket bucket) {
+        this.bucket = bucket;
+    }
+
+    public Set<SObjectItemVO> getItems() {
+        return items;
+    }
+
+    public void setItems(Set<SObjectItemVO> items) {
+        this.items = items;
+    }
+
+    public void deleteItem(long id) {
+        Iterator<SObjectItemVO> it = getItems().iterator();
+
+        while (it.hasNext()) {
+            SObjectItemVO oneItem = it.next();
+            if (id == oneItem.getId()) {
+                boolean bRemoved = items.remove(oneItem);
+                System.out.println("deleteItem from sobject: " + bRemoved);
+                return;
+            }
+        }
+    }
+
+    public SObjectItemVO getLatestVersion(boolean versioningOff) {
+        Iterator<SObjectItemVO> it = getItems().iterator();
+        int maxVersion = 0;
+        int curVersion = 0;
+        SObjectItemVO latestItem = null;
+
+        while (it.hasNext()) {
+            SObjectItemVO item = it.next();
+
+            //    If versioning is off then return the item with the null version string (if exists)
+            //    For example, the bucket could have allowed versioning and then it was suspended
+            //    If an application wants a specific version it will need to explicitly ask for it
+            try {
                 String version = item.getVersion();
                 if (versioningOff && null == version) {
-                	return item;
+                    return item;
                 }
-				curVersion = Integer.parseInt( version );
-				
-			} catch (NumberFormatException e) {
-				curVersion = 0;
-			}
-			
-			if(curVersion >= maxVersion) {
-				maxVersion = curVersion;
-				latestItem = item;
-			}
-		}
-		return latestItem;
-	}
-	
-	/**
-	 * S3 versioning allows the client to request the return of a specific version,
-	 * not just the last version.
-	 * 
-	 * @param wantVersion
-	 * @return
-	 */
-	public SObjectItemVO getVersion( String wantVersion ) 
-	{
-		Iterator<SObjectItemVO> it = getItems().iterator();	
-		while( it.hasNext()) 
-		{
-			SObjectItemVO item = it.next();
-			String curVersion = item.getVersion();
-			if (null != curVersion && wantVersion.equalsIgnoreCase( curVersion )) return item;				
-		}
-		return null;
-	}
+                curVersion = Integer.parseInt(version);
 
-	@Override
-	public boolean equals(Object other) {
-		if(this == other)
-			return true;
-		
-		if(!(other instanceof SObjectVO))
-			return false;
-		
-		if(!getNameKey().equals(((SObjectVO)other).getNameKey()))
-			return false;
-		
-		if(getBucket() != null) {
-			if(!getBucket().equals(((SObjectVO)other).getBucket()))
-				return false;
-		} else {
-			if(((SObjectVO)other).getBucket() != null)
-				return false;
-		}
-		
-		return true;
-	}
-	
-	@Override
-	public int hashCode() {
-		int hashCode = 0;
-		hashCode = hashCode*17 + getNameKey().hashCode();
-		
-		if(getBucket() != null)
-			hashCode = hashCode*17 + getBucket().hashCode(); 
-		return hashCode;
-	}
+            } catch (NumberFormatException e) {
+                curVersion = 0;
+            }
+
+            if (curVersion >= maxVersion) {
+                maxVersion = curVersion;
+                latestItem = item;
+            }
+        }
+        return latestItem;
+    }
+
+    /**
+     * S3 versioning allows the client to request the return of a specific version,
+     * not just the last version.
+     *
+     * @param wantVersion
+     * @return
+     */
+    public SObjectItemVO getVersion(String wantVersion) {
+        Iterator<SObjectItemVO> it = getItems().iterator();
+        while (it.hasNext()) {
+            SObjectItemVO item = it.next();
+            String curVersion = item.getVersion();
+            if (null != curVersion && wantVersion.equalsIgnoreCase(curVersion))
+                return item;
+        }
+        return null;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other)
+            return true;
+
+        if (!(other instanceof SObjectVO))
+            return false;
+
+        if (!getNameKey().equals(((SObjectVO)other).getNameKey()))
+            return false;
+
+        if (getBucket() != null) {
+            if (!getBucket().equals(((SObjectVO)other).getBucket()))
+                return false;
+        } else {
+            if (((SObjectVO)other).getBucket() != null)
+                return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int hashCode = 0;
+        hashCode = hashCode * 17 + getNameKey().hashCode();
+
+        if (getBucket() != null)
+            hashCode = hashCode * 17 + getBucket().hashCode();
+        return hashCode;
+    }
 }

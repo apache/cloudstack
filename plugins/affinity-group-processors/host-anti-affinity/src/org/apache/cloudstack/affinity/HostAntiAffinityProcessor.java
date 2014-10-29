@@ -23,14 +23,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.deploy.DeployDestination;
@@ -39,8 +38,6 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -60,16 +57,14 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
     private int _vmCapacityReleaseInterval;
-    @Inject 
+    @Inject
     protected ConfigurationDao _configDao;
-    
+
     @Inject
     protected VMReservationDao _reservationDao;
 
     @Override
-    public void process(VirtualMachineProfile vmProfile, DeploymentPlan plan,
-            ExcludeList avoid)
-            throws AffinityConflictException {
+    public void process(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws AffinityConflictException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
         List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), getType());
 
@@ -90,17 +85,15 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
                         if (groupVM.getHostId() != null) {
                             avoid.addHost(groupVM.getHostId());
                             if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Added host " + groupVM.getHostId() + " to avoid set, since VM "
-                                        + groupVM.getId() + " is present on the host");
+                                s_logger.debug("Added host " + groupVM.getHostId() + " to avoid set, since VM " + groupVM.getId() + " is present on the host");
                             }
-                        } else if (VirtualMachine.State.Stopped.equals(groupVM.getState())
-                                && groupVM.getLastHostId() != null) {
+                        } else if (VirtualMachine.State.Stopped.equals(groupVM.getState()) && groupVM.getLastHostId() != null) {
                             long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - groupVM.getUpdateTime().getTime()) / 1000;
                             if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
                                 avoid.addHost(groupVM.getLastHostId());
                                 if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Added host " + groupVM.getLastHostId() + " to avoid set, since VM "
-                                            + groupVM.getId() + " is present on the host, in Stopped state but has reserved capacity");
+                                    s_logger.debug("Added host " + groupVM.getLastHostId() + " to avoid set, since VM " + groupVM.getId() +
+                                        " is present on the host, in Stopped state but has reserved capacity");
                                 }
                             }
                         }
@@ -110,17 +103,16 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
         }
 
     }
-    
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()),3600);
+        _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()), 3600);
         return true;
     }
 
     @Override
-    public boolean check(VirtualMachineProfile vmProfile, DeployDestination plannedDestination)
-            throws AffinityConflictException {
+    public boolean check(VirtualMachineProfile vmProfile, DeployDestination plannedDestination) throws AffinityConflictException {
 
         if (plannedDestination.getHost() == null) {
             return true;
@@ -134,17 +126,15 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
         for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
             // if more than 1 VM's are present in the group then check for
             // conflict due to parallel deployment
-            List<Long> groupVMIds = _affinityGroupVMMapDao
-                    .listVmIdsByAffinityGroup(vmGroupMapping.getAffinityGroupId());
+            List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(vmGroupMapping.getAffinityGroupId());
             groupVMIds.remove(vm.getId());
 
             for (Long groupVMId : groupVMIds) {
                 VMReservationVO vmReservation = _reservationDao.findByVmId(groupVMId);
-                if (vmReservation != null && vmReservation.getHostId() != null
-                        && vmReservation.getHostId().equals(plannedHostId)) {
+                if (vmReservation != null && vmReservation.getHostId() != null && vmReservation.getHostId().equals(plannedHostId)) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Planned destination for VM " + vm.getId() + " conflicts with an existing VM "
-                                + vmReservation.getVmId() + " reserved on the same host " + plannedHostId);
+                        s_logger.debug("Planned destination for VM " + vm.getId() + " conflicts with an existing VM " + vmReservation.getVmId() +
+                            " reserved on the same host " + plannedHostId);
                     }
                     return false;
                 }

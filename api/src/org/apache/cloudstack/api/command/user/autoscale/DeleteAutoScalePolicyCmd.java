@@ -16,6 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.autoscale;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -27,13 +31,12 @@ import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteAutoScalePolicy", description = "Deletes a autoscale policy.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteAutoScalePolicy", description = "Deletes a autoscale policy.", responseObject = SuccessResponse.class, entityType = {AutoScalePolicy.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteAutoScalePolicyCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteAutoScalePolicyCmd.class.getName());
     private static final String s_name = "deleteautoscalepolicyresponse";
@@ -41,8 +44,12 @@ public class DeleteAutoScalePolicyCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class,
-            required = true, description = "the ID of the autoscale policy")
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = AutoScalePolicyResponse.class,
+               required = true,
+               description = "the ID of the autoscale policy")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -90,7 +97,7 @@ public class DeleteAutoScalePolicyCmd extends BaseAsyncCmd {
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             s_logger.warn("Failed to delete autoscale policy " + getId());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete AutoScale Policy");

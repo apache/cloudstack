@@ -33,8 +33,8 @@ public interface RfbConstants {
     /**
      * Client message types.
      */
-    public static final int CLIENT_SET_PIXEL_FORMAT = 0, CLIENT_FIX_COLOURMAP_ENTRIES = 1, CLIENT_SET_ENCODINGS = 2, CLIENT_FRAMEBUFFER_UPDATE_REQUEST = 3, CLIENT_KEYBOARD_EVENT = 4,
-            CLIENT_POINTER_EVENT = 5, CLIENT_CUT_TEXT = 6;
+    public static final int CLIENT_SET_PIXEL_FORMAT = 0, CLIENT_FIX_COLOURMAP_ENTRIES = 1, CLIENT_SET_ENCODINGS = 2, CLIENT_FRAMEBUFFER_UPDATE_REQUEST = 3,
+            CLIENT_KEYBOARD_EVENT = 4, CLIENT_POINTER_EVENT = 5, CLIENT_CUT_TEXT = 6;
 
     /**
      * Server authorization type
@@ -59,7 +59,7 @@ public interface RfbConstants {
     /**
      * Encodings, which we support.
      */
-    public final static int[] SUPPORTED_ENCODINGS_ARRAY = { ENCODING_RAW, ENCODING_COPY_RECT, ENCODING_DESKTOP_SIZE };
+    public final static int[] SUPPORTED_ENCODINGS_ARRAY = {ENCODING_RAW, ENCODING_COPY_RECT, ENCODING_DESKTOP_SIZE};
 
     /**
      * Frame buffer update request type: update of whole screen or partial

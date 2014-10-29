@@ -31,7 +31,6 @@ import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
 
-
 public class ElementCollectionTest extends TestCase {
     static final Logger s_logger = Logger.getLogger(ElementCollectionTest.class);
     ArrayList<String> ar = null;
@@ -51,7 +50,8 @@ public class ElementCollectionTest extends TestCase {
                 ParameterizedType type = (ParameterizedType)field.getGenericType();
                 Type rawType = type.getRawType();
                 Class<?> rawClazz = (Class<?>)rawType;
-                if (!Modifier.isAbstract(rawClazz.getModifiers()) && !rawClazz.isInterface() && rawClazz.getConstructors().length != 0 && rawClazz.getConstructor() != null) {
+                if (!Modifier.isAbstract(rawClazz.getModifiers()) && !rawClazz.isInterface() && rawClazz.getConstructors().length != 0 &&
+                    rawClazz.getConstructor() != null) {
                     collection = rawClazz.newInstance();
                 }
 

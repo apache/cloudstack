@@ -18,39 +18,48 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
 import com.cloud.vm.InstanceGroup;
-import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = InstanceGroup.class)
-public class InstanceGroupResponse extends BaseResponse implements ControlledViewEntityResponse{
-    @SerializedName(ApiConstants.ID) @Param(description="the id of the instance group")
+public class InstanceGroupResponse extends BaseResponse implements ControlledViewEntityResponse {
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the id of the instance group")
     private String id;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the name of the instance group")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the name of the instance group")
     private String name;
 
-    @SerializedName(ApiConstants.CREATED) @Param(description="time and date the instance group was created")
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "time and date the instance group was created")
     private Date created;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account owning the instance group")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account owning the instance group")
     private String accountName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the group")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the group")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the group")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the group")
     private String projectName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the instance group")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain ID of the instance group")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the instance group")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain name of the instance group")
     private String domainName;
 
     public void setId(String id) {

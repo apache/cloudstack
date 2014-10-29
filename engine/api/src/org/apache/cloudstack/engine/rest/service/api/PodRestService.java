@@ -34,42 +34,45 @@ public class PodRestService {
 //  @Inject
     ProvisioningService _provisioningService;
 
-    @GET @Path("/pod/{pod-id}")
+    @GET
+    @Path("/pod/{pod-id}")
     public PodEntity getPod(@PathParam("pod-id") String podId) {
         return null;
     }
 
-    @POST @Path("/pod/{pod-id}/enable")
+    @POST
+    @Path("/pod/{pod-id}/enable")
     public String enable(@PathParam("pod-id") String podId) {
         return null;
     }
 
-    @POST @Path("/pod/{pod-id}/disable")
+    @POST
+    @Path("/pod/{pod-id}/disable")
     public String disable(@PathParam("pod-id") String podId) {
         return null;
     }
 
-    @POST @Path("/pod/{pod-id}/deactivate")
+    @POST
+    @Path("/pod/{pod-id}/deactivate")
     public String deactivate(@PathParam("pod-id") String podId) {
         return null;
     }
 
-    @POST @Path("/pod/{pod-id}/reactivate")
+    @POST
+    @Path("/pod/{pod-id}/reactivate")
     public String reactivate(@PathParam("pod-id") String podId) {
         return null;
     }
 
-    @PUT @Path("/pod/create")
-    public PodEntity create(
-            @QueryParam("xid") String xid,
-            @QueryParam("display-name") String displayName) {
+    @PUT
+    @Path("/pod/create")
+    public PodEntity create(@QueryParam("xid") String xid, @QueryParam("display-name") String displayName) {
         return null;
     }
 
-    @PUT @Path("/pod/{pod-id}")
-    public PodEntity update(
-            @PathParam("pod-id") String podId,
-            @QueryParam("display-name") String displayName) {
+    @PUT
+    @Path("/pod/{pod-id}")
+    public PodEntity update(@PathParam("pod-id") String podId, @QueryParam("display-name") String displayName) {
         return null;
     }
 }

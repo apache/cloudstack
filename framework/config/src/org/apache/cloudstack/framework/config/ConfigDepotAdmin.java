@@ -31,7 +31,7 @@ public interface ConfigDepotAdmin {
      * @see Configuration
      */
     void populateConfigurations();
-    
+
     void populateConfiguration(Configurable configurable);
 
     List<String> getComponentsInDepot();

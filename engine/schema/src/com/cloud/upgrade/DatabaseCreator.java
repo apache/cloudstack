@@ -20,14 +20,13 @@ package com.cloud.upgrade;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.SQLException;
+import java.sql.DriverManager;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -45,16 +44,12 @@ import com.cloud.utils.db.TransactionLegacy;
 public class DatabaseCreator {
 
     protected static void printHelp(String cmd) {
-        System.out.println(
-                "\nDatabaseCreator creates the database schema by removing the \n" +
-                "previous schema, creating the schema, and running \n" +
-                "through the database updaters.");
-        System.out.println("Usage: " + cmd + " [options] [db.properties file] [schema.sql files] [database upgrade class]\nOptions:"
-                + "\n   --database=a,b comma separate databases to initialize, use the db name in db.properties defined as db.xyz.host, xyz should be passed"
-                + "\n   --rootpassword=password, by default it will try with an empty password"
-                + "\n   --dry or -d, this would not run any process, just does a dry run"
-                + "\n   --verbose or -v to print running sql commands, by default it won't print them"
-                + "\n   --help or -h for help");
+        System.out.println("\nDatabaseCreator creates the database schema by removing the \n" + "previous schema, creating the schema, and running \n"
+            + "through the database updaters.");
+        System.out.println("Usage: " + cmd + " [options] [db.properties file] [schema.sql files] [database upgrade class]\nOptions:" +
+            "\n   --database=a,b comma separate databases to initialize, use the db name in db.properties defined as db.xyz.host, xyz should be passed" +
+            "\n   --rootpassword=password, by default it will try with an empty password" + "\n   --dry or -d, this would not run any process, just does a dry run" +
+            "\n   --verbose or -v to print running sql commands, by default it won't print them" + "\n   --help or -h for help");
     }
 
     private static boolean fileExists(String file) {
@@ -79,14 +74,10 @@ public class DatabaseCreator {
 
     private static void runQuery(String host, String port, String rootPassword, String query, boolean dryRun) {
         System.out.println("============> Running query: " + query);
-        Connection conn = null;
-        try {
-            conn = DriverManager.getConnection(String.format("jdbc:mysql://%s:%s/", host, port),
-                    "root", rootPassword);
-            Statement stmt = conn.createStatement();
-            if (!dryRun)
+        try (Connection conn = DriverManager.getConnection(String.format("jdbc:mysql://%s:%s/", host, port), "root", rootPassword);
+             Statement stmt = conn.createStatement();){
+             if (!dryRun)
                 stmt.executeUpdate(query);
-            conn.close();
         } catch (SQLException e) {
             System.out.println("SQL exception in trying initDB: " + e);
             System.exit(1);
@@ -95,14 +86,14 @@ public class DatabaseCreator {
 
     private static void initDB(String dbPropsFile, String rootPassword, String[] databases, boolean dryRun) {
         Properties dbProperties = new Properties();
-        try {
-            dbProperties.load(new FileInputStream(new File(dbPropsFile)));
+        try(FileInputStream f_stream = new FileInputStream(new File(dbPropsFile));) {
+            dbProperties.load(f_stream);
         } catch (IOException e) {
             System.out.println("IOError: unable to load/read db properties file: " + e);
             System.exit(1);
         }
 
-        for (String database: databases) {
+        for (String database : databases) {
             String host = dbProperties.getProperty(String.format("db.%s.host", database));
             String port = dbProperties.getProperty(String.format("db.%s.port", database));
             String username = dbProperties.getProperty(String.format("db.%s.username", database));
@@ -116,18 +107,17 @@ public class DatabaseCreator {
             queries.add(String.format("GRANT ALL ON %s.* to '%s'@`localhost` identified by '%s'", dbName, username, password));
             queries.add(String.format("GRANT ALL ON %s.* to '%s'@`%%` identified by '%s'", dbName, username, password));
 
-            for (String query: queries) {
+            for (String query : queries) {
                 runQuery(host, port, rootPassword, query, dryRun);
             }
         }
     }
 
     public static void main(String[] args) {
-    	
-    	ClassPathXmlApplicationContext appContext = new ClassPathXmlApplicationContext(
-    	        new String[] {"/com/cloud/upgrade/databaseCreatorContext.xml"});
-    	appContext.getBean(ComponentContext.class);
-    	
+
+        ClassPathXmlApplicationContext appContext = new ClassPathXmlApplicationContext(new String[] {"/com/cloud/upgrade/databaseCreatorContext.xml"});
+        appContext.getBean(ComponentContext.class);
+
         String dbPropsFile = "";
         List<String> sqlFiles = new ArrayList<String>();
         List<String> upgradeClasses = new ArrayList<String>();
@@ -137,7 +127,7 @@ public class DatabaseCreator {
         boolean dryRun = false;
 
         // Process opts
-        for (String arg: args) {
+        for (String arg : args) {
             if (arg.equals("--help") || arg.equals("-h")) {
                 printHelp("DatabaseCreator");
                 System.exit(0);
@@ -152,12 +142,12 @@ public class DatabaseCreator {
             } else if (arg.endsWith(".sql")) {
                 sqlFiles.add(arg);
             } else if (arg.endsWith(".sql.override")) {
-            	if (fileExists(arg)) {
-            		int index = arg.lastIndexOf(".override");
-            		String fileToOverride = arg.substring(0, index);
-            		sqlFiles.remove(fileToOverride);
-            		sqlFiles.add(arg);
-            	}
+                if (fileExists(arg)) {
+                    int index = arg.lastIndexOf(".override");
+                    String fileToOverride = arg.substring(0, index);
+                    sqlFiles.remove(fileToOverride);
+                    sqlFiles.add(arg);
+                }
             } else if (arg.endsWith(".properties")) {
                 if (!dbPropsFile.endsWith("properties.override") && fileExists(arg))
                     dbPropsFile = arg;
@@ -169,8 +159,7 @@ public class DatabaseCreator {
             }
         }
 
-        if ((dbPropsFile.isEmpty())
-                || (sqlFiles.size() == 0) && upgradeClasses.size() == 0) {
+        if ((dbPropsFile.isEmpty()) || (sqlFiles.size() == 0) && upgradeClasses.size() == 0) {
             printHelp("DatabaseCreator");
             System.exit(1);
         }
@@ -184,7 +173,7 @@ public class DatabaseCreator {
         initDB(dbPropsFile, rootPassword, databases, dryRun);
 
         // Process sql files
-        for (String sqlFile: sqlFiles) {
+        for (String sqlFile : sqlFiles) {
             File sqlScript = PropertiesUtil.findConfigFile(sqlFile);
             if (sqlScript == null) {
                 System.err.println("Unable to find " + sqlFile);
@@ -193,52 +182,51 @@ public class DatabaseCreator {
             }
 
             System.out.println("========> Processing SQL file at " + sqlScript.getAbsolutePath());
-            Connection conn = TransactionLegacy.getStandaloneConnection();
-            try {
-                FileReader reader = null;
-                try {
-                    reader = new FileReader(sqlScript);
-                } catch (FileNotFoundException e) {
-                    System.err.println("Unable to read " + sqlFile + ": " + e.getMessage());
-                    System.exit(1);
-                }
+
+            try(Connection conn = TransactionLegacy.getStandaloneConnection();
+                FileReader reader = new FileReader(sqlScript);
+            ) {
                 if (!dryRun)
                     runScript(conn, reader, sqlFile, verbosity);
-            } finally {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    System.err.println("Unable to close DB connection: " + e.getMessage());
-                }
+            }catch (SQLException e)
+            {
+                System.err.println("Sql Exception:" + e.getMessage());
+                System.exit(1);
             }
+            catch (IOException e)
+            {
+                System.err.println("File IO Exception : " + e.getMessage());
+                System.exit(1);
+            }
+
         }
 
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
         try {
-        // Process db upgrade classes
-        for (String upgradeClass: upgradeClasses) {
-            System.out.println("========> Processing upgrade: " + upgradeClass);
-            Class<?> clazz = null;
-            try {
-                clazz = Class.forName(upgradeClass);
-                if (!SystemIntegrityChecker.class.isAssignableFrom(clazz)) {
-                    System.err.println("The class must be of SystemIntegrityChecker: " + clazz.getName());
+            // Process db upgrade classes
+            for (String upgradeClass : upgradeClasses) {
+                System.out.println("========> Processing upgrade: " + upgradeClass);
+                Class<?> clazz = null;
+                try {
+                    clazz = Class.forName(upgradeClass);
+                    if (!SystemIntegrityChecker.class.isAssignableFrom(clazz)) {
+                        System.err.println("The class must be of SystemIntegrityChecker: " + clazz.getName());
+                        System.exit(1);
+                    }
+                    SystemIntegrityChecker checker = (SystemIntegrityChecker)clazz.newInstance();
+                    checker.check();
+                } catch (ClassNotFoundException e) {
+                    System.err.println("Unable to find " + upgradeClass + ": " + e.getMessage());
+                    System.exit(1);
+                } catch (InstantiationException e) {
+                    System.err.println("Unable to instantiate " + upgradeClass + ": " + e.getMessage());
+                    System.exit(1);
+                } catch (IllegalAccessException e) {
+                    System.err.println("Unable to access " + upgradeClass + ": " + e.getMessage());
                     System.exit(1);
                 }
-                SystemIntegrityChecker checker = (SystemIntegrityChecker)clazz.newInstance();
-                checker.check();
-            } catch (ClassNotFoundException e) {
-                System.err.println("Unable to find " + upgradeClass + ": " + e.getMessage());
-                System.exit(1);
-            } catch (InstantiationException e) {
-                System.err.println("Unable to instantiate " + upgradeClass + ": " + e.getMessage());
-                System.exit(1);
-            } catch (IllegalAccessException e) {
-                System.err.println("Unable to access " + upgradeClass + ": " + e.getMessage());
-                System.exit(1);
-            }
 
-         }
+            }
         } finally {
             txn.close();
         }

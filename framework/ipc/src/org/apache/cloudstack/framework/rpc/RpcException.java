@@ -19,17 +19,17 @@
 package org.apache.cloudstack.framework.rpc;
 
 public class RpcException extends RuntimeException {
-	private static final long serialVersionUID = -3164514701087423787L;
+    private static final long serialVersionUID = -3164514701087423787L;
 
-	public RpcException() {
-		super();
-	}
-	
-	public RpcException(String message) {
-		super(message);
-	}
-	
-	public RpcException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    public RpcException() {
+        super();
+    }
+
+    public RpcException(String message) {
+        super(message);
+    }
+
+    public RpcException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,8 +15,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api;
+//
 
+package com.cloud.agent.api;
 
 public class ValidateSnapshotAnswer extends Answer {
     private String expectedSnapshotBackupUuid;
@@ -26,7 +28,8 @@ public class ValidateSnapshotAnswer extends Answer {
 
     }
 
-    public ValidateSnapshotAnswer(ValidateSnapshotCommand cmd, boolean success, String result, String expectedSnapshotBackupUuid, String actualSnapshotBackupUuid, String actualSnapshotUuid) {
+    public ValidateSnapshotAnswer(ValidateSnapshotCommand cmd, boolean success, String result, String expectedSnapshotBackupUuid, String actualSnapshotBackupUuid,
+            String actualSnapshotUuid) {
         super(cmd, success, result);
         this.expectedSnapshotBackupUuid = expectedSnapshotBackupUuid;
         this.actualSnapshotBackupUuid = actualSnapshotBackupUuid;

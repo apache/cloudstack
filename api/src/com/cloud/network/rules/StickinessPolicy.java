@@ -18,6 +18,7 @@ package com.cloud.network.rules;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -25,7 +26,7 @@ import com.cloud.utils.Pair;
 
 /**
  */
-public interface StickinessPolicy extends InternalIdentity, Identity {
+public interface StickinessPolicy extends InternalIdentity, Identity, Displayable {
 
     public long getLoadBalancerId();
 
@@ -38,5 +39,8 @@ public interface StickinessPolicy extends InternalIdentity, Identity {
     public boolean isRevoke();
 
     public List<Pair<String, String>> getParams(); /* get params in Map <string,String> format */
+
+    @Override
+    boolean isDisplay();
 
 }

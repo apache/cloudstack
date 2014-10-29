@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,30 +15,30 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api.baremetal;
 
 import com.cloud.agent.api.Command;
 
 public class IpmISetBootDevCommand extends Command {
-	public enum BootDev {
-		pxe(),
-		disk(),
-		cdrom(),
-	}
+    public enum BootDev {
+        pxe(), disk(), cdrom(),
+    }
 
-	BootDev bootDev;
+    BootDev bootDev;
 
-	public BootDev getBootDev() {
-		return bootDev;
-	}
+    public BootDev getBootDev() {
+        return bootDev;
+    }
 
-	public IpmISetBootDevCommand(BootDev dev) {
-		bootDev = dev;
-	}
+    public IpmISetBootDevCommand(BootDev dev) {
+        bootDev = dev;
+    }
 
-	@Override
-	public boolean executeInSequence() {
-		return true;
-	}
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 
 }

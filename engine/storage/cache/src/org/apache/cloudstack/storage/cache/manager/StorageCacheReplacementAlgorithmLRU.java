@@ -17,6 +17,7 @@
  * under the License.
  */
 package org.apache.cloudstack.storage.cache.manager;
+
 import java.util.Calendar;
 import java.util.Date;
 
@@ -40,8 +41,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-
-
 public class StorageCacheReplacementAlgorithmLRU implements StorageCacheReplacementAlgorithm {
     @Inject
     ConfigurationDao configDao;
@@ -60,7 +59,7 @@ public class StorageCacheReplacementAlgorithmLRU implements StorageCacheReplacem
 
     @PostConstruct
     public void initialize() {
-        /* Avoid using configDao at this time, we can't be sure that the database is already upgraded 
+        /* Avoid using configDao at this time, we can't be sure that the database is already upgraded
          * and there might be fatal errors when using a dao.
          */
         //unusedTimeInterval = NumbersUtil.parseInt(configDao.getValue(Config.StorageCacheReplacementLRUTimeInterval.key()), 30);
@@ -82,10 +81,10 @@ public class StorageCacheReplacementAlgorithmLRU implements StorageCacheReplacem
 
         QueryBuilder<TemplateDataStoreVO> sc = QueryBuilder.create(TemplateDataStoreVO.class);
         sc.and(sc.entity().getLastUpdated(), SearchCriteria.Op.LT, bef);
-        sc.and(sc.entity().getState(), SearchCriteria.Op.EQ,ObjectInDataStoreStateMachine.State.Ready);
-        sc.and(sc.entity().getDataStoreId(), SearchCriteria.Op.EQ,store.getId());
-        sc.and(sc.entity().getDataStoreRole(), SearchCriteria.Op.EQ,store.getRole());
-        sc.and(sc.entity().getRefCnt(), SearchCriteria.Op.EQ,0);
+        sc.and(sc.entity().getState(), SearchCriteria.Op.EQ, ObjectInDataStoreStateMachine.State.Ready);
+        sc.and(sc.entity().getDataStoreId(), SearchCriteria.Op.EQ, store.getId());
+        sc.and(sc.entity().getDataStoreRole(), SearchCriteria.Op.EQ, store.getRole());
+        sc.and(sc.entity().getRefCnt(), SearchCriteria.Op.EQ, 0);
         TemplateDataStoreVO template = sc.find();
         if (template != null) {
             return templateFactory.getTemplate(template.getTemplateId(), store);
@@ -93,9 +92,9 @@ public class StorageCacheReplacementAlgorithmLRU implements StorageCacheReplacem
 
         QueryBuilder<VolumeDataStoreVO> volSc = QueryBuilder.create(VolumeDataStoreVO.class);
         volSc.and(volSc.entity().getLastUpdated(), SearchCriteria.Op.LT, bef);
-        volSc.and(volSc.entity().getState(), SearchCriteria.Op.EQ,ObjectInDataStoreStateMachine.State.Ready);
-        volSc.and(volSc.entity().getDataStoreId(), SearchCriteria.Op.EQ,store.getId());
-        volSc.and(volSc.entity().getRefCnt(), SearchCriteria.Op.EQ,0);
+        volSc.and(volSc.entity().getState(), SearchCriteria.Op.EQ, ObjectInDataStoreStateMachine.State.Ready);
+        volSc.and(volSc.entity().getDataStoreId(), SearchCriteria.Op.EQ, store.getId());
+        volSc.and(volSc.entity().getRefCnt(), SearchCriteria.Op.EQ, 0);
         VolumeDataStoreVO volume = volSc.find();
         if (volume != null) {
             return volumeFactory.getVolume(volume.getVolumeId(), store);
@@ -103,10 +102,10 @@ public class StorageCacheReplacementAlgorithmLRU implements StorageCacheReplacem
 
         QueryBuilder<SnapshotDataStoreVO> snapshotSc = QueryBuilder.create(SnapshotDataStoreVO.class);
         snapshotSc.and(snapshotSc.entity().getLastUpdated(), SearchCriteria.Op.LT, bef);
-        snapshotSc.and(snapshotSc.entity().getState(), SearchCriteria.Op.EQ,ObjectInDataStoreStateMachine.State.Ready);
-        snapshotSc.and(snapshotSc.entity().getDataStoreId(), SearchCriteria.Op.EQ,store.getId());
-        snapshotSc.and(snapshotSc.entity().getRole(), SearchCriteria.Op.EQ,store.getRole());
-        snapshotSc.and(snapshotSc.entity().getRefCnt(), SearchCriteria.Op.EQ,0);
+        snapshotSc.and(snapshotSc.entity().getState(), SearchCriteria.Op.EQ, ObjectInDataStoreStateMachine.State.Ready);
+        snapshotSc.and(snapshotSc.entity().getDataStoreId(), SearchCriteria.Op.EQ, store.getId());
+        snapshotSc.and(snapshotSc.entity().getRole(), SearchCriteria.Op.EQ, store.getRole());
+        snapshotSc.and(snapshotSc.entity().getRefCnt(), SearchCriteria.Op.EQ, 0);
         SnapshotDataStoreVO snapshot = snapshotSc.find();
         if (snapshot != null) {
             return snapshotFactory.getSnapshot(snapshot.getSnapshotId(), store);

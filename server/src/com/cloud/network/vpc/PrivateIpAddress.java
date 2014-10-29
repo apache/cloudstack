@@ -16,9 +16,7 @@
 // under the License.
 package com.cloud.network.vpc;
 
-
-
-public class PrivateIpAddress implements PrivateIp{
+public class PrivateIpAddress implements PrivateIp {
     String broadcastUri;
     String gateway;
     String netmask;
@@ -26,7 +24,7 @@ public class PrivateIpAddress implements PrivateIp{
     String macAddress;
     long networkId;
     boolean sourceNat;
-    
+
     /**
      * @param privateIp
      * @param broadcastUri
@@ -70,7 +68,7 @@ public class PrivateIpAddress implements PrivateIp{
     public String getMacAddress() {
         return macAddress;
     }
-    
+
     @Override
     public long getNetworkId() {
         return networkId;

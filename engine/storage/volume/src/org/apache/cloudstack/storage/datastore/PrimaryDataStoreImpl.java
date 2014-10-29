@@ -20,17 +20,32 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.*;
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -52,6 +67,7 @@ import com.cloud.utils.storage.encoding.EncodingType;
 
 public class PrimaryDataStoreImpl implements PrimaryDataStore {
     private static final Logger s_logger = Logger.getLogger(PrimaryDataStoreImpl.class);
+
     protected PrimaryDataStoreDriver driver;
     protected StoragePoolVO pdsv;
     @Inject
@@ -71,6 +87,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Inject
     private VolumeDao volumeDao;
+    private Map<String, String> _details;
 
     public PrimaryDataStoreImpl() {
 
@@ -82,8 +99,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
         this.provider = provider;
     }
 
-    public static PrimaryDataStoreImpl createDataStore(StoragePoolVO pdsv, PrimaryDataStoreDriver driver,
-            DataStoreProvider provider) {
+    public static PrimaryDataStoreImpl createDataStore(StoragePoolVO pdsv, PrimaryDataStoreDriver driver, DataStoreProvider provider) {
         PrimaryDataStoreImpl dataStore = ComponentContext.inject(PrimaryDataStoreImpl.class);
         dataStore.configure(pdsv, driver, provider);
         return dataStore;
@@ -122,15 +138,24 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     }
 
     @Override
+    public void setDetails(Map<String, String> details) {
+        _details = details;
+    }
+
+    @Override
+    public Map<String, String> getDetails() {
+        return _details;
+    }
+
+    @Override
     public String getUri() {
-        String path = pdsv.getPath();
-        path.replaceFirst("/*", "");
+        String path = pdsv.getPath().replaceFirst("/*", "");
         StringBuilder builder = new StringBuilder();
         builder.append(pdsv.getPoolType());
         builder.append("://");
         builder.append(pdsv.getHostAddress());
         builder.append(File.separator);
-        builder.append(pdsv.getPath());
+        builder.append(path);
         builder.append(File.separator);
         builder.append("?" + EncodingType.ROLE + "=" + getRole());
         builder.append("&" + EncodingType.STOREUUID + "=" + pdsv.getUuid());
@@ -210,10 +235,15 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     }
 
     @Override
+    public boolean isManaged() {
+        return pdsv.isManaged();
+    }
+
+    @Override
     public DataObject create(DataObject obj) {
         // create template on primary storage
-        if (obj.getType() == DataObjectType.TEMPLATE) {
-            try{
+        if (obj.getType() == DataObjectType.TEMPLATE && !isManaged()) {
+            try {
                 String templateIdPoolIdString = "templateId:" + obj.getId() + "poolId:" + getId();
                 VMTemplateStoragePoolVO templateStoragePoolRef;
                 GlobalLock lock = GlobalLock.getInternLock(templateIdPoolIdString);
@@ -222,8 +252,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
                     return null;
                 }
                 try {
-                    templateStoragePoolRef = templatePoolDao.findByPoolTemplate(getId(),
-                            obj.getId());
+                    templateStoragePoolRef = templatePoolDao.findByPoolTemplate(getId(), obj.getId());
                     if (templateStoragePoolRef == null) {
 
                         if (s_logger.isDebugEnabled()) {
@@ -233,22 +262,22 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
                         templateStoragePoolRef = templatePoolDao.persist(templateStoragePoolRef);
                     }
                 } catch (Throwable t) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Failed to insert (" + templateIdPoolIdString + ") to template_spool_ref", t);
+                    }
+                    templateStoragePoolRef = templatePoolDao.findByPoolTemplate(getId(), obj.getId());
+                    if (templateStoragePoolRef == null) {
+                        throw new CloudRuntimeException("Failed to create template storage pool entry");
+                    } else {
                         if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Failed to insert (" + templateIdPoolIdString +  ") to template_spool_ref", t);
+                            s_logger.debug("Another thread already inserts " + templateStoragePoolRef.getId() + " to template_spool_ref", t);
                         }
-                        templateStoragePoolRef = templatePoolDao.findByPoolTemplate(getId(), obj.getId());
-                        if (templateStoragePoolRef == null) {
-                            throw new CloudRuntimeException("Failed to create template storage pool entry");
-                        } else {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Another thread already inserts " + templateStoragePoolRef.getId() + " to template_spool_ref", t);
-                            }
-                        }
-                }finally {
-                        lock.unlock();
-                        lock.releaseRef();
+                    }
+                } finally {
+                    lock.unlock();
+                    lock.releaseRef();
                 }
-            } catch (Exception e){
+            } catch (Exception e) {
                 s_logger.debug("Caught exception ", e);
             }
         } else if (obj.getType() == DataObjectType.SNAPSHOT) {
@@ -357,7 +386,13 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public boolean isInMaintenance() {
-        return getStatus() == StoragePoolStatus.PrepareForMaintenance || getStatus() == StoragePoolStatus.Maintenance || getStatus() == StoragePoolStatus.ErrorInMaintenance || getRemoved() != null;
+        return getStatus() == StoragePoolStatus.PrepareForMaintenance || getStatus() == StoragePoolStatus.Maintenance ||
+            getStatus() == StoragePoolStatus.ErrorInMaintenance || getRemoved() != null;
+    }
+
+    @Override
+    public HypervisorType getHypervisor() {
+       return pdsv.getHypervisor();
     }
 
     @Override

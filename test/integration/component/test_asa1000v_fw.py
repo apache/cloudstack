@@ -18,15 +18,15 @@
 """ Cisco ASA1000v external firewall
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
-import datetime
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (NetworkOffering,
+                             PhysicalNetwork,
+                             VNMC,
+                             ASA1000V,
+                             Cluster)
+from marvin.lib.common import get_zone
 
 
 class Services:
@@ -101,7 +101,7 @@ class TestASASetup(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
 
-        self.zone = get_zone(self.apiclient, self.services)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.physicalnetworks = PhysicalNetwork.list(self.apiclient, zoneid=self.zone.id)
         self.assertNotEqual(len(self.physicalnetworks), 0, "Check if the list physical network API returns a non-empty response")
         self.clusters = Cluster.list(self.apiclient, hypervisor='VMware')

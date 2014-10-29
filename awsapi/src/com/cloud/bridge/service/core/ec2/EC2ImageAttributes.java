@@ -20,53 +20,47 @@ import java.util.List;
 
 public class EC2ImageAttributes {
 
-    private String  imageId;
-    private String  description;
+    private String imageId;
+    private String description;
     private boolean isPublic;
-    private List<String>  accountNamesWithLaunchPermission;
-    private String  domainId;
-    
-    public enum ImageAttribute{
-        description,
-        launchPermission,
-        kernel,
-        ramdisk,
-        productCodes,
-        blockDeviceMapping
+    private List<String> accountNamesWithLaunchPermission;
+    private String domainId;
+
+    public enum ImageAttribute {
+        description, launchPermission, kernel, ramdisk, productCodes, blockDeviceMapping
     };
-    
+
     public EC2ImageAttributes() {
-        imageId          = null;
+        imageId = null;
         description = null;
-        isPublic    = false;
-        accountNamesWithLaunchPermission= null;
-        domainId    = null;
+        isPublic = false;
+        accountNamesWithLaunchPermission = null;
+        domainId = null;
     }
-    
-    public void setImageId( String imageId ) {
+
+    public void setImageId(String imageId) {
         this.imageId = imageId;
     }
-    
+
     public String getImageId() {
         return this.imageId;
     }
-    
-    public void setDescription( String description ) {
+
+    public void setDescription(String description) {
         this.description = description;
     }
-    
+
     public String getDescription() {
         return this.description;
     }
-    
-    public void setIsPublic( boolean isPublic ) {
+
+    public void setIsPublic(boolean isPublic) {
         this.isPublic = isPublic;
     }
-    
+
     public boolean getIsPublic() {
         return this.isPublic;
     }
-
 
     public String getDomainId() {
         return domainId;

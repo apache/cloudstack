@@ -17,49 +17,49 @@
 
 package org.apache.cloudstack.network.contrail.management;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.cloudstack.api.Identity;
-
 import net.juniper.contrail.api.ApiObjectBase;
 
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.Identity;
 
 public class DBSyncGeneric {
 
     private static final Logger s_logger = Logger.getLogger(DBSyncGeneric.class);
 
     /* for each synchronization VNC class, following methods
-     * needs to be defined. 
+     * needs to be defined.
      * For e.q : VirtualNetwork class should have createMethodPrefix+"VirtualNetwork" etc
-     */ 
+     */
     private final String createMethodPrefix = "create";
     private final String deleteMethodPrefix = "delete";
     private final String compareMethodPrefix = "compare";
     private final String filterMethodPrefix = "filter";
     private final String equalMethodPrefix = "equal";
     private final String syncMethodPrefix = "sync";
-    /* default db, vnc comparators are implemented based on uuid values, 
-     * if user defined comparators are required, then only add these methods 
+    /* default db, vnc comparators are implemented based on uuid values,
+     * if user defined comparators are required, then only add these methods
      */
     private final String dbComparatorMethodPrefix = "dbComparator";
     private final String vncComparatorMethodPrefix = "vncComparator";
 
-    /* sync methods implementation object, if implemented in seperate class 
+    /* sync methods implementation object, if implemented in seperate class
      * set the scope object
      */
     private Object _scope;
     private HashMap<String, Method> _methodMap;
-    private short  _syncMode;
+    private short _syncMode;
 
     public static final short SYNC_MODE_UPDATE = 0;
     public static final short SYNC_MODE_CHECK = 1;
-    
+
     public DBSyncGeneric(Object scope) {
         this._scope = scope;
         this._syncMode = SYNC_MODE_UPDATE;
@@ -75,11 +75,11 @@ public class DBSyncGeneric {
     public void setSyncMode(short mode) {
         this._syncMode = mode;
     }
-    
+
     public short getSyncMode() {
         return this._syncMode;
     }
-    
+
     public void setScope(Object scope) {
         this._scope = scope;
         setMethodMap();
@@ -89,7 +89,7 @@ public class DBSyncGeneric {
         _methodMap = new HashMap<String, Method>();
         Method methods[] = _scope.getClass().getMethods();
         for (int i = 0; i < methods.length; i++) {
-            _methodMap.put(methods[i].getName(),  methods[i]); 
+            _methodMap.put(methods[i].getName(), methods[i]);
         }
     }
 
@@ -108,35 +108,39 @@ public class DBSyncGeneric {
     public Boolean sync(Class<?> cls, Object... parameters) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         String syncMethod = syncMethodPrefix + getClassName(cls);
         Method method = _methodMap.get(syncMethod);
-        if (method == null) throw new NoSuchMethodException(getClassName(_scope.getClass()) + ":" + syncMethod);
+        if (method == null)
+            throw new NoSuchMethodException(getClassName(_scope.getClass()) + ":" + syncMethod);
         return (Boolean)method.invoke(_scope, parameters);
     }
 
     private void create(Class<?> cls, Object... parameters) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         String createMethod = createMethodPrefix + getClassName(cls);
         Method method = _methodMap.get(createMethod);
-        if (method == null) throw new NoSuchMethodException(getClassName(_scope.getClass()) + ":" + createMethod);
+        if (method == null)
+            throw new NoSuchMethodException(getClassName(_scope.getClass()) + ":" + createMethod);
         method.invoke(_scope, parameters);
     }
 
     private void delete(Class<?> cls, Object... parameters) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         String deleteMethod = deleteMethodPrefix + getClassName(cls);
         Method method = _methodMap.get(deleteMethod);
-        if (method == null) throw new NoSuchMethodException(getClassName(_scope.getClass()) + ":" + deleteMethod);
+        if (method == null)
+            throw new NoSuchMethodException(getClassName(_scope.getClass()) + ":" + deleteMethod);
         method.invoke(_scope, parameters);
     }
 
     private Integer compare(Class<?> cls, Object... parameters) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         String compareMethod = compareMethodPrefix + getClassName(cls);
         Method method = _methodMap.get(compareMethod);
-        if (method == null) throw new NoSuchMethodException(getClassName(_scope.getClass()) + ":" + compareMethod);
+        if (method == null)
+            throw new NoSuchMethodException(getClassName(_scope.getClass()) + ":" + compareMethod);
         return (Integer)method.invoke(_scope, parameters);
     }
 
     private Boolean filter(Class<?> cls, Object... parameters) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         String filterMethod = filterMethodPrefix + getClassName(cls);
         Method method = _methodMap.get(filterMethod);
-        if (method == null) { 
+        if (method == null) {
             s_logger.debug("Method not implemented: " + getClassName(_scope.getClass()) + ":" + filterMethod);
             return false;
         }
@@ -146,9 +150,9 @@ public class DBSyncGeneric {
     private Boolean equal(Class<?> cls, Object... parameters) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         String equalMethod = equalMethodPrefix + getClassName(cls);
         Method method = _methodMap.get(equalMethod);
-        if (method == null) { 
+        if (method == null) {
             s_logger.debug("Method not implemented: " + getClassName(_scope.getClass()) + ":" + equalMethod);
-            return true; 
+            return true;
         }
         return (Boolean)method.invoke(_scope, parameters);
     }
@@ -157,7 +161,8 @@ public class DBSyncGeneric {
     private Comparator dbComparator(Class<?> cls, Object... parameters) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         String dbComparatorMethod = dbComparatorMethodPrefix + getClassName(cls);
         Method method = _methodMap.get(dbComparatorMethod);
-        if (method == null) return dbComparatorDefault();
+        if (method == null)
+            return dbComparatorDefault();
         return (Comparator)method.invoke(_scope, parameters);
     }
 
@@ -165,14 +170,15 @@ public class DBSyncGeneric {
     private Comparator vncComparator(Class<?> cls, Object... parameters) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         String vncComparatorMethod = vncComparatorMethodPrefix + getClassName(cls);
         Method method = _methodMap.get(vncComparatorMethod);
-        if (method == null) return vncComparatorDefault();
+        if (method == null)
+            return vncComparatorDefault();
         return (Comparator)method.invoke(_scope, parameters);
     }
-
 
     @SuppressWarnings("rawtypes")
     public Comparator dbComparatorDefault() {
         Comparator comparator = new Comparator<Identity>() {
+            @Override
             public int compare(Identity u1, Identity u2) {
                 return u1.getUuid().compareTo(u2.getUuid());
             }
@@ -183,13 +189,13 @@ public class DBSyncGeneric {
     @SuppressWarnings("rawtypes")
     public Comparator vncComparatorDefault() {
         Comparator comparator = new Comparator<ApiObjectBase>() {
+            @Override
             public int compare(ApiObjectBase u1, ApiObjectBase u2) {
                 return u1.getUuid().compareTo(u2.getUuid());
             }
         };
         return comparator;
     }
-
 
     public static class SyncStats {
         public int create;
@@ -198,16 +204,21 @@ public class DBSyncGeneric {
         public int diff;
         public int filter;
         public StringBuffer logMsg;
+
         SyncStats() {
             logMsg = new StringBuffer();
         }
+
         void log(String str) {
             logMsg.append(str);
             logMsg.append('\n');
         }
+
         public boolean isSynchronized() {
             return create == 0 && delete == 0 && diff == 0;
         }
+
+        @Override
         public String toString() {
             StringBuffer str = new StringBuffer();
             str.append("create: " + create);
@@ -220,12 +231,12 @@ public class DBSyncGeneric {
             return str.toString();
         }
     }
-    
-    public void syncCollections(Class<?> cls, Collection<?> lhsList, Collection<?> rhsList, boolean modifyMode,
-            SyncStats stats) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+
+    public void syncCollections(Class<?> cls, Collection<?> lhsList, Collection<?> rhsList, boolean modifyMode, SyncStats stats) throws InvocationTargetException,
+        IllegalAccessException, NoSuchMethodException {
         java.util.Iterator<?> lhsIter = lhsList.iterator();
-        java.util.Iterator<?> rhsIter =  rhsList.iterator();
-      
+        java.util.Iterator<?> rhsIter = rhsList.iterator();
+
         Object lhsItem = lhsIter.hasNext() ? lhsIter.next() : null;
         Object rhsItem = rhsIter.hasNext() ? rhsIter.next() : null;
 
@@ -250,7 +261,7 @@ public class DBSyncGeneric {
                 }
                 rhsItem = rhsIter.hasNext() ? rhsIter.next() : null;
             } else {
-                // Equal 
+                // Equal
                 if (this.equal(cls, lhsItem, rhsItem, stats.logMsg)) {
                     stats.equal++;
                 } else {
@@ -264,7 +275,7 @@ public class DBSyncGeneric {
         while (lhsItem != null) {
             // Create
             if (modifyMode) {
-               this.create(cls, lhsItem, stats.logMsg);
+                this.create(cls, lhsItem, stats.logMsg);
             }
             stats.create++;
             lhsItem = lhsIter.hasNext() ? lhsIter.next() : null;
@@ -283,7 +294,7 @@ public class DBSyncGeneric {
             rhsItem = rhsIter.hasNext() ? rhsIter.next() : null;
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     public boolean syncGeneric(Class<?> cls, List<?> dbList, List<?> vncList) throws Exception {
         SyncStats stats = new SyncStats();
@@ -295,7 +306,7 @@ public class DBSyncGeneric {
         java.util.Collections.sort(vncList, this.vncComparator(cls));
 
         syncCollections(cls, dbList, vncList, _syncMode != SYNC_MODE_CHECK, stats);
-        
+
         if (_syncMode != SYNC_MODE_CHECK) {
             s_logger.debug("Sync stats<" + getClassName(cls) + ">:  " + stats.toString());
             s_logger.debug(stats.logMsg);
@@ -306,17 +317,16 @@ public class DBSyncGeneric {
                 s_logger.debug("DB and VNC objects out of sync is detected : " + getClassName(cls));
                 s_logger.debug("Log message: \n" + stats.logMsg);
             } else {
-                s_logger.debug("DB and VNC objects are in sync : " + getClassName(cls));            
+                s_logger.debug("DB and VNC objects are in sync : " + getClassName(cls));
             }
         }
-        
+
         /* return value of this method indicates state of the db & vnc before sync
-         * false: out of sync, true: in sync; 
+         * false: out of sync, true: in sync;
          * it does not indicate whether sync operation is performed or not;
-         * Actual sync is done only if _syncMode is UPDATE 
+         * Actual sync is done only if _syncMode is UPDATE
          */
         return stats.isSynchronized();
     }
 
 }
-

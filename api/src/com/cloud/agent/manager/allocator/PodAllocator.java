@@ -28,6 +28,6 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public interface PodAllocator extends Adapter {
     Pair<Pod, Long> allocateTo(VirtualMachineTemplate template, ServiceOffering offering, DataCenter dc, long userId, Set<Long> avoids);
-    
+
     Pod allocateTo(VirtualMachineProfile vm, DataCenter dc, Set<? extends Pod> avoids);
 }

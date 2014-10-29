@@ -25,7 +25,7 @@
         // UI actions to appear in dialog
         autoscaleActions: {
             enable: {
-                label: 'Enable Autoscale',
+                label: 'label.enable.autoscale',
                 action: function(args) {
                     $.ajax({
                         url: createURL('enableAutoScaleVmGroup'),
@@ -53,7 +53,7 @@
                 }
             },
             disable: {
-                label: 'Disable Autoscale',
+                label: 'label.disable.autoscale',
                 action: function(args) {
                     $.ajax({
                         url: createURL('disableAutoScaleVmGroup'),
@@ -328,7 +328,7 @@
                 },
 
                 minInstance: {
-                    label: 'Min Instances',
+                    label: 'label.min.instances',
                     defaultValue: '3',
                     validation: {
                         required: true,
@@ -337,7 +337,7 @@
                 },
 
                 maxInstance: {
-                    label: 'Max Instances',
+                    label: 'label.max.instances',
                     defaultValue: '10',
                     validation: {
                         required: true,
@@ -349,10 +349,10 @@
             bottomFields: {
                 isAdvanced: {
                     isBoolean: true,
-                    label: 'Show advanced settings'
+                    label: 'label.show.advanced.settings'
                 },
                 interval: {
-                    label: 'Polling Interval (in sec)',
+                    label: 'label.polling.interval.sec',
                     defaultValue: '30',
                     validation: {
                         required: true,
@@ -361,7 +361,7 @@
                 },
 
                 quietTime: {
-                    label: 'Quiet Time (in sec)',
+                    label: 'label.quiet.time.sec',
                     defaultValue: '300',
                     validation: {
                         required: true,
@@ -370,7 +370,7 @@
                 },
 
                 destroyVMgracePeriod: {
-                    label: 'Destroy VM Grace Period',
+                    label: 'label.destroy.vm.graceperiod',
                     defaultValue: '30',
                     isHidden: true,
                     dependsOn: 'isAdvanced',
@@ -442,7 +442,7 @@
                 snmpCommunity: {
                     isHidden: true,
                     dependsOn: 'isAdvanced',
-                    label: 'SNMP Community',
+                    label: 'label.SNMP.community',
                     defaultValue: 'public',
                     validation: {
                         required: true
@@ -452,7 +452,7 @@
                 snmpPort: {
                     isHidden: true,
                     dependsOn: 'isAdvanced',
-                    label: 'SNMP Port',
+                    label: 'label.SNMP.port',
                     defaultValue: '161',
                     validation: {
                         required: true,
@@ -463,7 +463,7 @@
                 username: {
                     isHidden: true,
                     dependsOn: 'isAdvanced',
-                    label: 'User',
+                    label: 'label.user',
                     select: function(args) {
                         var items = [];
                         if (args.context.originalAutoscaleData == null) { //new LB rule
@@ -532,13 +532,13 @@
             },
             scaleUpPolicy: {
                 title: 'ScaleUp Policy',
-                label: 'SCALE UP POLICY',
+                label: 'label.scale.up.policy',
                 noSelect: true,
                 noHeaderActionsColumn: true,
                 ignoreEmptyFields: true,
                 fields: {
                     'counterid': {
-                        label: 'Counter',
+                        label: 'label.counter',
                         select: function(args) {
                             $.ajax({
                                 url: createURL("listCounters"),
@@ -560,7 +560,7 @@
                         }
                     },
                     'relationaloperator': {
-                        label: 'Operator',
+                        label: 'label.operator',
                         select: function(args) {
                             args.response.success({
                                 data: [{
@@ -584,7 +584,7 @@
                     },
                     'threshold': {
                         edit: true,
-                        label: 'Threshold'
+                        label: 'label.threshold'
                     },
                     'add-scaleUpcondition': {
                         label: 'label.add',
@@ -642,7 +642,7 @@
                 ignoreEmptyFields: true,
                 fields: {
                     'counterid': {
-                        label: 'Counter',
+                        label: 'label.counter',
                         select: function(args) {
                             $.ajax({
                                 url: createURL("listCounters"),
@@ -664,7 +664,7 @@
                         }
                     },
                     'relationaloperator': {
-                        label: 'Operator',
+                        label: 'label.operator',
                         select: function(args) {
                             args.response.success({
                                 data: [{
@@ -688,7 +688,7 @@
                     },
                     'threshold': {
                         edit: true,
-                        label: 'Threshold'
+                        label: 'label.threshold'
                     },
                     'add-scaleDowncondition': {
                         label: 'label.add',
@@ -1270,7 +1270,7 @@
                     if ('vpc' in args.context) { //from VPC section
                         if (args.data.tier == null) {
                             cloudStack.dialog.notice({
-                                message: 'Tier is required'
+                                message: 'message.tier.required'
                             });
                             return;
                         }
@@ -1429,7 +1429,7 @@
 
                         if (template && template[0].hypervisor === 'VMware') {
                             cloudStack.dialog.confirm({
-                                message: 'For VMware-based VMs, please read the dynamic scaling section in the admin guide before scaling. Would you like to continue?,',
+                                message: 'message.admin.guide.read',
                                 action: function() {
                                     //*** API calls start!!! ********
                                     scaleUp(args);

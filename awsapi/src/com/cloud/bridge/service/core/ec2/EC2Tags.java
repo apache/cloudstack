@@ -25,20 +25,19 @@ public class EC2Tags {
     private List<EC2TagTypeId> resourceTypeSet = new ArrayList<EC2TagTypeId>();
     private List<EC2TagKeyValue> resourceTagSet = new ArrayList<EC2TagKeyValue>();
 
-    public void addResourceType( EC2TagTypeId param ) {
-        resourceTypeSet.add( param );
+    public void addResourceType(EC2TagTypeId param) {
+        resourceTypeSet.add(param);
     }
 
     public EC2TagTypeId[] getResourceTypeSet() {
         return resourceTypeSet.toArray(new EC2TagTypeId[0]);
     }
 
-    public void addResourceTag( EC2TagKeyValue param ) {
-        resourceTagSet.add( param );
+    public void addResourceTag(EC2TagKeyValue param) {
+        resourceTagSet.add(param);
     }
 
     public EC2TagKeyValue[] getResourceTags() {
         return resourceTagSet.toArray(new EC2TagKeyValue[0]);
     }
 }
-

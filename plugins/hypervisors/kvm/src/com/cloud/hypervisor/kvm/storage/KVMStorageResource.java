@@ -33,19 +33,20 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 
 public class KVMStorageResource {
     private LibvirtComputingResource resource;
+
     public KVMStorageResource(LibvirtComputingResource resource) {
         this.resource = resource;
     }
-    
+
     public Answer handleStorageCommands(StorageSubSystemCommand command) {
         if (command instanceof CopyCommand) {
             return this.execute((CopyCommand)command);
         } else if (command instanceof AttachPrimaryDataStoreCmd) {
             return this.execute((AttachPrimaryDataStoreCmd)command);
         } else if (command instanceof CreatePrimaryDataStoreCmd) {
-            return execute((CreatePrimaryDataStoreCmd) command);
+            return execute((CreatePrimaryDataStoreCmd)command);
         } else if (command instanceof CreateObjectCommand) {
-            return execute((CreateObjectCommand) command);
+            return execute((CreateObjectCommand)command);
         } else if (command instanceof DeleteCommand) {
             return execute((DeleteCommand)command);
         } else if (command instanceof AttachCommand) {
@@ -55,33 +56,33 @@ public class KVMStorageResource {
         }
         return new Answer((Command)command, false, "not implemented yet");
     }
-    
+
     protected Answer execute(CopyCommand cmd) {
-        return new Answer((Command)cmd, false, "not implemented yet");
+        return new Answer(cmd, false, "not implemented yet");
     }
-    
+
     protected Answer execute(AttachPrimaryDataStoreCmd cmd) {
-        return new Answer((Command)cmd, false, "not implemented yet");
+        return new Answer(cmd, false, "not implemented yet");
     }
-    
+
     protected Answer execute(CreatePrimaryDataStoreCmd cmd) {
-        return new Answer((Command)cmd, false, "not implemented yet");
+        return new Answer(cmd, false, "not implemented yet");
     }
-    
+
     protected Answer execute(CreateObjectCommand cmd) {
-        return new Answer((Command)cmd, false, "not implemented yet");
+        return new Answer(cmd, false, "not implemented yet");
     }
-    
+
     protected Answer execute(DeleteCommand cmd) {
-        return new Answer((Command)cmd, false, "not implemented yet");
+        return new Answer(cmd, false, "not implemented yet");
     }
-    
+
     protected Answer execute(AttachCommand cmd) {
-        return new Answer((Command)cmd, false, "not implemented yet");
+        return new Answer(cmd, false, "not implemented yet");
     }
-    
+
     protected Answer execute(DettachCommand cmd) {
-        return new Answer((Command)cmd, false, "not implemented yet");
+        return new Answer(cmd, false, "not implemented yet");
     }
-    
+
 }

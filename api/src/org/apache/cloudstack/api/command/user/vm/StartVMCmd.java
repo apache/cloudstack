@@ -16,18 +16,22 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -39,8 +43,10 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "startVirtualMachine", responseObject = UserVmResponse.class, description = "Starts a virtual machine.")
+@APICommand(name = "startVirtualMachine", responseObject = UserVmResponse.class, description = "Starts a virtual machine.", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class StartVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StartVMCmd.class.getName());
 
@@ -49,14 +55,20 @@ public class StartVMCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType=UserVmResponse.class,
             required = true, description = "The ID of the virtual machine")
     private Long id;
 
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class,
-            description="destination Host ID to deploy the VM to - parameter available for root admin only", since="3.0.1")
+    @Parameter(name = ApiConstants.HOST_ID,
+               type = CommandType.UUID,
+               entityType = HostResponse.class,
+               description = "destination Host ID to deploy the VM to - parameter available for root admin only",
+               since = "3.0.1")
     private Long hostId;
+
+    @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
+    private String deploymentPlanner;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -83,6 +95,10 @@ public class StartVMCmd extends BaseAsyncCmd {
         return "virtualmachine";
     }
 
+    public String getDeploymentPlanner() {
+        return deploymentPlanner;
+    }
+
     @Override
     public long getEntityOwnerId() {
         UserVm vm = _responseGenerator.findUserVmById(getId());
@@ -104,10 +120,12 @@ public class StartVMCmd extends BaseAsyncCmd {
         return "starting user vm: " + getId();
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.VirtualMachine;
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }
@@ -117,13 +135,13 @@ public class StartVMCmd extends BaseAsyncCmd {
         try {
             CallContext.current().setEventDetails("Vm Id: " + getId());
 
-            UserVm result ;
+            UserVm result;
             result = _userVmService.startVirtualMachine(this);
 
             if (result != null) {
-                UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
+                UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", result).get(0);
                 response.setResponseName(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start a vm");
             }
@@ -139,7 +157,7 @@ public class StartVMCmd extends BaseAsyncCmd {
         } catch (InsufficientCapacityException ex) {
             StringBuilder message = new StringBuilder(ex.getMessage());
             if (ex instanceof InsufficientServerCapacityException) {
-                if (((InsufficientServerCapacityException) ex).isAffinityApplied()) {
+                if (((InsufficientServerCapacityException)ex).isAffinityApplied()) {
                     message.append(", Please check the affinity groups provided, there may not be sufficient capacity to follow them");
                 }
             }

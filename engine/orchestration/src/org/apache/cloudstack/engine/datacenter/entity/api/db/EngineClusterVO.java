@@ -43,57 +43,57 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
 
 @Entity
-@Table(name="cluster")
+@Table(name = "cluster")
 public class EngineClusterVO implements EngineCluster, Identity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="id")
+    @Column(name = "id")
     long id;
 
-    @Column(name="name")
+    @Column(name = "name")
     String name;
 
-    @Column(name="guid")
+    @Column(name = "guid")
     String guid;
 
-    @Column(name="data_center_id")
+    @Column(name = "data_center_id")
     long dataCenterId;
 
-    @Column(name="pod_id")
+    @Column(name = "pod_id")
     long podId;
 
-    @Column(name="hypervisor_type")
+    @Column(name = "hypervisor_type")
     String hypervisorType;
 
-    @Column(name="cluster_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "cluster_type")
+    @Enumerated(value = EnumType.STRING)
     Cluster.ClusterType clusterType;
 
-    @Column(name="allocation_state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "allocation_state")
+    @Enumerated(value = EnumType.STRING)
     AllocationState allocationState;
 
-    @Column(name="managed_state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "managed_state")
+    @Enumerated(value = EnumType.STRING)
     ManagedState managedState;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     String uuid;
 
     //orchestration
 
-    @Column(name="owner")
+    @Column(name = "owner")
     private String owner = null;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     protected Date created;
 
-    @Column(name="lastUpdated", updatable=true)
-    @Temporal(value=TemporalType.TIMESTAMP)
+    @Column(name = "lastUpdated", updatable = true)
+    @Temporal(value = TemporalType.TIMESTAMP)
     protected Date lastUpdated;
 
     /**
@@ -101,11 +101,10 @@ public class EngineClusterVO implements EngineCluster, Identity {
      * the state machine needs to go through the DAO object because someone
      * else could be updating it as well.
      */
-    @Enumerated(value=EnumType.STRING)
-    @StateMachine(state=State.class, event=Event.class)
-    @Column(name="engine_state", updatable=true, nullable=false, length=32)
+    @Enumerated(value = EnumType.STRING)
+    @StateMachine(state = State.class, event = Event.class)
+    @Column(name = "engine_state", updatable = true, nullable = false, length = 32)
     protected State state = null;
-
 
     public EngineClusterVO() {
         clusterType = Cluster.ClusterType.CloudManaged;

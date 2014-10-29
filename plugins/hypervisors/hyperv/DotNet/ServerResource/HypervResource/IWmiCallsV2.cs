@@ -27,9 +27,10 @@ namespace HypervResource
 {
     public interface IWmiCallsV2
     {
-        System.Management.ManagementPath AddDiskDriveToVm(ComputerSystem vm, string vhdfile, string cntrllerAddr, string driveResourceType);
+        System.Management.ManagementPath AddDiskDriveToIdeController(ComputerSystem vm, string vhdfile, string cntrllerAddr, string driveResourceType);
         ComputerSystem AddUserData(ComputerSystem vm, string userData);
         void AttachIso(string displayName, string iso);
+        void AttachDisk(string vmName, string diskPath, string addressOnController);
         void CreateDynamicVirtualHardDisk(ulong MaxInternalSize, string Path);
         SyntheticEthernetPortSettingData CreateNICforVm(ComputerSystem vm, string mac);
         ComputerSystem CreateVM(string name, long memory_mb, int vcpus);
@@ -38,8 +39,12 @@ namespace HypervResource
         ComputerSystem DeployVirtualMachine(dynamic jsonObj, string systemVmIso);
         void DestroyVm(dynamic jsonObj);
         void DestroyVm(string displayName);
+        void MigrateVm(string vmName, string destination);
+        void MigrateVolume(string vmName, string volume, string destination);
+        void MigrateVmWithVolume(string vmName, string destination, Dictionary<string, string> volumeToPool);
         void DetachDisk(string displayName, string diskFileName);
         ComputerSystem GetComputerSystem(string displayName);
+        ComputerSystem.ComputerSystemCollection GetComputerSystemCollection();
         string GetDefaultDataRoot();
         string GetDefaultVirtualDiskFolder();
         ResourceAllocationSettingData GetDvdDriveSettings(VirtualSystemSettingData vmSettings);
@@ -50,7 +55,7 @@ namespace HypervResource
         KvpExchangeComponentSettingData GetKvpSettings(VirtualSystemSettingData vmSettings);
         void GetMemoryResources(out ulong physicalRamKBs, out ulong freeMemoryKBs);
         MemorySettingData GetMemSettings(VirtualSystemSettingData vmSettings);
-        void GetProcessorResources(out uint cores, out uint mhz);
+        void GetProcessorResources(out uint sockets, out uint cores, out uint mhz);
         void GetProcessorUsageInfo(out double cpuUtilization);
         ProcessorSettingData GetProcSettings(VirtualSystemSettingData vmSettings);
         ResourceAllocationSettingData.ResourceAllocationSettingDataCollection GetResourceAllocationSettings(VirtualSystemSettingData vmSettings);
@@ -63,5 +68,11 @@ namespace HypervResource
         VirtualSystemSettingData GetVmSettings(ComputerSystem vm);
         void patchSystemVmIso(string vmName, string systemVmIso);
         void SetState(ComputerSystem vm, ushort requiredState);
+        Dictionary<String, VmState> GetVmSync(String privateIpAddress);
+        string GetVmNote(System.Management.ManagementPath sysPath);
+        void ModifyVmVLan(string vmName, String vlanid, string mac);
+        void ModifyVmVLan(string vmName, String vlanid, uint pos, bool enable, string switchLabelName);
+        void DisableVmNics();
+        void DisableNicVlan(String mac, String vmName);
     }
 }

@@ -19,43 +19,42 @@
 
 package org.apache.cloudstack.framework.messagebus;
 
-
 public class MessageBusEndpoint {
-	private MessageBus _eventBus;
-	private String _sender;
-	private PublishScope _scope;
-	
-	public MessageBusEndpoint(MessageBus eventBus, String sender, PublishScope scope) {
-		_eventBus = eventBus;
-		_sender = sender;
-		_scope = scope;
-	}
-	
-	public MessageBusEndpoint setEventBus(MessageBus eventBus) {
-		_eventBus = eventBus;
-		return this;
-	}
-	
-	public MessageBusEndpoint setScope(PublishScope scope) {
-		_scope = scope;
-		return this;
-	}
-	
-	public PublishScope getScope() {
-		return _scope;
-	}
-	
-	public MessageBusEndpoint setSender(String sender) {
-		_sender = sender;
-		return this;
-	}
-	
-	public String getSender() {
-		return _sender;
-	}
-	
-	public void Publish(String subject, Object args) {
-		assert(_eventBus != null);
-		_eventBus.publish(_sender, subject, _scope, args);
-	}
+    private MessageBus _eventBus;
+    private String _sender;
+    private PublishScope _scope;
+
+    public MessageBusEndpoint(MessageBus eventBus, String sender, PublishScope scope) {
+        _eventBus = eventBus;
+        _sender = sender;
+        _scope = scope;
+    }
+
+    public MessageBusEndpoint setEventBus(MessageBus eventBus) {
+        _eventBus = eventBus;
+        return this;
+    }
+
+    public MessageBusEndpoint setScope(PublishScope scope) {
+        _scope = scope;
+        return this;
+    }
+
+    public PublishScope getScope() {
+        return _scope;
+    }
+
+    public MessageBusEndpoint setSender(String sender) {
+        _sender = sender;
+        return this;
+    }
+
+    public String getSender() {
+        return _sender;
+    }
+
+    public void Publish(String subject, Object args) {
+        assert (_eventBus != null);
+        _eventBus.publish(_sender, subject, _scope, args);
+    }
 }

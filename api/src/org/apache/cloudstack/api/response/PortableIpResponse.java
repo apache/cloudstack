@@ -18,50 +18,57 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
-import java.util.List;
+
+import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
-
-import com.cloud.network.IpAddress;
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.region.PortableIp;
-import org.apache.cloudstack.region.PortableIpRange;
 
-@EntityReference(value=PortableIp.class)
+import com.cloud.serializer.Param;
+
+@EntityReference(value = PortableIp.class)
 public class PortableIpResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.REGION_ID)
     @Param(description = "Region Id in which global load balancer is created")
     private Integer regionId;
 
-    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="public IP address")
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "public IP address")
     private String ipAddress;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the ID of the zone the public IP address belongs to")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "the ID of the zone the public IP address belongs to")
     private String zoneId;
 
-    @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the ID of the Network where ip belongs to")
+    @SerializedName(ApiConstants.NETWORK_ID)
+    @Param(description = "the ID of the Network where ip belongs to")
     private String networkId;
 
-    @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the ip belongs to")
+    @SerializedName(ApiConstants.VPC_ID)
+    @Param(description = "VPC the ip belongs to")
     private String vpcId;
 
-    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
+    @Param(description = "the physical network this belongs to")
     private String physicalNetworkId;
 
-    @SerializedName(ApiConstants.ACCOUNT_ID) @Param(description="the account ID the portable IP address is associated with")
+    @SerializedName(ApiConstants.ACCOUNT_ID)
+    @Param(description = "the account ID the portable IP address is associated with")
     private String accountId;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID the portable IP address is associated with")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain ID the portable IP address is associated with")
     private String domainId;
 
-    @SerializedName("allocated") @Param(description="date the portal IP address was acquired")
+    @SerializedName("allocated")
+    @Param(description = "date the portal IP address was acquired")
     private Date allocated;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="State of the ip address. Can be: Allocatin, Allocated and Releasing")
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "State of the ip address. Can be: Allocatin, Allocated and Releasing")
     private String state;
 
     public void setRegionId(Integer regionId) {

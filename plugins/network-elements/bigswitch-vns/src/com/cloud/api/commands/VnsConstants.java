@@ -17,7 +17,6 @@
 
 package com.cloud.api.commands;
 
-
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 
 import com.cloud.network.Network.Provider;

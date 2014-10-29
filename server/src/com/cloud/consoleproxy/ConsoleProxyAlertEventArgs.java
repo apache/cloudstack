@@ -20,52 +20,51 @@ import com.cloud.utils.events.EventArgs;
 import com.cloud.vm.ConsoleProxyVO;
 
 public class ConsoleProxyAlertEventArgs extends EventArgs {
-	
-	private static final long serialVersionUID = 23773987551479885L;
-	
-	public static final int PROXY_CREATED = 1;
-	public static final int PROXY_UP = 2; 
-	public static final int PROXY_DOWN = 3; 
-	public static final int PROXY_CREATE_FAILURE = 4;
-	public static final int PROXY_START_FAILURE = 5;
-	public static final int PROXY_FIREWALL_ALERT = 6;
-	public static final int PROXY_STORAGE_ALERT = 7;
-	public static final int PROXY_REBOOTED = 8;
-	
-	private int type;
-	private long zoneId;
-	private long proxyId;
-	private ConsoleProxyVO proxy;
-	private String message;
-	
-	public ConsoleProxyAlertEventArgs(int type, long zoneId, 
-		long proxyId, ConsoleProxyVO proxy, String message) {
-		
-		super(ConsoleProxyManager.ALERT_SUBJECT);
-		this.type = type;
-		this.zoneId = zoneId;
-		this.proxyId = proxyId;
-		this.proxy = proxy;
-		this.message = message;
-	}
-	
-	public int getType() {
-		return type;
-	}
 
-	public long getZoneId() {
-		return zoneId;
-	}
+    private static final long serialVersionUID = 23773987551479885L;
 
-	public long getProxyId() {
-		return proxyId;
-	}
+    public static final int PROXY_CREATED = 1;
+    public static final int PROXY_UP = 2;
+    public static final int PROXY_DOWN = 3;
+    public static final int PROXY_CREATE_FAILURE = 4;
+    public static final int PROXY_START_FAILURE = 5;
+    public static final int PROXY_FIREWALL_ALERT = 6;
+    public static final int PROXY_STORAGE_ALERT = 7;
+    public static final int PROXY_REBOOTED = 8;
 
-	public ConsoleProxyVO getProxy() {
-		return proxy;
-	}
+    private int type;
+    private long zoneId;
+    private long proxyId;
+    private ConsoleProxyVO proxy;
+    private String message;
 
-	public String getMessage() {
-		return message;
-	}
+    public ConsoleProxyAlertEventArgs(int type, long zoneId, long proxyId, ConsoleProxyVO proxy, String message) {
+
+        super(ConsoleProxyManager.ALERT_SUBJECT);
+        this.type = type;
+        this.zoneId = zoneId;
+        this.proxyId = proxyId;
+        this.proxy = proxy;
+        this.message = message;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public long getProxyId() {
+        return proxyId;
+    }
+
+    public ConsoleProxyVO getProxy() {
+        return proxy;
+    }
+
+    public String getMessage() {
+        return message;
+    }
 }

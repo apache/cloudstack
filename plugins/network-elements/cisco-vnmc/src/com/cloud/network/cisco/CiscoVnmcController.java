@@ -23,8 +23,10 @@ import com.cloud.org.Grouping;
 
 public interface CiscoVnmcController extends Grouping, InternalIdentity, Identity {
 
+    @Override
     long getId();
 
+    @Override
     String getUuid();
 
     void setUuid(String uuid);

@@ -16,28 +16,34 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.dc.DedicatedResources;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = DedicatedResources.class)
 public class DedicateZoneResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the ID of the dedicated resource")
+    @SerializedName("id")
+    @Param(description = "the ID of the dedicated resource")
     private String id;
 
-    @SerializedName("zoneid") @Param(description="the ID of the Zone")
+    @SerializedName("zoneid")
+    @Param(description = "the ID of the Zone")
     private String zoneId;
 
-    @SerializedName("zonename") @Param(description="the Name of the Zone")
+    @SerializedName("zonename")
+    @Param(description = "the Name of the Zone")
     private String zoneName;
 
-    @SerializedName("domainid") @Param(description="the domain ID to which the Zone is dedicated")
+    @SerializedName("domainid")
+    @Param(description = "the domain ID to which the Zone is dedicated")
     private String domainId;
 
-    @SerializedName("accountid") @Param(description="the Account Id to which the Zone is dedicated")
+    @SerializedName("accountid")
+    @Param(description = "the Account Id to which the Zone is dedicated")
     private String accountId;
 
     @SerializedName("affinitygroupid")

@@ -24,25 +24,24 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
-@Local(value=Investigator.class)
+@Local(value = Investigator.class)
 public class VmwareInvestigator extends AdapterBase implements Investigator {
     protected VmwareInvestigator() {
     }
-    
+
     @Override
     public Status isAgentAlive(Host agent) {
-    	if(agent.getHypervisorType() == HypervisorType.VMware)
-    		return Status.Disconnected;
-    	
-    	return null;
+        if (agent.getHypervisorType() == HypervisorType.VMware)
+            return Status.Disconnected;
+
+        return null;
     }
-    
+
     @Override
     public Boolean isVmAlive(VirtualMachine vm, Host host) {
-    	if(vm.getHypervisorType() == HypervisorType.VMware)
-    		return true;
-    	
-    	return null;
+        if (vm.getHypervisorType() == HypervisorType.VMware)
+            return true;
+
+        return null;
     }
 }
-

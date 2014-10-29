@@ -26,38 +26,36 @@ import com.cloud.bridge.model.SObjectItemVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={SObjectItemDao.class})
+@Local(value = {SObjectItemDao.class})
 public class SObjectItemDaoImpl extends GenericDaoBase<SObjectItemVO, Long> implements SObjectItemDao {
-    
-    	
-	public SObjectItemDaoImpl() {
-	}
-	
-	@Override
-	public SObjectItemVO getByObjectIdNullVersion(long id) {
-	    
-	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
-	    SearchBuilder <SObjectItemVO> SearchByID = createSearchBuilder();
-	    SearchByID.and("ID", SearchByID.entity().getId(), SearchCriteria.Op.EQ);
-	    
-	    try {
-    		txn.start();
-    		SearchCriteria<SObjectItemVO> sc = SearchByID.create();
-    		sc.setParameters("ID", id);
-		return findOneBy(sc);
-	    }finally {
-		txn.close();
-	    }
-   	}
-	
-	@Override
+
+    public SObjectItemDaoImpl() {
+    }
+
+    @Override
+    public SObjectItemVO getByObjectIdNullVersion(long id) {
+
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
+        SearchBuilder<SObjectItemVO> SearchByID = createSearchBuilder();
+        SearchByID.and("ID", SearchByID.entity().getId(), SearchCriteria.Op.EQ);
+
+        try {
+            txn.start();
+            SearchCriteria<SObjectItemVO> sc = SearchByID.create();
+            sc.setParameters("ID", id);
+            return findOneBy(sc);
+        } finally {
+            txn.close();
+        }
+    }
+
+    @Override
     public List<SObjectItemVO> getItems(long sobjectID) {
 
-	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         SearchBuilder<SObjectItemVO> SearchBySobjectID = createSearchBuilder();
         SearchBySobjectID.and("SObjectID", SearchBySobjectID.entity().getId(), SearchCriteria.Op.EQ);
 

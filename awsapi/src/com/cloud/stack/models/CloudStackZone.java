@@ -50,129 +50,129 @@ public class CloudStackZone {
     @SerializedName(ApiConstants.SECURITY_GROUPS_ENABLED)
     private Boolean securityGroupsEnabled;
     @SerializedName(ApiConstants.VLAN)
-    private String vlan; 
+    private String vlan;
     @SerializedName(ApiConstants.ZONE_TOKEN)
     private String zoneToken;
-    
+
     public CloudStackZone() {
     }
 
-	/**
-	 * @return the id
-	 */
-	public String getId() {
-		return id;
-	}
+    /**
+     * @return the id
+     */
+    public String getId() {
+        return id;
+    }
 
-	/**
-	 * @return the allocationState
-	 */
-	public String getAllocationState() {
-		return allocationState;
-	}
+    /**
+     * @return the allocationState
+     */
+    public String getAllocationState() {
+        return allocationState;
+    }
 
-	/**
-	 * @return the description
-	 */
-	public String getDescription() {
-		return description;
-	}
+    /**
+     * @return the description
+     */
+    public String getDescription() {
+        return description;
+    }
 
-	/**
-	 * @return the dhcpProvider
-	 */
-	public String getDhcpProvider() {
-		return dhcpProvider;
-	}
+    /**
+     * @return the dhcpProvider
+     */
+    public String getDhcpProvider() {
+        return dhcpProvider;
+    }
 
-	/**
-	 * @return the displayText
-	 */
-	public String getDisplayText() {
-		return displayText;
-	}
+    /**
+     * @return the displayText
+     */
+    public String getDisplayText() {
+        return displayText;
+    }
 
-	/**
-	 * @return the dns1
-	 */
-	public String getDns1() {
-		return dns1;
-	}
+    /**
+     * @return the dns1
+     */
+    public String getDns1() {
+        return dns1;
+    }
 
-	/**
-	 * @return the dns2
-	 */
-	public String getDns2() {
-		return dns2;
-	}
+    /**
+     * @return the dns2
+     */
+    public String getDns2() {
+        return dns2;
+    }
 
-	/**
-	 * @return the domain
-	 */
-	public String getDomain() {
-		return domain;
-	}
+    /**
+     * @return the domain
+     */
+    public String getDomain() {
+        return domain;
+    }
 
-	/**
-	 * @return the domainId
-	 */
-	public Long getDomainId() {
-		return domainId;
-	}
+    /**
+     * @return the domainId
+     */
+    public Long getDomainId() {
+        return domainId;
+    }
 
-	/**
-	 * @return the guestCidrAddress
-	 */
-	public String getGuestCidrAddress() {
-		return guestCidrAddress;
-	}
+    /**
+     * @return the guestCidrAddress
+     */
+    public String getGuestCidrAddress() {
+        return guestCidrAddress;
+    }
 
-	/**
-	 * @return the internalDns1
-	 */
-	public String getInternalDns1() {
-		return internalDns1;
-	}
+    /**
+     * @return the internalDns1
+     */
+    public String getInternalDns1() {
+        return internalDns1;
+    }
 
-	/**
-	 * @return the internalDns2
-	 */
-	public String getInternalDns2() {
-		return internalDns2;
-	}
+    /**
+     * @return the internalDns2
+     */
+    public String getInternalDns2() {
+        return internalDns2;
+    }
 
-	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
 
-	/**
-	 * @return the networkType
-	 */
-	public String getNetworkType() {
-		return networkType;
-	}
+    /**
+     * @return the networkType
+     */
+    public String getNetworkType() {
+        return networkType;
+    }
 
-	/**
-	 * @return the securityGroupsEnabled
-	 */
-	public Boolean getSecurityGroupsEnabled() {
-		return securityGroupsEnabled;
-	}
+    /**
+     * @return the securityGroupsEnabled
+     */
+    public Boolean getSecurityGroupsEnabled() {
+        return securityGroupsEnabled;
+    }
 
-	/**
-	 * @return the vlan
-	 */
-	public String getVlan() {
-		return vlan;
-	}
+    /**
+     * @return the vlan
+     */
+    public String getVlan() {
+        return vlan;
+    }
 
-	/**
-	 * @return the zoneToken
-	 */
-	public String getZoneToken() {
-		return zoneToken;
-	}
+    /**
+     * @return the zoneToken
+     */
+    public String getZoneToken() {
+        return zoneToken;
+    }
 }

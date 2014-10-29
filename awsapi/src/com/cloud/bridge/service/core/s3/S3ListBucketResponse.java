@@ -19,104 +19,104 @@ package com.cloud.bridge.service.core.s3;
 import com.cloud.bridge.util.XElement;
 
 public class S3ListBucketResponse extends S3Response {
-	
-	@XElement(name="Name")
-	protected String bucketName;
-	
-	@XElement(name="Prefix")
-	protected String prefix;
-	
-	@XElement(name="Marker")
-	protected String marker;
-	
-	@XElement(name="MaxKeys")
-	protected int maxKeys;
-	
-	@XElement(name="IsTruncated")
-	protected boolean isTruncated;
-	
-	protected String delimiter;
-	protected String nextMarker;
-	
-	@XElement(name="ContentsList", item="Contents", itemClass="com.cloud.gate.service.core.s3.S3ListBucketObjectEntry")
-	protected S3ListBucketObjectEntry[] contents;
-	
-	@XElement(name="CommonPrefixesList", item="CommonPrefixes", itemClass="com.cloud.gate.service.core.s3.S3ListBucketPrefixEntry")
-	protected S3ListBucketPrefixEntry[] commonPrefixes;
-	
-	public S3ListBucketResponse() {
-		super();
-	}
-	
-	public String getBucketName() {
-		return bucketName;
-	}
-	
-	public void setBucketName(String bucketName) {
-		this.bucketName = bucketName;
-	}
-	
-	public String getMarker() {
-		return marker;
-	}
-	
-	public void setMarker(String marker) {
-		this.marker = marker;
-	}
-	
-	public String getPrefix() {
-		return prefix;
-	}
-	
-	public void setPrefix(String prefix) {
-		this.prefix = prefix;
-	}
-	
-	public String getDelimiter() {
-		return delimiter;
-	}
-	
-	public void setDelimiter(String delimiter) {
-		this.delimiter = delimiter;
-	}
-	
-	public int getMaxKeys() {
-		return maxKeys;
-	}
-	
-	public void setMaxKeys(int maxKeys) {
-		this.maxKeys = maxKeys;
-	}
-	
-	public boolean isTruncated() {
-		return isTruncated;
-	}
-	
-	public void setTruncated(boolean isTruncated) {
-		this.isTruncated = isTruncated;
-	}
-	
-	public String getNextMarker() {
-		return nextMarker;
-	}
-	
-	public void setNextMarker(String nextMarker) {
-		this.nextMarker = nextMarker;
-	}
-	
-	public S3ListBucketPrefixEntry[] getCommonPrefixes() {
-		return commonPrefixes;
-	}
-	
-	public void setCommonPrefixes(S3ListBucketPrefixEntry[] commonPrefixes) {
-		this.commonPrefixes = commonPrefixes;
-	}
-	
-	public S3ListBucketObjectEntry[] getContents() {
-		return contents;
-	}
-	
-	public void setContents(S3ListBucketObjectEntry[] contents) {
-		this.contents = contents;
-	}
+
+    @XElement(name = "Name")
+    protected String bucketName;
+
+    @XElement(name = "Prefix")
+    protected String prefix;
+
+    @XElement(name = "Marker")
+    protected String marker;
+
+    @XElement(name = "MaxKeys")
+    protected int maxKeys;
+
+    @XElement(name = "IsTruncated")
+    protected boolean isTruncated;
+
+    protected String delimiter;
+    protected String nextMarker;
+
+    @XElement(name = "ContentsList", item = "Contents", itemClass = "com.cloud.gate.service.core.s3.S3ListBucketObjectEntry")
+    protected S3ListBucketObjectEntry[] contents;
+
+    @XElement(name = "CommonPrefixesList", item = "CommonPrefixes", itemClass = "com.cloud.gate.service.core.s3.S3ListBucketPrefixEntry")
+    protected S3ListBucketPrefixEntry[] commonPrefixes;
+
+    public S3ListBucketResponse() {
+        super();
+    }
+
+    public String getBucketName() {
+        return bucketName;
+    }
+
+    public void setBucketName(String bucketName) {
+        this.bucketName = bucketName;
+    }
+
+    public String getMarker() {
+        return marker;
+    }
+
+    public void setMarker(String marker) {
+        this.marker = marker;
+    }
+
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
+
+    public String getDelimiter() {
+        return delimiter;
+    }
+
+    public void setDelimiter(String delimiter) {
+        this.delimiter = delimiter;
+    }
+
+    public int getMaxKeys() {
+        return maxKeys;
+    }
+
+    public void setMaxKeys(int maxKeys) {
+        this.maxKeys = maxKeys;
+    }
+
+    public boolean isTruncated() {
+        return isTruncated;
+    }
+
+    public void setTruncated(boolean isTruncated) {
+        this.isTruncated = isTruncated;
+    }
+
+    public String getNextMarker() {
+        return nextMarker;
+    }
+
+    public void setNextMarker(String nextMarker) {
+        this.nextMarker = nextMarker;
+    }
+
+    public S3ListBucketPrefixEntry[] getCommonPrefixes() {
+        return commonPrefixes;
+    }
+
+    public void setCommonPrefixes(S3ListBucketPrefixEntry[] commonPrefixes) {
+        this.commonPrefixes = commonPrefixes;
+    }
+
+    public S3ListBucketObjectEntry[] getContents() {
+        return contents;
+    }
+
+    public void setContents(S3ListBucketObjectEntry[] contents) {
+        this.contents = contents;
+    }
 }

@@ -29,8 +29,7 @@ public interface BigSwitchVnsElementService extends PluggableService {
 
     public BigSwitchVnsDeviceVO addBigSwitchVnsDevice(AddBigSwitchVnsDeviceCmd cmd);
 
-    public BigSwitchVnsDeviceResponse createBigSwitchVnsDeviceResponse(
-            BigSwitchVnsDeviceVO bigswitchDeviceVO);
+    public BigSwitchVnsDeviceResponse createBigSwitchVnsDeviceResponse(BigSwitchVnsDeviceVO bigswitchDeviceVO);
 
     boolean deleteBigSwitchVnsDevice(DeleteBigSwitchVnsDeviceCmd cmd);
 

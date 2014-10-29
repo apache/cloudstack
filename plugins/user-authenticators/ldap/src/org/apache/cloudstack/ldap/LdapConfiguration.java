@@ -22,138 +22,156 @@ import javax.inject.Inject;
 import javax.naming.directory.SearchControls;
 
 import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
-
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.utils.Pair;
 
-public class LdapConfiguration {
-	private final static String factory = "com.sun.jndi.ldap.LdapCtxFactory";
+public class LdapConfiguration implements Configurable{
+    private final static String factory = "com.sun.jndi.ldap.LdapCtxFactory";
 
-	private final static int scope = SearchControls.SUBTREE_SCOPE;
+    private static final ConfigKey<Long> ldapReadTimeout = new ConfigKey<Long>(Long.class, "ldap.read.timeout", "Advanced", "1000",
+        "LDAP connection Timeout in milli sec", true, ConfigKey.Scope.Global, 1l);
 
-	@Inject
-	private ConfigurationDao _configDao;
+    private static final ConfigKey<Integer> ldapPageSize = new ConfigKey<Integer>(Integer.class, "ldap.request.page.size", "Advanced", "1000",
+                                                                               "page size sent to ldap server on each request to get user", true, ConfigKey.Scope.Global, 1);
 
-	@Inject
-	private LdapManager _ldapManager;
+    private final static int scope = SearchControls.SUBTREE_SCOPE;
 
-	public LdapConfiguration() {
-	}
+    @Inject
+    private ConfigurationDao _configDao;
 
-	public LdapConfiguration(final ConfigurationDao configDao,
-			final LdapManager ldapManager) {
-		_configDao = configDao;
-		_ldapManager = ldapManager;
-	}
+    @Inject
+    private LdapManager _ldapManager;
 
-	public String getAuthentication() {
-		if ((getBindPrincipal() == null) && (getBindPassword() == null)) {
-			return "none";
-		} else {
-			return "simple";
-		}
-	}
+    public LdapConfiguration() {
+    }
 
-	public String getBaseDn() {
-		return _configDao.getValue("ldap.basedn");
-	}
+    public LdapConfiguration(final ConfigurationDao configDao, final LdapManager ldapManager) {
+        _configDao = configDao;
+        _ldapManager = ldapManager;
+    }
 
-	public String getBindPassword() {
-		return _configDao.getValue("ldap.bind.password");
-	}
+    public String getAuthentication() {
+        if ((getBindPrincipal() == null) && (getBindPassword() == null)) {
+            return "none";
+        } else {
+            return "simple";
+        }
+    }
 
-	public String getBindPrincipal() {
-		return _configDao.getValue("ldap.bind.principal");
-	}
+    public String getBaseDn() {
+        return _configDao.getValue("ldap.basedn");
+    }
 
-	public String getEmailAttribute() {
-		final String emailAttribute = _configDao
-				.getValue("ldap.email.attribute");
-		return emailAttribute == null ? "mail" : emailAttribute;
-	}
+    public String getBindPassword() {
+        return _configDao.getValue("ldap.bind.password");
+    }
 
-	public String getFactory() {
-		return factory;
-	}
+    public String getBindPrincipal() {
+        return _configDao.getValue("ldap.bind.principal");
+    }
 
-	public String getFirstnameAttribute() {
-		final String firstnameAttribute = _configDao
-				.getValue("ldap.firstname.attribute");
-		return firstnameAttribute == null ? "givenname" : firstnameAttribute;
-	}
+    public String getEmailAttribute() {
+        final String emailAttribute = _configDao.getValue("ldap.email.attribute");
+        return emailAttribute == null ? "mail" : emailAttribute;
+    }
 
-	public String getLastnameAttribute() {
-		final String lastnameAttribute = _configDao
-				.getValue("ldap.lastname.attribute");
-		return lastnameAttribute == null ? "sn" : lastnameAttribute;
-	}
+    public String getFactory() {
+        return factory;
+    }
 
-	public String getProviderUrl() {
-		final String protocol = getSSLStatus() == true ? "ldaps://" : "ldap://";
-		final Pair<List<? extends LdapConfigurationVO>, Integer> result = _ldapManager
-				.listConfigurations(new LdapListConfigurationCmd(_ldapManager));
-		final StringBuilder providerUrls = new StringBuilder();
-		String delim = "";
-		for (final LdapConfigurationVO resource : result.first()) {
-			final String providerUrl = protocol + resource.getHostname() + ":"
-					+ resource.getPort();
-			providerUrls.append(delim).append(providerUrl);
-			delim = " ";
-		}
-		return providerUrls.toString();
-	}
+    public String getFirstnameAttribute() {
+        final String firstnameAttribute = _configDao.getValue("ldap.firstname.attribute");
+        return firstnameAttribute == null ? "givenname" : firstnameAttribute;
+    }
 
-	public String[] getReturnAttributes() {
-		return new String[] { getUsernameAttribute(), getEmailAttribute(),
-				getFirstnameAttribute(), getLastnameAttribute(), getCommonNameAttribute() };
-	}
+    public String getLastnameAttribute() {
+        final String lastnameAttribute = _configDao.getValue("ldap.lastname.attribute");
+        return lastnameAttribute == null ? "sn" : lastnameAttribute;
+    }
 
-	public int getScope() {
-		return scope;
-	}
+    public String getProviderUrl() {
+        final String protocol = getSSLStatus() == true ? "ldaps://" : "ldap://";
+        final Pair<List<? extends LdapConfigurationVO>, Integer> result = _ldapManager.listConfigurations(new LdapListConfigurationCmd(_ldapManager));
+        final StringBuilder providerUrls = new StringBuilder();
+        String delim = "";
+        for (final LdapConfigurationVO resource : result.first()) {
+            final String providerUrl = protocol + resource.getHostname() + ":" + resource.getPort();
+            providerUrls.append(delim).append(providerUrl);
+            delim = " ";
+        }
+        return providerUrls.toString();
+    }
 
-	public String getSearchGroupPrinciple() {
-		return _configDao.getValue("ldap.search.group.principle");
-	}
+    public String[] getReturnAttributes() {
+        return new String[] {getUsernameAttribute(), getEmailAttribute(), getFirstnameAttribute(), getLastnameAttribute(), getCommonNameAttribute()};
+    }
 
-	public boolean getSSLStatus() {
-		boolean sslStatus = false;
-		if (getTrustStore() != null && getTrustStorePassword() != null) {
-			sslStatus = true;
-		}
-		return sslStatus;
-	}
+    public int getScope() {
+        return scope;
+    }
 
-	public String getTrustStore() {
-		return _configDao.getValue("ldap.truststore");
-	}
+    public String getSearchGroupPrinciple() {
+        return _configDao.getValue("ldap.search.group.principle");
+    }
 
-	public String getTrustStorePassword() {
-		return _configDao.getValue("ldap.truststore.password");
-	}
+    public boolean getSSLStatus() {
+        boolean sslStatus = false;
+        if (getTrustStore() != null && getTrustStorePassword() != null) {
+            sslStatus = true;
+        }
+        return sslStatus;
+    }
 
-	public String getUsernameAttribute() {
-		final String usernameAttribute = _configDao
-				.getValue("ldap.username.attribute");
-		return usernameAttribute == null ? "uid" : usernameAttribute;
-	}
+    public String getTrustStore() {
+        return _configDao.getValue("ldap.truststore");
+    }
 
-	public String getUserObject() {
-		final String userObject = _configDao.getValue("ldap.user.object");
-		return userObject == null ? "inetOrgPerson" : userObject;
-	}
+    public String getTrustStorePassword() {
+        return _configDao.getValue("ldap.truststore.password");
+    }
+
+    public String getUsernameAttribute() {
+        final String usernameAttribute = _configDao.getValue("ldap.username.attribute");
+        return usernameAttribute == null ? "uid" : usernameAttribute;
+    }
+
+    public String getUserObject() {
+        final String userObject = _configDao.getValue("ldap.user.object");
+        return userObject == null ? "inetOrgPerson" : userObject;
+    }
 
     public String getGroupObject() {
-	final String groupObject = _configDao.getValue("ldap.group.object");
-	return groupObject == null ? "groupOfUniqueNames" : groupObject;
+        final String groupObject = _configDao.getValue("ldap.group.object");
+        return groupObject == null ? "groupOfUniqueNames" : groupObject;
     }
 
     public String getGroupUniqueMemeberAttribute() {
-	final String uniqueMemberAttribute = _configDao.getValue("ldap.group.user.uniquemember");
-	return uniqueMemberAttribute == null ? "uniquemember" : uniqueMemberAttribute;
+        final String uniqueMemberAttribute = _configDao.getValue("ldap.group.user.uniquemember");
+        return uniqueMemberAttribute == null ? "uniquemember" : uniqueMemberAttribute;
     }
 
     public String getCommonNameAttribute() {
-	return "cn";
+        return "cn";
+    }
+
+    public Long getReadTimeout() {
+        return ldapReadTimeout.value();
+    }
+
+    public Integer getLdapPageSize() {
+        return ldapPageSize.value();
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return LdapConfiguration.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {ldapReadTimeout, ldapPageSize};
     }
 }

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,8 +15,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api.routing;
+//
 
+package com.cloud.agent.api.routing;
 
 public class DhcpEntryCommand extends NetworkElementCommand {
 
@@ -102,43 +104,43 @@ public class DhcpEntryCommand extends NetworkElementCommand {
         this.staticRoutes = staticRoutes;
     }
 
-	public String getDefaultDns() {
-		return defaultDns;
-	}
+    public String getDefaultDns() {
+        return defaultDns;
+    }
 
-	public void setDefaultDns(String defaultDns) {
-		this.defaultDns = defaultDns;
-	}
+    public void setDefaultDns(String defaultDns) {
+        this.defaultDns = defaultDns;
+    }
 
-	public String getIp6Gateway() {
-		return ip6Gateway;
-	}
+    public String getIp6Gateway() {
+        return ip6Gateway;
+    }
 
-	public void setIp6Gateway(String ip6Gateway) {
-		this.ip6Gateway = ip6Gateway;
-	}
+    public void setIp6Gateway(String ip6Gateway) {
+        this.ip6Gateway = ip6Gateway;
+    }
 
-	public String getDuid() {
-		return duid;
-	}
+    public String getDuid() {
+        return duid;
+    }
 
-	public void setDuid(String duid) {
-		this.duid = duid;
-	}
+    public void setDuid(String duid) {
+        this.duid = duid;
+    }
 
-	public String getVmIp6Address() {
-		return vmIp6Address;
-	}
+    public String getVmIp6Address() {
+        return vmIp6Address;
+    }
 
-	public void setVmIp6Address(String ip6Address) {
-		this.vmIp6Address = ip6Address;
-	}
+    public void setVmIp6Address(String ip6Address) {
+        this.vmIp6Address = ip6Address;
+    }
 
-	public boolean isDefault() {
-		return isDefault;
-	}
+    public boolean isDefault() {
+        return isDefault;
+    }
 
-	public void setDefault(boolean isDefault) {
-		this.isDefault = isDefault;
-	}
+    public void setDefault(boolean isDefault) {
+        this.isDefault = isDefault;
+    }
 }

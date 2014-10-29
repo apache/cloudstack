@@ -36,6 +36,7 @@
          * Dialog with form
          */
         createForm: function(args) {
+            var cancel = args.cancel;
             var $formContainer = $('<div>').addClass('form-container');
             var $form = $('<form>').appendTo($formContainer)
                     .submit(function() {
@@ -69,11 +70,16 @@
                 return key;
             });
 
+            $(window).trigger('cloudStack.createForm.makeFields', {
+                $form: $form,
+                fields: args.form.fields
+            });
+
             var ret = function() {
                 $('.overlay').remove();
 
                 return $formContainer.dialog({
-                    dialogClass: 'create-form',
+                    dialogClass: args.form.isWarning ? 'create-form warning' : 'create-form',
                     closeOnEscape: false,
                     draggable: false,
                     width: 400,
@@ -85,6 +91,10 @@
                                 context: args.context
                             });
                         }
+
+                        $(window).trigger('cloudStack.createForm.open', {
+                          $form: $form
+                        });
                     },
                     buttons: [{
                         text: createLabel ? createLabel : _l('label.ok'),
@@ -113,6 +123,10 @@
                             $(this).dialog('destroy');
 
                             $('.hovered-elem').hide();
+
+                            if (cancel) {
+                                cancel();
+                            }
                         }
                     }]
                 }).closest('.ui-dialog').overlay();
@@ -144,7 +158,7 @@
                 if (field.isHidden != null) {
                     if (typeof(field.isHidden) == 'boolean' && field.isHidden == true)
                         $formItem.hide();
-                    else if (typeof(field.isHidden) == 'function' && field.isHidden() == true)
+                    else if (typeof(field.isHidden) == 'function' && field.isHidden(args) == true)
                         $formItem.hide();
                 }
 
@@ -209,7 +223,12 @@
                     });
 
                     if ($dependsOn.is('[type=checkbox]')) {
-                        var isReverse = args.form.fields[dependsOn].isReverse;
+                        var isReverse = false;
+                        
+                        if (args.form.fields[dependsOn]) {
+                            isReverse = args.form.fields[dependsOn].isReverse;
+                            isChecked = args.form.fields[dependsOn].isChecked;
+                        }
 
                         // Checkbox
                         $dependsOn.bind('click', function(event) {
@@ -243,6 +262,10 @@
                         // Show fields by default if it is reverse checkbox
                         if (isReverse) {
                             $dependsOn.click();
+
+                            if (isChecked) {
+                                $dependsOn.attr('checked', true);
+                            }
                         }
                     }
                 }
@@ -254,24 +277,31 @@
                         context: args.context,
                         response: {
                             success: function(args) {
+                            	if (args.data == undefined || args.data.length == 0) {
+                            		var $option = $('<option>')
+                                    .appendTo($input)                                    
+                                    .html("");
+                            	} else {
                                 $(args.data).each(function() {
                                     var id;
                                     if (field.valueField)
                                         id = this[field.valueField];
                                     else
                                         id = this.id !== undefined ? this.id : this.name;
-                                    var description = this.description;
 
+                                    var desc;
                                     if (args.descriptionField)
-                                        description = this[args.descriptionField];
+                                        desc = this[args.descriptionField];
                                     else
-                                        description = this.description;
+                                        desc = _l(this.description);
 
                                     var $option = $('<option>')
                                             .appendTo($input)
                                             .val(_s(id))
-                                            .html(_s(description));
+                                            .data('json-obj', this)
+                                            .html(_s(desc));
                                 });
+                            	}
 
                                 if (field.defaultValue) {
                                     $input.val(_s(strOrFunc(field.defaultValue, args.data)));
@@ -407,6 +437,7 @@
                     $form.hide();
 
                     field.dynamic({
+                        context: args.context,
                         response: {
                             success: function(args) {
                                 var form = cloudStack.dialog.createForm({
@@ -439,6 +470,35 @@
                     if (field.defaultValue) {
                         $input.val(strOrFunc(field.defaultValue));
                     }
+                } else if (field.isTokenInput) { // jquery.tokeninput.js
+                    isAsync = true;
+
+                    selectArgs = {
+                        context: args.context,
+                        response: {
+                            success: function(args) {
+                                $input.tokenInput(unique_tags(args.data),
+                                {
+                                    theme: "facebook",
+                                    preventDuplicates: true,
+                                    hintText: args.hintText,
+                                    noResultsText: args.noResultsText
+                                });
+                            }
+                        }
+                    };
+
+                    $input = $('<input>').attr({
+                        name: key,
+                        type: 'text'
+                    }).appendTo($value);
+
+                    $.extend(selectArgs, {
+                        $form: $form,
+                        type: 'createForm'
+                    });
+
+                    field.dataProvider(selectArgs);
                 } else if (field.isDatepicker) { //jQuery datepicker
                     $input = $('<input>').attr({
                         name: key,
@@ -541,7 +601,7 @@
                     }).appendTo($value);
 
                     if (field.defaultValue) {
-                        $input.val(strOrFunc(field.defaultValue));
+                        $input.val(strOrFunc(field.defaultValue, args.context));
                     }
                     if (field.id) {
                         $input.attr('id', field.id);
@@ -765,7 +825,7 @@
                 )
             ).dialog({
                 title: _l('label.confirmation'),
-                dialogClass: 'confirm',
+                dialogClass: args.isWarning ? 'confirm warning': 'confirm',
                 closeOnEscape: false,
                 zIndex: 5000,
                 buttons: [{
@@ -807,7 +867,7 @@
                     closeOnEscape: false,
                     zIndex: 5000,
                     buttons: [{
-                        text: _l('Close'),
+                        text: _l('label.close'),
                         'class': 'close',
                         click: function() {
                             $(this).dialog('destroy');

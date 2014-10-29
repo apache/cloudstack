@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.nicira;
 
 import java.util.UUID;
@@ -34,7 +37,7 @@ public abstract class NatRule {
         return match;
     }
 
-    public void setMatch(Match match) {
+    public void setMatch(final Match match) {
         this.match = match;
     }
 
@@ -42,7 +45,7 @@ public abstract class NatRule {
         return uuid;
     }
 
-    public void setUuid(UUID uuid) {
+    public void setUuid(final UUID uuid) {
         this.uuid = uuid;
     }
 
@@ -50,7 +53,7 @@ public abstract class NatRule {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(final String type) {
         this.type = type;
     }
 
@@ -58,7 +61,7 @@ public abstract class NatRule {
         return order;
     }
 
-    public void setOrder(int order) {
+    public void setOrder(final int order) {
         this.order = order;
     }
 
@@ -74,14 +77,14 @@ public abstract class NatRule {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         if (this == obj)
             return true;
         if (obj == null)
             return false;
         if (getClass() != obj.getClass())
             return false;
-        NatRule other = (NatRule) obj;
+        NatRule other = (NatRule)obj;
         if (match == null) {
             if (other.match != null)
                 return false;
@@ -102,14 +105,14 @@ public abstract class NatRule {
         return true;
     }
 
-    public boolean equalsIgnoreUuid(Object obj) {
+    public boolean equalsIgnoreUuid(final Object obj) {
         if (this == obj)
             return true;
         if (obj == null)
             return false;
         if (getClass() != obj.getClass())
             return false;
-        NatRule other = (NatRule) obj;
+        NatRule other = (NatRule)obj;
         if (match == null) {
             if (other.match != null)
                 return false;
@@ -124,6 +127,4 @@ public abstract class NatRule {
             return false;
         return true;
     }
-
-
 }

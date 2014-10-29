@@ -25,32 +25,34 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="ntwk_offering_service_map")
+@Table(name = "ntwk_offering_service_map")
 public class NetworkOfferingServiceMapVO implements InternalIdentity {
-   
+
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     long id;
-    
-    @Column(name="network_offering_id")
+
+    @Column(name = "network_offering_id")
     long networkOfferingId;
-    
-    @Column(name="service")
+
+    @Column(name = "service")
     String service;
-    
-    @Column(name="provider")
+
+    @Column(name = "provider")
     String provider;
-    
-    @Column(name=GenericDao.CREATED_COLUMN)
+
+    @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 
+    @Override
     public long getId() {
         return id;
     }
@@ -70,10 +72,10 @@ public class NetworkOfferingServiceMapVO implements InternalIdentity {
     public Date getCreated() {
         return created;
     }
-    
+
     public NetworkOfferingServiceMapVO() {
     }
-    
+
     public NetworkOfferingServiceMapVO(long networkOfferingId, Service service, Provider provider) {
         this.networkOfferingId = networkOfferingId;
         this.service = service.getName();
@@ -81,14 +83,10 @@ public class NetworkOfferingServiceMapVO implements InternalIdentity {
             this.provider = provider.getName();
         }
     }
-    
+
+    @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("[Network Offering Service[");
         return buf.append(networkOfferingId).append("-").append(service).append("-").append(provider).append("]").toString();
     }
 }
-
-
-
-
-

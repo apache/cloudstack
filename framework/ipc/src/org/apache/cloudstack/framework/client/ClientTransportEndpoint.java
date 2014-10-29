@@ -22,19 +22,18 @@ import org.apache.cloudstack.framework.transport.TransportEndpoint;
 
 public class ClientTransportEndpoint implements TransportEndpoint {
 
-	@Override
-	public void onAttachConfirm(boolean bSuccess, String endpointAddress) {
-		// TODO Auto-generated method stub
-	}
-	
-	@Override
-	public void onDetachIndication(String endpointAddress) {
-	}
+    @Override
+    public void onAttachConfirm(boolean bSuccess, String endpointAddress) {
+        // TODO Auto-generated method stub
+    }
 
-	@Override
-	public void onTransportMessage(String senderEndpointAddress,
-			String targetEndpointAddress, String multiplexer, String message) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void onDetachIndication(String endpointAddress) {
+    }
+
+    @Override
+    public void onTransportMessage(String senderEndpointAddress, String targetEndpointAddress, String multiplexer, String message) {
+        // TODO Auto-generated method stub
+
+    }
 }

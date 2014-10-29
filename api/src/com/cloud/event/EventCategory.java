@@ -26,7 +26,7 @@ public class EventCategory {
     private static List<EventCategory> eventCategories = new ArrayList<EventCategory>();
     private String eventCategoryName;
 
-    public  EventCategory(String categoryName) {
+    public EventCategory(String categoryName) {
         this.eventCategoryName = categoryName;
         eventCategories.add(this);
     }
@@ -49,8 +49,8 @@ public class EventCategory {
     }
 
     public static final EventCategory ACTION_EVENT = new EventCategory("ActionEvent");
-    public static final EventCategory ALERT_EVENT  = new EventCategory("AlertEvent");
-    public static final EventCategory USAGE_EVENT  = new EventCategory("UsageEvent");
+    public static final EventCategory ALERT_EVENT = new EventCategory("AlertEvent");
+    public static final EventCategory USAGE_EVENT = new EventCategory("UsageEvent");
     public static final EventCategory RESOURCE_STATE_CHANGE_EVENT = new EventCategory("ResourceStateEvent");
     public static final EventCategory ASYNC_JOB_CHANGE_EVENT = new EventCategory("AsyncJobEvent");
 }

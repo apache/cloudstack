@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,40 +15,34 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 public class StopAnswer extends RebootAnswer {
 
-    private String hypervisortoolsversion;
-    Integer timeOffset;
+    private String platform;
 
     protected StopAnswer() {
     }
 
-    public StopAnswer(StopCommand cmd, String details, String hypervisortoolsversion, Integer timeOffset, boolean success) {
-        super(cmd,  details, success);
-        this.hypervisortoolsversion = hypervisortoolsversion;
-        this.timeOffset = timeOffset;
+    public StopAnswer(StopCommand cmd, String details, String platform, boolean success) {
+        super(cmd, details, success);
+        this.platform = platform;
     }
 
     public StopAnswer(StopCommand cmd, String details, boolean success) {
-        super(cmd,  details, success);
-        this.hypervisortoolsversion = null;
-        this.timeOffset = null;
+        super(cmd, details, success);
+        this.platform = null;
     }
-
 
     public StopAnswer(StopCommand cmd, Exception e) {
         super(cmd, e);
-        this.hypervisortoolsversion = null;
-        this.timeOffset = null;
+        this.platform = null;
     }
 
-    public String getHypervisorToolsVersion() {
-        return hypervisortoolsversion;
+    public String getPlatform() {
+        return platform;
     }
 
-    public Integer getTimeOffset() {
-        return timeOffset;
-    }
 }

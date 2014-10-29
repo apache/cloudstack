@@ -17,7 +17,6 @@
 package com.cloud.api.query.vo;
 
 import org.apache.cloudstack.acl.ControlledEntity;
-
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,12 +15,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 public class SetupAnswer extends Answer {
     // indicate if agent reconnect is needed after setup command
     private boolean _reconnect;
-    public SetupAnswer() {}
+
+    public SetupAnswer() {
+    }
 
     public SetupAnswer(SetupCommand cmd, boolean reconnect) {
         super(cmd, true, null);
@@ -30,6 +35,7 @@ public class SetupAnswer extends Answer {
         super(cmd, false, details);
         _reconnect = true;
     }
+
     public boolean needReconnect() {
         return _reconnect;
     }

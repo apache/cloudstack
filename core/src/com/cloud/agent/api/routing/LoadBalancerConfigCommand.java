@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api.routing;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
@@ -29,10 +32,11 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
     public String lbStatsPrivateIP; /* load balancer listen on this ips for stats */
     public String lbStatsGuestIP; /* load balancer listen on this ips for stats */
     public String lbStatsPort = "8081"; /*load balancer listen on this port for stats */
-    public String lbStatsSrcCidrs = "0/0" ; /* TODO : currently there is no filtering based on the source ip */
+    public String lbStatsSrcCidrs = "0/0"; /* TODO : currently there is no filtering based on the source ip */
     public String lbStatsAuth = "admin1:AdMiN123";
     public String lbStatsUri = "/admin?stats";
-    public String maxconn ="";
+    public String maxconn = "";
+    public String lbProtocol;
     public boolean keepAliveEnabled = false;
     NicTO nic;
     Long vpcId;
@@ -41,18 +45,19 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
     }
 
     public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers, Long vpcId) {
-    	this.loadBalancers = loadBalancers;
-    	this.vpcId = vpcId;
+        this.loadBalancers = loadBalancers;
+        this.vpcId = vpcId;
     }
 
-    public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers,String PublicIp,String GuestIp,String PrivateIp, NicTO nic, Long vpcId, String maxconn, boolean keepAliveEnabled) {
-    	this.loadBalancers = loadBalancers;
-    	this.lbStatsPublicIP = PublicIp;
-    	this.lbStatsPrivateIP = PrivateIp;
-    	this.lbStatsGuestIP = GuestIp;
-    	this.nic = nic;
-    	this.vpcId = vpcId;
-        this.maxconn=maxconn;
+    public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers, String publicIp, String guestIp, String privateIp, NicTO nic, Long vpcId, String maxconn,
+            boolean keepAliveEnabled) {
+        this.loadBalancers = loadBalancers;
+        this.lbStatsPublicIP = publicIp;
+        this.lbStatsPrivateIP = privateIp;
+        this.lbStatsGuestIP = guestIp;
+        this.nic = nic;
+        this.vpcId = vpcId;
+        this.maxconn = maxconn;
         this.keepAliveEnabled = keepAliveEnabled;
     }
 
@@ -60,7 +65,7 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
         return nic;
     }
 
-	public LoadBalancerTO[] getLoadBalancers() {
+    public LoadBalancerTO[] getLoadBalancers() {
         return loadBalancers;
     }
 

@@ -17,17 +17,17 @@
 package com.cloud.bridge.service.core.s3;
 
 public class S3GetBucketAccessControlPolicyRequest extends S3Request {
-	protected String bucketName;
-	
-	public S3GetBucketAccessControlPolicyRequest() {
-		super();
-	}
+    protected String bucketName;
 
-	public String getBucketName() {
-		return bucketName;
-	}
+    public S3GetBucketAccessControlPolicyRequest() {
+        super();
+    }
 
-	public void setBucketName(String bucketName) {
-		this.bucketName = bucketName;
-	}
+    public String getBucketName() {
+        return bucketName;
+    }
+
+    public void setBucketName(String bucketName) {
+        this.bucketName = bucketName;
+    }
 }

@@ -18,20 +18,18 @@
  */
 package com.cloud.hypervisor.kvm.storage;
 
-import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import javax.naming.ConfigurationException;
+
 import org.junit.Before;
 import org.junit.Test;
-
-import javax.naming.ConfigurationException;
-import java.util.HashMap;
 
 public class KVMStorageProcessorTest {
     @Before
     public void setUp() throws ConfigurationException {
     }
+
     @Test
     public void testCloneVolumeFromBaseTemplate() throws Exception {
-
 
     }
 

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,29 +15,32 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.nicira;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 public class NiciraTagTest {
     @Test
     public void testCreateTag() {
-        NiciraNvpTag tag = new NiciraNvpTag("scope","tag");
+        final NiciraNvpTag tag = new NiciraNvpTag("scope", "tag");
         assertEquals("scope part set", "scope", tag.getScope());
         assertEquals("tag part set", "tag", tag.getTag());
     }
 
     @Test
     public void testCreateLongTag() {
-        NiciraNvpTag tag = new NiciraNvpTag("scope","verylongtagthatshouldattheminimumexceedthefortycharacterlenght");
+        final NiciraNvpTag tag = new NiciraNvpTag("scope", "verylongtagthatshouldattheminimumexceedthefortycharacterlenght");
         assertEquals("scope part set", "scope", tag.getScope());
         assertEquals("tag part set", "verylongtagthatshouldattheminimumexceedt", tag.getTag());
     }
 
     @Test
     public void testSetTag() {
-        NiciraNvpTag tag = new NiciraNvpTag();
+        final NiciraNvpTag tag = new NiciraNvpTag();
         tag.setScope("scope");
         tag.setTag("tag");
         assertEquals("scope part set", "scope", tag.getScope());
@@ -45,7 +49,7 @@ public class NiciraTagTest {
 
     @Test
     public void testSetLongTag() {
-        NiciraNvpTag tag = new NiciraNvpTag();
+        final NiciraNvpTag tag = new NiciraNvpTag();
         tag.setScope("scope");
         tag.setTag("verylongtagthatshouldattheminimumexceedthefortycharacterlenght");
         assertEquals("scope part set", "scope", tag.getScope());

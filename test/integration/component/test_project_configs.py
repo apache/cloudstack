@@ -21,10 +21,10 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
+from marvin.sshClient import SshClient
 import datetime
 
 
@@ -109,13 +109,11 @@ class TestUserProjectCreation(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestUserProjectCreation,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestUserProjectCreation, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         configs = Configurations.list(
@@ -175,7 +173,7 @@ class TestUserProjectCreation(cloudstackTestCase):
         return
 
     @attr(configuration = "allow.user.create.projects")
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_admin_project_creation(self):
         """Test create project as a domain admin and domain user
         """
@@ -275,13 +273,11 @@ class TestProjectCreationNegative(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestProjectCreationNegative,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestProjectCreationNegative, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         # Checking for prereqisits - global configs
@@ -420,17 +416,15 @@ class TestProjectInviteRequired(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                                TestProjectInviteRequired,
-                                cls
-                            ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestProjectInviteRequired, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         # Create domains, account etc.
-        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
 
         # Verify 'project.invite.required' is set to false
         configs = Configurations.list(
@@ -483,7 +477,7 @@ class TestProjectInviteRequired(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
     def test_add_user_to_project(self):
         """Add user to project when 'project.invite.required' is false"""
 
@@ -572,17 +566,15 @@ class TestProjectInviteRequiredTrue(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                                TestProjectInviteRequiredTrue,
-                                cls
-                            ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestProjectInviteRequiredTrue, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         # Create domains, account etc.
-        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
 
         # Verify 'project.invite.required' is set to true
         configs = Configurations.list(
@@ -636,7 +628,7 @@ class TestProjectInviteRequiredTrue(cloudstackTestCase):
         return
 
     @attr(configuration = "project.invite.required")
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
     def test_add_user_to_project(self):
         """Add user to project when 'project.invite.required' is true"""
 
@@ -725,17 +717,15 @@ class TestProjectInviteTimeout(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                                TestProjectInviteTimeout,
-                                cls
-                            ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestProjectInviteTimeout, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         # Create domains, account etc.
-        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
 
         # Verify 'project.invite.required' is set to true
         configs = Configurations.list(

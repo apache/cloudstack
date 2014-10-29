@@ -79,6 +79,9 @@
             case 'VMware':
                 hypervisorAttr = 'vmwarenetworklabel';
                 break;
+            case 'Hyperv':
+                hypervisorAttr = 'hypervnetworklabel';
+                break;
             case 'BareMetal':
                 hypervisorAttr = 'baremetalnetworklabel';
                 break;
@@ -174,11 +177,17 @@
                         },
                         'startip': {
                             edit: true,
-                            label: 'label.start.IP'
+                            label: 'label.start.IP',
+                            validation: {
+                                ipv4: true
+                            }
                         },
                         'endip': {
                             edit: true,
-                            label: 'label.end.IP'
+                            label: 'label.end.IP',
+                            validation: {
+                                ipv4: true
+                            }
                         },
                         'add-rule': {
                             label: 'label.add',
@@ -216,6 +225,7 @@
             },
 
             storageTrafficIPRange: function(args) {
+
                 var multiEditData = [];
                 var totalIndex = 0;
 
@@ -415,36 +425,50 @@
                         desc: 'message.tooltip.zone.name'
                     },
                     ip4dns1: {
-                        label: 'IPv4 DNS1',
+                        label: 'label.ipv4.dns1',
                         validation: {
-                            required: true
+                            required: true,
+                            ipv4: true
                         },
                         desc: 'message.tooltip.dns.1'
                     },
                     ip4dns2: {
-                        label: 'IPv4 DNS2',
-                        desc: 'message.tooltip.dns.2'
+                        label: 'label.ipv4.dns2',
+                        desc: 'message.tooltip.dns.2',
+                        validation: {
+                            ipv4: true
+                        }
                     },
 
                     ip6dns1: {
-                        label: 'IPv6 DNS1',
-                        desc: 'message.tooltip.dns.1'
+                        label: 'label.ipv6.dns1',
+                        desc: 'message.tooltip.dns.1',
+                        validation: {
+                            ipv6: true
+                        }
                     },
                     ip6dns2: {
-                        label: 'IPv6 DNS2',
-                        desc: 'message.tooltip.dns.2'
-                    },
+                        label: 'label.ipv6.dns2',
+                        desc: 'message.tooltip.dns.2',
+                        validation: {
+                            ipv6: true
+                        }
+                   },
 
                     internaldns1: {
                         label: 'label.internal.dns.1',
                         validation: {
-                            required: true
+                            required: true,
+                            ipv4: true
                         },
                         desc: 'message.tooltip.internal.dns.1'
                     },
                     internaldns2: {
                         label: 'label.internal.dns.2',
-                        desc: 'message.tooltip.internal.dns.2'
+                        desc: 'message.tooltip.internal.dns.2',
+                        validation: {
+                            ipv4: true
+                        },
                     },
                     hypervisor: {
                         label: 'label.hypervisor',
@@ -470,9 +494,12 @@
                                         nonSupportedHypervisors["BareMetal"] = 1;
                                         nonSupportedHypervisors["Hyperv"] = 1;
                                         nonSupportedHypervisors["Ovm"] = 1;
-                                        nonSupportedHypervisors["LXC"] = 1;
                                     }
 
+                                    if (args.context.zones[0]['network-model'] == "Advanced") { //CLOUDSTACK-7681: UI > zone wizard > Advanced zone > hypervisor => do not support BareMetal                                    
+                                        nonSupportedHypervisors["BareMetal"] = 1;                                        
+                                    }
+                                    
                                     if (items != null) {
                                         for (var i = 0; i < items.length; i++) {
                                             if (items[i].name in nonSupportedHypervisors)
@@ -613,7 +640,7 @@
                     },
                     isdedicated: {                        
                         isBoolean: true,
-                        label: 'Dedicated',
+                        label: 'label.dedicated',
                         isChecked: false 
                     },
                     domain: {
@@ -644,7 +671,7 @@
                     },
 
                     account: {
-                        label: 'Account',
+                        label: 'label.account',
                         isHidden: true,
                         dependsOn: 'isdedicated',
                         //docID:'helpAccountForDedication',
@@ -706,13 +733,15 @@
                     reservedSystemStartIp: {
                         label: 'label.start.reserved.system.IP',
                         validation: {
-                            required: true
+                            required: true,
+                            ipv4: true
                         }
                     },
                     reservedSystemEndIp: {
                         label: 'label.end.reserved.system.IP',
                         validation: {
-                            required: false
+                            required: false,
+                            ipv4: true
                         }
                     }
                 }
@@ -766,15 +795,15 @@
                         label: 'label.private.interface'
                     },
                     gslbprovider: {
-                        label: 'GSLB service',
+                        label: 'label.gslb.service',
                         isBoolean: true,
                         isChecked: false
                     },
                     gslbproviderpublicip: {
-                        label: 'GSLB service Public IP'
+                        label: 'label.gslb.service.public.ip'
                     },
                     gslbproviderprivateip: {
-                        label: 'GSLB service Private IP'
+                        label: 'label.gslb.service.private.ip'
                     },
                     numretries: {
                         label: 'label.numretries',
@@ -848,7 +877,7 @@
                         label: 'label.guest.end.ip'
                     }, //Basic, Advanced with SG
                     vlanId: {
-                        label: 'VLAN ID'
+                        label: 'label.vlan.id'
                     }, //Advanced with SG
 
                     vlanRange: { //in multiple tabs (tabs is as many as Guest Traffic types in multiple physical networks in Advanced Zone without SG)
@@ -1034,7 +1063,7 @@
                     },
 
                     overridepublictraffic: {
-                        label: 'Override Public-Traffic',
+                        label: 'label.override.public.traffic',
                         isBoolean: true,
                         isHidden: true
 
@@ -1114,7 +1143,7 @@
                     */
 					
                     overrideguesttraffic: {
-                        label: 'Override Guest-Traffic',
+                        label: 'label.override.guest.traffic',
                         isBoolean: true,
                         isHidden: true
 
@@ -1197,21 +1226,21 @@
 
                     //Cisco Nexus Vswitch
                     vsmipaddress: {
-                        label: 'Nexus 1000v IP Address',
+                        label: 'label.cisco.nexus1000v.ip.address',
                         validation: {
                             required: false
                         },
                         isHidden: true
                     },
                     vsmusername: {
-                        label: 'Nexus 1000v Username',
+                        label: 'label.cisco.nexus1000v.username',
                         validation: {
                             required: false
                         },
                         isHidden: true
                     },
                     vsmpassword: {
-                        label: 'Nexus 1000v Password',
+                        label: 'label.cisco.nexus1000v.password',
                         validation: {
                             required: false
                         },
@@ -1425,8 +1454,8 @@
                                 return;
                             }
 
-                            //zone-wide-primary-storage is supported only for KVM and VMWare
-                            if (selectedHypervisorObj.hypervisortype == "KVM" || selectedHypervisorObj.hypervisortype == "VMware") {
+                            //zone-wide-primary-storage is supported only for KVM and VMWare and Hyperv
+                            if (selectedHypervisorObj.hypervisortype == "KVM" || selectedHypervisorObj.hypervisortype == "VMware" || selectedHypervisorObj.hypervisortype == "Hyperv") {
                                 var scope = [];
                                 scope.push({
                                     id: 'zone',
@@ -1473,7 +1502,7 @@
                                 items.push({
                                     id: "nfs",
                                     description: "nfs"
-                                });
+                                });                               
                                 items.push({
                                     id: "SharedMountPoint",
                                     description: "SharedMountPoint"
@@ -1481,6 +1510,10 @@
                                 items.push({
                                     id: "clvm",
                                     description: "CLVM"
+                                });
+                                items.push({
+                                    id: "gluster",
+                                    description: "Gluster"
                                 });
                                 args.response.success({
                                     data: items
@@ -1490,7 +1523,7 @@
                                 items.push({
                                     id: "nfs",
                                     description: "nfs"
-                                });
+                                });                               
                                 items.push({
                                     id: "PreSetup",
                                     description: "PreSetup"
@@ -1507,7 +1540,7 @@
                                 items.push({
                                     id: "nfs",
                                     description: "nfs"
-                                });
+                                });                                
                                 items.push({
                                     id: "vmfs",
                                     description: "vmfs"
@@ -1515,12 +1548,21 @@
                                 args.response.success({
                                     data: items
                                 });
+                            } else if (selectedClusterObj.hypervisortype == "Hyperv") {    
+                            	var items = []; 
+                            	items.push({
+                                    id: "SMB",
+                                    description: "SMB/CIFS"
+                                });
+                            	args.response.success({
+                                    data: items
+                                });
                             } else if (selectedClusterObj.hypervisortype == "Ovm") {
                                 var items = [];
                                 items.push({
                                     id: "nfs",
                                     description: "nfs"
-                                });
+                                });                                
                                 items.push({
                                     id: "ocfs2",
                                     description: "ocfs2"
@@ -1533,7 +1575,7 @@
                                 items.push({
                                     id: "nfs",
                                     description: "nfs"
-                                });
+                                });                               
                                 items.push({
                                     id: "SharedMountPoint",
                                     description: "SharedMountPoint"
@@ -1552,167 +1594,199 @@
 
                                 var protocol = $(this).val();
 
-                                $form.find('[rel=path]').find(".name").find("label").html('<span class=\"field-required\">*</span>Path:');
+                                $form.find('[rel=path]').find(".name").find("label").html('<span class=\"field-required\">*</span>' + _l('label.path') + ':');
 
                                 if (protocol == null)
                                     return;
 
-                                if (protocol == "nfs") {
-                                    //$("#add_pool_server_container", $dialogAddPool).show();
-                                    $form.find('[rel=server]').css('display', 'block');
-                                    //$dialogAddPool.find("#add_pool_nfs_server").val("");
+                                if (protocol == "nfs") {                                    
+                                    $form.find('[rel=server]').css('display', 'block');                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("");
-
-                                    //$('li[input_group="nfs"]', $dialogAddPool).show();
-                                    $form.find('[rel=path]').css('display', 'block');
-                                    //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.path"]+":");
-                                    //$form.find('[rel=path]').find(".name").find("label").text("Path:");
-
-                                    //$('li[input_group="iscsi"]', $dialogAddPool).hide();
+                                    
+                                    $form.find('[rel=path]').css('display', 'block');                                   
+                                    
+                                    $form.find('[rel=smbUsername]').hide();
+                                    $form.find('[rel=smbPassword]').hide();
+                                    $form.find('[rel=smbDomain]').hide();
+                                    
                                     $form.find('[rel=iqn]').hide();
                                     $form.find('[rel=lun]').hide();
-
-                                    //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                                   
                                     $form.find('[rel=volumegroup]').hide();
-
-                                    //$('li[input_group="vmfs"]', $dialogAddPool).hide();
+                                    
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
-                                } else if (protocol == "ocfs2") { //ocfs2 is the same as nfs, except no server field.
-                                    //$dialogAddPool.find("#add_pool_server_container").hide();
-                                    $form.find('[rel=server]').hide();
-                                    //$dialogAddPool.find("#add_pool_nfs_server").val("");
+                                    $form.find('[rel=glustervolume]').hide();
+                                } else if (protocol == "SMB") { //"SMB" show almost the same fields as "nfs" does, except 3 more SMB-specific fields.                                                  
+                               	    $form.find('[rel=server]').css('display', 'block');                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("");
-
-                                    //$('li[input_group="nfs"]', $dialogAddPool).show();
-                                    $form.find('[rel=path]').css('display', 'block');
-                                    //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.path"]+":");
-                                    //$form.find('[rel=path]').find(".name").find("label").text("Path:");
-
-                                    //$('li[input_group="iscsi"]', $dialogAddPool).hide();
+                                    
+                                    $form.find('[rel=path]').css('display', 'block');                                   
+                                    
+                                    $form.find('[rel=smbUsername]').css('display', 'block');  
+                                    $form.find('[rel=smbPassword]').css('display', 'block');  
+                                    $form.find('[rel=smbDomain]').css('display', 'block');  
+                                    
                                     $form.find('[rel=iqn]').hide();
                                     $form.find('[rel=lun]').hide();
-
-                                    //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                                   
                                     $form.find('[rel=volumegroup]').hide();
-
-                                    //$('li[input_group="vmfs"]', $dialogAddPool).hide();
+                                    
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
-                                } else if (protocol == "PreSetup") {
-                                    //$dialogAddPool.find("#add_pool_server_container").hide();
-                                    $form.find('[rel=server]').hide();
-                                    //$dialogAddPool.find("#add_pool_nfs_server").val("localhost");
+
+                                    $form.find('[rel=glustervolume]').hide();
+                                } else if (protocol == "ocfs2") { //ocfs2 is the same as nfs, except no server field.                                    
+                                    $form.find('[rel=server]').hide();                                    
+                                    $form.find('[rel=server]').find(".value").find("input").val("");
+                                    
+                                    $form.find('[rel=path]').css('display', 'block');
+                                                                        
+                                    $form.find('[rel=smbUsername]').hide();
+                                    $form.find('[rel=smbPassword]').hide();
+                                    $form.find('[rel=smbDomain]').hide();
+                                    
+                                    $form.find('[rel=iqn]').hide();
+                                    $form.find('[rel=lun]').hide();
+                                    
+                                    $form.find('[rel=volumegroup]').hide();
+                                   
+                                    $form.find('[rel=vCenterDataCenter]').hide();
+                                    $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
+                                } else if (protocol == "PreSetup") {                                   
+                                    $form.find('[rel=server]').hide();                                   
                                     $form.find('[rel=server]').find(".value").find("input").val("localhost");
-
-                                    //$('li[input_group="nfs"]', $dialogAddPool).show();
-                                    $form.find('[rel=path]').css('display', 'block');
-                                    //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.SR.name"]+":");
-                                    $form.find('[rel=path]').find(".name").find("label").html("<span class=\"field-required\">*</span>SR Name-Label:");
-
-                                    //$('li[input_group="iscsi"]', $dialogAddPool).hide();
+                                   
+                                    $form.find('[rel=path]').css('display', 'block');                                    
+                                    $form.find('[rel=path]').find(".name").find("label").html('<span class=\"field-required\">*</span>'+_l('label.SR.name')+':');
+                                   
+                                    $form.find('[rel=smbUsername]').hide();
+                                    $form.find('[rel=smbPassword]').hide();
+                                    $form.find('[rel=smbDomain]').hide();
+                                    
                                     $form.find('[rel=iqn]').hide();
                                     $form.find('[rel=lun]').hide();
-
-                                    //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                                   
                                     $form.find('[rel=volumegroup]').hide();
-
-                                    //$('li[input_group="vmfs"]', $dialogAddPool).hide();
+                                    
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
-                                } else if (protocol == "iscsi") {
-                                    //$dialogAddPool.find("#add_pool_server_container").show();
-                                    $form.find('[rel=server]').css('display', 'block');
-                                    //$dialogAddPool.find("#add_pool_nfs_server").val("");
+
+                                    $form.find('[rel=glustervolume]').hide();
+                                } else if (protocol == "iscsi") {                                    
+                                    $form.find('[rel=server]').css('display', 'block');                                   
                                     $form.find('[rel=server]').find(".value").find("input").val("");
-
-                                    //$('li[input_group="nfs"]', $dialogAddPool).hide();
+                                   
                                     $form.find('[rel=path]').hide();
-
-                                    //$('li[input_group="iscsi"]', $dialogAddPool).show();
+                                    
+                                    $form.find('[rel=smbUsername]').hide();
+                                    $form.find('[rel=smbPassword]').hide();
+                                    $form.find('[rel=smbDomain]').hide();
+                                    
                                     $form.find('[rel=iqn]').css('display', 'block');
                                     $form.find('[rel=lun]').css('display', 'block');
-
-                                    //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                                    
                                     $form.find('[rel=volumegroup]').hide();
-
-                                    //$('li[input_group="vmfs"]', $dialogAddPool).hide();
+                                    
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
-                                } else if ($(this).val() == "clvm") {
-                                    //$("#add_pool_server_container", $dialogAddPool).hide();
-                                    $form.find('[rel=server]').hide();
-                                    //$dialogAddPool.find("#add_pool_nfs_server").val("localhost");
+
+                                    $form.find('[rel=glustervolume]').hide();
+                                } else if ($(this).val() == "clvm") {                                    
+                                    $form.find('[rel=server]').hide();                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("localhost");
-
-                                    //$('li[input_group="nfs"]', $dialogAddPool).hide();
+                                    
                                     $form.find('[rel=path]').hide();
-
-                                    //$('li[input_group="iscsi"]', $dialogAddPool).hide();
+                                    
+                                    $form.find('[rel=smbUsername]').hide();
+                                    $form.find('[rel=smbPassword]').hide();
+                                    $form.find('[rel=smbDomain]').hide();
+                                    
                                     $form.find('[rel=iqn]').hide();
                                     $form.find('[rel=lun]').hide();
-
-                                    //$('li[input_group="clvm"]', $dialogAddPool).show();
+                                   
                                     $form.find('[rel=volumegroup]').css('display', 'inline-block');
-
-                                    //$('li[input_group="vmfs"]', $dialogAddPool).hide();
+                                   
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
-                                } else if (protocol == "vmfs") {
-                                    //$dialogAddPool.find("#add_pool_server_container").show();
-                                    $form.find('[rel=server]').css('display', 'block');
-                                    //$dialogAddPool.find("#add_pool_nfs_server").val("");
+
+                                    $form.find('[rel=glustervolume]').hide();
+                                } else if (protocol == "vmfs") {                                    
+                                    $form.find('[rel=server]').css('display', 'block');                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("");
-
-                                    //$('li[input_group="nfs"]', $dialogAddPool).hide();
+                                   
                                     $form.find('[rel=path]').hide();
-
-                                    //$('li[input_group="iscsi"]', $dialogAddPool).hide();
+                                   
+                                    $form.find('[rel=smbUsername]').hide();
+                                    $form.find('[rel=smbPassword]').hide();
+                                    $form.find('[rel=smbDomain]').hide();
+                                    
                                     $form.find('[rel=iqn]').hide();
                                     $form.find('[rel=lun]').hide();
-
-                                    //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                                   
                                     $form.find('[rel=volumegroup]').hide();
-
-                                    //$('li[input_group="vmfs"]', $dialogAddPool).show();
+                                   
                                     $form.find('[rel=vCenterDataCenter]').css('display', 'block');
                                     $form.find('[rel=vCenterDataStore]').css('display', 'block');
-                                } else if (protocol == "SharedMountPoint") { //"SharedMountPoint" show the same fields as "nfs" does.
-                                    //$dialogAddPool.find("#add_pool_server_container").hide();
-                                    $form.find('[rel=server]').hide();
-                                    //$dialogAddPool.find("#add_pool_nfs_server").val("localhost");
+
+                                    $form.find('[rel=glustervolume]').hide();
+                                } else if (protocol == "SharedMountPoint") { //"SharedMountPoint" show the same fields as "nfs" does.                                   
+                                    $form.find('[rel=server]').hide();                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("localhost");
-
-                                    //$('li[input_group="nfs"]', $dialogAddPool).show();
-                                    $form.find('[rel=path]').css('display', 'block');
-                                    //$form.find('[rel=path]').find(".name").find("label").text("Path:");
-
-                                    //$('li[input_group="iscsi"]', $dialogAddPool).hide();
+                                   
+                                    $form.find('[rel=path]').css('display', 'block');                                   
+                                   
+                                    $form.find('[rel=smbUsername]').hide();
+                                    $form.find('[rel=smbPassword]').hide();
+                                    $form.find('[rel=smbDomain]').hide();
+                                    
                                     $form.find('[rel=iqn]').hide();
                                     $form.find('[rel=lun]').hide();
-
-                                    //$('li[input_group="clvm"]', $dialogAddPool).hide();
+                                   
                                     $form.find('[rel=volumegroup]').hide();
-
-                                    //$('li[input_group="vmfs"]', $dialogAddPool).hide();
+                                   
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
-                                } else {
-                                    //$dialogAddPool.find("#add_pool_server_container").show();
+
+                                    $form.find('[rel=glustervolume]').hide();
+                                } else if (protocol == "gluster") {
                                     $form.find('[rel=server]').css('display', 'block');
-                                    //$dialogAddPool.find("#add_pool_nfs_server").val("");
                                     $form.find('[rel=server]').find(".value").find("input").val("");
 
-                                    //$('li[input_group="iscsi"]', $dialogAddPool).hide();
+                                    $form.find('[rel=path]').hide();
+                                   
+                                    $form.find('[rel=smbUsername]').hide();
+                                    $form.find('[rel=smbPassword]').hide();
+                                    $form.find('[rel=smbDomain]').hide();
+
                                     $form.find('[rel=iqn]').hide();
                                     $form.find('[rel=lun]').hide();
 
-                                    //$('li[input_group="clvm"]', $dialogAddPool).hide();
                                     $form.find('[rel=volumegroup]').hide();
 
-                                    //$('li[input_group="vmfs"]', $dialogAddPool).hide();
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').css('display', 'block');
+                                } else {                                    
+                                    $form.find('[rel=server]').css('display', 'block');                                    
+                                    $form.find('[rel=server]').find(".value").find("input").val("");
+                                   
+                                    $form.find('[rel=smbUsername]').hide();
+                                    $form.find('[rel=smbPassword]').hide();
+                                    $form.find('[rel=smbDomain]').hide();
+                                    
+                                    $form.find('[rel=iqn]').hide();
+                                    $form.find('[rel=lun]').hide();
+                                   
+                                    $form.find('[rel=volumegroup]').hide();
+                                    
+                                    $form.find('[rel=vCenterDataCenter]').hide();
+                                    $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 }
                             });
 
@@ -1736,6 +1810,31 @@
                         isHidden: true
                     },
 
+                    //SMB
+                    smbDomain: {
+                    	label: 'label.smb.domain',
+                    	validation: {
+                            required: true
+                        },
+                        isHidden: true
+                    },          
+                    smbUsername: {
+                    	label: 'label.smb.username',
+                    	validation: {
+                            required: true
+                        },
+                        isHidden: true
+                    },
+                    smbPassword: {
+                    	label: 'label.smb.password',
+                    	isPassword: true,
+                    	validation: {
+                            required: true
+                        },
+                        isHidden: true
+                    },
+                                    
+                    
                     //iscsi
                     iqn: {
                         label: 'label.target.iqn',
@@ -1777,6 +1876,15 @@
                         isHidden: true
                     },
 
+                    //gluster
+                    glustervolume: {
+                        label: 'label.gluster.volume',
+                        validation: {
+                            required: true
+                        },
+                        isHidden: true
+                    },
+
                     //always appear (begin)
                     storageTags: {
                         label: 'label.storage.tags',
@@ -1790,9 +1898,11 @@
             secondaryStorage: {
                 fields: {                    
                     provider: {
-                        label: 'Provider',
+                        label: 'label.provider',
                         select: function(args) {
-                        	var storageproviders = [];      
+                        	var storageproviders = [];  
+                        	storageproviders.push({ id: '', description: ''});                         	
+                        	
                         	$.ajax({
                         		url: createURL('listImageStores'),
                         		data: {
@@ -1802,27 +1912,17 @@
                         		success: function(json) {                        			
                         			var s3stores = json.listimagestoresresponse.imagestore;
                         			if(s3stores != null && s3stores.length > 0) {                        				
-                        				storageproviders.push({ id: 'S3', description: 'S3'});
+                        				storageproviders.push({ id: 'S3', description: 'S3'}); //if (region-wide) S3 store exists already, only "S3" option should be included here. Any other type of store is not allowed to be created since cloudstack doesn't support multiple types of store at this point. 
                         			} else {
-                        				$.ajax({
-                                            url: createURL('listStorageProviders'),
-                                            data: {
-                                                type: 'image'
-                                            },
-                                            async: false,
-                                            success: function(json) {
-                                                var objs = json.liststorageprovidersresponse.dataStoreProvider;
-                                                storageproviders.push({ id: '', description: ''}); 
-                                                if (objs != null) {
-                                                    for (var i = 0; i < objs.length; i++) {    
-                                                    	storageproviders.push({
-                                                            id: objs[i].name,
-                                                            description: objs[i].name
-                                                        });
-                                                    }
-                                                }                                    
-                                            }
-                                        });
+                        				/*                                                	  
+                                    	UI no longer gets providers from "listStorageProviders&type=image" because:
+                                    	(1) Not all of returned values are handled by UI (e.g. Provider "NetApp" is not handled by UI).
+                                    	(2) Provider "SMB" which is handled by UI is not returned from "listStorageProviders&type=image" 
+                                    	*/
+                        				storageproviders.push({ id: 'NFS', description: 'NFS'});
+                        				storageproviders.push({ id: 'SMB', description: 'SMB/CIFS'});
+                        				storageproviders.push({ id: 'S3', description: 'S3'});
+                        				storageproviders.push({ id: 'Swift', description: 'Swift'});                        				
                         			}                        		                    			
                                     args.response.success({
                                         data: storageproviders
@@ -1840,6 +1940,11 @@
                                             $fields.filter('[rel=nfsServer]').hide();
                                             $fields.filter('[rel=path]').hide();
 
+                                            //SMB
+                                            $fields.filter('[rel=smbUsername]').hide();
+                                            $fields.filter('[rel=smbPassword]').hide();
+                                            $fields.filter('[rel=smbDomain]').hide();
+                                            
                                             //S3
                                             $fields.filter('[rel=accesskey]').hide();
                                             $fields.filter('[rel=secretkey]').hide();
@@ -1868,6 +1973,44 @@
                                             $fields.filter('[rel=nfsServer]').css('display', 'inline-block');
                                             $fields.filter('[rel=path]').css('display', 'inline-block');
 
+                                            //SMB
+                                            $fields.filter('[rel=smbUsername]').hide();
+                                            $fields.filter('[rel=smbPassword]').hide();
+                                            $fields.filter('[rel=smbDomain]').hide();
+                                            
+                                            //S3
+                                            $fields.filter('[rel=accesskey]').hide();
+                                            $fields.filter('[rel=secretkey]').hide();
+                                            $fields.filter('[rel=bucket]').hide();
+                                            $fields.filter('[rel=endpoint]').hide();
+                                            $fields.filter('[rel=usehttps]').hide();
+                                            $fields.filter('[rel=connectiontimeout]').hide();
+                                            $fields.filter('[rel=maxerrorretry]').hide();
+                                            $fields.filter('[rel=sockettimeout]').hide();
+
+                                            $fields.filter('[rel=createNfsCache]').hide();
+                                            $fields.filter('[rel=createNfsCache]').find('input').removeAttr('checked');
+                                            $fields.filter('[rel=nfsCacheNfsServer]').hide();
+                                            $fields.filter('[rel=nfsCachePath]').hide();
+
+                                            //Swift
+                                            $fields.filter('[rel=url]').hide();
+                                            $fields.filter('[rel=account]').hide();
+                                            $fields.filter('[rel=username]').hide();
+                                            $fields.filter('[rel=key]').hide();
+                                        } else if ($(this).val() == "SMB") {
+                                        	$fields.filter('[rel=name]').css('display', 'inline-block');
+                                        	
+                                        	//NFS
+                                            $fields.filter('[rel=zoneid]').css('display', 'inline-block');
+                                            $fields.filter('[rel=nfsServer]').css('display', 'inline-block');
+                                            $fields.filter('[rel=path]').css('display', 'inline-block');
+
+                                            //SMB
+                                            $fields.filter('[rel=smbUsername]').css('display', 'inline-block');
+                                            $fields.filter('[rel=smbPassword]').css('display', 'inline-block');
+                                            $fields.filter('[rel=smbDomain]').css('display', 'inline-block');
+                                            
                                             //S3
                                             $fields.filter('[rel=accesskey]').hide();
                                             $fields.filter('[rel=secretkey]').hide();
@@ -1904,6 +2047,11 @@
                                             $fields.filter('[rel=nfsServer]').hide();
                                             $fields.filter('[rel=path]').hide();
 
+                                            //SMB
+                                            $fields.filter('[rel=smbUsername]').hide();
+                                            $fields.filter('[rel=smbPassword]').hide();
+                                            $fields.filter('[rel=smbDomain]').hide();
+                                            
                                             //S3
                                             if(s3stores != null && s3stores.length > 0) {
                                             	 $fields.filter('[rel=accesskey]').hide();
@@ -1943,6 +2091,11 @@
                                             $fields.filter('[rel=nfsServer]').hide();
                                             $fields.filter('[rel=path]').hide();
 
+                                            //SMB
+                                            $fields.filter('[rel=smbUsername]').hide();
+                                            $fields.filter('[rel=smbPassword]').hide();
+                                            $fields.filter('[rel=smbDomain]').hide();
+                                            
                                             //S3
                                             $fields.filter('[rel=accesskey]').hide();
                                             $fields.filter('[rel=secretkey]').hide();
@@ -1976,9 +2129,9 @@
                         isHidden: true
                     },
                     
-                    //NFS (begin)
+                    //NFS, SMB (begin)
                     nfsServer: {
-                        label: 'label.nfs.server',
+                        label: 'label.server', //change label from "NFS Server" to "Server" since this field is also shown when provider "SMB/CIFS" is elected.
                         validation: {
                             required: true
                         },
@@ -1991,9 +2144,31 @@
                         },
                         isHidden: true
                     },
-                    //NFS (end)
+                    //NFS, SMB (end)
 
 
+                    //SMB (begin) 
+                    smbDomain: {
+                    	label: 'label.smb.domain',
+                    	validation: {
+                            required: true
+                        }
+                    },
+                    smbUsername: {
+                    	label: 'label.smb.username',
+                    	validation: {
+                            required: true
+                        }
+                    },
+                    smbPassword: {
+                    	label: 'label.smb.password',
+                    	isPassword: true,
+                    	validation: {
+                            required: true
+                        }
+                    },                    
+                    //SMB (end)
+                    
                     //S3 (begin)
                     accesskey: {
                         label: 'label.s3.access_key',
@@ -2040,7 +2215,7 @@
                     },
 
                     createNfsCache: {
-                        label: 'Create NFS Secondary Staging Store',
+                        label: 'label.create.nfs.secondary.staging.storage',
                         isBoolean: true,
                         isChecked: true,
                         isHidden: true
@@ -2922,6 +3097,100 @@
                                                         });
                                                         // ***** Virtual Router ***** (end) *****
 
+                                                         // ***** Ovs ***** (begin) *****
+                                                        var ovsProviderId =  null;
+                                                        $.ajax({
+                                                            url: createURL("listNetworkServiceProviders&name=Ovs&physicalNetworkId=" + thisPhysicalNetwork.id),
+                                                            dataType: "json",
+                                                            async: false,
+                                                            success: function (json) {
+                                                                var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+                                                                if (items != null && items.length > 0) {
+                                                                    ovsProviderId = items[0].id;
+                                                                }
+                                                            }
+                                                        });
+                                                        if (ovsProviderId != null) {
+                                                            var ovsElementId = null;
+                                                            $.ajax({
+                                                                url: createURL("listOvsElements&nspid=" + ovsProviderId),
+                                                                dataType: "json",
+                                                                async: false,
+                                                                success: function (json) {
+                                                                    var items = json.listovselementsresponse.ovselement;
+                                                                    if (items != null && items.length > 0) {
+                                                                        ovsElementId = items[0].id;
+                                                                    }
+                                                                }
+                                                            });
+                                                            if (ovsElementId != null) {
+                                                                $.ajax({
+                                                                    url: createURL("configureOvsElement&enabled=true&id=" + ovsElementId),
+                                                                    dataType: "json",
+                                                                    async: false,
+                                                                    success: function (json) {
+                                                                        var jobId = json.configureovselementresponse.jobid;
+                                                                        var enableOvsElementIntervalID = setInterval(function () {
+                                                                            $.ajax({
+                                                                                url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                                                dataType: "json",
+                                                                                success: function (json) {
+                                                                                    var result = json.queryasyncjobresultresponse;
+                                                                                    if (result.jobstatus == 0) {
+                                                                                        return; //Job has not completed
+                                                                                    } else {
+                                                                                        clearInterval(enableOvsElementIntervalID);
+
+                                                                                        if (result.jobstatus == 1) { //configureOvsElement succeeded
+                                                                                            $.ajax({
+                                                                                                url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + ovsProviderId),
+                                                                                                dataType: "json",
+                                                                                                async: false,
+                                                                                                success: function (json) {
+                                                                                                    var jobId = json.updatenetworkserviceproviderresponse.jobid;
+                                                                                                    var enableOvsProviderIntervalID = setInterval(function () {
+                                                                                                        $.ajax({
+                                                                                                            url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                                                                            dataType: "json",
+                                                                                                            success: function (json) {
+                                                                                                                var result = json.queryasyncjobresultresponse;
+                                                                                                                if (result.jobstatus == 0) {
+                                                                                                                    return; //Job has not completed
+                                                                                                                } else {
+                                                                                                                    clearInterval(enableOvsProviderIntervalID);
+
+                                                                                                                    if (result.jobstatus == 2) {
+                                                                                                                        alert("failed to enable Ovs Provider. Error: " + _s(result.jobresult.errortext));
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            },
+                                                                                                            error: function (XMLHttpResponse) {
+                                                                                                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                                                                                alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
+                                                                                                            }
+                                                                                                        });
+                                                                                                    }, g_queryAsyncJobResultInterval);
+                                                                                                }
+                                                                                            });
+                                                                                        } else if (result.jobstatus == 2) {
+                                                                                            alert("configureOvsElement failed. Error: " + _s(result.jobresult.errortext));
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                error: function (XMLHttpResponse) {
+                                                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                                                    alert("configureOvsElement failed. Error: " + errorMsg);
+                                                                                }
+                                                                            });
+                                                                        }, g_queryAsyncJobResultInterval);
+                                                                    }
+                                                                });
+                                                            }
+
+
+                                                        }
+                                                        // ***** Ovs ***** (end) *****
+
                                                         // ***** Internal LB ***** (begin) *****
                                                         var internalLbProviderId;
                                                         $.ajax({
@@ -2957,6 +3226,7 @@
                                                             return;
                                                         }
 
+                                                        var virtualRouterElementId;
                                                         $.ajax({
                                                             url: createURL("configureInternalLoadBalancerElement&enabled=true&id=" + internalLbElementId),
                                                             dataType: "json",
@@ -3020,6 +3290,202 @@
                                                                 }, g_queryAsyncJobResultInterval);
                                                             }
                                                         });
+                                                        // ***** Virtual Router ***** (end) *****
+
+                                                        // ***** Ovs ***** (begin) *****
+                                                        var ovsProviderId =  null;
+                                                        $.ajax({
+                                                            url: createURL("listNetworkServiceProviders&name=Ovs&physicalNetworkId=" + thisPhysicalNetwork.id),
+                                                            dataType: "json",
+                                                            async: false,
+                                                            success: function (json) {
+                                                                var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+                                                                if (items != null && items.length > 0) {
+                                                                    ovsProviderId = items[0].id;
+                                                                }
+                                                            }
+                                                        });
+                                                        if (ovsProviderId != null) {
+                                                            var ovsElementId = null;
+                                                            $.ajax({
+                                                                url: createURL("listOvsElements&nspid=" + ovsProviderId),
+                                                                dataType: "json",
+                                                                async: false,
+                                                                success: function (json) {
+                                                                    var items = json.listovselementsresponse.ovselement;
+                                                                    if (items != null && items.length > 0) {
+                                                                        ovsElementId = items[0].id;
+                                                                    }
+                                                                }
+                                                            });
+                                                            if (ovsElementId != null) {
+                                                                $.ajax({
+                                                                    url: createURL("configureOvsElement&enabled=true&id=" + ovsElementId),
+                                                                    dataType: "json",
+                                                                    async: false,
+                                                                    success: function (json) {
+                                                                        var jobId = json.configureovselementresponse.jobid;
+                                                                        var enableOvsElementIntervalID = setInterval(function () {
+                                                                            $.ajax({
+                                                                                url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                                                dataType: "json",
+                                                                                success: function (json) {
+                                                                                    var result = json.queryasyncjobresultresponse;
+                                                                                    if (result.jobstatus == 0) {
+                                                                                        return; //Job has not completed
+                                                                                    } else {
+                                                                                        clearInterval(enableOvsElementIntervalID);
+
+                                                                                        if (result.jobstatus == 1) { //configureOvsElement succeeded
+                                                                                            $.ajax({
+                                                                                                url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + ovsProviderId),
+                                                                                                dataType: "json",
+                                                                                                async: false,
+                                                                                                success: function (json) {
+                                                                                                    var jobId = json.updatenetworkserviceproviderresponse.jobid;
+                                                                                                    var enableOvsProviderIntervalID = setInterval(function () {
+                                                                                                        $.ajax({
+                                                                                                            url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                                                                            dataType: "json",
+                                                                                                            success: function (json) {
+                                                                                                                var result = json.queryasyncjobresultresponse;
+                                                                                                                if (result.jobstatus == 0) {
+                                                                                                                    return; //Job has not completed
+                                                                                                                } else {
+                                                                                                                    clearInterval(enableOvsProviderIntervalID);
+
+                                                                                                                    if (result.jobstatus == 2) {
+                                                                                                                        alert("failed to enable Ovs Provider. Error: " + _s(result.jobresult.errortext));
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            },
+                                                                                                            error: function (XMLHttpResponse) {
+                                                                                                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                                                                                alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
+                                                                                                            }
+                                                                                                        });
+                                                                                                    }, g_queryAsyncJobResultInterval);
+                                                                                                }
+                                                                                            });
+                                                                                        } else if (result.jobstatus == 2) {
+                                                                                            alert("configureOvsElement failed. Error: " + _s(result.jobresult.errortext));
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                error: function (XMLHttpResponse) {
+                                                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                                                    alert("configureOvsElement failed. Error: " + errorMsg);
+                                                                                }
+                                                                            });
+                                                                        }, g_queryAsyncJobResultInterval);
+                                                                    }
+                                                                });
+                                                            }
+
+
+                                                        }
+
+
+                                                        // ***** Ovs ***** (end) *****
+
+                                                        // ***** Internal LB ***** (begin) *****
+                                                        var internalLbProviderId;
+                                                        $.ajax({
+                                                            url: createURL("listNetworkServiceProviders&name=Internallbvm&physicalNetworkId=" + thisPhysicalNetwork.id),
+                                                            dataType: "json",
+                                                            async: false,
+                                                            success: function (json) {
+                                                                var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+                                                                if (items != null && items.length > 0) {
+                                                                    internalLbProviderId = items[0].id;
+                                                                }
+                                                            }
+                                                        });
+                                                        if (internalLbProviderId == null) {
+                                                            alert("error: listNetworkServiceProviders API doesn't return internalLb provider ID");
+                                                            return;
+                                                        }
+
+                                                        var internalLbElementId;
+                                                        $.ajax({
+                                                            url: createURL("listInternalLoadBalancerElements&nspid=" + internalLbProviderId),
+                                                            dataType: "json",
+                                                            async: false,
+                                                            success: function (json) {
+                                                                var items = json.listinternalloadbalancerelementsresponse.internalloadbalancerelement;
+                                                                if (items != null && items.length > 0) {
+                                                                    internalLbElementId = items[0].id;
+                                                                }
+                                                            }
+                                                        });
+                                                        if (internalLbElementId == null) {
+                                                            alert("error: listInternalLoadBalancerElements API doesn't return Internal LB Element Id");
+                                                            return;
+                                                        }
+
+                                                        $.ajax({
+                                                            url: createURL("configureInternalLoadBalancerElement&enabled=true&id=" + internalLbElementId),
+                                                            dataType: "json",
+                                                            async: false,
+                                                            success: function (json) {
+                                                                var jobId = json.configureinternalloadbalancerelementresponse.jobid;
+                                                                var enableInternalLbElementIntervalID = setInterval(function () {
+                                                                    $.ajax({
+                                                                        url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                                        dataType: "json",
+                                                                        success: function (json) {
+                                                                            var result = json.queryasyncjobresultresponse;
+                                                                            if (result.jobstatus == 0) {
+                                                                                return; //Job has not completed
+                                                                            } else {
+                                                                                clearInterval(enableInternalLbElementIntervalID);
+
+                                                                                if (result.jobstatus == 1) { //configureVirtualRouterElement succeeded
+                                                                                    $.ajax({
+                                                                                        url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + internalLbProviderId),
+                                                                                        dataType: "json",
+                                                                                        async: false,
+                                                                                        success: function (json) {
+                                                                                            var jobId = json.updatenetworkserviceproviderresponse.jobid;
+                                                                                            var enableInternalLbProviderIntervalID = setInterval(function () {
+                                                                                                $.ajax({
+                                                                                                    url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                                                                    dataType: "json",
+                                                                                                    success: function (json) {
+                                                                                                        var result = json.queryasyncjobresultresponse;
+                                                                                                        if (result.jobstatus == 0) {
+                                                                                                            return; //Job has not completed
+                                                                                                        } else {
+                                                                                                            clearInterval(enableInternalLbProviderIntervalID);
+
+                                                                                                            if (result.jobstatus == 1) { //Internal LB has been enabled successfully
+                                                                                                                //don't need to do anything here
+                                                                                                            } else if (result.jobstatus == 2) {
+                                                                                                                alert("failed to enable Internal LB Provider. Error: " + _s(result.jobresult.errortext));
+                                                                                                            }
+                                                                                                        }
+                                                                                                    },
+                                                                                                    error: function (XMLHttpResponse) {
+                                                                                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                                                                        alert("failed to enable Internal LB Provider. Error: " + errorMsg);
+                                                                                                    }
+                                                                                                });
+                                                                                            }, g_queryAsyncJobResultInterval);
+                                                                                        }
+                                                                                    });
+                                                                                } else if (result.jobstatus == 2) {
+                                                                                    alert("configureVirtualRouterElement failed. Error: " + _s(result.jobresult.errortext));
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        error: function (XMLHttpResponse) {
+                                                                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                                            alert("configureVirtualRouterElement failed. Error: " + errorMsg);
+                                                                        }
+                                                                    });
+                                                                }, g_queryAsyncJobResultInterval);
+                                                            }
+                                                        });
                                                         // ***** Internal LB ***** (end) *****
 
                                                         if (args.data.zone.sgEnabled != true) { //Advanced SG-disabled zone
@@ -3029,7 +3495,7 @@
                                                                 url: createURL("listNetworkServiceProviders&name=VpcVirtualRouter&physicalNetworkId=" + thisPhysicalNetwork.id),
                                                                 dataType: "json",
                                                                 async: false,
-                                                                success: function(json) {
+                                                                success: function (json) {
                                                                     var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
                                                                     if (items != null && items.length > 0) {
                                                                         vpcVirtualRouterProviderId = items[0].id;
@@ -3046,7 +3512,7 @@
                                                                 url: createURL("listVirtualRouterElements&nspid=" + vpcVirtualRouterProviderId),
                                                                 dataType: "json",
                                                                 async: false,
-                                                                success: function(json) {
+                                                                success: function (json) {
                                                                     var items = json.listvirtualrouterelementsresponse.virtualrouterelement;
                                                                     if (items != null && items.length > 0) {
                                                                         vpcVirtualRouterElementId = items[0].id;
@@ -3062,13 +3528,13 @@
                                                                 url: createURL("configureVirtualRouterElement&enabled=true&id=" + vpcVirtualRouterElementId),
                                                                 dataType: "json",
                                                                 async: false,
-                                                                success: function(json) {
+                                                                success: function (json) {
                                                                     var jobId = json.configurevirtualrouterelementresponse.jobid;
-                                                                    var enableVpcVirtualRouterElementIntervalID = setInterval(function() {
+                                                                    var enableVpcVirtualRouterElementIntervalID = setInterval(function () {
                                                                         $.ajax({
                                                                             url: createURL("queryAsyncJobResult&jobId=" + jobId),
                                                                             dataType: "json",
-                                                                            success: function(json) {
+                                                                            success: function (json) {
                                                                                 var result = json.queryasyncjobresultresponse;
                                                                                 if (result.jobstatus == 0) {
                                                                                     return; //Job has not completed
@@ -3080,13 +3546,13 @@
                                                                                             url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + vpcVirtualRouterProviderId),
                                                                                             dataType: "json",
                                                                                             async: false,
-                                                                                            success: function(json) {
+                                                                                            success: function (json) {
                                                                                                 var jobId = json.updatenetworkserviceproviderresponse.jobid;
-                                                                                                var enableVpcVirtualRouterProviderIntervalID = setInterval(function() {
+                                                                                                var enableVpcVirtualRouterProviderIntervalID = setInterval(function () {
                                                                                                     $.ajax({
                                                                                                         url: createURL("queryAsyncJobResult&jobId=" + jobId),
                                                                                                         dataType: "json",
-                                                                                                        success: function(json) {
+                                                                                                        success: function (json) {
                                                                                                             var result = json.queryasyncjobresultresponse;
                                                                                                             if (result.jobstatus == 0) {
                                                                                                                 return; //Job has not completed
@@ -3100,7 +3566,7 @@
                                                                                                                 }
                                                                                                             }
                                                                                                         },
-                                                                                                        error: function(XMLHttpResponse) {
+                                                                                                        error: function (XMLHttpResponse) {
                                                                                                             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                                                                                             alert("failed to enable VPC Virtual Router Provider. Error: " + errorMsg);
                                                                                                         }
@@ -3113,7 +3579,7 @@
                                                                                     }
                                                                                 }
                                                                             },
-                                                                            error: function(XMLHttpResponse) {
+                                                                            error: function (XMLHttpResponse) {
                                                                                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                                                                 alert("configureVirtualRouterElement failed. Error: " + errorMsg);
                                                                             }
@@ -3122,7 +3588,7 @@
                                                                 }
                                                             });
                                                             // ***** VPC Virtual Router ***** (end) *****
-                                                        } else { //args.data.zone.sgEnabled == true  //Advanced SG-enabled zone
+                                                        } else { //args.data.zone.sgEnabled == true  //Advanced SG-enabled zone                                                         
                                                             message(dictionary['message.enabling.security.group.provider']);
 
                                                             // get network service provider ID of Security Group
@@ -3131,7 +3597,7 @@
                                                                 url: createURL("listNetworkServiceProviders&name=SecurityGroupProvider&physicalNetworkId=" + thisPhysicalNetwork.id),
                                                                 dataType: "json",
                                                                 async: false,
-                                                                success: function(json) {
+                                                                success: function (json) {
                                                                     var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
                                                                     if (items != null && items.length > 0) {
                                                                         securityGroupProviderId = items[0].id;
@@ -3192,6 +3658,7 @@
                 },
 
                 addNetscalerProvider: function(args) {
+
                     if (selectedNetworkOfferingHavingNetscaler == true) {
                         message(dictionary['message.adding.Netscaler.provider']);
 
@@ -3862,7 +4329,6 @@
                             url = hostname;
                         url += "/" + dcName + "/" + clusterName;
                         array1.push("&url=" + todb(url));
-
                         clusterName = hostname + "/" + dcName + "/" + clusterName; //override clusterName
                     }
                     array1.push("&clustername=" + todb(clusterName));
@@ -4020,53 +4486,47 @@
 
                     var server = args.data.primaryStorage.server;
                     var url = null;
-                    if (args.data.primaryStorage.protocol == "nfs") {
-                        //var path = trim($thisDialog.find("#add_pool_path").val());
+                    if (args.data.primaryStorage.protocol == "nfs") {                        
                         var path = args.data.primaryStorage.path;
-
                         if (path.substring(0, 1) != "/")
                             path = "/" + path;
                         url = nfsURL(server, path);
-                    } else if (args.data.primaryStorage.protocol == "PreSetup") {
-                        //var path = trim($thisDialog.find("#add_pool_path").val());
+                    } else if (args.data.primaryStorage.protocol == "SMB") {
+                    	var path = args.data.primaryStorage.path;
+                        if (path.substring(0, 1) != "/")
+                            path = "/" + path;
+                        url = smbURL(server, path);
+                        array1.push("&details[0].user=" + args.data.primaryStorage.smbUsername);
+                        array1.push("&details[1].password=" + todb(args.data.primaryStorage.smbPassword));
+                        array1.push("&details[2].domain=" + args.data.primaryStorage.smbDomain);
+                    } else if (args.data.primaryStorage.protocol == "PreSetup") {                        
                         var path = args.data.primaryStorage.path;
-
                         if (path.substring(0, 1) != "/")
                             path = "/" + path;
                         url = presetupURL(server, path);
-                    } else if (args.data.primaryStorage.protocol == "ocfs2") {
-                        //var path = trim($thisDialog.find("#add_pool_path").val());
+                    } else if (args.data.primaryStorage.protocol == "ocfs2") {                        
                         var path = args.data.primaryStorage.path;
-
                         if (path.substring(0, 1) != "/")
                             path = "/" + path;
                         url = ocfs2URL(server, path);
-                    } else if (args.data.primaryStorage.protocol == "SharedMountPoint") {
-                        //var path = trim($thisDialog.find("#add_pool_path").val());
+                    } else if (args.data.primaryStorage.protocol == "SharedMountPoint") {                        
                         var path = args.data.primaryStorage.path;
-
                         if (path.substring(0, 1) != "/")
                             path = "/" + path;
                         url = SharedMountPointURL(server, path);
-                    } else if (args.data.primaryStorage.protocol == "clvm") {
-                        //var vg = trim($thisDialog.find("#add_pool_clvm_vg").val());
+                    } else if (args.data.primaryStorage.protocol == "clvm") {                       
                         var vg = args.data.primaryStorage.volumegroup;
-
                         if (vg.substring(0, 1) != "/")
                             vg = "/" + vg;
                         url = clvmURL(vg);
-                    } else if (args.data.primaryStorage.protocol == "vmfs") {
-                        //var path = trim($thisDialog.find("#add_pool_vmfs_dc").val());
+                    } else if (args.data.primaryStorage.protocol == "vmfs") {                        
                         var path = args.data.primaryStorage.vCenterDataCenter;
-
                         if (path.substring(0, 1) != "/")
                             path = "/" + path;
                         path += "/" + args.data.primaryStorage.vCenterDataStore;
                         url = vmfsURL("dummy", path);
-                    } else {
-                        //var iqn = trim($thisDialog.find("#add_pool_iqn").val());
+                    } else {                       
                         var iqn = args.data.primaryStorage.iqn;
-
                         if (iqn.substring(0, 1) != "/")
                             iqn = "/" + iqn;
                         var lun = args.data.primaryStorage.lun;
@@ -4121,9 +4581,44 @@
                         var url = nfsURL(nfs_server, path);
 
                         $.extend(data, {
-                            provider: 'NFS',
+                            provider: args.data.secondaryStorage.provider,
                             zoneid: args.data.returnedZone.id,
                             url: url
+                        });
+
+                        $.ajax({
+                            url: createURL('addImageStore'),
+                            data: data,
+                            success: function(json) {
+                                complete({
+                                    data: $.extend(args.data, {
+                                        returnedSecondaryStorage: json.addimagestoreresponse.secondarystorage
+                                    })
+                                });
+                            },
+                            error: function(XMLHttpResponse) {
+                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                error('addSecondaryStorage', errorMsg, {
+                                    fn: 'addSecondaryStorage',
+                                    args: args
+                                });
+                            }
+                        });
+                    } else if (args.data.secondaryStorage.provider == 'SMB') {
+                        var nfs_server = args.data.secondaryStorage.nfsServer;
+                        var path = args.data.secondaryStorage.path;
+                        var url = smbURL(nfs_server, path);
+
+                        $.extend(data, {
+                            provider: args.data.secondaryStorage.provider,
+                            zoneid: args.data.returnedZone.id,
+                            url: url,
+                            'details[0].key': 'user',
+                            'details[0].value': args.data.secondaryStorage.smbUsername,
+                            'details[1].key': 'password',
+                            'details[1].value': args.data.secondaryStorage.smbPassword,
+                            'details[2].key': 'domain',
+                            'details[2].value': args.data.secondaryStorage.smbDomain
                         });
 
                         $.ajax({

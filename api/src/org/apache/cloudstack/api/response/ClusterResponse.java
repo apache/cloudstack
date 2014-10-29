@@ -16,55 +16,70 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.org.Cluster;
-import com.cloud.serializer.Param;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.cloud.org.Cluster;
+import com.cloud.serializer.Param;
 
 @EntityReference(value = Cluster.class)
 public class ClusterResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the cluster ID")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the cluster ID")
     private String id;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the cluster name")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the cluster name")
     private String name;
 
-    @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod ID of the cluster")
+    @SerializedName(ApiConstants.POD_ID)
+    @Param(description = "the Pod ID of the cluster")
     private String podId;
 
-    @SerializedName("podname") @Param(description="the Pod name of the cluster")
+    @SerializedName("podname")
+    @Param(description = "the Pod name of the cluster")
     private String podName;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID of the cluster")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "the Zone ID of the cluster")
     private String zoneId;
 
-    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name of the cluster")
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "the Zone name of the cluster")
     private String zoneName;
 
-    @SerializedName("hypervisortype") @Param(description="the hypervisor type of the cluster")
+    @SerializedName("hypervisortype")
+    @Param(description = "the hypervisor type of the cluster")
     private String hypervisorType;
 
-    @SerializedName("clustertype") @Param(description="the type of the cluster")
+    @SerializedName("clustertype")
+    @Param(description = "the type of the cluster")
     private String clusterType;
 
-    @SerializedName("allocationstate") @Param(description="the allocation state of the cluster")
+    @SerializedName("allocationstate")
+    @Param(description = "the allocation state of the cluster")
     private String allocationState;
 
-    @SerializedName("managedstate") @Param(description="whether this cluster is managed by cloudstack")
+    @SerializedName("managedstate")
+    @Param(description = "whether this cluster is managed by cloudstack")
     private String managedState;
 
-    @SerializedName("capacity")  @Param(description="the capacity of the Cluster", responseObject = CapacityResponse.class)
+    @SerializedName("capacity")
+    @Param(description = "the capacity of the Cluster", responseObject = CapacityResponse.class)
     private List<CapacityResponse> capacitites;
 
-    @SerializedName("cpuovercommitratio") @Param(description = "The cpu overcommit ratio of the cluster")
+    @SerializedName("cpuovercommitratio")
+    @Param(description = "The cpu overcommit ratio of the cluster")
     private String cpuovercommitratio;
 
-    @SerializedName("memoryovercommitratio") @Param (description = "The memory overcommit ratio of the cluster")
+    @SerializedName("memoryovercommitratio")
+    @Param(description = "The memory overcommit ratio of the cluster")
     private String memoryovercommitratio;
 
     public String getId() {
@@ -155,19 +170,19 @@ public class ClusterResponse extends BaseResponse {
         this.capacitites = arrayList;
     }
 
-    public void setCpuOvercommitRatio(String cpuovercommitratio){
-        this.cpuovercommitratio= cpuovercommitratio;
+    public void setCpuOvercommitRatio(String cpuovercommitratio) {
+        this.cpuovercommitratio = cpuovercommitratio;
     }
 
-    public String getCpuOvercommitRatio(){
+    public String getCpuOvercommitRatio() {
         return cpuovercommitratio;
     }
 
-    public void setMemoryOvercommitRatio(String memoryovercommitratio){
-        this.memoryovercommitratio= memoryovercommitratio;
+    public void setMemoryOvercommitRatio(String memoryovercommitratio) {
+        this.memoryovercommitratio = memoryovercommitratio;
     }
 
-    public String getMemoryOvercommitRatio(){
+    public String getMemoryOvercommitRatio() {
         return memoryovercommitratio;
     }
 }

@@ -17,20 +17,20 @@
 package com.cloud.bridge.service.exception;
 
 public class FileNotExistException extends RuntimeException {
-	private static final long serialVersionUID = 5512751425783765269L;
-	
-	public FileNotExistException() {
-	}
-	
-	public FileNotExistException(String message) {
-		super(message);
-	}
+    private static final long serialVersionUID = 5512751425783765269L;
 
-	public FileNotExistException(Throwable e) {
-		super(e);
-	}
-	
-	public FileNotExistException(String message, Throwable e) {
-		super(message, e);
-	}
+    public FileNotExistException() {
+    }
+
+    public FileNotExistException(String message) {
+        super(message);
+    }
+
+    public FileNotExistException(Throwable e) {
+        super(e);
+    }
+
+    public FileNotExistException(String message, Throwable e) {
+        super(message, e);
+    }
 }

@@ -21,13 +21,13 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="account")
+@Table(name = "account")
 public class CloudStackAccountVO {
-    
-    @Column(name="uuid")
+
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="default_zone_id")
+    @Column(name = "default_zone_id")
     private Long defaultZoneId = null;
 
     public String getUuid() {
@@ -45,6 +45,5 @@ public class CloudStackAccountVO {
     public void setDefaultZoneId(Long defaultZoneId) {
         this.defaultZoneId = defaultZoneId;
     }
-
 
 }

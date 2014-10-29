@@ -19,7 +19,7 @@
 version='TESTBUILD'
 sourcedir=~/cloudstack/
 outputdir=/tmp/cloudstack-build/
-branch='master'
+branch='master' # DH(20140604): maybe change default to `git symbolic-ref --short HEAD`
 tag='no'
 certid='X'
 committosvn='X'
@@ -102,6 +102,12 @@ esac
 
 git clean -f
 
+#create a RC branch
+RELEASE_BRANCH="RC"`date +%Y%m%dT%H%M`
+git branch $branch-$RELEASE_BRANCH
+git checkout $branch-$RELEASE_BRANCH
+
+
 echo 'commit changes'
 git commit -a -s -m "Updating pom.xml version numbers for release $version"
 export commitsh=`git show HEAD | head -n 1 | cut -d ' ' -f 2`
@@ -163,9 +169,5 @@ if [ "$committosvn" == "yes" ]; then
   svn add apache-cloudstack-$version-src.tar.bz2.sha
   svn commit -m "Committing release candidate artifacts for $version to dist/dev/cloudstack in preparation for release vote"
 fi
-
-echo 'revert version changes'
-cd $sourcedir
-git revert --no-edit $commitsh
 
 echo "completed.  use commit-sh of $commitsh when starting the VOTE thread"

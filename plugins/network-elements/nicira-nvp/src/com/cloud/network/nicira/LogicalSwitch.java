@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,85 +15,46 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.nicira;
 
 import java.util.List;
 
-public class LogicalSwitch {
-    private String display_name;
-    private boolean port_isolation_enabled;
-    private List<NiciraNvpTag> tags;
-    private List<TransportZoneBinding> transport_zones;
-    private String type;
-    private String uuid;
-    private String _href;
-    //private RequestQueryParameters _query;
-    //private LogicalSwitchRelations _relations;
-    private String _schema;
+public class LogicalSwitch extends BaseNiciraNamedEntity {
+    public static final String REPLICATION_MODE_SERVICE = "service";
+    public static final String REPLICATION_MODE_SOURCE = "source";
 
-    public String getDisplay_name() {
-        return display_name;
+    private final String type = "LogicalSwitchConfig";
+    private boolean portIsolationEnabled;
+    private List<TransportZoneBinding> transportZones;
+    private String replicationMode;
+
+    public boolean isPortIsolationEnabled() {
+        return portIsolationEnabled;
     }
 
-    public void setDisplay_name(String display_name) {
-        this.display_name = display_name;
-    }
-
-    public boolean isPort_isolation_enabled() {
-        return port_isolation_enabled;
-    }
-
-    public void setPort_isolation_enabled(boolean port_isolation_enabled) {
-        this.port_isolation_enabled = port_isolation_enabled;
+    public void setPortIsolationEnabled(final boolean portIsolationEnabled) {
+        this.portIsolationEnabled = portIsolationEnabled;
     }
 
     public String getType() {
         return type;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public List<TransportZoneBinding> getTransportZones() {
+        return transportZones;
     }
 
-    public String getUuid() {
-        return uuid;
+    public void setTransportZones(final List<TransportZoneBinding> transportZones) {
+        this.transportZones = transportZones;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
+    public String getReplicationMode() {
+        return replicationMode;
     }
 
-    public String get_href() {
-        return _href;
+    public void setReplicationMode(final String replicationMode) {
+        this.replicationMode = replicationMode;
     }
-
-    public void set_href(String _href) {
-        this._href = _href;
-    }
-
-    public String get_schema() {
-        return _schema;
-    }
-
-    public void set_schema(String _schema) {
-        this._schema = _schema;
-    }
-
-    public List<NiciraNvpTag> getTags() {
-        return tags;
-    }
-
-    public void setTags(List<NiciraNvpTag> tags) {
-        this.tags = tags;
-    }
-
-    public List<TransportZoneBinding> getTransport_zones() {
-        return transport_zones;
-    }
-
-    public void setTransport_zones(List<TransportZoneBinding> transport_zones) {
-        this.transport_zones = transport_zones;
-    }
-
-
 }

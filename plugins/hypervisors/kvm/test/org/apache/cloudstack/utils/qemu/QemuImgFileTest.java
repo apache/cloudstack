@@ -16,10 +16,11 @@
 // under the License.
 package org.apache.cloudstack.utils.qemu;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Ignore;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
+
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
 @Ignore

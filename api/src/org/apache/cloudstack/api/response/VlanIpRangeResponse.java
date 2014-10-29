@@ -16,83 +16,105 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.dc.Vlan;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=Vlan.class)
+@EntityReference(value = Vlan.class)
 @SuppressWarnings("unused")
-public class VlanIpRangeResponse extends BaseResponse implements ControlledEntityResponse{
-    @SerializedName(ApiConstants.ID) @Param(description="the ID of the VLAN IP range")
+public class VlanIpRangeResponse extends BaseResponse implements ControlledEntityResponse {
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the ID of the VLAN IP range")
     private String id;
 
-    @SerializedName("forvirtualnetwork") @Param(description="the virtual network for the VLAN IP range")
+    @SerializedName("forvirtualnetwork")
+    @Param(description = "the virtual network for the VLAN IP range")
     private Boolean forVirtualNetwork;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID of the VLAN IP range")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "the Zone ID of the VLAN IP range")
     private String zoneId;
 
-    @SerializedName(ApiConstants.VLAN) @Param(description="the ID or VID of the VLAN.")
+    @SerializedName(ApiConstants.VLAN)
+    @Param(description = "the ID or VID of the VLAN.")
     private String vlan;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account of the VLAN IP range")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account of the VLAN IP range")
     private String accountName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the VLAN IP range")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain ID of the VLAN IP range")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the VLAN IP range")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain name of the VLAN IP range")
     private String domainName;
 
-    @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod ID for the VLAN IP range")
+    @SerializedName(ApiConstants.POD_ID)
+    @Param(description = "the Pod ID for the VLAN IP range")
     private String podId;
 
-    @SerializedName("podname") @Param(description="the Pod name for the VLAN IP range")
+    @SerializedName("podname")
+    @Param(description = "the Pod name for the VLAN IP range")
     private String podName;
 
-    @SerializedName(ApiConstants.GATEWAY) @Param(description="the gateway of the VLAN IP range")
+    @SerializedName(ApiConstants.GATEWAY)
+    @Param(description = "the gateway of the VLAN IP range")
     private String gateway;
 
-    @SerializedName(ApiConstants.NETMASK) @Param(description="the netmask of the VLAN IP range")
+    @SerializedName(ApiConstants.NETMASK)
+    @Param(description = "the netmask of the VLAN IP range")
     private String netmask;
 
-    @SerializedName(ApiConstants.DESCRIPTION) @Param(description="the description of the VLAN IP range")
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "the description of the VLAN IP range")
     private String description;
 
-    @SerializedName(ApiConstants.START_IP) @Param(description="the start ip of the VLAN IP range")
+    @SerializedName(ApiConstants.START_IP)
+    @Param(description = "the start ip of the VLAN IP range")
     private String startIp;
 
-    @SerializedName(ApiConstants.END_IP) @Param(description="the end ip of the VLAN IP range")
+    @SerializedName(ApiConstants.END_IP)
+    @Param(description = "the end ip of the VLAN IP range")
     private String endIp;
 
-    @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the network id of vlan range")
+    @SerializedName(ApiConstants.NETWORK_ID)
+    @Param(description = "the network id of vlan range")
     private String networkId;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vlan range")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the vlan range")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vlan range")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the vlan range")
     private String projectName;
 
-    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
+    @Param(description = "the physical network this belongs to")
     private String physicalNetworkId;
 
-    @SerializedName(ApiConstants.START_IPV6) @Param(description="the start ipv6 of the VLAN IP range")
+    @SerializedName(ApiConstants.START_IPV6)
+    @Param(description = "the start ipv6 of the VLAN IP range")
     private String startIpv6;
 
-    @SerializedName(ApiConstants.END_IPV6) @Param(description="the end ipv6 of the VLAN IP range")
+    @SerializedName(ApiConstants.END_IPV6)
+    @Param(description = "the end ipv6 of the VLAN IP range")
     private String endIpv6;
-    
-    @SerializedName(ApiConstants.IP6_GATEWAY) @Param(description="the gateway of IPv6 network")
+
+    @SerializedName(ApiConstants.IP6_GATEWAY)
+    @Param(description = "the gateway of IPv6 network")
     private String ip6Gateway;
-    
-    @SerializedName(ApiConstants.IP6_CIDR) @Param(description="the cidr of IPv6 network")
+
+    @SerializedName(ApiConstants.IP6_CIDR)
+    @Param(description = "the cidr of IPv6 network")
     private String ip6Cidr;
-    
 
     public void setId(String id) {
         this.id = id;
@@ -110,14 +132,17 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
         this.vlan = vlan;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
 
+    @Override
     public void setDomainId(String domainId) {
         this.domainId = domainId;
     }
 
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
@@ -172,23 +197,23 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
         return physicalNetworkId;
     }
 
-	public String getStartIpv6() {
-		return startIpv6;
-	}
+    public String getStartIpv6() {
+        return startIpv6;
+    }
 
-	public void setStartIpv6(String startIpv6) {
-		this.startIpv6 = startIpv6;
-	}
+    public void setStartIpv6(String startIpv6) {
+        this.startIpv6 = startIpv6;
+    }
 
-	public void setEndIpv6(String endIpv6) {
-		this.endIpv6 = endIpv6;
-	}
+    public void setEndIpv6(String endIpv6) {
+        this.endIpv6 = endIpv6;
+    }
 
-	public void setIp6Gateway(String ip6Gateway) {
-		this.ip6Gateway = ip6Gateway;
-	}
+    public void setIp6Gateway(String ip6Gateway) {
+        this.ip6Gateway = ip6Gateway;
+    }
 
-	public void setIp6Cidr(String ip6Cidr) {
-		this.ip6Cidr = ip6Cidr;
-	}
+    public void setIp6Cidr(String ip6Cidr) {
+        this.ip6Cidr = ip6Cidr;
+    }
 }

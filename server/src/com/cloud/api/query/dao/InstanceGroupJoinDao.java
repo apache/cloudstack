@@ -28,5 +28,4 @@ public interface InstanceGroupJoinDao extends GenericDao<InstanceGroupJoinVO, Lo
 
     InstanceGroupJoinVO newInstanceGroupView(InstanceGroup group);
 
-
 }

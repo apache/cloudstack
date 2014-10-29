@@ -42,15 +42,16 @@ public class StoragePoolDetailVO implements ResourceDetail {
     @Column(name = "value")
     String value;
 
-    @Column(name="display")
-    private boolean display;
-    
-    public StoragePoolDetailVO(long poolId, String name, String value) {
+    @Column(name = "display")
+    private boolean display = true;
+
+    public StoragePoolDetailVO(long poolId, String name, String value, boolean display) {
         this.resourceId = poolId;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
-    
+
     public StoragePoolDetailVO() {
     }
 
@@ -68,12 +69,12 @@ public class StoragePoolDetailVO implements ResourceDetail {
     public String getName() {
         return name;
     }
-    
+
     @Override
     public String getValue() {
         return value;
     }
-    
+
     @Override
     public boolean isDisplay() {
         return display;

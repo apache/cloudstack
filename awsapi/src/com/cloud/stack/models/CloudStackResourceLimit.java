@@ -30,27 +30,26 @@ public class CloudStackResourceLimit {
     @SerializedName(ApiConstants.MAX)
     private Long max;
 
-    
     public CloudStackResourceLimit() {
     }
 
-	public String getAccountName() {
-		return accountName;
-	}
+    public String getAccountName() {
+        return accountName;
+    }
 
     public String getDomainId() {
         return domainId;
     }
 
-	public String getDomainName() {
-		return domainName;
-	}
+    public String getDomainName() {
+        return domainName;
+    }
 
-	public String getResourceType() {
-		return resourceType;
-	}
+    public String getResourceType() {
+        return resourceType;
+    }
 
-	public Long getMax() {
-		return max;
-	}
+    public Long getMax() {
+        return max;
+    }
 }

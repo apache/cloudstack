@@ -37,6 +37,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedGuestVlanRangeCmd;
@@ -54,7 +55,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 public class DedicateGuestVlanRangesTest {
@@ -72,13 +72,18 @@ public class DedicateGuestVlanRangesTest {
     ListDedicatedGuestVlanRangesCmd listDedicatedGuestVlanRangesCmd = new ListDedicatedGuestVlanRangesCmdExtn();
     Class<?> _listDedicatedGuestVlanRangeClass = listDedicatedGuestVlanRangesCmd.getClass().getSuperclass();
 
-
-    @Mock AccountManager _accountMgr;
-    @Mock AccountDao _accountDao;
-    @Mock ProjectManager _projectMgr;
-    @Mock PhysicalNetworkDao _physicalNetworkDao;
-    @Mock DataCenterVnetDao _dataCenterVnetDao;
-    @Mock AccountGuestVlanMapDao _accountGuestVlanMapDao;
+    @Mock
+    AccountManager _accountMgr;
+    @Mock
+    AccountDao _accountDao;
+    @Mock
+    ProjectManager _projectMgr;
+    @Mock
+    PhysicalNetworkDao _physicalNetworkDao;
+    @Mock
+    DataCenterVnetDao _dataCenterVnetDao;
+    @Mock
+    AccountGuestVlanMapDao _accountGuestVlanMapDao;
 
     @Before
     public void setup() throws Exception {
@@ -88,13 +93,13 @@ public class DedicateGuestVlanRangesTest {
         networkService._accountDao = _accountDao;
         networkService._projectMgr = _projectMgr;
         networkService._physicalNetworkDao = _physicalNetworkDao;
-        networkService._datacneter_vnet = _dataCenterVnetDao;
+        networkService._datacneterVnet = _dataCenterVnetDao;
         networkService._accountGuestVlanMapDao = _accountGuestVlanMapDao;
 
-        Account account = new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(networkService._accountMgr.getAccount(anyLong())).thenReturn(account);
         when(networkService._accountDao.findActiveAccount(anyString(), anyLong())).thenReturn(account);
-        
+
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
 
         CallContext.register(user, account);
@@ -178,29 +183,29 @@ public class DedicateGuestVlanRangesTest {
 
     void runDedicateGuestVlanRangePostiveTest() throws Exception {
         TransactionLegacy txn = TransactionLegacy.open("runDedicateGuestVlanRangePostiveTest");
-        
+
         Field dedicateVlanField = _dedicateGuestVlanRangeClass.getDeclaredField("vlan");
         dedicateVlanField.setAccessible(true);
         dedicateVlanField.set(dedicateGuestVlanRangesCmd, "2-5");
 
         PhysicalNetworkVO physicalNetwork = new PhysicalNetworkVO(1L, 1L, "2-5", "200", 1L, null, "testphysicalnetwork");
         physicalNetwork.addIsolationMethod("VLAN");
-        AccountGuestVlanMapVO accountGuestVlanMapVO = new AccountGuestVlanMapVO(1L,1L);
+        AccountGuestVlanMapVO accountGuestVlanMapVO = new AccountGuestVlanMapVO(1L, 1L);
 
         when(networkService._physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetwork);
 
-        when(networkService._datacneter_vnet.listAllocatedVnetsInRange(anyLong(), anyLong(), anyInt(), anyInt())).thenReturn(null);
+        when(networkService._datacneterVnet.listAllocatedVnetsInRange(anyLong(), anyLong(), anyInt(), anyInt())).thenReturn(null);
 
         when(networkService._accountGuestVlanMapDao.listAccountGuestVlanMapsByPhysicalNetwork(anyLong())).thenReturn(null);
 
         when(networkService._accountGuestVlanMapDao.persist(any(AccountGuestVlanMapVO.class))).thenReturn(accountGuestVlanMapVO);
 
-        when(networkService._datacneter_vnet.update(anyLong(), any(DataCenterVnetVO.class))).thenReturn(true);
+        when(networkService._datacneterVnet.update(anyLong(), any(DataCenterVnetVO.class))).thenReturn(true);
 
         List<DataCenterVnetVO> dataCenterVnetList = new ArrayList<DataCenterVnetVO>();
         DataCenterVnetVO dataCenterVnetVO = new DataCenterVnetVO("2-5", 1L, 1L);
         dataCenterVnetList.add(dataCenterVnetVO);
-        when(networkService._datacneter_vnet.findVnet(anyLong(), anyString())).thenReturn(dataCenterVnetList);
+        when(networkService._datacneterVnet.findVnet(anyLong(), anyString())).thenReturn(dataCenterVnetList);
 
         try {
             GuestVlan result = networkService.dedicateGuestVlanRange(dedicateGuestVlanRangesCmd);
@@ -239,7 +244,7 @@ public class DedicateGuestVlanRangesTest {
         Field dedicateVlanField = _dedicateGuestVlanRangeClass.getDeclaredField("vlan");
         dedicateVlanField.setAccessible(true);
         dedicateVlanField.set(dedicateGuestVlanRangesCmd, "2-5");
-        
+
         PhysicalNetworkVO physicalNetwork = new PhysicalNetworkVO(1L, 1L, "6-10", "200", 1L, null, "testphysicalnetwork");
         physicalNetwork.addIsolationMethod("VLAN");
 
@@ -256,7 +261,7 @@ public class DedicateGuestVlanRangesTest {
 
     void runDedicateGuestVlanRangeAllocatedVlans() throws Exception {
         TransactionLegacy txn = TransactionLegacy.open("runDedicateGuestVlanRangeAllocatedVlans");
-        
+
         Field dedicateVlanField = _dedicateGuestVlanRangeClass.getDeclaredField("vlan");
         dedicateVlanField.setAccessible(true);
         dedicateVlanField.set(dedicateGuestVlanRangesCmd, "2-5");
@@ -269,7 +274,7 @@ public class DedicateGuestVlanRangesTest {
         DataCenterVnetVO dataCenter = new DataCenterVnetVO("2-5", 1L, 1L);
         dataCenter.setAccountId(1L);
         dataCenterList.add(dataCenter);
-        when(networkService._datacneter_vnet.listAllocatedVnetsInRange(anyLong(), anyLong(), anyInt(), anyInt())).thenReturn(dataCenterList);
+        when(networkService._datacneterVnet.listAllocatedVnetsInRange(anyLong(), anyLong(), anyInt(), anyInt())).thenReturn(dataCenterList);
 
         try {
             networkService.dedicateGuestVlanRange(dedicateGuestVlanRangesCmd);
@@ -282,7 +287,7 @@ public class DedicateGuestVlanRangesTest {
 
     void runDedicateGuestVlanRangeDedicatedRange() throws Exception {
         TransactionLegacy txn = TransactionLegacy.open("runDedicateGuestVlanRangeDedicatedRange");
-        
+
         Field dedicateVlanField = _dedicateGuestVlanRangeClass.getDeclaredField("vlan");
         dedicateVlanField.setAccessible(true);
         dedicateVlanField.set(dedicateGuestVlanRangesCmd, "2-5");
@@ -292,7 +297,7 @@ public class DedicateGuestVlanRangesTest {
 
         when(networkService._physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetwork);
 
-        when(networkService._datacneter_vnet.listAllocatedVnetsInRange(anyLong(), anyLong(), anyInt(), anyInt())).thenReturn(null);
+        when(networkService._datacneterVnet.listAllocatedVnetsInRange(anyLong(), anyLong(), anyInt(), anyInt())).thenReturn(null);
 
         List<AccountGuestVlanMapVO> guestVlanMaps = new ArrayList<AccountGuestVlanMapVO>();
         AccountGuestVlanMapVO accountGuestVlanMap = new AccountGuestVlanMapVO(1L, 1L);
@@ -311,7 +316,7 @@ public class DedicateGuestVlanRangesTest {
 
     void runDedicateGuestVlanRangePartiallyDedicated() throws Exception {
         TransactionLegacy txn = TransactionLegacy.open("runDedicateGuestVlanRangePartiallyDedicated");
-        
+
         Field dedicateVlanField = _dedicateGuestVlanRangeClass.getDeclaredField("vlan");
         dedicateVlanField.setAccessible(true);
         dedicateVlanField.set(dedicateGuestVlanRangesCmd, "2-5");
@@ -321,7 +326,7 @@ public class DedicateGuestVlanRangesTest {
 
         when(networkService._physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetwork);
 
-        when(networkService._datacneter_vnet.listAllocatedVnetsInRange(anyLong(), anyLong(), anyInt(), anyInt())).thenReturn(null);
+        when(networkService._datacneterVnet.listAllocatedVnetsInRange(anyLong(), anyLong(), anyInt(), anyInt())).thenReturn(null);
 
         List<AccountGuestVlanMapVO> guestVlanMaps = new ArrayList<AccountGuestVlanMapVO>();
         AccountGuestVlanMapVO accountGuestVlanMap = new AccountGuestVlanMapVO(2L, 1L);
@@ -337,13 +342,13 @@ public class DedicateGuestVlanRangesTest {
             txn.close("runDedicateGuestVlanRangePartiallyDedicated");
         }
     }
-    
+
     void runReleaseDedicatedGuestVlanRangePostiveTest() throws Exception {
         TransactionLegacy txn = TransactionLegacy.open("runReleaseDedicatedGuestVlanRangePostiveTest");
 
         AccountGuestVlanMapVO accountGuestVlanMap = new AccountGuestVlanMapVO(1L, 1L);
         when(networkService._accountGuestVlanMapDao.findById(anyLong())).thenReturn(accountGuestVlanMap);
-        doNothing().when(networkService._datacneter_vnet).releaseDedicatedGuestVlans(anyLong());
+        doNothing().when(networkService._datacneterVnet).releaseDedicatedGuestVlans(anyLong());
         when(networkService._accountGuestVlanMapDao.remove(anyLong())).thenReturn(true);
 
         try {
@@ -362,14 +367,14 @@ public class DedicateGuestVlanRangesTest {
         when(networkService._accountGuestVlanMapDao.findById(anyLong())).thenReturn(null);
 
         try {
-        	networkService.releaseDedicatedGuestVlanRange(releaseDedicatedGuestVlanRangesCmd.getId());
+            networkService.releaseDedicatedGuestVlanRange(releaseDedicatedGuestVlanRangesCmd.getId());
         } catch (Exception e) {
             Assert.assertTrue(e.getMessage().contains("Dedicated guest vlan with specified id doesn't exist in the system"));
         } finally {
             txn.close("runReleaseDedicatedGuestVlanRangeInvalidRange");
         }
     }
-    
+
     public class DedicateGuestVlanRangeCmdExtn extends DedicateGuestVlanRangeCmd {
         @Override
         public long getEntityOwnerId() {

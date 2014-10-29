@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,11 +15,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import java.util.Map;
-import com.cloud.agent.api.to.VolumeTO;
+
 import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.VolumeTO;
 
 public class MigrateWithStorageReceiveAnswer extends Answer {
 
@@ -33,8 +37,8 @@ public class MigrateWithStorageReceiveAnswer extends Answer {
         token = null;
     }
 
-    public MigrateWithStorageReceiveAnswer(MigrateWithStorageReceiveCommand cmd, Map<VolumeTO, Object> volumeToSr,
-            Map<NicTO, Object> nicToNetwork, Map<String, String> token) {
+    public MigrateWithStorageReceiveAnswer(MigrateWithStorageReceiveCommand cmd, Map<VolumeTO, Object> volumeToSr, Map<NicTO, Object> nicToNetwork,
+            Map<String, String> token) {
         super(cmd, true, null);
         this.volumeToSr = volumeToSr;
         this.nicToNetwork = nicToNetwork;

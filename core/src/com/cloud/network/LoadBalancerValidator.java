@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,9 +15,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network;
 
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.lb.LoadBalancingRule;
 
 public interface LoadBalancerValidator {
@@ -24,7 +26,6 @@ public interface LoadBalancerValidator {
      * Validate rules
      * @param rule
      * @return true/false. If there are no validation then true should be return.
-     * @throws ResourceUnavailableException
      */
     public boolean validateLBRule(LoadBalancingRule rule);
 }

@@ -18,9 +18,10 @@
  */
 package src;
 
+import junit.framework.TestCase;
+
 import org.junit.Before;
 import org.junit.Test;
-import junit.framework.TestCase;
 
 //@RunWith(SpringJUnit4ClassRunner.class)
 //@ContextConfiguration(locations = "classpath:/SnapshotManagerTestContext.xml")

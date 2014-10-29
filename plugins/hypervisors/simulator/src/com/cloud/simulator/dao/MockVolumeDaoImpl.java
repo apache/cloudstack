@@ -16,6 +16,12 @@
 // under the License.
 package com.cloud.simulator.dao;
 
+import java.util.List;
+
+import javax.ejb.Local;
+
+import org.springframework.stereotype.Component;
+
 import com.cloud.simulator.MockVolumeVO;
 import com.cloud.simulator.MockVolumeVO.MockVolumeType;
 import com.cloud.utils.db.GenericDaoBase;
@@ -23,19 +29,16 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import java.util.List;
 
 @Component
-@Local(value={MockVolumeDao.class})
+@Local(value = {MockVolumeDao.class})
 public class MockVolumeDaoImpl extends GenericDaoBase<MockVolumeVO, Long> implements MockVolumeDao {
     protected final SearchBuilder<MockVolumeVO> idTypeSearch;
     protected final SearchBuilder<MockVolumeVO> pathTypeSearch;
     protected final SearchBuilder<MockVolumeVO> namePoolSearch;
     protected final SearchBuilder<MockVolumeVO> nameSearch;
     protected final GenericSearchBuilder<MockVolumeVO, Long> totalSearch;
+
     @Override
     public List<MockVolumeVO> findByStorageIdAndType(long id, MockVolumeType type) {
         SearchCriteria<MockVolumeVO> sc = idTypeSearch.create();
@@ -54,9 +57,9 @@ public class MockVolumeDaoImpl extends GenericDaoBase<MockVolumeVO, Long> implem
 
     @Override
     public MockVolumeVO findByStoragePathAndType(String path) {
-       SearchCriteria<MockVolumeVO> sc = pathTypeSearch.create();
-       sc.setParameters("path", "%" + path + "%");
-       return findOneBy(sc);
+        SearchCriteria<MockVolumeVO> sc = pathTypeSearch.create();
+        sc.setParameters("path", "%" + path + "%");
+        return findOneBy(sc);
     }
 
     @Override

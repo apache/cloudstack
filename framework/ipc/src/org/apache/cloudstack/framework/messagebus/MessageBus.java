@@ -22,13 +22,17 @@ package org.apache.cloudstack.framework.messagebus;
 import org.apache.cloudstack.framework.serializer.MessageSerializer;
 
 public interface MessageBus {
-	void setMessageSerializer(MessageSerializer messageSerializer);
-	MessageSerializer getMessageSerializer();
-	
-	void subscribe(String subject, MessageSubscriber subscriber);
-	void unsubscribe(String subject, MessageSubscriber subscriber);
-	void clearAll();
-	void prune();
-	
-	void publish(String senderAddress, String subject, PublishScope scope, Object args);
+    void setMessageSerializer(MessageSerializer messageSerializer);
+
+    MessageSerializer getMessageSerializer();
+
+    void subscribe(String subject, MessageSubscriber subscriber);
+
+    void unsubscribe(String subject, MessageSubscriber subscriber);
+
+    void clearAll();
+
+    void prune();
+
+    void publish(String senderAddress, String subject, PublishScope scope, Object args);
 }

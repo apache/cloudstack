@@ -24,8 +24,11 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface XElement {
-	String name();
-	String ns() default "";
-	String item() default "";
-	String itemClass() default "";
+    String name();
+
+    String ns() default "";
+
+    String item() default "";
+
+    String itemClass() default "";
 }

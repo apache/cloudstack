@@ -24,7 +24,7 @@
          */
         var viewAllButton = function(args) {
             var $viewAll = $('<div>').addClass('button view-all');
-            var $label = $('<span>').addClass('view-all-label').html(args.label ? args.label : 'View all');
+            var $label = $('<span>').addClass('view-all-label').html(args.label ? args.label : _l('label.view.all'));
             var $browser = args.$browser;
             var action = args.action;
             // Launch a list view
@@ -111,46 +111,46 @@
                 // Resource items
                 var computeResources = {
                     zone: {
-                        label: 'Zone'
+                        label: 'label.zone'
                     },
 
                     pods: {
-                        label: 'Pods',
+                        label: 'label.pods',
                         viewAll: {
                             action: actions.listView('pods', context)
                         }
                     },
 
                     clusters: {
-                        label: 'Clusters',
+                        label: 'label.clusters',
                         viewAll: {
                             action: actions.listView('clusters', context)
                         }
                     },
 
                     hosts: {
-                        label: 'Hosts',
+                        label: 'label.hosts',
                         viewAll: {
                             action: actions.listView('hosts', context)
                         }
                     },
 
                     primaryStorage: {
-                        label: 'Primary Storage',
+                        label: 'label.primary.storage',
                         viewAll: {
                             action: actions.listView('primary-storage', context)
                         }
                     },
 
                     ucs: {
-                        label: 'UCS',
+                        label: 'label.ucs',
                         viewAll: {
                             action: actions.listView('ucs', context)
                         }
                     },
 
                     secondaryStorage: {
-                        label: 'Secondary Storage',
+                        label: 'label.secondary.storage',
                         viewAll: {
                             action: actions.listView('secondary-storage', context)
                         }
@@ -166,13 +166,13 @@
                     var $label = $('<span>').addClass('label');
 
                     $li.addClass(id);
-                    $label.html(resource.label);
+                    $label.html(_l(resource.label));
                     $label.appendTo($li);
 
                     // View all
                     if (resource.viewAll) {
                         viewAllButton($.extend(resource.viewAll, {
-                            title: resource.label,
+                            title: _l(resource.label),
                             $browser: $browser,
                             context: context
                         })).appendTo($li);
@@ -383,6 +383,9 @@
                     },
                     7: {
                         name: _l('label.vlan')
+                    },
+                    19: {
+                        name: _l('GPU')
                     }
                 };
 

@@ -16,8 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.systemvm;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -34,9 +41,9 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "changeServiceForSystemVm", responseObject=SystemVmResponse.class, description="Changes the service offering for a system vm (console proxy or secondary storage). " +
-                                                                                            "The system vm must be in a \"Stopped\" state for " +
-                                                                                            "this command to take effect.")
+@APICommand(name = "changeServiceForSystemVm", responseObject = SystemVmResponse.class, description = "Changes the service offering for a system vm (console proxy or secondary storage). "
+        + "The system vm must be in a \"Stopped\" state for " + "this command to take effect.", entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpgradeSystemVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeVMCmd.class.getName());
     private static final String s_name = "changeserviceforsystemvmresponse";
@@ -45,13 +52,15 @@ public class UpgradeSystemVMCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=SystemVmResponse.class,
-            required=true, description="The ID of the system vm")
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SystemVmResponse.class, required = true, description = "The ID of the system vm")
     private Long id;
 
-    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType=ServiceOfferingResponse.class,
-            required=true, description="the service offering ID to apply to the system vm")
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, required = true, description = "the service offering ID to apply to the system vm")
     private Long serviceOfferingId;
+
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "name value pairs of custom parameters for cpu, memory and cpunumber. example details[i].name=value")
+    private Map<String, String> details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -63,6 +72,21 @@ public class UpgradeSystemVMCmd extends BaseCmd {
 
     public Long getServiceOfferingId() {
         return serviceOfferingId;
+    }
+
+    public Map<String, String> getDetails() {
+        Map<String, String> customparameterMap = new HashMap<String, String>();
+        if (details != null && details.size() != 0) {
+            Collection parameterCollection = details.values();
+            Iterator iter = parameterCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> value = (HashMap<String, String>)iter.next();
+                for (Map.Entry<String,String>entry : value.entrySet()) {
+                    customparameterMap.put(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+        return customparameterMap;
     }
 
     /////////////////////////////////////////////////////
@@ -85,8 +109,8 @@ public class UpgradeSystemVMCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Vm Id: "+getId());
+    public void execute() {
+        CallContext.current().setEventDetails("Vm Id: " + getId());
 
         ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         if (serviceOffering == null) {

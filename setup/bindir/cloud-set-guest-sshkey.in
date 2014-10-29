@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 #
 # Init file for SSH Public Keys Download Client
 #
@@ -12,9 +12,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -31,21 +31,17 @@ DHCP_FOLDERS="/var/lib/dhclient/* /var/lib/dhcp3/*"
 keys_received=0
 file_count=0
 
-for DHCP_FILE in $DHCP_FOLDERS
-do
-    if [ -f $DHCP_FILE ]
-    then
+for DHCP_FILE in $DHCP_FOLDERS; do
+    if [ -f $DHCP_FILE ]; then
         file_count=$((file_count+1))
         SSHKEY_SERVER_IP=$(grep dhcp-server-identifier $DHCP_FILE | tail -1 | awk '{print $NF}' | tr -d '\;')
 
-        if [ -n "$SSHKEY_SERVER_IP" ]
-        then
+        if [ -n "$SSHKEY_SERVER_IP" ]; then
             logger -t "cloud" "Sending request to ssh key server at $SSHKEY_SERVER_IP"
 
-            publickey=$(wget -t 3 -T 20 -O - http://$SSHKEY_SERVER_IP/latest/public-keys 2>/dev/null)
+            publickey=$(wget -q -t 3 -T 20 -O - http://$SSHKEY_SERVER_IP/latest/public-keys)
 
-            if [ $? -eq 0 ]
-            then
+            if [ $? -eq 0 ]; then
                 logger -t "cloud" "Got response from server at $SSHKEY_SERVER_IP"
                 keys_received=1
                 break
@@ -56,11 +52,10 @@ do
     fi
 done
 
-if [ "$keys_received" == "0" ]
-then
+if [ "$keys_received" == "0" ]; then
     SSHKEY_SERVER_IP=$(nslookup data-server | grep Address |tr '\n' ' '|  awk '{print $4}')
     logger -t "cloud" "Sending request to ssh key server at $SSHKEY_SERVER_IP"
-     publickey=$(wget -t 3 -T 20 -O - http://data-server/latest/public-keys 2>/dev/null)
+     publickey=$(wget -q -t 3 -T 20 -O - http://data-server/latest/public-keys)
      if [ $? -eq 0 ]
      then
         logger -t "cloud" "Got response from server at $SSHKEY_SERVER_IP"
@@ -70,39 +65,33 @@ then
      fi
 fi
 
-# did we find the keys anywhere?
-if [ "$keys_received" == "0" ]
-then
+if [ "$keys_received" == "0" ]; then
     logger -t "cloud" "Failed to get ssh keys from any server"
     exit 1
 fi
 
+if [ -z "$publickey" ]; then
+    logger -t "cloud" "Did not receive any keys from any server"
+    exit 1
+fi
 
-
-# set ssh public key
 homedir=$(grep ^$user /etc/passwd|awk -F ":" '{print $6}')
 sshdir=$homedir/.ssh
 authorized=$sshdir/authorized_keys
-restorecon=/sbin/restorecon
 
-
-if [ ! -e $sshdir ]
-then
+if [ ! -e $sshdir ]; then
     mkdir $sshdir
+    chmod 700 $sshdir
 fi
 
-if [ ! -e $authorized ]
-then
+if [ ! -e $authorized ]; then
     touch $authorized
+    chmod 600 $authorized
 fi
 
-cat $authorized|grep -v "$publickey" > $authorized
+cat $authorized|grep -v "$publickey"|tee $authorized > /dev/null
 echo "$publickey" >> $authorized
 
-if [ -e $restorecon ]
-then
-    $restorecon -R -v $sshdir
-fi
+which restorecon && restorecon -R -v $sshdir
 
 exit 0
-

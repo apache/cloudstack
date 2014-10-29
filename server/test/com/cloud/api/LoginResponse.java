@@ -16,10 +16,11 @@
 // under the License.
 package com.cloud.api;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 /**
  * Login Response object
@@ -134,7 +135,5 @@ public class LoginResponse extends BaseResponse {
     public void setType(int type) {
         this.type = type;
     }
-
-
 
 }

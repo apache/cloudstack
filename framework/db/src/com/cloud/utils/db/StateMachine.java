@@ -26,5 +26,6 @@ import java.lang.annotation.Target;
 @Retention(RUNTIME)
 public @interface StateMachine {
     public Class<?> state();
+
     public Class<?> event();
 }

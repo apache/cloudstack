@@ -46,11 +46,9 @@ public interface VMTemplateHostDao extends GenericDao<VMTemplateHostVO, Long>,
 
     List<VMTemplateHostVO> listByTemplateStatus(long templateId, VMTemplateHostVO.Status downloadState);
 
-    List<VMTemplateHostVO> listByTemplateStatus(long templateId, long datacenterId,
-            VMTemplateHostVO.Status downloadState);
+    List<VMTemplateHostVO> listByTemplateStatus(long templateId, long datacenterId, VMTemplateHostVO.Status downloadState);
 
-    List<VMTemplateHostVO> listByTemplateStatus(long templateId, long datacenterId, long podId,
-            VMTemplateHostVO.Status downloadState);
+    List<VMTemplateHostVO> listByTemplateStatus(long templateId, long datacenterId, long podId, VMTemplateHostVO.Status downloadState);
 
     List<VMTemplateHostVO> listByTemplateStates(long templateId, VMTemplateHostVO.Status... states);
 

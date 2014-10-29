@@ -16,6 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -24,7 +28,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -32,17 +35,17 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteVPC", description="Deletes a VPC", responseObject=SuccessResponse.class)
-public class DeleteVPCCmd extends BaseAsyncCmd{
+@APICommand(name = "deleteVPC", description = "Deletes a VPC", responseObject = SuccessResponse.class, entityType = {Vpc.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class DeleteVPCCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVPCCmd.class.getName());
     private static final String s_name = "deletevpcresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = VpcResponse.class,
-            required=true, description="the ID of the VPC")
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcResponse.class, required = true, description = "the ID of the VPC")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -73,11 +76,11 @@ public class DeleteVPCCmd extends BaseAsyncCmd{
             boolean result = _vpcService.deleteVpc(getId());
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete VPC");
             }
-        }catch (ResourceUnavailableException ex) {
+        } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException ex) {

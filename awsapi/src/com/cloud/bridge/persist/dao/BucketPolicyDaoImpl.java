@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.bridge.persist.dao;
 
-
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -29,18 +28,20 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={BucketPolicyDao.class})
-public class BucketPolicyDaoImpl extends GenericDaoBase<BucketPolicyVO, Long> implements BucketPolicyDao{
+@Local(value = {BucketPolicyDao.class})
+public class BucketPolicyDaoImpl extends GenericDaoBase<BucketPolicyVO, Long> implements BucketPolicyDao {
     public static final Logger logger = Logger.getLogger(BucketPolicyDaoImpl.class);
-    public BucketPolicyDaoImpl(){ }
+
+    public BucketPolicyDaoImpl() {
+    }
 
     /**
      * Since a bucket policy can exist before its bucket we also need to keep the policy's owner
      * so we can restrict who modifies it (because of the "s3:CreateBucket" action).
      */
     @Override
-    public BucketPolicyVO getByName( String bucketName ) {
-        SearchBuilder <BucketPolicyVO> searchByBucket = createSearchBuilder();
+    public BucketPolicyVO getByName(String bucketName) {
+        SearchBuilder<BucketPolicyVO> searchByBucket = createSearchBuilder();
         searchByBucket.and("BucketName", searchByBucket.entity().getBucketName(), SearchCriteria.Op.EQ);
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         try {
@@ -49,15 +50,15 @@ public class BucketPolicyDaoImpl extends GenericDaoBase<BucketPolicyVO, Long> im
             sc.setParameters("BucketName", bucketName);
             return findOneBy(sc);
 
-        }finally {
+        } finally {
             txn.close();
         }
 
     }
 
     @Override
-    public void deletePolicy( String bucketName ) {
-        SearchBuilder <BucketPolicyVO> deleteByBucket = createSearchBuilder();
+    public void deletePolicy(String bucketName) {
+        SearchBuilder<BucketPolicyVO> deleteByBucket = createSearchBuilder();
         deleteByBucket.and("BucketName", deleteByBucket.entity().getBucketName(), SearchCriteria.Op.EQ);
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         try {
@@ -66,7 +67,7 @@ public class BucketPolicyDaoImpl extends GenericDaoBase<BucketPolicyVO, Long> im
             sc.setParameters("BucketName", bucketName);
             remove(sc);
 
-        }finally {
+        } finally {
             txn.close();
         }
 

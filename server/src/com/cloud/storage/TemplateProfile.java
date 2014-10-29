@@ -23,218 +23,257 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 
 public class TemplateProfile {
-	Long userId;
-	String name;
-	String displayText;
-	Integer bits;
-	Boolean passwordEnabled;
-	Boolean sshKeyEnbaled;
-	Boolean requiresHvm;
-	String url;
-	Boolean isPublic;
-	Boolean featured;
-	Boolean isExtractable;
-	ImageFormat format;
-	Long guestOsId;
-	Long zoneId;
-	HypervisorType hypervisorType;
-	String accountName;
-	Long domainId;
-	Long accountId;
-	String chksum;
-	Boolean bootable;
-	Long templateId;
-	VMTemplateVO template;
-	String templateTag;
-	Map details;
+    Long userId;
+    String name;
+    String displayText;
+    Integer bits;
+    Boolean passwordEnabled;
+    Boolean sshKeyEnbaled;
+    Boolean requiresHvm;
+    String url;
+    Boolean isPublic;
+    Boolean featured;
+    Boolean isExtractable;
+    ImageFormat format;
+    Long guestOsId;
+    Long zoneId;
+    HypervisorType hypervisorType;
+    String accountName;
+    Long domainId;
+    Long accountId;
+    String chksum;
+    Boolean bootable;
+    Long templateId;
+    VMTemplateVO template;
+    String templateTag;
+    Map details;
     Boolean isDynamicallyScalable;
     TemplateType templateType;
-	
 
-	public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm,
-			String url, Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId,
-			HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, Map details, Boolean sshKeyEnabled) {
-		this.templateId = templateId;
-		this.userId = userId;
-		this.name = name;
-		this.displayText = displayText;
-		this.bits = bits;
-		this.passwordEnabled = passwordEnabled;
-		this.requiresHvm = requiresHvm;
-		this.url = url;
-		this.isPublic = isPublic;
-		this.featured = featured;
-		this.isExtractable = isExtractable;
-		this.format = format;
-		this.guestOsId = guestOsId;
-		this.zoneId = zoneId;
-		this.hypervisorType = hypervisorType;
-		this.accountName = accountName;
-		this.domainId = domainId;
-		this.accountId = accountId;
-		this.chksum = chksum;
-		this.bootable = bootable;
-		this.details = details;
-		this.sshKeyEnbaled = sshKeyEnabled;
-	}
+    public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
+            Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId, HypervisorType hypervisorType,
+            String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, Map details, Boolean sshKeyEnabled) {
+        this.templateId = templateId;
+        this.userId = userId;
+        this.name = name;
+        this.displayText = displayText;
+        this.bits = bits;
+        this.passwordEnabled = passwordEnabled;
+        this.requiresHvm = requiresHvm;
+        this.url = url;
+        this.isPublic = isPublic;
+        this.featured = featured;
+        this.isExtractable = isExtractable;
+        this.format = format;
+        this.guestOsId = guestOsId;
+        this.zoneId = zoneId;
+        this.hypervisorType = hypervisorType;
+        this.accountName = accountName;
+        this.domainId = domainId;
+        this.accountId = accountId;
+        this.chksum = chksum;
+        this.bootable = bootable;
+        this.details = details;
+        this.sshKeyEnbaled = sshKeyEnabled;
+    }
 
-	public TemplateProfile(Long userId, VMTemplateVO template, Long zoneId) {
-		this.userId = userId;
-		this.template = template;
-		this.zoneId = zoneId;
-	}
+    public TemplateProfile(Long userId, VMTemplateVO template, Long zoneId) {
+        this.userId = userId;
+        this.template = template;
+        this.zoneId = zoneId;
+    }
 
-    public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm,
-            String url, Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId,
+    public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
+            Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId,
 
-            HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, String templateTag, Map details, Boolean sshKeyEnabled,
-            Long imageStoreId, Boolean isDynamicallyScalable, TemplateType templateType) {
-        this(templateId, userId, name, displayText, bits, passwordEnabled, requiresHvm, url, isPublic, featured, isExtractable, format, guestOsId, zoneId,
-                hypervisorType, accountName, domainId, accountId, chksum, bootable, details, sshKeyEnabled);
+            HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, String templateTag, Map details,
+            Boolean sshKeyEnabled, Long imageStoreId, Boolean isDynamicallyScalable, TemplateType templateType) {
+        this(templateId,
+            userId,
+            name,
+            displayText,
+            bits,
+            passwordEnabled,
+            requiresHvm,
+            url,
+            isPublic,
+            featured,
+            isExtractable,
+            format,
+            guestOsId,
+            zoneId,
+            hypervisorType,
+            accountName,
+            domainId,
+            accountId,
+            chksum,
+            bootable,
+            details,
+            sshKeyEnabled);
         this.templateTag = templateTag;
         this.isDynamicallyScalable = isDynamicallyScalable;
         this.templateType = templateType;
-    }	
+    }
 
-	public Long getTemplateId() {
-		return templateId;
-	}
-	public void setTemplateId(Long id) {
-		this.templateId = id;
-	}
+    public Long getTemplateId() {
+        return templateId;
+    }
 
-	public Long getUserId() {
-		return userId;
-	}
-	public void setUserId(Long userId) {
-		this.userId = userId;
-	}
+    public void setTemplateId(Long id) {
+        this.templateId = id;
+    }
 
-	public String getName() {
-		return name;
-	}
-	public void setName(String name) {
-		this.name = name;
-	}
+    public Long getUserId() {
+        return userId;
+    }
 
-	public String getDisplayText() {
-		return displayText;
-	}
-	public void setDisplayText(String text) {
-		this.displayText = text;
-	}
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
 
-	public Integer getBits() {
-		return bits;
-	}
-	public void setBits(Integer bits) {
-		this.bits = bits;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public Boolean getPasswordEnabled() {
-		return passwordEnabled;
-	}
-	public void setPasswordEnabled(Boolean enabled) {
-		this.passwordEnabled = enabled;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public Boolean getRequiresHVM() {
-		return requiresHvm;
-	}
-	public void setRequiresHVM(Boolean hvm) {
-		this.requiresHvm = hvm;
-	}
+    public String getDisplayText() {
+        return displayText;
+    }
 
-	public String getUrl() {
-		return url;
-	}
-	public void setUrl(String url) {
-		this.url = url;
-	}
+    public void setDisplayText(String text) {
+        this.displayText = text;
+    }
 
-	public Boolean getIsPublic() {
-		return isPublic;
-	}
-	public void setIsPublic(Boolean is) {
-		this.isPublic = is;
-	}
+    public Integer getBits() {
+        return bits;
+    }
 
-	public Boolean getFeatured() {
-		return featured;
-	}
-	public void setFeatured(Boolean featured) {
-		this.featured = featured;
-	}
+    public void setBits(Integer bits) {
+        this.bits = bits;
+    }
 
-	public Boolean getIsExtractable() {
-		return isExtractable;
-	}
-	public void setIsExtractable(Boolean is) {
-		this.isExtractable = is;
-	}
+    public Boolean getPasswordEnabled() {
+        return passwordEnabled;
+    }
 
-	public ImageFormat getFormat() {
-		return format;
-	}
-	public void setFormat(ImageFormat format) {
-		this.format = format;
-	}
+    public void setPasswordEnabled(Boolean enabled) {
+        this.passwordEnabled = enabled;
+    }
 
-	public Long getGuestOsId() {
-		return guestOsId;
-	}
-	public void setGuestOsId(Long id) {
-		this.guestOsId = id;
-	}
+    public Boolean getRequiresHVM() {
+        return requiresHvm;
+    }
 
-	public Long getZoneId() {
-		return zoneId;
-	}
-	public void setZoneId(Long id) {
-		this.zoneId = id;
-	}
+    public void setRequiresHVM(Boolean hvm) {
+        this.requiresHvm = hvm;
+    }
 
-	public HypervisorType getHypervisorType() {
-		return hypervisorType;
-	}
-	public void setHypervisorType(HypervisorType type) {
-		this.hypervisorType = type;
-	}
+    public String getUrl() {
+        return url;
+    }
 
-	public Long getDomainId() {
-		return domainId;
-	}
-	public void setDomainId(Long id) {
-		this.domainId = id;
-	}
+    public void setUrl(String url) {
+        this.url = url;
+    }
 
-	public Long getAccountId() {
-		return accountId;
-	}
-	public void setAccountId(Long id) {
-		this.accountId = id;
-	}
+    public Boolean getIsPublic() {
+        return isPublic;
+    }
 
-	public String getCheckSum() {
-		return chksum;
-	}
-	public void setCheckSum(String chksum) {
-		this.chksum = chksum;
-	}
+    public void setIsPublic(Boolean is) {
+        this.isPublic = is;
+    }
 
-	public Boolean getBootable() {
-		return this.bootable;
-	}
-	public void setBootable(Boolean bootable) {
-		this.bootable = bootable;
-	}
+    public Boolean getFeatured() {
+        return featured;
+    }
 
-	public VMTemplateVO getTemplate() {
-		return template;
-	}
-	public void setTemplate(VMTemplateVO template) {
-		this.template = template;
-	}
+    public void setFeatured(Boolean featured) {
+        this.featured = featured;
+    }
+
+    public Boolean getIsExtractable() {
+        return isExtractable;
+    }
+
+    public void setIsExtractable(Boolean is) {
+        this.isExtractable = is;
+    }
+
+    public ImageFormat getFormat() {
+        return format;
+    }
+
+    public void setFormat(ImageFormat format) {
+        this.format = format;
+    }
+
+    public Long getGuestOsId() {
+        return guestOsId;
+    }
+
+    public void setGuestOsId(Long id) {
+        this.guestOsId = id;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(Long id) {
+        this.zoneId = id;
+    }
+
+    public HypervisorType getHypervisorType() {
+        return hypervisorType;
+    }
+
+    public void setHypervisorType(HypervisorType type) {
+        this.hypervisorType = type;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(Long id) {
+        this.domainId = id;
+    }
+
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Long id) {
+        this.accountId = id;
+    }
+
+    public String getCheckSum() {
+        return chksum;
+    }
+
+    public void setCheckSum(String chksum) {
+        this.chksum = chksum;
+    }
+
+    public Boolean getBootable() {
+        return this.bootable;
+    }
+
+    public void setBootable(Boolean bootable) {
+        this.bootable = bootable;
+    }
+
+    public VMTemplateVO getTemplate() {
+        return template;
+    }
+
+    public void setTemplate(VMTemplateVO template) {
+        this.template = template;
+    }
 
     public String getTemplateTag() {
         return templateTag;
@@ -245,19 +284,19 @@ public class TemplateProfile {
     }
 
     public Map getDetails() {
-    	return this.details;
+        return this.details;
     }
 
     public void setDetails(Map details) {
-    	this.details = details;
+        this.details = details;
     }
 
     public void setSshKeyEnabled(Boolean enabled) {
-    	this.sshKeyEnbaled = enabled;
+        this.sshKeyEnbaled = enabled;
     }
 
     public Boolean getSshKeyEnabled() {
-    	return this.sshKeyEnbaled;
+        return this.sshKeyEnbaled;
     }
 
     public Boolean IsDynamicallyScalable() {

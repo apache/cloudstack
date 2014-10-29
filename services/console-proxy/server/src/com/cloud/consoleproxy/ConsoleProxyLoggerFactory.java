@@ -22,66 +22,80 @@ import com.cloud.consoleproxy.util.LoggerFactory;
 public class ConsoleProxyLoggerFactory implements LoggerFactory {
     public ConsoleProxyLoggerFactory() {
     }
-    
+
+    @Override
     public Logger getLogger(Class<?> clazz) {
         return new Log4jLogger(org.apache.log4j.Logger.getLogger(clazz));
     }
-    
+
     public static class Log4jLogger extends Logger {
         private org.apache.log4j.Logger logger;
-        
+
         public Log4jLogger(org.apache.log4j.Logger logger) {
             this.logger = logger;
         }
-        
+
+        @Override
         public boolean isTraceEnabled() {
             return logger.isTraceEnabled();
         }
-        
+
+        @Override
         public boolean isDebugEnabled() {
             return logger.isDebugEnabled();
         }
-        
+
+        @Override
         public boolean isInfoEnabled() {
             return logger.isInfoEnabled();
         }
 
+        @Override
         public void trace(Object message) {
             logger.trace(message);
         }
-        
+
+        @Override
         public void trace(Object message, Throwable exception) {
             logger.trace(message, exception);
         }
-        
+
+        @Override
         public void info(Object message) {
             logger.info(message);
         }
-        
+
+        @Override
         public void info(Object message, Throwable exception) {
             logger.info(message, exception);
         }
-        
+
+        @Override
         public void debug(Object message) {
             logger.debug(message);
         }
-        
+
+        @Override
         public void debug(Object message, Throwable exception) {
             logger.debug(message, exception);
         }
-        
+
+        @Override
         public void warn(Object message) {
             logger.warn(message);
         }
-        
+
+        @Override
         public void warn(Object message, Throwable exception) {
             logger.warn(message, exception);
         }
-        
+
+        @Override
         public void error(Object message) {
             logger.error(message);
         }
-        
+
+        @Override
         public void error(Object message, Throwable exception) {
             logger.error(message, exception);
         }

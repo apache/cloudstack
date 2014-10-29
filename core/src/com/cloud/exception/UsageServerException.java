@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,12 +15,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.exception;
 
 public class UsageServerException extends CloudException {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = -8398313106067116466L;
 
@@ -30,8 +33,5 @@ public class UsageServerException extends CloudException {
     public UsageServerException(String message) {
         super(message);
     }
-
-
-
 
 }

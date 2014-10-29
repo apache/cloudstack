@@ -23,8 +23,7 @@ public class CreateVnsPortCommand extends Command {
     private String _portName;
     private String _mac;
 
-    public CreateVnsPortCommand(String networkUuid, String portUuid,
-                                String tenantUuid, String portName, String mac) {
+    public CreateVnsPortCommand(String networkUuid, String portUuid, String tenantUuid, String portName, String mac) {
         this._networkUuid = networkUuid;
         this._portUuid = portUuid;
         this._tenantUuid = tenantUuid;
@@ -32,26 +31,21 @@ public class CreateVnsPortCommand extends Command {
         this._mac = mac;
     }
 
-
     public String getNetworkUuid() {
         return _networkUuid;
     }
-
 
     public String getPortUuid() {
         return _portUuid;
     }
 
-
     public String getTenantUuid() {
         return _tenantUuid;
     }
 
-
     public String getPortName() {
         return _portName;
     }
-
 
     public String getMac() {
         return _mac;

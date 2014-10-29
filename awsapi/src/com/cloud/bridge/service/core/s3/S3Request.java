@@ -19,34 +19,34 @@ package com.cloud.bridge.service.core.s3;
 import java.util.Calendar;
 
 public class S3Request {
-	protected String accessKey;
-	protected String signature;
-	protected Calendar requestTimestamp;
-	
-	public S3Request() {
-	}
+    protected String accessKey;
+    protected String signature;
+    protected Calendar requestTimestamp;
 
-	public String getAccessKey() {
-		return accessKey;
-	}
+    public S3Request() {
+    }
 
-	public void setAccessKey(String accessKey) {
-		this.accessKey = accessKey;
-	}
+    public String getAccessKey() {
+        return accessKey;
+    }
 
-	public String getSignature() {
-		return signature;
-	}
+    public void setAccessKey(String accessKey) {
+        this.accessKey = accessKey;
+    }
 
-	public void setSignature(String signature) {
-		this.signature = signature;
-	}
+    public String getSignature() {
+        return signature;
+    }
 
-	public Calendar getRequestTimestamp() {
-		return requestTimestamp;
-	}
+    public void setSignature(String signature) {
+        this.signature = signature;
+    }
 
-	public void setRequestTimestamp(Calendar requestTimestamp) {
-		this.requestTimestamp = requestTimestamp;
-	}
+    public Calendar getRequestTimestamp() {
+        return requestTimestamp;
+    }
+
+    public void setRequestTimestamp(Calendar requestTimestamp) {
+        this.requestTimestamp = requestTimestamp;
+    }
 }

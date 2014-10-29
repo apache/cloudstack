@@ -28,7 +28,7 @@ import com.cloud.utils.db.Merovingian2;
  */
 public class LockMasterListener implements ClusterManagerListener {
     Merovingian2 _lockMaster;
-    
+
     public LockMasterListener(long msId) {
         _lockMaster = Merovingian2.createLockMaster(msId);
     }

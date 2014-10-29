@@ -30,26 +30,26 @@ import com.cloud.utils.db.SearchCriteria.Op;
  * GenericSearchBuilder in that it is used for building queries during runtime
  * where GenericSearchBuilder expects the query to be built during load time
  * and parameterized values to be set during runtime.
- * 
+ *
  * GenericQueryBuilder allows results to be a native type, the entity bean,
  * and a composite type.  If you are just retrieving the entity bean, there
  * is a simpler class called QueryBuilder that you can use.  The usage
  * is approximately the same.
- * 
+ *
  * <code>
  * // Note that in the following search, it selects a func COUNT to be the
  * // return result so for the second parameterized type is long.
  * // Note the entity object itself must have came from search and
  * // it uses the getters of the object to retrieve the field used in the search.
- * 
+ *
  * GenericQueryBuilder<HostVO, Long> sc = GenericQueryBuilder.create(HostVO.class, Long.class);
  * HostVO entity = CountSearch.entity();
  * sc.select(null, FUNC.COUNT, null, null).where(entity.getType(), Op.EQ, Host.Type.Routing);
  * sc.and(entity.getCreated(), Op.LT, new Date());
  * Long count = sc.find();
- * 
+ *
  * </code> *
- * 
+ *
  * @see GenericSearchBuilder
  * @see QueryBuilder
  *
@@ -78,7 +78,7 @@ public class GenericQueryBuilder<T, K> extends SearchBase<GenericQueryBuilder<T,
 
     /**
      * Adds AND search condition
-     * 
+     *
      * @param field the field of the entity to perform the search on.
      * @param op operator
      * @param values parameterized values
@@ -93,7 +93,7 @@ public class GenericQueryBuilder<T, K> extends SearchBase<GenericQueryBuilder<T,
 
     /**
      * Adds OR search condition
-     * 
+     *
      * @param field the field of the entity to perform the search on.
      * @param op operator
      * @param values parameterized values
@@ -116,7 +116,7 @@ public class GenericQueryBuilder<T, K> extends SearchBase<GenericQueryBuilder<T,
     /**
      * Adds search condition that starts with an open parenthesis.  Call cp()
      * to close the parenthesis.
-     * 
+     *
      * @param field the field of the entity to perform the search on.
      * @param op operator
      * @param values parameterized values

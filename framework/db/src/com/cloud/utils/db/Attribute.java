@@ -57,6 +57,7 @@ public class Attribute {
         Encrypted(0x800000);
 
         int place;
+
         Flag(int place) {
             this.place = place;
         }

@@ -21,78 +21,78 @@ import com.cloud.bridge.service.exception.EC2ServiceException.ClientError;
 
 public class EC2RegisterImage {
 
-	private String  location;
-	private String  name;
-	private String  description;
-	private String  format;
-	private String  zoneName;
-	private String  osTypeName;
-	private String  hypervisor;
-	
-	public EC2RegisterImage() {
-		location    = null;
-		name        = null;
-		description = null;
-		format      = null;
-		zoneName    = null;
-		osTypeName  = null;
-	}
-	
-	public void setLocation( String location ) {
-		this.location = location;
-	}
-	
-	public String getLocation() {
-		return this.location;
-	}
-	
-	public void setName( String name ) {
-		this.name = name;
-	}
-	
-	public String getName() {
-		return this.name;
-	}
+    private String location;
+    private String name;
+    private String description;
+    private String format;
+    private String zoneName;
+    private String osTypeName;
+    private String hypervisor;
 
-	public void setDescription( String description ) {
-		this.description = description;
-	}
-	
-	public String getDescription() {
-		return this.description;
-	}
-	
-	/**
-	 * We redefine the expected format of this field to be:
-	 * "format:zonename:ostypename:hypervisor"
-	 * 
-	 * @param param
-	 */
-	public void setArchitecture( String param ) {
-		if (null != param) {
+    public EC2RegisterImage() {
+        location = null;
+        name = null;
+        description = null;
+        format = null;
+        zoneName = null;
+        osTypeName = null;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public String getLocation() {
+        return this.location;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return this.description;
+    }
+
+    /**
+     * We redefine the expected format of this field to be:
+     * "format:zonename:ostypename:hypervisor"
+     *
+     * @param param
+     */
+    public void setArchitecture(String param) {
+        if (null != param) {
             if (!param.contains(":") || param.split(":").length < 4) {
-                throw new EC2ServiceException(  ClientError.InvalidParameterValue, "Supported format for " +
-                        "parameter 'architecture' is format:zonename:ostypename:hypervisor" );
+                throw new EC2ServiceException(ClientError.InvalidParameterValue, "Supported format for "
+                    + "parameter 'architecture' is format:zonename:ostypename:hypervisor");
             }
-            String parts[] = param.split( ":" );
+            String parts[] = param.split(":");
             format = parts[0];
             zoneName = parts[1];
             osTypeName = parts[2];
             hypervisor = parts[3];
         }
-	}
-	
-	public String getFormat() {
-		return this.format;
-	}
+    }
 
-	public String getZoneName() {
-		return this.zoneName;
-	}
+    public String getFormat() {
+        return this.format;
+    }
 
-	public String getOsTypeName() {
-		return this.osTypeName;
-	}
+    public String getZoneName() {
+        return this.zoneName;
+    }
+
+    public String getOsTypeName() {
+        return this.osTypeName;
+    }
 
     public String getHypervisor() {
         return hypervisor;

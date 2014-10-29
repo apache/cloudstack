@@ -22,6 +22,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 import com.cloud.org.Grouping;
 
 public interface VmwareDatacenterZoneMap extends Grouping, InternalIdentity {
+    @Override
     public long getId();
 
     public long getZoneId();

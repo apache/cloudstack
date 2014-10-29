@@ -19,38 +19,71 @@ package com.cloud.hypervisor;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.GuestOSHypervisorDao;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value=HypervisorGuru.class)
+@Local(value = HypervisorGuru.class)
 public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
-    @Inject GuestOSDao _guestOsDao;
-    
-	@Override
-	public HypervisorType getHypervisorType() {
-		return HypervisorType.KVM;
-	}
-	
-	protected KVMGuru() {
-		super();
-	}
+    @Inject
+    GuestOSDao _guestOsDao;
+    @Inject
+    GuestOSHypervisorDao _guestOsHypervisorDao;
+    @Inject
+    HostDao _hostDao;
 
-	@Override
+    @Override
+    public HypervisorType getHypervisorType() {
+        return HypervisorType.KVM;
+    }
+
+    protected KVMGuru() {
+        super();
+    }
+
+    @Override
+
     public VirtualMachineTO implement(VirtualMachineProfile vm) {
-		VirtualMachineTO to = toVirtualMachineTO(vm);
+        VirtualMachineTO to = toVirtualMachineTO(vm);
 
-		// Determine the VM's OS description
-		GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
-		to.setOs(guestOS.getDisplayName());
+        // Determine the VM's OS description
+        GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
+        to.setOs(guestOS.getDisplayName());
+        HostVO host = _hostDao.findById(vm.getVirtualMachine().getHostId());
+        GuestOSHypervisorVO guestOsMapping = null;
+        if (host != null) {
+            guestOsMapping = _guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), getHypervisorType().toString(), host.getHypervisorVersion());
+        }
+        if (guestOsMapping == null || host == null) {
+            to.setPlatformEmulator("Other");
+        } else {
+            to.setPlatformEmulator(guestOsMapping.getGuestOsName());
+        }
 
-		return to;
-	}
-	
-	@Override
+        return to;
+    }
+
+    @Override
+    public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
+        if (cmd instanceof StorageSubSystemCommand) {
+            StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
+            c.setExecuteInSequence(false);
+        }
+        return new Pair<Boolean, Long>(false, new Long(hostId));
+    }
+
+    @Override
     public boolean trackVmHostChange() {
-    	return false;
+        return false;
     }
 }

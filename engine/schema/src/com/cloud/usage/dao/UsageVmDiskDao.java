@@ -24,6 +24,8 @@ import com.cloud.utils.db.GenericDao;
 
 public interface UsageVmDiskDao extends GenericDao<UsageVmDiskVO, Long> {
     Map<String, UsageVmDiskVO> getRecentVmDiskStats();
+
     void deleteOldStats(long maxEventTime);
+
     void saveUsageVmDisks(List<UsageVmDiskVO> usageVmDisks);
 }

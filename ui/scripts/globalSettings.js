@@ -63,7 +63,8 @@
                     fields: {
                         name: {
                             label: 'label.name',
-                            id: true
+                            id: true,
+                            truncate: true
                         },
                         description: {
                             label: 'label.description'
@@ -101,16 +102,16 @@
             },
             ldapConfiguration: {
                 type: 'select',
-                title: 'LDAP Configuration',
+                title: 'label.ldap.configuration',
                 listView: {
                     id: 'ldap',
-                    label: 'LDAP Configuration',
+                    label: 'label.ldap.configuration',
                     fields: {
                         hostname: {
-                            label: 'Hostname'
+                            label: 'label.host.name'
                         },
                         port: {
-                            label: 'LDAP Port'
+                            label: 'label.ldap.port'
                         }
                     },
                     dataProvider: function(args) {
@@ -134,13 +135,13 @@
                         name: 'label.details',
                         actions: {
                             remove: {
-                                label: 'Remove LDAP',
+                                label: 'label.remove.ldap',
                                 messages: {
                                     notification: function(args) {
-                                        return 'LDAP Configuration Deleted';
+                                        return 'label.remove.ldap';
                                     },
                                     confirm: function() {
-                                        return 'Are you sure you want to delete the LDAP configuration?';
+                                        return 'message.remove.ldap';
                                     }
                                 },
                                 action: function(args) {
@@ -156,13 +157,13 @@
                         },
                         tabs: {
                             details: {
-                                title: 'LDAP Configuration Details',
+                                title: 'label.ldap.configuration',
                                 fields: [{
                                     hostname: {
-                                        label: 'Hostname'
+                                        label: 'label.host.name'
                                     },
                                     port: {
-                                        label: 'Port'
+                                        label: 'label.port'
                                     }
                                 }],
                                 dataProvider: function(args) {
@@ -185,27 +186,26 @@
                     },
                     actions: {
                         add: {
-                            label: 'Configure LDAP',
+                            label: 'label.configure.ldap',
                             messages: {
                                 confirm: function(args) {
-                                    return 'Do you really want to configure LDAP ? ';
+                                    return 'message.configure.ldap';
                                 },
                                 notification: function(args) {
-                                    console.log(args);
-                                    return 'Successfully added a new LDAP server';
+                                    return 'label.configure.ldap';
                                 }
                             },
                             createForm: {
-                                title: 'Configure LDAP',
+                                title: 'label.configure.ldap',
                                 fields: {
                                     hostname: {
-                                        label: 'Hostname',
+                                        label: 'label.host.name',
                                         validation: {
                                             required: true
                                         }
                                     },
                                     port: {
-                                        label: 'Port',
+                                        label: 'label.port',
                                         validation: {
                                             required: true
                                         }
@@ -234,7 +234,78 @@
                         }
                     }
                 }
-            },
+            },           
+            baremetalRct: {
+                type: 'select',
+                title: 'Baremetal Rack Configuration',
+                listView: {
+                    id: 'baremetalRct',
+                    label: 'Baremetal Rack Configuration',
+                    fields: {   
+                    	id: {
+                    		label: 'label.id'
+                    	},
+                        url: {
+                            label: 'label.url'
+                        }
+                    },
+                    dataProvider: function(args) {
+                        var data = {};
+                        listViewDataProvider(args, data);
+                        
+                        $.ajax({
+                        	url: createURL("listBaremetalRct"),
+                        	data: data,
+                        	success: function(json) {                        		
+                        		args.response.success({ data: json.listbaremetalrctresponse.baremetalrct });
+                        	}
+                        });   
+                    },
+                    actions: {
+                        add: {
+                            label: 'Add Baremetal Rack Configuration',
+                            messages: {                                
+                                notification: function(args) {
+                                    return 'Add Baremetal Rack Configuration';
+                                }
+                            },
+                            createForm: {
+                                title: 'Add Baremetal Rack Configuration',
+                                fields: {
+                                    url: {
+                                        label: 'label.url',
+                                        validation: {
+                                            required: true
+                                        }
+                                    }
+                                }
+                            },
+                            action: function(args) {                                
+                                $.ajax({
+                                	url: createURL("addBaremetalRct"),
+                                	data: {
+                                		baremetalrcturl: args.data.url
+                                	},
+                                	success: function(json) {                                		
+                                		var jid = json.addbaremetalrctresponse.jobid
+                                		args.response.success({
+                                            _custom: {
+                                                jobId: jid,
+                                                getUpdatedItem: function(json) {                                                	
+                                                    return json.queryasyncjobresultresponse.jobresult.baremetalrct;
+                                                }
+                                            }
+                                        });
+                                	}
+                                });
+                            },
+                            notification: {
+                                poll: pollAsyncJobResult
+                            }
+                        }
+                    }
+                }
+            },            
             hypervisorCapabilities: {
                 type: 'select',
                 title: 'label.hypervisor.capabilities',

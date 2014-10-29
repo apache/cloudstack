@@ -19,41 +19,41 @@ package com.cloud.bridge.service.core.ec2;
 import java.util.HashSet;
 
 public class EC2DescribeAddresses {
-	private EC2AddressFilterSet filterSet;
-	private HashSet<String> publicIpsSet = new HashSet<String>();
+    private EC2AddressFilterSet filterSet;
+    private HashSet<String> publicIpsSet = new HashSet<String>();
 
-	public EC2DescribeAddresses() {
-	}
+    public EC2DescribeAddresses() {
+    }
 
-	public void addPublicIp( String param ) {
-		publicIpsSet.add( param );
-	}
-	
-	/*
-	 * inPublicIpSet will return true if the ip is in the set, or if set length is 0
-	 */
-	public boolean inPublicIpSet(String ip) {
-		if (publicIpsSet.isEmpty()) 
-			 return true;
-		return publicIpsSet.contains(ip);
-	}
-	
-	// probably don't need this silly function...
-	public String[] getPublicIpsSet() {
-		return publicIpsSet.toArray(new String[0]);
-	}
+    public void addPublicIp(String param) {
+        publicIpsSet.add(param);
+    }
 
-	/**
-	 * @return the keyFilterSet
-	 */
-	public EC2AddressFilterSet getFilterSet() {
-		return filterSet;
-	}
+    /*
+     * inPublicIpSet will return true if the ip is in the set, or if set length is 0
+     */
+    public boolean inPublicIpSet(String ip) {
+        if (publicIpsSet.isEmpty())
+            return true;
+        return publicIpsSet.contains(ip);
+    }
 
-	/**
-	 * @param keyFilterSet the keyFilterSet to set
-	 */
-	public void setFilterSet(EC2AddressFilterSet keyFilterSet) {
-		this.filterSet = keyFilterSet;
-	}
+    // probably don't need this silly function...
+    public String[] getPublicIpsSet() {
+        return publicIpsSet.toArray(new String[0]);
+    }
+
+    /**
+     * @return the keyFilterSet
+     */
+    public EC2AddressFilterSet getFilterSet() {
+        return filterSet;
+    }
+
+    /**
+     * @param keyFilterSet the keyFilterSet to set
+     */
+    public void setFilterSet(EC2AddressFilterSet keyFilterSet) {
+        this.filterSet = keyFilterSet;
+    }
 }

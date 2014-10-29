@@ -40,8 +40,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.fsm.StateMachine2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupEgressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.AuthorizeSecurityGroupIngressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.CreateSecurityGroupCmd;
@@ -120,7 +123,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Local(value = { SecurityGroupManager.class, SecurityGroupService.class })
+@Local(value = {SecurityGroupManager.class, SecurityGroupService.class})
 public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGroupManager, SecurityGroupService, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     public static final Logger s_logger = Logger.getLogger(SecurityGroupManagerImpl.class);
 
@@ -176,13 +179,11 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
     protected long _serverId;
 
-    private  int _timeBetweenCleanups = TIME_BETWEEN_CLEANUPS; // seconds
-    protected  int _numWorkerThreads = WORKER_THREAD_COUNT;
-    private  int _globalWorkLockTimeout = 300; // 5 minutes
+    private int _timeBetweenCleanups = TIME_BETWEEN_CLEANUPS; // seconds
+    protected int _numWorkerThreads = WORKER_THREAD_COUNT;
+    private int _globalWorkLockTimeout = 300; // 5 minutes
 
     private final GlobalLock _workLock = GlobalLock.getInternLock("SecurityGroupWork");
-
-
 
     SecurityGroupListener _answerListener;
 
@@ -267,7 +268,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            PortAndProto other = (PortAndProto) obj;
+            PortAndProto other = (PortAndProto)obj;
             if (endPort != other.endPort) {
                 return false;
             }
@@ -323,18 +324,17 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
         @Override
         public int compare(String cidr1, String cidr2) {
-           // parse both to find significance first (low number of bits is high)
-           // if equal then just do a string compare
-           if(significance(cidr1) == significance(cidr2)) {
+            // parse both to find significance first (low number of bits is high)
+            // if equal then just do a string compare
+            if (significance(cidr1) == significance(cidr2)) {
                 return cidr1.compareTo(cidr2);
-           }
-           else {
+            } else {
                 return significance(cidr2) - significance(cidr1);
-           }
+            }
         }
-        private int significance(String cidr)
-        {
-           return Integer.parseInt(cidr.substring(cidr.indexOf('/')+1));
+
+        private int significance(String cidr) {
+            return Integer.parseInt(cidr.substring(cidr.indexOf('/') + 1));
         }
 
     }
@@ -376,7 +376,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
     protected String generateRulesetSignature(Map<PortAndProto, Set<String>> ingress, Map<PortAndProto, Set<String>> egress) {
         String ruleset = ingress.toString();
-        ruleset.concat(egress.toString());
+        ruleset = ruleset.concat(egress.toString());
         return DigestUtils.md5Hex(ruleset);
     }
 
@@ -401,7 +401,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Security Group Mgr: scheduling ruleset updates for " + affectedVms.size() + " vms");
         }
-        boolean locked = _workLock.lock(_globalWorkLockTimeout); 
+        boolean locked = _workLock.lock(_globalWorkLockTimeout);
         if (!locked) {
             s_logger.warn("Security Group Mgr: failed to acquire global work lock");
             return;
@@ -410,7 +410,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Security Group Mgr: acquired global work lock");
         }
-        
+
         try {
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
@@ -421,13 +421,13 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                         }
                         VmRulesetLogVO log = null;
                         SecurityGroupWorkVO work = null;
-        
+
                         log = _rulesetLogDao.findByVmId(vmId);
                         if (log == null) {
                             log = new VmRulesetLogVO(vmId);
                             log = _rulesetLogDao.persist(log);
                         }
-        
+
                         if (log != null && updateSeqno) {
                             log.incrLogsequence();
                             _rulesetLogDao.update(log.getId(), log);
@@ -440,7 +440,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                                 s_logger.trace("Security Group Mgr: created new work item for " + vmId + "; id = " + work.getId());
                             }
                         }
-        
+
                         work.setLogsequenceNumber(log.getLogsequence());
                         _workDao.update(work.getId(), work);
                     }
@@ -464,10 +464,9 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         List<SecurityGroupVMMapVO> groupsForVm = _securityGroupVMMapDao.listByInstanceId(vm.getId());
         // For each group, find the security rules that allow the group
         for (SecurityGroupVMMapVO mapVO : groupsForVm) {// FIXME: use custom sql in the dao
-        	//Add usage events for security group assign
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SECURITY_GROUP_ASSIGN, vm.getAccountId(),
-                    vm.getDataCenterId(), vm.getId(), mapVO.getSecurityGroupId(),
-                    vm.getClass().getName(), vm.getUuid());
+            //Add usage events for security group assign
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SECURITY_GROUP_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), mapVO.getSecurityGroupId(), vm
+                    .getClass().getName(), vm.getUuid());
 
             List<SecurityGroupRuleVO> allowingRules = _securityGroupRuleDao.listByAllowedSecurityGroupId(mapVO.getSecurityGroupId());
             // For each security rule that allows a group that the vm belongs to, find the group it belongs to
@@ -481,10 +480,9 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         List<SecurityGroupVMMapVO> groupsForVm = _securityGroupVMMapDao.listByInstanceId(vm.getId());
         // For each group, find the security rules rules that allow the group
         for (SecurityGroupVMMapVO mapVO : groupsForVm) {// FIXME: use custom sql in the dao
-        	//Add usage events for security group remove
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SECURITY_GROUP_REMOVE,
-                    vm.getAccountId(), vm.getDataCenterId(), vm.getId(), mapVO.getSecurityGroupId(),
-                    vm.getClass().getName(), vm.getUuid());
+            //Add usage events for security group remove
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SECURITY_GROUP_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), mapVO.getSecurityGroupId(), vm
+                    .getClass().getName(), vm.getUuid());
 
             List<SecurityGroupRuleVO> allowingRules = _securityGroupRuleDao.listByAllowedSecurityGroupId(mapVO.getSecurityGroupId());
             // For each security rule that allows a group that the vm belongs to, find the group it belongs to
@@ -507,24 +505,28 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         return affectedVms;
     }
 
-    protected SecurityGroupRulesCmd generateRulesetCmd(String vmName, String guestIp, String guestMac, Long vmId, String signature, long seqnum, Map<PortAndProto, Set<String>> ingressRules, Map<PortAndProto, Set<String>> egressRules, List<String> secIps) {
+    protected SecurityGroupRulesCmd generateRulesetCmd(String vmName, String guestIp, String guestMac, Long vmId, String signature, long seqnum,
+            Map<PortAndProto, Set<String>> ingressRules, Map<PortAndProto, Set<String>> egressRules, List<String> secIps) {
         List<IpPortAndProto> ingressResult = new ArrayList<IpPortAndProto>();
         List<IpPortAndProto> egressResult = new ArrayList<IpPortAndProto>();
         for (PortAndProto pAp : ingressRules.keySet()) {
             Set<String> cidrs = ingressRules.get(pAp);
             if (cidrs.size() > 0) {
-                IpPortAndProto ipPortAndProto = new SecurityGroupRulesCmd.IpPortAndProto(pAp.getProto(), pAp.getStartPort(), pAp.getEndPort(), cidrs.toArray(new String[cidrs.size()]));
+                IpPortAndProto ipPortAndProto = new SecurityGroupRulesCmd.IpPortAndProto(pAp.getProto(), pAp.getStartPort(), pAp.getEndPort(), cidrs.toArray(new String[cidrs
+                        .size()]));
                 ingressResult.add(ipPortAndProto);
             }
         }
         for (PortAndProto pAp : egressRules.keySet()) {
             Set<String> cidrs = egressRules.get(pAp);
             if (cidrs.size() > 0) {
-                IpPortAndProto ipPortAndProto = new SecurityGroupRulesCmd.IpPortAndProto(pAp.getProto(), pAp.getStartPort(), pAp.getEndPort(), cidrs.toArray(new String[cidrs.size()]));
+                IpPortAndProto ipPortAndProto = new SecurityGroupRulesCmd.IpPortAndProto(pAp.getProto(), pAp.getStartPort(), pAp.getEndPort(), cidrs.toArray(new String[cidrs
+                        .size()]));
                 egressResult.add(ipPortAndProto);
             }
         }
-        return new SecurityGroupRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqnum, ingressResult.toArray(new IpPortAndProto[ingressResult.size()]), egressResult.toArray(new IpPortAndProto[egressResult.size()]), secIps);
+        return new SecurityGroupRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqnum, ingressResult.toArray(new IpPortAndProto[ingressResult.size()]),
+                egressResult.toArray(new IpPortAndProto[egressResult.size()]), secIps);
     }
 
     protected void handleVmStopped(VMInstanceVO vm) {
@@ -555,6 +557,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             scheduleRulesetUpdateToHosts(affectedVms, true, null);
         }
     }
+
     @Override
     @DB
     @SuppressWarnings("rawtypes")
@@ -584,10 +587,11 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         Integer icmpCode = cmd.getIcmpCode();
         List<String> cidrList = cmd.getCidrList();
         Map groupList = cmd.getUserSecurityGroupList();
-        return authorizeSecurityGroupRule(securityGroupId,protocol,startPort,endPort,icmpType,icmpCode,cidrList,groupList,SecurityRuleType.IngressRule);
+        return authorizeSecurityGroupRule(securityGroupId, protocol, startPort, endPort, icmpType, icmpCode, cidrList, groupList, SecurityRuleType.IngressRule);
     }
 
-    private List<SecurityGroupRuleVO> authorizeSecurityGroupRule(final Long securityGroupId, String protocol,Integer startPort,Integer endPort,Integer icmpType,Integer icmpCode,final List<String>  cidrList,Map groupList, final SecurityRuleType ruleType) {
+    private List<SecurityGroupRuleVO> authorizeSecurityGroupRule(final Long securityGroupId, String protocol, Integer startPort, Integer endPort, Integer icmpType,
+            Integer icmpCode, final List<String> cidrList, Map groupList, final SecurityRuleType ruleType) {
         Integer startPortOrType = null;
         Integer endPortOrCode = null;
 
@@ -616,9 +620,9 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             protocol = NetUtils.ALL_PROTO;
         }
 
-        if(cidrList != null){
-            for(String cidr : cidrList ){
-                if (!NetUtils.isValidCIDR(cidr)){
+        if (cidrList != null) {
+            for (String cidr : cidrList) {
+                if (!NetUtils.isValidCIDR(cidr)) {
                     throw new InvalidParameterValueException("Invalid cidr " + cidr);
                 }
             }
@@ -676,9 +680,9 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             Collection userGroupCollection = groupList.values();
             Iterator iter = userGroupCollection.iterator();
             while (iter.hasNext()) {
-                HashMap userGroup = (HashMap) iter.next();
-                String group = (String) userGroup.get("group");
-                String authorizedAccountName = (String) userGroup.get("account");
+                HashMap userGroup = (HashMap)iter.next();
+                String group = (String)userGroup.get("group");
+                String authorizedAccountName = (String)userGroup.get("account");
 
                 if ((group == null) || (authorizedAccountName == null)) {
                     throw new InvalidParameterValueException(
@@ -687,13 +691,14 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
                 Account authorizedAccount = _accountDao.findActiveAccount(authorizedAccountName, domainId);
                 if (authorizedAccount == null) {
-                    throw new InvalidParameterValueException("Nonexistent account: " + authorizedAccountName + " when trying to authorize security group rule  for " + securityGroupId + ":" + protocol + ":"
-                            + startPortOrType + ":" + endPortOrCode);
+                    throw new InvalidParameterValueException("Nonexistent account: " + authorizedAccountName + " when trying to authorize security group rule  for "
+                            + securityGroupId + ":" + protocol + ":" + startPortOrType + ":" + endPortOrCode);
                 }
 
                 SecurityGroupVO groupVO = _securityGroupDao.findByAccountAndName(authorizedAccount.getId(), group);
                 if (groupVO == null) {
-                    throw new InvalidParameterValueException("Nonexistent group " + group + " for account " + authorizedAccountName + "/" + domainId + " is given, unable to authorize security group rule.");
+                    throw new InvalidParameterValueException("Nonexistent group " + group + " for account " + authorizedAccountName + "/" + domainId
+                            + " is given, unable to authorize security group rule.");
                 }
 
                 // Check permissions
@@ -712,7 +717,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         final Integer startPortOrTypeFinal = startPortOrType;
         final Integer endPortOrCodeFinal = endPortOrCode;
         final String protocolFinal = protocol;
-        return Transaction.execute(new TransactionCallback<List<SecurityGroupRuleVO>>() {
+        List<SecurityGroupRuleVO> newRules = Transaction.execute(new TransactionCallback<List<SecurityGroupRuleVO>>() {
             @Override
             public List<SecurityGroupRuleVO> doInTransaction(TransactionStatus status) {
                 // Prevents other threads/management servers from creating duplicate security rules
@@ -733,7 +738,8 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                                 throw new ConcurrentAccessException("Failed to acquire lock on security group: " + ngId);
                             }
                         }
-                        SecurityGroupRuleVO securityGroupRule = _securityGroupRuleDao.findByProtoPortsAndAllowedGroupId(securityGroup.getId(), protocolFinal, startPortOrTypeFinal, endPortOrCodeFinal, ngVO.getId());
+                        SecurityGroupRuleVO securityGroupRule = _securityGroupRuleDao.findByProtoPortsAndAllowedGroupId(securityGroup.getId(), protocolFinal, startPortOrTypeFinal,
+                                endPortOrCodeFinal, ngVO.getId());
                         if ((securityGroupRule != null) && (securityGroupRule.getRuleType() == ruleType)) {
                             continue; // rule already exists.
                         }
@@ -743,7 +749,8 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                     }
                     if (cidrList != null) {
                         for (String cidr : cidrList) {
-                            SecurityGroupRuleVO securityGroupRule = _securityGroupRuleDao.findByProtoPortsAndCidr(securityGroup.getId(), protocolFinal, startPortOrTypeFinal, endPortOrCodeFinal, cidr);
+                            SecurityGroupRuleVO securityGroupRule = _securityGroupRuleDao.findByProtoPortsAndCidr(securityGroup.getId(), protocolFinal, startPortOrTypeFinal,
+                                    endPortOrCodeFinal, cidr);
                             if ((securityGroupRule != null) && (securityGroupRule.getRuleType() == ruleType)) {
                                 continue;
                             }
@@ -755,9 +762,6 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Added " + newRules.size() + " rules to security group " + securityGroup.getName());
                     }
-                    final ArrayList<Long> affectedVms = new ArrayList<Long>();
-                    affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(securityGroup.getId()));
-                    scheduleRulesetUpdateToHosts(affectedVms, true, null);
                     return newRules;
                 } catch (Exception e) {
                     s_logger.warn("Exception caught when adding security group rules ", e);
@@ -770,6 +774,15 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             }
         });
 
+        try {
+            final ArrayList<Long> affectedVms = new ArrayList<Long>();
+            affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(securityGroup.getId()));
+            scheduleRulesetUpdateToHosts(affectedVms, true, null);
+        } catch (Exception e) {
+            s_logger.debug("can't update rules on host, ignore", e);
+        }
+
+        return newRules;
     }
 
     @Override
@@ -801,15 +814,16 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
         // check type
         if (type != rule.getRuleType()) {
-            s_logger.debug("Mismatch in rule type for security rule with id " + id );
+            s_logger.debug("Mismatch in rule type for security rule with id " + id);
             throw new InvalidParameterValueException("Mismatch in rule type for security rule with id " + id);
         }
 
         // Check permissions
         SecurityGroup securityGroup = _securityGroupDao.findById(rule.getSecurityGroupId());
-        _accountMgr.checkAccess(caller, null, true, securityGroup);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, securityGroup);
 
-        return Transaction.execute(new TransactionCallback<Boolean>() {
+        long securityGroupId = rule.getSecurityGroupId();
+        Boolean result = Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 SecurityGroupVO groupHandle = null;
@@ -821,14 +835,10 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                         s_logger.warn("Could not acquire lock on security group id: " + rule.getSecurityGroupId());
                         return false;
                     }
-        
+
                     _securityGroupRuleDao.remove(id);
                     s_logger.debug("revokeSecurityGroupRule succeeded for security rule id: " + id);
-        
-                    final ArrayList<Long> affectedVms = new ArrayList<Long>();
-                    affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(groupHandle.getId()));
-                    scheduleRulesetUpdateToHosts(affectedVms, true, null);
-        
+
                     return true;
                 } catch (Exception e) {
                     s_logger.warn("Exception caught when deleting security rules ", e);
@@ -840,6 +850,16 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                 }
             }
         });
+
+        try {
+            final ArrayList<Long> affectedVms = new ArrayList<Long>();
+            affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(securityGroupId));
+            scheduleRulesetUpdateToHosts(affectedVms, true, null);
+        } catch (Exception e) {
+            s_logger.debug("Can't update rules for host, ignore", e);
+        }
+
+        return result;
     }
 
     @Override
@@ -885,8 +905,8 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
         _serverId = ManagementServerNode.getManagementServerId();
 
-        s_logger.info("SecurityGroupManager: num worker threads=" + _numWorkerThreads + 
-                ", time between cleanups=" + _timeBetweenCleanups + " global lock timeout=" + _globalWorkLockTimeout);
+        s_logger.info("SecurityGroupManager: num worker threads=" + _numWorkerThreads + ", time between cleanups=" + _timeBetweenCleanups + " global lock timeout="
+                + _globalWorkLockTimeout);
         createThreadPools();
 
         return true;
@@ -919,7 +939,8 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         if (groupVO == null) {
             Account accVO = _accountDao.findById(accountId);
             if (accVO != null) {
-                return createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, accVO.getDomainId(), accVO.getId(), accVO.getAccountName());
+                return createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, accVO.getDomainId(), accVO.getId(),
+                        accVO.getAccountName());
             }
         }
         return groupVO;
@@ -944,7 +965,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             }
             ArrayList<Long> affectedVms = new ArrayList<Long>();
             affectedVms.add(userVmId);
-            scheduleRulesetUpdateToHosts(affectedVms, false, _timeBetweenCleanups*1000l);
+            scheduleRulesetUpdateToHosts(affectedVms, false, _timeBetweenCleanups * 1000l);
             return;
         }
         s_logger.debug("Working on " + work);
@@ -976,7 +997,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                         return;
                     }
                     seqnum = log.getLogsequence();
-        
+
                     if (vm != null && vm.getState() == State.Running) {
                         Map<PortAndProto, Set<String>> ingressRules = generateRulesForVM(userVmId, SecurityRuleType.IngressRule);
                         Map<PortAndProto, Set<String>> egressRules = generateRulesForVM(userVmId, SecurityRuleType.EgressRule);
@@ -993,8 +1014,8 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                                     nicSecIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nic.getId());
                                 }
                             }
-                            SecurityGroupRulesCmd cmd = generateRulesetCmd( vm.getInstanceName(), vm.getPrivateIpAddress(), vm.getPrivateMacAddress(), vm.getId(), generateRulesetSignature(ingressRules, egressRules), seqnum,
-                                    ingressRules, egressRules, nicSecIps);
+                            SecurityGroupRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), vm.getPrivateIpAddress(), vm.getPrivateMacAddress(), vm.getId(),
+                                    generateRulesetSignature(ingressRules, egressRules), seqnum, ingressRules, egressRules, nicSecIps);
                             Commands cmds = new Commands(cmd);
                             try {
                                 _agentMgr.send(agentId, cmds, _answerListener);
@@ -1002,7 +1023,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                                 s_logger.debug("Unable to send ingress rules updates for vm: " + userVmId + "(agentid=" + agentId + ")");
                                 _workDao.updateStep(work.getInstanceId(), seqnum, Step.Done);
                             }
-        
+
                         }
                     }
                 } finally {
@@ -1043,7 +1064,8 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                             SecurityGroupVO ngrpLock = _securityGroupDao.lockRow(securityGroup.getId(), false);
                             if (ngrpLock == null) {
                                 s_logger.warn("Failed to acquire lock on network group id=" + securityGroup.getId() + " name=" + securityGroup.getName());
-                                throw new ConcurrentModificationException("Failed to acquire lock on network group id=" + securityGroup.getId() + " name=" + securityGroup.getName());
+                                throw new ConcurrentModificationException("Failed to acquire lock on network group id=" + securityGroup.getId() + " name="
+                                        + securityGroup.getName());
                             }
                             if (_securityGroupVMMapDao.findByVmIdGroupId(userVmId, securityGroup.getId()) == null) {
                                 SecurityGroupVMMapVO groupVmMapVO = new SecurityGroupVMMapVO(securityGroup.getId(), userVmId);
@@ -1101,18 +1123,18 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         // check permissions
         _accountMgr.checkAccess(caller, null, true, group);
 
-        return Transaction.execute(new TransactionCallbackWithException<Boolean,ResourceInUseException>() {
+        return Transaction.execute(new TransactionCallbackWithException<Boolean, ResourceInUseException>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) throws ResourceInUseException {
                 SecurityGroupVO group = _securityGroupDao.lockRow(groupId, true);
                 if (group == null) {
                     throw new InvalidParameterValueException("Unable to find security group by id " + groupId);
                 }
-        
+
                 if (group.getName().equalsIgnoreCase(SecurityGroupManager.DEFAULT_GROUP_NAME)) {
                     throw new InvalidParameterValueException("The network group default is reserved");
                 }
-        
+
                 List<SecurityGroupRuleVO> allowingRules = _securityGroupRuleDao.listByAllowedSecurityGroupId(groupId);
                 List<SecurityGroupVMMapVO> securityGroupVmMap = _securityGroupVMMapDao.listBySecurityGroup(groupId);
                 if (!allowingRules.isEmpty()) {
@@ -1120,18 +1142,16 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                 } else if (!securityGroupVmMap.isEmpty()) {
                     throw new ResourceInUseException("Cannot delete group when it's in use by virtual machines");
                 }
-        
+
                 _securityGroupDao.expunge(groupId);
 
                 s_logger.debug("Deleted security group id=" + groupId);
-        
+
                 return true;
             }
         });
 
     }
-
-
 
     private Pair<List<SecurityGroupJoinVO>, Integer> listSecurityGroupRulesByVM(long vmId, long pageInd, long pageSize) {
         Filter sf = new Filter(SecurityGroupVMMapVO.class, null, true, pageInd, pageSize);
@@ -1180,7 +1200,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     }
 
     private void cleanupUnfinishedWork() {
-        Date before = new Date(System.currentTimeMillis() - 2*_timeBetweenCleanups*1000l);
+        Date before = new Date(System.currentTimeMillis() - 2 * _timeBetweenCleanups * 1000l);
         List<SecurityGroupWorkVO> unfinished = _workDao.findUnfinishedWork(before);
         if (unfinished.size() > 0) {
             s_logger.info("Network Group Work cleanup found " + unfinished.size() + " unfinished work items older than " + before.toString());
@@ -1202,8 +1222,8 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         if (numJobs > 0) {
             s_logger.debug("Security group work: found scheduled jobs " + numJobs);
             Random rand = new Random();
-            for (int i=0; i < numJobs; i++) {
-                long delayMs = 100 + 10*rand.nextInt(numJobs);
+            for (int i = 0; i < numJobs; i++) {
+                long delayMs = 100 + 10 * rand.nextInt(numJobs);
                 _executorPool.schedule(new WorkerThread(), delayMs, TimeUnit.MILLISECONDS);
             }
         }
@@ -1260,32 +1280,35 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status, Object opaque) {
-        if (!status) {
-            return false;
-        }
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, VirtualMachine vm, boolean status, Object opaque) {
+      if (!status) {
+        return false;
+      }
 
-        if (VirtualMachine.State.isVmStarted(oldState, event, newState)) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Security Group Mgr: handling start of vm id" + vm.getId());
-            }
-            handleVmStarted((VMInstanceVO) vm);
-        } else if (VirtualMachine.State.isVmStopped(oldState, event, newState)) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Security Group Mgr: handling stop of vm id" + vm.getId());
-            }
-            handleVmStopped((VMInstanceVO) vm);
-        } else if (VirtualMachine.State.isVmMigrated(oldState, event, newState)) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Security Group Mgr: handling migration of vm id" + vm.getId());
-            }
-            handleVmMigrated((VMInstanceVO) vm);
+      State oldState = transition.getCurrentState();
+      State newState = transition.getToState();
+      Event event = transition.getEvent();
+      if (VirtualMachine.State.isVmStarted(oldState, event, newState)) {
+        if (s_logger.isTraceEnabled()) {
+          s_logger.trace("Security Group Mgr: handling start of vm id" + vm.getId());
         }
+        handleVmStarted((VMInstanceVO)vm);
+      } else if (VirtualMachine.State.isVmStopped(oldState, event, newState)) {
+        if (s_logger.isTraceEnabled()) {
+          s_logger.trace("Security Group Mgr: handling stop of vm id" + vm.getId());
+        }
+        handleVmStopped((VMInstanceVO)vm);
+      } else if (VirtualMachine.State.isVmMigrated(oldState, event, newState)) {
+        if (s_logger.isTraceEnabled()) {
+          s_logger.trace("Security Group Mgr: handling migration of vm id" + vm.getId());
+        }
+        handleVmMigrated((VMInstanceVO)vm);
+      }
 
-        return true;
+      return true;
     }
 
-    @Override
+  @Override
     public boolean isVmSecurityGroupEnabled(Long vmId) {
         VirtualMachine vm = _vmDao.findByIdIncludingRemoved(vmId);
         List<NicProfile> nics = _networkMgr.getNicProfiles(vm);
@@ -1325,48 +1348,42 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     }
 
     @Override
-    public boolean securityGroupRulesForVmSecIp(Long nicId, Long networkId,
-            String secondaryIp, boolean ruleAction) {
+    public boolean securityGroupRulesForVmSecIp(long nicId, String secondaryIp, boolean ruleAction) {
+        Account caller = CallContext.current().getCallingAccount();
 
-        String vmMac = null;
-        String vmName = null;
-
-        if (secondaryIp == null || nicId == null || networkId == null) {
-            throw new InvalidParameterValueException("Vm nicId or networkId or secondaryIp can't be null");
+        if (secondaryIp == null) {
+            throw new InvalidParameterValueException("Vm secondaryIp can't be null");
         }
 
         NicVO nic = _nicDao.findById(nicId);
-        Long vmId = nic.getInstanceId();
+        long vmId = nic.getInstanceId();
+        UserVm vm = _userVMDao.findById(vmId);
+        if (vm == null || vm.getType() != VirtualMachine.Type.User) {
+            throw new InvalidParameterValueException("Can't configure the SG ipset, arprules rules for the non existing or non user vm");
+        }
+
+        // Verify permissions
+        _accountMgr.checkAccess(caller, null, false, vm);
 
         // Validate parameters
         List<SecurityGroupVO> vmSgGrps = getSecurityGroupsForVm(vmId);
-        if (vmSgGrps == null) {
+        if (vmSgGrps.isEmpty()) {
             s_logger.debug("Vm is not in any Security group ");
             return true;
         }
 
-        Account caller = CallContext.current().getCallingAccount();
-
-        for (SecurityGroupVO securityGroup: vmSgGrps) {
-            Account owner = _accountMgr.getAccount(securityGroup.getAccountId());
-            if (owner == null) {
-                throw new InvalidParameterValueException("Unable to find security group owner by id=" + securityGroup.getAccountId());
-            }
-            // Verify permissions
-            _accountMgr.checkAccess(caller, null, true, securityGroup);
+        //If network does not support SG service, no need add SG rules for secondary ip
+        Network network = _networkModel.getNetwork(nic.getNetworkId());
+        if (!_networkModel.isSecurityGroupSupportedInNetwork(network)) {
+            s_logger.debug("Network " + network + " is not enabled with security group service, "+
+                    "so not applying SG rules for secondary ip");
+            return true;
         }
 
-        UserVm  vm = _userVMDao.findById(vmId);
-        if (vm.getType() != VirtualMachine.Type.User) {
-            throw new InvalidParameterValueException("Can't configure the SG ipset, arprules rules for the non user vm");
-        }
-
-        if (vm != null) {
-            vmMac = vm.getPrivateMacAddress();
-            vmName = vm.getInstanceName();
-            if (vmMac == null || vmName == null) {
-                throw new InvalidParameterValueException("vm name or vm mac can't be null");
-            }
+        String vmMac = vm.getPrivateMacAddress();
+        String vmName = vm.getInstanceName();
+        if (vmMac == null || vmName == null) {
+            throw new InvalidParameterValueException("vm name or vm mac can't be null");
         }
 
         //create command for the to add ip in ipset and arptables rules

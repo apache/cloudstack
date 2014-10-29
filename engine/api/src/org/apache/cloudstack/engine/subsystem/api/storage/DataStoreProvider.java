@@ -27,7 +27,7 @@ public interface DataStoreProvider {
     static final String S3_IMAGE = "S3";
     static final String SWIFT_IMAGE = "Swift";
     static final String SAMPLE_IMAGE = "Sample";
-
+    static final String SMB = "NFS";
     static final String DEFAULT_PRIMARY = "DefaultPrimary";
 
     static enum DataStoreProviderType {

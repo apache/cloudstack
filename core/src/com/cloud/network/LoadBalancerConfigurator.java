@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network;
 
 import java.util.List;
@@ -21,14 +24,14 @@ import java.util.List;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 
-
 public interface LoadBalancerConfigurator {
-	public final static int ADD = 0;
-	public final static int REMOVE = 1;
-	public final static int STATS = 2;
-	
-	public String [] generateConfiguration(List<PortForwardingRuleTO> fwRules);
-	
-	public String [] generateConfiguration(LoadBalancerConfigCommand lbCmd);
-	public String [][] generateFwRules(LoadBalancerConfigCommand lbCmd);
+    public final static int ADD = 0;
+    public final static int REMOVE = 1;
+    public final static int STATS = 2;
+
+    public String[] generateConfiguration(List<PortForwardingRuleTO> fwRules);
+
+    public String[] generateConfiguration(LoadBalancerConfigCommand lbCmd);
+
+    public String[][] generateFwRules(LoadBalancerConfigCommand lbCmd);
 }

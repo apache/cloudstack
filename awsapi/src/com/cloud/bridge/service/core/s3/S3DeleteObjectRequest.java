@@ -17,36 +17,36 @@
 package com.cloud.bridge.service.core.s3;
 
 public class S3DeleteObjectRequest extends S3Request {
-	protected String bucketName;
-	protected String key;
-	protected String version;
-	
-	public S3DeleteObjectRequest() {
-		super();
-		version = null;
-	}
-	
-	public String getBucketName() {
-		return bucketName;
-	}
+    protected String bucketName;
+    protected String key;
+    protected String version;
 
-	public void setBucketName(String bucketName) {
-		this.bucketName = bucketName;
-	}
+    public S3DeleteObjectRequest() {
+        super();
+        version = null;
+    }
 
-	public String getKey() {
-		return key;
-	}
+    public String getBucketName() {
+        return bucketName;
+    }
 
-	public void setKey(String key) {
-		this.key = key;
-	}
-	
-	public String getVersion() {
-		return version;
-	}
-	
-	public void setVersion(String version) {
-		this.version = version;
-	}
+    public void setBucketName(String bucketName) {
+        this.bucketName = bucketName;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
 }

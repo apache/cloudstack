@@ -20,10 +20,7 @@ import com.cloud.storage.Snapshot;
 
 public interface SnapshotStrategy {
     enum SnapshotOperation {
-        TAKE,
-        BACKUP,
-        DELETE,
-        REVERT
+        TAKE, BACKUP, DELETE, REVERT
     }
 
     SnapshotInfo takeSnapshot(SnapshotInfo snapshot);

@@ -17,36 +17,53 @@
 
 package com.cloud.storage.listener;
 
-import javax.inject.Inject;
-
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-
-import com.cloud.event.EventCategory;
-import com.cloud.server.ManagementServer;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Snapshot.State;
-import com.cloud.storage.Snapshot.Event;
-import com.cloud.storage.Snapshot.State;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.utils.fsm.StateListener;
-import com.cloud.utils.component.ComponentContext;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import com.cloud.utils.fsm.StateMachine2;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventBusException;
+
+import com.cloud.configuration.Config;
+import com.cloud.event.EventCategory;
+import com.cloud.server.ManagementService;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.Event;
+import com.cloud.storage.Snapshot.State;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.fsm.StateListener;
+
+@Component
+@Local(value = {SnapshotStateListener.class})
 public class SnapshotStateListener implements StateListener<State, Event, SnapshotVO> {
 
-    protected static EventBus _eventBus = null;
+    protected static EventBus s_eventBus = null;
+    protected static ConfigurationDao s_configDao;
 
-    private static final Logger s_logger = Logger.getLogger(VolumeStateListener.class);
+    @Inject
+    private ConfigurationDao configDao;
+
+    private static final Logger s_logger = Logger.getLogger(SnapshotStateListener.class);
 
     public SnapshotStateListener() {
 
+    }
+
+    @PostConstruct
+    void init() {
+        s_configDao = configDao;
     }
 
     @Override
@@ -56,25 +73,27 @@ public class SnapshotStateListener implements StateListener<State, Event, Snapsh
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, SnapshotVO vo, boolean status, Object opaque) {
-        pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
-        return true;
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, SnapshotVO vo, boolean status, Object opaque) {
+      pubishOnEventBus(transition.getEvent().name(), "postStateTransitionEvent", vo, transition.getCurrentState(), transition.getToState());
+      return true;
     }
 
-    private void pubishOnEventBus(String event, String status, Snapshot vo, State oldState, State newState) {
+  private void pubishOnEventBus(String event, String status, Snapshot vo, State oldState, State newState) {
 
+        String configKey = Config.PublishResourceStateEvent.key();
+        String value = s_configDao.getValue(configKey);
+        boolean configValue = Boolean.parseBoolean(value);
+        if(!configValue)
+            return;
         try {
-            _eventBus = ComponentContext.getComponent(EventBus.class);
-        } catch(NoSuchBeanDefinitionException nbe) {
+            s_eventBus = ComponentContext.getComponent(EventBus.class);
+        } catch (NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
         }
 
         String resourceName = getEntityFromClassName(Snapshot.class.getName());
-        org.apache.cloudstack.framework.events.Event eventMsg =  new org.apache.cloudstack.framework.events.Event(
-                ManagementServer.Name,
-                EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(),
-                event,
-                resourceName,
+        org.apache.cloudstack.framework.events.Event eventMsg =
+            new org.apache.cloudstack.framework.events.Event(ManagementService.Name, EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(), event, resourceName,
                 vo.getUuid());
         Map<String, String> eventDescription = new HashMap<String, String>();
         eventDescription.put("resource", resourceName);
@@ -87,7 +106,7 @@ public class SnapshotStateListener implements StateListener<State, Event, Snapsh
 
         eventMsg.setDescription(eventDescription);
         try {
-            _eventBus.publish(eventMsg);
+            s_eventBus.publish(eventMsg);
         } catch (EventBusException e) {
             s_logger.warn("Failed to publish state change event on the the event bus.");
         }
@@ -97,7 +116,7 @@ public class SnapshotStateListener implements StateListener<State, Event, Snapsh
         int index = entityClassName.lastIndexOf(".");
         String entityName = entityClassName;
         if (index != -1) {
-            entityName = entityClassName.substring(index+1);
+            entityName = entityClassName.substring(index + 1);
         }
         return entityName;
     }

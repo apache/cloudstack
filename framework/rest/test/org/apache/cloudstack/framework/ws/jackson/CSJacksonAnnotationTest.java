@@ -42,7 +42,8 @@ public class CSJacksonAnnotationTest {
     public void setUp() throws Exception {
     }
 
-    @Test @Ignore
+    @Test
+    @Ignore
     public void test() {
         ObjectMapper mapper = new ObjectMapper();
         JaxbAnnotationModule jaxbModule = new JaxbAnnotationModule();
@@ -60,7 +61,7 @@ public class CSJacksonAnnotationTest {
         vo.values.put("key1", 1000l);
         vo.values.put("key2", 2000l);
         vo.vo2.name = "testvoname2";
-        vo.pods="abcde";
+        vo.pods = "abcde";
 
         try {
             mapper.writeValue(writer, vo);
@@ -76,12 +77,12 @@ public class CSJacksonAnnotationTest {
 
     }
 
-    @XmlRootElement(name="xml-test2")
+    @XmlRootElement(name = "xml-test2")
     public class Test2VO {
         public String name;
     }
 
-    @XmlRootElement(name="abc")
+    @XmlRootElement(name = "abc")
     public class TestVO {
         public int id;
 
@@ -89,13 +90,11 @@ public class CSJacksonAnnotationTest {
 
         public String name;
 
-
         public List<String> names;
 
         public String pods;
 
-
-        @XmlElement(name="test2")
+        @XmlElement(name = "test2")
         public Test2VO vo2 = new Test2VO();
 
         public TestVO(int id, String name) {
@@ -103,12 +102,12 @@ public class CSJacksonAnnotationTest {
             this.name = name;
         }
 
-        @Url(clazz=TestVO.class, method="getName")
+        @Url(clazz = TestVO.class, method = "getName")
         public String getName() {
             return name;
         }
 
-        @Url(clazz=TestVO.class, method="getNames", type=List.class)
+        @Url(clazz = TestVO.class, method = "getNames", type = List.class)
         public List<String> getNames() {
             return names;
         }

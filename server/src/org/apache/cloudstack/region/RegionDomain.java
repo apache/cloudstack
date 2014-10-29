@@ -24,38 +24,38 @@ public class RegionDomain extends DomainVO {
     String parentdomainname;
     Boolean haschild;
 
-	public RegionDomain() {
+    public RegionDomain() {
     }
-    
+
     public String getAccountuuid() {
-		return accountUuid;
-	}
+        return accountUuid;
+    }
 
-	public void setAccountuuid(String accountUuid) {
-		this.accountUuid = accountUuid;
-	}
+    public void setAccountuuid(String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
 
-	public String getParentUuid() {
-		return parentUuid;
-	}
+    public String getParentUuid() {
+        return parentUuid;
+    }
 
-	public void setParentUuid(String parentUuid) {
-		this.parentUuid = parentUuid;
-	}
+    public void setParentUuid(String parentUuid) {
+        this.parentUuid = parentUuid;
+    }
 
-	public String getParentdomainname() {
-		return parentdomainname;
-	}
+    public String getParentdomainname() {
+        return parentdomainname;
+    }
 
-	public void setParentdomainname(String parentdomainname) {
-		this.parentdomainname = parentdomainname;
-	}
+    public void setParentdomainname(String parentdomainname) {
+        this.parentdomainname = parentdomainname;
+    }
 
-	public Boolean getHaschild() {
-		return haschild;
-	}
+    public Boolean getHaschild() {
+        return haschild;
+    }
 
-	public void setHaschild(Boolean haschild) {
-		this.haschild = haschild;
-	}
+    public void setHaschild(Boolean haschild) {
+        this.haschild = haschild;
+    }
 }

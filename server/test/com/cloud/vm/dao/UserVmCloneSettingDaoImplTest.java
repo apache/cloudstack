@@ -33,13 +33,15 @@ import com.cloud.vm.UserVmCloneSettingVO;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/CloneSettingDaoTestContext.xml")
 public class UserVmCloneSettingDaoImplTest extends TestCase {
-    @Inject UserVmCloneSettingDaoImpl _vmcsdao;
+    @Inject
+    UserVmCloneSettingDaoImpl _vmcsdao;
 
     public void makeEntry(Long vmId, String cloneType) {
         UserVmCloneSettingVO vo = new UserVmCloneSettingVO(vmId, cloneType);
         _vmcsdao.persist(vo);
         vo = _vmcsdao.findById(vmId);
-        assert (vo.getCloneType().equalsIgnoreCase(cloneType)) : "Unexpected Clone Type retrieved from table! Retrieved: " + vo.getCloneType() + " while expected was: " + cloneType;
+        assert (vo.getCloneType().equalsIgnoreCase(cloneType)) : "Unexpected Clone Type retrieved from table! Retrieved: " + vo.getCloneType() + " while expected was: " +
+            cloneType;
 
         // Next test whether the record is retrieved by clone type.
         List<UserVmCloneSettingVO> voList = new ArrayList<UserVmCloneSettingVO>();
@@ -49,6 +51,7 @@ public class UserVmCloneSettingDaoImplTest extends TestCase {
         // If a vo list is indeed retrieved, also check whether the vm id retrieved matches what we put in there.
         assert (voList.get(0).getVmId() == vmId) : "Retrieved vmId " + voList.get(0).getVmId() + " does not match input vmId: " + vmId;
     }
+
     @Test
     public void testPersist() {
 

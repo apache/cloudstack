@@ -17,15 +17,31 @@
 """ P1 tests for tags
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-import datetime
-
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (Tag,
+                             Account,
+                             VirtualMachine,
+                             Iso,
+                             Volume,
+                             Network,
+                             Host,
+                             DiskOffering,
+                             NATRule,
+                             PublicIPAddress,
+                             FireWallRule,
+                             LoadBalancerRule,
+                             Vpn,
+                             Template,
+                             Snapshot,
+                             ServiceOffering,
+                             Project)
+from marvin.lib.common import (get_zone,
+                               get_domain,
+                               get_template)
+from marvin.codes import FAILED
+import time
 
 class Services:
     """Test tags Services
@@ -174,30 +190,28 @@ class TestResourceTags(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestResourceTags,
-                               cls
-                               ).getClsTestClient().getApiClient()
-        cls.services = Services().services
-        # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.testClient = super(TestResourceTags, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
-        # Create domains, account etc.
-        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.services = Services().services
+
+        # Get Zone, Domain and templates
+
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
+        cls.template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostype"]
+                            )
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
                             admin=True,
                             )
-        cls.zone = get_zone(cls.api_client, cls.services)
-
-        cls.template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
-
         # Create service offerings, disk offerings etc
         cls.service_offering = ServiceOffering.create(
                                     cls.api_client,
@@ -266,7 +280,7 @@ class TestResourceTags(cloudstackTestCase):
 
         return
     
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_01_lbrule_tag(self):
         """ Test Create tag on LB rule and remove the LB rule
         """
@@ -409,7 +423,7 @@ class TestResourceTags(cloudstackTestCase):
             self.fail("failed to delete load balancer rule! - %s" % e)
         return
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_02_natrule_tag(self):
         """ Test Create tag on nat rule and remove the nat rule
         """
@@ -546,7 +560,7 @@ class TestResourceTags(cloudstackTestCase):
             self.fail("failed to delete port forwarding rule! - %s" % e)
         return
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_03_firewallrule_tag(self):
         """ Test Create tag on firewall rule and remove the firewall rule
         """
@@ -689,7 +703,7 @@ class TestResourceTags(cloudstackTestCase):
             self.fail("failed to delete firewall rule! - %s" % e)
         return
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_04_vpn_tag(self):
         """ Test Create tag on vpn and remove the vpn
         """
@@ -841,7 +855,7 @@ class TestResourceTags(cloudstackTestCase):
             self.fail("failed to disable VPN! - %s" % e)
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_05_vm_tag(self):
         """ Test creation, listing and deletion tags on UserVM
         """
@@ -918,7 +932,7 @@ class TestResourceTags(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_06_template_tag(self):
         """ Test creation, listing and deletion tag on templates
         """
@@ -926,14 +940,14 @@ class TestResourceTags(cloudstackTestCase):
         # 1. Create a tag on template/ISO using createTags API
         # 2. Delete above created tag using deleteTags API
 
-        self.debug("Stopping the virtual machine: %s" % self.vm_1.name)
-        #Stop virtual machine
-        self.vm_1.stop(self.apiclient)
+        try:
+            self.debug("Stopping the virtual machine: %s" % self.vm_1.name)
+            #Stop virtual machine
+            self.vm_1.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop VM: %s" % e)
 
         timeout = self.services["timeout"]
-        #Wait before server has be successfully stopped
-        time.sleep(self.services["sleep"])
-
         while True:
             list_volume = Volume.list(
                                    self.apiclient,
@@ -992,11 +1006,11 @@ class TestResourceTags(cloudstackTestCase):
                          'CentOS',
                          'The tag should have original value'
                          )
-      
-        templates = Template.list(
+
+        Template.list(
                   self.apiclient,
                   templatefilter=\
-                  self.services["template"]["templatefilter"],  
+                  self.services["template"]["templatefilter"],
                   listall=True,
                   key='OS',
                   value='CentOS'
@@ -1030,7 +1044,7 @@ class TestResourceTags(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_07_iso_tag(self):
         """ Test creation, listing and deletion tags on ISO
         """
@@ -1046,10 +1060,8 @@ class TestResourceTags(cloudstackTestCase):
                          )
         self.debug("ISO created with ID: %s" % iso.id)
 
-        list_iso_response = list_isos(
-                                      self.apiclient,
-                                      id=iso.id
-                                      )
+        list_iso_response = Iso.list(self.apiclient,
+                                     id=iso.id)
         self.assertEqual(
                          isinstance(list_iso_response, list),
                          True,
@@ -1127,7 +1139,7 @@ class TestResourceTags(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_08_volume_tag(self):
         """ Test creation, listing and deletion tagson volume
         """
@@ -1216,7 +1228,7 @@ class TestResourceTags(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_09_snapshot_tag(self):
         """ Test creation, listing and deletion tag son snapshot
         """
@@ -1227,12 +1239,10 @@ class TestResourceTags(cloudstackTestCase):
         self.debug("Creating snapshot on ROOT volume for VM: %s " %
                                                             self.vm_1.name)
         # Get the Root disk of VM
-        volumes = list_volumes(
-                               self.apiclient,
-                               virtualmachineid=self.vm_1.id,
-                               type='ROOT',
-                               listall=True
-                              )
+        volumes = Volume.list(self.apiclient,
+                              virtualmachineid=self.vm_1.id,
+                              type='ROOT',
+                              listall=True)
         volume = volumes[0]
 
         # Create a snapshot from the ROOTDISK
@@ -1240,10 +1250,8 @@ class TestResourceTags(cloudstackTestCase):
         self.debug("Snapshot created: ID - %s" % snapshot.id)
         self.cleanup.append(snapshot)
 
-        snapshots = list_snapshots(
-                                   self.apiclient,
-                                   id=snapshot.id
-                                   )
+        snapshots = Snapshot.list(self.apiclient,
+                                  id=snapshot.id)
         self.assertEqual(
                          isinstance(snapshots, list),
                          True,
@@ -1277,13 +1285,10 @@ class TestResourceTags(cloudstackTestCase):
                          'manual',
                          'The tag should have original value'
                          )
-        
-        snapshots = list_snapshots(
-                                   self.apiclient,
-                                   listall=True,
-                                   key='type',
-                                   value='manual'
-                                   )
+        snapshots = Snapshot.list(self.apiclient,
+                                  listall=True,
+                                  key='type',
+                                  value='manual')
         self.assertEqual(
                          isinstance(snapshots, list),
                          True,
@@ -1325,7 +1330,7 @@ class TestResourceTags(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_10_network_tag(self):
         """ Testcreation, listing and deletion tags on guest network
         """
@@ -1527,7 +1532,7 @@ class TestResourceTags(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_13_tag_case_insensitive(self):
         """ Test to verify that tags are not case sensitive
         """
@@ -1565,21 +1570,16 @@ class TestResourceTags(cloudstackTestCase):
                          'India',
                          'The tag should have original value'
                          )
-        self.debug("Creating the same tag with caps for user VM")
-        
         try:
-            tag_2 = Tag.create(
-                     self.apiclient,
-                     resourceIds=self.vm_1.id,
-                     resourceType='userVM',
-                     tags={'REGION': 'INDIA'}
-                )
+            Tag.create(self.apiclient,
+                       resourceIds=self.vm_1.id,
+                       resourceType='userVM',
+                       tags={'REGION': 'INDIA'})
         except Exception as e:
             pass
         else:
             assert("Creating same tag in upper case succeeded")
 
-        self.debug("Deleting the created tag..")
         try:
             tag_1.delete(
                        self.apiclient,
@@ -1608,7 +1608,7 @@ class TestResourceTags(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_14_special_char_mutiple_tags(self):
         """ Test multiple tags and with special characters on same machine
         """
@@ -1677,7 +1677,7 @@ class TestResourceTags(cloudstackTestCase):
                        )
         return
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_15_project_tag(self):
         """ Test creation, listing and deletion tags on projects
         """
@@ -1769,7 +1769,7 @@ class TestResourceTags(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_16_query_tags_other_account(self):
         """ Test Query the tags from other account
         """
@@ -1787,14 +1787,14 @@ class TestResourceTags(cloudstackTestCase):
                             domainid=self.domain.id
                             )
         self.cleanup.append(user_account)
-        
+
         other_user_account = Account.create(
                             self.apiclient,
                             self.services["other_user"],
                             domainid=self.domain.id
                             )
         self.cleanup.append(other_user_account)
-    
+
         iso = Iso.create(
                          self.apiclient,
                          self.services["iso"],
@@ -1803,10 +1803,8 @@ class TestResourceTags(cloudstackTestCase):
                          )
         self.debug("ISO created with ID: %s" % iso.id)
 
-        list_iso_response = list_isos(
-                                      self.apiclient,
-                                      id=iso.id
-                                      )
+        list_iso_response = Iso.list(self.apiclient,
+                                     id=iso.id)
         self.assertEqual(
                             isinstance(list_iso_response, list),
                             True,
@@ -1830,8 +1828,6 @@ class TestResourceTags(cloudstackTestCase):
                         domainid=user_account.domainid,
                         key='region',
                         )
-    
-        self.debug("Verify listTag API using user account")
         self.assertEqual(
                          isinstance(tags, list),
                          True,
@@ -1861,7 +1857,7 @@ class TestResourceTags(cloudstackTestCase):
         
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_17_query_tags_admin_account(self):
         """ Test Query the tags from admin account
         """
@@ -1879,33 +1875,25 @@ class TestResourceTags(cloudstackTestCase):
                             domainid=self.domain.id
                             )
         self.cleanup.append(user_account)
-        
+
         iso = Iso.create(
                          self.apiclient,
                          self.services["iso"],
                          account=user_account.name,
                          domainid=user_account.domainid
                          )
-        self.debug("ISO created with ID: %s" % iso.id)
 
-        list_iso_response = list_isos(
-                                      self.apiclient,
-                                      id=iso.id
-                                      )
+        list_iso_response = Iso.list(self.apiclient,
+                                     id=iso.id)
         self.assertEqual(
                          isinstance(list_iso_response, list),
                          True,
                          "Check list response returns a valid list"
                          )
-
-        self.debug("Creating a tag for the ISO")
-        tag = Tag.create(
-                         self.apiclient,
-                         resourceIds=iso.id,
-                         resourceType='ISO',
-                         tags={'region': 'India'}
-                         )
-        self.debug("Tag created: %s" % tag.__dict__)
+        Tag.create(self.apiclient,
+                   resourceIds=iso.id,
+                   resourceType='ISO',
+                   tags={'region': 'India'})
 
         tags = Tag.list(
                         self.apiclient,
@@ -1915,8 +1903,6 @@ class TestResourceTags(cloudstackTestCase):
                         domainid=user_account.domainid,
                         key='region',
                         )
-    
-        self.debug("Verify listTag API using user account")
         self.assertEqual(
                          isinstance(tags, list),
                          True,
@@ -1948,7 +1934,7 @@ class TestResourceTags(cloudstackTestCase):
         
         return
 
-    @attr(tags=["advanced", "basic", "simulator"])
+    @attr(tags=["advanced", "basic", "simulator"], required_hardware="false")
     def test_18_invalid_list_parameters(self):
         """ Test listAPI with invalid tags parameter
         """
@@ -1987,7 +1973,7 @@ class TestResourceTags(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_19_delete_add_same_tag(self):
         """ Test deletion and addition of same tag on a resource.
         """
@@ -2093,7 +2079,7 @@ class TestResourceTags(cloudstackTestCase):
             self.fail("Failed to delete the tag - %s" % e)
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_20_create_tags_multiple_resources(self):
         "Test creation of same tag on multiple resources"
 
@@ -2198,51 +2184,25 @@ class TestResourceTags(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_21_create_tag_stopped_vm(self):
         "Test creation of tag on stopped vm."
 
-        self.debug("Stopping the virtual machine: %s" % self.vm_1.name)
-        #Stop virtual machine
-        self.vm_1.stop(self.apiclient)
-    
-        timeout = self.services["timeout"]
-        #Wait before server has be successfully stopped
-        time.sleep(self.services["sleep"])
+        try:
+            self.debug("Stopping the virtual machine: %s" % self.vm_1.name)
+            #Stop virtual machine
+            self.vm_1.stop(self.apiclient)
 
-        list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.vm_1.id
-                                                 )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % self.vm_1.id
-          )
-
-        self.assertEqual(
-                         isinstance(list_vm_response, list),
-                         True,
-                         "Check list response returns a valid list"
-                         )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-                         vm_response.state,
-                         "Stopped",
-                         "VM should be in stopped state after deployment"
-                         )
-
-        self.debug("Creating a tag for user VM")
-        tag = Tag.create(
+            self.debug("Creating a tag for user VM")
+            tag = Tag.create(
                          self.apiclient,
                          resourceIds=self.vm_1.id,
                          resourceType='userVM',
                          tags={'region': 'India'}
                          )
-        self.debug("Tag created: %s" % tag.__dict__)
+            self.debug("Tag created: %s" % tag.__dict__)
 
-        tags = Tag.list(
+            tags = Tag.list(
                         self.apiclient,
                         listall=True,
                         resourceType='userVM',
@@ -2251,20 +2211,19 @@ class TestResourceTags(cloudstackTestCase):
                         key='region',
                         value='India'
                         )
-        self.assertEqual(
+            self.assertEqual(
                          isinstance(tags, list),
                          True,
                          "List tags should not return empty response"
                          )
 
-        self.assertEqual(
+            self.assertEqual(
                          tags[0].value,
                          "India",
                          "Tag created with incorrect value"
                          )
 
-        self.debug("Deleting the created tag..")
-        try:
+            self.debug("Deleting the created tag..")
             tag.delete(
                        self.apiclient,
                        resourceIds=self.vm_1.id,
@@ -2272,15 +2231,15 @@ class TestResourceTags(cloudstackTestCase):
                        tags={'region': 'India'}
                        )
         except Exception as e:
-            self.fail("Failed to delete the tag - %s" % e)
+            self.fail("Exception occured - %s" % e)
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_22_create_tag_destroyed_vm(self):
         "Test creation of tag on stopped vm."
 
         self.debug("Destroying instance: %s" % self.vm_1.name)
-        self.vm_1.delete(self.apiclient)
+        self.vm_1.delete(self.apiclient, expunge=False)
 
         self.debug("Creating a tag for user VM")
         tag = Tag.create(

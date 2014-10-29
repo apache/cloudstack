@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import com.cloud.vm.VirtualMachine.State;
@@ -23,7 +26,8 @@ import com.cloud.vm.VirtualMachine.State;
 public class CheckStateAnswer extends Answer {
     State state;
 
-    public CheckStateAnswer() {}
+    public CheckStateAnswer() {
+    }
 
     public CheckStateAnswer(CheckStateCommand cmd, State state) {
         this(cmd, state, null);

@@ -18,12 +18,9 @@ package org.apache.cloudstack.region;
 
 import java.util.List;
 
-import com.cloud.dc.Vlan;
-import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface PortableIpDao  extends GenericDao<PortableIpVO, Long> {
+public interface PortableIpDao extends GenericDao<PortableIpVO, Long> {
 
     List<PortableIpVO> listByRegionId(int regionId);
 

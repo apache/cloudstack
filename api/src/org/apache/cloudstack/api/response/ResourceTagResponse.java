@@ -16,34 +16,41 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
-public class ResourceTagResponse extends BaseResponse implements ControlledViewEntityResponse{
-    @SerializedName(ApiConstants.KEY) @Param(description="tag key name")
+public class ResourceTagResponse extends BaseResponse implements ControlledViewEntityResponse {
+    @SerializedName(ApiConstants.KEY)
+    @Param(description = "tag key name")
     private String key;
 
-    @SerializedName(ApiConstants.VALUE) @Param(description="tag value")
+    @SerializedName(ApiConstants.VALUE)
+    @Param(description = "tag value")
     private String value;
 
-    @SerializedName(ApiConstants.RESOURCE_TYPE) @Param(description="resource type")
+    @SerializedName(ApiConstants.RESOURCE_TYPE)
+    @Param(description = "resource type")
     private String resourceType;
 
-    @SerializedName(ApiConstants.RESOURCE_ID) @Param(description="id of the resource")
+    @SerializedName(ApiConstants.RESOURCE_ID)
+    @Param(description = "id of the resource")
     private String resourceId;
 
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account associated with the tag")
     private String accountName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id the tag belongs to")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id the tag belongs to")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name where tag belongs to")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name where tag belongs to")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
@@ -54,7 +61,8 @@ public class ResourceTagResponse extends BaseResponse implements ControlledViewE
     @Param(description = "the domain associated with the tag")
     private String domainName;
 
-    @SerializedName(ApiConstants.CUSTOMER) @Param(description="customer associated with the tag")
+    @SerializedName(ApiConstants.CUSTOMER)
+    @Param(description = "customer associated with the tag")
     private String customer;
 
     public void setKey(String key) {
@@ -100,5 +108,36 @@ public class ResourceTagResponse extends BaseResponse implements ControlledViewE
 
     public void setCustomer(String customer) {
         this.customer = customer;
+    }
+
+    public String getKey() {
+        return this.key;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        String key = this.getKey();
+        result = prime * result + ((key == null) ? 0 : key.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        ResourceTagResponse other = (ResourceTagResponse) obj;
+        String key = this.getKey();
+        if (key == null) {
+            if (other.getKey() != null)
+                return false;
+        } else if (!key.equals(other.getKey()))
+            return false;
+        return true;
     }
 }

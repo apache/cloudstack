@@ -36,7 +36,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = { StoragePoolHostDao.class })
+@Local(value = {StoragePoolHostDao.class})
 public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Long> implements StoragePoolHostDao {
     public static final Logger s_logger = Logger.getLogger(StoragePoolHostDaoImpl.class.getName());
 
@@ -46,16 +46,13 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
 
     protected static final String HOST_FOR_POOL_SEARCH = "SELECT * FROM storage_pool_host_ref ph,  host h where  ph.host_id = h.id and ph.pool_id=? and h.status=? ";
 
-    protected static final String STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) "
-            + " FROM storage_pool p, storage_pool_host_ref ph " + " WHERE p.id = ph.pool_id AND p.data_center_id = ? "
-            + " GROUP by p.data_center_id";
+    protected static final String STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) " + " FROM storage_pool p, storage_pool_host_ref ph "
+        + " WHERE p.id = ph.pool_id AND p.data_center_id = ? " + " GROUP by p.data_center_id";
 
-    protected static final String SHARED_STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) "
-            + " FROM storage_pool p, storage_pool_host_ref ph " + " WHERE p.id = ph.pool_id AND p.data_center_id = ? "
-            + " AND p.pool_type NOT IN ('LVM', 'Filesystem')" + " GROUP by p.data_center_id";
+    protected static final String SHARED_STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) " + " FROM storage_pool p, storage_pool_host_ref ph "
+        + " WHERE p.id = ph.pool_id AND p.data_center_id = ? " + " AND p.pool_type NOT IN ('LVM', 'Filesystem')" + " GROUP by p.data_center_id";
 
-    protected static final String DELETE_PRIMARY_RECORDS = "DELETE " + "FROM storage_pool_host_ref "
-            + "WHERE host_id = ?";
+    protected static final String DELETE_PRIMARY_RECORDS = "DELETE " + "FROM storage_pool_host_ref " + "WHERE host_id = ?";
 
     public StoragePoolHostDaoImpl() {
         PoolSearch = createSearchBuilder();
@@ -105,37 +102,25 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
     @Override
     public List<StoragePoolHostVO> listByHostStatus(long poolId, Status hostStatus) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
+        String sql = HOST_FOR_POOL_SEARCH;
         List<StoragePoolHostVO> result = new ArrayList<StoragePoolHostVO>();
-        ResultSet rs = null;
-        try {
-            String sql = HOST_FOR_POOL_SEARCH;
-            pstmt = txn.prepareStatement(sql);
-
+        try(PreparedStatement pstmt = txn.prepareStatement(sql);) {
             pstmt.setLong(1, poolId);
             pstmt.setString(2, hostStatus.toString());
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                // result.add(toEntityBean(rs, false)); TODO: this is buggy in
-                // GenericDaoBase for hand constructed queries
-                long id = rs.getLong(1); // ID column
-                result.add(findById(id));
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    // result.add(toEntityBean(rs, false)); TODO: this is buggy in
+                    // GenericDaoBase for hand constructed queries
+                    long id = rs.getLong(1); // ID column
+                    result.add(findById(id));
+                }
+            }catch (SQLException e) {
+                s_logger.warn("listByHostStatus:Exception: ", e);
             }
         } catch (Exception e) {
-            s_logger.warn("Exception: ", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+            s_logger.warn("listByHostStatus:Exception: ", e);
         }
         return result;
-
     }
 
     @Override
@@ -143,7 +128,6 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
         ArrayList<Pair<Long, Integer>> l = new ArrayList<Pair<Long, Integer>>();
         String sql = sharedOnly ? SHARED_STORAGE_POOL_HOST_INFO : STORAGE_POOL_HOST_INFO;
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        ;
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement(sql);
@@ -154,14 +138,14 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
                 l.add(new Pair<Long, Integer>(rs.getLong(1), rs.getInt(2)));
             }
         } catch (SQLException e) {
-        } catch (Throwable e) {
+            s_logger.debug("SQLException: ", e);
         }
         return l;
     }
 
     /**
      * This method deletes the primary records from the host
-     * 
+     *
      * @param hostId
      *            -- id of the host
      */

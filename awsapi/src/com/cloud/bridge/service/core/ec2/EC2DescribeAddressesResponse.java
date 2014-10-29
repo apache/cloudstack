@@ -21,16 +21,16 @@ import java.util.List;
 
 public class EC2DescribeAddressesResponse {
 
-	private List<EC2Address> addressSet = new ArrayList<EC2Address>();    
+    private List<EC2Address> addressSet = new ArrayList<EC2Address>();
 
-	public EC2DescribeAddressesResponse() {
-	}
-	
-	public void addAddress( EC2Address param ) {
-		addressSet.add( param );
-	}
-	
-	public EC2Address[] getAddressSet() {
-		return addressSet.toArray(new EC2Address[0]);
-	}
+    public EC2DescribeAddressesResponse() {
+    }
+
+    public void addAddress(EC2Address param) {
+        addressSet.add(param);
+    }
+
+    public EC2Address[] getAddressSet() {
+        return addressSet.toArray(new EC2Address[0]);
+    }
 }

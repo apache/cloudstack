@@ -22,13 +22,12 @@ import java.util.List;
 public class EC2ImageLaunchPermission {
 
     private Operation launchPermOperation;
-    public enum Operation{
-        add,
-        remove,
-        reset;
+
+    public enum Operation {
+        add, remove, reset;
     }
 
-    private List<String>  launchPermissionList = new ArrayList<String>();
+    private List<String> launchPermissionList = new ArrayList<String>();
 
     public EC2ImageLaunchPermission() {
         launchPermOperation = null;
@@ -42,7 +41,7 @@ public class EC2ImageLaunchPermission {
         return launchPermissionList;
     }
 
-    public void setLaunchPermOp( Operation launchPermOperation ) {
+    public void setLaunchPermOp(Operation launchPermOperation) {
         this.launchPermOperation = launchPermOperation;
     }
 

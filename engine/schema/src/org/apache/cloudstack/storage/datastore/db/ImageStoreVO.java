@@ -31,14 +31,14 @@ import javax.persistence.TableGenerator;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.ScopeType;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "image_store")
 public class ImageStoreVO implements ImageStore {
     @Id
-    @TableGenerator(name = "image_store_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value",
-            pkColumnValue = "image_store_seq", allocationSize = 1)
+    @TableGenerator(name = "image_store_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "image_store_seq", allocationSize = 1)
     @Column(name = "id", nullable = false)
     private long id;
 
@@ -91,14 +91,17 @@ public class ImageStoreVO implements ImageStore {
         this.role = role;
     }
 
+    @Override
     public long getId() {
         return this.id;
     }
 
+    @Override
     public String getName() {
         return this.name;
     }
 
+    @Override
     public String getProviderName() {
         return this.providerName;
     }
@@ -115,6 +118,7 @@ public class ImageStoreVO implements ImageStore {
         this.protocol = protocol;
     }
 
+    @Override
     public String getProtocol() {
         return this.protocol;
     }
@@ -123,6 +127,7 @@ public class ImageStoreVO implements ImageStore {
         this.dcId = dcId;
     }
 
+    @Override
     public Long getDataCenterId() {
         return this.dcId;
     }
@@ -139,12 +144,17 @@ public class ImageStoreVO implements ImageStore {
         this.uuid = uuid;
     }
 
+    @Override
     public String getUuid() {
         return this.uuid;
     }
 
     public String getUrl() {
-        return url;
+        String updatedUrl = url;
+        if ("cifs".equalsIgnoreCase(this.protocol)) {
+            updatedUrl = UriUtils.getUpdateUri(updatedUrl, false);
+        }
+        return updatedUrl;
     }
 
     public void setUrl(String url) {

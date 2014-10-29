@@ -20,18 +20,19 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 
-import com.cloud.consoleproxy.util.Logger;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
+import com.cloud.consoleproxy.util.Logger;
+
 public class ConsoleProxyCmdHandler implements HttpHandler {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyCmdHandler.class);
-    
+
+    @Override
     public void handle(HttpExchange t) throws IOException {
         try {
-            Thread.currentThread().setName("Cmd Thread " + 
-                    Thread.currentThread().getId() + " " + t.getRemoteAddress());
+            Thread.currentThread().setName("Cmd Thread " + Thread.currentThread().getId() + " " + t.getRemoteAddress());
             s_logger.info("CmdHandler " + t.getRequestURI());
             doHandle(t);
         } catch (Exception e) {
@@ -41,7 +42,7 @@ public class ConsoleProxyCmdHandler implements HttpHandler {
             OutputStream os = t.getResponseBody();
             os.write(response.getBytes());
             os.close();
-        } catch(OutOfMemoryError e) {
+        } catch (OutOfMemoryError e) {
             s_logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
             System.exit(1);
         } catch (Throwable e) {
@@ -50,7 +51,7 @@ public class ConsoleProxyCmdHandler implements HttpHandler {
             t.close();
         }
     }
-    
+
     public void doHandle(HttpExchange t) throws Exception {
         String path = t.getRequestURI().getPath();
         int i = path.indexOf("/", 1);
@@ -58,7 +59,7 @@ public class ConsoleProxyCmdHandler implements HttpHandler {
         s_logger.info("Get CMD request for " + cmd);
         if (cmd.equals("getstatus")) {
             ConsoleProxyClientStatsCollector statsCollector = ConsoleProxy.getStatsCollector();
-            
+
             Headers hds = t.getResponseHeaders();
             hds.set("Content-Type", "text/plain");
             t.sendResponseHeaders(200, 0);

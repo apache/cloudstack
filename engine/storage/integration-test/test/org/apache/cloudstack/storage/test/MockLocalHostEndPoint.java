@@ -29,8 +29,7 @@ import com.cloud.agent.api.Command;
 public class MockLocalHostEndPoint extends LocalHostEndpoint {
     @Override
     public Answer sendMessage(Command cmd) {
-        if ((cmd instanceof CopyCommand) || (cmd instanceof DownloadCommand)
-                || (cmd instanceof DeleteCommand)) {
+        if ((cmd instanceof CopyCommand) || (cmd instanceof DownloadCommand) || (cmd instanceof DeleteCommand)) {
             return resource.executeRequest(cmd);
         }
         // TODO Auto-generated method stub

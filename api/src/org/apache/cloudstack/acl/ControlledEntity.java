@@ -26,8 +26,8 @@ import com.cloud.user.OwnedBy;
  */
 public interface ControlledEntity extends OwnedBy, PartOf {
     public enum ACLType {
-        Account,
-        Domain
+        Account, Domain
     }
 
+    Class<?> getEntityType();
 }

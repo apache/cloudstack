@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,26 +15,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import com.cloud.host.HostStats;
 
 public class HostStatsEntry implements HostStats {
 
-	long hostId;
-	String entityType;
-	double cpuUtilization;
-	double networkReadKBs;
-	double networkWriteKBs;
+    long hostId;
+    String entityType;
+    double cpuUtilization;
+    double networkReadKBs;
+    double networkWriteKBs;
     double totalMemoryKBs;
     double freeMemoryKBs;
 
     public HostStatsEntry() {
     }
 
-    public HostStatsEntry(long hostId,double cpuUtilization, double networkReadKBs, double networkWriteKBs, String entityType,
-		double totalMemoryKBs, double freeMemoryKBs, double xapiMemoryUsageKBs, double averageLoad)
-    {
+    public HostStatsEntry(long hostId, double cpuUtilization, double networkReadKBs, double networkWriteKBs, String entityType, double totalMemoryKBs,
+            double freeMemoryKBs, double xapiMemoryUsageKBs, double averageLoad) {
         this.hostId = hostId;
         this.entityType = entityType;
         this.cpuUtilization = cpuUtilization;
@@ -43,71 +45,71 @@ public class HostStatsEntry implements HostStats {
         this.freeMemoryKBs = freeMemoryKBs;
     }
 
-	@Override
+    @Override
     public double getNetworkReadKBs() {
-    	return networkReadKBs;
+        return networkReadKBs;
     }
 
     public void setNetworkReadKBs(double networkReadKBs) {
-    	this.networkReadKBs = networkReadKBs;
+        this.networkReadKBs = networkReadKBs;
     }
 
-	@Override
+    @Override
     public double getNetworkWriteKBs() {
-    	return networkWriteKBs;
+        return networkWriteKBs;
     }
 
     public void setNetworkWriteKBs(double networkWriteKBs) {
-    	this.networkWriteKBs = networkWriteKBs;
+        this.networkWriteKBs = networkWriteKBs;
     }
 
-	@Override
-    public String getEntityType(){
-    	return this.entityType;
+    @Override
+    public String getEntityType() {
+        return this.entityType;
     }
 
-    public void setEntityType(String entityType){
-    	this.entityType = entityType;
+    public void setEntityType(String entityType) {
+        this.entityType = entityType;
     }
 
-	@Override
-    public double getTotalMemoryKBs(){
-    	return this.totalMemoryKBs;
+    @Override
+    public double getTotalMemoryKBs() {
+        return this.totalMemoryKBs;
     }
 
-    public void setTotalMemoryKBs(double totalMemoryKBs){
-    	this.totalMemoryKBs = totalMemoryKBs;
+    public void setTotalMemoryKBs(double totalMemoryKBs) {
+        this.totalMemoryKBs = totalMemoryKBs;
     }
 
-	@Override
-    public double getFreeMemoryKBs(){
-    	return this.freeMemoryKBs;
+    @Override
+    public double getFreeMemoryKBs() {
+        return this.freeMemoryKBs;
     }
 
-    public void setFreeMemoryKBs(double freeMemoryKBs){
-    	this.freeMemoryKBs = freeMemoryKBs;
+    public void setFreeMemoryKBs(double freeMemoryKBs) {
+        this.freeMemoryKBs = freeMemoryKBs;
     }
 
-	@Override
-	public double getCpuUtilization() {
-		return this.cpuUtilization;
-	}
+    @Override
+    public double getCpuUtilization() {
+        return this.cpuUtilization;
+    }
 
-	public void setCpuUtilization(double cpuUtilization) {
-		this.cpuUtilization = cpuUtilization;
-	}
+    public void setCpuUtilization(double cpuUtilization) {
+        this.cpuUtilization = cpuUtilization;
+    }
 
-	@Override
-	public double getUsedMemory() {
-		return (totalMemoryKBs-freeMemoryKBs);
-	}
+    @Override
+    public double getUsedMemory() {
+        return (totalMemoryKBs - freeMemoryKBs);
+    }
 
-	@Override
-	public HostStats getHostStats() {
-		return this;
-	}
+    @Override
+    public HostStats getHostStats() {
+        return this;
+    }
 
-	public void setHostId(long hostId) {
-		this.hostId = hostId;
-	}
+    public void setHostId(long hostId) {
+        this.hostId = hostId;
+    }
 }

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,36 +15,38 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package org.apache.cloudstack.storage.command;
 
-
-
-
 public class DownloadProgressCommand extends DownloadCommand {
-	public static enum RequestType {GET_STATUS, ABORT, RESTART, PURGE, GET_OR_RESTART}
-	private String jobId;
-	private RequestType request;
+    public static enum RequestType {
+        GET_STATUS, ABORT, RESTART, PURGE, GET_OR_RESTART
+    }
 
-	protected DownloadProgressCommand() {
-		super();
-	}
+    private String jobId;
+    private RequestType request;
 
-	public DownloadProgressCommand(DownloadCommand cmd, String jobId, RequestType req) {
-	    super(cmd);
+    protected DownloadProgressCommand() {
+        super();
+    }
 
-		this.jobId = jobId;
-		this.setRequest(req);
-	}
+    public DownloadProgressCommand(DownloadCommand cmd, String jobId, RequestType req) {
+        super(cmd);
 
-	public String getJobId() {
-		return jobId;
-	}
+        this.jobId = jobId;
+        this.setRequest(req);
+    }
 
-	public void setRequest(RequestType request) {
-		this.request = request;
-	}
+    public String getJobId() {
+        return jobId;
+    }
 
-	public RequestType getRequest() {
-		return request;
-	}
+    public void setRequest(RequestType request) {
+        this.request = request;
+    }
+
+    public RequestType getRequest() {
+        return request;
+    }
 }

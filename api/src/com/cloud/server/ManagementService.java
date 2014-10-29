@@ -20,12 +20,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.exception.*;
-
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCmd;
+import org.apache.cloudstack.api.command.admin.guest.AddGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.ListGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsCmd;
+import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsCmd;
+import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
@@ -34,7 +38,12 @@ import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListCapacityCmd;
 import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;
-import org.apache.cloudstack.api.command.admin.systemvm.*;
+import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.ListSystemVMsCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.RebootSystemVmCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.ScaleSystemVMCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.StopSystemVmCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.UpgradeSystemVMCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ListVlanIpRangesCmd;
 import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
 import org.apache.cloudstack.api.command.user.config.ListCapabilitiesCmd;
@@ -55,12 +64,17 @@ import com.cloud.capacity.Capacity;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
 import com.cloud.domain.Domain;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ManagementServerException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.IpAddress;
 import com.cloud.org.Cluster;
 import com.cloud.storage.GuestOS;
+import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.SSHKeyPair;
@@ -83,7 +97,6 @@ public interface ManagementService {
      * @return map of configuration name/values
      */
     Pair<List<? extends Configuration>, Integer> searchForConfigurations(ListCfgsByCmd c);
-
 
     /**
      * Searches for Clusters by the specified search criteria
@@ -117,9 +130,6 @@ public interface ManagementService {
      */
     Pair<List<? extends Host>, Integer> searchForServers(ListHostsCmd cmd);
 
-
-
-
     /**
      * Obtains a list of IP Addresses by the specified search criteria. Can search by: "userId", "dataCenterId",
      * "address"
@@ -143,6 +153,69 @@ public interface ManagementService {
      * @return list of GuestOSCategories
      */
     Pair<List<? extends GuestOsCategory>, Integer> listGuestOSCategoriesByCriteria(ListGuestOsCategoriesCmd cmd);
+
+    /**
+     * Obtains a list of all guest OS mappings
+     *
+     * @return list of GuestOSHypervisor
+     */
+    Pair<List<? extends GuestOSHypervisor>, Integer> listGuestOSMappingByCriteria(ListGuestOsMappingCmd cmd);
+
+    /**
+     * Adds a new guest OS mapping
+     *
+     * @return A VO containing the new mapping, with its hypervisor, hypervisor type, guest OS name, and the name of guest OS specific to hypervisor
+     */
+    GuestOSHypervisor addGuestOsMapping(AddGuestOsMappingCmd addGuestOsMappingCmd);
+
+    /**
+     * Find newly added guest OS mapping by ID
+     *
+     * @return A VO containing the guest OS mapping specified by ID, with its hypervisor, hypervisor type, guest OS name, and the name of guest OS specific to hypervisor
+     */
+    GuestOSHypervisor getAddedGuestOsMapping(Long guestOsHypervisorId);
+
+    /**
+     * Adds a new guest OS
+     *
+     * @return A VO containing the new guest OS, with its category ID, name and display name
+     */
+    GuestOS addGuestOs(AddGuestOsCmd addGuestOsCmd);
+
+    /**
+     * Find newly added guest OS by ID
+     *
+     * @return A VO containing the guest OS specified by ID, with its category ID, name and display name
+     */
+    GuestOS getAddedGuestOs(Long guestOsId);
+
+    /**
+     * Updates an existing guest OS
+     *
+     * @return A VO containing the updated display name
+     */
+    GuestOS updateGuestOs(UpdateGuestOsCmd updateGuestOsCmd);
+
+    /**
+     * Updates an existing guest OS mapping
+     *
+     * @return A VO containing the updated OS name for hypervisor
+     */
+    GuestOSHypervisor updateGuestOsMapping(UpdateGuestOsMappingCmd updateGuestOsMappingCmd);
+
+    /**
+     * Removes an existing guest OS
+     *
+     * @return True is successfully marked for delete, false otherwise
+     */
+    boolean removeGuestOs(RemoveGuestOsCmd removeGuestOsCmd);
+
+    /**
+     * Removes an existing guest OS mapping
+     *
+     * @return True is successfully marked for delete, false otherwise
+     */
+    boolean removeGuestOsMapping(RemoveGuestOsMappingCmd removeGuestOsMappingCmd);
 
     VirtualMachine stopSystemVM(StopSystemVmCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
 
@@ -207,7 +280,6 @@ public interface ManagementService {
      */
     List<? extends Capacity> listCapacities(ListCapacityCmd cmd);
 
-
     /**
      * List system VMs by the given search criteria
      *
@@ -230,7 +302,6 @@ public interface ManagementService {
 
     InstanceGroup updateVmGroup(UpdateVMGroupCmd cmd);
 
-
     Map<String, Object> listCapabilities(ListCapabilitiesCmd cmd);
 
     /**
@@ -249,8 +320,6 @@ public interface ManagementService {
      * @param cmd
      *            -- upload certificate cmd
      * @return -- returns a string on success
-     * @throws ServerApiException
-     *             -- even if one of the console proxy patching fails, we throw back this exception
      */
     String uploadCertificate(UploadCustomCertificateCmd cmd);
 
@@ -270,10 +339,6 @@ public interface ManagementService {
      * @return a random password
      */
     String generateRandomPassword();
-
-    public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId);
-
-    public Long saveCompletedEvent(Long userId, Long accountId, String level, String type, String description, long startEventId);
 
     /**
      * Search registered key pairs for the logged in user.
@@ -334,8 +399,7 @@ public interface ManagementService {
      * @return Ternary<List<? extends Host>, List<? extends Host>, Map<Host, Boolean>> List of all Hosts to which a VM
      *         can be migrated, list of Hosts with enough capacity and hosts requiring storage motion for migration.
      */
-    Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(
-            Long vmId, Long startIndex, Long pageSize);
+    Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize);
 
     /**
      * List storage pools for live migrating of a volume. The API returns list of all pools in the cluster to which the
@@ -349,7 +413,8 @@ public interface ManagementService {
 
     String[] listEventTypes();
 
-    Pair<List<? extends HypervisorCapabilities>, Integer> listHypervisorCapabilities(Long id, HypervisorType hypervisorType, String keyword, Long startIndex, Long pageSizeVal);
+    Pair<List<? extends HypervisorCapabilities>, Integer> listHypervisorCapabilities(Long id, HypervisorType hypervisorType, String keyword, Long startIndex,
+        Long pageSizeVal);
 
     HypervisorCapabilities updateHypervisorCapabilities(Long id, Long maxGuestsLimit, Boolean securityGroupEnabled);
 
@@ -363,9 +428,10 @@ public interface ManagementService {
 
     List<String> listDeploymentPlanners();
 
-    VirtualMachine upgradeSystemVM(ScaleSystemVMCmd cmd) throws ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException, ConcurrentOperationException;
-
-    boolean getExecuteInSequence();
+    VirtualMachine upgradeSystemVM(ScaleSystemVMCmd cmd) throws ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException,
+        ConcurrentOperationException;
 
     void cleanupVMReservations();
+
+
 }

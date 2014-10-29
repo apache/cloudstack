@@ -22,29 +22,31 @@ import java.util.Map;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.simulator.MockVMVO;
+import com.cloud.simulator.dao.MockConfigurationDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
-import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.PowerState;
 
 public interface SimulatorManager extends Manager {
-	public static final String Name = "simulator manager";
+    public static final String Name = "simulator manager";
 
-	public enum AgentType {
-		Computing(0), // not used anymore
-		Routing(1),
-		Storage(2);
+    public enum AgentType {
+        Computing(0), // not used anymore
+        Routing(1),
+        Storage(2);
 
-		int value;
+        int value;
 
-		AgentType(int value) {
-			this.value = value;
-		}
+        AgentType(int value) {
+            this.value = value;
+        }
 
-		public int value() {
-			return value;
-		}
-	}
+        public int value() {
+            return value;
+        }
+    }
 
     MockVmManager getVmMgr();
 
@@ -53,12 +55,20 @@ public interface SimulatorManager extends Manager {
     MockAgentManager getAgentMgr();
 
     Answer simulate(Command cmd, String hostGuid);
+
     StoragePoolInfo getLocalStorage(String hostGuid);
 
-    boolean configureSimulator(Long zoneId, Long podId, Long clusterId, Long hostId, String command, String values);
+    Long configureSimulator(Long zoneId, Long podId, Long clusterId, Long hostId, String command, String values, Integer count, String jsonResponse);
+
     public HashMap<String, Pair<Long, Long>> syncNetworkGroups(String hostGuid);
 
-    Map<String, State> getVmStates(String hostGuid);
+    Map<String, PowerState> getVmStates(String hostGuid);
 
-	Map<String, MockVMVO> getVms(String hostGuid);
+    Map<String, MockVMVO> getVms(String hostGuid);
+
+    MockConfigurationVO querySimulatorMock(Long id);
+
+    boolean clearSimulatorMock(Long id);
+
+    MockConfigurationDao getMockConfigurationDao();
 }

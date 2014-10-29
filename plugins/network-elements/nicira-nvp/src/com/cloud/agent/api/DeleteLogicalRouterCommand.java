@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 /**
@@ -21,14 +24,13 @@ package com.cloud.agent.api;
  */
 public class DeleteLogicalRouterCommand extends Command {
 
-    private String _logicalRouterUuid;
+    private final String logicalRouterUuid;
 
     public DeleteLogicalRouterCommand(String logicalRouterUuid) {
-        _logicalRouterUuid = logicalRouterUuid;
+        this.logicalRouterUuid = logicalRouterUuid;
     }
 
-    /*
-     * (non-Javadoc)
+    /* (non-Javadoc)
      * @see com.cloud.agent.api.Command#executeInSequence()
      */
     @Override
@@ -37,6 +39,6 @@ public class DeleteLogicalRouterCommand extends Command {
     }
 
     public String getLogicalRouterUuid() {
-        return _logicalRouterUuid;
+        return logicalRouterUuid;
     }
 }

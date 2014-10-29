@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.dao;
 
 import javax.ejb.Local;
@@ -27,9 +30,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=NiciraNvpNicMappingDao.class)
-public class NiciraNvpNicMappingDaoImpl extends
-GenericDaoBase<NiciraNvpNicMappingVO, Long> implements NiciraNvpNicMappingDao {
+@Local(value = NiciraNvpNicMappingDao.class)
+public class NiciraNvpNicMappingDaoImpl extends GenericDaoBase<NiciraNvpNicMappingVO, Long> implements NiciraNvpNicMappingDao {
 
     protected final SearchBuilder<NiciraNvpNicMappingVO> nicSearch;
 
@@ -40,7 +42,7 @@ GenericDaoBase<NiciraNvpNicMappingVO, Long> implements NiciraNvpNicMappingDao {
     }
 
     @Override
-    public NiciraNvpNicMappingVO findByNicUuid(String nicUuid) {
+    public NiciraNvpNicMappingVO findByNicUuid(final String nicUuid) {
         SearchCriteria<NiciraNvpNicMappingVO> sc = nicSearch.create();
         sc.setParameters("nicUuid", nicUuid);
         return findOneBy(sc);

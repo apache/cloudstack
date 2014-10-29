@@ -30,23 +30,23 @@ public class ModuleLocationUtils {
     public static String getModulesLocation(String baseDir) {
         return String.format(ALL_MODULE_PROPERTIES, baseDir);
     }
-    
+
     public static String getModuleLocation(String baseDir, String name) {
         return String.format(MODULE_PROPERTIES, baseDir, name);
     }
-    
+
     public static String getContextLocation(String baseDir, String name) {
         return String.format(CONTEXT_LOCATION, baseDir, name);
     }
-    
+
     public static String getInheritableContextLocation(String baseDir, String name) {
         return String.format(INHERTIABLE_CONTEXT_LOCATION, baseDir, name);
     }
-    
+
     public static String getOverrideContextLocation(String baseDir, String name) {
         return String.format(OVERRIDE_CONTEXT_LOCATION, baseDir, name);
     }
-    
+
     public static String getDefaultsLocation(String baseDir, String name) {
         return String.format(DEFAULTS_LOCATION, baseDir, name);
     }

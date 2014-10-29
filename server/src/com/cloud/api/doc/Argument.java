@@ -18,60 +18,69 @@ package com.cloud.api.doc;
 
 import java.util.List;
 
-public class Argument implements Comparable{
-	private String name;
-	private String description;
-	private Boolean required;
-	private String type;
-	private String sinceVersion = null;
-	private List<Argument> arguments;
-	
-	public Argument(String name) {
-		this.name = name;
-	}
-	
-	public Argument(String name, String description, boolean required) {
+public class Argument implements Comparable {
+    private String name;
+    private String description;
+    private Boolean required;
+    private String type;
+    private String sinceVersion = null;
+    private List<Argument> arguments;
+    private String dataType;
+
+    public Argument(String name) {
+        this.name = name;
+    }
+
+    public Argument(String name, String description, boolean required) {
         this.name = name;
         this.description = description;
         this.required = required;
     }
-	
-	public Argument(String name, String description) {
+
+    public Argument(String name, String description) {
         this.name = name;
         this.description = description;
     }
-	
-	public String getType() {
-	    return this.type;
-	}
-	
-	public void setType(String type) {
-	    this.type = type;
-	}
-	
-	public String getName() {
-		return name;
-	}
-	
-	public void setName(String name) {
-		this.name = name;
-	}
-	
-	public String getDescription() {
-		return description;
-	}
-	
-	public void setDescription(String description) {
-		this.description = description;
-	}
-	
-	public Boolean isRequired() {
-		return required;
-	}
-	
-	public void setRequired(Boolean required) {
-		this.required = required;
-	}
+
+    public String getType() {
+        return this.type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public void setDataType(String dataType) {
+        this.dataType = dataType;
+    }
+
+    public String getDataType() {
+        return this.dataType;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Boolean isRequired() {
+        return required;
+    }
+
+    public void setRequired(Boolean required) {
+        this.required = required;
+    }
 
     public List<Argument> getArguments() {
         return arguments;
@@ -80,23 +89,29 @@ public class Argument implements Comparable{
     public void setArguments(List<Argument> arguments) {
         this.arguments = arguments;
     }
-    
-	public String getSinceVersion() {
-		return sinceVersion;
-	}
 
-	public void setSinceVersion(String sinceVersion) {
-		this.sinceVersion = sinceVersion;
-	}
-    
+    public String getSinceVersion() {
+        return sinceVersion;
+    }
+
+    public void setSinceVersion(String sinceVersion) {
+        this.sinceVersion = sinceVersion;
+    }
+
+    @Override
     public int compareTo(Object anotherAgrument) throws ClassCastException {
         if (!(anotherAgrument instanceof Argument))
             throw new ClassCastException("An Argument object expected.");
         Argument argument = (Argument)anotherAgrument;
-        return this.getName().compareToIgnoreCase(argument.getName());    
+        return this.getName().compareToIgnoreCase(argument.getName());
     }
-    
+
     public boolean hasArguments() {
-        return (arguments!= null && !arguments.isEmpty());
+        return (arguments != null && !arguments.isEmpty());
+    }
+
+    @Override
+    public String toString() {
+        return "name=" + this.name + ", description=" + description + ", required=" + required + ", type=" + this.type + ", sinceVersion=" + this.sinceVersion + ", arguments=" + this.arguments + ", dataType=" + this.dataType;
     }
 }

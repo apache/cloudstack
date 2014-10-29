@@ -68,7 +68,7 @@
 
                 var baseFields = {
                     stickyName: {
-                        label: 'Sticky Name',
+                        label: 'label.sticky.name',
                         validation: {
                             required: true
                         }
@@ -96,7 +96,7 @@
 
                 var conditionalFields = {
                     methodname: {
-                        label: 'Stickiness method',
+                        label: 'label.stickiness.method',
                         select: function(args) {
                             var $select = args.$select;
                             var $form = $select.closest('form');

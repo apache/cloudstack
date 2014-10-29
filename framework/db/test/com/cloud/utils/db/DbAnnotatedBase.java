@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.utils.db;
 
-
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
@@ -30,15 +29,16 @@ import org.springframework.stereotype.Component;
 public class DbAnnotatedBase {
     private static final Logger s_logger = Logger.getLogger(DbAnnotatedBase.class);
 
-    @Inject DummyComponent _dummy;
-    
+    @Inject
+    DummyComponent _dummy;
+
     @PostConstruct
     public void initTest() {
-    	Assert.assertTrue(true);
+        Assert.assertTrue(true);
     }
-    
+
     public void MethodWithClassDbAnnotated() {
-    	s_logger.info("called");
-    	_dummy.sayHello();
+        s_logger.info("called");
+        _dummy.sayHello();
     }
 }

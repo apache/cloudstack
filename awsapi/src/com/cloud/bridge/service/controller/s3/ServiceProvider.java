@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.bridge.service.controller.s3;
 
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -36,6 +35,7 @@ import javax.inject.Inject;
 
 import org.apache.axis2.AxisFault;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.springframework.stereotype.Component;
@@ -61,15 +61,17 @@ import com.cloud.bridge.util.NetHelper;
 import com.cloud.bridge.util.OrderedPair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class ServiceProvider extends ManagerBase {
     protected final static Logger logger = Logger.getLogger(ServiceProvider.class);
-    @Inject MHostDao mhostDao;
-    @Inject SHostDao shostDao;
-    @Inject UserCredentialsDao ucDao;
+    @Inject
+    MHostDao mhostDao;
+    @Inject
+    SHostDao shostDao;
+    @Inject
+    UserCredentialsDao ucDao;
 
     public final static long HEARTBEAT_INTERVAL = 10000;
 
@@ -79,15 +81,17 @@ public class ServiceProvider extends ManagerBase {
     private final Timer timer = new Timer();
     private MHostVO mhost;
     private Properties properties;
-    private boolean useSubDomain = false;		 // use DNS sub domain for bucket name
+    private boolean useSubDomain = false;         // use DNS sub domain for bucket name
     private String serviceEndpoint = null;
     private String multipartDir = null;          // illegal bucket name used as a folder for storing multiparts
     private String masterDomain = ".s3.amazonaws.com";
-    @Inject private S3Engine engine;
-    @Inject private EC2Engine EC2_engine;
+    @Inject
+    private S3Engine engine;
+    @Inject
+    private EC2Engine EC2_engine;
 
     // -> cache Bucket Policies here so we don't have to load from db on every access
-    private final Map<String,S3BucketPolicy> policyMap = new HashMap<String,S3BucketPolicy>();
+    private final Map<String, S3BucketPolicy> policyMap = new HashMap<String, S3BucketPolicy>();
 
     protected ServiceProvider() throws IOException {
         // register service implementation object
@@ -105,23 +109,22 @@ public class ServiceProvider extends ManagerBase {
         serviceMap.put(AmazonEC2SkeletonInterface.class, new EC2SoapServiceImpl(EC2_engine));
         instance = this;
     }
-    
-	public boolean configure(String name, Map<String, Object> params)
-			throws ConfigurationException {
-		
-		initialize();
-		return true;
-	}
-    
-    public long getManagementHostId() {
-        // we want to limit mhost within its own session, id of the value will be returned 
-        long mhostId = 0;
-        if(mhost != null)
-            mhostId = mhost.getId() != null ? mhost.getId().longValue() : 0L;
-            return mhostId;
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        initialize();
+        return true;
     }
 
-    /** 
+    public long getManagementHostId() {
+        // we want to limit mhost within its own session, id of the value will be returned
+        long mhostId = 0;
+        if (mhost != null)
+            mhostId = mhost.getId() != null ? mhost.getId().longValue() : 0L;
+        return mhostId;
+    }
+
+    /**
      * We return a 2-tuple to distinguish between two cases:
      * (1) there is no entry in the map for bucketName, and (2) there is a null entry
      * in the map for bucketName.   In case 2, the database was inspected for the
@@ -130,19 +133,19 @@ public class ServiceProvider extends ManagerBase {
      * @return Integer in the tuple means: -1 if no policy defined for the bucket, 0 if one defined
      *         even if it is set at null.
      */
-    public OrderedPair<S3BucketPolicy,Integer> getBucketPolicy(String bucketName) {
+    public OrderedPair<S3BucketPolicy, Integer> getBucketPolicy(String bucketName) {
 
-        if (policyMap.containsKey( bucketName )) {
-            S3BucketPolicy policy = policyMap.get( bucketName );
-            return new OrderedPair<S3BucketPolicy,Integer>( policy, 0 );
-        }
-        else return new OrderedPair<S3BucketPolicy,Integer>( null, -1 );           // For case (1) where the map has no entry for bucketName
+        if (policyMap.containsKey(bucketName)) {
+            S3BucketPolicy policy = policyMap.get(bucketName);
+            return new OrderedPair<S3BucketPolicy, Integer>(policy, 0);
+        } else
+            return new OrderedPair<S3BucketPolicy, Integer>(null, -1);           // For case (1) where the map has no entry for bucketName
     }
 
     /**
      * The policy parameter can be set to null, which means that there is no policy
      * for the bucket so a database lookup is not necessary.
-     * 
+     *
      * @param bucketName
      * @param policy
      */
@@ -187,30 +190,29 @@ public class ServiceProvider extends ManagerBase {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
         try {
             txn.start();
-            UserCredentialsVO cloudKeys = ucDao.getByAccessKey( accessKey ); 
-            if ( null == cloudKeys ) {
-                logger.debug( accessKey + " is not defined in the S3 service - call SetUserKeys" );
-                return null; 
+            UserCredentialsVO cloudKeys = ucDao.getByAccessKey(accessKey);
+            if (null == cloudKeys) {
+                logger.debug(accessKey + " is not defined in the S3 service - call SetUserKeys");
+                return null;
             } else {
-                info.setAccessKey( accessKey );
-                info.setSecretKey( cloudKeys.getSecretKey());
+                info.setAccessKey(accessKey);
+                info.setSecretKey(cloudKeys.getSecretKey());
                 info.setCanonicalUserId(accessKey);
-                info.setDescription( "S3 REST request" );
+                info.setDescription("S3 REST request");
                 return info;
             }
-        }finally {
+        } finally {
             txn.commit();
         }
     }
 
     @DB
     protected void initialize() {
-        if(logger.isInfoEnabled())
+        if (logger.isInfoEnabled())
             logger.info("Initializing ServiceProvider...");
 
-
         File file = ConfigurationHelper.findConfigurationFile("log4j-cloud.xml");
-        if(file != null) {
+        if (file != null) {
             System.out.println("Log4j configuration from : " + file.getAbsolutePath());
             DOMConfigurator.configureAndWatch(file.getAbsolutePath(), 10000);
         } else {
@@ -219,24 +221,23 @@ public class ServiceProvider extends ManagerBase {
 
         loadStartupProperties();
         String hostKey = properties.getProperty("host.key");
-        if(hostKey == null) {
+        if (hostKey == null) {
             InetAddress inetAddr = NetHelper.getFirstNonLoopbackLocalInetAddress();
-            if(inetAddr != null)
+            if (inetAddr != null)
                 hostKey = NetHelper.getMacAddress(inetAddr);
         }
-        if(hostKey == null) 
+        if (hostKey == null)
             throw new ConfigurationException("Please configure host.key property in cloud-bridge.properites");
         String host = properties.getProperty("host");
-        if(host == null)
+        if (host == null)
             host = NetHelper.getHostName();
 
-        if(properties.get("bucket.dns") != null && 
-                ((String)properties.get("bucket.dns")).equalsIgnoreCase("true")) {
+        if (properties.get("bucket.dns") != null && ((String)properties.get("bucket.dns")).equalsIgnoreCase("true")) {
             useSubDomain = true;
         }
 
         serviceEndpoint = (String)properties.get("serviceEndpoint");
-        masterDomain = new String( "." + serviceEndpoint );
+        masterDomain = new String("." + serviceEndpoint);
 
         setupHost(hostKey, host);
 
@@ -258,25 +259,29 @@ public class ServiceProvider extends ManagerBase {
         timer.schedule(getHeartbeatTask(), HEARTBEAT_INTERVAL, HEARTBEAT_INTERVAL);
         txn1.close();
 
-        if(logger.isInfoEnabled())
+        if (logger.isInfoEnabled())
             logger.info("ServiceProvider initialized");
     }
 
     private void loadStartupProperties() {
         File propertiesFile = ConfigurationHelper.findConfigurationFile("cloud-bridge.properties");
-        properties = new Properties(); 
-        if(propertiesFile != null) {
+        properties = new Properties();
+        if (propertiesFile != null) {
+            FileInputStream startProps = null;
             try {
-                properties.load(new FileInputStream(propertiesFile));
+                startProps = new FileInputStream(propertiesFile);
+                properties.load(startProps);
             } catch (FileNotFoundException e) {
                 logger.warn("Unable to open properties file: " + propertiesFile.getAbsolutePath(), e);
             } catch (IOException e) {
                 logger.warn("Unable to read properties file: " + propertiesFile.getAbsolutePath(), e);
+            } finally {
+                IOUtils.closeQuietly(startProps);
             }
 
             logger.info("Use startup properties file: " + propertiesFile.getAbsolutePath());
         } else {
-            if(logger.isInfoEnabled())
+            if (logger.isInfoEnabled())
                 logger.info("Startup properties is not found.");
         }
     }
@@ -288,7 +293,7 @@ public class ServiceProvider extends ManagerBase {
                 try {
                     mhost.setLastHeartbeatTime(DateHelper.currentGMTTime());
                     mhostDao.updateHeartBeat(mhost);
-                } catch(Throwable e){
+                } catch (Throwable e) {
                     logger.error("Unexpected exception " + e.getMessage(), e);
                 } finally {
                 }
@@ -299,7 +304,7 @@ public class ServiceProvider extends ManagerBase {
     private void setupHost(String hostKey, String host) {
 
         mhost = mhostDao.getByHostKey(hostKey);
-        if(mhost == null) {
+        if (mhost == null) {
             mhost = new MHostVO();
             mhost.setHostKey(hostKey);
             mhost.setHost(host);
@@ -313,7 +318,7 @@ public class ServiceProvider extends ManagerBase {
 
     private void setupLocalStorage(String storageRoot) {
         SHostVO shost = shostDao.getLocalStorageHost(mhost.getId(), storageRoot);
-        if(shost == null) {
+        if (shost == null) {
             shost = new SHostVO();
             shost.setMhost(mhost);
             shost.setMhostid(mhost.getId());
@@ -326,7 +331,7 @@ public class ServiceProvider extends ManagerBase {
 
     private void setupCAStorStorage(String storageRoot) {
         SHostVO shost = shostDao.getLocalStorageHost(mhost.getId(), storageRoot);
-        if(shost == null) {
+        if (shost == null) {
             shost = new SHostVO();
             shost.setMhost(mhost);
             shost.setMhostid(mhost.getId());
@@ -340,18 +345,15 @@ public class ServiceProvider extends ManagerBase {
     public void shutdown() {
         timer.cancel();
 
-        if(logger.isInfoEnabled())
+        if (logger.isInfoEnabled())
             logger.info("ServiceProvider stopped");
     }
 
     @SuppressWarnings("unchecked")
     private static <T> T getProxy(Class<?> serviceInterface, final T serviceObject) {
-        return (T) Proxy.newProxyInstance(serviceObject.getClass().getClassLoader(),
-                new Class[] { serviceInterface },
-                new InvocationHandler() {
+        return (T)Proxy.newProxyInstance(serviceObject.getClass().getClassLoader(), new Class[] {serviceInterface}, new InvocationHandler() {
             @Override
-            public Object invoke(Object proxy, Method method,
-                    Object[] args) throws Throwable {
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                 Object result = null;
                 try {
                     result = method.invoke(serviceObject, args);
@@ -362,17 +364,12 @@ public class ServiceProvider extends ManagerBase {
                     // enveloped AxisFault and if so, pass it on as
                     // such. Otherwise
                     // log to help debugging and throw as is.
-                    if (e.getCause() != null
-                            && e.getCause() instanceof AxisFault)
+                    if (e.getCause() != null && e.getCause() instanceof AxisFault)
                         throw e.getCause();
-                    else if (e.getCause() != null
-                            && e.getCause().getCause() != null
-                            && e.getCause().getCause() instanceof AxisFault)
+                    else if (e.getCause() != null && e.getCause().getCause() != null && e.getCause().getCause() instanceof AxisFault)
                         throw e.getCause().getCause();
                     else {
-                        logger.warn(
-                                "Unhandled exception " + e.getMessage(),
-                                e);
+                        logger.warn("Unhandled exception " + e.getMessage(), e);
                         throw e;
                     }
                 } finally {

@@ -20,8 +20,9 @@ import java.util.EnumSet;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+
 import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.host.Host;
 import com.cloud.utils.db.GenericDao;

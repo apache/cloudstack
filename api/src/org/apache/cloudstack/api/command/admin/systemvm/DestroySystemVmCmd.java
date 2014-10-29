@@ -16,6 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.systemvm;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,20 +30,23 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "destroySystemVm", responseObject=SystemVmResponse.class, description="Destroyes a system virtual machine.")
+@APICommand(name = "destroySystemVm", responseObject = SystemVmResponse.class, description = "Destroyes a system virtual machine.", entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DestroySystemVmCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DestroySystemVmCmd.class.getName());
 
     private static final String s_name = "destroysystemvmresponse";
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=SystemVmResponse.class,
-            required=true, description="The ID of the system virtual machine")
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = SystemVmResponse.class,
+               required = true,
+               description = "The ID of the system virtual machine")
     private Long id;
 
     public Long getId() {
@@ -68,17 +75,16 @@ public class DestroySystemVmCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
         VirtualMachine.Type type = _mgr.findSystemVMTypeById(getId());
-        if(type == VirtualMachine.Type.ConsoleProxy){
+        if (type == VirtualMachine.Type.ConsoleProxy) {
             return EventTypes.EVENT_PROXY_DESTROY;
-        }
-        else{
+        } else {
             return EventTypes.EVENT_SSVM_DESTROY;
         }
     }
 
     @Override
     public String getEventDescription() {
-        return  "destroying system vm: " + getId();
+        return "destroying system vm: " + getId();
     }
 
     @Override
@@ -92,13 +98,13 @@ public class DestroySystemVmCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Vm Id: "+getId());
+    public void execute() {
+        CallContext.current().setEventDetails("Vm Id: " + getId());
         VirtualMachine instance = _mgr.destroySystemVM(this);
         if (instance != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(instance);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Fail to destroy system vm");
         }

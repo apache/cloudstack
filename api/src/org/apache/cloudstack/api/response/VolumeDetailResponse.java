@@ -16,21 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
-import com.cloud.storage.Volume;
-import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
-public class VolumeDetailResponse extends BaseResponse{
+public class VolumeDetailResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "ID of the volume")
     private String id;
@@ -39,12 +33,12 @@ public class VolumeDetailResponse extends BaseResponse{
     @Param(description = "name of the volume detail")
     private String name;
 
-
     @SerializedName(ApiConstants.VALUE)
     @Param(description = "value of the volume detail")
     private String value;
 
-    @SerializedName(ApiConstants.DISPLAY_VOLUME) @Param(description="an optional field whether to the display the volume to the end user or not.")
+    @SerializedName(ApiConstants.DISPLAY_VOLUME)
+    @Param(description = "an optional field whether to the display the volume to the end user or not.")
     private Boolean displayVm;
 
     public String getId() {

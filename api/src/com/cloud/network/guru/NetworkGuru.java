@@ -20,7 +20,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.TrafficType;
@@ -103,12 +103,13 @@ public interface NetworkGuru extends Adapter {
      * @param offering network offering that the network was created with.
      * @param destination where the network is being deployed in.
      * @return a fully implemented Network.
-     * @throws InsufficientVirtualNetworkCapcityException  if there's not
+     * @throws InsufficientVirtualNetworkCapacityException  if there's not
      * enough resources to make the guest network usable in the physical
      * environment.  At this time, the admin generally must be involved to
      * allocate more resources before any more guest network can be implemented.
      */
-    Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context) throws InsufficientVirtualNetworkCapcityException;
+    Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context)
+        throws InsufficientVirtualNetworkCapacityException;
 
     /**
      * Once a guest network has been designed, virtual machines can be
@@ -121,12 +122,13 @@ public interface NetworkGuru extends Adapter {
      *            network settings to make sure everything will work.
      * @param vm virtual machine that is about to be deployed.
      * @return NicProfile nic with all of the information
-     * @throws InsufficientVirtualNetworkCapcityException if there's
+     * @throws InsufficientVirtualNetworkCapacityException if there's
      *         insufficient capacity within the guest network.
      * @throws InsufficientAddressCapacityException if there are not addresses
      *         to be assigned.
      */
-    NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException;
+    NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapacityException,
+        InsufficientAddressCapacityException, ConcurrentOperationException;
 
     /**
      * Once a guest network is implemented, then the virtual machine must
@@ -139,14 +141,15 @@ public interface NetworkGuru extends Adapter {
      * @param vm vm
      * @param dest destination the vm is deployed to
      * @param context Reservation context from which to get the owner, caller, and reservation id
-     * @throws InsufficientVirtualNetworkCapcityException if there's not enough
+     * @throws InsufficientVirtualNetworkCapacityException if there's not enough
      *         resources.
      * @throws InsufficientAddressCapacityException if there's not enough ip
      *         addresses.
      * @throws ConcurrentOperationException if there are multiple operations
      *         happening on this guest network or vm.
      */
-    void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException;
+    void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException;
 
     /**
      * When a virtual machine is stopped, the NetworkGuru is informed via the

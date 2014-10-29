@@ -16,8 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -26,6 +25,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -34,8 +34,8 @@ import com.cloud.network.vpc.NetworkACL;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
-@APICommand(name = "createNetworkACLList", description = "Creates a Network ACL for the given VPC",
-responseObject = NetworkACLResponse.class)
+@APICommand(name = "createNetworkACLList", description = "Creates a Network ACL for the given VPC", responseObject = NetworkACLResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkACLListCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkACLListCmd.class.getName());
 
@@ -51,8 +51,15 @@ public class CreateNetworkACLListCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Description of the network ACL List")
     private String description;
 
-    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, required = true, entityType = VpcResponse.class, description = "Id of the VPC associated with this network ACL List")
+    @Parameter(name = ApiConstants.VPC_ID,
+               type = CommandType.UUID,
+               required = true,
+               entityType = VpcResponse.class,
+               description = "Id of the VPC associated with this network ACL List")
     private Long vpcId;
+
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the list to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -70,6 +77,15 @@ public class CreateNetworkACLListCmd extends BaseAsyncCreateCmd {
         return vpcId;
     }
 
+    @Override
+    public boolean isDisplay() {
+        if (display != null) {
+            return display;
+        } else {
+            return true;
+        }
+    }
+
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
@@ -81,7 +97,7 @@ public class CreateNetworkACLListCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() {
-        NetworkACL result = _networkACLService.createNetworkACL(getName(), getDescription(), getVpcId());
+        NetworkACL result = _networkACLService.createNetworkACL(getName(), getDescription(), getVpcId(), isDisplay());
         setEntityId(result.getId());
         setEntityUuid(result.getUuid());
     }
@@ -89,7 +105,7 @@ public class CreateNetworkACLListCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() throws ResourceUnavailableException {
         NetworkACL acl = _networkACLService.getNetworkACL(getEntityId());
-        if(acl != null){
+        if (acl != null) {
             NetworkACLResponse aclResponse = _responseGenerator.createNetworkACLResponse(acl);
             setResponseObject(aclResponse);
             aclResponse.setResponseName(getCommandName());
@@ -116,6 +132,6 @@ public class CreateNetworkACLListCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "Creating Network ACL with id: "+getEntityUuid();
+        return "Creating Network ACL with id: " + getEntityUuid();
     }
 }

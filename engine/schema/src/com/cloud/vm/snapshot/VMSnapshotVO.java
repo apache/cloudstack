@@ -41,7 +41,12 @@ import com.cloud.utils.db.GenericDao;
 @Table(name = "vm_snapshots")
 public class VMSnapshotVO implements VMSnapshot {
     @Id
-    @TableGenerator(name = "vm_snapshots_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "vm_snapshots_seq", allocationSize = 1)
+    @TableGenerator(name = "vm_snapshots_sq",
+                    table = "sequence",
+                    pkColumnName = "name",
+                    valueColumnName = "value",
+                    pkColumnValue = "vm_snapshots_seq",
+                    allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.TABLE)
     @Column(name = "id")
     Long id;
@@ -83,15 +88,15 @@ public class VMSnapshotVO implements VMSnapshot {
 
     @Column(name = "current")
     Boolean current;
-    
+
     @Column(name = "parent")
     Long parent;
-    
+
     @Column(name = "updated")
     @Temporal(value = TemporalType.TIMESTAMP)
     Date updated;
-    
-    @Column(name="update_count", updatable = true, nullable=false)
+
+    @Column(name = "update_count", updatable = true, nullable = false)
     protected long updatedCount;
 
     @Transient
@@ -105,36 +110,38 @@ public class VMSnapshotVO implements VMSnapshot {
         this.options = options;
     }
 
+    @Override
     public Long getParent() {
-		return parent;
-	}
+        return parent;
+    }
 
-	public void setParent(Long parent) {
-		this.parent = parent;
-	}
+    public void setParent(Long parent) {
+        this.parent = parent;
+    }
 
-	public VMSnapshotVO() {
+    public VMSnapshotVO() {
 
     }
 
+    @Override
     public Date getRemoved() {
         return removed;
     }
 
-    public VMSnapshotVO(Long accountId, Long domainId, Long vmId,
-            String description, String vmSnapshotName, String vsDisplayName,
-            Long serviceOfferingId, Type type, Boolean current) {
+    public VMSnapshotVO(Long accountId, Long domainId, Long vmId, String description, String vmSnapshotName, String vsDisplayName, Long serviceOfferingId, Type type,
+            Boolean current) {
         this.accountId = accountId;
         this.domainId = domainId;
         this.vmId = vmId;
-        this.state = State.Allocated;
+        state = State.Allocated;
         this.description = description;
-        this.name = vmSnapshotName;
-        this.displayName = vsDisplayName;
+        name = vmSnapshotName;
+        displayName = vsDisplayName;
         this.type = type;
         this.current = current;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
@@ -204,13 +211,14 @@ public class VMSnapshotVO implements VMSnapshot {
         this.displayName = displayName;
     }
 
-	public Boolean getCurrent() {
-		return current;
-	}
+    @Override
+    public Boolean getCurrent() {
+        return current;
+    }
 
-	public void setCurrent(Boolean current) {
-		this.current = current;
-	}
+    public void setCurrent(Boolean current) {
+        this.current = current;
+    }
 
     @Override
     public long getUpdatedCount() {
@@ -219,7 +227,7 @@ public class VMSnapshotVO implements VMSnapshot {
 
     @Override
     public void incrUpdatedCount() {
-        this.updatedCount++;
+        updatedCount++;
     }
 
     @Override
@@ -231,8 +239,13 @@ public class VMSnapshotVO implements VMSnapshot {
     public Type getType() {
         return type;
     }
-    
+
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return VMSnapshot.class;
     }
 }

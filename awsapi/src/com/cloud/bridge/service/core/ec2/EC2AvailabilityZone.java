@@ -18,17 +18,17 @@ package com.cloud.bridge.service.core.ec2;
 
 public class EC2AvailabilityZone {
 
-    private String   id;
-    private String   name;
-    private String   message;
+    private String id;
+    private String name;
+    private String message;
 
     public EC2AvailabilityZone() {
-        id      = null;
-        name    = null;
+        id = null;
+        name = null;
         message = null;
-	}
+    }
 
-    public void setId( String id ) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -36,7 +36,7 @@ public class EC2AvailabilityZone {
         return this.id;
     }
 
-    public void setName( String name ) {
+    public void setName(String name) {
         this.name = name;
     }
 
@@ -44,7 +44,7 @@ public class EC2AvailabilityZone {
         return this.name;
     }
 
-    public void setMessage( String message ) {
+    public void setMessage(String message) {
         this.message = message;
     }
 

@@ -26,8 +26,7 @@ public class ResourceInUseException extends ManagementServerException {
         super(message);
     }
 
-    public ResourceInUseException(String message, String resourceType,
-            String resourceName) {
+    public ResourceInUseException(String message, String resourceType, String resourceName) {
         super(message);
         this.resourceType = resourceType;
         this.resourceName = resourceName;

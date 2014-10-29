@@ -16,16 +16,21 @@
 // under the License.
 package org.apache.cloudstack.utils.qemu;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
+
+import java.io.File;
+import com.cloud.utils.script.Script;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import org.junit.Ignore;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
+
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.UUID;
-import java.io.File;
+
 
 @Ignore
 public class QemuImgTest {
@@ -81,6 +86,31 @@ public class QemuImgTest {
 
         String infoClusterSize = info.get(new String("cluster_size"));
         assertEquals(clusterSize, infoClusterSize);
+
+        File f = new File(filename);
+        f.delete();
+
+    }
+
+    @Test
+    public void testCreateSparseVolume() throws QemuImgException {
+        String filename = "/tmp/" + UUID.randomUUID() + ".qcow2";
+
+        /* 10TB virtual_size */
+        long size = 10995116277760l;
+        QemuImgFile file = new QemuImgFile(filename, size, PhysicalDiskFormat.QCOW2);
+        String preallocation = "metadata";
+        Map<String, String> options = new HashMap<String, String>();
+
+        options.put("preallocation", preallocation);
+
+        QemuImg qemu = new QemuImg(0);
+        qemu.create(file, options);
+
+        String allocatedSize = Script.runSimpleBashScript(String.format("ls -alhs %s | awk '{print $1}'", file));
+        String declaredSize  = Script.runSimpleBashScript(String.format("ls -alhs %s | awk '{print $6}'", file));
+
+        assertFalse(allocatedSize.equals(declaredSize));
 
         File f = new File(filename);
         f.delete();
@@ -173,7 +203,7 @@ public class QemuImgTest {
     }
 
     @Test(expected = QemuImgException.class)
-    public void testCreateAndResizeFail() throws QemuImgException  {
+    public void testCreateAndResizeFail() throws QemuImgException {
         String filename = "/tmp/" + UUID.randomUUID() + ".qcow2";
 
         long startSize = 20480;
@@ -273,7 +303,7 @@ public class QemuImgTest {
 
         Map<String, String> info = qemu.info(destFile);
 
-        PhysicalDiskFormat infoFormat = PhysicalDiskFormat.valueOf(info.get(new String("file_format")).toUpperCase());
+        PhysicalDiskFormat infoFormat = PhysicalDiskFormat.valueOf(info.get(new String("format")).toUpperCase());
         assertEquals(destFormat, infoFormat);
 
         Long infoSize = Long.parseLong(info.get(new String("virtual_size")));

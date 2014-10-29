@@ -20,128 +20,128 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackExtractTemplate {
-	@SerializedName(ApiConstants.ID)
-	Long id;
-	@SerializedName(ApiConstants.ACCOUNT_ID)
-	Long accountId;
-	@SerializedName(ApiConstants.CREATED)
-	String created;
-	@SerializedName(ApiConstants.EXTRACT_ID)
-	Long extractId;
-	@SerializedName(ApiConstants.EXTRACT_MODE)
-	String extractMode;
-	@SerializedName(ApiConstants.NAME)
-	String name;
-	@SerializedName(ApiConstants.STATE)
-	String state;
-	@SerializedName(ApiConstants.STATUS)
-	String status;
-	@SerializedName(ApiConstants.STORAGE_TYPE)
-	String storageType;
-	@SerializedName(ApiConstants.UPLOAD_PERCENTAGE)
-	String uploadPercentage;
-	@SerializedName(ApiConstants.URL)
-	String url;
-	@SerializedName(ApiConstants.ZONE_ID)
-	Long zoneId;
-	@SerializedName(ApiConstants.ZONE_NAME)
-	String zoneName;
-	
-	/**
-	 * 
-	 */
-	public CloudStackExtractTemplate() {
-		// TODO Auto-generated constructor stub
-	}
+    @SerializedName(ApiConstants.ID)
+    Long id;
+    @SerializedName(ApiConstants.ACCOUNT_ID)
+    Long accountId;
+    @SerializedName(ApiConstants.CREATED)
+    String created;
+    @SerializedName(ApiConstants.EXTRACT_ID)
+    Long extractId;
+    @SerializedName(ApiConstants.EXTRACT_MODE)
+    String extractMode;
+    @SerializedName(ApiConstants.NAME)
+    String name;
+    @SerializedName(ApiConstants.STATE)
+    String state;
+    @SerializedName(ApiConstants.STATUS)
+    String status;
+    @SerializedName(ApiConstants.STORAGE_TYPE)
+    String storageType;
+    @SerializedName(ApiConstants.UPLOAD_PERCENTAGE)
+    String uploadPercentage;
+    @SerializedName(ApiConstants.URL)
+    String url;
+    @SerializedName(ApiConstants.ZONE_ID)
+    Long zoneId;
+    @SerializedName(ApiConstants.ZONE_NAME)
+    String zoneName;
 
-	/**
-	 * @return the id
-	 */
-	public Long getId() {
-		return id;
-	}
+    /**
+     *
+     */
+    public CloudStackExtractTemplate() {
+        // TODO Auto-generated constructor stub
+    }
 
-	/**
-	 * @return the accountId
-	 */
-	public Long getAccountId() {
-		return accountId;
-	}
+    /**
+     * @return the id
+     */
+    public Long getId() {
+        return id;
+    }
 
-	/**
-	 * @return the created
-	 */
-	public String getCreated() {
-		return created;
-	}
+    /**
+     * @return the accountId
+     */
+    public Long getAccountId() {
+        return accountId;
+    }
 
-	/**
-	 * @return the extractId
-	 */
-	public Long getExtractId() {
-		return extractId;
-	}
+    /**
+     * @return the created
+     */
+    public String getCreated() {
+        return created;
+    }
 
-	/**
-	 * @return the extractMode
-	 */
-	public String getExtractMode() {
-		return extractMode;
-	}
+    /**
+     * @return the extractId
+     */
+    public Long getExtractId() {
+        return extractId;
+    }
 
-	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
+    /**
+     * @return the extractMode
+     */
+    public String getExtractMode() {
+        return extractMode;
+    }
 
-	/**
-	 * @return the state
-	 */
-	public String getState() {
-		return state;
-	}
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
 
-	/**
-	 * @return the status
-	 */
-	public String getStatus() {
-		return status;
-	}
+    /**
+     * @return the state
+     */
+    public String getState() {
+        return state;
+    }
 
-	/**
-	 * @return the storageType
-	 */
-	public String getStorageType() {
-		return storageType;
-	}
+    /**
+     * @return the status
+     */
+    public String getStatus() {
+        return status;
+    }
 
-	/**
-	 * @return the uploadPercentage
-	 */
-	public String getUploadPercentage() {
-		return uploadPercentage;
-	}
+    /**
+     * @return the storageType
+     */
+    public String getStorageType() {
+        return storageType;
+    }
 
-	/**
-	 * @return the url
-	 */
-	public String getUrl() {
-		return url;
-	}
+    /**
+     * @return the uploadPercentage
+     */
+    public String getUploadPercentage() {
+        return uploadPercentage;
+    }
 
-	/**
-	 * @return the zoneId
-	 */
-	public Long getZoneId() {
-		return zoneId;
-	}
+    /**
+     * @return the url
+     */
+    public String getUrl() {
+        return url;
+    }
 
-	/**
-	 * @return the zoneName
-	 */
-	public String getZoneName() {
-		return zoneName;
-	}
+    /**
+     * @return the zoneId
+     */
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    /**
+     * @return the zoneName
+     */
+    public String getZoneName() {
+        return zoneName;
+    }
 }

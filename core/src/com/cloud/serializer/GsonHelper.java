@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,13 +15,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.serializer;
-
-
 
 import java.util.List;
 
 import org.apache.log4j.Logger;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -33,9 +38,6 @@ import com.cloud.agent.transport.LoggingExclusionStrategy;
 import com.cloud.agent.transport.Request.NwGroupsCommandTypeAdaptor;
 import com.cloud.agent.transport.Request.PortConfigListTypeAdaptor;
 import com.cloud.utils.Pair;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 
 public class GsonHelper {
     private static final Logger s_logger = Logger.getLogger(GsonHelper.class);

@@ -40,26 +40,25 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class UtilsForTest {
 
-    private static DocumentBuilderFactory factory = DocumentBuilderFactory
-            .newInstance();
+    private static DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 
-    public static boolean verifyTags (Map<String, String> params) {
+    public static boolean verifyTags(Map<String, String> params) {
         boolean result = true;
         for (String value : params.keySet()) {
             if (params.get(value) == null) {
-                result=false;
+                result = false;
             }
         }
         return result;
     }
 
-    public static boolean verifyTagValues (Map<String, String> params, Map<String, String> pattern) {
+    public static boolean verifyTagValues(Map<String, String> params, Map<String, String> pattern) {
         boolean result = true;
 
         if (pattern != null) {
             for (String value : pattern.keySet()) {
                 if (!pattern.get(value).equals(params.get(value))) {
-                    result=false;
+                    result = false;
                     System.out.println("Tag " + value + " has " + params.get(value) + " while expected value is: " + pattern.get(value));
                 }
             }
@@ -67,9 +66,7 @@ public class UtilsForTest {
         return result;
     }
 
-
-    public static Map<String, String> parseXML(InputStream is,
-            String[] tagNames) {
+    public static Map<String, String> parseXML(InputStream is, String[] tagNames) {
         Map<String, String> returnValues = new HashMap<String, String>();
         try {
             DocumentBuilder docBuilder = factory.newDocumentBuilder();
@@ -77,15 +74,12 @@ public class UtilsForTest {
             Element rootElement = doc.getDocumentElement();
 
             for (int i = 0; i < tagNames.length; i++) {
-                NodeList targetNodes = rootElement
-                        .getElementsByTagName(tagNames[i]);
+                NodeList targetNodes = rootElement.getElementsByTagName(tagNames[i]);
                 if (targetNodes.getLength() <= 0) {
-                    System.out.println("no " + tagNames[i]
-                            + " tag in the response");
+                    System.out.println("no " + tagNames[i] + " tag in the response");
                     returnValues.put(tagNames[i], null);
                 } else {
-                    returnValues.put(tagNames[i], targetNodes.item(0)
-                            .getTextContent());
+                    returnValues.put(tagNames[i], targetNodes.item(0).getTextContent());
                 }
             }
         } catch (Exception ex) {
@@ -95,27 +89,24 @@ public class UtilsForTest {
         return returnValues;
     }
 
-
-    public static ArrayList<HashMap<String, String>> parseMulXML (InputStream is, String[] tagNames){
-        ArrayList<HashMap<String, String>> returnValues = new ArrayList<HashMap <String, String>>();
+    public static ArrayList<HashMap<String, String>> parseMulXML(InputStream is, String[] tagNames) {
+        ArrayList<HashMap<String, String>> returnValues = new ArrayList<HashMap<String, String>>();
 
         try {
             DocumentBuilder docBuilder = factory.newDocumentBuilder();
             Document doc = docBuilder.parse(is);
             Element rootElement = doc.getDocumentElement();
             for (int i = 0; i < tagNames.length; i++) {
-                NodeList targetNodes = rootElement
-                        .getElementsByTagName(tagNames[i]);
+                NodeList targetNodes = rootElement.getElementsByTagName(tagNames[i]);
                 if (targetNodes.getLength() <= 0) {
-                    System.out.println("no " + tagNames[i]
-                            + " tag in XML response...returning null");
+                    System.out.println("no " + tagNames[i] + " tag in XML response...returning null");
                 } else {
                     for (int j = 0; j < targetNodes.getLength(); j++) {
-                        HashMap<String, String> valueList = new HashMap<String,String> ();
+                        HashMap<String, String> valueList = new HashMap<String, String>();
                         Node node = targetNodes.item(j);
                         //parse child nodes
                         NodeList child = node.getChildNodes();
-                        for (int c=0; c<node.getChildNodes().getLength(); c++){
+                        for (int c = 0; c < node.getChildNodes().getLength(); c++) {
                             child.item(c).getNodeName();
                             valueList.put(child.item(c).getNodeName(), child.item(c).getTextContent());
                         }
@@ -130,7 +121,6 @@ public class UtilsForTest {
 
         return returnValues;
     }
-
 
     public static String createMD5String(String password) {
         MessageDigest md5;
@@ -154,14 +144,7 @@ public class UtilsForTest {
         return sb.toString();
     }
 
-
-
-
-
-
-
-    public static Map<String, String> getSingleValueFromXML(InputStream is,
-            String[] tagNames) {
+    public static Map<String, String> getSingleValueFromXML(InputStream is, String[] tagNames) {
         Map<String, String> returnValues = new HashMap<String, String>();
         try {
             DocumentBuilder docBuilder = factory.newDocumentBuilder();
@@ -169,14 +152,11 @@ public class UtilsForTest {
             Element rootElement = doc.getDocumentElement();
 
             for (int i = 0; i < tagNames.length; i++) {
-                NodeList targetNodes = rootElement
-                        .getElementsByTagName(tagNames[i]);
+                NodeList targetNodes = rootElement.getElementsByTagName(tagNames[i]);
                 if (targetNodes.getLength() <= 0) {
-                    System.out.println("no " + tagNames[i]
-                            + " tag in XML response...returning null");
+                    System.out.println("no " + tagNames[i] + " tag in XML response...returning null");
                 } else {
-                    returnValues.put(tagNames[i], targetNodes.item(0)
-                            .getTextContent());
+                    returnValues.put(tagNames[i], targetNodes.item(0).getTextContent());
                 }
             }
         } catch (Exception ex) {
@@ -186,20 +166,16 @@ public class UtilsForTest {
         return returnValues;
     }
 
-
-    public static Map<String, List<String>> getMultipleValuesFromXML(
-            InputStream is, String[] tagNames) {
+    public static Map<String, List<String>> getMultipleValuesFromXML(InputStream is, String[] tagNames) {
         Map<String, List<String>> returnValues = new HashMap<String, List<String>>();
         try {
             DocumentBuilder docBuilder = factory.newDocumentBuilder();
             Document doc = docBuilder.parse(is);
             Element rootElement = doc.getDocumentElement();
             for (int i = 0; i < tagNames.length; i++) {
-                NodeList targetNodes = rootElement
-                        .getElementsByTagName(tagNames[i]);
+                NodeList targetNodes = rootElement.getElementsByTagName(tagNames[i]);
                 if (targetNodes.getLength() <= 0) {
-                    System.out.println("no " + tagNames[i]
-                            + " tag in XML response...returning null");
+                    System.out.println("no " + tagNames[i] + " tag in XML response...returning null");
                 } else {
                     List<String> valueList = new ArrayList<String>();
                     for (int j = 0; j < targetNodes.getLength(); j++) {
@@ -215,13 +191,10 @@ public class UtilsForTest {
         return returnValues;
     }
 
-
-
     public static String signRequest(String request, String key) {
         try {
             Mac mac = Mac.getInstance("HmacSHA1");
-            SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(),
-                    "HmacSHA1");
+            SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(), "HmacSHA1");
             mac.init(keySpec);
             mac.update(request.getBytes());
             byte[] encryptedBytes = mac.doFinal();

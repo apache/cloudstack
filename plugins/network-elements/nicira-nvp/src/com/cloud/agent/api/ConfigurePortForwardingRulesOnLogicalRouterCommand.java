@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import java.util.List;
@@ -28,7 +31,7 @@ public class ConfigurePortForwardingRulesOnLogicalRouterCommand extends Command 
     private String logicalRouterUuid;
     private List<PortForwardingRuleTO> rules;
 
-    public ConfigurePortForwardingRulesOnLogicalRouterCommand(String logicalRouterUuid, List<PortForwardingRuleTO> rules) {
+    public ConfigurePortForwardingRulesOnLogicalRouterCommand(final String logicalRouterUuid, final List<PortForwardingRuleTO> rules) {
         this.logicalRouterUuid = logicalRouterUuid;
         this.rules = rules;
     }
@@ -37,7 +40,7 @@ public class ConfigurePortForwardingRulesOnLogicalRouterCommand extends Command 
         return logicalRouterUuid;
     }
 
-    public void setLogicalRouterUuid(String logicalRouterUuid) {
+    public void setLogicalRouterUuid(final String logicalRouterUuid) {
         this.logicalRouterUuid = logicalRouterUuid;
     }
 
@@ -45,12 +48,11 @@ public class ConfigurePortForwardingRulesOnLogicalRouterCommand extends Command 
         return rules;
     }
 
-    public void setRules(List<PortForwardingRuleTO> rules) {
+    public void setRules(final List<PortForwardingRuleTO> rules) {
         this.rules = rules;
     }
 
-    /*
-     * (non-Javadoc)
+    /* (non-Javadoc)
      * @see com.cloud.agent.api.Command#executeInSequence()
      */
     @Override

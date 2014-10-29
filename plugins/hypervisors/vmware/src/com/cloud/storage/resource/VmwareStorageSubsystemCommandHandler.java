@@ -18,6 +18,17 @@
  */
 package com.cloud.storage.resource;
 
+import java.io.File;
+
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -27,15 +38,6 @@ import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManager;
 import com.cloud.storage.DataStoreRole;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
-
-import java.io.File;
 
 public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemCommandHandlerBase {
     private static final Logger s_logger = Logger.getLogger(VmwareStorageSubsystemCommandHandler.class);
@@ -58,11 +60,9 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
         this.storageManager = storageManager;
     }
 
-    public VmwareStorageSubsystemCommandHandler(StorageProcessor processor
-                                               ) {
+    public VmwareStorageSubsystemCommandHandler(StorageProcessor processor) {
         super(processor);
     }
-
 
     @Override
     protected Answer execute(CopyCommand cmd) {
@@ -72,8 +72,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
         DataStoreTO destDataStore = destData.getDataStore();
         //if copied between s3 and nfs cache, go to resource
         boolean needDelegation = false;
-        if (destDataStore instanceof NfsTO
-                && destDataStore.getRole() == DataStoreRole.ImageCache) {
+        if (destDataStore instanceof NfsTO && destDataStore.getRole() == DataStoreRole.ImageCache) {
             if (srcDataStore instanceof S3TO || srcDataStore instanceof SwiftTO) {
                 needDelegation = true;
             }
@@ -90,27 +89,41 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                 String name = path.substring(index + 1);
                 storageManager.createOva(parentPath + File.separator + path, name);
                 vol.setPath(path + File.separator + name + ".ova");
-            } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.TEMPLATE) {
-                //create template from snapshot on src at first, then copy it to s3
-                TemplateObjectTO cacheTemplate = (TemplateObjectTO)destData;
-                cacheTemplate.setDataStore(srcDataStore);
-                CopyCmdAnswer answer = (CopyCmdAnswer)processor.createTemplateFromSnapshot(cmd);
-                if (!answer.getResult()) {
-                    return answer;
+            } else if (srcData.getObjectType() == DataObjectType.TEMPLATE) {
+                // sync template from NFS cache to S3 in NFS migration to S3 case
+                storageManager.createOvaForTemplate((TemplateObjectTO)srcData);
+            } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT) {
+                // pack ova first
+                // sync snapshot from NFS cache to S3 in NFS migration to S3 case
+                String parentPath = storageResource.getRootDir(srcDataStore.getUrl());
+                SnapshotObjectTO snap = (SnapshotObjectTO)srcData;
+                String path = snap.getPath();
+                int index = path.lastIndexOf(File.separator);
+                String name = path.substring(index + 1);
+                String snapDir = path.substring(0, index);
+                storageManager.createOva(parentPath + File.separator + snapDir, name);
+                if (destData.getObjectType() == DataObjectType.TEMPLATE) {
+                    //create template from snapshot on src at first, then copy it to s3
+                    TemplateObjectTO cacheTemplate = (TemplateObjectTO)destData;
+                    cacheTemplate.setDataStore(srcDataStore);
+                    CopyCmdAnswer answer = (CopyCmdAnswer)processor.createTemplateFromSnapshot(cmd);
+                    if (!answer.getResult()) {
+                        return answer;
+                    }
+                    cacheTemplate.setDataStore(destDataStore);
+                    TemplateObjectTO template = (TemplateObjectTO)answer.getNewData();
+                    template.setDataStore(srcDataStore);
+                    CopyCommand newCmd = new CopyCommand(template, destData, cmd.getWait(), cmd.executeInSequence());
+                    Answer result = storageResource.defaultAction(newCmd);
+                    //clean up template data on staging area
+                    try {
+                        DeleteCommand deleteCommand = new DeleteCommand(template);
+                        storageResource.defaultAction(deleteCommand);
+                    } catch (Exception e) {
+                        s_logger.debug("Failed to clean up staging area:", e);
+                    }
+                    return result;
                 }
-                cacheTemplate.setDataStore(destDataStore);
-                TemplateObjectTO template = (TemplateObjectTO)answer.getNewData();
-                template.setDataStore(srcDataStore);
-                CopyCommand newCmd = new CopyCommand(template, destData, cmd.getWait(), cmd.executeInSequence());
-                Answer result = storageResource.defaultAction(newCmd);
-                //clean up template data on staging area
-                try {
-                    DeleteCommand deleteCommand = new DeleteCommand(template);
-                    storageResource.defaultAction(deleteCommand);
-                } catch (Exception e) {
-                    s_logger.debug("Failed to clean up staging area:", e);
-                }
-                return result;                
             }
             needDelegation = true;
         }

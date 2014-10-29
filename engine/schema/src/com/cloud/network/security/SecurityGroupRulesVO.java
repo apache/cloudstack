@@ -27,12 +27,11 @@ import javax.persistence.Table;
 
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.utils.db.JoinType;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("security_group"))
 @JoinType(type = "left")
-@SecondaryTable(name = "security_group_rule", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "id", referencedColumnName = "security_group_id") })
+@SecondaryTable(name = "security_group_rule", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "id", referencedColumnName = "security_group_id")})
 public class SecurityGroupRulesVO implements SecurityGroupRules {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -82,8 +81,8 @@ public class SecurityGroupRulesVO implements SecurityGroupRules {
         this.id = id;
     }
 
-    public SecurityGroupRulesVO(long id, String name, String description, Long domainId, Long accountId, Long ruleId, String ruleUuid, int startPort, int endPort, String protocol, Long allowedNetworkId,
-            String allowedSourceIpCidr) {
+    public SecurityGroupRulesVO(long id, String name, String description, Long domainId, Long accountId, Long ruleId, String ruleUuid, int startPort, int endPort,
+            String protocol, Long allowedNetworkId, String allowedSourceIpCidr) {
         this.id = id;
         this.name = name;
         this.description = description;

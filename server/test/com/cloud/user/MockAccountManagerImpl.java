@@ -22,6 +22,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -29,7 +31,6 @@ import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.domain.Domain;
@@ -44,11 +45,9 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-
 @Component
-@Local(value = { AccountManager.class, AccountService.class })
+@Local(value = {AccountManager.class, AccountService.class})
 public class MockAccountManagerImpl extends ManagerBase implements Manager, AccountManager {
-
 
     @Override
     public boolean deleteUserAccount(long accountId) {
@@ -121,7 +120,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public boolean isAdmin(short accountType) {
+    public boolean isAdmin(Long accountId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -134,6 +133,19 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
 
     @Override
     public Account getActiveAccountByName(String accountName, Long domainId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public UserAccount getActiveUserAccount(String username, Long domainId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public UserAccount updateUser(Long userId, String firstName, String lastName, String email, String userName, String password, String apiKey, String secretKey,
+                                  String timeZone) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -163,7 +175,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public boolean isRootAdmin(short accountType) {
+    public boolean isRootAdmin(Long accountId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -191,7 +203,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         // TODO Auto-generated method stub
 
     }
-    
+
     @Override
     public Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId) {
         // TODO Auto-generated method stub
@@ -225,11 +237,17 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         // TODO Auto-generated method stub
     }
 
+
+    @Override
+    public UserAccount getUserAccountById(Long userId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     @Override
     public void logoutUser(long userId) {
         // TODO Auto-generated method stub
     }
-
 
     @Override
     public UserAccount authenticateUser(String username, String password, Long domainId, String loginIpAddress, Map<String, Object[]> requestParameters) {
@@ -240,7 +258,6 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     public Pair<User, Account> findUserByApiKey(String apiKey) {
         return null;
     }
-
 
     @Override
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
@@ -294,22 +311,18 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public UserAccount createUserAccount(String userName, String password,
-            String firstName, String lastName, String email, String timezone,
-            String accountName, short accountType, Long domainId,
-            String networkDomain, Map<String, String> details, String accountUUID, String userUUID) {
+    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName,
+        short accountType, Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public User createUser(String userName, String password, String firstName,
-            String lastName, String email, String timeZone, String accountName,
-            Long domainId, String userUUID) {
+    public User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId,
+        String userUUID) {
         // TODO Auto-generated method stub
         return null;
     }
-
 
     @Override
     public RoleType getRoleType(Account account) {
@@ -327,5 +340,36 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public boolean isDomainAdmin(Long accountId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean isNormalUser(long accountId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public List<String> listAclGroupsByAccount(Long accountId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName,
+            ControlledEntity... entities) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 
 }

@@ -17,20 +17,20 @@
 package com.cloud.bridge.service.exception;
 
 public class NetworkIOException extends RuntimeException {
-	private static final long serialVersionUID = 1797775871115398024L;
-	
-	public NetworkIOException() {
-	}
-	
-	public NetworkIOException(String message) {
-		super(message);
-	}
+    private static final long serialVersionUID = 1797775871115398024L;
 
-	public NetworkIOException(Throwable e) {
-		super(e);
-	}
-	
-	public NetworkIOException(String message, Throwable e) {
-		super(message, e);
-	}
+    public NetworkIOException() {
+    }
+
+    public NetworkIOException(String message) {
+        super(message);
+    }
+
+    public NetworkIOException(Throwable e) {
+        super(e);
+    }
+
+    public NetworkIOException(String message, Throwable e) {
+        super(message, e);
+    }
 }

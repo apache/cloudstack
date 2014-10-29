@@ -22,7 +22,6 @@ import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
-
 public interface DedicatedResourceDao extends GenericDao<DedicatedResourceVO, Long> {
 
     DedicatedResourceVO findByZoneId(Long zoneId);

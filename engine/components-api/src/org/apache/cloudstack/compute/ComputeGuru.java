@@ -26,9 +26,11 @@ import com.cloud.vm.VirtualMachineProfile;
  */
 public interface ComputeGuru {
     String getVersion();
-    String getHypervisor();
-    void start(VirtualMachineProfile vm);
-    void stop(VirtualMachineProfile vm);
 
+    String getHypervisor();
+
+    void start(VirtualMachineProfile vm);
+
+    void stop(VirtualMachineProfile vm);
 
 }

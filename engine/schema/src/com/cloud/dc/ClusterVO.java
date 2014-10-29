@@ -28,106 +28,111 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
-import com.cloud.org.Managed.ManagedState;
 import com.cloud.org.Grouping;
+import com.cloud.org.Managed.ManagedState;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="cluster")
+@Table(name = "cluster")
 public class ClusterVO implements Cluster {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="id")
+    @Column(name = "id")
     long id;
 
-    @Column(name="name")
+    @Column(name = "name")
     String name;
 
-    @Column(name="guid")
+    @Column(name = "guid")
     String guid;
 
-    @Column(name="data_center_id")
+    @Column(name = "data_center_id")
     long dataCenterId;
 
-    @Column(name="pod_id")
+    @Column(name = "pod_id")
     long podId;
 
-    @Column(name="hypervisor_type")
+    @Column(name = "hypervisor_type")
     String hypervisorType;
 
-    @Column(name="cluster_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "cluster_type")
+    @Enumerated(value = EnumType.STRING)
     Cluster.ClusterType clusterType;
 
-    @Column(name="allocation_state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "allocation_state")
+    @Enumerated(value = EnumType.STRING)
     AllocationState allocationState;
 
-    @Column(name="managed_state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "managed_state")
+    @Enumerated(value = EnumType.STRING)
     ManagedState managedState;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     String uuid;
 
     public ClusterVO() {
-    	clusterType = Cluster.ClusterType.CloudManaged;
-    	allocationState = Grouping.AllocationState.Enabled;
+        clusterType = Cluster.ClusterType.CloudManaged;
+        allocationState = Grouping.AllocationState.Enabled;
 
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
 
     public ClusterVO(long dataCenterId, long podId, String name) {
         this.dataCenterId = dataCenterId;
         this.podId = podId;
         this.name = name;
-    	this.clusterType = Cluster.ClusterType.CloudManaged;
-    	this.allocationState = Grouping.AllocationState.Enabled;
-    	this.managedState = ManagedState.Managed;
-    	this.uuid = UUID.randomUUID().toString();
+        this.clusterType = Cluster.ClusterType.CloudManaged;
+        this.allocationState = Grouping.AllocationState.Enabled;
+        this.managedState = ManagedState.Managed;
+        this.uuid = UUID.randomUUID().toString();
     }
 
+    @Override
     public long getId() {
         return id;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public long getDataCenterId() {
         return dataCenterId;
     }
 
+    @Override
     public long getPodId() {
         return podId;
     }
 
+    @Override
     public Cluster.ClusterType getClusterType() {
-    	return clusterType;
+        return clusterType;
     }
 
     public void setClusterType(Cluster.ClusterType clusterType) {
-    	this.clusterType = clusterType;
+        this.clusterType = clusterType;
     }
 
+    @Override
     public AllocationState getAllocationState() {
-    	return allocationState;
+        return allocationState;
     }
 
     public void setAllocationState(AllocationState allocationState) {
-		this.allocationState = allocationState;
+        this.allocationState = allocationState;
     }
 
+    @Override
     public ManagedState getManagedState() {
         return managedState;
     }
@@ -154,12 +159,13 @@ public class ClusterVO implements Cluster {
         return this.id == that.id;
     }
 
+    @Override
     public HypervisorType getHypervisorType() {
-    	return HypervisorType.getType(hypervisorType);
+        return HypervisorType.getType(hypervisorType);
     }
 
-	public void setHypervisorType(String hy) {
-    	hypervisorType = hy;
+    public void setHypervisorType(String hy) {
+        hypervisorType = hy;
     }
 
     public String getGuid() {
@@ -180,10 +186,10 @@ public class ClusterVO implements Cluster {
 
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return this.uuid;
     }
 
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
 }

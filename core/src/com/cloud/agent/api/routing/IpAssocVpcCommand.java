@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,16 +15,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api.routing;
 
 import com.cloud.agent.api.to.IpAddressTO;
 
-public class IpAssocVpcCommand extends IpAssocCommand{
+public class IpAssocVpcCommand extends IpAssocCommand {
     protected IpAssocVpcCommand() {
         super();
     }
 
     public IpAssocVpcCommand(IpAddressTO[] ips) {
         super(ips);
+    }
+
+    @Override
+    public int getAnswersCount() {
+        //Count private gateway to maximum value
+        return ipAddresses.length * 2;
     }
 }

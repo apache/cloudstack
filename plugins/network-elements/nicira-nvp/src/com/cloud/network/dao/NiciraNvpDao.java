@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.dao;
 
 import java.util.List;
@@ -21,7 +24,7 @@ import java.util.List;
 import com.cloud.network.NiciraNvpDeviceVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface NiciraNvpDao extends GenericDao<NiciraNvpDeviceVO, Long>{
+public interface NiciraNvpDao extends GenericDao<NiciraNvpDeviceVO, Long> {
     /**
      * list all the nicira nvp devices added in to this physical network
      * @param physicalNetworkId physical Network Id

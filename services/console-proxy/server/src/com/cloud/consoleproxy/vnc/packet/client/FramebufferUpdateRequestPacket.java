@@ -23,7 +23,7 @@ import com.cloud.consoleproxy.vnc.RfbConstants;
 
 /**
  * FramebufferUpdateRequestPacket
- * 
+ *
  * @author Volodymyr M. Lisivka
  */
 public class FramebufferUpdateRequestPacket implements ClientPacket {

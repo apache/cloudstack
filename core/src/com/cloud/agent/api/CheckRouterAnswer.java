@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import com.cloud.network.router.VirtualRouter.RedundantState;
@@ -34,7 +37,7 @@ public class CheckRouterAnswer extends Answer {
                 this.result = false;
             }
         }
-	}
+    }
 
     public CheckRouterAnswer(CheckRouterCommand cmd, String details) {
         super(cmd, false, details);
@@ -64,11 +67,11 @@ public class CheckRouterAnswer extends Answer {
 
     public void setState(RedundantState state) {
         this.state = state;
-	}
+    }
 
     public RedundantState getState() {
         return state;
-	}
+    }
 
     public boolean isBumped() {
         return isBumped;

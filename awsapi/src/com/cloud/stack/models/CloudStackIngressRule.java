@@ -19,7 +19,7 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackIngressRule {
-	
+
     @SerializedName(ApiConstants.RULE_ID)
     private String ruleId;
 
@@ -46,43 +46,43 @@ public class CloudStackIngressRule {
 
     @SerializedName(ApiConstants.CIDR)
     private String cidr;
-    
+
     public CloudStackIngressRule() {
     }
 
-	public String getRuleId() {
-		return ruleId;
-	}
+    public String getRuleId() {
+        return ruleId;
+    }
 
-	public String getProtocol() {
-		return protocol;
-	}
+    public String getProtocol() {
+        return protocol;
+    }
 
-	public Integer getIcmpType() {
-		return icmpType;
-	}
+    public Integer getIcmpType() {
+        return icmpType;
+    }
 
-	public Integer getIcmpCode() {
-		return icmpCode;
-	}
+    public Integer getIcmpCode() {
+        return icmpCode;
+    }
 
-	public Integer getStartPort() {
-		return startPort;
-	}
+    public Integer getStartPort() {
+        return startPort;
+    }
 
-	public Integer getEndPort() {
-		return endPort;
-	}
+    public Integer getEndPort() {
+        return endPort;
+    }
 
-	public String getSecurityGroupName() {
-		return securityGroupName;
-	}
+    public String getSecurityGroupName() {
+        return securityGroupName;
+    }
 
-	public String getAccountName() {
-		return accountName;
-	}
+    public String getAccountName() {
+        return accountName;
+    }
 
-	public String getCidr() {
-		return cidr;
-	}
+    public String getCidr() {
+        return cidr;
+    }
 }

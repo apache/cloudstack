@@ -26,8 +26,8 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 
 import com.cloud.utils.db.GenericDaoBase;
 
-@Local(value={ConfigurationDao.class})
-public class MockConfigurationDaoImpl  extends GenericDaoBase<ConfigurationVO, String> implements ConfigurationDao{
+@Local(value = {ConfigurationDao.class})
+public class MockConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String> implements ConfigurationDao {
 
     /* (non-Javadoc)
      * @see com.cloud.configuration.dao.ConfigurationDao#getConfiguration(java.lang.String, java.util.Map)
@@ -80,7 +80,7 @@ public class MockConfigurationDaoImpl  extends GenericDaoBase<ConfigurationVO, S
         // TODO Auto-generated method stub
         return null;
     }
-    
+
     /* (non-Javadoc)
      * @see com.cloud.configuration.dao.ConfigurationDao#getValueAndInitIfNotExist(java.lang.String, java.lang.String, java.lang.String)
      */
@@ -89,7 +89,7 @@ public class MockConfigurationDaoImpl  extends GenericDaoBase<ConfigurationVO, S
         // TODO Auto-generated method stub
         return null;
     }
-    
+
     /* (non-Javadoc)
      * @see com.cloud.configuration.dao.ConfigurationDao#isPremium()
      */

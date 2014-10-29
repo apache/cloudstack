@@ -16,20 +16,17 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import com.cloud.vm.NicSecondaryIp;
-
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -41,25 +38,25 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
+import com.cloud.vm.NicSecondaryIp;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "addIpToNic", description = "Assigns secondary IP to NIC", responseObject = NicSecondaryIpResponse.class)
-public class AddIpToVmNicCmd extends BaseAsyncCmd {
+@APICommand(name = "addIpToNic", description = "Assigns secondary IP to NIC", responseObject = NicSecondaryIpResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AddIpToVmNicCmd.class.getName());
     private static final String s_name = "addiptovmnicresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.NIC_ID, type=CommandType.UUID, entityType = NicResponse.class, required = true,
-            description="the ID of the nic to which you want to assign private IP")
-            private Long nicId;
+    @Parameter(name = ApiConstants.NIC_ID, type = CommandType.UUID, entityType = NicResponse.class, required = true, description = "the ID of the nic to which you want to assign private IP")
+    private Long nicId;
 
-    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, required = false,
-            description = "Secondary IP Address")
-            private String ipAddr;
+    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, required = false, description = "Secondary IP Address")
+    private String ipAddr;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -69,36 +66,19 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
         return "nic_secondary_ips";
     }
 
-    public String getAccountName() {
-        return CallContext.current().getCallingAccount().getAccountName();
-    }
-
-    public long getDomainId() {
-        return CallContext.current().getCallingAccount().getDomainId();
-    }
-
-    private long getZoneId() {
-        Network ntwk = _entityMgr.findById(Network.class, getNetworkId());
-        if (ntwk == null) {
-            throw new InvalidParameterValueException("Can't find zone id for specified");
-        }
-        return ntwk.getDataCenterId();
-    }
-
-    public Long getNetworkId() {
+    private long getNetworkId() {
         Nic nic = _entityMgr.findById(Nic.class, nicId);
         if (nic == null) {
             throw new InvalidParameterValueException("Can't find network id for specified nic");
         }
-        Long networkId = nic.getNetworkId();
-        return networkId;
+        return nic.getNetworkId();
     }
 
-    public Long getNicId() {
+    public long getNicId() {
         return nicId;
     }
 
-    public String getIpaddress () {
+    private String getIpaddress() {
         if (ipAddr != null) {
             return ipAddr;
         } else {
@@ -106,32 +86,31 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
         }
     }
 
-    public NetworkType getNetworkType() {
+    private NetworkType getNetworkType() {
         Network ntwk = _entityMgr.findById(Network.class, getNetworkId());
         DataCenter dc = _entityMgr.findById(DataCenter.class, ntwk.getDataCenterId());
         return dc.getNetworkType();
     }
 
-    @Override
-    public long getEntityOwnerId() {
-        Account caller = CallContext.current().getCallingAccount();
-        return caller.getAccountId();
+    private boolean isZoneSGEnabled() {
+        Network ntwk = _entityMgr.findById(Network.class, getNetworkId());
+        DataCenter dc = _entityMgr.findById(DataCenter.class, ntwk.getDataCenterId());
+        return dc.isSecurityGroupEnabled();
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_NET_IP_ASSIGN;
+        return EventTypes.EVENT_NIC_SECONDARY_IP_ASSIGN;
     }
 
     @Override
     public String getEventDescription() {
-        return  "associating ip to nic id: " + getNetworkId() + " in zone " + getZoneId();
+        return "associating ip to nic id=" + getNicId() + " belonging to network id=" + getNetworkId();
     }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
 
     @Override
     public String getCommandName() {
@@ -143,39 +122,21 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, ResourceAllocationException,
-    ConcurrentOperationException, InsufficientCapacityException {
+    public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
 
-        CallContext.current().setEventDetails("Nic Id: " + getNicId() );
-        String ip;
-        NicSecondaryIp result;
-        String secondaryIp = null;
-        if ((ip = getIpaddress()) != null) {
-            if (!NetUtils.isValidIp(ip)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Invalid ip address " + ip);
-            }
-        }
-
-        try {
-            result =  _networkService.allocateSecondaryGuestIP(_accountService.getAccount(getEntityOwnerId()),  getZoneId(), getNicId(), getNetworkId(), getIpaddress());
-        } catch (InsufficientAddressCapacityException e) {
-            throw new InvalidParameterValueException("Allocating guest ip for nic failed");
-        }
+        CallContext.current().setEventDetails("Nic Id: " + getNicId());
+        NicSecondaryIp result = _entityMgr.findById(NicSecondaryIp.class, getEntityId());
 
         if (result != null) {
-            secondaryIp = result.getIp4Address();
-            if (getNetworkType() == NetworkType.Basic) {
-                // add security group rules for the secondary ip addresses
-                boolean success = false;
-                success = _securityGroupService.securityGroupRulesForVmSecIp(getNicId(), getNetworkId(), secondaryIp, (boolean) true);
-                if (success == false) {
-                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to set security group rules for the secondary ip");
-                }
+            CallContext.current().setEventDetails("secondary Ip Id: " + getEntityId());
+            boolean success = false;
+            success = _networkService.configureNicSecondaryIp(result, isZoneSGEnabled());
+
+            if (success == false) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to set security group rules for the secondary ip");
             }
 
-            s_logger.info("Associated ip address to NIC : " + secondaryIp);
-            NicSecondaryIpResponse response = new NicSecondaryIpResponse();
-            response = _responseGenerator.createSecondaryIPToNicResponse(result);
+            NicSecondaryIpResponse response = _responseGenerator.createSecondaryIPToNicResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
@@ -183,10 +144,6 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
         }
     }
 
-    @Override
-    public String getSyncObjType() {
-        return BaseAsyncCmd.networkSyncObject;
-    }
 
     @Override
     public Long getSyncObjId() {
@@ -198,4 +155,41 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
         return ApiCommandJobType.IpAddress;
     }
 
+    @Override
+    public long getEntityOwnerId() {
+        Nic nic = _entityMgr.findById(Nic.class, nicId);
+        if (nic == null) {
+            throw new InvalidParameterValueException("Can't find nic for id specified");
+        }
+        long vmId = nic.getInstanceId();
+        VirtualMachine vm = _entityMgr.findById(VirtualMachine.class, vmId);
+
+        return vm.getAccountId();
+    }
+
+    @Override
+    public void create() throws ResourceAllocationException {
+        String ip;
+        NicSecondaryIp result;
+        String secondaryIp = null;
+        if ((ip = getIpaddress()) != null) {
+            if (!NetUtils.isValidIp(ip)) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Invalid ip address " + ip);
+            }
+        }
+
+        try {
+            result = _networkService.allocateSecondaryGuestIP(getNicId(), getIpaddress());
+            if (result != null) {
+                setEntityId(result.getId());
+                setEntityUuid(result.getUuid());
+            }
+        } catch (InsufficientAddressCapacityException e) {
+            throw new InvalidParameterValueException("Allocating guest ip for nic failed : " + e.getMessage());
+        }
+
+        if (result == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign secondary ip to nic");
+        }
+    }
 }

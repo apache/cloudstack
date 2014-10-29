@@ -18,7 +18,6 @@ package org.apache.cloudstack.storage.test;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 public class AopTestAdvice {

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,39 +15,41 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.nicira;
 
 /**
  *
  */
 public class L3GatewayAttachment extends Attachment {
-    private String l3_gateway_service_uuid;
-    private String type = "L3GatewayAttachment";
-    private Long vlan_id;
+    private String l3GatewayServiceUuid;
+    private final String type = "L3GatewayAttachment";
+    private Long vlanId;
 
-    public L3GatewayAttachment(String l3_gateway_service_uuid) {
-        this.l3_gateway_service_uuid = l3_gateway_service_uuid;
+    public L3GatewayAttachment(String l3GatewayServiceUuid) {
+        this.l3GatewayServiceUuid = l3GatewayServiceUuid;
     }
 
-    public L3GatewayAttachment(String l3_gateway_service_uuid, long vlan_id) {
-        this.l3_gateway_service_uuid = l3_gateway_service_uuid;
-        this.vlan_id = vlan_id;
+    public L3GatewayAttachment(final String l3GatewayServiceUuid, final long vlanId) {
+        this.l3GatewayServiceUuid = l3GatewayServiceUuid;
+        this.vlanId = vlanId;
     }
 
     public String getL3GatewayServiceUuid() {
-        return l3_gateway_service_uuid;
+        return l3GatewayServiceUuid;
     }
 
-    public void setL3GatewayServiceUuid(String l3_gateway_service_uuid) {
-        this.l3_gateway_service_uuid = l3_gateway_service_uuid;
+    public void setL3GatewayServiceUuid(final String l3GatewayServiceUuid) {
+        this.l3GatewayServiceUuid = l3GatewayServiceUuid;
     }
 
     public long getVlanId() {
-        return vlan_id;
+        return vlanId;
     }
 
-    public void setVlanId(long vlan_id) {
-        this.vlan_id = vlan_id;
+    public void setVlanId(long vlanId) {
+        this.vlanId = vlanId;
     }
 
 }

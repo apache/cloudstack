@@ -21,7 +21,6 @@ import java.util.List;
 
 import com.google.gson.annotations.SerializedName;
 
-
 public class LbStickinessMethod {
     public static class StickinessMethodType {
         private String _name;
@@ -29,6 +28,7 @@ public class LbStickinessMethod {
         public static final StickinessMethodType LBCookieBased = new StickinessMethodType("LbCookie");
         public static final StickinessMethodType AppCookieBased = new StickinessMethodType("AppCookie");
         public static final StickinessMethodType SourceBased = new StickinessMethodType("SourceBased");
+
         public StickinessMethodType(String name) {
             _name = name;
         }
@@ -51,8 +51,7 @@ public class LbStickinessMethod {
         @SerializedName("description")
         private String _description;
 
-        public LbStickinessMethodParam(String name, Boolean required,
-                String description,Boolean flag) {
+        public LbStickinessMethodParam(String name, Boolean required, String description, Boolean flag) {
             this._paramName = name;
             this._required = required;
             this._description = description;
@@ -110,8 +109,8 @@ public class LbStickinessMethod {
 
     public void addParam(String name, Boolean required, String description, Boolean isFlag) {
         /* FIXME : UI is breaking if the capability string length is larger , temporarily description is commented out */
-       // LbStickinessMethodParam param = new LbStickinessMethodParam(name, required, description);
-        LbStickinessMethodParam param = new LbStickinessMethodParam(name,required, " ",isFlag);
+        // LbStickinessMethodParam param = new LbStickinessMethodParam(name, required, description);
+        LbStickinessMethodParam param = new LbStickinessMethodParam(name, required, " ", isFlag);
         _paramList.add(param);
         return;
     }

@@ -21,7 +21,6 @@ import java.util.List;
 
 import com.cloud.dc.HostPodVO;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.VirtualMachine;
 
 public interface HostPodDao extends GenericDao<HostPodVO, Long> {
     public List<HostPodVO> listByDataCenterId(long id);

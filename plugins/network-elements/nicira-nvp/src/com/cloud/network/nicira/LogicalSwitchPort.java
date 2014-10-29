@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,104 +15,68 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.nicira;
 
 import java.util.List;
 
-public class LogicalSwitchPort {
-    private String display_name;
-    private List<NiciraNvpTag> tags;
+public class LogicalSwitchPort extends BaseNiciraNamedEntity {
     private Integer portno;
-    private boolean admin_status_enabled;
-    //private List<AddressPairs> allowed_address_pairs;
-    private String queue_uuid;
-    private List<String> security_profiles;
-    private List<String> mirror_targets;
-    private String type;
-    private String uuid;
+    private boolean adminStatusEnabled;
+    private String queueUuid;
+    private List<String> securityProfiles;
+    private List<String> mirrorTargets;
+    private final String type = "LogicalSwitchPortConfig";
 
     public LogicalSwitchPort() {
         super();
     }
 
-    public LogicalSwitchPort(String display_name, List<NiciraNvpTag> tags,
-            boolean admin_status_enabled) {
+    public LogicalSwitchPort(final String displayName, final List<NiciraNvpTag> tags, final boolean adminStatusEnabled) {
         super();
-        this.display_name = display_name;
+        this.displayName = displayName;
         this.tags = tags;
-        this.admin_status_enabled = admin_status_enabled;
-    }
-
-    public String getDisplay_name() {
-        return display_name;
-    }
-
-    public void setDisplay_name(String display_name) {
-        this.display_name = display_name;
-    }
-
-    public List<NiciraNvpTag> getTags() {
-        return tags;
-    }
-
-    public void setTags(List<NiciraNvpTag> tags) {
-        this.tags = tags;
+        this.adminStatusEnabled = adminStatusEnabled;
     }
 
     public Integer getPortno() {
         return portno;
     }
 
-    public void setPortno(Integer portno) {
+    public void setPortno(final Integer portno) {
         this.portno = portno;
     }
 
-    public boolean isAdmin_status_enabled() {
-        return admin_status_enabled;
+    public boolean isAdminStatusEnabled() {
+        return adminStatusEnabled;
     }
 
-    public void setAdmin_status_enabled(boolean admin_status_enabled) {
-        this.admin_status_enabled = admin_status_enabled;
+    public void setAdminStatusEnabled(final boolean adminStatusEnabled) {
+        this.adminStatusEnabled = adminStatusEnabled;
     }
 
-    public String getQueue_uuid() {
-        return queue_uuid;
+    public String getQueueUuid() {
+        return queueUuid;
     }
 
-    public void setQueue_uuid(String queue_uuid) {
-        this.queue_uuid = queue_uuid;
+    public void setQueueUuid(final String queueUuid) {
+        this.queueUuid = queueUuid;
     }
 
-    public List<String> getSecurity_profiles() {
-        return security_profiles;
+    public List<String> getSecurityProfiles() {
+        return securityProfiles;
     }
 
-    public void setSecurity_profiles(List<String> security_profiles) {
-        this.security_profiles = security_profiles;
+    public void setSecurityProfiles(final List<String> securityProfiles) {
+        this.securityProfiles = securityProfiles;
     }
 
-    public List<String> getMirror_targets() {
-        return mirror_targets;
+    public List<String> getMirrorTargets() {
+        return mirrorTargets;
     }
 
-    public void setMirror_targets(List<String> mirror_targets) {
-        this.mirror_targets = mirror_targets;
+    public void setMirrorTargets(final List<String> mirrorTargets) {
+        this.mirrorTargets = mirrorTargets;
     }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
 }

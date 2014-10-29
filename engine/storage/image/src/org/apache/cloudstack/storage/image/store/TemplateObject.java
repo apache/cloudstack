@@ -29,6 +29,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
@@ -49,6 +50,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -117,7 +119,7 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public String getUri() {
-        if ( url != null ){
+        if (url != null) {
             return url;
         }
         VMTemplateVO image = imageDao.findById(imageVO.getId());
@@ -133,12 +135,12 @@ public class TemplateObject implements TemplateInfo {
         }
 
         /*
-         * 
+         *
          * // If the template that was passed into this allocator is not
          * installed in the storage pool, // add 3 * (template size on secondary
          * storage) to the running total VMTemplateHostVO templateHostVO =
          * _storageMgr.findVmTemplateHost(templateForVmCreation.getId(), null);
-         * 
+         *
          * if (templateHostVO == null) { VMTemplateSwiftVO templateSwiftVO =
          * _swiftMgr.findByTmpltId(templateForVmCreation.getId()); if
          * (templateSwiftVO != null) { long templateSize =
@@ -184,21 +186,19 @@ public class TemplateObject implements TemplateInfo {
         try {
             if (getDataStore().getRole() == DataStoreRole.Primary) {
                 if (answer instanceof CopyCmdAnswer) {
-                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer) answer;
-                    TemplateObjectTO newTemplate = (TemplateObjectTO) cpyAnswer.getNewData();
-                    VMTemplateStoragePoolVO templatePoolRef = templatePoolDao.findByPoolTemplate(getDataStore()
-                            .getId(), getId());
+                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
+                    TemplateObjectTO newTemplate = (TemplateObjectTO)cpyAnswer.getNewData();
+                    VMTemplateStoragePoolVO templatePoolRef = templatePoolDao.findByPoolTemplate(getDataStore().getId(), getId());
                     templatePoolRef.setDownloadPercent(100);
                     templatePoolRef.setDownloadState(Status.DOWNLOADED);
                     templatePoolRef.setLocalDownloadPath(newTemplate.getPath());
                     templatePoolRef.setInstallPath(newTemplate.getPath());
                     templatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
                 }
-            } else if (getDataStore().getRole() == DataStoreRole.Image
-                    || getDataStore().getRole() == DataStoreRole.ImageCache) {
+            } else if (getDataStore().getRole() == DataStoreRole.Image || getDataStore().getRole() == DataStoreRole.ImageCache) {
                 if (answer instanceof CopyCmdAnswer) {
-                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer) answer;
-                    TemplateObjectTO newTemplate = (TemplateObjectTO) cpyAnswer.getNewData();
+                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
+                    TemplateObjectTO newTemplate = (TemplateObjectTO)cpyAnswer.getNewData();
                     TemplateDataStoreVO templateStoreRef = templateStoreDao.findByStoreTemplate(getDataStore().getId(), getId());
                     templateStoreRef.setInstallPath(newTemplate.getPath());
                     templateStoreRef.setDownloadPercent(100);
@@ -213,7 +213,7 @@ public class TemplateObject implements TemplateInfo {
                         if (newTemplate.getFormat() != null) {
                             templateVO.setFormat(newTemplate.getFormat());
                         }
-                        if (newTemplate.getName() != null ){
+                        if (newTemplate.getName() != null) {
                             // For template created from snapshot, template name is determine by resource code.
                             templateVO.setUniqueName(newTemplate.getName());
                         }
@@ -300,6 +300,20 @@ public class TemplateObject implements TemplateInfo {
         if (dataStore == null) {
             return null;
         }
+
+        // managed primary data stores should not have an install path
+        if (dataStore instanceof PrimaryDataStore) {
+            PrimaryDataStore primaryDataStore = (PrimaryDataStore)dataStore;
+
+            Map<String, String> details = primaryDataStore.getDetails();
+
+            boolean managed = details != null && Boolean.parseBoolean(details.get(PrimaryDataStore.MANAGED));
+
+            if (managed) {
+                return null;
+            }
+        }
+
         DataObjectInStore obj = objectInStoreMgr.findObject(this, dataStore);
         return obj.getInstallPath();
     }
@@ -390,13 +404,13 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public String getUrl() {
-        if (url != null ){
+        if (url != null) {
             return url;
         }
         return imageVO.getUrl();
     }
 
-    public void setUrl(String url){
+    public void setUrl(String url) {
         this.url = url;
     }
 
@@ -421,8 +435,8 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
-    public Boolean isDynamicallyScalable() {
-        return Boolean.FALSE;
+    public boolean isDynamicallyScalable() {
+        return false;
     }
 
     @Override
@@ -438,4 +452,8 @@ public class TemplateObject implements TemplateInfo {
         return true;
     }
 
+    @Override
+    public Class<?> getEntityType() {
+        return VirtualMachineTemplate.class;
+    }
 }

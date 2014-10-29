@@ -17,20 +17,20 @@
 package com.cloud.bridge.service.exception;
 
 public class OutOfServiceException extends RuntimeException {
-	private static final long serialVersionUID = 8457313467757867680L;
-	
-	public OutOfServiceException() {
-	}
-	
-	public OutOfServiceException(String message) {
-		super(message);
-	}
-	
-	public OutOfServiceException(Throwable e) {
-		super(e);
-	}
+    private static final long serialVersionUID = 8457313467757867680L;
 
-	public OutOfServiceException(String message, Throwable e) {
-		super(message, e);
-	}
+    public OutOfServiceException() {
+    }
+
+    public OutOfServiceException(String message) {
+        super(message);
+    }
+
+    public OutOfServiceException(Throwable e) {
+        super(e);
+    }
+
+    public OutOfServiceException(String message, Throwable e) {
+        super(message, e);
+    }
 }

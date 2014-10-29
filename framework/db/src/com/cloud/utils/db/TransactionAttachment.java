@@ -26,7 +26,7 @@ public interface TransactionAttachment {
      * @return a unique name to be inserted.
      */
     String getName();
-    
+
     /**
      * cleanup() if it wasn't cleaned up before.
      */

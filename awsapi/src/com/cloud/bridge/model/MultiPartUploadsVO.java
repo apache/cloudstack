@@ -28,33 +28,33 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 @Entity
-@Table(name="multipart_uploads")
-
+@Table(name = "multipart_uploads")
 public class MultiPartUploadsVO {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="ID")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ID")
     private Long id;
-    
-    @Column(name="AccessKey")
+
+    @Column(name = "AccessKey")
     private String accessKey;
-    
-    @Column(name="BucketName")
+
+    @Column(name = "BucketName")
     private String bucketName;
-    
-    @Column(name="NameKey")
+
+    @Column(name = "NameKey")
     private String nameKey;
-    
-    @Column(name="x_amz_acl")
+
+    @Column(name = "x_amz_acl")
     private String amzAcl;
-    
-    @Column(name="CreateTime")
-    @Temporal(value=TemporalType.TIMESTAMP)
+
+    @Column(name = "CreateTime")
+    @Temporal(value = TemporalType.TIMESTAMP)
     private Date createTime;
-    
-    public MultiPartUploadsVO() {}
-    
+
+    public MultiPartUploadsVO() {
+    }
+
     public MultiPartUploadsVO(String accessKey, String bucketName, String key, String cannedAccess, Date tod) {
         this.accessKey = accessKey;
         this.bucketName = bucketName;

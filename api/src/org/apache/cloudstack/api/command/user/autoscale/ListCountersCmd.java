@@ -20,18 +20,20 @@ package org.apache.cloudstack.api.command.user.autoscale;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.as.Counter;
 import com.cloud.user.Account;
 
-@APICommand(name = "listCounters", description = "List the counters", responseObject = CounterResponse.class)
+@APICommand(name = "listCounters", description = "List the counters", responseObject = CounterResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListCountersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListCountersCmd.class.getName());
     private static final String s_name = "counterresponse";
@@ -40,8 +42,7 @@ public class ListCountersCmd extends BaseListCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = CounterResponse.class,
-            description = "ID of the Counter.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = CounterResponse.class, description = "ID of the Counter.")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name of the counter.")

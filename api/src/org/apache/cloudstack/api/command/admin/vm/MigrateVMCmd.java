@@ -16,18 +16,19 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vm;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -41,7 +42,11 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "migrateVirtualMachine", description="Attempts Migration of a VM to a different host or Root volume of the vm to a different storage pool", responseObject=UserVmResponse.class)
+@APICommand(name = "migrateVirtualMachine",
+            description = "Attempts Migration of a VM to a different host or Root volume of the vm to a different storage pool",
+        responseObject = UserVmResponse.class, entityType = {VirtualMachine.class},
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = true)
 public class MigrateVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(MigrateVMCmd.class.getName());
 
@@ -51,16 +56,25 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class,
-            required=false, description="Destination Host ID to migrate VM to. Required for live migrating a VM from host to host")
+    @Parameter(name = ApiConstants.HOST_ID,
+               type = CommandType.UUID,
+               entityType = HostResponse.class,
+               required = false,
+               description = "Destination Host ID to migrate VM to. Required for live migrating a VM from host to host")
     private Long hostId;
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="the ID of the virtual machine")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+               type = CommandType.UUID,
+               entityType = UserVmResponse.class,
+               required = true,
+               description = "the ID of the virtual machine")
     private Long virtualMachineId;
 
-    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.UUID, entityType=StoragePoolResponse.class,
-            required=false, description="Destination storage pool ID to migrate VM volumes to. Required for migrating the root disk volume")
+    @Parameter(name = ApiConstants.STORAGE_ID,
+               type = CommandType.UUID,
+               entityType = StoragePoolResponse.class,
+               required = false,
+               description = "Destination storage pool ID to migrate VM volumes to. Required for migrating the root disk volume")
     private Long storageId;
 
     /////////////////////////////////////////////////////
@@ -78,7 +92,6 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     public Long getStoragePoolId() {
         return storageId;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -106,17 +119,17 @@ public class MigrateVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Attempting to migrate VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId();
+        return "Attempting to migrate VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId();
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         if (getHostId() == null && getStoragePoolId() == null) {
-            throw new InvalidParameterValueException("either hostId or storageId must be specified");
+            throw new InvalidParameterValueException("Either hostId or storageId must be specified");
         }
 
         if (getHostId() != null && getStoragePoolId() != null) {
-            throw new InvalidParameterValueException("only one of hostId and storageId can be specified");
+            throw new InvalidParameterValueException("Only one of hostId and storageId can be specified");
         }
 
         UserVm userVm = _userVmService.getUserVm(getVirtualMachineId());
@@ -130,7 +143,10 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             if (destinationHost == null) {
                 throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
             }
-            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId());
+            if (destinationHost.getType() != Host.Type.Routing) {
+                throw new InvalidParameterValueException("The specified host(" + destinationHost.getName() + ") is not suitable to migrate the VM, please specify another one");
+            }
+            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId());
         }
 
         StoragePool destStoragePool = null;
@@ -139,10 +155,10 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             if (destStoragePool == null) {
                 throw new InvalidParameterValueException("Unable to find the storage pool to migrate the VM");
             }
-            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: "+ getStoragePoolId());
+            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: " + getStoragePoolId());
         }
 
-        try{
+        try {
             VirtualMachine migratedVm = null;
             if (getHostId() != null) {
                 migratedVm = _userVmService.migrateVirtualMachine(getVirtualMachineId(), destinationHost);
@@ -150,9 +166,9 @@ public class MigrateVMCmd extends BaseAsyncCmd {
                 migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), destStoragePool);
             }
             if (migratedVm != null) {
-                UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", (UserVm)migratedVm).get(0);
+                UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", (UserVm)migratedVm).get(0);
                 response.setResponseName(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate vm");
             }

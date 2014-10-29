@@ -19,13 +19,9 @@ package com.cloud.storage.dao;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateEvent;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
-
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.fsm.StateDao;
 
 /*
  * Data Access Object for vm_templates table

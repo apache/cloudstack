@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,30 +15,32 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 
 public class CopyVolumeAnswer extends Answer {
-	private String volumeFolder;
-	private String volumePath;
+    private String volumeFolder;
+    private String volumePath;
 
-	protected CopyVolumeAnswer() {
-	    super();
+    protected CopyVolumeAnswer() {
+        super();
     }
 
-	public CopyVolumeAnswer(Command command, boolean success, String details, String volumeFolder, String volumePath) {
-		super(command, success, details);
-		this.volumeFolder = volumeFolder;
-		this.volumePath = volumePath;
-	}
+    public CopyVolumeAnswer(Command command, boolean success, String details, String volumeFolder, String volumePath) {
+        super(command, success, details);
+        this.volumeFolder = volumeFolder;
+        this.volumePath = volumePath;
+    }
 
-	public String getVolumeFolder() {
-		return volumeFolder;
-	}
+    public String getVolumeFolder() {
+        return volumeFolder;
+    }
 
-	public String getVolumePath() {
-		return volumePath;
-	}
+    public String getVolumePath() {
+        return volumePath;
+    }
 }

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package org.apache.cloudstack.api.agent.test;
 
 import static org.junit.Assert.assertFalse;
@@ -36,10 +39,9 @@ public class BackupSnapshotAnswerTest {
 
         StoragePool pool = Mockito.mock(StoragePool.class);
 
-        bsc = new BackupSnapshotCommand(
-                "secondaryStoragePoolURL", 101L, 102L, 103L, 104L, 105L,
-                "volumePath", pool, "snapshotUuid", "snapshotName",
-                "prevSnapshotUuid", "prevBackupUuid", false, "vmName", 5);
+        bsc =
+            new BackupSnapshotCommand("secondaryStoragePoolURL", 101L, 102L, 103L, 104L, 105L, "volumePath", pool, "snapshotUuid", "snapshotName", "prevSnapshotUuid",
+                "prevBackupUuid", false, "vmName", 5);
         bsa = new BackupSnapshotAnswer(bsc, true, "results", "bussname", false);
     }
 

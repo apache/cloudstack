@@ -25,21 +25,18 @@ public interface CiscoNexusVSMDevice extends InternalIdentity, Identity {
     // need this if we would like to carry out any sort of maintenance on the
     // VSM or CS.
     public enum VSMDeviceState {
-    	Enabled,
-    	Disabled
+        Enabled, Disabled
     }
 
     // This tells us whether the VSM is currently configured with a standby (HA)
     // or does not have any standby (Standalone).
     public enum VSMConfigMode {
-        Standalone,
-        HA
+        Standalone, HA
     }
 
     // This tells us whether the VSM is currently a primary or a standby VSM.
     public enum VSMConfigState {
-        Primary,
-        Standby
+        Primary, Standby
     }
 
     public String getvsmName();
@@ -68,6 +65,7 @@ public interface CiscoNexusVSMDevice extends InternalIdentity, Identity {
 
     public VSMDeviceState getvsmDeviceState();
 
+    @Override
     public String getUuid();
 
 }

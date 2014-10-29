@@ -16,21 +16,25 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 public class SSHKeyPairResponse extends BaseResponse {
 
-    @SerializedName(ApiConstants.NAME) @Param(description="Name of the keypair")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "Name of the keypair")
     private String name;
 
-    @SerializedName("fingerprint") @Param(description="Fingerprint of the public key")
+    @SerializedName("fingerprint")
+    @Param(description = "Fingerprint of the public key")
     private String fingerprint;
 
-    public SSHKeyPairResponse() {}
+    public SSHKeyPairResponse() {
+    }
 
     public SSHKeyPairResponse(String name, String fingerprint) {
         this.name = name;

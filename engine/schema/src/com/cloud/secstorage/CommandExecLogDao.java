@@ -21,5 +21,5 @@ import java.util.Date;
 import com.cloud.utils.db.GenericDao;
 
 public interface CommandExecLogDao extends GenericDao<CommandExecLogVO, Long> {
-	public void expungeExpiredRecords(Date cutTime);
+    public void expungeExpiredRecords(Date cutTime);
 }

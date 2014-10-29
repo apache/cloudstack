@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.dao;
 
 import javax.ejb.Local;
@@ -27,7 +30,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=NiciraNvpRouterMappingDao.class)
+@Local(value = NiciraNvpRouterMappingDao.class)
 public class NiciraNvpRouterMappingDaoImpl extends GenericDaoBase<NiciraNvpRouterMappingVO, Long> implements NiciraNvpRouterMappingDao {
 
     protected final SearchBuilder<NiciraNvpRouterMappingVO> networkSearch;
@@ -39,7 +42,7 @@ public class NiciraNvpRouterMappingDaoImpl extends GenericDaoBase<NiciraNvpRoute
     }
 
     @Override
-    public NiciraNvpRouterMappingVO findByNetworkId(long id) {
+    public NiciraNvpRouterMappingVO findByNetworkId(final long id) {
         SearchCriteria<NiciraNvpRouterMappingVO> sc = networkSearch.create();
         sc.setParameters("network_id", id);
         return findOneBy(sc);

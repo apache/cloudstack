@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -30,66 +30,54 @@ import com.cloud.network.router.VirtualRouter;
 /**
  */
 @Entity
-@Table(name="domain_router")
-@PrimaryKeyJoinColumn(name="id")
-@DiscriminatorValue(value="DomainRouter")
+@Table(name = "domain_router")
+@PrimaryKeyJoinColumn(name = "id")
+@DiscriminatorValue(value = "DomainRouter")
 public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
-    @Column(name="element_id")
+    @Column(name = "element_id")
     private long elementId;
 
-    @Column(name="public_ip_address")
+    @Column(name = "public_ip_address")
     private String publicIpAddress;
 
-    @Column(name="public_mac_address")
+    @Column(name = "public_mac_address")
     private String publicMacAddress;
 
-    @Column(name="public_netmask")
+    @Column(name = "public_netmask")
     private String publicNetmask;
 
-    @Column(name="is_redundant_router")
+    @Column(name = "is_redundant_router")
     boolean isRedundantRouter;
 
-    @Column(name="priority")
+    @Column(name = "priority")
     int priority;
 
-    @Column(name="is_priority_bumpup")
+    @Column(name = "is_priority_bumpup")
     boolean isPriorityBumpUp;
 
-    @Column(name="redundant_state")
+    @Column(name = "redundant_state")
     @Enumerated(EnumType.STRING)
     private RedundantState redundantState;
 
-    @Column(name="stop_pending")
+    @Column(name = "stop_pending")
     boolean stopPending;
 
-    @Column(name="role")
+    @Column(name = "role")
     @Enumerated(EnumType.STRING)
     private Role role = Role.VIRTUAL_ROUTER;
 
-    @Column(name="template_version")
+    @Column(name = "template_version")
     private String templateVersion;
 
-    @Column(name="scripts_version")
+    @Column(name = "scripts_version")
     private String scriptsVersion;
 
-    @Column(name="vpc_id")
+    @Column(name = "vpc_id")
     private Long vpcId;
 
-    public DomainRouterVO(long id,
-            long serviceOfferingId,
-            long elementId,
-            String name,
-            long templateId,
-            HypervisorType hypervisorType,
-            long guestOSId,
-            long domainId,
-            long accountId,
-            boolean isRedundantRouter,
-            int priority,
-            boolean isPriorityBumpUp,
-            RedundantState redundantState,
-            boolean haEnabled,
-            boolean stopPending, Long vpcId) {
+    public DomainRouterVO(long id, long serviceOfferingId, long elementId, String name, long templateId, HypervisorType hypervisorType, long guestOSId, long domainId,
+            long accountId, boolean isRedundantRouter, int priority, boolean isPriorityBumpUp, RedundantState redundantState, boolean haEnabled, boolean stopPending,
+            Long vpcId) {
         super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.elementId = elementId;
         this.isRedundantRouter = isRedundantRouter;
@@ -100,21 +88,8 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
         this.vpcId = vpcId;
     }
 
-    public DomainRouterVO(long id,
-            long serviceOfferingId,
-            long elementId,
-            String name,
-            long templateId,
-            HypervisorType hypervisorType,
-            long guestOSId,
-            long domainId,
-            long accountId,
-            boolean isRedundantRouter,
-            int priority,
-            boolean isPriorityBumpUp,
-            RedundantState redundantState,
-            boolean haEnabled,
-            boolean stopPending,
+    public DomainRouterVO(long id, long serviceOfferingId, long elementId, String name, long templateId, HypervisorType hypervisorType, long guestOSId, long domainId,
+            long accountId, boolean isRedundantRouter, int priority, boolean isPriorityBumpUp, RedundantState redundantState, boolean haEnabled, boolean stopPending,
             VirtualMachine.Type vmType, Long vpcId) {
         super(id, serviceOfferingId, name, name, vmType, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.elementId = elementId;
@@ -222,6 +197,7 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
         this.stopPending = stopPending;
     }
 
+    @Override
     public String getTemplateVersion() {
         return this.templateVersion;
     }

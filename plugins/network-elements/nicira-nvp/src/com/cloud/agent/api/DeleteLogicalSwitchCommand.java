@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,14 +15,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 public class DeleteLogicalSwitchCommand extends Command {
 
-    private String _logicalSwitchUuid;
+    private final String logicalSwitchUuid;
 
-    public DeleteLogicalSwitchCommand(String logicalSwitchUuid) {
-        _logicalSwitchUuid = logicalSwitchUuid;
+    public DeleteLogicalSwitchCommand(final String logicalSwitchUuid) {
+        this.logicalSwitchUuid = logicalSwitchUuid;
     }
 
     @Override
@@ -30,6 +33,6 @@ public class DeleteLogicalSwitchCommand extends Command {
     }
 
     public String getLogicalSwitchUuid() {
-        return _logicalSwitchUuid;
+        return logicalSwitchUuid;
     }
 }

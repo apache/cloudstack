@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,25 +15,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.nicira;
 
 /**
  *
  */
 public class RouterNextHop {
-    private String gateway_ip_address;
-    private String type = "RouterNextHop";
+    private String gatewayIpAddress;
+    private final String type = "RouterNextHop";
 
     public RouterNextHop(String gatewayIpAddress) {
-        gateway_ip_address = gatewayIpAddress;
+        this.gatewayIpAddress = gatewayIpAddress;
     }
 
     public String getGatewayIpAddress() {
-        return gateway_ip_address;
+        return gatewayIpAddress;
     }
 
-    public void setGatewayIpAddress(String gateway_ip_address) {
-        this.gateway_ip_address = gateway_ip_address;
+    public void setGatewayIpAddress(String gatewayIpAddress) {
+        this.gatewayIpAddress = gatewayIpAddress;
     }
-
 }

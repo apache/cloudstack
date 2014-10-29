@@ -18,8 +18,7 @@ package com.cloud.agent.api;
 
 public class CreateVnsPortAnswer extends Answer {
 
-    public CreateVnsPortAnswer(Command command, boolean success,
-            String details) {
+    public CreateVnsPortAnswer(Command command, boolean success, String details) {
         super(command, success, details);
     }
 

@@ -19,15 +19,7 @@ package org.apache.cloudstack.networkoffering;
 
 import java.io.IOException;
 
-import javax.inject.Inject;
-
-import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.affinity.AffinityGroupService;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.region.PortableIpDaoImpl;
-import org.apache.cloudstack.region.dao.RegionDaoImpl;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
-import org.apache.cloudstack.test.utils.SpringUtils;
+import com.cloud.storage.StorageManager;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -39,9 +31,12 @@ import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.affinity.AffinityGroupService;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.region.PortableIpDaoImpl;
 import org.apache.cloudstack.region.PortableIpRangeDaoImpl;
@@ -58,10 +53,10 @@ import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.dao.AccountVlanMapDaoImpl;
 import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.dc.dao.DataCenterDaoImpl;
+import com.cloud.dc.dao.DataCenterDetailsDaoImpl;
 import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDao;
 import com.cloud.dc.dao.DataCenterVnetDaoImpl;
-import com.cloud.dc.dao.DataCenterDetailsDaoImpl;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.HostPodDaoImpl;
 import com.cloud.dc.dao.PodVlanDaoImpl;
@@ -112,7 +107,6 @@ import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.storage.dao.SnapshotDaoImpl;
 import com.cloud.storage.dao.StoragePoolDetailsDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountManager;
@@ -127,61 +121,20 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 
 @Configuration
-@ComponentScan(basePackageClasses={
-        AccountVlanMapDaoImpl.class,
-        VolumeDaoImpl.class,
-        HostPodDaoImpl.class,
-        DomainDaoImpl.class,
-        ServiceOfferingDaoImpl.class,
-        ServiceOfferingDetailsDaoImpl.class,
-        VlanDaoImpl.class,
-        IPAddressDaoImpl.class,
-        ResourceTagsDaoImpl.class,
-        AccountDaoImpl.class,
-        InstanceGroupDaoImpl.class,
-        UserAccountJoinDaoImpl.class,
-        CapacityDaoImpl.class,
-        SnapshotDaoImpl.class,
-        HostDaoImpl.class,
-        VMInstanceDaoImpl.class,
-        HostTransferMapDaoImpl.class,
-        PortForwardingRulesDaoImpl.class,
-        PrivateIpDaoImpl.class,
-        UsageEventDaoImpl.class,
-        PodVlanMapDaoImpl.class,
-        DiskOfferingDaoImpl.class,
-        DataCenterDaoImpl.class,
-        DataCenterIpAddressDaoImpl.class,
-        DataCenterVnetDaoImpl.class,
-        PodVlanDaoImpl.class,
-        DataCenterDetailsDaoImpl.class,
-        NicSecondaryIpDaoImpl.class,
-        UserIpv6AddressDaoImpl.class,
-        UserDaoImpl.class,
-        NicDaoImpl.class,
-        NetworkDomainDaoImpl.class,
-        HostDetailsDaoImpl.class,
-        HostTagsDaoImpl.class,
-        ClusterDaoImpl.class,
-        FirewallRulesDaoImpl.class,
-        FirewallRulesCidrsDaoImpl.class,
-        PhysicalNetworkDaoImpl.class,
-        PhysicalNetworkTrafficTypeDaoImpl.class,
-        PhysicalNetworkServiceProviderDaoImpl.class,
-        LoadBalancerDaoImpl.class,
-        NetworkServiceMapDaoImpl.class,
-        PrimaryDataStoreDaoImpl.class,
-        StoragePoolDetailsDaoImpl.class,
-        PortableIpRangeDaoImpl.class,
-        RegionDaoImpl.class,
-        PortableIpDaoImpl.class,
-        AccountGuestVlanMapDaoImpl.class
-    },
-includeFilters={@Filter(value=ChildTestConfiguration.Library.class, type=FilterType.CUSTOM)},
-useDefaultFilters=false
-        )
-
-public class ChildTestConfiguration {
+@ComponentScan(basePackageClasses = {AccountVlanMapDaoImpl.class, VolumeDaoImpl.class, HostPodDaoImpl.class, DomainDaoImpl.class, ServiceOfferingDaoImpl.class,
+    ServiceOfferingDetailsDaoImpl.class, VlanDaoImpl.class, IPAddressDaoImpl.class, ResourceTagsDaoImpl.class, AccountDaoImpl.class,
+    InstanceGroupDaoImpl.class, UserAccountJoinDaoImpl.class, CapacityDaoImpl.class, SnapshotDaoImpl.class, HostDaoImpl.class, VMInstanceDaoImpl.class,
+    HostTransferMapDaoImpl.class, PortForwardingRulesDaoImpl.class, PrivateIpDaoImpl.class, UsageEventDaoImpl.class, PodVlanMapDaoImpl.class,
+    DiskOfferingDaoImpl.class, DataCenterDaoImpl.class, DataCenterIpAddressDaoImpl.class, DataCenterVnetDaoImpl.class, PodVlanDaoImpl.class,
+    DataCenterDetailsDaoImpl.class, NicSecondaryIpDaoImpl.class, UserIpv6AddressDaoImpl.class, UserDaoImpl.class, NicDaoImpl.class,
+    NetworkDomainDaoImpl.class, HostDetailsDaoImpl.class, HostTagsDaoImpl.class, ClusterDaoImpl.class, FirewallRulesDaoImpl.class,
+    FirewallRulesCidrsDaoImpl.class, PhysicalNetworkDaoImpl.class, PhysicalNetworkTrafficTypeDaoImpl.class, PhysicalNetworkServiceProviderDaoImpl.class,
+    LoadBalancerDaoImpl.class, NetworkServiceMapDaoImpl.class, PrimaryDataStoreDaoImpl.class, StoragePoolDetailsDaoImpl.class,
+    PortableIpRangeDaoImpl.class, RegionDaoImpl.class, PortableIpDaoImpl.class, AccountGuestVlanMapDaoImpl.class},
+               includeFilters = {@Filter(value = ChildTestConfiguration.Library.class, type = FilterType.CUSTOM)},
+               useDefaultFilters = false)
+public class
+        ChildTestConfiguration {
 
     @Bean
     public ManagementService managementService() {
@@ -207,7 +160,7 @@ public class ChildTestConfiguration {
     public AlertManager alertMgr() {
         return Mockito.mock(AlertManager.class);
     }
-    
+
     @Bean
     public EntityManager entityMgr() {
         return Mockito.mock(EntityManager.class);
@@ -226,11 +179,6 @@ public class ChildTestConfiguration {
     @Bean
     public ProjectManager projectMgr() {
         return Mockito.mock(ProjectManager.class);
-    }
-
-    @Bean
-    public SecondaryStorageVmManager ssvmMgr() {
-        return Mockito.mock(SecondaryStorageVmManager.class);
     }
 
     @Bean
@@ -309,6 +257,11 @@ public class ChildTestConfiguration {
     }
 
     @Bean
+    public ConfigDepot configDepot() {
+        return Mockito.mock(ConfigDepot.class);
+    }
+
+    @Bean
     public CallContext userContext() {
         return Mockito.mock(CallContext.class);
     }
@@ -345,7 +298,7 @@ public class ChildTestConfiguration {
 
     @Bean
     public DataCenterLinkLocalIpAddressDao datacenterLinkLocalIpAddressDao() {
-    	return Mockito.mock(DataCenterLinkLocalIpAddressDao.class);
+        return Mockito.mock(DataCenterLinkLocalIpAddressDao.class);
     }
 
     @Bean
@@ -376,6 +329,11 @@ public class ChildTestConfiguration {
     @Bean
     public AffinityGroupService affinityGroupService() {
         return Mockito.mock(AffinityGroupService.class);
+    }
+
+    @Bean
+    public StorageManager storageManager() {
+        return Mockito.mock(StorageManager.class);
     }
 
     public static class Library implements TypeFilter {

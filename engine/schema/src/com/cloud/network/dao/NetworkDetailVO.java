@@ -26,31 +26,33 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
-@Table(name="network_details")
+@Table(name = "network_details")
 public class NetworkDetailVO implements ResourceDetail {
     @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="network_id")
+    @Column(name = "network_id")
     private long resourceId;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="value", length=1024)
+    @Column(name = "value", length = 1024)
     private String value;
-    
-    @Column(name="display")
-    private boolean display;
 
-    public NetworkDetailVO() {}
+    @Column(name = "display")
+    private boolean display = true;
 
-    public NetworkDetailVO(long networkId, String name, String value) {
+    public NetworkDetailVO() {
+    }
+
+    public NetworkDetailVO(long networkId, String name, String value, boolean display) {
         this.resourceId = networkId;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override
@@ -72,7 +74,7 @@ public class NetworkDetailVO implements ResourceDetail {
     public long getResourceId() {
         return resourceId;
     }
-    
+
     @Override
     public boolean isDisplay() {
         return display;

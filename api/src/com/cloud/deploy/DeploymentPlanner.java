@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.deploy;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -82,18 +83,16 @@ public interface DeploymentPlanner extends Adapter {
     boolean canHandle(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid);
 
     public enum AllocationAlgorithm {
-        random,
-        firstfit,
-        userdispersing,
-        userconcentratedpod_random,
-        userconcentratedpod_firstfit;
+        random, firstfit, userdispersing, userconcentratedpod_random, userconcentratedpod_firstfit;
     }
 
     public enum PlannerResourceUsage {
         Shared, Dedicated;
     }
 
-    public static class ExcludeList {
+    public static class ExcludeList implements Serializable {
+        private static final long serialVersionUID = -482175549460148301L;
+
         private Set<Long> _dcIds;
         private Set<Long> _podIds;
         private Set<Long> _clusterIds;
@@ -103,22 +102,22 @@ public interface DeploymentPlanner extends Adapter {
         public ExcludeList() {
         }
 
-        public ExcludeList(Set<Long> _dcIds, Set<Long> _podIds, Set<Long> _clusterIds, Set<Long> _hostIds, Set<Long> _poolIds) {
-            if (_dcIds != null) {
-                this._dcIds = new HashSet<Long>(_dcIds);
+        public ExcludeList(Set<Long> dcIds, Set<Long> podIds, Set<Long> clusterIds, Set<Long> hostIds, Set<Long> poolIds) {
+            if (dcIds != null) {
+                this._dcIds = new HashSet<Long>(dcIds);
             }
-            if (_podIds != null) {
-                this._podIds = new HashSet<Long>(_podIds);
+            if (podIds != null) {
+                this._podIds = new HashSet<Long>(podIds);
             }
-            if (_clusterIds != null) {
-                this._clusterIds = new HashSet<Long>(_clusterIds);
+            if (clusterIds != null) {
+                this._clusterIds = new HashSet<Long>(clusterIds);
             }
 
-            if (_hostIds != null) {
-                this._hostIds = new HashSet<Long>(_hostIds);
+            if (hostIds != null) {
+                this._hostIds = new HashSet<Long>(hostIds);
             }
-            if (_poolIds != null) {
-                this._poolIds = new HashSet<Long>(_poolIds);
+            if (poolIds != null) {
+                this._poolIds = new HashSet<Long>(poolIds);
             }
         }
 
@@ -175,6 +174,12 @@ public interface DeploymentPlanner extends Adapter {
                 _poolIds = new HashSet<Long>();
             }
             _poolIds.add(poolId);
+        }
+
+        public void removePool(long poolId) {
+            if (_poolIds != null) {
+                _poolIds.remove(poolId);
+            }
         }
 
         public void addDataCenter(long dataCenterId) {

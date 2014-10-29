@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,18 +15,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.storage.template;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Map;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InternalErrorException;
@@ -33,6 +34,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * VhdProcessor processes the downloaded template for VHD.  It
@@ -40,16 +42,16 @@ import com.cloud.utils.component.AdapterBase;
  * into the VHD format.
  *
  */
-@Local(value=Processor.class)
+@Local(value = Processor.class)
 public class VhdProcessor extends AdapterBase implements Processor {
-    
+
     private static final Logger s_logger = Logger.getLogger(VhdProcessor.class);
     StorageLayer _storage;
-    private int vhd_footer_size = 512;
-    private int vhd_footer_creator_app_offset = 28;
-    private int vhd_footer_creator_ver_offset = 32;
-    private int vhd_footer_current_size_offset = 48;
-    private byte[][] citrix_creator_app = {{0x74, 0x61, 0x70, 0x00},{0x43, 0x54, 0x58, 0x53}}; /*"tap ", and "CTXS"*/
+    private int vhdFooterSize = 512;
+    private int vhdFooterCreatorAppOffset = 28;
+    private int vhdFooterCreatorVerOffset = 32;
+    private int vhdFooterCurrentSizeOffset = 48;
+    private byte[][] citrixCreatorApp = { {0x74, 0x61, 0x70, 0x00}, {0x43, 0x54, 0x58, 0x53}}; /*"tap ", and "CTXS"*/
 
     @Override
     public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
@@ -57,33 +59,45 @@ public class VhdProcessor extends AdapterBase implements Processor {
             s_logger.debug("We currently don't handle conversion from " + format + " to VHD.");
             return null;
         }
-        
+
         String vhdPath = templatePath + File.separator + templateName + "." + ImageFormat.VHD.getFileExtension();
-       
+
         if (!_storage.exists(vhdPath)) {
             s_logger.debug("Unable to find the vhd file: " + vhdPath);
             return null;
         }
-        
+
         FormatInfo info = new FormatInfo();
         info.format = ImageFormat.VHD;
         info.filename = templateName + "." + ImageFormat.VHD.getFileExtension();
-        
+
         File vhdFile = _storage.getFile(vhdPath);
-        
+
         info.size = _storage.getSize(vhdPath);
         FileInputStream strm = null;
         byte[] currentSize = new byte[8];
         byte[] creatorApp = new byte[4];
         try {
             strm = new FileInputStream(vhdFile);
-            strm.skip(info.size - vhd_footer_size + vhd_footer_creator_app_offset);
-            strm.read(creatorApp);
-            strm.skip(vhd_footer_current_size_offset - vhd_footer_creator_ver_offset);
-            strm.read(currentSize);           
-        } catch (Exception e) {
+            long skipped = strm.skip(info.size - vhdFooterSize + vhdFooterCreatorAppOffset);
+            if (skipped == -1) {
+                throw new InternalErrorException("Unexpected end-of-file");
+            }
+            long read = strm.read(creatorApp);
+            if (read == -1) {
+                throw new InternalErrorException("Unexpected end-of-file");
+            }
+            skipped = strm.skip(vhdFooterCurrentSizeOffset - vhdFooterCreatorVerOffset);
+            if (skipped == -1) {
+                throw new InternalErrorException("Unexpected end-of-file");
+            }
+            read = strm.read(currentSize);
+            if (read == -1) {
+                throw new InternalErrorException("Unexpected end-of-file");
+            }
+        } catch (IOException e) {
             s_logger.warn("Unable to read vhd file " + vhdPath, e);
-            throw new InternalErrorException("Unable to read vhd file " + vhdPath + ": " + e);
+            throw new InternalErrorException("Unable to read vhd file " + vhdPath + ": " + e, e);
         } finally {
             if (strm != null) {
                 try {
@@ -92,9 +106,9 @@ public class VhdProcessor extends AdapterBase implements Processor {
                 }
             }
         }
-        
+
         //imageSignatureCheck(creatorApp);
-        
+
         long templateSize = NumbersUtil.bytesToLong(currentSize);
         info.virtualSize = templateSize;
 
@@ -102,15 +116,15 @@ public class VhdProcessor extends AdapterBase implements Processor {
     }
 
     @Override
-    public Long getVirtualSize(File file) {
+    public long getVirtualSize(File file) {
         FileInputStream strm = null;
         byte[] currentSize = new byte[8];
         byte[] creatorApp = new byte[4];
         try {
             strm = new FileInputStream(file);
-            strm.skip(file.length() - vhd_footer_size + vhd_footer_creator_app_offset);
+            strm.skip(file.length() - vhdFooterSize + vhdFooterCreatorAppOffset);
             strm.read(creatorApp);
-            strm.skip(vhd_footer_current_size_offset - vhd_footer_creator_ver_offset);
+            strm.skip(vhdFooterCurrentSizeOffset - vhdFooterCreatorVerOffset);
             strm.read(currentSize);
         } catch (Exception e) {
             s_logger.warn("Unable to read vhd file " + file.getAbsolutePath(), e);
@@ -135,25 +149,8 @@ public class VhdProcessor extends AdapterBase implements Processor {
         if (_storage == null) {
             throw new ConfigurationException("Unable to get storage implementation");
         }
-        
+
         return true;
     }
-    
-    private void imageSignatureCheck(byte[] creatorApp) throws InternalErrorException {
-    	boolean findKnownCreator = false;
-    	for (int i = 0; i < citrix_creator_app.length; i++) {
-    		if (Arrays.equals(creatorApp, citrix_creator_app[i])) {
-    			findKnownCreator = true;
-    			break;
-    		}
-    	}
-    	if (!findKnownCreator) {
-    		/*Only support VHD image created by citrix xenserver, and xenconverter*/
-    		String readableCreator = "";
-    		for (int j = 0; j < creatorApp.length; j++) {
-    			readableCreator += (char)creatorApp[j];
-    		}
-    		throw new InternalErrorException("Image creator is:" + readableCreator +", is not supported");
-    	}
-    }
+
 }

@@ -56,8 +56,8 @@ public class AuthenticatorTest {
     @InjectMocks
     SHA256SaltedUserAuthenticator authenticator;
 
-	@Before
-	public void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         try {
             authenticator.configure("SHA256", Collections.<String, Object> emptyMap());
         } catch (ConfigurationException e) {
@@ -72,31 +72,31 @@ public class AuthenticatorTest {
         //20 byte salt, and password="password"
         when(adminAccount20Byte.getPassword()).thenReturn("QL2NsxVEmRuDaNRkvIyADny7C5w=:JoegiytiWnoBAxmSD/PwBZZYqkr746x2KzPrZNw4NgI=");
 
-	}
+    }
 
-	@Test
-	public void testEncode() throws UnsupportedEncodingException, NoSuchAlgorithmException {
-		
-		String encodedPassword = authenticator.encode("password");
-        
-		String storedPassword[] = encodedPassword.split(":");
-        assertEquals ("hash must consist of two components", storedPassword.length, 2);
+    @Test
+    public void testEncode() throws UnsupportedEncodingException, NoSuchAlgorithmException {
+
+        String encodedPassword = authenticator.encode("password");
+
+        String storedPassword[] = encodedPassword.split(":");
+        assertEquals("hash must consist of two components", storedPassword.length, 2);
 
         byte salt[] = Base64.decode(storedPassword[0]);
         String hashedPassword = authenticator.encode("password", salt);
-        
+
         assertEquals("compare hashes", storedPassword[1], hashedPassword);
 
-	}
+    }
 
     @Test
     public void testAuthentication() throws UnsupportedEncodingException, NoSuchAlgorithmException {
         Map<String, Object[]> dummyMap = new HashMap<String, Object[]>();
-        assertEquals("32 byte salt authenticated", true, authenticator.authenticate("admin", "password", 0L, dummyMap));
-        assertEquals("20 byte salt authenticated", true, authenticator.authenticate("admin20Byte", "password", 0L, dummyMap));
-        assertEquals("fake user not authenticated", false, authenticator.authenticate("fake", "fake", 0L, dummyMap));
-        assertEquals("bad password not authenticated", false, authenticator.authenticate("admin", "fake", 0L, dummyMap));
-        assertEquals("20 byte user bad password not authenticated", false, authenticator.authenticate("admin20Byte", "fake", 0L, dummyMap));
+        assertEquals("32 byte salt authenticated", true, authenticator.authenticate("admin", "password", 0L, dummyMap).first());
+        assertEquals("20 byte salt authenticated", true, authenticator.authenticate("admin20Byte", "password", 0L, dummyMap).first());
+        assertEquals("fake user not authenticated", false, authenticator.authenticate("fake", "fake", 0L, dummyMap).first());
+        assertEquals("bad password not authenticated", false, authenticator.authenticate("admin", "fake", 0L, dummyMap).first());
+        assertEquals("20 byte user bad password not authenticated", false, authenticator.authenticate("admin20Byte", "fake", 0L, dummyMap).first());
     }
 
 //    @Test

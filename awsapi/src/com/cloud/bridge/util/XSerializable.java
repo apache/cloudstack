@@ -21,6 +21,7 @@ import java.io.PrintWriter;
 import org.w3c.dom.Node;
 
 public interface XSerializable {
-	void serializeTo(XSerializer serializer, int indentLevel, PrintWriter writer);
-	void serializeFrom(XSerializer serializer, Object object, Node node);
+    void serializeTo(XSerializer serializer, int indentLevel, PrintWriter writer);
+
+    void serializeFrom(XSerializer serializer, Object object, Node node);
 }

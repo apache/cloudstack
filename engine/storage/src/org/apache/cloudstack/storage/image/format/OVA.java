@@ -18,8 +18,9 @@
  */
 package org.apache.cloudstack.storage.image.format;
 
-import org.apache.cloudstack.storage.BaseType;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.storage.BaseType;
 
 @Component
 public class OVA extends BaseType implements ImageFormat {

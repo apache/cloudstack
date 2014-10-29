@@ -16,6 +16,8 @@
 // under the License.
 
 (function(cloudStack, $) {
+	var rootDomainId;
+	
     cloudStack.accountsWizard = {
 
         informationWithinLdap: {
@@ -75,20 +77,9 @@
                 validation: {
                     required: true
                 },
-                select: function(args) {
-                    var data = {};
-
-                    if (args.context.users) { // In accounts section
-                        data.listAll = true;
-                    } else if (args.context.domains) { // In domain section (use specific domain)
-                        data.id = args.context.domains[0].id;
-                    }
-
+                select: function(args) {                    
                     $.ajax({
-                        url: createURL("listDomains"),
-                        data: data,
-                        dataType: "json",
-                        async: false,
+                        url: createURL("listDomains"),                        
                         success: function(json) {
                             var items = [];
                             domainObjs = json.listdomainsresponse.domain;
@@ -161,14 +152,23 @@
                 validation: {
                     required: false
                 }
+            },
+            ldapGroupName: {
+                label: 'label.ldap.group.name',
+                docID: 'helpLdapGroupName',
+                validation: {
+                    required: false
+                }
             }
+
         },
 
         action: function(args) {
             var array1 = [];
-            var ldapStatus = isLdapEnabled();
-            console.log("creating user: " + args.username);
-            array1.push("&username=" + args.username);
+            var ldapStatus = args.isLdap;
+            if (args.username) {
+                array1.push("&username=" + args.username);
+            }
 
             if (!ldapStatus) {
                 var password = args.data.password;
@@ -179,9 +179,11 @@
                 array1.push("&firstname=" + args.data.firstname);
                 array1.push("&lastname=" + args.data.lastname);
 
-                var password = args.data.password;
+                password = args.data.password;
                 if (md5Hashed) {
                     password = $.md5(password);
+                } else {
+                	password = todb(password);
                 }
                 array1.push("&password=" + password);
             }
@@ -189,14 +191,16 @@
             array1.push("&domainid=" + args.data.domainid);
 
             var account = args.data.account;
-            if (account === null || account.length === 0) {
-                account = args.username;
+
+            if (account !== null && account.length > 0) {
+                array1.push("&account=" + account);
             }
-            array1.push("&account=" + account);
 
             var accountType = args.data.accounttype;
-            if (args.data.accounttype == "1" && args.data.domainid != rootDomainId) { //if account type is admin, but domain is not Root domain
-                accountType = "2"; // Change accounttype from root-domain("1") to domain-admin("2")
+            if (accountType == "1") { //if "admin" is selected in account type dropdown            
+            	if (rootDomainId == undefined || args.data.domainid != rootDomainId ) { //but current login has no visibility to root domain object, or the selected domain is not root domain
+                    accountType = "2"; // change accountType from root-domain("1") to domain-admin("2")
+            	}
             }
             array1.push("&accounttype=" + accountType);
 
@@ -207,82 +211,43 @@
             if (args.data.networkdomain !== null && args.data.networkdomain.length > 0) {
                 array1.push("&networkdomain=" + args.data.networkdomain);
             }
+            if (args.groupname && args.groupname !== null && args.groupname.length > 0) {
+                array1.push("&group=" + args.groupname);
+            }
 
             if (ldapStatus) {
-                console.log("doing an ldap add");
-                $.ajax({
-                    url: createURL('ldapCreateAccount' + array1.join("")),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                        var item = json.createaccountresponse.account;
-                        args.response.success({
-                            data: item
-                        });
-                    },
-                    error: function(XMLHttpResponse) {
-                        args.response.error(parseXMLHttpResponse(XMLHttpResponse));
-                    }
-                });
+                if (args.groupname) {
+                    $.ajax({
+                        url: createURL('importLdapUsers' + array1.join("")),
+                        dataType: "json",
+                        type: "POST",
+                        async: false,
+                        error: function(XMLHttpResponse) {
+                            args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                        }
+                    });
+                } else if (args.username) {
+                    $.ajax({
+                        url: createURL('ldapCreateAccount' + array1.join("")),
+                        dataType: "json",
+                        type: "POST",
+                        async: false,
+                        error: function(XMLHttpResponse) {
+                            args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                        }
+                    });
+                }
             } else {
-                console.log("doing normal user add");
                 $.ajax({
                     url: createURL('createAccount' + array1.join("")),
                     dataType: "json",
+                    type: "POST",
                     async: false,
-                    success: function(json) {
-                        var item = json.createaccountresponse.account;
-                        args.response.success({
-                            data: item
-                        });
-                    },
                     error: function(XMLHttpResponse) {
                         args.response.error(parseXMLHttpResponse(XMLHttpResponse));
                     }
                 });
             }
-        }
-        /*
-                action: function(args) {
-                    var array1 = [];
-
-                    var username = args.data.username;
-
-                    array1.push("&domainid=" + args.data.domainid);
-
-                    if (args.data.account != null && args.data.account.length != 0) {
-                        array1.push("&account=" + args.data.account);
-                    }
-
-                    if (args.data.accounttype == "1" && args.data.domainid != rootDomainId) {
-                        args.data.accounttype = "2";
-                    }
-                    array1.push("&accountType=" + args.data.accounttype);
-
-                    if (args.data.timezone != null && args.data.timezone.length != 0) {
-                        array1.push("&timezone=" + args.data.timezone);
-                    }
-                    if (args.data.networkdomain != null && args.data.networkdomain != 0) {
-                        array1.push("&networkDomain=" + args.data.networkdomain);
-                    }
-
-                    for (var i = 0; i < username.length; i++) {
-                        $.ajax({
-                            url: createURL("ldapCreateAccount&username=" + username[i] + array1.join("")),
-                            dataType: "json",
-                            async: false,
-                            success: function(json) {
-                                var item = json.createaccountresponse.account;
-                                args.response.success({
-                                    data: item
-                                });
-                            },
-                            error: function(XMLHttpResponse) {
-                                args.response.error(parseXMLHttpResponse(XMLHttpResponse));
-                            }
-                        });
-                    }
-                }
-                */
+        }        
     };
 }(cloudStack, jQuery));

@@ -19,7 +19,7 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackIpAddress {
-	
+
     @SerializedName(ApiConstants.ID)
     private String id;
     @SerializedName(ApiConstants.ACCOUNT)
@@ -66,87 +66,87 @@ public class CloudStackIpAddress {
     public CloudStackIpAddress() {
     }
 
-	public String getId() {
-		return id;
-	}
+    public String getId() {
+        return id;
+    }
 
-	public String getIpAddress() {
-		return ipAddress;
-	}
+    public String getIpAddress() {
+        return ipAddress;
+    }
 
-	public String getAllocated() {
-		return allocated;
-	}
+    public String getAllocated() {
+        return allocated;
+    }
 
-	public String getZoneId() {
-		return zoneId;
-	}
+    public String getZoneId() {
+        return zoneId;
+    }
 
-	public String getZoneName() {
-		return zoneName;
-	}
+    public String getZoneName() {
+        return zoneName;
+    }
 
-	public Boolean getSourceNat() {
-		return sourceNat;
-	}
+    public Boolean getSourceNat() {
+        return sourceNat;
+    }
 
-	public String getAccountName() {
-		return accountName;
-	}
+    public String getAccountName() {
+        return accountName;
+    }
 
-	public String getDomainId() {
-		return domainId;
-	}
+    public String getDomainId() {
+        return domainId;
+    }
 
-	public String getDomainName() {
-		return domainName;
-	}
+    public String getDomainName() {
+        return domainName;
+    }
 
-	public Boolean getForVirtualNetwork() {
-		return forVirtualNetwork;
-	}
+    public Boolean getForVirtualNetwork() {
+        return forVirtualNetwork;
+    }
 
-	public String getVlanId() {
-		return vlanId;
-	}
+    public String getVlanId() {
+        return vlanId;
+    }
 
-	public String getVlanName() {
-		return vlanName;
-	}
+    public String getVlanName() {
+        return vlanName;
+    }
 
-	public Boolean getStaticNat() {
-		return staticNat;
-	}
+    public Boolean getStaticNat() {
+        return staticNat;
+    }
 
-	public String getVirtualMachineId() {
-		return virtualMachineId;
-	}
+    public String getVirtualMachineId() {
+        return virtualMachineId;
+    }
 
-	public String getVirtualMachineName() {
-		return virtualMachineName;
-	}
+    public String getVirtualMachineName() {
+        return virtualMachineName;
+    }
 
-	public String getVirtualMachineDisplayName() {
-		return virtualMachineDisplayName;
-	}
+    public String getVirtualMachineDisplayName() {
+        return virtualMachineDisplayName;
+    }
 
-	public String getAssociatedNetworkId() {
-		return associatedNetworkId;
-	}
+    public String getAssociatedNetworkId() {
+        return associatedNetworkId;
+    }
 
-	public String getNetworkId() {
-		return networkId;
-	}
+    public String getNetworkId() {
+        return networkId;
+    }
 
-	public String getState() {
-		return state;
-	}
+    public String getState() {
+        return state;
+    }
 
-	public String getJobId() {
-		return jobId;
-	}
+    public String getJobId() {
+        return jobId;
+    }
 
-	public Integer getJobStatus() {
-		return jobStatus;
-	}
+    public Integer getJobStatus() {
+        return jobStatus;
+    }
 }

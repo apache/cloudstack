@@ -22,118 +22,118 @@ import com.cloud.bridge.util.XElement;
 
 public class S3ListBucketObjectEntry {
 
-	@XElement(name="Key")
-	protected String key;
-	
-	protected String version;
-	protected boolean isLatest;
-	protected boolean isDeletionMarker;
-	
-	@XElement(name="LastModified")
-	protected Calendar lastModified;
-	
-	@XElement(name="ETag")
-	protected String ETag;
-	
-	@XElement(name="Size")
-	protected long size;
-	
-	@XElement(name="Owner")
-	protected S3CanonicalUser owner = new S3CanonicalUser();
-	
-	@XElement(name="StorageClass")
-	protected String storageClass;
-	
-	public S3ListBucketObjectEntry() {
-		isLatest = false;
-		isDeletionMarker = false;
-	}
+    @XElement(name = "Key")
+    protected String key;
 
-	public String getKey() {
-		return key;
-	}
+    protected String version;
+    protected boolean isLatest;
+    protected boolean isDeletionMarker;
 
-	public void setKey(String key) {
-		this.key = key;
-	}
+    @XElement(name = "LastModified")
+    protected Calendar lastModified;
 
-	public String getVersion() {
-		return version;
-	}
+    @XElement(name = "ETag")
+    protected String ETag;
 
-	public void setVersion(String version) {
-		this.version = version;
-	}
+    @XElement(name = "Size")
+    protected long size;
 
-	public boolean getIsLatest() {
-		return isLatest;
-	}
+    @XElement(name = "Owner")
+    protected S3CanonicalUser owner = new S3CanonicalUser();
 
-	public void setIsLatest(boolean isLatest) {
-		this.isLatest = isLatest;
-	}
+    @XElement(name = "StorageClass")
+    protected String storageClass;
 
-	public boolean getIsDeletionMarker() {
-		return isDeletionMarker;
-	}
+    public S3ListBucketObjectEntry() {
+        isLatest = false;
+        isDeletionMarker = false;
+    }
 
-	public void setIsDeletionMarker(boolean isDeletionMarker) {
-		this.isDeletionMarker = isDeletionMarker;
-	}
+    public String getKey() {
+        return key;
+    }
 
-	public String getETag() {
-		return ETag;
-	}
+    public void setKey(String key) {
+        this.key = key;
+    }
 
-	public void setETag(String eTag) {
-		ETag = eTag;
-	}
+    public String getVersion() {
+        return version;
+    }
 
-	public long getSize() {
-		return size;
-	}
+    public void setVersion(String version) {
+        this.version = version;
+    }
 
-	public void setSize(long size) {
-		this.size = size;
-	}
+    public boolean getIsLatest() {
+        return isLatest;
+    }
 
-	public Calendar getLastModified() {
-		return lastModified;
-	}
+    public void setIsLatest(boolean isLatest) {
+        this.isLatest = isLatest;
+    }
 
-	public void setLastModified(Calendar lastModified) {
-		this.lastModified = lastModified;
-	}
+    public boolean getIsDeletionMarker() {
+        return isDeletionMarker;
+    }
 
-	public String getOwnerCanonicalId() {
-		return owner.getID();
-	}
+    public void setIsDeletionMarker(boolean isDeletionMarker) {
+        this.isDeletionMarker = isDeletionMarker;
+    }
 
-	public void setOwnerCanonicalId(String ownerCanonicalId) {
-		owner.setID(ownerCanonicalId);
-	}
+    public String getETag() {
+        return ETag;
+    }
 
-	public String getOwnerDisplayName() {
-		return owner.getDisplayName();
-	}
+    public void setETag(String eTag) {
+        ETag = eTag;
+    }
 
-	public void setOwnerDisplayName(String ownerDisplayName) {
-		owner.setDisplayName(ownerDisplayName);
-	}
+    public long getSize() {
+        return size;
+    }
 
-	public S3CanonicalUser getOwner() {
-		return owner;
-	}
+    public void setSize(long size) {
+        this.size = size;
+    }
 
-	public void setOwner(S3CanonicalUser owner) {
-		this.owner = owner;
-	}
+    public Calendar getLastModified() {
+        return lastModified;
+    }
 
-	public String getStorageClass() {
-		return storageClass;
-	}
+    public void setLastModified(Calendar lastModified) {
+        this.lastModified = lastModified;
+    }
 
-	public void setStorageClass(String storageClass) {
-		this.storageClass = storageClass;
-	}
+    public String getOwnerCanonicalId() {
+        return owner.getID();
+    }
+
+    public void setOwnerCanonicalId(String ownerCanonicalId) {
+        owner.setID(ownerCanonicalId);
+    }
+
+    public String getOwnerDisplayName() {
+        return owner.getDisplayName();
+    }
+
+    public void setOwnerDisplayName(String ownerDisplayName) {
+        owner.setDisplayName(ownerDisplayName);
+    }
+
+    public S3CanonicalUser getOwner() {
+        return owner;
+    }
+
+    public void setOwner(S3CanonicalUser owner) {
+        this.owner = owner;
+    }
+
+    public String getStorageClass() {
+        return storageClass;
+    }
+
+    public void setStorageClass(String storageClass) {
+        this.storageClass = storageClass;
+    }
 }

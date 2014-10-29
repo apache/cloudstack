@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,11 +15,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api.routing;
+
+import java.util.Arrays;
 
 import com.cloud.agent.api.Answer;
 
-public class SetStaticRouteAnswer extends Answer{
+public class SetStaticRouteAnswer extends Answer {
     String[] results;
 
     protected SetStaticRouteAnswer() {
@@ -26,11 +31,16 @@ public class SetStaticRouteAnswer extends Answer{
 
     public SetStaticRouteAnswer(SetStaticRouteCommand cmd, boolean success, String[] results) {
         super(cmd, success, null);
-        assert (cmd.getStaticRoutes().length == results.length) : "Static routes and their results should be the same length";
-        this.results = results;
+        if (results != null) {
+            assert (cmd.getStaticRoutes().length == results.length) : "Static routes and their results should be the same length";
+            this.results = Arrays.copyOf(results, results.length);
+        }
     }
 
     public String[] getResults() {
-        return results;
+        if (results != null) {
+            return Arrays.copyOf(results, results.length);
+        }
+        return null;
     }
 }

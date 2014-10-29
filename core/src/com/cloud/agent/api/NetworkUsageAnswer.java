@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,14 +15,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
 
 @LogLevel(Log4jLevel.Debug)
 public class NetworkUsageAnswer extends Answer {
-	String routerName;
-	Long bytesSent;
+    String routerName;
+    Long bytesSent;
     Long bytesReceived;
 
     protected NetworkUsageAnswer() {
@@ -37,7 +40,6 @@ public class NetworkUsageAnswer extends Answer {
     public NetworkUsageAnswer(Command command, Exception e) {
         super(command, e);
     }
-
 
     public void setBytesReceived(Long bytesReceived) {
         this.bytesReceived = bytesReceived;
@@ -55,7 +57,7 @@ public class NetworkUsageAnswer extends Answer {
         return bytesSent;
     }
 
-	public String getRouterName() {
-		return routerName;
-	}
+    public String getRouterName() {
+        return routerName;
+    }
 }

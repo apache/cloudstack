@@ -34,7 +34,7 @@ public class Upgrade228to229 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "2.2.8", "2.2.8"};
+        return new String[] {"2.2.8", "2.2.8"};
     }
 
     @Override
@@ -53,7 +53,7 @@ public class Upgrade228to229 implements DbUpgrade {
         if (script == null) {
             throw new CloudRuntimeException("Unable to find db/schema-228to229.sql");
         }
-        return new File[] { new File(script) };
+        return new File[] {new File(script)};
     }
 
     @Override
@@ -62,15 +62,17 @@ public class Upgrade228to229 implements DbUpgrade {
         PreparedStatement pstmt;
         try {
             /*fk_cluster__data_center_id has been wrongly added in previous upgrade(not sure which one), 228to229 upgrade drops it and re-add again*/
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`cluster` ADD CONSTRAINT `fk_cluster__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`) ON DELETE CASCADE");
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`cluster` ADD CONSTRAINT `fk_cluster__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
 
             pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__removed`(`removed`)");
             pstmt.executeUpdate();
-   
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`network_tags` ADD CONSTRAINT `fk_network_tags__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE");
+
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`network_tags` ADD CONSTRAINT `fk_network_tags__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
-            
+
             pstmt.close();
 
         } catch (SQLException e) {
@@ -97,27 +99,26 @@ public class Upgrade228to229 implements DbUpgrade {
         keys = new ArrayList<String>();
         keys.add("i_snapshots__removed");
         indexes.put("snapshots", keys);
-        
+
         //for domain router
         keys = new ArrayList<String>();
         keys.add("i_domain_router__public_ip_address");
         indexes.put("domain_router", keys);
-        
+
         //for user_ip_address
         keys = new ArrayList<String>();
         keys.add("i_user_ip_address__public_ip_address");
         indexes.put("user_ip_address", keys);
-        
-        
+
         //foreign keys to drop - this key would be re-added later
         keys = new ArrayList<String>();
         keys.add("fk_cluster__data_center_id");
         foreignKeys.put("cluster", keys);
-        
+
         keys = new ArrayList<String>();
         keys.add("fk_domain_router__public_ip_address");
         foreignKeys.put("domain_router", keys);
-        
+
         //drop foreign key from network tags table - it would be re-added later
         keys = new ArrayList<String>();
         keys.add("fk_network_tags__network_id");
@@ -134,5 +135,5 @@ public class Upgrade228to229 implements DbUpgrade {
             DbUpgradeUtils.dropKeysIfExist(conn, tableName, indexes.get(tableName), false);
         }
     }
-    
+
 }

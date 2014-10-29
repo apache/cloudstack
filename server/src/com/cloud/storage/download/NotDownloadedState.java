@@ -22,26 +22,19 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 
 public class NotDownloadedState extends DownloadActiveState {
 
+    public NotDownloadedState(DownloadListener downloadListener) {
+        super(downloadListener);
+    }
 
-	public NotDownloadedState(DownloadListener downloadListener) {
-		super(downloadListener);
-	}
+    @Override
+    public String getName() {
+        return Status.NOT_DOWNLOADED.toString();
+    }
 
-	
-
-	@Override
-	public String getName() {
-		return Status.NOT_DOWNLOADED.toString();
-	}
-
-
-
-	@Override
-	public void onEntry(String prevState, DownloadEvent event, Object evtObj) {
-		super.onEntry(prevState, event, evtObj);
-		getDownloadListener().scheduleStatusCheck(RequestType.GET_STATUS);
-	}
-
-
+    @Override
+    public void onEntry(String prevState, DownloadEvent event, Object evtObj) {
+        super.onEntry(prevState, event, evtObj);
+        getDownloadListener().scheduleStatusCheck(RequestType.GET_STATUS);
+    }
 
 }

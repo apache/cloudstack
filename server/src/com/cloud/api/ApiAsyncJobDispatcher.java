@@ -36,7 +36,6 @@ import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.jobs.JobInfo;
-import org.apache.cloudstack.managed.context.ManagedContext;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -47,28 +46,19 @@ import com.cloud.utils.db.EntityManager;
 public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispatcher {
     private static final Logger s_logger = Logger.getLogger(ApiAsyncJobDispatcher.class);
 
-    @Inject private ApiDispatcher _dispatcher;
-    
-    @Inject private AsyncJobManager _asyncJobMgr;
+    @Inject
+    private ApiDispatcher _dispatcher;
+
+    @Inject
+    private AsyncJobManager _asyncJobMgr;
     @Inject
     private EntityManager _entityMgr;
-    @Inject
-    ManagedContext _managedContext;
-    
+
     public ApiAsyncJobDispatcher() {
     }
-    
+
     @Override
     public void runJob(final AsyncJob job) {
-        _managedContext.runWithContext(new Runnable() {
-            @Override
-            public void run() {
-                runJobInContext(job);
-            }
-        });
-    }
-    
-	protected void runJobInContext(AsyncJob job) {
         BaseAsyncCmd cmdObj = null;
         try {
             Class<?> cmdClass = Class.forName(job.getCmd());
@@ -76,14 +66,18 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             cmdObj = ComponentContext.inject(cmdObj);
             cmdObj.configure();
             cmdObj.setJob(job);
-            
-            Type mapType = new TypeToken<Map<String, String>>() {}.getType();
+
+            Type mapType = new TypeToken<Map<String, String>>() {
+            }.getType();
             Gson gson = ApiGsonHelper.getBuilder().create();
             Map<String, String> params = gson.fromJson(job.getCmdInfo(), mapType);
 
             // whenever we deserialize, the UserContext needs to be updated
             String userIdStr = params.get("ctxUserId");
             String acctIdStr = params.get("ctxAccountId");
+            String contextDetails = params.get("ctxDetails");
+
+
             Long userId = null;
             Account accountObject = null;
 
@@ -103,7 +97,12 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
                 accountObject = _entityMgr.findById(Account.class, Long.parseLong(acctIdStr));
             }
 
-            CallContext.register(user, accountObject, job.getRelated());
+            CallContext ctx = CallContext.register(user, accountObject);
+            if(contextDetails != null){
+                Type objectMapType = new TypeToken<Map<Object, Object>>() {}.getType();
+                ctx.putContextParameters((Map<Object, Object>) gson.fromJson(contextDetails, objectMapType));
+            }
+
             try {
                 // dispatch could ultimately queue the job
                 _dispatcher.dispatch(cmdObj, params, true);
@@ -113,7 +112,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             } finally {
                 CallContext.unregister();
             }
-        } catch(Throwable e) {
+        } catch (Throwable e) {
             String errorMsg = null;
             int errorCode = ApiErrorCode.INTERNAL_ERROR.getHttpCode();
             if (!(e instanceof ServerApiException)) {
@@ -134,5 +133,5 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             //         and we need to preserve that as much as possible here
             _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), ApiSerializerHelper.toSerializedString(response));
         }
-	}
+    }
 }

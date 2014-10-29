@@ -21,10 +21,12 @@ import java.util.List;
 
 import com.cloud.utils.db.GenericDao;
 
-public interface OvsTunnelNetworkDao extends
-		GenericDao<OvsTunnelNetworkVO, Long> {
-	OvsTunnelNetworkVO getByFromToNetwork(long from, long to, long networkId);
-	void removeByFromNetwork(long from, long networkId);
-	void removeByFromToNetwork(long from, long to, long networkId);
-	List<OvsTunnelNetworkVO> listByToNetwork(long to, long networkId);
+public interface OvsTunnelNetworkDao extends GenericDao<OvsTunnelNetworkVO, Long> {
+    OvsTunnelNetworkVO getByFromToNetwork(long from, long to, long networkId);
+
+    void removeByFromNetwork(long from, long networkId);
+
+    void removeByFromToNetwork(long from, long to, long networkId);
+
+    List<OvsTunnelNetworkVO> listByToNetwork(long to, long networkId);
 }

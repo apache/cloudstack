@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.cluster;
 
-
 public interface ManagementServerHost {
     long getId();
 

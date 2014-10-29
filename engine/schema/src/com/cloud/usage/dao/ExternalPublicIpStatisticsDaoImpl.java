@@ -23,55 +23,56 @@ import javax.ejb.Local;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.ExternalPublicIpStatisticsVO;
-import com.cloud.user.UserStatisticsVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.vm.dao.DomainRouterDao;
 
 @Component
-@Local(value = { ExternalPublicIpStatisticsDao.class })
+@Local(value = {ExternalPublicIpStatisticsDao.class})
 public class ExternalPublicIpStatisticsDaoImpl extends GenericDaoBase<ExternalPublicIpStatisticsVO, Long> implements ExternalPublicIpStatisticsDao {
 
-	private final SearchBuilder<ExternalPublicIpStatisticsVO> AccountZoneSearch;
-	private final SearchBuilder<ExternalPublicIpStatisticsVO> SingleRowSearch;    
-    
+    private final SearchBuilder<ExternalPublicIpStatisticsVO> AccountZoneSearch;
+    private final SearchBuilder<ExternalPublicIpStatisticsVO> SingleRowSearch;
+
     public ExternalPublicIpStatisticsDaoImpl() {
-    	AccountZoneSearch = createSearchBuilder();
-    	AccountZoneSearch.and("accountId", AccountZoneSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-    	AccountZoneSearch.and("zoneId", AccountZoneSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
-    	AccountZoneSearch.done();
+        AccountZoneSearch = createSearchBuilder();
+        AccountZoneSearch.and("accountId", AccountZoneSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AccountZoneSearch.and("zoneId", AccountZoneSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+        AccountZoneSearch.done();
 
-    	SingleRowSearch = createSearchBuilder();
-    	SingleRowSearch.and("accountId", SingleRowSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-    	SingleRowSearch.and("zoneId", SingleRowSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
-    	SingleRowSearch.and("publicIp", SingleRowSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
-    	SingleRowSearch.done();
+        SingleRowSearch = createSearchBuilder();
+        SingleRowSearch.and("accountId", SingleRowSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        SingleRowSearch.and("zoneId", SingleRowSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+        SingleRowSearch.and("publicIp", SingleRowSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
+        SingleRowSearch.done();
     }
-	
-	public ExternalPublicIpStatisticsVO lock(long accountId, long zoneId, String publicIpAddress) {
-		SearchCriteria<ExternalPublicIpStatisticsVO> sc = getSingleRowSc(accountId, zoneId, publicIpAddress);
-		return lockOneRandomRow(sc, true);
-	}
 
+    @Override
+    public ExternalPublicIpStatisticsVO lock(long accountId, long zoneId, String publicIpAddress) {
+        SearchCriteria<ExternalPublicIpStatisticsVO> sc = getSingleRowSc(accountId, zoneId, publicIpAddress);
+        return lockOneRandomRow(sc, true);
+    }
+
+    @Override
     public ExternalPublicIpStatisticsVO findBy(long accountId, long zoneId, String publicIpAddress) {
-    	SearchCriteria<ExternalPublicIpStatisticsVO> sc = getSingleRowSc(accountId, zoneId, publicIpAddress);
+        SearchCriteria<ExternalPublicIpStatisticsVO> sc = getSingleRowSc(accountId, zoneId, publicIpAddress);
         return findOneBy(sc);
     }
-    
+
     private SearchCriteria<ExternalPublicIpStatisticsVO> getSingleRowSc(long accountId, long zoneId, String publicIpAddress) {
-    	SearchCriteria<ExternalPublicIpStatisticsVO> sc = SingleRowSearch.create();
-    	sc.setParameters("accountId", accountId);
-		sc.setParameters("zoneId", zoneId);
-		sc.setParameters("publicIp", publicIpAddress);
-		return sc;
+        SearchCriteria<ExternalPublicIpStatisticsVO> sc = SingleRowSearch.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("zoneId", zoneId);
+        sc.setParameters("publicIp", publicIpAddress);
+        return sc;
     }
-	
-	public List<ExternalPublicIpStatisticsVO> listBy(long accountId, long zoneId) {
-		SearchCriteria<ExternalPublicIpStatisticsVO> sc = AccountZoneSearch.create();
+
+    @Override
+    public List<ExternalPublicIpStatisticsVO> listBy(long accountId, long zoneId) {
+        SearchCriteria<ExternalPublicIpStatisticsVO> sc = AccountZoneSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("zoneId", zoneId);
         return search(sc, null);
-	}
-	
+    }
+
 }

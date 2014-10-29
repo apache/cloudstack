@@ -28,39 +28,39 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Entity
 @Table(name = "ldap_configuration")
 public class LdapConfigurationVO implements InternalIdentity {
-	@Column(name = "hostname")
-	private String hostname;
+    @Column(name = "hostname")
+    private String hostname;
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id")
-	private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
 
-	@Column(name = "port")
-	private int port;
+    @Column(name = "port")
+    private int port;
 
-	public LdapConfigurationVO() {
-	}
+    public LdapConfigurationVO() {
+    }
 
-	public LdapConfigurationVO(final String hostname, final int port) {
-		this.hostname = hostname;
-		this.port = port;
-	}
+    public LdapConfigurationVO(final String hostname, final int port) {
+        this.hostname = hostname;
+        this.port = port;
+    }
 
-	public String getHostname() {
-		return hostname;
-	}
+    public String getHostname() {
+        return hostname;
+    }
 
-	@Override
-	public long getId() {
-		return id;
-	}
+    @Override
+    public long getId() {
+        return id;
+    }
 
-	public int getPort() {
-		return port;
-	}
+    public int getPort() {
+        return port;
+    }
 
-	public void setId(final long id) {
-		this.id = id;
-	}
+    public void setId(final long id) {
+        this.id = id;
+    }
 }

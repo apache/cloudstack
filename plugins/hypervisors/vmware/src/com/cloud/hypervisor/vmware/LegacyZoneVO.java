@@ -27,12 +27,14 @@ import javax.persistence.Table;
 import com.cloud.utils.NumbersUtil;
 
 /**
-* LegacyZoneVO contains id of CloudStack zone containing clusters from multiple VMware vCetners and/or VMware Datacenters.
-*/
+ * LegacyZoneVO contains id of CloudStack zone containing clusters from multiple VMware vCetners and/or VMware Datacenters.
+ */
 
 @Entity
-@Table(name="legacy_zones")
+@Table(name = "legacy_zones")
 public class LegacyZoneVO implements LegacyZone {
+
+    private static final long serialVersionUID = -3979866054555152793L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -60,7 +62,7 @@ public class LegacyZoneVO implements LegacyZone {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof LegacyZoneVO) {
-            return ((LegacyZoneVO)obj).getId() == this.getId();
+            return ((LegacyZoneVO)obj).getId() == getId();
         } else {
             return false;
         }
@@ -70,7 +72,7 @@ public class LegacyZoneVO implements LegacyZone {
     }
 
     public LegacyZoneVO(long zoneId) {
-        this.id = zoneId;
+        id = zoneId;
     }
 
     public LegacyZoneVO(long id, long zoneId) {

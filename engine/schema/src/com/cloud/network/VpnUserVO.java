@@ -27,49 +27,47 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.Encrypt;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name=("vpn_users"))
+@Table(name = ("vpn_users"))
 public class VpnUserVO implements VpnUser {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="owner_id")
+    @Column(name = "owner_id")
     private long accountId;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="username")
+    @Column(name = "username")
     private String username;
 
     @Encrypt
-    @Column(name="password")
+    @Column(name = "password")
     private String password;
 
-    @Column(name="state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
     private State state;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
     public VpnUserVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public VpnUserVO(long accountId, long domainId, String userName, String password) {
         this.accountId = accountId;
         this.domainId = domainId;
-        this.username = userName;
+        username = userName;
         this.password = password;
-        this.state = State.Add;
-        this.uuid = UUID.randomUUID().toString();
+        state = State.Add;
+        uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -88,7 +86,7 @@ public class VpnUserVO implements VpnUser {
     }
 
     public void setUsername(String userName) {
-        this.username = userName;
+        username = userName;
     }
 
     @Override
@@ -114,7 +112,6 @@ public class VpnUserVO implements VpnUser {
         return domainId;
     }
 
-
     @Override
     public String toString() {
         return new StringBuilder("VpnUser[").append(id).append("-").append(username).append("-").append(accountId).append("]").toString();
@@ -122,10 +119,15 @@ public class VpnUserVO implements VpnUser {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return VpnUser.class;
     }
 }

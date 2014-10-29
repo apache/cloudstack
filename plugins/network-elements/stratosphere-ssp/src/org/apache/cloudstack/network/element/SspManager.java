@@ -40,8 +40,7 @@ public interface SspManager extends Manager {
      * @param context
      * @return
      */
-    public boolean createNetwork(Network network, NetworkOffering offering,
-            DeployDestination dest, ReservationContext context);
+    public boolean createNetwork(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context);
 
     /**
      * Tell ssp to delete a network

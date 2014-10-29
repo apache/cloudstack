@@ -18,7 +18,6 @@ package com.cloud.network.bigswitch;
 
 public class BigSwitchVnsApiException extends Exception {
 
-
     private static final long serialVersionUID = -5864952230870945604L;
 
     public BigSwitchVnsApiException() {

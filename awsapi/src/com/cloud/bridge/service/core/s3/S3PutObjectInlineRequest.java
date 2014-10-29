@@ -23,87 +23,85 @@ import java.io.InputStream;
 import javax.activation.DataHandler;
 
 public class S3PutObjectInlineRequest extends S3Request {
-	protected String bucketName;
-	protected String key;
-	protected long contentLength;
-	protected S3MetaDataEntry[] metaEntries;
-	protected S3AccessControlList acl;
-	protected String cannedAccessPolicy;    // Canned ACLs are public-read, public-read-write, private, authenticated-read or log-delivery-write
-	protected DataHandler data;
-	protected String dataAsString;
-	
-	public S3PutObjectInlineRequest() {
-		super();
-		data = null;
-	}
-	
-	public String getBucketName() {
-		return bucketName;
-	}
-	
-	public void setBucketName(String bucketName) {
-		this.bucketName = bucketName;
-	}
-	
-	public String getKey() {
-		return key;
-	}
-	
-	public void setKey(String key) {
-		this.key = key;
-	}
-	
-	public long getContentLength() {
-		return contentLength;
-	}
-	
-	public void setContentLength(long contentLength) {
-		this.contentLength = contentLength;
-	}
-	
-	public S3MetaDataEntry[] getMetaEntries() {
-		return metaEntries;
-	}
-	
-	public void setMetaEntries(S3MetaDataEntry[] metaEntries) {
-		this.metaEntries = metaEntries;
-	}
-	
-	public S3AccessControlList getAcl() {
-		return acl;
-	}
-	
-	public void setAcl(S3AccessControlList acl) {
-		this.acl = acl;
-	}
-	
-	public String getCannedAccess() {
-		return cannedAccessPolicy;
-	}
+    protected String bucketName;
+    protected String key;
+    protected long contentLength;
+    protected S3MetaDataEntry[] metaEntries;
+    protected S3AccessControlList acl;
+    protected String cannedAccessPolicy;    // Canned ACLs are public-read, public-read-write, private, authenticated-read or log-delivery-write
+    protected DataHandler data;
+    protected String dataAsString;
 
-	public void setCannedAccess(String cannedAccessPolicy) {
-		this.cannedAccessPolicy = cannedAccessPolicy;
-	}
-	
-	public DataHandler getData() {
-		return data;
-	}
-	
-	public void setData(DataHandler data) {
-		this.data = data;
-	}
-	
-	public void setDataAsString( String data ) {
-		this.dataAsString = data;
-	}
-	
-	public InputStream getDataInputStream() throws IOException 
-	{
-		if ( null == data ) 
-		{
-			 ByteArrayInputStream bs = new ByteArrayInputStream( dataAsString.getBytes());
-			 return bs;
-		}
-		else return data.getInputStream();
-	}
+    public S3PutObjectInlineRequest() {
+        super();
+        data = null;
+    }
+
+    public String getBucketName() {
+        return bucketName;
+    }
+
+    public void setBucketName(String bucketName) {
+        this.bucketName = bucketName;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public long getContentLength() {
+        return contentLength;
+    }
+
+    public void setContentLength(long contentLength) {
+        this.contentLength = contentLength;
+    }
+
+    public S3MetaDataEntry[] getMetaEntries() {
+        return metaEntries;
+    }
+
+    public void setMetaEntries(S3MetaDataEntry[] metaEntries) {
+        this.metaEntries = metaEntries;
+    }
+
+    public S3AccessControlList getAcl() {
+        return acl;
+    }
+
+    public void setAcl(S3AccessControlList acl) {
+        this.acl = acl;
+    }
+
+    public String getCannedAccess() {
+        return cannedAccessPolicy;
+    }
+
+    public void setCannedAccess(String cannedAccessPolicy) {
+        this.cannedAccessPolicy = cannedAccessPolicy;
+    }
+
+    public DataHandler getData() {
+        return data;
+    }
+
+    public void setData(DataHandler data) {
+        this.data = data;
+    }
+
+    public void setDataAsString(String data) {
+        this.dataAsString = data;
+    }
+
+    public InputStream getDataInputStream() throws IOException {
+        if (null == data) {
+            ByteArrayInputStream bs = new ByteArrayInputStream(dataAsString.getBytes());
+            return bs;
+        } else
+            return data.getInputStream();
+    }
 }

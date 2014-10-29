@@ -25,8 +25,8 @@ public class EC2DescribeAvailabilityZonesResponse {
     public EC2DescribeAvailabilityZonesResponse() {
     }
 
-    public void addAvailabilityZone( EC2AvailabilityZone param ) {
-        availabilityZoneSet.add( param );
+    public void addAvailabilityZone(EC2AvailabilityZone param) {
+        availabilityZoneSet.add(param);
     }
 
     public EC2AvailabilityZone[] getAvailabilityZoneSet() {

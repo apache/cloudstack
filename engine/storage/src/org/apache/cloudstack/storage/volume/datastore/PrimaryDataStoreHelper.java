@@ -18,10 +18,15 @@
  */
 package org.apache.cloudstack.storage.volume.datastore;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -29,20 +34,21 @@ import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -61,16 +67,19 @@ public class PrimaryDataStoreHelper {
     protected StoragePoolHostDao storagePoolHostDao;
 
     public DataStore createPrimaryDataStore(PrimaryDataStoreParameters params) {
+        if(params == null)
+        {
+            throw new InvalidParameterValueException("createPrimaryDataStore: Input params is null, please check");
+        }
         StoragePoolVO dataStoreVO = dataStoreDao.findPoolByUUID(params.getUuid());
         if (dataStoreVO != null) {
             throw new CloudRuntimeException("duplicate uuid: " + params.getUuid());
         }
-
         dataStoreVO = new StoragePoolVO();
         dataStoreVO.setStorageProviderName(params.getProviderName());
         dataStoreVO.setHostAddress(params.getHost());
-        dataStoreVO.setPath(params.getPath());
         dataStoreVO.setPoolType(params.getType());
+        dataStoreVO.setPath(params.getPath());
         dataStoreVO.setPort(params.getPort());
         dataStoreVO.setName(params.getName());
         dataStoreVO.setUuid(params.getUuid());
@@ -86,6 +95,28 @@ public class PrimaryDataStoreHelper {
         dataStoreVO.setHypervisor(params.getHypervisorType());
 
         Map<String, String> details = params.getDetails();
+        if (params.getType() == StoragePoolType.SMB && details != null) {
+            String user = details.get("user");
+            String password = details.get("password");
+            String domain = details.get("domain");
+            String updatedPath = params.getPath();
+
+            if (user == null || password == null) {
+                String errMsg = "Missing cifs user and password details. Add them as details parameter.";
+                s_logger.warn(errMsg);
+                throw new InvalidParameterValueException(errMsg);
+            } else {
+                try {
+                    password = DBEncryptionUtil.encrypt(URLEncoder.encode(password, "UTF-8"));
+                    details.put("password", password);
+                    updatedPath += "?user=" + user + "&password=" + password + "&domain=" + domain;
+                } catch (UnsupportedEncodingException e) {
+                    throw new CloudRuntimeException("Error while generating the cifs url. " + e.getMessage());
+                }
+            }
+
+            dataStoreVO.setPath(updatedPath);
+        }
         String tags = params.getTags();
         if (tags != null) {
             String[] tokens = tags.split(",");
@@ -98,9 +129,7 @@ public class PrimaryDataStoreHelper {
                 details.put(tag, "true");
             }
         }
-
         dataStoreVO = dataStoreDao.persist(dataStoreVO, details);
-
         return dataStoreMgr.getDataStore(dataStoreVO.getId(), DataStoreRole.Primary);
     }
 
@@ -117,8 +146,7 @@ public class PrimaryDataStoreHelper {
         pool.setCapacityBytes(existingInfo.getCapacityBytes());
         pool.setStatus(StoragePoolStatus.Up);
         this.dataStoreDao.update(pool.getId(), pool);
-        this.storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE,
-                pool.getUsedBytes());
+        this.storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, pool.getUsedBytes());
         return dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
     }
 

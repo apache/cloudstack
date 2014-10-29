@@ -20,18 +20,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ServiceOfferings {
-	
-	private List<ServiceOffer> offerSet = new ArrayList<ServiceOffer>();    
 
-	public ServiceOfferings() {
-	}
-	
-	public void addOffer( ServiceOffer param ) {
-		offerSet.add( param );
-	}
-	
-	public ServiceOffer[] getOfferSet() {
-		return offerSet.toArray(new ServiceOffer[0]);
-	}
+    private List<ServiceOffer> offerSet = new ArrayList<ServiceOffer>();
+
+    public ServiceOfferings() {
+    }
+
+    public void addOffer(ServiceOffer param) {
+        offerSet.add(param);
+    }
+
+    public ServiceOffer[] getOfferSet() {
+        return offerSet.toArray(new ServiceOffer[0]);
+    }
 
 }

@@ -23,6 +23,8 @@ import com.cloud.utils.db.GenericDao;
 
 public interface PhysicalNetworkDao extends GenericDao<PhysicalNetworkVO, Long> {
     List<PhysicalNetworkVO> listByZone(long zoneId);
+
     List<PhysicalNetworkVO> listByZoneIncludingRemoved(long zoneId);
+
     List<PhysicalNetworkVO> listByZoneAndTrafficType(long dataCenterId, TrafficType trafficType);
 }

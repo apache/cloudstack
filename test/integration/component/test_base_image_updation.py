@@ -25,13 +25,13 @@
 """
 
 #Import Local Modules
-import marvin
 from marvin.codes import (PASS,
+                          FAIL,
                           RECURRING)
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
 
-from marvin.integration.lib.base import (ServiceOffering,
+from marvin.lib.base import (ServiceOffering,
                                          Account,
                                          VirtualMachine,
                                          Volume,
@@ -41,17 +41,16 @@ from marvin.integration.lib.base import (ServiceOffering,
                                          Template
                                          )
 
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            list_templates
                                            )
 
-from marvin.integration.lib.utils import (validateList,
+from marvin.lib.utils import (validateList,
                                           cleanup_resources)
 
 import time
-from datetime import datetime, timedelta
 
 class Services:
     """Test Base Image Updation
@@ -100,7 +99,7 @@ class Services:
                         "name": "Public template - Xen",
                         "ostype": "CentOS 5.3 (64-bit)",
                         "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
-                        "hypervisor": "XenServer",
+                        "hypervisor": "xenserver",
                         "format": "VHD",
                         "isfeatured": True,
                         "ispublic": True,
@@ -111,8 +110,20 @@ class Services:
                         "name": "Public template -KVM",
                         "ostype": "CentOS 5.3 (64-bit)",
                         "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.qcow2.bz2",
-                        "hypervisor": "KVM",
+                        "hypervisor": "kvm",
                         "format": "qcow2",
+                        "isfeatured": True,
+                        "ispublic": True,
+                        "isextractable": True,
+
+                },
+                "VMware": {
+                        "displaytext": "Public Template - VMware",
+                        "name": "Public template -VMware",
+                        "ostype": "CentOS 5.3 (64-bit)",
+                        "url": "http://download.cloud.com/releases/2.2.0/CentOS5.3-x86_64.ova",
+                        "hypervisor": "vmware",
+                        "format": "ova",
                         "isfeatured": True,
                         "ispublic": True,
                         "isextractable": True,
@@ -150,14 +161,14 @@ class TestBaseImageUpdate(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestBaseImageUpdate,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestBaseImageUpdate, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -227,6 +238,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
 
@@ -281,6 +293,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
 
         return
 
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_01_deploy_instance_with_is_volatile_offering(self):
         """ Test deploy an instance with service offerings with IsVolatile set.
         """
@@ -311,6 +324,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
                              )
         return
 
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_02_reboot_instance_with_is_volatile_offering(self):
         """ Test rebooting instances created with isVolatile service offerings
         """
@@ -388,6 +402,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
 
         return
 
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_03_restore_vm_with_new_template(self):
         """ Test restoring a vm with different template than the one it was created with
         """
@@ -406,14 +421,15 @@ class TestBaseImageUpdate(cloudstackTestCase):
         hypervisor = host_list_validation_result[1].hypervisor
 
         for k, v in self.services["templates"].items():
-            if k == hypervisor:
+            if k.lower() == hypervisor.lower():
                 # Register new template
                 template = Template.register(
                                         self.apiclient,
                                         v,
                                         zoneid=self.zone.id,
                                         account=self.account.name,
-                                        domainid=self.account.domainid
+                                        domainid=self.account.domainid,
+                                        hypervisor=self.hypervisor
                                         )
                 self.debug(
                     "Registered a template of format: %s with ID: %s" % (
@@ -500,9 +516,9 @@ class TestBaseImageUpdate(cloudstackTestCase):
                                     "VM created with IsVolatile=False doesn't have same ip after restore. Got : %s Expected : %s"
                                     %(vm_without_reset.nic[0].ipaddress, self.vm_without_reset.nic[0].ipaddress)
                                 )
+        return
 
-	    return
-
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_04_reoccuring_snapshot_rules(self):
         """
         1) Create a VM using the Service offering IsVolatile enabled
@@ -530,14 +546,8 @@ class TestBaseImageUpdate(cloudstackTestCase):
                                             vm_with_reset.rootdeviceid
                                         )
 
-        now = datetime.now()
-        delta = timedelta(minutes=15)
-        scheduled_time = now + delta
-
-        self.services["recurring_snapshot"]["schedule"] = scheduled_time.minute
-
         self.debug("Creating recurring snapshot policy for root disk on vm created with IsVolatile=True")
-        self.debug("Snapshot Policy - Type : %s Scheduled minute : %s" %(
+        self.debug("Snapshot Policy - Type : %s Scheduled Hours : %s" %(
             self.services["recurring_snapshot"]["intervaltype"],
             self.services["recurring_snapshot"]["schedule"]))
 
@@ -571,7 +581,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
                         self.services["recurring_snapshot"]["maxsnaps"],
                         "Check interval type in list resources call"
                         )
-        sleep_seconds = delta.seconds + 600
+        sleep_seconds = (self.services["recurring_snapshot"]["schedule"]) * 3600 + 600
         sleep_minutes = sleep_seconds/60
         self.debug("Sleeping for %s minutes till the volume is snapshoted" %sleep_minutes)
         time.sleep(sleep_seconds)
@@ -640,9 +650,13 @@ class TestBaseImageUpdate(cloudstackTestCase):
                    Here we are passing root disk id of vm before reboot which does not exist hence\
                    listing should fail")
 
-        with self.assertRaises(Exception):
-            list_snapshots_policy = SnapshotPolicy.list(
-                                                     self.apiclient,
-                                                     volumeid=vm_with_reset_root_disk_id
-                                                     )
+        try:
+            listSnapshotPolicies = SnapshotPolicy.list(
+                                        self.apiclient,
+                                        volumeid=vm_with_reset_root_disk_id)
+        except Exception as e:
+            self.fail("Failed to list snapshot policies: %s" % e)
+
+        self.assertEqual(validateList(listSnapshotPolicies)[0], FAIL,\
+                "Snapshot policies list should be empty")
         return

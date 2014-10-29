@@ -43,41 +43,20 @@ def echo(fn):
     return wrapped
 
 @echo
-def gethostvmstats(session, args):
-    collect_host_stats = args['collectHostStats']
-    consolidation_function = args['consolidationFunction']
-    interval = args['interval']
-    start_time = args['startTime']
-    result = hostvmstats.get_stats(session, collect_host_stats, consolidation_function, interval, start_time)
-    return result
-    
-@echo
 def setup_iscsi(session, args):
    uuid=args['uuid']
    try:
-       cmd = ["bash", "/usr/lib/xcp/bin/setup_iscsi.sh", uuid]
+       cmd = ["b", "/opt/cloud/bin/setup_iscsi.sh", uuid]
        txt = util.pread2(cmd)
    except:
        txt = ''
    return '> DONE <'
  
-
-@echo
-def getgateway(session, args):
-    mgmt_ip = args['mgmtIP']
-    try:
-        cmd = ["bash", "/usr/lib/xcp/bin/network_info.sh", "-g", mgmt_ip]
-        txt = util.pread2(cmd)
-    except:
-        txt = ''
-
-    return txt
-    
 @echo
 def preparemigration(session, args):
     uuid = args['uuid']
     try:
-        cmd = ["/usr/lib/xcp/bin/make_migratable.sh", uuid]
+        cmd = ["/opt/cloud/bin/make_migratable.sh", uuid]
         util.pread2(cmd)
         txt = 'success'
     except:
@@ -89,7 +68,7 @@ def preparemigration(session, args):
 @echo
 def setIptables(session, args):
     try:
-        '''cmd = ["/bin/bash", "/usr/lib/xcp/bin/setupxenserver.sh"]
+        '''cmd = ["/bin/bash", "/opt/cloud/bin/setupxenserver.sh"]
         txt = util.pread2(cmd)'''
         txt = 'success'
     except:
@@ -118,7 +97,7 @@ def pingdomr(session, args):
 def kill_copy_process(session, args):
     namelabel = args['namelabel']
     try:
-        cmd = ["bash", "/usr/lib/xcp/bin/kill_copy_process.sh", namelabel]
+        cmd = ["bash", "/opt/cloud/bin/kill_copy_process.sh", namelabel]
         txt = util.pread2(cmd)
     except:
         txt = 'false'
@@ -133,7 +112,7 @@ def pingxenserver(session, args):
 def ipassoc(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/usr/lib/xcp/bin/ipassoc.sh")
+    cmd.insert(0, "/opt/cloud/bin/ipassoc.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -147,7 +126,7 @@ def ipassoc(session, args):
 def pingtest(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/usr/lib/xcp/bin/pingtest.sh")
+    cmd.insert(0, "/opt/cloud/bin/pingtest.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -162,7 +141,7 @@ def pingtest(session, args):
 def savePassword(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/usr/lib/xcp/bin/save_password_to_domr.sh")
+    cmd.insert(0, "/opt/cloud/bin/save_password_to_domr.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -177,7 +156,7 @@ def savePassword(session, args):
 def saveDhcpEntry(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/usr/lib/xcp/bin/dhcp_entry.sh")
+    cmd.insert(0, "/opt/cloud/bin/dhcp_entry.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -192,7 +171,7 @@ def saveDhcpEntry(session, args):
 def lt2p_vpn(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/usr/lib/xcp/bin/l2tp_vpn.sh")
+    cmd.insert(0, "/opt/cloud/bin/l2tp_vpn.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -239,7 +218,7 @@ def setLinkLocalIP(session, args):
 def setFirewallRule(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/usr/lib/xcp/bin/call_firewall.sh")
+    cmd.insert(0, "/opt/cloud/bin/call_firewall.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -254,7 +233,7 @@ def setFirewallRule(session, args):
 def setLoadBalancerRule(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/usr/lib/xcp/bin/call_loadbalancer.sh")
+    cmd.insert(0, "/opt/cloud/bin/call_loadbalancer.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -300,7 +279,7 @@ def deleteFile(session, args):
 def networkUsage(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/usr/lib/xcp/bin/networkUsage.sh")
+    cmd.insert(0, "/opt/cloud/bin/networkUsage.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -1350,7 +1329,7 @@ def network_rules(session, args):
 def checkRouter(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/usr/lib/xcp/bin/getRouterStatus.sh")
+    cmd.insert(0, "/opt/cloud/bin/getRouterStatus.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -1364,7 +1343,7 @@ def checkRouter(session, args):
 def bumpUpPriority(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/usr/lib/xcp/bin/bumpUpPriority.sh")
+    cmd.insert(0, "/opt/cloud/bin/bumpUpPriority.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -1443,26 +1422,10 @@ def createISOVHD(session, args):
     return vdi_uuid
 
 @echo
-def routerProxy(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/usr/lib/xcp/bin/router_proxy.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-        if txt is None or len(txt) == 0 :
-            txt = 'success'
-    except:
-        util.SMlog("routerProxy command " + sargs + " failed "  )
-        txt = ''
-
-    return txt
-
-@echo
 def getDomRVersion(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/usr/lib/xcp/bin/getDomRVersion.sh")
+    cmd.insert(0, "/opt/cloud/bin/getDomRVersion.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -1473,8 +1436,8 @@ def getDomRVersion(session, args):
     return txt
 
 if __name__ == "__main__":
-     XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, 
-                            "getgateway": getgateway, "preparemigration": preparemigration, 
+     XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi,
+                            "preparemigration": preparemigration, 
                             "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
                             "ipassoc": ipassoc, "savePassword": savePassword, 
                             "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, 
@@ -1489,5 +1452,4 @@ if __name__ == "__main__":
                             "bumpUpPriority":bumpUpPriority, "getDomRVersion":getDomRVersion,
                             "kill_copy_process":kill_copy_process,
                             "createISOVHD":createISOVHD,
-                            "routerProxy":routerProxy,
                             "setDNATRule":setDNATRule})

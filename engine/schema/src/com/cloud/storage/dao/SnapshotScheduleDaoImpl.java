@@ -30,7 +30,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = { SnapshotScheduleDao.class })
+@Local(value = {SnapshotScheduleDao.class})
 public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, Long> implements SnapshotScheduleDao {
     protected final SearchBuilder<SnapshotScheduleVO> executableSchedulesSearch;
     protected final SearchBuilder<SnapshotScheduleVO> coincidingSchedulesSearch;
@@ -40,19 +40,14 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
     protected SnapshotScheduleDaoImpl() {
 
         executableSchedulesSearch = createSearchBuilder();
-        executableSchedulesSearch.and("scheduledTimestamp", executableSchedulesSearch.entity().getScheduledTimestamp(),
-                SearchCriteria.Op.LT);
-        executableSchedulesSearch.and("asyncJobId", executableSchedulesSearch.entity().getAsyncJobId(),
-                SearchCriteria.Op.NULL);
+        executableSchedulesSearch.and("scheduledTimestamp", executableSchedulesSearch.entity().getScheduledTimestamp(), SearchCriteria.Op.LT);
+        executableSchedulesSearch.and("asyncJobId", executableSchedulesSearch.entity().getAsyncJobId(), SearchCriteria.Op.NULL);
         executableSchedulesSearch.done();
 
         coincidingSchedulesSearch = createSearchBuilder();
-        coincidingSchedulesSearch.and("volumeId", coincidingSchedulesSearch.entity().getVolumeId(),
-                SearchCriteria.Op.EQ);
-        coincidingSchedulesSearch.and("scheduledTimestamp", coincidingSchedulesSearch.entity().getScheduledTimestamp(),
-                SearchCriteria.Op.LT);
-        coincidingSchedulesSearch.and("asyncJobId", coincidingSchedulesSearch.entity().getAsyncJobId(),
-                SearchCriteria.Op.NULL);
+        coincidingSchedulesSearch.and("volumeId", coincidingSchedulesSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        coincidingSchedulesSearch.and("scheduledTimestamp", coincidingSchedulesSearch.entity().getScheduledTimestamp(), SearchCriteria.Op.LT);
+        coincidingSchedulesSearch.and("asyncJobId", coincidingSchedulesSearch.entity().getAsyncJobId(), SearchCriteria.Op.NULL);
         coincidingSchedulesSearch.done();
 
         VolumeIdSearch = createSearchBuilder();

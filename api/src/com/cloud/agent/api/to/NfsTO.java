@@ -23,6 +23,7 @@ public class NfsTO implements DataStoreTO {
     private String _url;
     private DataStoreRole _role;
     private String uuid;
+    private static final String pathSeparator = "/";
 
     public NfsTO() {
 
@@ -44,8 +45,8 @@ public class NfsTO implements DataStoreTO {
         return _url;
     }
 
-    public void setUrl(String _url) {
-        this._url = _url;
+    public void setUrl(String url) {
+        this._url = url;
     }
 
     @Override
@@ -53,8 +54,8 @@ public class NfsTO implements DataStoreTO {
         return _role;
     }
 
-    public void setRole(DataStoreRole _role) {
-        this._role = _role;
+    public void setRole(DataStoreRole role) {
+        this._role = role;
     }
 
     @Override
@@ -64,5 +65,10 @@ public class NfsTO implements DataStoreTO {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public String getPathSeparator() {
+        return pathSeparator;
     }
 }

@@ -1,20 +1,22 @@
 <!--
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements. See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership. The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License. You may obtain a copy of the License at
 
-  http://www.apache.org/licenses/LICENSE-2.0
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied. See the License for the
-  specific language governing permissions and limitations
-  under the License.
+      http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
 -->
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -31,7 +33,14 @@
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="orderConfigKey" value="user.authenticators.order" />
         <property name="excludeKey" value="user.authenticators.exclude" />
-        <property name="orderConfigDefault" value="SHA256SALT,MD5,LDAP,PLAINTEXT" />
+        <property name="orderConfigDefault" value="SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT" />
+    </bean>
+
+    <bean id="pluggableAPIAuthenticatorsRegistry"
+          class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="orderConfigKey" value="pluggableApi.authenticators.order" />
+        <property name="excludeKey" value="pluggableApi.authenticators.exclude" />
+        <property name="orderConfigDefault" value="SAML2Auth" />
     </bean>
 
     <bean id="userPasswordEncodersRegistry"
@@ -75,6 +84,12 @@
         <property name="orderConfigDefault"
             value="FirstFitPlanner,UserDispersingPlanner,UserConcentratedPodPlanner,ImplicitDedicationPlanner,BareMetalPlanner" />
         <property name="excludeKey" value="deployment.planners.exclude" />
+	<property name="excludeDefault" value="SkipHeuresticsPlanner" />
+    </bean>
+
+    <bean id="haPlannersRegistry"
+          class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="ha.planners.exclude" />
     </bean>
 
     <bean id="podAllocatorsRegistry"
@@ -84,6 +99,8 @@
 
     <bean id="hostAllocatorsRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+	<property name="orderConfigKey" value="host.allocators.order" />
+        <property name="orderConfigDefault" value="FirstFitRouting" />
         <property name="excludeKey" value="host.allocators.exclude" />
         <property name="excludeDefault"
             value="RandomAllocator,TestingAllocator,FirstFitAllocator,RecreateHostAllocator" />
@@ -214,6 +231,21 @@
         </property>
     </bean>
 
+    <bean id="remoteAccessVPNServiceProviderRegistry"
+        class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="remote.access.vpn.service.provider.exclude" />
+        <property name="preRegistered">
+            <list>
+                <ref bean="VpcVirtualRouter" />
+            </list>
+        </property>
+    </bean>
+
+    <bean id="gslbServiceProvidersRegistry"
+        class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="gslb.service.provider.exclude" />
+    </bean>
+
     <bean id="affinityProcessorsRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="orderConfigKey" value="affinity.processors.order" />
@@ -234,6 +266,11 @@
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="excludeKey" value="api.checkers.exclude" />
     </bean>
+    
+    <bean id="querySelectorsRegistry"
+        class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="query.selectors.exclude" />
+    </bean>    
 
     <bean id="apiCommandsRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">

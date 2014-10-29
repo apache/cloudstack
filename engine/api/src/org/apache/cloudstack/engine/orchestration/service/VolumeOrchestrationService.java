@@ -21,6 +21,8 @@ package org.apache.cloudstack.engine.orchestration.service;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -39,10 +41,12 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 /**
  * VolumeOrchestrationService is a PURE orchestration service on CloudStack
@@ -52,7 +56,23 @@ import com.cloud.vm.VirtualMachineProfile;
  * to provision volumes.
  */
 public interface VolumeOrchestrationService {
-    VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType) throws ConcurrentOperationException, StorageUnavailableException;
+
+    static final ConfigKey<Long> CustomDiskOfferingMinSize = new ConfigKey<Long>("Advanced",
+        Long.class,
+        "custom.diskoffering.size.min",
+        "1",
+        "Minimum size in GB for custom disk offering.",
+        true
+    );
+    static final ConfigKey<Long> CustomDiskOfferingMaxSize = new ConfigKey<Long>("Advanced",
+        Long.class,
+        "custom.diskoffering.size.max",
+        "1024",
+        "Maximum size in GB for custom disk offering.",
+        true
+    );
+    VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType)
+        throws ConcurrentOperationException, StorageUnavailableException;
 
     Volume allocateDuplicateVolume(Volume oldVol, Long templateId);
 
@@ -62,19 +82,23 @@ public interface VolumeOrchestrationService {
 
     String getVmNameOnVolume(Volume volume);
 
-    VolumeInfo createVolumeFromSnapshot(Volume volume, Snapshot snapshot) throws StorageUnavailableException;
+    VolumeInfo createVolumeFromSnapshot(Volume volume, Snapshot snapshot, UserVm vm) throws StorageUnavailableException;
 
     Volume migrateVolume(Volume volume, StoragePool destPool) throws StorageUnavailableException;
 
     void destroyVolume(Volume volume);
 
-    DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, VirtualMachine vm, VirtualMachineTemplate template, Account owner);
+    DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template, Account owner);
 
-    VolumeInfo createVolumeOnPrimaryStorage(VirtualMachine vm, Volume rootVolumeOfVm, VolumeInfo volume, HypervisorType rootDiskHyperType) throws NoTransitionException;
+    VolumeInfo createVolumeOnPrimaryStorage(VirtualMachine vm, VolumeInfo volume, HypervisorType rootDiskHyperType, StoragePool storagePool) throws NoTransitionException;
 
     void release(VirtualMachineProfile profile);
 
     void cleanupVolumes(long vmId) throws ConcurrentOperationException;
+
+    void revokeAccess(DataObject dataObject, Host host, DataStore dataStore);
+
+    void revokeAccess(long vmId, long hostId);
 
     void migrateVolumes(VirtualMachine vm, VirtualMachineTO vmTo, Host srcHost, Host destHost, Map<Volume, StoragePool> volumeToPool);
 
@@ -86,7 +110,8 @@ public interface VolumeOrchestrationService {
 
     boolean canVmRestartOnAnotherServer(long vmId);
 
-    DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, VirtualMachineTemplate template, VirtualMachine vm, Account owner);
+    DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
+        Account owner);
 
     String getVmNameFromVolumeId(long volumeId);
 
@@ -97,4 +122,5 @@ public interface VolumeOrchestrationService {
     StoragePool findStoragePool(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, Set<StoragePool> avoid);
 
     void updateVolumeDiskChain(long volumeId, String path, String chainInfo);
+
 }

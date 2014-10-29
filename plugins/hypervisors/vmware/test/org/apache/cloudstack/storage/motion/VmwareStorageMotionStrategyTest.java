@@ -16,6 +16,13 @@
 // under the License.
 package org.apache.cloudstack.storage.motion;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,18 +30,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.framework.async.AsyncCallFuture;
-import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.framework.async.AsyncRpcContext;
-import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -52,6 +47,19 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.framework.async.AsyncRpcContext;
+import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.test.utils.SpringUtils;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.MigrateWithStorageAnswer;
 import com.cloud.agent.api.MigrateWithStorageCommand;
@@ -63,24 +71,22 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 public class VmwareStorageMotionStrategyTest {
 
-    @Inject VmwareStorageMotionStrategy strategy = new VmwareStorageMotionStrategy();
-    @Inject AgentManager agentMgr;
-    @Inject VolumeDao volDao;
-    @Inject VolumeDataFactory volFactory;
-    @Inject PrimaryDataStoreDao storagePoolDao;
-    @Inject VMInstanceDao instanceDao;
+    @Inject
+    VmwareStorageMotionStrategy strategy = new VmwareStorageMotionStrategy();
+    @Inject
+    AgentManager agentMgr;
+    @Inject
+    VolumeDao volDao;
+    @Inject
+    VolumeDataFactory volFactory;
+    @Inject
+    PrimaryDataStoreDao storagePoolDao;
+    @Inject
+    VMInstanceDao instanceDao;
 
     CopyCommandResult result;
 
@@ -136,7 +142,7 @@ public class VmwareStorageMotionStrategyTest {
         when(agentMgr.send(anyLong(), isA(MigrateWithStorageCommand.class))).thenReturn(migAnswerMock);
 
         strategy.copyAsync(volumeMap, to, srcHost, destHost, caller);
-        assertTrue("Migration within cluster isn't successful.", this.result.isSuccess());
+        assertTrue("Migration within cluster isn't successful.", result.isSuccess());
     }
 
     @Test
@@ -160,7 +166,7 @@ public class VmwareStorageMotionStrategyTest {
         when(agentMgr.send(anyLong(), isA(MigrateWithStorageCommand.class))).thenReturn(migAnswerMock);
 
         strategy.copyAsync(volumeMap, to, srcHost, destHost, caller);
-        assertFalse("Migration within cluster didn't fail.", this.result.isSuccess());
+        assertFalse("Migration within cluster didn't fail.", result.isSuccess());
     }
 
     @Test
@@ -184,7 +190,7 @@ public class VmwareStorageMotionStrategyTest {
         when(agentMgr.send(anyLong(), isA(MigrateWithStorageCommand.class))).thenReturn(migAnswerMock);
 
         strategy.copyAsync(volumeMap, to, srcHost, destHost, caller);
-        assertTrue("Migration across cluster isn't successful.", this.result.isSuccess());
+        assertTrue("Migration across cluster isn't successful.", result.isSuccess());
     }
 
     @Test
@@ -208,33 +214,27 @@ public class VmwareStorageMotionStrategyTest {
         when(agentMgr.send(anyLong(), isA(MigrateWithStorageCommand.class))).thenReturn(migAnswerMock);
 
         strategy.copyAsync(volumeMap, to, srcHost, destHost, caller);
-        assertFalse("Migration across cluster didn't fail.", this.result.isSuccess());
+        assertFalse("Migration across cluster didn't fail.", result.isSuccess());
     }
 
     private class MockContext<T> extends AsyncRpcContext<T> {
-        final Map<VolumeInfo, DataStore> volumeToPool;
-        final AsyncCallFuture<CommandResult> future;
         /**
          * @param callback
          */
-        public MockContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<CommandResult> future,
-                Map<VolumeInfo, DataStore> volumeToPool) {
+        public MockContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<CommandResult> future, Map<VolumeInfo, DataStore> volumeToPool) {
             super(callback);
-            this.volumeToPool = volumeToPool;
-            this.future = future;
         }
     }
 
-    protected Void mockCallBack(AsyncCallbackDispatcher<VmwareStorageMotionStrategyTest,
-            CopyCommandResult> callback, MockContext<CommandResult> context) {
-        this.result = callback.getResult();
+    protected Void mockCallBack(AsyncCallbackDispatcher<VmwareStorageMotionStrategyTest, CopyCommandResult> callback, MockContext<CommandResult> context) {
+        result = callback.getResult();
         return null;
     }
 
     @Configuration
-    @ComponentScan(basePackageClasses = { VmwareStorageMotionStrategy.class },
-    includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
-    useDefaultFilters = false)
+    @ComponentScan(basePackageClasses = {VmwareStorageMotionStrategy.class},
+                   includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
+                   useDefaultFilters = false)
     public static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         @Bean

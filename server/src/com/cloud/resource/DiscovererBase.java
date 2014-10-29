@@ -16,35 +16,41 @@
 // under the License.
 package com.cloud.resource;
 
+import com.cloud.configuration.Config;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.network.NetworkModel;
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.net.UrlUtil;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
-import com.cloud.configuration.Config;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.network.NetworkModel;
-import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.net.UrlUtil;
-
 public abstract class DiscovererBase extends AdapterBase implements Discoverer {
     protected Map<String, String> _params;
     private static final Logger s_logger = Logger.getLogger(DiscovererBase.class);
-    @Inject protected ClusterDao _clusterDao;
-    @Inject protected ConfigurationDao _configDao;
-    @Inject protected NetworkModel _networkMgr;
-    @Inject protected HostDao _hostDao;
+    @Inject
+    protected ClusterDao _clusterDao;
+    @Inject
+    protected ConfigurationDao _configDao;
+    @Inject
+    protected NetworkModel _networkMgr;
+    @Inject
+    protected HostDao _hostDao;
+    @Inject
+    protected ResourceManager _resourceMgr;
+    @Inject
+    protected DataCenterDao _dcDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -77,12 +83,12 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
         return true;
     }
 
-    protected ServerResource getResource(String resourceName){
+    protected ServerResource getResource(String resourceName) {
         ServerResource resource = null;
         try {
             Class<?> clazz = Class.forName(resourceName);
             Constructor constructor = clazz.getConstructor();
-            resource = (ServerResource) constructor.newInstance();
+            resource = (ServerResource)constructor.newInstance();
         } catch (ClassNotFoundException e) {
             s_logger.warn("Unable to find class " + resourceName, e);
         } catch (InstantiationException e) {
@@ -102,7 +108,7 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
         return resource;
     }
 
-    protected HashMap<String, Object> buildConfigParams(HostVO host){
+    protected HashMap<String, Object> buildConfigParams(HostVO host) {
         HashMap<String, Object> params = new HashMap<String, Object>(host.getDetails().size() + 5);
         params.putAll(host.getDetails());
 
@@ -129,8 +135,11 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
         params.put("secondary.storage.vm", "false");
         params.put("max.template.iso.size", _configDao.getValue(Config.MaxTemplateAndIsoSize.toString()));
         params.put("migratewait", _configDao.getValue(Config.MigrateWait.toString()));
-        params.put(Config.XenMaxNics.toString().toLowerCase(), _configDao.getValue(Config.XenMaxNics.toString()));
-        params.put(Config.XenHeartBeatInterval.toString().toLowerCase(), _configDao.getValue(Config.XenHeartBeatInterval.toString()));
+        params.put(Config.XenServerMaxNics.toString().toLowerCase(), _configDao.getValue(Config.XenServerMaxNics.toString()));
+        params.put(Config.XenServerHeartBeatInterval.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatInterval.toString()));
+        params.put(Config.XenServerHeartBeatTimeout.toString().toLowerCase(), _configDao.getValue(Config.XenServerHeartBeatTimeout.toString()));
+        params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
+
         return params;
 
     }
@@ -140,7 +149,7 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
         String resourceName = host.getResource();
         ServerResource resource = getResource(resourceName);
 
-        if(resource != null){
+        if (resource != null) {
             _hostDao.loadDetails(host);
             updateNetworkLabels(host);
 
@@ -159,7 +168,7 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
         return resource;
     }
 
-    private void updateNetworkLabels(HostVO host){
+    private void updateNetworkLabels(HostVO host) {
         //check if networkLabels need to be updated in details
         //we send only private and storage network label to the resource.
         String privateNetworkLabel = _networkMgr.getDefaultManagementTrafficLabel(host.getDataCenterId(), host.getHypervisorType());
@@ -170,15 +179,15 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
 
         boolean update = false;
 
-        if(privateNetworkLabel != null && !privateNetworkLabel.equalsIgnoreCase(privateDevice)){
+        if (privateNetworkLabel != null && !privateNetworkLabel.equalsIgnoreCase(privateDevice)) {
             host.setDetail("private.network.device", privateNetworkLabel);
             update = true;
         }
-        if(storageNetworkLabel != null && !storageNetworkLabel.equalsIgnoreCase(storageDevice)){
+        if (storageNetworkLabel != null && !storageNetworkLabel.equalsIgnoreCase(storageDevice)) {
             host.setDetail("storage.network.device1", storageNetworkLabel);
             update = true;
         }
-        if(update){
+        if (update) {
             _hostDao.saveDetails(host);
         }
     }

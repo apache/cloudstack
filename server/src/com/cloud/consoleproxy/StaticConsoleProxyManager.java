@@ -16,16 +16,12 @@
 // under the License.
 package com.cloud.consoleproxy;
 
-
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
@@ -33,10 +29,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.info.ConsoleProxyInfo;
-import com.cloud.keystore.KeystoreDao;
-import com.cloud.keystore.KeystoreManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
@@ -44,12 +37,9 @@ import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.ConsoleProxyDao;
-import com.cloud.vm.dao.VMInstanceDao;
 
-@Local(value={ConsoleProxyManager.class})
-public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager implements ConsoleProxyManager,
-        ResourceStateAdapter {
-    private static final Logger s_logger = Logger.getLogger(StaticConsoleProxyManager.class);
+@Local(value = {ConsoleProxyManager.class})
+public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager implements ConsoleProxyManager, ResourceStateAdapter {
 
     @Inject
     ConsoleProxyDao _proxyDao;
@@ -57,21 +47,10 @@ public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager imp
     ResourceManager _resourceMgr;
     @Inject
     ConfigurationDao _configDao;
-    @Inject
-    private VMInstanceDao _instanceDao;
-    @Inject
-    KeystoreDao _ksDao;
-    @Inject
-    private KeystoreManager _ksMgr;
-    @Inject
-    private HostDao _hostDao;
-    private final Random _random = new Random(System.currentTimeMillis());
-    private String _hashKey;
     private String _ip = null;
 
-
     public StaticConsoleProxyManager() {
-        
+
     }
 
     @Override
@@ -95,8 +74,7 @@ public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager imp
             _ip = "127.0.0.1";
         }
 
-
-        String value = (String) params.get("consoleproxy.sslEnabled");
+        String value = (String)params.get("consoleproxy.sslEnabled");
         if (value != null && value.equalsIgnoreCase("true")) {
             _sslEnabled = true;
         }
@@ -121,14 +99,12 @@ public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager imp
     }
 
     @Override
-    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource,
-            Map<String, String> details, List<String> hostTags) {
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details, List<String> hostTags) {
         return null;
     }
 
     @Override
-    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage)
-            throws UnableDeleteHostException {
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
         return null;
     }
 

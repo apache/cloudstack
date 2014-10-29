@@ -5,9 +5,9 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,28 +28,29 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="ucs_blade")
-public class UcsBladeVO implements InternalIdentity, Identity  {
+@Table(name = "ucs_blade")
+public class UcsBladeVO implements InternalIdentity, Identity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="ucs_manager_id")
+    @Column(name = "ucs_manager_id")
     private long ucsManagerId;
 
-    @Column(name="host_id")
+    @Column(name = "host_id")
     private Long hostId;
 
-    @Column(name="dn")
+    @Column(name = "dn")
     private String dn;
 
-    @Column(name="profile_dn")
+    @Column(name = "profile_dn")
     private String profileDn;
 
+    @Override
     public long getId() {
         return id;
     }
@@ -82,6 +83,7 @@ public class UcsBladeVO implements InternalIdentity, Identity  {
         this.dn = dn;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }

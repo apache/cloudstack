@@ -36,7 +36,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={AsyncJobJoinDao.class})
+@Local(value = {AsyncJobJoinDao.class})
 public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> implements AsyncJobJoinDao {
     public static final Logger s_logger = Logger.getLogger(AsyncJobJoinDaoImpl.class);
 
@@ -44,17 +44,12 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
 
     protected AsyncJobJoinDaoImpl() {
 
-
         jobIdSearch = createSearchBuilder();
         jobIdSearch.and("id", jobIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         jobIdSearch.done();
 
         _count = "select count(distinct id) from async_job_view WHERE ";
     }
-
-
-
-
 
     @Override
     public AsyncJobResponse newAsyncJobResponse(AsyncJobJoinVO job) {
@@ -79,7 +74,7 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         SerializationContext.current().setUuidTranslation(false);
 
         Object resultObject = ApiSerializerHelper.fromSerializedString(job.getResult());
-        jobResponse.setJobResult((ResponseObject) resultObject);
+        jobResponse.setJobResult((ResponseObject)resultObject);
         SerializationContext.current().setUuidTranslation(savedValue);
 
         if (resultObject != null) {
@@ -95,10 +90,6 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         return jobResponse;
     }
 
-
-
-
-
     @Override
     public AsyncJobJoinVO newAsyncJobView(AsyncJob job) {
         SearchCriteria<AsyncJobJoinVO> sc = jobIdSearch.create();
@@ -108,9 +99,5 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         return accounts.get(0);
 
     }
-
-
-
-
 
 }

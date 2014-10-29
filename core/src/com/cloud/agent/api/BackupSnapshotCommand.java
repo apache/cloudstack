@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
@@ -52,22 +55,8 @@ public class BackupSnapshotCommand extends SnapshotCommand {
      * @param isVolumeInactive         True if the volume belongs to a VM that is not running or is detached.
      * @param secHostId                This is the Id of the secondary storage.
      */
-    public BackupSnapshotCommand(String secondaryStoragePoolURL,
-                                 Long   dcId,
-                                 Long   accountId,
-                                 Long   volumeId,
-                                 Long   snapshotId,
-                                 Long   secHostId,
-                                 String volumePath,
-                                 StoragePool pool,
-                                 String snapshotUuid,
-                                 String snapshotName,
-                                 String prevSnapshotUuid,
-                                 String prevBackupUuid,
-                                 boolean isVolumeInactive,
-                                 String vmName,
-                                 int wait)
-    {
+    public BackupSnapshotCommand(String secondaryStoragePoolURL, Long dcId, Long accountId, Long volumeId, Long snapshotId, Long secHostId, String volumePath,
+            StoragePool pool, String snapshotUuid, String snapshotName, String prevSnapshotUuid, String prevBackupUuid, boolean isVolumeInactive, String vmName, int wait) {
         super(pool, secondaryStoragePoolURL, snapshotUuid, snapshotName, dcId, accountId, volumeId);
         this.snapshotId = snapshotId;
         this.prevSnapshotUuid = prevSnapshotUuid;

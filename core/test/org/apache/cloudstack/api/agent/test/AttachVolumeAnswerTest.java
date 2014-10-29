@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package org.apache.cloudstack.api.agent.test;
 
 import static org.junit.Assert.assertEquals;
@@ -26,9 +29,7 @@ import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.storage.Storage.StoragePoolType;
 
 public class AttachVolumeAnswerTest {
-    AttachVolumeCommand avc = new AttachVolumeCommand(true, false, "vmname",
-            StoragePoolType.Filesystem, "vPath", "vName", 1073741824L,
-            123456789L, "chainInfo");
+    AttachVolumeCommand avc = new AttachVolumeCommand(true, false, "vmname", StoragePoolType.Filesystem, "vPath", "vName", 1073741824L, 123456789L, "chainInfo");
     AttachVolumeAnswer ava1 = new AttachVolumeAnswer(avc);
     String results = "";
     AttachVolumeAnswer ava2 = new AttachVolumeAnswer(avc, results);

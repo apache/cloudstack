@@ -23,10 +23,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
@@ -34,7 +34,6 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = StoragePoolAllocator.class)
@@ -50,8 +49,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     boolean _storagePoolCleanupEnabled;
 
     @Override
-    public List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile,
-            DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    public List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
         s_logger.debug("GarbageCollectingStoragePoolAllocator looking for storage pool");
         if (!_storagePoolCleanupEnabled) {
             s_logger.debug("Storage pool cleanup is not enabled, so GarbageCollectingStoragePoolAllocator is being skipped.");
@@ -69,8 +67,8 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
         }
 
         // Try to find a storage pool after cleanup
-        ExcludeList myAvoids = new ExcludeList(avoid.getDataCentersToAvoid(), avoid.getPodsToAvoid(),
-                avoid.getClustersToAvoid(), avoid.getHostsToAvoid(), avoid.getPoolsToAvoid());
+        ExcludeList myAvoids =
+            new ExcludeList(avoid.getDataCentersToAvoid(), avoid.getPodsToAvoid(), avoid.getClustersToAvoid(), avoid.getHostsToAvoid(), avoid.getPoolsToAvoid());
 
         return allocator.allocateToPool(dskCh, vmProfile, plan, myAvoids, returnUpTo);
     }
@@ -85,8 +83,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
         _localStoragePoolAllocator.configure("GCLocalStoragePoolAllocator", params);
 
         String storagePoolCleanupEnabled = _configDao.getValue("storage.pool.cleanup.enabled");
-        _storagePoolCleanupEnabled = (storagePoolCleanupEnabled == null) ? true : Boolean
-                .parseBoolean(storagePoolCleanupEnabled);
+        _storagePoolCleanupEnabled = (storagePoolCleanupEnabled == null) ? true : Boolean.parseBoolean(storagePoolCleanupEnabled);
 
         return true;
     }

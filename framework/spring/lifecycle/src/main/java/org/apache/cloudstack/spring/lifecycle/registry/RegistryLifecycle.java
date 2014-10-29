@@ -20,6 +20,7 @@ package org.apache.cloudstack.spring.lifecycle.registry;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -29,15 +30,19 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.SmartLifecycle;
+import org.springframework.util.StringUtils;
 
 import com.cloud.utils.component.Registry;
 
 public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, ApplicationContextAware {
 
     private static final Logger log = LoggerFactory.getLogger(RegistryLifecycle.class);
-    
+
+    public static final String EXTENSION_EXCLUDE = "extensions.exclude";
+    public static final String EXTENSION_INCLUDE_PREFIX = "extensions.include.";
+
     Registry<Object> registry;
-    
+
     /* The bean name works around circular dependency issues in Spring.  This shouldn't be
      * needed if your beans are already nicely organized.  If they look like spaghetti, then you
      * can use this.
@@ -46,13 +51,50 @@ public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, App
     Set<Object> beans = new HashSet<Object>();
     Class<?> typeClass;
     ApplicationContext applicationContext;
+    Set<String> excludes = null;
 
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-        if ( typeClass.isAssignableFrom(bean.getClass()) )
+        if (typeClass.isAssignableFrom(bean.getClass()) && !isExcluded(bean)) {
             beans.add(bean);
-        
+        }
+
         return bean;
+    }
+
+    protected synchronized boolean isExcluded(Object bean) {
+        String name = RegistryUtils.getName(bean);
+
+        if (excludes == null) {
+            loadExcluded();
+        }
+
+        boolean result = excludes.contains(name);
+        if (result) {
+            log.info("Excluding extension [{}] based on configuration", name);
+        }
+
+        return result;
+    }
+
+    protected synchronized void loadExcluded() {
+        Properties props = applicationContext.getBean("DefaultConfigProperties", Properties.class);
+        excludes = new HashSet<String>();
+        for (String exclude : props.getProperty(EXTENSION_EXCLUDE, "").trim().split("\\s*,\\s*")) {
+            if (StringUtils.hasText(exclude)) {
+                excludes.add(exclude);
+            }
+        }
+
+        for (String key : props.stringPropertyNames()) {
+            if (key.startsWith(EXTENSION_INCLUDE_PREFIX)) {
+                String module = key.substring(EXTENSION_INCLUDE_PREFIX.length());
+                boolean include = props.getProperty(key).equalsIgnoreCase("true");
+                if (!include) {
+                    excludes.add(module);
+                }
+            }
+        }
     }
 
     @Override
@@ -64,10 +106,10 @@ public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, App
     public void start() {
         Iterator<Object> iter = beans.iterator();
         Registry<Object> registry = lookupRegistry();
-        
-        while ( iter.hasNext() ) {
+
+        while (iter.hasNext()) {
             Object next = iter.next();
-            if ( registry.register(next) ) {
+            if (registry.register(next)) {
                 log.debug("Registered {}", next);
             } else {
                 iter.remove();
@@ -78,11 +120,11 @@ public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, App
     @Override
     public void stop() {
         Registry<Object> registry = lookupRegistry();
-        
-        for ( Object bean : beans ) {
+
+        for (Object bean : beans) {
             registry.unregister(bean);
         }
-        
+
         beans.clear();
     }
 
@@ -106,12 +148,12 @@ public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, App
         stop();
         callback.run();
     }
-    
+
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
-    
+
     @SuppressWarnings("unchecked")
     protected Registry<Object> lookupRegistry() {
         return registry == null ? applicationContext.getBean(registryBeanName, Registry.class) : registry;

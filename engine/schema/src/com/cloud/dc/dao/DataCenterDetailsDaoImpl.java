@@ -26,15 +26,14 @@ import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
 import com.cloud.dc.DataCenterDetailVO;
 
-@Local(value=DataCenterDetailsDao.class)
+@Local(value = DataCenterDetailsDao.class)
 public class DataCenterDetailsDaoImpl extends ResourceDetailsDaoBase<DataCenterDetailVO> implements DataCenterDetailsDao, ScopedConfigStorage {
 
-    
     @Override
     public Scope getScope() {
         return ConfigKey.Scope.Zone;
     }
-    
+
     @Override
     public String getConfigValue(long id, ConfigKey<?> key) {
         ResourceDetail vo = findDetail(id, key.key());
@@ -42,8 +41,8 @@ public class DataCenterDetailsDaoImpl extends ResourceDetailsDaoBase<DataCenterD
     }
 
     @Override
-    public void addDetail(long resourceId, String key, String value) {
-        super.addDetail(new DataCenterDetailVO(resourceId, key, value));
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new DataCenterDetailVO(resourceId, key, value, display));
     }
 
 }

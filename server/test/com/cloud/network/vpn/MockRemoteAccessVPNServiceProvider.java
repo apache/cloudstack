@@ -28,51 +28,46 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
 import com.cloud.utils.component.ManagerBase;
 
-@Local (value = RemoteAccessVPNServiceProvider.class)
-public class MockRemoteAccessVPNServiceProvider extends ManagerBase implements
-		RemoteAccessVPNServiceProvider {
+@Local(value = RemoteAccessVPNServiceProvider.class)
+public class MockRemoteAccessVPNServiceProvider extends ManagerBase implements RemoteAccessVPNServiceProvider {
 
-	@Override
-	public boolean configure(String name, Map<String, Object> params)
-			throws ConfigurationException {
-		return true;
-	}
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        return true;
+    }
 
-	@Override
-	public String getName() {
-		return "MockRemoteAccessVPNServiceProvider";
-	}
+    @Override
+    public String getName() {
+        return "MockRemoteAccessVPNServiceProvider";
+    }
 
-	@Override
-	public boolean start() {
-		return true;
-	}
+    @Override
+    public boolean start() {
+        return true;
+    }
 
-	@Override
-	public boolean stop() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean stop() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public String[] applyVpnUsers(RemoteAccessVpn vpn,
-			List<? extends VpnUser> users) throws ResourceUnavailableException {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public boolean startVpn(RemoteAccessVpn vpn)
-			throws ResourceUnavailableException {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean startVpn(RemoteAccessVpn vpn) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean stopVpn(RemoteAccessVpn vpn)
-			throws ResourceUnavailableException {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean stopVpn(RemoteAccessVpn vpn) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
 }

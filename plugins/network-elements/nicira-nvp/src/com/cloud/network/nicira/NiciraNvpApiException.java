@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.nicira;
 
 public class NiciraNvpApiException extends Exception {
@@ -21,15 +24,15 @@ public class NiciraNvpApiException extends Exception {
     public NiciraNvpApiException() {
     }
 
-    public NiciraNvpApiException(String message) {
+    public NiciraNvpApiException(final String message) {
         super(message);
     }
 
-    public NiciraNvpApiException(Throwable cause) {
+    public NiciraNvpApiException(final Throwable cause) {
         super(cause);
     }
 
-    public NiciraNvpApiException(String message, Throwable cause) {
+    public NiciraNvpApiException(final String message, final Throwable cause) {
         super(message, cause);
     }
 

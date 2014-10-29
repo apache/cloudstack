@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
-import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -39,24 +38,26 @@ public class RouterNetworkDaoImpl extends GenericDaoBase<RouterNetworkVO, Long> 
         RouterNetworksSearch.selectFields(RouterNetworksSearch.entity().getNetworkId());
         RouterNetworksSearch.and("routerId", RouterNetworksSearch.entity().getRouterId(), Op.EQ);
         RouterNetworksSearch.done();
-        
+
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("routerId", AllFieldsSearch.entity().getRouterId(), Op.EQ);
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
         AllFieldsSearch.done();
     }
-    
+
+    @Override
     public List<Long> getRouterNetworks(long routerId) {
         SearchCriteria<Long> sc = RouterNetworksSearch.create();
         sc.setParameters("routerId", routerId);
         return customSearch(sc, null);
     }
-    
-    public RouterNetworkVO findByRouterAndNetwork (long routerId, long networkId) {
+
+    @Override
+    public RouterNetworkVO findByRouterAndNetwork(long routerId, long networkId) {
         SearchCriteria<RouterNetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("routerId", routerId);
         sc.setParameters("networkId", networkId);
         return findOneBy(sc);
     }
-    
+
 }

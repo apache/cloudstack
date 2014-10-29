@@ -25,57 +25,59 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.db.GenericDao;
 
 /**
  * Records the intent to update a VM's ingress ruleset
  *
  */
 @Entity
-@Table(name="op_vm_ruleset_log")
+@Table(name = "op_vm_ruleset_log")
 public class VmRulesetLogVO implements InternalIdentity {
-	@Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
-    
-    @Column(name="instance_id", updatable=false, nullable=false)
+
+    @Column(name = "instance_id", updatable = false, nullable = false)
     private Long instanceId;    // vm_instance id
-    
-    @Column(name=GenericDao.CREATED_COLUMN)
+
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
-    
-    @Column(name="logsequence")
+
+    @Column(name = "logsequence")
     long logsequence;
-    
+
     protected VmRulesetLogVO() {
-    	
+
     }
 
-	public VmRulesetLogVO(Long instanceId) {
-		super();
-		this.instanceId = instanceId;
-	}
+    public VmRulesetLogVO(Long instanceId) {
+        super();
+        this.instanceId = instanceId;
+    }
 
-	public long getId() {
-		return id;
-	}
+    @Override
+    public long getId() {
+        return id;
+    }
 
-	public Long getInstanceId() {
-		return instanceId;
-	}
+    public Long getInstanceId() {
+        return instanceId;
+    }
 
-	public Date getCreated() {
-		return created;
-	}
+    public Date getCreated() {
+        return created;
+    }
 
-	public long getLogsequence() {
-		return logsequence;
-	}
-    
-	public void incrLogsequence() {
-		logsequence++;
-	}
-    
+    public long getLogsequence() {
+        return logsequence;
+    }
+
+    public void incrLogsequence() {
+        logsequence++;
+    }
+
 }

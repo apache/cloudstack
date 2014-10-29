@@ -17,50 +17,50 @@
 package com.cloud.bridge.util;
 
 public class Converter {
-	public static boolean toBool(String value, boolean defaultValue) {
-		if(value != null && !value.isEmpty()) {
-			return Boolean.parseBoolean(value);
-		}
-		return defaultValue;
-	}
+    public static boolean toBool(String value, boolean defaultValue) {
+        if (value != null && !value.isEmpty()) {
+            return Boolean.parseBoolean(value);
+        }
+        return defaultValue;
+    }
 
-	public static short toShort(String value, short defaultValue) {
-		if(value != null && !value.isEmpty()) {
-			return Short.parseShort(value);
-		}
-		
-		return defaultValue;
-	}
-	
-	public static int toInt(String value, int defaultValue) {
-		if(value != null && !value.isEmpty()) {
-			return Integer.parseInt(value);
-		}
-		
-		return defaultValue;
-	}
-	
-	public static long toLong(String value, long defaultValue) {
-		if(value != null && !value.isEmpty()) {
-			return Long.parseLong(value);
-		}
-		
-		return defaultValue;
-	}
-	
-	public static float toFloat(String value, float defaultValue) {
-		if(value != null && !value.isEmpty()) {
-			return Float.parseFloat(value);
-		}
-		
-		return defaultValue;
-	}
-	
-	public static double toDouble(String value, double defaultValue) {
-		if(value != null && !value.isEmpty()) {
-			return Double.parseDouble(value);
-		}
-		
-		return defaultValue;
-	}
+    public static short toShort(String value, short defaultValue) {
+        if (value != null && !value.isEmpty()) {
+            return Short.parseShort(value);
+        }
+
+        return defaultValue;
+    }
+
+    public static int toInt(String value, int defaultValue) {
+        if (value != null && !value.isEmpty()) {
+            return Integer.parseInt(value);
+        }
+
+        return defaultValue;
+    }
+
+    public static long toLong(String value, long defaultValue) {
+        if (value != null && !value.isEmpty()) {
+            return Long.parseLong(value);
+        }
+
+        return defaultValue;
+    }
+
+    public static float toFloat(String value, float defaultValue) {
+        if (value != null && !value.isEmpty()) {
+            return Float.parseFloat(value);
+        }
+
+        return defaultValue;
+    }
+
+    public static double toDouble(String value, double defaultValue) {
+        if (value != null && !value.isEmpty()) {
+            return Double.parseDouble(value);
+        }
+
+        return defaultValue;
+    }
 }

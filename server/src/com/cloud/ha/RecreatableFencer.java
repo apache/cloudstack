@@ -33,12 +33,14 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
 @Component
-@Local(value=FenceBuilder.class)
+@Local(value = FenceBuilder.class)
 public class RecreatableFencer extends AdapterBase implements FenceBuilder {
     private static final Logger s_logger = Logger.getLogger(RecreatableFencer.class);
-    @Inject VolumeDao _volsDao;
-    @Inject PrimaryDataStoreDao _poolDao;
-    
+    @Inject
+    VolumeDao _volsDao;
+    @Inject
+    PrimaryDataStoreDao _poolDao;
+
     public RecreatableFencer() {
         super();
     }
@@ -56,7 +58,7 @@ public class RecreatableFencer extends AdapterBase implements FenceBuilder {
         for (VolumeVO vol : vols) {
             if (!vol.isRecreatable()) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to f	ence off volumes that are not recreatable: " + vol);
+                    s_logger.debug("Unable to f    ence off volumes that are not recreatable: " + vol);
                 }
                 return null;
             }

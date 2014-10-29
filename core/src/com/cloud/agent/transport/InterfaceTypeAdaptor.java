@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,12 +15,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.transport;
 
 import java.lang.reflect.Type;
 import java.util.Map;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -29,10 +31,11 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+
 public class InterfaceTypeAdaptor<T> implements JsonDeserializer<T>, JsonSerializer<T> {
 
-    protected Gson              _gson = null;
-
+    protected Gson _gson = null;
 
     public InterfaceTypeAdaptor() {
     }
@@ -46,13 +49,12 @@ public class InterfaceTypeAdaptor<T> implements JsonDeserializer<T>, JsonSeriali
         JsonObject obj = new JsonObject();
         obj.add(src.getClass().getName(), _gson.toJsonTree(src));
         return obj;
-     }
+    }
 
     @Override
     @SuppressWarnings("unchecked")
-    public T deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-    throws JsonParseException {
-        JsonObject element = (JsonObject) json;
+    public T deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+        JsonObject element = (JsonObject)json;
         Map.Entry<String, JsonElement> entry = element.entrySet().iterator().next();
         String name = entry.getKey();
         Class<?> clazz;
@@ -61,6 +63,6 @@ public class InterfaceTypeAdaptor<T> implements JsonDeserializer<T>, JsonSeriali
         } catch (ClassNotFoundException e) {
             throw new CloudRuntimeException("can't find " + name);
         }
-        return (T) _gson.fromJson(entry.getValue(), clazz);
+        return (T)_gson.fromJson(entry.getValue(), clazz);
     }
 }

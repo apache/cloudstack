@@ -20,29 +20,25 @@ import com.cloud.agent.transport.Request;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
 
-
 public class DummyAttache extends AgentAttache {
 
-	public DummyAttache(AgentManagerImpl agentMgr, long id, String name, boolean maintenance) {
-		super(agentMgr, id, name, maintenance);
-	}
+    public DummyAttache(AgentManagerImpl agentMgr, long id, String name, boolean maintenance) {
+        super(agentMgr, id, name, maintenance);
+    }
 
+    @Override
+    public void disconnect(Status state) {
 
-	@Override
-	public void disconnect(Status state) {
+    }
 
-	}
+    @Override
+    protected boolean isClosed() {
+        return false;
+    }
 
-	
-	@Override
-	protected boolean isClosed() {
-		return false;
-	}
+    @Override
+    public void send(Request req) throws AgentUnavailableException {
 
-	
-	@Override
-	public void send(Request req) throws AgentUnavailableException {
-
-	}
+    }
 
 }

@@ -34,10 +34,11 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "autoscale_vmprofiles")
@@ -85,12 +86,15 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     @Column(name = GenericDao.CREATED_COLUMN)
     protected Date created;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     public AutoScaleVmProfileVO() {
     }
 
-    public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId, String otherDeployParams, Map counterParamList, Integer destroyVmGraceperiod,
-            long autoscaleUserId) {
-        this.uuid = UUID.randomUUID().toString();
+    public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId, String otherDeployParams, Map counterParamList,
+            Integer destroyVmGraceperiod, long autoscaleUserId) {
+        uuid = UUID.randomUUID().toString();
         this.zoneId = zoneId;
         this.domainId = domainId;
         this.accountId = accountId;
@@ -145,7 +149,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     }
 
     public void setCounterParams(String counterParam) {
-        this.counterParams = counterParam;
+        counterParams = counterParam;
     }
 
     public void setCounterParamsForUpdate(Map counterParamList) {
@@ -215,4 +219,23 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     public long getAutoScaleUserId() {
         return autoscaleUserId;
     }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return AutoScaleVmProfile.class;
+    }
+
 }

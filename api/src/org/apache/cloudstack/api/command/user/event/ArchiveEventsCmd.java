@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.user.event;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -29,12 +31,12 @@ import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
+import com.cloud.event.Event;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
-@APICommand(name = "archiveEvents", description = "Archive one or more events.", responseObject = SuccessResponse.class)
+@APICommand(name = "archiveEvents", description = "Archive one or more events.", responseObject = SuccessResponse.class, entityType = {Event.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ArchiveEventsCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(ArchiveEventsCmd.class.getName());
@@ -45,16 +47,19 @@ public class ArchiveEventsCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.IDS, type = CommandType.LIST,  collectionType = CommandType.UUID, entityType = EventResponse.class,
-            description = "the IDs of the events")
+    @Parameter(name = ApiConstants.IDS,
+               type = CommandType.LIST,
+               collectionType = CommandType.UUID,
+               entityType = EventResponse.class,
+               description = "the IDs of the events")
     private List<Long> ids;
 
-    @Parameter(name=ApiConstants.END_DATE, type=CommandType.DATE, description="end date range to archive events" +
-            " (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-ddThh:mm:ss\")")
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "end date range to archive events"
+        + " (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-ddThh:mm:ss\")")
     private Date endDate;
 
-    @Parameter(name=ApiConstants.START_DATE, type=CommandType.DATE, description="start date range to archive events" +
-            " (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-ddThh:mm:ss\")")
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "start date range to archive events"
+        + " (including) this date (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-ddThh:mm:ss\")")
     private Date startDate;
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "archive by event type")
@@ -100,7 +105,7 @@ public class ArchiveEventsCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        if(ids == null && type == null && endDate == null) {
+        if (ids == null && type == null && endDate == null) {
             throw new InvalidParameterValueException("either ids, type or enddate must be specified");
         } else if (startDate != null && endDate == null) {
             throw new InvalidParameterValueException("enddate must be specified with startdate parameter");
@@ -108,7 +113,7 @@ public class ArchiveEventsCmd extends BaseCmd {
         boolean result = _mgr.archiveEvents(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to archive Events, one or more parameters has invalid values");
         }

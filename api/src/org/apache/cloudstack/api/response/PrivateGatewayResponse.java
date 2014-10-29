@@ -15,53 +15,66 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.api.response;
+
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.vpc.VpcGateway;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=VpcGateway.class)
+@EntityReference(value = VpcGateway.class)
 @SuppressWarnings("unused")
-public class PrivateGatewayResponse extends BaseResponse implements ControlledEntityResponse{
+public class PrivateGatewayResponse extends BaseResponse implements ControlledEntityResponse {
 
-    @SerializedName(ApiConstants.ID) @Param(description="the id of the private gateway")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the id of the private gateway")
     private String id;
 
-    @SerializedName(ApiConstants.GATEWAY) @Param(description="the gateway")
+    @SerializedName(ApiConstants.GATEWAY)
+    @Param(description = "the gateway")
     private String gateway;
 
-    @SerializedName(ApiConstants.NETMASK) @Param(description="the private gateway's netmask")
+    @SerializedName(ApiConstants.NETMASK)
+    @Param(description = "the private gateway's netmask")
     private String netmask;
 
-    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the private gateway's ip address")
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "the private gateway's ip address")
     private String address;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone id of the private gateway")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "zone id of the private gateway")
     private String zoneId;
 
-    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone the private gateway belongs to")
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "the name of the zone the private gateway belongs to")
     private String zoneName;
 
-    @SerializedName(ApiConstants.VLAN) @Param(description="the network implementation uri for the private gateway")
+    @SerializedName(ApiConstants.VLAN)
+    @Param(description = "the network implementation uri for the private gateway")
     private String broadcastUri;
 
-    @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the private gateaway belongs to")
+    @SerializedName(ApiConstants.VPC_ID)
+    @Param(description = "VPC the private gateaway belongs to")
     private String vpcId;
 
-    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network id")
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
+    @Param(description = "the physical network id")
     private String physicalNetworkId;
 
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account associated with the private gateway")
     private String accountName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the private gateway")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the private gateway")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the private gateway")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the private gateway")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
@@ -72,17 +85,17 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     @Param(description = "the domain associated with the private gateway")
     private String domainName;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="State of the gateway, can be Creating, Ready, Deleting")
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "State of the gateway, can be Creating, Ready, Deleting")
     private String state;
 
-
-    @SerializedName(ApiConstants.SOURCE_NAT_SUPPORTED) @Param(description = "Souce Nat enable status")
+    @SerializedName(ApiConstants.SOURCE_NAT_SUPPORTED)
+    @Param(description = "Souce Nat enable status")
     private Boolean sourceNat;
 
-
-    @SerializedName(ApiConstants.ACL_ID) @Param(description = "ACL Id set for private gateway")
+    @SerializedName(ApiConstants.ACL_ID)
+    @Param(description = "ACL Id set for private gateway")
     private String aclId;
-
 
     @Override
     public String getObjectId() {
@@ -162,7 +175,4 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
         this.aclId = aclId;
     }
 
-
-
 }
-

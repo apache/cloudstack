@@ -38,11 +38,12 @@ import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
 
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.DomDriver;
+
 import com.cloud.domain.DomainVO;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserAccountVO;
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 
 /**
  * Utility class for making API calls between peer Regions
@@ -58,13 +59,13 @@ public class RegionsApiUtil {
      * @param params
      * @return True, if api is successful
      */
-    protected static boolean makeAPICall(Region region, String command, List<NameValuePair> params){
+    protected static boolean makeAPICall(Region region, String command, List<NameValuePair> params) {
         try {
             String apiParams = buildParams(command, params);
             String url = buildUrl(apiParams, region);
             HttpClient client = new HttpClient();
             HttpMethod method = new GetMethod(url);
-            if( client.executeMethod(method) == 200){
+            if (client.executeMethod(method) == 200) {
                 return true;
             } else {
                 return false;
@@ -86,12 +87,12 @@ public class RegionsApiUtil {
      * @param params
      * @return
      */
-    protected static RegionAccount makeAccountAPICall(Region region, String command, List<NameValuePair> params){
+    protected static RegionAccount makeAccountAPICall(Region region, String command, List<NameValuePair> params) {
         try {
             String url = buildUrl(buildParams(command, params), region);
             HttpClient client = new HttpClient();
             HttpMethod method = new GetMethod(url);
-            if( client.executeMethod(method) == 200){
+            if (client.executeMethod(method) == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 //Translate response to Account object
                 XStream xstream = new XStream(new DomDriver());
@@ -104,8 +105,12 @@ public class RegionsApiUtil {
                 xstream.aliasField("networkdomain", RegionAccount.class, "networkDomain");
                 xstream.aliasField("id", RegionUser.class, "uuid");
                 xstream.aliasField("accountId", RegionUser.class, "accountUuid");
-                ObjectInputStream in = xstream.createObjectInputStream(is);
-                return (RegionAccount)in.readObject();
+                try(ObjectInputStream in = xstream.createObjectInputStream(is);) {
+                    return (RegionAccount) in.readObject();
+                }catch (IOException e) {
+                    s_logger.error(e.getMessage());
+                    return null;
+                }
             } else {
                 return null;
             }
@@ -129,12 +134,12 @@ public class RegionsApiUtil {
      * @param params
      * @return
      */
-    protected static RegionDomain makeDomainAPICall(Region region, String command, List<NameValuePair> params){
+    protected static RegionDomain makeDomainAPICall(Region region, String command, List<NameValuePair> params) {
         try {
             String url = buildUrl(buildParams(command, params), region);
             HttpClient client = new HttpClient();
             HttpMethod method = new GetMethod(url);
-            if( client.executeMethod(method) == 200){
+            if (client.executeMethod(method) == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 XStream xstream = new XStream(new DomDriver());
                 //Translate response to Domain object
@@ -142,8 +147,12 @@ public class RegionsApiUtil {
                 xstream.aliasField("id", RegionDomain.class, "uuid");
                 xstream.aliasField("parentdomainid", RegionDomain.class, "parentUuid");
                 xstream.aliasField("networkdomain", DomainVO.class, "networkDomain");
-                ObjectInputStream in = xstream.createObjectInputStream(is);
-                return (RegionDomain)in.readObject();
+                try(ObjectInputStream in = xstream.createObjectInputStream(is);) {
+                    return (RegionDomain) in.readObject();
+                }catch (IOException e) {
+                    s_logger.error(e.getMessage());
+                    return null;
+                }
             } else {
                 return null;
             }
@@ -167,12 +176,12 @@ public class RegionsApiUtil {
      * @param params
      * @return
      */
-    protected static UserAccount makeUserAccountAPICall(Region region, String command, List<NameValuePair> params){
+    protected static UserAccount makeUserAccountAPICall(Region region, String command, List<NameValuePair> params) {
         try {
             String url = buildUrl(buildParams(command, params), region);
             HttpClient client = new HttpClient();
             HttpMethod method = new GetMethod(url);
-            if( client.executeMethod(method) == 200){
+            if (client.executeMethod(method) == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 XStream xstream = new XStream(new DomDriver());
                 xstream.alias("useraccount", UserAccountVO.class);
@@ -201,17 +210,16 @@ public class RegionsApiUtil {
      * @return
      */
     protected static String buildParams(String command, List<NameValuePair> params) {
-        StringBuffer paramString = new StringBuffer("command="+command);
+        StringBuffer paramString = new StringBuffer("command=" + command);
         Iterator<NameValuePair> iter = params.iterator();
         try {
-            while(iter.hasNext()){
+            while (iter.hasNext()) {
                 NameValuePair param = iter.next();
-                if(param.getValue() != null && !(param.getValue().isEmpty())){
-                    paramString.append("&"+param.getName()+"="+URLEncoder.encode(param.getValue(), "UTF-8"));
+                if (param.getValue() != null && !(param.getValue().isEmpty())) {
+                    paramString.append("&" + param.getName() + "=" + URLEncoder.encode(param.getValue(), "UTF-8"));
                 }
             }
-        }
-        catch (UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e) {
             s_logger.error(e.getMessage());
             return null;
         }
@@ -230,9 +238,8 @@ public class RegionsApiUtil {
         String apiKey = "";
         String secretKey = "";
 
-
         if (apiKey == null || secretKey == null) {
-            return region.getEndPoint() +"?"+ apiParams;
+            return region.getEndPoint() + "?" + apiParams;
         }
 
         String encodedApiKey;
@@ -258,7 +265,6 @@ public class RegionsApiUtil {
             }
             Collections.sort(sortedParams);
 
-
             //Construct the sorted URL and sign and URL encode the sorted URL with your secret key
             String sortedUrl = null;
             first = true;
@@ -272,7 +278,7 @@ public class RegionsApiUtil {
             }
             String encodedSignature = signRequest(sortedUrl, secretKey);
 
-            String finalUrl = region.getEndPoint() +"?"+apiParams+ "&apiKey=" + apiKey + "&signature=" + encodedSignature;
+            String finalUrl = region.getEndPoint() + "?" + apiParams + "&apiKey=" + apiKey + "&signature=" + encodedSignature;
 
             return finalUrl;
 

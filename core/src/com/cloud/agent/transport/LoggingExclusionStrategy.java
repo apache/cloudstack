@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,15 +15,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.transport;
 
 import org.apache.log4j.Logger;
 
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
+
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.LogLevel;
 import com.cloud.agent.api.LogLevel.Log4jLevel;
-import com.google.gson.ExclusionStrategy;
-import com.google.gson.FieldAttributes;
 
 public class LoggingExclusionStrategy implements ExclusionStrategy {
     Logger _logger = null;

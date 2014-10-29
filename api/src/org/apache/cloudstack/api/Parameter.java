@@ -26,7 +26,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ FIELD })
+@Target({FIELD})
 public @interface Parameter {
     String name() default "";
 
@@ -48,7 +48,5 @@ public @interface Parameter {
 
     String since() default "";
 
-    String retrieveMethod() default "getById";
-    
     RoleType[] authorized() default {};
 }

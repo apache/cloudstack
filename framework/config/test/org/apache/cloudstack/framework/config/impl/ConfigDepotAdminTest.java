@@ -35,14 +35,12 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 
 import com.cloud.utils.db.EntityManager;
 
 public class ConfigDepotAdminTest extends TestCase {
-    private final ConfigKey<Integer> DynamicIntCK = new ConfigKey<Integer>(Integer.class, "dynIntKey", "Advance", "10", "Test Key", true);
-    private final ConfigKey<Integer> StaticIntCK = new ConfigKey<Integer>(Integer.class, "statIntKey", "Advance", "10", "Test Key", false);
+    private final static ConfigKey<Integer> DynamicIntCK = new ConfigKey<Integer>(Integer.class, "dynIntKey", "Advance", "10", "Test Key", true);
+    private final static ConfigKey<Integer> StaticIntCK = new ConfigKey<Integer>(Integer.class, "statIntKey", "Advance", "10", "Test Key", false);
 
     @Mock
     Configurable _configurable;
@@ -82,7 +80,7 @@ public class ConfigDepotAdminTest extends TestCase {
         dynamicIntCV.setValue("100");
         ConfigurationVO staticIntCV = new ConfigurationVO("UnitTestComponent", StaticIntCK);
         dynamicIntCV.setValue("200");
-        
+
         when(_configurable.getConfigComponentName()).thenReturn("UnitTestComponent");
         when(_configurable.getConfigKeys()).thenReturn(new ConfigKey<?>[] {DynamicIntCK, StaticIntCK});
         when(_configDao.findById(StaticIntCK.key())).thenReturn(null);

@@ -30,19 +30,19 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={EventDao.class})
+@Local(value = {EventDao.class})
 public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements EventDao {
     public static final Logger s_logger = Logger.getLogger(EventDaoImpl.class.getName());
     protected final SearchBuilder<EventVO> CompletedEventSearch;
     protected final SearchBuilder<EventVO> ToArchiveOrDeleteEventSearch;
 
-    public EventDaoImpl () {
+    public EventDaoImpl() {
         CompletedEventSearch = createSearchBuilder();
-        CompletedEventSearch.and("state",CompletedEventSearch.entity().getState(),SearchCriteria.Op.EQ);
+        CompletedEventSearch.and("state", CompletedEventSearch.entity().getState(), SearchCriteria.Op.EQ);
         CompletedEventSearch.and("startId", CompletedEventSearch.entity().getStartId(), SearchCriteria.Op.EQ);
         CompletedEventSearch.and("archived", CompletedEventSearch.entity().getArchived(), Op.EQ);
         CompletedEventSearch.done();
@@ -64,7 +64,8 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
 
     @Override
     public List<EventVO> listOlderEvents(Date oldTime) {
-        if (oldTime == null) return null;
+        if (oldTime == null)
+            return null;
         SearchCriteria<EventVO> sc = createSearchCriteria();
         sc.addAnd("createDate", SearchCriteria.Op.LT, oldTime);
         sc.addAnd("archived", SearchCriteria.Op.EQ, false);

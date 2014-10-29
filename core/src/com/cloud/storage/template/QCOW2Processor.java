@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.storage.template;
 
 import java.io.File;
@@ -31,88 +34,67 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.AdapterBase;
 
-@Local(value=Processor.class)
+@Local(value = Processor.class)
 public class QCOW2Processor extends AdapterBase implements Processor {
     private static final Logger s_logger = Logger.getLogger(QCOW2Processor.class);
-    StorageLayer _storage;
+    private static final int VIRTUALSIZE_HEADER_LOCATION = 24;
 
-	@Override
-	public FormatInfo process(String templatePath, ImageFormat format,
-			String templateName) {
-		if (format != null) {
+    private StorageLayer _storage;
+
+    @Override
+    public FormatInfo process(String templatePath, ImageFormat format, String templateName) {
+        if (format != null) {
             s_logger.debug("We currently don't handle conversion from " + format + " to QCOW2.");
             return null;
         }
-        
+
         String qcow2Path = templatePath + File.separator + templateName + "." + ImageFormat.QCOW2.getFileExtension();
-       
+
         if (!_storage.exists(qcow2Path)) {
             s_logger.debug("Unable to find the qcow2 file: " + qcow2Path);
             return null;
         }
-        
+
         FormatInfo info = new FormatInfo();
         info.format = ImageFormat.QCOW2;
         info.filename = templateName + "." + ImageFormat.QCOW2.getFileExtension();
-        
+
         File qcow2File = _storage.getFile(qcow2Path);
-        
+
         info.size = _storage.getSize(qcow2Path);
-        FileInputStream strm = null;
-        byte[] b = new byte[8];
+
         try {
-            strm = new FileInputStream(qcow2File);
-            strm.skip(24);
-            strm.read(b);
-        } catch (Exception e) {
-            s_logger.warn("Unable to read qcow2 file " + qcow2Path, e);
+            info.virtualSize = getVirtualSize(qcow2File);
+        } catch (IOException e) {
+            s_logger.error("Unable to get virtual size from " + qcow2File.getName());
             return null;
-        } finally {
-            if (strm != null) {
-                try {
-                    strm.close();
-                } catch (IOException e) {
-                }
-            }
         }
-        
-        long templateSize = NumbersUtil.bytesToLong(b);
-        info.virtualSize = templateSize;
 
         return info;
-	}
+    }
 
-     public Long getVirtualSize(File file) {
-         FileInputStream strm = null;
-         byte[] b = new byte[8];
-         try {
-             strm = new FileInputStream(file);
-             strm.skip(24);
-             strm.read(b);
-         } catch (Exception e) {
-             s_logger.warn("Unable to read qcow2 file " + file, e);
-             return null;
-         } finally {
-             if (strm != null) {
-                 try {
-                     strm.close();
-                 } catch (IOException e) {
-                 }
-             }
-         }
+    @Override
+    public long getVirtualSize(File file) throws IOException {
+        byte[] b = new byte[8];
+        try (FileInputStream strm = new FileInputStream(file)) {
+            if (strm.skip(VIRTUALSIZE_HEADER_LOCATION) != VIRTUALSIZE_HEADER_LOCATION) {
+                throw new IOException("Unable to skip to the virtual size header");
+            }
+            if (strm.read(b) != 8) {
+                throw new IOException("Unable to properly read the size");
+            }
+        }
 
-         long templateSize = NumbersUtil.bytesToLong(b);
-         return templateSize;
-     }
+        return NumbersUtil.bytesToLong(b);
+    }
 
-	@Override
-	public boolean configure(String name, Map<String, Object> params)
-			throws ConfigurationException {
-	        _storage = (StorageLayer)params.get(StorageLayer.InstanceConfigKey);
-	        if (_storage == null) {
-	            throw new ConfigurationException("Unable to get storage implementation");
-	        }
-	        
-	        return true;
-	}
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        _storage = (StorageLayer)params.get(StorageLayer.InstanceConfigKey);
+        if (_storage == null) {
+            throw new ConfigurationException("Unable to get storage implementation");
+        }
+
+        return true;
+    }
 }

@@ -18,7 +18,7 @@ package com.cloud.hypervisor.kvm.resource;
 
 public class LibvirtStoragePoolDef {
     public enum poolType {
-        ISCSI("iscsi"), NETFS("netfs"), LOGICAL("logical"), DIR("dir"), RBD("rbd");
+        ISCSI("iscsi"), NETFS("netfs"), LOGICAL("logical"), DIR("dir"), RBD("rbd"), GLUSTERFS("glusterfs");
         String _poolType;
 
         poolType(String poolType) {
@@ -56,8 +56,7 @@ public class LibvirtStoragePoolDef {
     private authType _authType;
     private String _secretUuid;
 
-    public LibvirtStoragePoolDef(poolType type, String poolName, String uuid,
-            String host, int port, String dir, String targetPath) {
+    public LibvirtStoragePoolDef(poolType type, String poolName, String uuid, String host, int port, String dir, String targetPath) {
         _poolType = type;
         _poolName = poolName;
         _uuid = uuid;
@@ -67,8 +66,7 @@ public class LibvirtStoragePoolDef {
         _targetPath = targetPath;
     }
 
-    public LibvirtStoragePoolDef(poolType type, String poolName, String uuid,
-            String host, String dir, String targetPath) {
+    public LibvirtStoragePoolDef(poolType type, String poolName, String uuid, String host, String dir, String targetPath) {
         _poolType = type;
         _poolName = poolName;
         _uuid = uuid;
@@ -77,9 +75,8 @@ public class LibvirtStoragePoolDef {
         _targetPath = targetPath;
     }
 
-    public LibvirtStoragePoolDef(poolType type, String poolName, String uuid,
-            String sourceHost, int sourcePort, String dir, String authUsername,
-            authType authType, String secretUuid) {
+    public LibvirtStoragePoolDef(poolType type, String poolName, String uuid, String sourceHost, int sourcePort, String dir, String authUsername, authType authType,
+            String secretUuid) {
         _poolType = type;
         _poolName = poolName;
         _uuid = uuid;
@@ -130,7 +127,15 @@ public class LibvirtStoragePoolDef {
     @Override
     public String toString() {
         StringBuilder storagePoolBuilder = new StringBuilder();
-        storagePoolBuilder.append("<pool type='" + _poolType + "'>\n");
+        if (_poolType == poolType.GLUSTERFS) {
+            /* libvirt mounts a Gluster volume, similar to NFS */
+            storagePoolBuilder.append("<pool type='netfs'>\n");
+        } else {
+            storagePoolBuilder.append("<pool type='");
+            storagePoolBuilder.append(_poolType);
+            storagePoolBuilder.append("'>\n");
+        }
+
         storagePoolBuilder.append("<name>" + _poolName + "</name>\n");
         if (_uuid != null)
             storagePoolBuilder.append("<uuid>" + _uuid + "</uuid>\n");
@@ -149,6 +154,23 @@ public class LibvirtStoragePoolDef {
                 storagePoolBuilder.append("<secret uuid='" + _secretUuid + "'/>\n");
                 storagePoolBuilder.append("</auth>\n");
             }
+            storagePoolBuilder.append("</source>\n");
+        }
+        if (_poolType == poolType.GLUSTERFS) {
+            storagePoolBuilder.append("<source>\n");
+            storagePoolBuilder.append("<host name='");
+            storagePoolBuilder.append(_sourceHost);
+            if (_sourcePort != 0) {
+                storagePoolBuilder.append("' port='");
+                storagePoolBuilder.append(_sourcePort);
+            }
+            storagePoolBuilder.append("'/>\n");
+            storagePoolBuilder.append("<dir path='");
+            storagePoolBuilder.append(_sourceDir);
+            storagePoolBuilder.append("'/>\n");
+            storagePoolBuilder.append("<format type='");
+            storagePoolBuilder.append(_poolType);
+            storagePoolBuilder.append("'/>\n");
             storagePoolBuilder.append("</source>\n");
         }
         if (_poolType != poolType.RBD) {

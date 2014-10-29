@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.offerings.dao;
 
-
 import java.util.Map;
 
 import com.cloud.offering.NetworkOffering;
@@ -24,8 +23,9 @@ import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offerings.NetworkOfferingDetailsVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface NetworkOfferingDetailsDao extends GenericDao<NetworkOfferingDetailsVO, Long>{
+public interface NetworkOfferingDetailsDao extends GenericDao<NetworkOfferingDetailsVO, Long> {
 
-    Map<NetworkOffering.Detail,String> getNtwkOffDetails(long offeringId);
+    Map<NetworkOffering.Detail, String> getNtwkOffDetails(long offeringId);
+
     String getDetail(long offeringId, Detail detailName);
 }

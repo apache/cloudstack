@@ -25,12 +25,10 @@
 . /lib/lsb/init-functions
 . /etc/default/rcS
 
-whatami=cloud-console-proxy
-
 # set environment variables
 
-SHORTNAME="$whatami"
-PIDFILE=@PIDDIR@/"$whatami".pid
+SHORTNAME=`basename $0`
+PIDFILE=@PIDDIR@/"$SHORTNAME".pid
 LOCKFILE=@LOCKDIR@/"$SHORTNAME"
 LOGFILE=@CPLOG@
 PROGNAME="Cloud Console Proxy"
@@ -104,7 +102,7 @@ case "$1" in
 	start
 	;;
   *)
-	echo $"Usage: $whatami {start|stop|restart|status|help}"
+	echo $"Usage: $SHORTNAME {start|stop|restart|status|help}"
 	RETVAL=3
 esac
 

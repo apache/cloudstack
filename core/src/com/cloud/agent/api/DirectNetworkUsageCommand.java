@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,28 +15,30 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import java.util.Date;
 import java.util.List;
 
 public class DirectNetworkUsageCommand extends Command {
-    
+
     private List<String> publicIps;
     private Date start;
     private Date end;
     private String includeZones;
     private String excludeZones;
 
-	public DirectNetworkUsageCommand(List<String> publicIps, Date start, Date end, String includeZones, String excludeZones) {
-	    this.setPublicIps(publicIps);
-	    this.setStart(start);
-	    this.setEnd(end);
-	    this.setIncludeZones(includeZones);
-	    this.setExcludeZones(excludeZones);
+    public DirectNetworkUsageCommand(List<String> publicIps, Date start, Date end, String includeZones, String excludeZones) {
+        this.setPublicIps(publicIps);
+        this.setStart(start);
+        this.setEnd(end);
+        this.setIncludeZones(includeZones);
+        this.setExcludeZones(excludeZones);
     }
-	
-	@Override
+
+    @Override
     public boolean executeInSequence() {
         return false;
     }
@@ -64,20 +67,20 @@ public class DirectNetworkUsageCommand extends Command {
         return end;
     }
 
-	public String getIncludeZones() {
-		return includeZones;
-	}
+    public String getIncludeZones() {
+        return includeZones;
+    }
 
-	public void setIncludeZones(String includeZones) {
-		this.includeZones = includeZones;
-	}
+    public void setIncludeZones(String includeZones) {
+        this.includeZones = includeZones;
+    }
 
-	public String getExcludeZones() {
-		return excludeZones;
-	}
+    public String getExcludeZones() {
+        return excludeZones;
+    }
 
-	public void setExcludeZones(String excludeZones) {
-		this.excludeZones = excludeZones;
-	}
-    
+    public void setExcludeZones(String excludeZones) {
+        this.excludeZones = excludeZones;
+    }
+
 }

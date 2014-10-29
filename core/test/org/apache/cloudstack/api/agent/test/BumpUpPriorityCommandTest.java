@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package org.apache.cloudstack.api.agent.test;
 
 import static org.junit.Assert.assertFalse;
@@ -36,19 +39,15 @@ public class BumpUpPriorityCommandTest {
         value = bupc.getAccessDetail(NetworkElementCommand.ACCOUNT_ID);
         assertTrue(value.equals("accountID"));
 
-        bupc.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR,
-                "GuestNetworkCIDR");
+        bupc.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, "GuestNetworkCIDR");
         value = bupc.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR);
         assertTrue(value.equals("GuestNetworkCIDR"));
 
-        bupc.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY,
-                "GuestNetworkGateway");
-        value = bupc
-                .getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
+        bupc.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY, "GuestNetworkGateway");
+        value = bupc.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
         assertTrue(value.equals("GuestNetworkGateway"));
 
-        bupc.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG,
-                "GuestVlanTag");
+        bupc.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, "GuestVlanTag");
         value = bupc.getAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG);
         assertTrue(value.equals("GuestVlanTag"));
 
@@ -60,13 +59,11 @@ public class BumpUpPriorityCommandTest {
         value = bupc.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         assertTrue(value.equals("RouterIP"));
 
-        bupc.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP,
-                "RouterGuestIP");
+        bupc.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, "RouterGuestIP");
         value = bupc.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
         assertTrue(value.equals("RouterGuestIP"));
 
-        bupc.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE,
-                "ZoneNetworkType");
+        bupc.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, "ZoneNetworkType");
         value = bupc.getAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE);
         assertTrue(value.equals("ZoneNetworkType"));
 

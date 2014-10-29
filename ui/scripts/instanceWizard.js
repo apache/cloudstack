@@ -22,6 +22,12 @@
     var step6ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group', 'select-advanced-sg'(advanced sg-enabled zone)
 
     cloudStack.instanceWizard = {
+        //min disk offering  size when custom disk size is used
+        minDiskOfferingSize: function() {
+            return g_capabilities.customdiskofferingminsize;
+        },
+
+        //max disk offering size when custom disk size is used
         maxDiskOfferingSize: function() {
             return g_capabilities.customdiskofferingmaxsize;
         },
@@ -71,19 +77,23 @@
         steps: [
             // Step 1: Setup
             function(args) {
-                if (args.initArgs.pluginForm != null && args.initArgs.pluginForm.name == "vpcTierInstanceWizard") { //from VPC Tier chart
-                    //populate only one zone to the dropdown, the zone which the VPC is under.
-                    zoneObjs = [{
-                        id: args.context.vpc[0].zoneid,
-                        name: args.context.vpc[0].zonename,
-                        networktype: 'Advanced'
-                    }];
-                    args.response.success({
-                        data: {
-                            zones: zoneObjs
-                        }
-                    });
-                } else { //from Instance page
+                //from VPC Tier chart -- when the tier (network) has strechedl2subnet==false:
+                //only own zone is populated to the dropdown
+                if (args.initArgs.pluginForm != null && args.initArgs.pluginForm.name == "vpcTierInstanceWizard"
+                    && args.context.networks[0].strechedl2subnet) {
+                        zoneObjs = [{
+                            id: args.context.vpc[0].zoneid,
+                            name: args.context.vpc[0].zonename,
+                            networktype: 'Advanced'
+                        }];
+                        args.response.success({
+                            data: {
+                                zones: zoneObjs
+                            }
+                        });
+                }
+                //in all other cases (as well as from instance page) all zones are populated to dropdown
+                else {
                     $.ajax({
                         url: createURL("listZones&available=true"),
                         dataType: "json",
@@ -239,7 +249,11 @@
                         templates: templatesObj,
                         hypervisors: hypervisorObjs
                     },
-                    customHidden: function(args) {                        
+                    customHidden: function(args) {
+                        ////
+                        return true; // Disabled -- not supported in backend right now
+                        ////
+                        
                         if (selectedTemplateOrIso == 'select-template') {
                             return false; //show Root Disk Size field
                         } else { //selectedTemplateOrIso == 'select-iso'
@@ -251,6 +265,7 @@
 
             // Step 3: Service offering
             function(args) {
+            	selectedTemplateObj = null; //reset            	
                 if (args.currentData["select-template"] == "select-template") {
                     if (featuredTemplateObjs != null && featuredTemplateObjs.length > 0) {
                         for (var i = 0; i < featuredTemplateObjs.length; i++) {
@@ -288,6 +303,9 @@
                     selectedHypervisor = args.currentData.hypervisorid;
                 }
 
+                // if the user is leveraging a template, then we can show custom IOPS, if applicable
+                var canShowCustomIopsForServiceOffering = (args.currentData["select-template"] != "select-iso" ? true : false);
+
                 $.ajax({
                     url: createURL("listServiceOfferings&issystem=false"),
                     dataType: "json",
@@ -295,8 +313,10 @@
                     success: function(json) {
                         serviceOfferingObjs = json.listserviceofferingsresponse.serviceoffering;
                         args.response.success({
+                            canShowCustomIops: canShowCustomIopsForServiceOffering,
                             customFlag: 'iscustomized',
                         	//customFlag: 'offerha', //for testing only
+                        	customIopsFlag: 'iscustomizediops',
                             data: {
                                 serviceOfferings: serviceOfferingObjs
                             }
@@ -317,9 +337,11 @@
                         args.response.success({
                             required: isRequred,
                             customFlag: 'iscustomized', // Field determines if custom slider is shown
+                            customIopsDoFlag: 'iscustomizediops',
                             data: {
                                 diskOfferings: diskOfferingObjs
-                            }
+                            },
+                            multiDisk: false
                         });
                     }
                 });
@@ -377,7 +399,7 @@
                         step6ContainerType = 'nothing-to-select';
                         $networkStep.find("#from_instance_page_1").hide();
                         $networkStep.find("#from_instance_page_2").hide();
-                        $networkStep.find("#from_vpc_tier").text("tier " + args.context.networks[0].name);
+                        $networkStep.find("#from_vpc_tier").prepend("tier " + _s(args.context.networks[0].name));
                         $networkStep.find("#from_vpc_tier").show();
                     } else { //from Instance page
                         if (selectedZoneObj.securitygroupsenabled != true) { // Advanced SG-disabled zone
@@ -492,6 +514,47 @@
                         }
                     });
 
+                    //In addition to the networks in the current zone, find networks in other zones that have stretchedL2subnet==true
+                    //capability and show them on the UI
+                    var allOtherAdvancedZones = [];
+                    $.ajax({
+                        url: createURL('listZones'),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {
+                            var result = $.grep(json.listzonesresponse.zone, function(zone) {
+                               return (zone.networktype == 'Advanced');
+                            });
+                            $(result).each(function() {
+                                if (selectedZoneObj.id != this.id)
+                                    allOtherAdvancedZones.push(this);
+                            });
+                        }
+                    });
+                    if (allOtherAdvancedZones.length > 0) {
+                        for (var i = 0; i < allOtherAdvancedZones.length; i++) {
+                            var networkDataForZone = {
+                                zoneId: allOtherAdvancedZones[i].id,
+                                canusefordeploy: true
+                            };
+                            $.ajax({
+                                url: createURL('listNetworks'),
+                                data: networkDataForZone,
+                                async: false,
+                                success: function(json) {
+                                    var networksInThisZone = json.listnetworksresponse.network ? json.listnetworksresponse.network : [];
+                                    if (networksInThisZone.length > 0) {
+                                        for (var i = 0; i < networksInThisZone.length; i++) {
+                                            if (networksInThisZone[i].strechedl2subnet) {
+                                                networkObjsToPopulate.push(networksInThisZone[i]);
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }
+
                     $.ajax({
                         url: createURL("listNetworkOfferings"),
                         dataType: "json",
@@ -581,41 +644,91 @@
         ],
         action: function(args) {
             // Create a new VM!!!!
-            var array1 = [];
+            var deployVmData = {};
 
-            //step 1 : select zone
-            array1.push("&zoneId=" + args.data.zoneid);
+            //step 1 : select zone           
+            $.extend(deployVmData, {
+            	zoneid : args.data.zoneid
+            });
 
-            //step 2: select template
-            array1.push("&templateId=" + args.data.templateid);
-            array1.push("&hypervisor=" + selectedHypervisor);
+            //step 2: select template            
+            $.extend(deployVmData, {
+            	templateid : args.data.templateid
+            });
+                        
+            $.extend(deployVmData, {
+            	hypervisor : selectedHypervisor
+            });
            
             if (args.$wizard.find('input[name=rootDiskSize]').parent().css('display') != 'none')  {
-            	if (args.$wizard.find('input[name=rootDiskSize]').val().length > 0) {
-            	    array1.push("&rootdisksize=" + args.$wizard.find('input[name=rootDiskSize]').val());     
+            	if (args.$wizard.find('input[name=rootDiskSize]').val().length > 0) {            	      
+            		$.extend(deployVmData, {
+            			rootdisksize : args.$wizard.find('input[name=rootDiskSize]').val()
+            		});
             	}
             }
             
-            //step 3: select service offering
-            array1.push("&serviceOfferingId=" + args.data.serviceofferingid);
+            //step 3: select service offering           
+            $.extend(deployVmData, {
+            	serviceofferingid : args.data.serviceofferingid
+            });
             
             if (args.$wizard.find('input[name=compute-cpu-cores]').parent().parent().css('display') != 'none') {
-	            if (args.$wizard.find('input[name=compute-cpu-cores]').val().length > 0)  {   
-	            	array1.push("&cpunumber=" + args.$wizard.find('input[name=compute-cpu-cores]').val());
+	            if (args.$wizard.find('input[name=compute-cpu-cores]').val().length > 0)  {   	            	
+	            	$.extend(deployVmData, {
+	            	    'details[0].cpuNumber' : args.$wizard.find('input[name=compute-cpu-cores]').val()
+	            	});
 	            }            
-	            if (args.$wizard.find('input[name=compute-cpu]').val().length > 0)  {          
-	            	array1.push("&cpuspeed=" + args.$wizard.find('input[name=compute-cpu]').val());
+	            if (args.$wizard.find('input[name=compute-cpu]').val().length > 0)  {    
+	            	$.extend(deployVmData, {
+	            	    'details[0].cpuSpeed' : args.$wizard.find('input[name=compute-cpu]').val()
+	            	});
 	            }            
-	            if (args.$wizard.find('input[name=compute-memory]').val().length > 0)  {        
-	            	array1.push("&memory=" + args.$wizard.find('input[name=compute-memory]').val());
+	            if (args.$wizard.find('input[name=compute-memory]').val().length > 0)  {     
+	            	$.extend(deployVmData, {
+	            	    'details[0].memory' : args.$wizard.find('input[name=compute-memory]').val()
+	            	});
 	            }               
             }
-            
+
+            if (args.$wizard.find('input[name=disk-min-iops]').parent().parent().css('display') != 'none') {
+	            if (args.$wizard.find('input[name=disk-min-iops]').val().length > 0) {
+	            	$.extend(deployVmData, {
+	            	    'details[0].minIops' : args.$wizard.find('input[name=disk-min-iops]').val()
+	            	});
+	            }
+	            if (args.$wizard.find('input[name=disk-max-iops]').val().length > 0) {
+	            	$.extend(deployVmData, {
+	            	    'details[0].maxIops' : args.$wizard.find('input[name=disk-max-iops]').val()
+	            	});
+	            }
+            }
+
             //step 4: select disk offering
-            if (args.data.diskofferingid != null && args.data.diskofferingid != "0") {
-                array1.push("&diskOfferingId=" + args.data.diskofferingid);
-                if (selectedDiskOfferingObj.iscustomized == true)
-                    array1.push("&size=" + args.data.size);
+            if (args.data.diskofferingid != null && args.data.diskofferingid != "0") {                
+            	$.extend(deployVmData, {
+            		diskofferingid : args.data.diskofferingid
+            	});
+                
+                if (selectedDiskOfferingObj.iscustomized == true) {                    
+                	$.extend(deployVmData, {
+                		size : args.data.size
+                	});
+                }
+
+                if (selectedDiskOfferingObj.iscustomizediops == true) {
+	                if (args.$wizard.find('input[name=disk-min-iops-do]').val().length > 0) {
+	            	    $.extend(deployVmData, {
+	            	        'details[0].minIopsDo' : args.$wizard.find('input[name=disk-min-iops-do]').val()
+	            	    });
+	                }
+
+	                if (args.$wizard.find('input[name=disk-max-iops-do]').val().length > 0) {
+	            	    $.extend(deployVmData, {
+	            	        'details[0].maxIopsDo' : args.$wizard.find('input[name=disk-max-iops-do]').val()
+	            	    });
+	                }
+                }
             }
 
             //step 5: select an affinity group
@@ -629,12 +742,16 @@
                 checkedAffinityGroupIdArray = [];
             }
 
-            if (checkedAffinityGroupIdArray.length > 0)
-                array1.push("&affinitygroupids=" + checkedAffinityGroupIdArray.join(","));
+            if (checkedAffinityGroupIdArray.length > 0) {                
+            	$.extend(deployVmData, {
+            		affinitygroupids : checkedAffinityGroupIdArray.join(",")
+            	});
+            }
 
             //step 6: select network
             if (step6ContainerType == 'select-network' || step6ContainerType == 'select-advanced-sg') {
                 var array2 = [];
+                var array3 = [];                
                 var defaultNetworkId = args.data.defaultNetwork; //args.data.defaultNetwork might be equal to string "new-network" or a network ID
 
                 var checkedNetworkIdArray;
@@ -651,7 +768,7 @@
                 if (args.data["new-network"] == "create-new-network") {
                     var isCreateNetworkSuccessful = true;
 
-                    var data = {
+                    var createNetworkData = {
                         networkOfferingId: args.data["new-network-networkofferingid"],
                         name: args.data["new-network-name"],
                         displayText: args.data["new-network-name"],
@@ -660,7 +777,7 @@
 
                     $.ajax({
                         url: createURL('createNetwork'),
-                        data: data,
+                        data: createNetworkData,
                         async: false,
                         success: function(json) {
                             newNetwork = json.createnetworkresponse.network;
@@ -680,19 +797,62 @@
                 }
                 //create new network ends here
 
-                //add default network first
-                if (defaultNetworkId != null && defaultNetworkId.length > 0)
-                    array2.push(defaultNetworkId);
 
-                //then, add other checked networks
+                if (defaultNetworkId == null) {
+                	cloudStack.dialog.notice({
+                        message: "Please select a default network in Network step."
+                    });    
+                	return;
+                }    
+                  
                 if (checkedNetworkIdArray.length > 0) {
                     for (var i = 0; i < checkedNetworkIdArray.length; i++) {
-                        if (checkedNetworkIdArray[i] != defaultNetworkId) //exclude defaultNetworkId that has been added to array2
+                    	if (checkedNetworkIdArray[i] == defaultNetworkId) { 
+                    		array2.unshift(defaultNetworkId); 
+                    		
+                    		var ipToNetwork = {
+                    			networkid: defaultNetworkId
+                    		};                    		                 		         
+                    		if (args.data["new-network"] == "create-new-network") {
+                    			if (args.data['new-network-ip'] != null && args.data['new-network-ip'].length > 0) {
+                    				$.extend(ipToNetwork, {
+                    					ip: args.data['new-network-ip']
+                    				});                    				
+                    			}
+                    		} else {
+                    			if (args.data["my-network-ips"][i] != null && args.data["my-network-ips"][i].length > 0) {
+                    				$.extend(ipToNetwork, {
+                    					ip: args.data["my-network-ips"][i]
+                    				});       
+                    			}
+                    		}
+                    		array3.unshift(ipToNetwork);    
+                    			
+                    	} else {                         
                             array2.push(checkedNetworkIdArray[i]);
+                            
+                            var ipToNetwork = {
+                        		networkid: checkedNetworkIdArray[i]
+                        	};                          	
+                        	if (args.data["my-network-ips"][i] != null && args.data["my-network-ips"][i].length > 0) {
+                        		$.extend(ipToNetwork, {
+                					ip: args.data["my-network-ips"][i]
+                				});      
+                        	}
+                        	array3.push(ipToNetwork);    
+                        }                    	
                     }
                 }
-
-                array1.push("&networkIds=" + array2.join(","));
+                
+                //deployVmData.push("&networkIds=" + array2.join(","));  //ipToNetworkMap can't be specified along with networkIds or ipAddress
+                                            
+                for (var k = 0; k < array3.length; k++) {                	
+                	deployVmData["iptonetworklist[" + k + "].networkid"] = array3[k].networkid;                	
+                	if (array3[k].ip != undefined && array3[k].ip.length > 0) {                	    
+                		deployVmData["iptonetworklist[" + k + "].ip"] = array3[k].ip;                	   
+                	}
+                }                        
+               
             } else if (step6ContainerType == 'select-security-group') {
                 var checkedSecurityGroupIdArray;
                 if (typeof(args.data["security-groups"]) == "object" && args.data["security-groups"].length != null) { //args.data["security-groups"] is an array of string, e.g. ["2375f8cc-8a73-4b8d-9b26-50885a25ffe0", "27c60d2a-de7f-4bb7-96e5-a602cec681df","c6301d77-99b5-4e8a-85e2-3ea2ab31c342"],
@@ -704,8 +864,11 @@
                     checkedSecurityGroupIdArray = [];
                 }
 
-                if (checkedSecurityGroupIdArray.length > 0)
-                    array1.push("&securitygroupids=" + checkedSecurityGroupIdArray.join(","));
+                if (checkedSecurityGroupIdArray.length > 0) {                    
+                	$.extend(deployVmData, {
+                		securitygroupids : checkedSecurityGroupIdArray.join(",")
+                	});
+                }
 
                 if (selectedZoneObj.networktype == "Advanced" && selectedZoneObj.securitygroupsenabled == true) { // Advanced SG-enabled zone
                     var array2 = [];
@@ -723,8 +886,9 @@
                     }
 
                     //add default network first
-                    if (defaultNetworkId != null && defaultNetworkId.length > 0 && defaultNetworkId != 'new-network')
+                    if (defaultNetworkId != null && defaultNetworkId.length > 0 && defaultNetworkId != 'new-network') {
                         array2.push(defaultNetworkId);
+                    }
 
                     //then, add other checked networks
                     if (checkedNetworkIdArray.length > 0) {
@@ -733,36 +897,65 @@
                                 array2.push(checkedNetworkIdArray[i]);
                         }
                     }
-
-                    array1.push("&networkIds=" + array2.join(","));
+                   
+                    $.extend(deployVmData, {
+                    	networkids : array2.join(",")
+                    });
                 }
             } else if (step6ContainerType == 'nothing-to-select') {
-                if (args.context.networks != null) { //from VPC tier
-                    array1.push("&networkIds=" + args.context.networks[0].id);
-                    array1.push("&domainid=" + args.context.vpc[0].domainid);
-
-                    if (args.context.vpc[0].account != null)
-                        array1.push("&account=" + args.context.vpc[0].account);
-                    else if (args.context.vpc[0].projectid != null)
-                        array1.push("&projectid=" + args.context.vpc[0].projectid);
+                if ("vpc" in args.context) { //from VPC tier    
+                    deployVmData["iptonetworklist[0].networkid"] = args.context.networks[0].id;            	
+                	if (args.data["vpc-specify-ip"] != undefined && args.data["vpc-specify-ip"].length > 0) {                	    
+                		deployVmData["iptonetworklist[0].ip"] = args.data["vpc-specify-ip"];              	   
+                	}
+                	
+                    $.extend(deployVmData, {
+                    	domainid : args.context.vpc[0].domainid
+                    });
+                    if (args.context.vpc[0].account != null) {                        
+                    	$.extend(deployVmData, {
+                    		account : args.context.vpc[0].account
+                    	});                    
+                    } else if (args.context.vpc[0].projectid != null) {                        
+                    	$.extend(deployVmData, {
+                    		projectid : args.context.vpc[0].projectid
+                    	});
+                    }
                 }
             }
 
             var displayname = args.data.displayname;
-            if (displayname != null && displayname.length > 0) {
-                array1.push("&displayname=" + todb(displayname));
-                array1.push("&name=" + todb(displayname));
+            if (displayname != null && displayname.length > 0) {                
+            	$.extend(deployVmData, {
+            		displayname : displayname
+            	});                                
+            	$.extend(deployVmData, {
+            		name : displayname
+            	});
             }
 
             var group = args.data.groupname;
-            if (group != null && group.length > 0)
-                array1.push("&group=" + todb(group));
-
-            //array1.push("&startVm=false");	//for testing only, comment it out before checking in
+            if (group != null && group.length > 0) {                
+            	$.extend(deployVmData, {
+            		group : group
+            	});
+            }
+            
+            var keyboard = args.data.keyboardLanguage;
+            if (keyboard != null && keyboard.length > 0) {  //when blank option (default option) is selected => args.data.keyboardLanguage == ""              
+            	$.extend(deployVmData, {
+            		keyboard : keyboard
+            	});
+            }            
+            
+            $(window).trigger('cloudStack.deployVirtualMachine', {
+                deployVmData: deployVmData,
+                formData: args.data
+            });
 
             $.ajax({
-                url: createURL("deployVirtualMachine" + array1.join("")),
-                dataType: "json",
+                url: createURL('deployVirtualMachine'),
+                data: deployVmData,
                 success: function(json) {
                     var jid = json.deployvirtualmachineresponse.jobid;
                     var vmid = json.deployvirtualmachineresponse.id;

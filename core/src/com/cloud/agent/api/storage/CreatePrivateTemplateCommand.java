@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api.storage;
 
 public class CreatePrivateTemplateCommand extends StorageCommand {
@@ -29,13 +32,15 @@ public class CreatePrivateTemplateCommand extends StorageCommand {
     private String _secondaryStorageURL;
     private String _snapshotName;
 
-    public CreatePrivateTemplateCommand() {}
+    public CreatePrivateTemplateCommand() {
+    }
 
-    public CreatePrivateTemplateCommand(String secondaryStorageURL, long templateId, long accountId, String userSpecifiedName, String uniqueName, String snapshotFolder, String snapshotPath, String snapshotName, String userFolder) {
-    	_secondaryStorageURL = secondaryStorageURL;
-    	_templateId = templateId;
-    	_accountId = accountId;
-    	_userSpecifiedName = userSpecifiedName;
+    public CreatePrivateTemplateCommand(String secondaryStorageURL, long templateId, long accountId, String userSpecifiedName, String uniqueName, String snapshotFolder,
+            String snapshotPath, String snapshotName, String userFolder) {
+        _secondaryStorageURL = secondaryStorageURL;
+        _templateId = templateId;
+        _accountId = accountId;
+        _userSpecifiedName = userSpecifiedName;
         _uniqueName = uniqueName;
         _snapshotFolder = snapshotFolder;
         _snapshotPath = snapshotPath;
@@ -49,7 +54,7 @@ public class CreatePrivateTemplateCommand extends StorageCommand {
     }
 
     public String getSecondaryStorageURL() {
-    	return _secondaryStorageURL;
+        return _secondaryStorageURL;
     }
 
     public String getTemplateName() {
@@ -69,7 +74,7 @@ public class CreatePrivateTemplateCommand extends StorageCommand {
     }
 
     public String getSnapshotName() {
-    	return _snapshotName;
+        return _snapshotName;
     }
 
     public String getUserFolder() {
@@ -77,14 +82,14 @@ public class CreatePrivateTemplateCommand extends StorageCommand {
     }
 
     public long getTemplateId() {
-    	return _templateId;
+        return _templateId;
     }
 
     public long getAccountId() {
-    	return _accountId;
+        return _accountId;
     }
 
     public void setTemplateId(long templateId) {
-    	_templateId = templateId;
+        _templateId = templateId;
     }
 }

@@ -18,8 +18,9 @@ package com.cloud.hypervisor.vmware.mo;
 
 import java.util.List;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.ManagedObjectReference;
+
+import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class NetworkMO extends BaseMO {
     public NetworkMO(VmwareContext context, ManagedObjectReference morCluster) {
@@ -35,6 +36,6 @@ public class NetworkMO extends BaseMO {
     }
 
     public List<ManagedObjectReference> getVMsOnNetwork() throws Exception {
-        return (List<ManagedObjectReference>)_context.getVimClient().getDynamicProperty(_mor, "vm");
+        return _context.getVimClient().getDynamicProperty(_mor, "vm");
     }
 }

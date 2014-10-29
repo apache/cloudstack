@@ -21,9 +21,6 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.PrimaryKeyJoinColumn;
-import javax.persistence.SecondaryTable;
-import javax.persistence.SecondaryTables;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.api.InternalIdentity;
@@ -50,6 +47,7 @@ public class AffinityGroupVMMapVO implements InternalIdentity {
         this.instanceId = instanceId;
     }
 
+    @Override
     public long getId() {
         return id;
     }
@@ -57,7 +55,6 @@ public class AffinityGroupVMMapVO implements InternalIdentity {
     public long getAffinityGroupId() {
         return affinityGroupId;
     }
-
 
     public long getInstanceId() {
         return instanceId;

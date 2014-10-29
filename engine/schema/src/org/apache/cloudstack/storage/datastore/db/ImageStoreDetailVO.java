@@ -16,14 +16,14 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.db;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "image_store_details")
@@ -51,6 +51,7 @@ public class ImageStoreDetailVO implements InternalIdentity {
         this.value = value;
     }
 
+    @Override
     public long getId() {
         return id;
     }

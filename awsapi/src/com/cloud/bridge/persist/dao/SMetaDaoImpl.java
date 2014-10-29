@@ -27,66 +27,66 @@ import com.cloud.bridge.service.core.s3.S3MetaDataEntry;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={SMetaDao.class})
+@Local(value = {SMetaDao.class})
 public class SMetaDaoImpl extends GenericDaoBase<SMetaVO, Long> implements SMetaDao {
 
-	public SMetaDaoImpl() {}
-	
-	@Override
-	public List<SMetaVO> getByTarget(String target, long targetId) {
-	    SearchBuilder <SMetaVO> SearchByTarget = createSearchBuilder();
-	    SearchByTarget.and("Target", SearchByTarget.entity().getTarget(), SearchCriteria.Op.EQ);
-	    SearchByTarget.and("TargetID", SearchByTarget.entity().getTargetId(), SearchCriteria.Op.EQ);
-	    SearchByTarget.done();
-	    TransactionLegacy txn = TransactionLegacy.open( TransactionLegacy.AWSAPI_DB);
-	    try {
+    public SMetaDaoImpl() {
+    }
+
+    @Override
+    public List<SMetaVO> getByTarget(String target, long targetId) {
+        SearchBuilder<SMetaVO> SearchByTarget = createSearchBuilder();
+        SearchByTarget.and("Target", SearchByTarget.entity().getTarget(), SearchCriteria.Op.EQ);
+        SearchByTarget.and("TargetID", SearchByTarget.entity().getTargetId(), SearchCriteria.Op.EQ);
+        SearchByTarget.done();
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
+        try {
             txn.start();
             SearchCriteria<SMetaVO> sc = SearchByTarget.create();
             sc.setParameters("Target", target);
             sc.setParameters("TargetID", targetId);
             return listBy(sc);
-	    } finally {
+        } finally {
             txn.close();
-	    }
+        }
 
-	}
-	
-	@Override
-	public SMetaVO save(String target, long targetId, S3MetaDataEntry entry) {
-		SMetaVO meta = new SMetaVO();
-		meta.setTarget(target);
-		meta.setTargetId(targetId);
-		meta.setName(entry.getName());
-		meta.setValue(entry.getValue());
-		meta = this.persist(meta);
-		return meta;
-	}
-	
-	@Override
-	public void save(String target, long targetId, S3MetaDataEntry[] entries) {
-		// To redefine the target's metadaa
-	    SearchBuilder <SMetaVO> SearchByTarget = createSearchBuilder();
-	    SearchByTarget.and("Target", SearchByTarget.entity().getTarget(), SearchCriteria.Op.EQ);
-	    SearchByTarget.and("TargetID", SearchByTarget.entity().getTargetId(), SearchCriteria.Op.EQ);
-	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
-	    try {
-		txn.start();
-		SearchCriteria<SMetaVO> sc = SearchByTarget.create();
-		sc.setParameters("Target", target);
-		sc.setParameters("TargetID", targetId);
-		this.remove(sc);
+    }
 
-		if(entries != null) {
-		    for(S3MetaDataEntry entry : entries)
-        		save(target, targetId, entry);
-        	}
-		txn.commit();
-		}finally {
-		    txn.close();
-		}
-	}
+    @Override
+    public SMetaVO save(String target, long targetId, S3MetaDataEntry entry) {
+        SMetaVO meta = new SMetaVO();
+        meta.setTarget(target);
+        meta.setTargetId(targetId);
+        meta.setName(entry.getName());
+        meta.setValue(entry.getValue());
+        meta = this.persist(meta);
+        return meta;
+    }
+
+    @Override
+    public void save(String target, long targetId, S3MetaDataEntry[] entries) {
+        // To redefine the target's metadaa
+        SearchBuilder<SMetaVO> SearchByTarget = createSearchBuilder();
+        SearchByTarget.and("Target", SearchByTarget.entity().getTarget(), SearchCriteria.Op.EQ);
+        SearchByTarget.and("TargetID", SearchByTarget.entity().getTargetId(), SearchCriteria.Op.EQ);
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
+        try {
+            txn.start();
+            SearchCriteria<SMetaVO> sc = SearchByTarget.create();
+            sc.setParameters("Target", target);
+            sc.setParameters("TargetID", targetId);
+            this.remove(sc);
+
+            if (entries != null) {
+                for (S3MetaDataEntry entry : entries)
+                    save(target, targetId, entry);
+            }
+            txn.commit();
+        } finally {
+            txn.close();
+        }
+    }
 }

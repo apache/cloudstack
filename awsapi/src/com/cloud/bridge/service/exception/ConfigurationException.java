@@ -17,20 +17,20 @@
 package com.cloud.bridge.service.exception;
 
 public class ConfigurationException extends RuntimeException {
-	private static final long serialVersionUID = 6810626920539827556L;
+    private static final long serialVersionUID = 6810626920539827556L;
 
-	public ConfigurationException() {
-	}
-	
-	public ConfigurationException(String message) {
-		super(message);
-	}
-	
-	public ConfigurationException(Throwable e) {
-		super(e);
-	}
-	
-	public ConfigurationException(String message, Throwable e) {
-		super(message, e);
-	}
+    public ConfigurationException() {
+    }
+
+    public ConfigurationException(String message) {
+        super(message);
+    }
+
+    public ConfigurationException(Throwable e) {
+        super(e);
+    }
+
+    public ConfigurationException(String message, Throwable e) {
+        super(message, e);
+    }
 }

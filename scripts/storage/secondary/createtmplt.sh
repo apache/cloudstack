@@ -73,7 +73,7 @@ is_compressed() {
          ;;
   bzip2)  ctype="bz2"
          ;;
-  ZIP)  ctype="zip"
+  [zZ][iI][pP])  ctype="zip"
         ;;
     *) echo "File $1 does not appear to be compressed" >&2
         return 1
@@ -92,7 +92,7 @@ uncompress() {
          ;;
   bzip2)  bunzip2 -q -c $1 > $tmpfile
          ;;
-  ZIP)  unzip -q -p $1 | cat > $tmpfile
+  [zZ][iI][pP])  unzip -q -p $1 | cat > $tmpfile
         ;;
     *) printf "$1"
        return 0
@@ -174,7 +174,7 @@ isCifs() {
    #then check if the template file is from cifs using df -P filename
    #Currently only cifs is supported in hyperv zone.
    mount | grep "type cifs" > /dev/null
-   return $?
+   echo $?
 }
 
 if [ "$tflag$nflag$fflag$sflag" != "1111" ]
@@ -204,7 +204,7 @@ rollback_if_needed $tmpltfs $? "tar archives not supported\n"
 
 if [ ${tmpltname%.vhd} != ${tmpltname} ]
 then
-  if [ isCifs -ne 0 ] ;
+  if [ $(isCifs) -ne 0 ] ;
   then
       if  which  vhd-util &>/dev/null
       then

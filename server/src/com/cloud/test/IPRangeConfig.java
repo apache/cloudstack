@@ -28,10 +28,8 @@ import java.util.Vector;
 
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.net.NetUtils;
-
 
 public class IPRangeConfig {
 
@@ -44,7 +42,6 @@ public class IPRangeConfig {
     private String usage() {
         return "Usage: ./change_ip_range.sh [add|delete] [public zone | private pod zone] startIP endIP";
     }
-
 
     public void run(String[] args) {
         if (args.length < 2) {
@@ -72,14 +69,15 @@ public class IPRangeConfig {
 
             long zoneId = PodZoneConfig.getZoneId(zone);
             result = changeRange(op, "public", -1, zoneId, startIP, endIP, null, -1);
-            result.replaceAll("<br>", "/n");
+            result = result.replaceAll("<br>", "/n");
             System.out.println(result);
         } else if (type.equals("private")) {
             if (args.length != 5 && args.length != 6) {
                 printError(usage());
             }
             String pod = args[2];
-            String zone = args[3];;
+            String zone = args[3];
+            ;
             String startIP = args[4];
             String endIP = null;
             if (args.length == 6) {
@@ -94,7 +92,7 @@ public class IPRangeConfig {
             long podId = PodZoneConfig.getPodId(pod, zone);
             long zoneId = PodZoneConfig.getZoneId(zone);
             result = changeRange(op, "private", podId, zoneId, startIP, endIP, null, -1);
-            result.replaceAll("<br>", "/n");
+            result = result.replaceAll("<br>", "/n");
             System.out.println(result);
         } else {
             printError(usage());
@@ -320,31 +318,31 @@ public class IPRangeConfig {
         String isPublicIPAllocatedSelectSql = "SELECT * FROM `cloud`.`user_ip_address` WHERE public_ip_address = ? AND vlan_id = ?";
 
         Vector<String> problemIPs = new Vector<String>();
-        PreparedStatement stmt = null;
-        PreparedStatement isAllocatedStmt = null;
-
         Connection conn = null;
         try {
             conn = txn.getConnection();
-            stmt = conn.prepareStatement(deleteSql);
-            isAllocatedStmt = conn.prepareStatement(isPublicIPAllocatedSelectSql);
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
+            System.out.println("deletePublicIPRange. Exception: " +e.getMessage());
             return null;
         }
-
-        while (startIP <= endIP) {
-            if (!isPublicIPAllocated(startIP, vlanDbId, isAllocatedStmt)) {
-                try {
-                    stmt.clearParameters();
-                    stmt.setLong(1, startIP);
-                    stmt.setLong(2, vlanDbId);
-                    stmt.executeUpdate();
-                } catch (Exception ex) {
+        try(PreparedStatement stmt = conn.prepareStatement(deleteSql);
+            PreparedStatement isAllocatedStmt = conn.prepareStatement(isPublicIPAllocatedSelectSql);) {
+            while (startIP <= endIP) {
+                if (!isPublicIPAllocated(startIP, vlanDbId, isAllocatedStmt)) {
+                        stmt.clearParameters();
+                        stmt.setLong(1, startIP);
+                        stmt.setLong(2, vlanDbId);
+                        stmt.executeUpdate();
+                    }
+                else {
+                    problemIPs.add(NetUtils.long2Ip(startIP));
                 }
-            } else {
-                problemIPs.add(NetUtils.long2Ip(startIP));
+                startIP += 1;
             }
-            startIP += 1;
+        }catch (Exception ex) {
+           System.out.println("deletePublicIPRange. Exception: " +ex.getMessage());
+           return null;
         }
 
         return problemIPs;
@@ -353,52 +351,46 @@ public class IPRangeConfig {
     private Vector<String> deletePrivateIPRange(TransactionLegacy txn, long startIP, long endIP, long podId, long zoneId) {
         String deleteSql = "DELETE FROM `cloud`.`op_dc_ip_address_alloc` WHERE ip_address = ? AND pod_id = ? AND data_center_id = ?";
         String isPrivateIPAllocatedSelectSql = "SELECT * FROM `cloud`.`op_dc_ip_address_alloc` WHERE ip_address = ? AND data_center_id = ? AND pod_id = ?";
-
         Vector<String> problemIPs = new Vector<String>();
-        PreparedStatement stmt = null;
-        PreparedStatement isAllocatedStmt = null;
-
-        Connection conn = null;
         try {
-            conn = txn.getConnection();
-            stmt = conn.prepareStatement(deleteSql);
-            isAllocatedStmt = conn.prepareStatement(isPrivateIPAllocatedSelectSql);
-        } catch (SQLException e) {
-            System.out.println("Exception: " + e.getMessage());
-            printError("Unable to start DB connection to delete private IPs. Please contact Cloud Support.");
-        }
-
-        while (startIP <= endIP) {
-            if (!isPrivateIPAllocated(NetUtils.long2Ip(startIP), podId, zoneId, isAllocatedStmt)) {
-                try {
-                    stmt.clearParameters();
-                    stmt.setString(1, NetUtils.long2Ip(startIP));
-                    stmt.setLong(2, podId);
-                    stmt.setLong(3, zoneId);
-                    stmt.executeUpdate();
-                } catch (Exception ex) {
+            Connection conn = txn.getConnection();
+            try (PreparedStatement stmt = conn.prepareStatement(deleteSql);
+                 PreparedStatement isAllocatedStmt = conn.prepareStatement(isPrivateIPAllocatedSelectSql);) {
+                while (startIP <= endIP) {
+                    if (!isPrivateIPAllocated(NetUtils.long2Ip(startIP), podId, zoneId, isAllocatedStmt)) {
+                        stmt.clearParameters();
+                        stmt.setString(1, NetUtils.long2Ip(startIP));
+                        stmt.setLong(2, podId);
+                        stmt.setLong(3, zoneId);
+                        stmt.executeUpdate();
+                    } else {
+                        problemIPs.add(NetUtils.long2Ip(startIP));
+                    }
+                    startIP += 1;
                 }
-            } else {
-                problemIPs.add(NetUtils.long2Ip(startIP));
+            } catch (SQLException e) {
+                System.out.println("deletePrivateIPRange. Exception: " + e.getMessage());
+                printError("deletePrivateIPRange. Exception: " + e.getMessage());
             }
-            startIP += 1;
+        }catch (SQLException e) {
+            System.out.println("deletePrivateIPRange. Exception: " + e.getMessage());
+            printError("deletePrivateIPRange. Exception: " + e.getMessage());
         }
-
         return problemIPs;
     }
 
     private boolean isPublicIPAllocated(long ip, long vlanDbId, PreparedStatement stmt) {
-        try {
+        try(ResultSet rs = stmt.executeQuery();) {
             stmt.clearParameters();
             stmt.setLong(1, ip);
             stmt.setLong(2, vlanDbId);
-            ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return (rs.getString("allocated") != null);
             } else {
                 return false;
             }
-        } catch (SQLException ex) {
+        }
+        catch (SQLException ex) {
             System.out.println(ex.getMessage());
             return true;
         }
@@ -410,11 +402,16 @@ public class IPRangeConfig {
             stmt.setString(1, ip);
             stmt.setLong(2, zoneId);
             stmt.setLong(3, podId);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return (rs.getString("taken") != null);
-            } else {
-                return false;
+            try(ResultSet rs = stmt.executeQuery();) {
+                if (rs.next()) {
+                    return (rs.getString("taken") != null);
+                } else {
+                    return false;
+                }
+            }
+            catch (Exception ex) {
+                System.out.println(ex.getMessage());
+                return true;
             }
         } catch (SQLException ex) {
             System.out.println(ex.getMessage());
@@ -443,16 +440,16 @@ public class IPRangeConfig {
         long startLinkLocalIp = NetUtils.ip2Long(linkLocalIps[0]);
         long endLinkLocalIp = NetUtils.ip2Long(linkLocalIps[1]);
 
-        saveLinkLocalPrivateIPRange(txn, startLinkLocalIp,  endLinkLocalIp, podId, zoneId);
+        saveLinkLocalPrivateIPRange(txn, startLinkLocalIp, endLinkLocalIp, podId, zoneId);
 
         return problemIPs;
     }
 
     public Vector<String> savePublicIPRange(TransactionLegacy txn, long startIP, long endIP, long zoneId, long vlanDbId, Long sourceNetworkId, long physicalNetworkId) {
-        String insertSql = "INSERT INTO `cloud`.`user_ip_address` (public_ip_address, data_center_id, vlan_db_id, mac_address, source_network_id, physical_network_id, uuid) VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?), ?, ?, ?)";
+        String insertSql =
+            "INSERT INTO `cloud`.`user_ip_address` (public_ip_address, data_center_id, vlan_db_id, mac_address, source_network_id, physical_network_id, uuid) VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?), ?, ?, ?)";
         String updateSql = "UPDATE `cloud`.`data_center` set mac_address = mac_address+1 where id=?";
         Vector<String> problemIPs = new Vector<String>();
-        PreparedStatement stmt = null;
 
         Connection conn = null;
         try {
@@ -460,23 +457,20 @@ public class IPRangeConfig {
         } catch (SQLException e) {
             return null;
         }
-
         while (startIP <= endIP) {
-            try {
-                stmt = conn.prepareStatement(insertSql);
-                stmt.setString(1, NetUtils.long2Ip(startIP));
-                stmt.setLong(2, zoneId);
-                stmt.setLong(3, vlanDbId);
-                stmt.setLong(4, zoneId);
-                stmt.setLong(5, sourceNetworkId);
-                stmt.setLong(6, physicalNetworkId);
-                stmt.setString(7, UUID.randomUUID().toString());
-                stmt.executeUpdate();
-                stmt.close();
-                stmt = conn.prepareStatement(updateSql);
-                stmt.setLong(1, zoneId);
-                stmt.executeUpdate();
-                stmt.close();
+            try (PreparedStatement insert_stmt = conn.prepareStatement(insertSql);
+            PreparedStatement update_stmt = conn.prepareStatement(updateSql);
+            ){
+                insert_stmt.setString(1, NetUtils.long2Ip(startIP));
+                insert_stmt.setLong(2, zoneId);
+                insert_stmt.setLong(3, vlanDbId);
+                insert_stmt.setLong(4, zoneId);
+                insert_stmt.setLong(5, sourceNetworkId);
+                insert_stmt.setLong(6, physicalNetworkId);
+                insert_stmt.setString(7, UUID.randomUUID().toString());
+                insert_stmt.executeUpdate();
+                update_stmt.setLong(1, zoneId);
+                update_stmt.executeUpdate();
             } catch (Exception ex) {
                 problemIPs.add(NetUtils.long2Ip(startIP));
             }
@@ -487,26 +481,25 @@ public class IPRangeConfig {
     }
 
     public List<String> savePrivateIPRange(TransactionLegacy txn, long startIP, long endIP, long podId, long zoneId) {
-        String insertSql = "INSERT INTO `cloud`.`op_dc_ip_address_alloc` (ip_address, data_center_id, pod_id, mac_address) VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?))";
+        String insertSql =
+            "INSERT INTO `cloud`.`op_dc_ip_address_alloc` (ip_address, data_center_id, pod_id, mac_address) VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?))";
         String updateSql = "UPDATE `cloud`.`data_center` set mac_address = mac_address+1 where id=?";
         Vector<String> problemIPs = new Vector<String>();
 
         try {
-            Connection conn = null;
-            conn = txn.getConnection();
+            Connection conn = txn.getConnection();
             while (startIP <= endIP) {
-                try {
-                    PreparedStatement stmt = conn.prepareStatement(insertSql);
-                    stmt.setString(1, NetUtils.long2Ip(startIP));
-                    stmt.setLong(2, zoneId);
-                    stmt.setLong(3, podId);
-                    stmt.setLong(4, zoneId);
-                    stmt.executeUpdate();
-                    stmt.close();
-                    stmt = conn.prepareStatement(updateSql);
-                    stmt.setLong(1, zoneId);
-                    stmt.executeUpdate();
-                    stmt.close();
+                try (PreparedStatement insert_stmt = conn.prepareStatement(insertSql);
+                     PreparedStatement update_stmt = conn.prepareStatement(updateSql);
+                )
+                {
+                    insert_stmt.setString(1, NetUtils.long2Ip(startIP));
+                    insert_stmt.setLong(2, zoneId);
+                    insert_stmt.setLong(3, podId);
+                    insert_stmt.setLong(4, zoneId);
+                    insert_stmt.executeUpdate();
+                    update_stmt.setLong(1, zoneId);
+                    update_stmt.executeUpdate();
                 } catch (Exception e) {
                     problemIPs.add(NetUtils.long2Ip(startIP));
                 }
@@ -515,7 +508,7 @@ public class IPRangeConfig {
         } catch (Exception ex) {
             System.out.print(ex.getMessage());
             ex.printStackTrace();
-        } 
+        }
 
         return problemIPs;
     }
@@ -531,10 +524,10 @@ public class IPRangeConfig {
             System.out.println("Exception: " + e.getMessage());
             printError("Unable to start DB connection to save private IPs. Please contact Cloud Support.");
         }
+        long start = startIP;
 
-        try {
-            long start = startIP;
-            PreparedStatement stmt = conn.prepareStatement(insertSql);
+        try(PreparedStatement stmt = conn.prepareStatement(insertSql);)
+        {
             while (startIP <= endIP) {
                 stmt.setString(1, NetUtils.long2Ip(startIP++));
                 stmt.setLong(2, zoneId);
@@ -547,53 +540,26 @@ public class IPRangeConfig {
                     problemIPs.add(NetUtils.long2Ip(start + (i / 2)));
                 }
             }
-            stmt.close();
         } catch (Exception ex) {
+            System.out.println("saveLinkLocalPrivateIPRange. Exception: " + ex.getMessage());
         }
-
         return problemIPs;
     }
 
     public static String getPublicNetmask(String zone) {
         return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`data_center` WHERE name = \"" + zone + "\"", "netmask",
-                "Unable to start DB connection to read public netmask. Please contact Cloud Support.");
+            "Unable to start DB connection to read public netmask. Please contact Cloud Support.");
     }
 
     public static String getPublicGateway(String zone) {
         return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`data_center` WHERE name = \"" + zone + "\"", "gateway",
-                "Unable to start DB connection to read public gateway. Please contact Cloud Support.");
+            "Unable to start DB connection to read public gateway. Please contact Cloud Support.");
     }
 
-    public static String getGuestNetworkCidr(Long zoneId)
-    {
-        return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`data_center` WHERE id = \"" + zoneId + "\"","guest_network_cidr",
-                "Unable to start DB connection to read guest cidr network. Please contact Cloud Support.");
+    public static String getGuestNetworkCidr(Long zoneId) {
+        return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`data_center` WHERE id = \"" + zoneId + "\"", "guest_network_cidr",
+            "Unable to start DB connection to read guest cidr network. Please contact Cloud Support.");
     }
-
-//	public static String getGuestIpNetwork() {
-//		return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`configuration` WHERE name = \"guest.ip.network\"", "value",
-//		"Unable to start DB connection to read guest IP network. Please contact Cloud Support.");
-//	}
-//	
-//	public static String getGuestNetmask() {
-//		return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`configuration` WHERE name = \"guest.netmask\"", "value",
-//		"Unable to start DB connection to read guest netmask. Please contact Cloud Support.");
-//	}
-
-//	public static String getGuestSubnet() {
-//		String guestIpNetwork = getGuestIpNetwork();
-//		String guestNetmask = getGuestNetmask();
-//		
-//		if (guestIpNetwork == null || guestIpNetwork.isEmpty()) printError("Please enter a valid guest IP network address.");
-//		if (guestNetmask == null || guestNetmask.isEmpty()) printError("Please enter a valid guest IP network netmask");
-//		
-//		return NetUtils.getSubNet(guestIpNetwork, guestNetmask);
-//	}
-
-//	public static long getGuestCidrSize() {
-//		String guestNetmask = getGuestNetmask();
-//		return NetUtils.getCidrSize(guestNetmask);
-//	}
 
     public static boolean validCIDR(final String cidr) {
         if (cidr == null || cidr.isEmpty()) {
@@ -644,7 +610,7 @@ public class IPRangeConfig {
             int octet;
             try {
                 octet = Integer.parseInt(octetString);
-            } catch(final Exception e) {
+            } catch (final Exception e) {
                 return false;
             }
             // Each octet must be between 0 and 255, inclusive
@@ -669,7 +635,7 @@ public class IPRangeConfig {
         }
 
         long startIPLong = NetUtils.ip2Long(startIP);
-        long endIPLong =  NetUtils.ip2Long(endIP);
+        long endIPLong = NetUtils.ip2Long(endIP);
         return (startIPLong < endIPLong);
     }
 

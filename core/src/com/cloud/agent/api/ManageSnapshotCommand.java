@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,23 +15,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.storage.StoragePool;
 
-
 public class ManageSnapshotCommand extends Command {
     // XXX: Should be an enum
     // XXX: Anyway there is something called inheritance in Java
-    public static String CREATE_SNAPSHOT = "-c";
-    public static String DESTROY_SNAPSHOT = "-d";
+    public static final String CREATE_SNAPSHOT = "-c";
+    public static final String DESTROY_SNAPSHOT = "-d";
 
     private String _commandSwitch;
 
     // Information about the volume that the snapshot is based on
     private String _volumePath = null;
-	StorageFilerTO _pool;
+    StorageFilerTO _pool;
 
     // Information about the snapshot
     private String _snapshotPath = null;
@@ -38,9 +40,10 @@ public class ManageSnapshotCommand extends Command {
     private long _snapshotId;
     private String _vmName = null;
 
-    public ManageSnapshotCommand() {}
+    public ManageSnapshotCommand() {
+    }
 
-    public ManageSnapshotCommand(long snapshotId, String volumePath, StoragePool pool, String preSnapshotPath ,String snapshotName, String vmName) {
+    public ManageSnapshotCommand(long snapshotId, String volumePath, StoragePool pool, String preSnapshotPath, String snapshotName, String vmName) {
         _commandSwitch = ManageSnapshotCommand.CREATE_SNAPSHOT;
         _volumePath = volumePath;
         _pool = new StorageFilerTO(pool);
@@ -54,7 +57,6 @@ public class ManageSnapshotCommand extends Command {
         _commandSwitch = ManageSnapshotCommand.DESTROY_SNAPSHOT;
         _snapshotPath = snapshotPath;
     }
-
 
     @Override
     public boolean executeInSequence() {
@@ -74,7 +76,7 @@ public class ManageSnapshotCommand extends Command {
     }
 
     public String getSnapshotPath() {
-    	return _snapshotPath;
+        return _snapshotPath;
     }
 
     public String getSnapshotName() {
@@ -86,7 +88,7 @@ public class ManageSnapshotCommand extends Command {
     }
 
     public String getVmName() {
-    	return _vmName;
+        return _vmName;
     }
 
 }

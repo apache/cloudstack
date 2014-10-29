@@ -18,5 +18,5 @@ package com.cloud.server.api.response.netapp;
 
 import org.apache.cloudstack.api.BaseResponse;
 
-public class DeleteVolumePoolCmdResponse  extends BaseResponse {
+public class DeleteVolumePoolCmdResponse extends BaseResponse {
 }

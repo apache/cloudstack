@@ -56,7 +56,8 @@ public abstract class InsufficientCapacityException extends CloudException {
         return id;
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         String str = super.toString();
         return str + "Scope=" + scope + "; id=" + id;
     }

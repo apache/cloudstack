@@ -16,10 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.log4j.Logger;
 
 public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIsoCmd.class.getName());
@@ -28,33 +29,36 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.BOOTABLE, type=CommandType.BOOLEAN, description="true if image is bootable, false otherwise")
+    @Parameter(name = ApiConstants.BOOTABLE, type = CommandType.BOOLEAN, description = "true if image is bootable, false otherwise")
     private Boolean bootable;
 
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the image", length=4096)
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the image", length = 4096)
     private String displayText;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = TemplateResponse.class,
-            required=true, description="the ID of the image file")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "the ID of the image file")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the image file")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the image file")
     private String templateName;
 
-    @Parameter(name=ApiConstants.OS_TYPE_ID, type=CommandType.UUID, entityType = GuestOSResponse.class,
-            description="the ID of the OS type that best represents the OS of this image.")
+    @Parameter(name = ApiConstants.OS_TYPE_ID,
+               type = CommandType.UUID,
+               entityType = GuestOSResponse.class,
+               description = "the ID of the OS type that best represents the OS of this image.")
     private Long osTypeId;
 
-    @Parameter(name=ApiConstants.FORMAT, type=CommandType.STRING, description="the format for the image")
+    @Parameter(name = ApiConstants.FORMAT, type = CommandType.STRING, description = "the format for the image")
     private String format;
 
-    @Parameter(name=ApiConstants.PASSWORD_ENABLED, type=CommandType.BOOLEAN, description="true if the image supports the password reset feature; default is false")
+    @Parameter(name = ApiConstants.PASSWORD_ENABLED, type = CommandType.BOOLEAN, description = "true if the image supports the password reset feature; default is false")
     private Boolean passwordEnabled;
 
-    @Parameter(name=ApiConstants.SORT_KEY, type=CommandType.INTEGER, description="sort key of the template, integer")
+    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the template, integer")
     private Integer sortKey;
 
-    @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE, type = CommandType.BOOLEAN, description = "true if template/ISO contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+    @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE,
+               type = CommandType.BOOLEAN,
+               description = "true if template/ISO contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
     private Boolean isDynamicallyScalable;
 
     @Parameter(name = ApiConstants.ROUTING, type = CommandType.BOOLEAN, description = "true if the template type is routing i.e., if template is used to deploy router")

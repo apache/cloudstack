@@ -60,10 +60,9 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
-        ImageStoreImpl imgStore = (ImageStoreImpl) store;
+        ImageStoreImpl imgStore = (ImageStoreImpl)store;
         Map<String, String> details = _imageStoreDetailsDao.getDetails(imgStore.getId());
-        return new SwiftTO(imgStore.getId(), imgStore.getUri(), details.get(ApiConstants.ACCOUNT),
-                details.get(ApiConstants.USERNAME), details.get(ApiConstants.KEY));
+        return new SwiftTO(imgStore.getId(), imgStore.getUri(), details.get(ApiConstants.ACCOUNT), details.get(ApiConstants.USERNAME), details.get(ApiConstants.KEY));
     }
 
     @Override
@@ -88,8 +87,7 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         }
 
         CreateContext<CreateCmdResult> context = new CreateContext<CreateCmdResult>(callback, data);
-        AsyncCallbackDispatcher<SwiftImageStoreDriverImpl, DownloadAnswer> caller = AsyncCallbackDispatcher
-                .create(this);
+        AsyncCallbackDispatcher<SwiftImageStoreDriverImpl, DownloadAnswer> caller = AsyncCallbackDispatcher.create(this);
         caller.setContext(context);
 
         if (data.getType() == DataObjectType.TEMPLATE) {

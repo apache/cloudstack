@@ -32,6 +32,7 @@
         <title></title>
         <link type="text/css" rel="stylesheet" href="lib/reset.css"/>
         <link type="text/css" rel="stylesheet" href="css/cloudstack3.css" />
+        <link type="text/css" rel="stylesheet" href="css/token-input-facebook.css" />
         <c:if test="${!empty cookie.lang && cookie.lang.value != 'en'}">
             <link type="text/css" rel="stylesheet" href="css/cloudstack3.${cookie.lang.value}.css" />
         </c:if>
@@ -71,7 +72,7 @@
                             <select name="language">
                                 <option value=""></option> <!-- when this blank option is selected, browser's default language will be used -->
                                 <option value="en"><fmt:message key="label.lang.english"/></option>
-                                <option value="ja"><fmt:message key="label.lang.japanese"/></option>
+                                <option value="ja_JP"><fmt:message key="label.lang.japanese"/></option>
                                 <option value="zh_CN"><fmt:message key="label.lang.chinese"/></option>
                                 <option value="ru_RU"><fmt:message key="label.lang.russian"/></option>
                                 <option value="fr_FR"><fmt:message key="label.lang.french"/></option>
@@ -83,6 +84,8 @@
                                 <option value="it_IT"><fmt:message key="label.lang.italian"/></option>
                                 <option value="nb_NO"><fmt:message key="label.lang.norwegian"/></option>
                                 <option value="ar"><fmt:message key="label.lang.arabic"/></option>
+                                <option value="nl_NL"><fmt:message key="label.lang.dutch"/></option>
+                                <option value="pl"><fmt:message key="label.lang.polish"/></option>
                             </select>
                         </div>
                     </div>
@@ -204,19 +207,32 @@
                             <div class="content">
                                 <div class="select-container">
                                 </div>
+
                                 <!-- Custom size slider -->
                                 <div class="section custom-size">
                                     <div class="field">
                                         <label><fmt:message key="label.num.cpu.cores"/></label>
-                                        <input type="text" name="compute-cpu-cores" />
+                                        <input type="text" class="required disallowSpecialCharacters" name="compute-cpu-cores" />
                                     </div>
                                     <div class="field">
                                         <label><fmt:message key="label.cpu.mhz"/></label>
-                                        <input type="text" name="compute-cpu" />
+                                        <input type="text" class="required disallowSpecialCharacters" name="compute-cpu" />
                                     </div>
                                     <div class="field">
                                         <label><fmt:message key="label.memory.mb"/></label>
-                                        <input type="text" name="compute-memory" />
+                                        <input type="text" class="required disallowSpecialCharacters" name="compute-memory" />
+                                    </div>
+                                </div>
+
+                                <!-- Custom iops -->
+                                <div class="section custom-iops">
+                                    <div class="field">
+                                        <label><fmt:message key="label.disk.iops.min"/></label>
+                                        <input type="text" class="disallowSpecialCharacters" name="disk-min-iops" />
+                                    </div>
+                                    <div class="field">
+                                        <label><fmt:message key="label.disk.iops.max"/></label>
+                                        <input type="text" class="disallowSpecialCharacters" name="disk-max-iops" />
                                     </div>
                                 </div>
                             </div>
@@ -235,16 +251,28 @@
                                 </div>
 
                                 <!-- Custom size slider -->
-                                <div class="section custom-size">
+                                <div class="section custom-size custom-disk-size">
                                     <label><fmt:message key="label.disk.size"/></label>
 
                                     <!-- Slider -->
-                                    <label class="size">1 GB</label>
+                                    <label class="size min"><span></span> GB</label>
                                     <div class="slider custom-size"></div>
                                     <label class="size max"><span></span> GB</label>
 
                                     <input type="text" class="required digits" name="size" value="1" />
                                     <label class="size">GB</label>
+                                </div>
+
+                                <!-- Custom iops -->
+                                <div class="section custom-iops-do">
+                                    <div class="field">
+                                        <label><fmt:message key="label.disk.iops.min"/></label>
+                                        <input type="text" class="disallowSpecialCharacters" name="disk-min-iops-do" />
+                                    </div>
+                                    <div class="field">
+                                        <label><fmt:message key="label.disk.iops.max"/></label>
+                                        <input type="text" class="disallowSpecialCharacters" name="disk-max-iops-do" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -263,7 +291,15 @@
                             <div class="wizard-step-conditional nothing-to-select">
                                 <p id="from_instance_page_1"><fmt:message key="message.zone.no.network.selection"/></p>
                                 <p id="from_instance_page_2"><fmt:message key="message.please.proceed"/></p>
-                                <p id="from_vpc_tier"></p>
+                                <p id="from_vpc_tier">
+                                    <div class="specify-ip">
+                                        <label>
+                                            <fmt:message key="label.ip.address"/>
+                                            (<fmt:message key="label.optional"/>):
+                                        </label>
+                                        <input type="text" name="vpc-specify-ip" />
+                                    </div>
+                                </p>
                             </div>
 
                             <!-- 5b: Select network -->
@@ -365,7 +401,7 @@
                             <div class="content">
                                 <div class="select-container">
                                     <!-- Name -->
-                                    <div class="select vm-instance-name">
+                                    <div class="select odd vm-instance-name">
                                         <div class="name">
                                             <span><fmt:message key="label.name"/> (<fmt:message key="label.optional"/>)</span>
                                         </div>
@@ -374,7 +410,7 @@
                                         </div>
                                     </div>
                                     <!-- Add to group -->
-                                    <div class="select odd">
+                                    <div class="select">
                                         <div class="name">
                                             <span><fmt:message key="label.add.to.group"/> (<fmt:message key="label.optional"/>)</span>
                                         </div>
@@ -382,6 +418,22 @@
                                             <input type="text" name="groupname" class="disallowSpecialCharacters" />
                                         </div>
                                     </div>
+
+                                    <!-- Keyboard Language -->
+                                    <div class="select odd">
+                                        <div class="name">
+                                            <span>Keyboard language</span>
+                                        </div>
+                                        <div class="value">
+                                            <select name="keyboardLanguage">
+                                                <option value=""></option>
+                                                <option value="us">Standard (US) keyboard</option>
+                                                <option value="uk">UK keyboard</option>
+                                                <option value="jp">Japanese keyboard</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
                                     <!-- Zone -->
                                     <div class="select">
                                         <div class="name">
@@ -514,10 +566,10 @@
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th style="width:40px">Select</th>
-                                            <th style="width:110px">Realname</th>
-                                            <th style="width:70px">Username</th>
-                                            <th>Email</th>
+                                            <th><fmt:message key="label.select"/></th>
+                                            <th><fmt:message key="label.name"/></th>
+                                            <th><fmt:message key="label.username"/></th>
+                                            <th><fmt:message key="label.email"/></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1042,7 +1094,7 @@
                     <div class="button refresh" id="refresh_button">
                         <span><fmt:message key="label.refresh"/></span>
                     </div>
-                    <div id="update_ssl_button" class="button action main-action reduced-hide lock" title="Updates your Console Proxy SSL Certificate">
+                    <div id="update_ssl_button" class="button action main-action reduced-hide lock" title="Updates your SSL Certificate">
                         <span class="icon">&nbsp;</span>
                         <span><fmt:message key="label.update.ssl.cert"/></span>
                     </div>
@@ -1634,6 +1686,7 @@
         <script src="lib/jquery.js" type="text/javascript"></script>
         <script src="lib/jquery.easing.js" type="text/javascript"></script>
         <script src="lib/jquery.validate.js" type="text/javascript"></script>
+        <script src="lib/jquery.validate.additional-methods.js" type="text/javascript"></script>
         <script src="lib/jquery-ui/js/jquery-ui.js" type="text/javascript"></script>
         <script src="lib/date.js" type="text/javascript"></script>
         <script src="lib/jquery.cookies.js" type="text/javascript"></script>
@@ -1653,6 +1706,8 @@
         <script src="lib/flot/jquery.flot.stack.js" type="text/javascript"></script>
         <script src="lib/flot/jquery.flot.symbol.js" type="text/javascript"></script>
         <script src="lib/flot/jquery.flot.threshold.js" type="text/javascript"></script>
+        <!-- jquery.tokeninput.js -->
+        <script src="lib/jquery.tokeninput.js" type="text/javascript"></script>
         <!-- CloudStack -->
         <script type="text/javascript" src="scripts/ui/core.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/ui/utils.js?t=<%=now%>"></script>
@@ -1722,6 +1777,9 @@
         <script type="text/javascript" src="plugins/plugins.js?t=<%=now%>"></script>
         <script type="text/javascript" src="modules/modules.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/plugins.js?t=<%=now%>"></script>
+
+        <!-- localized messages -->
+        <jsp:include page="dictionary.jsp" />
+	<jsp:include page="dictionary2.jsp" />
     </body>
 </html>
-<jsp:include page="dictionary.jsp" />

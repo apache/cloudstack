@@ -18,18 +18,19 @@ package com.cloud.bridge.service.core.ec2;
 
 public class OfferingBundle {
 
-	private String serviceOfferingId;
+    private String serviceOfferingId;
 
-	public OfferingBundle() {
-		serviceOfferingId = null;
-	}
-	
-	public void setServiceOfferingId( String id ) {
-		serviceOfferingId = id;
-		if (null != serviceOfferingId) serviceOfferingId = serviceOfferingId.trim();
-	}
-	
-	public String getServiceOfferingId() {
-		return serviceOfferingId;
-	}
+    public OfferingBundle() {
+        serviceOfferingId = null;
+    }
+
+    public void setServiceOfferingId(String id) {
+        serviceOfferingId = id;
+        if (null != serviceOfferingId)
+            serviceOfferingId = serviceOfferingId.trim();
+    }
+
+    public String getServiceOfferingId() {
+        return serviceOfferingId;
+    }
 }

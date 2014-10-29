@@ -24,61 +24,59 @@ import java.util.concurrent.TimeoutException;
 
 public class AsyncCallFuture<T> implements Future<T>, AsyncCompletionCallback<T> {
 
-	Object _completed = new Object();
-	boolean _done = false;
-	T _resultObject;		// we will store a copy of the result object
-	
-	public AsyncCallFuture() {
-	}
-	
-	@Override
-	public boolean cancel(boolean mayInterruptIfRunning) {
-		// TODO we don't support cancel yet
-		return false;
-	}
+    Object _completed = new Object();
+    boolean _done = false;
+    T _resultObject;        // we will store a copy of the result object
 
-	@Override
-	public T get() throws InterruptedException, ExecutionException {
-		synchronized(_completed) {
-			if(!_done)
-				_completed.wait();
-		}
-		
-		return _resultObject;
-	}
+    public AsyncCallFuture() {
+    }
 
-	@Override
-	public T get(long timeout, TimeUnit timeUnit) throws InterruptedException,
-			ExecutionException, TimeoutException {
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+        // TODO we don't support cancel yet
+        return false;
+    }
 
-		TimeUnit milliSecondsUnit = TimeUnit.MILLISECONDS;
-		
-		synchronized(_completed) {
-			if(!_done)
-				_completed.wait(milliSecondsUnit.convert(timeout, timeUnit));
-		}
-		
-		return _resultObject;
-	}
+    @Override
+    public T get() throws InterruptedException, ExecutionException {
+        synchronized (_completed) {
+            if (!_done)
+                _completed.wait();
+        }
 
-	@Override
-	public boolean isCancelled() {
-		// TODO we don't support cancel yet
-		return false;
-	}
+        return _resultObject;
+    }
 
-	@Override
-	public boolean isDone() {
-		return _done;
-	}
+    @Override
+    public T get(long timeout, TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
 
-	@Override
-	public void complete(T resultObject) {
-		_resultObject = resultObject;
-		synchronized(_completed) {
-			_done = true;
-			_completed.notifyAll();
-		}
-	}
+        TimeUnit milliSecondsUnit = TimeUnit.MILLISECONDS;
+
+        synchronized (_completed) {
+            if (!_done)
+                _completed.wait(milliSecondsUnit.convert(timeout, timeUnit));
+        }
+
+        return _resultObject;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        // TODO we don't support cancel yet
+        return false;
+    }
+
+    @Override
+    public boolean isDone() {
+        return _done;
+    }
+
+    @Override
+    public void complete(T resultObject) {
+        _resultObject = resultObject;
+        synchronized (_completed) {
+            _done = true;
+            _completed.notifyAll();
+        }
+    }
 }
-

@@ -18,28 +18,32 @@
  */
 package org.apache.cloudstack.managed.context.impl;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import org.apache.cloudstack.managed.context.ManagedContextListener;
-import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
 import org.junit.Before;
 import org.junit.Test;
+
+import org.apache.cloudstack.managed.context.ManagedContextListener;
+import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
 
 public class DefaultManagedContextTest {
 
     DefaultManagedContext context;
-    
+
     @Before
     public void init() {
         ManagedThreadLocal.setValidateInContext(false);
-        
+
         context = new DefaultManagedContext();
     }
-    
+
     @Test
     public void testCallable() throws Exception {
         assertEquals(5, context.callWithContext(new Callable<Integer>() {
@@ -53,17 +57,17 @@ public class DefaultManagedContextTest {
     @Test
     public void testRunnable() throws Exception {
         final List<Object> touch = new ArrayList<Object>();
-        
+
         context.runWithContext(new Runnable() {
             @Override
             public void run() {
                 touch.add(new Object());
             }
         });
-        
+
         assertEquals(1, touch.size());
     }
-    
+
     @Test
     public void testGoodListeners() throws Exception {
         final List<Object> touch = new ArrayList<Object>();
@@ -95,20 +99,20 @@ public class DefaultManagedContextTest {
                 assertEquals("hi", data);
             }
         });
-        
+
         assertEquals(5, context.callWithContext(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
                 return 5;
             }
         }).intValue());
-        
+
         assertEquals("enter", touch.get(0));
         assertEquals("enter1", touch.get(1));
         assertEquals("leave1", touch.get(2));
         assertEquals("leave", touch.get(3));
     }
-    
+
     @Test
     public void testBadListeners() throws Exception {
         final List<Object> touch = new ArrayList<Object>();
@@ -140,7 +144,7 @@ public class DefaultManagedContextTest {
                 assertEquals("hi", data);
             }
         });
-        
+
         try {
             context.callWithContext(new Callable<Integer>() {
                 @Override
@@ -148,19 +152,19 @@ public class DefaultManagedContextTest {
                     return 5;
                 }
             }).intValue();
-            
+
             fail();
-        } catch ( Throwable t ) {
+        } catch (Throwable t) {
             assertTrue(t instanceof RuntimeException);
             assertEquals("I'm a failure", t.getMessage());
         }
-        
+
         assertEquals("enter", touch.get(0));
         assertEquals("enter1", touch.get(1));
         assertEquals("leave1", touch.get(2));
         assertEquals("leave", touch.get(3));
     }
-    
+
     @Test
     public void testBadInvocation() throws Exception {
         final List<Object> touch = new ArrayList<Object>();
@@ -192,7 +196,7 @@ public class DefaultManagedContextTest {
                 assertEquals("hi1", data);
             }
         });
-        
+
         try {
             context.callWithContext(new Callable<Integer>() {
                 @Override
@@ -200,19 +204,19 @@ public class DefaultManagedContextTest {
                     throw new RuntimeException("I'm a failure");
                 }
             }).intValue();
-            
+
             fail();
-        } catch ( Throwable t ) {
+        } catch (Throwable t) {
             assertTrue(t.getMessage(), t instanceof RuntimeException);
             assertEquals("I'm a failure", t.getMessage());
         }
-        
+
         assertEquals("enter", touch.get(0));
         assertEquals("enter1", touch.get(1));
         assertEquals("leave1", touch.get(2));
         assertEquals("leave", touch.get(3));
     }
-    
+
     @Test
     public void testBadListernInExit() throws Exception {
         final List<Object> touch = new ArrayList<Object>();
@@ -228,7 +232,7 @@ public class DefaultManagedContextTest {
             public void onLeaveContext(Object data, boolean reentry) {
                 touch.add("leave");
                 assertEquals("hi", data);
-                
+
                 throw new RuntimeException("I'm a failure");
             }
         });
@@ -246,7 +250,7 @@ public class DefaultManagedContextTest {
                 assertEquals("hi1", data);
             }
         });
-        
+
         try {
             context.callWithContext(new Callable<Integer>() {
                 @Override
@@ -254,13 +258,13 @@ public class DefaultManagedContextTest {
                     return 5;
                 }
             }).intValue();
-            
+
             fail();
-        } catch ( Throwable t ) {
+        } catch (Throwable t) {
             assertTrue(t.getMessage(), t instanceof RuntimeException);
             assertEquals("I'm a failure", t.getMessage());
         }
-        
+
         assertEquals("enter", touch.get(0));
         assertEquals("enter1", touch.get(1));
         assertEquals("leave1", touch.get(2));

@@ -16,20 +16,20 @@
 // under the License.
 package com.cloud.storage;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
-
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 @Entity
 @Table(name = "storage_pool_work")
 public class StoragePoolWorkVO implements InternalIdentity {
 
+    @Override
     public long getId() {
         return id;
     }
@@ -98,8 +98,7 @@ public class StoragePoolWorkVO implements InternalIdentity {
     @Column(name = "mgmt_server_id")
     private Long managementServerId;
 
-    public StoragePoolWorkVO(long vmId, long poolId, boolean stoppedForMaintenance, boolean startedAfterMaintenance,
-            long mgmtServerId) {
+    public StoragePoolWorkVO(long vmId, long poolId, boolean stoppedForMaintenance, boolean startedAfterMaintenance, long mgmtServerId) {
         super();
         this.vmId = vmId;
         this.poolId = poolId;

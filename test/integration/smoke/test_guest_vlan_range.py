@@ -21,47 +21,26 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 import datetime
-
-
-class Services:
-    """Test Dedicating Guest Vlan Ranges
-    """
-
-    def __init__(self):
-        self.services = {
-                        "domain": {
-                                   "name": "Domain",
-                                   },
-                        "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    "password": "password",
-                         },
-                        "name": "testphysicalnetwork",
-
-                        "vlan": "2118-2120",
-                    }
-
 
 class TestDedicateGuestVlanRange(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestDedicateGuestVlanRange, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        testClient = super(TestDedicateGuestVlanRange, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+
         # Get Zone, Domain
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
 
         # Create Account
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
@@ -69,24 +48,18 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
                         cls.account,
                         ]
 
-        phy_networks = PhysicalNetwork.list(
-                             cls.api_client
-                             )
-        cls.existed_vlan = phy_networks[0].vlan
+        cls.physical_network, cls.free_vlan = setNonContiguousVlanIds(cls.apiclient, cls.zone.id)
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
             # Cleanup resources used
-            list_physical_network_response = PhysicalNetwork.list(cls.api_client)
-            if list_physical_network_response is not None and len(list_physical_network_response) > 0:
-                physical_network = list_physical_network_response[0]
-                removeGuestVlanRangeResponse = \
-                physical_network.update(cls.api_client,
-                        id=physical_network.id,
-                        vlan=cls.existed_vlan)
-            cleanup_resources(cls.api_client, cls._cleanup)
+            removeGuestVlanRangeResponse = \
+                cls.physical_network.update(cls.apiclient,
+                        id=cls.physical_network.id,
+                        vlan=cls.physical_network.vlan)
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -105,12 +78,13 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["simulator", "advanced", "guestvlanrange", "dedicate", "release"])
+    @attr(tags=["advanced", "guestvlanrange", "dedicate", "release"], required_hardware="false")
     def test_dedicateGuestVlanRange(self):
         """Test guest vlan range dedication
         """
 
         """Assume a physical network is available
+        """
         """
         # Validate the following:
         # 1. List the available physical network using ListPhysicalNetwork
@@ -120,29 +94,20 @@ class TestDedicateGuestVlanRange(cloudstackTestCase):
         # 5. Release the dedicated guest vlan range back to the system
         # 6. Verify guest vlan range has been released, verify with listDedicatedGuestVlanRanges
         # 7. Remove the added guest vlan range using UpdatePhysicalNetwork
-
-        self.debug("Listing available physical network")
-        list_physical_network_response = PhysicalNetwork.list(
-                             self.apiclient
-                             )
-        self.assertEqual(
-                         isinstance(list_physical_network_response, list),
-                         True,
-                         "Check for list guest vlan range response"
-                         )
-        physical_network_response = list_physical_network_response[0]
-
+        """
         self.debug("Adding guest vlan range")
 
-        new_vlan = self.existed_vlan + "," + self.services["vlan"]
-        addGuestVlanRangeResponse = physical_network_response.update(self.apiclient,
-                id=physical_network_response.id, vlan=new_vlan)
+        new_vlan = self.physical_network.vlan + "," + self.free_vlan["partial_range"][0]
+        #new_vlan = self.free_vlan["partial_range"][0]
+        addGuestVlanRangeResponse = self.physical_network.update(self.apiclient,
+                id=self.physical_network.id, vlan=new_vlan)
+                #id=self.physical_network.id, vlan=self.free_vlan["partial_range"][0])
 
         self.debug("Dedicating guest vlan range");
         dedicate_guest_vlan_range_response = PhysicalNetwork.dedicate(
                                                 self.apiclient,
-                                                self.services["vlan"],
-                                                physicalnetworkid=physical_network_response.id,
+                                                self.free_vlan["partial_range"][0],
+                                                physicalnetworkid=self.physical_network.id,
                                                 account=self.account.name,
                                                 domainid=self.account.domainid
                                             )

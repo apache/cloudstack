@@ -30,8 +30,9 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.api.Identity;
-import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "conditions")
@@ -76,7 +77,7 @@ public class ConditionVO implements Condition, Identity, InternalIdentity {
         this.relationalOperator = relationalOperator;
         this.accountId = accountId;
         this.domainId = domainId;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public Date getCreated() {
@@ -120,10 +121,16 @@ public class ConditionVO implements Condition, Identity, InternalIdentity {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public Date getRemoved() {
         return removed;
     }
+
+    @Override
+    public Class<?> getEntityType() {
+        return Condition.class;
+    }
+
 }

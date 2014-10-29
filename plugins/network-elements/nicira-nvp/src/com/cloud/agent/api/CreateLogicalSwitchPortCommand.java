@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,41 +15,38 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 public class CreateLogicalSwitchPortCommand extends Command {
-    private String _logicalSwitchUuid;
-    private String _attachmentUuid;
-    private String _ownerName;
-    private String _nicName;
+    private final String logicalSwitchUuid;
+    private final String attachmentUuid;
+    private final String ownerName;
+    private final String nicName;
 
-    public CreateLogicalSwitchPortCommand(String logicalSwitchUuid, String attachmentUuid, String ownerName, String nicName) {
-        _logicalSwitchUuid = logicalSwitchUuid;
-        _attachmentUuid = attachmentUuid;
-        _ownerName = ownerName;
-        _nicName = nicName;
+    public CreateLogicalSwitchPortCommand(final String logicalSwitchUuid, final String attachmentUuid, final String ownerName, final String nicName) {
+        this.logicalSwitchUuid = logicalSwitchUuid;
+        this.attachmentUuid = attachmentUuid;
+        this.ownerName = ownerName;
+        this.nicName = nicName;
     }
-
 
     public String getLogicalSwitchUuid() {
-        return _logicalSwitchUuid;
+        return logicalSwitchUuid;
     }
-
 
     public String getAttachmentUuid() {
-        return _attachmentUuid;
+        return attachmentUuid;
     }
-
 
     public String getOwnerName() {
-        return _ownerName;
+        return ownerName;
     }
-
 
     public String getNicName() {
-        return _nicName;
+        return nicName;
     }
-
 
     @Override
     public boolean executeInSequence() {

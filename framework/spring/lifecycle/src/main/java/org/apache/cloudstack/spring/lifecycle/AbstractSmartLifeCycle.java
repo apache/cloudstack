@@ -23,7 +23,7 @@ import org.springframework.context.SmartLifecycle;
 public abstract class AbstractSmartLifeCycle implements SmartLifecycle {
 
     boolean running = false;
-    
+
     @Override
     public void start() {
         running = true;

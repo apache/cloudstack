@@ -23,7 +23,7 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface ResourceTagDao extends GenericDao<ResourceTagVO, Long>{
+public interface ResourceTagDao extends GenericDao<ResourceTagVO, Long> {
 
     /**
      * @param resourceId
@@ -31,7 +31,7 @@ public interface ResourceTagDao extends GenericDao<ResourceTagVO, Long>{
      * @return
      */
     boolean removeByIdAndType(long resourceId, ResourceObjectType resourceType);
-    
+
     List<? extends ResourceTag> listBy(long resourceId, ResourceObjectType resourceType);
 
 }

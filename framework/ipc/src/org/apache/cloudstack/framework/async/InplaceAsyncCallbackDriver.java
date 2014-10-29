@@ -18,11 +18,10 @@
  */
 package org.apache.cloudstack.framework.async;
 
-
 public class InplaceAsyncCallbackDriver implements AsyncCallbackDriver {
 
-	@Override
-	public void performCompletionCallback(AsyncCallbackDispatcher callback) {
-		AsyncCallbackDispatcher.dispatch(callback.getTargetObject(), callback);
-	}
+    @Override
+    public void performCompletionCallback(AsyncCallbackDispatcher callback) {
+        AsyncCallbackDispatcher.dispatch(callback.getTargetObject(), callback);
+    }
 }

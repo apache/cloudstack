@@ -33,7 +33,7 @@ public interface SyncQueueItem {
      * @return subject object type pointed by the queue item
      */
     String getContentType();
-    
+
     /**
      * @return subject object id pointed by the queue item
      */

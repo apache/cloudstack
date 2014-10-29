@@ -17,6 +17,7 @@
 package com.cloud.network.dao;
 
 import java.util.List;
+
 import com.cloud.utils.db.GenericDao;
 
 public interface PortProfileDao extends GenericDao<PortProfileVO, Long> {
@@ -25,26 +26,26 @@ public interface PortProfileDao extends GenericDao<PortProfileVO, Long> {
      * Return a Port Profile VO (db record) given its name.
      */
     PortProfileVO findByName(String portProfileName);
-    
+
     /*
      * Returns true if there already is any portprofile that trunks
      * vlan IDs in a specified range.
      */
     boolean doesVlanRangeClash(int lowVlanId, int highVlanId);
-    
+
     /*
      * Return a list of port profiles that have the specified access vlanID.
      */
     List<PortProfileVO> listByVlanId(int vlanId);
-    
+
     /**
      * Other candidate functions that could be helpful.
-     * 
+     *
      * List all portprofiles configured with a particular id.
      * List<PortProfileVO> listByVlanId(int vlanId);
-     * 
+     *
      * List all uplink portprofiles (these represent physical ports).
-     * List<PortProfileVO> listAllUplinkPortProfiles();	// we may have to provide some filter, like clusterId or zoneId or something.
-     * 
+     * List<PortProfileVO> listAllUplinkPortProfiles();    // we may have to provide some filter, like clusterId or zoneId or something.
+     *
      */
 }

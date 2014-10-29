@@ -1,12 +1,13 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// the License.  You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils.script;
 
 import java.io.BufferedReader;
@@ -35,6 +38,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.PropertiesUtil;
@@ -61,13 +65,17 @@ public class Script implements Callable<String> {
     Process _process;
     Thread _thread;
 
+    public int getExitValue()  {
+        return _process.exitValue();
+    }
+
     public Script(String command, long timeout, Logger logger) {
         _command = new ArrayList<String>();
         _command.add(command);
         _timeout = timeout;
         if (_timeout == 0) {
-        	/* always using default timeout 1 hour to avoid thread hang */
-        	_timeout = _defaultTimeout;
+            /* always using default timeout 1 hour to avoid thread hang */
+            _timeout = _defaultTimeout;
         }
         _process = null;
         _logger = logger != null ? logger : s_logger;
@@ -107,9 +115,9 @@ public class Script implements Callable<String> {
         _command.add(value);
         return this;
     }
-    
+
     public void setWorkDir(String workDir) {
-    	_workDir = workDir;
+        _workDir = workDir;
     }
 
     protected String buildCommandLine(String[] command) {
@@ -157,10 +165,20 @@ public class Script implements Callable<String> {
 
     @Override
     public String toString() {
-    	String[] command = _command.toArray(new String[_command.size()]);
-    	return buildCommandLine(command);
+        String[] command = _command.toArray(new String[_command.size()]);
+        return buildCommandLine(command);
     }
-    
+
+    static String stackTraceAsString(Throwable throwable) {
+        //TODO: a StringWriter is bit to heavy weight
+        try(StringWriter out = new StringWriter(); PrintWriter writer = new PrintWriter(out);) {
+            throwable.printStackTrace(writer);
+            return out.toString();
+        } catch (IOException e) {
+            return "";
+        }
+    }
+
     public String execute(OutputInterpreter interpreter) {
         String[] command = _command.toArray(new String[_command.size()]);
 
@@ -171,9 +189,9 @@ public class Script implements Callable<String> {
         try {
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
-            if(_workDir != null) 
-            	pb.directory(new File(_workDir));
-            
+            if (_workDir != null)
+                pb.directory(new File(_workDir));
+
             _process = pb.start();
             if (_process == null) {
                 _logger.warn("Unable to execute: " + buildCommandLine(command));
@@ -243,39 +261,25 @@ public class Script implements Callable<String> {
             String error;
             if (interpreter != null) {
                 error = interpreter.processError(reader);
-            }
-            else {
+            } else {
                 error = String.valueOf(_process.exitValue());
             }
-            
+
             if (_logger.isDebugEnabled()) {
                 _logger.debug(error);
             }
             return error;
         } catch (SecurityException ex) {
             _logger.warn("Security Exception....not running as root?", ex);
-            StringWriter writer = new StringWriter();
-            ex.printStackTrace(new PrintWriter(writer));
-            return writer.toString();
+            return stackTraceAsString(ex);
         } catch (Exception ex) {
             _logger.warn("Exception: " + buildCommandLine(command), ex);
-            StringWriter writer = new StringWriter();
-            ex.printStackTrace(new PrintWriter(writer));
-            return writer.toString();
+            return stackTraceAsString(ex);
         } finally {
             if (_process != null) {
-                try {
-                    _process.getErrorStream().close();
-                } catch (IOException ex) {
-                }
-                try {
-                    _process.getOutputStream().close();
-                } catch (IOException ex) {
-                }
-                try {
-                    _process.getInputStream().close();
-                } catch (IOException ex) {
-                }
+                IOUtils.closeQuietly(_process.getErrorStream());
+                IOUtils.closeQuietly(_process.getOutputStream());
+                IOUtils.closeQuietly(_process.getInputStream());
                 _process.destroy();
             }
         }
@@ -304,31 +308,24 @@ public class Script implements Callable<String> {
         public Task(OutputInterpreter interpreter, BufferedReader reader) {
             this.interpreter = interpreter;
             this.reader = reader;
-            this.result = null;
+            result = null;
         }
 
+        @Override
         public void run() {
-            done = false;
-            try {
-                result = interpreter.interpret(reader);
-            } catch (IOException ex) {
-                StringWriter writer = new StringWriter();
-                ex.printStackTrace(new PrintWriter(writer));
-                result = writer.toString();
-            } catch (Exception ex) {
-                StringWriter writer = new StringWriter();
-                ex.printStackTrace(new PrintWriter(writer));
-                result = writer.toString();
-            } finally {
-                synchronized (this) {
-                    done = true;
-                    notifyAll();
-                }
+            synchronized(this) {
+                done = false;
                 try {
-                    reader.close();
+                    result = interpreter.interpret(reader);
                 } catch (IOException ex) {
+                    result = stackTraceAsString(ex);
+                } catch (Exception ex) {
+                    result = stackTraceAsString(ex);
+                } finally {
+                        done = true;
+                        notifyAll();
+                        IOUtils.closeQuietly(reader);
                 }
-                ;
             }
         }
 
@@ -343,8 +340,6 @@ public class Script implements Callable<String> {
     public static String findScript(String path, String script) {
         s_logger.debug("Looking for " + script + " in the classpath");
 
-        path = path.replace("/", File.separator);
-
         URL url = ClassLoader.getSystemResource(script);
         s_logger.debug("System resource: " + url);
         File file = null;
@@ -354,27 +349,31 @@ public class Script implements Callable<String> {
             return file.getAbsolutePath();
         }
 
+        if (path == null) {
+            s_logger.warn("No search path specified, unable to look for " + script);
+            return null;
+        }
+        path = path.replace("/", File.separator);
+
         /**
          * Look in WEB-INF/classes of the webapp
          * URI workaround the URL encoding of url.getFile
          */
         if (path.endsWith(File.separator)) {
-        	url = Script.class.getClassLoader().getResource(path + script);
-        }
-        else {
-        	url = Script.class.getClassLoader().getResource(path + File.separator + script);
+            url = Script.class.getClassLoader().getResource(path + script);
+        } else {
+            url = Script.class.getClassLoader().getResource(path + File.separator + script);
         }
         s_logger.debug("Classpath resource: " + url);
         if (url != null) {
-       	    try {
+            try {
                 file = new File(new URI(url.toString()).getPath());
                 s_logger.debug("Absolute path =  " + file.getAbsolutePath());
                 return file.getAbsolutePath();
-            }
-            catch (URISyntaxException e) {
+            } catch (URISyntaxException e) {
                 s_logger.warn("Unable to convert " + url.toString() + " to a URI");
             }
-        }       
+        }
 
         if (path.endsWith(File.separator)) {
             path = path.substring(0, path.lastIndexOf(File.separator));
@@ -399,12 +398,12 @@ public class Script implements Callable<String> {
 
                 int endBang = cp.lastIndexOf("!");
                 int end = cp.lastIndexOf(File.separator, endBang);
-                if (end < 0) 
-                	end = cp.lastIndexOf('/', endBang);
-                if(end < 0)
-                	cp = cp.substring(begin);
+                if (end < 0)
+                    end = cp.lastIndexOf('/', endBang);
+                if (end < 0)
+                    cp = cp.substring(begin);
                 else
-                	cp = cp.substring(begin, end);
+                    cp = cp.substring(begin, end);
 
                 s_logger.debug("Current binaries reside at " + cp);
                 search = cp;
@@ -445,7 +444,7 @@ public class Script implements Callable<String> {
         }
 
         search = System.getProperty("paths.script");
-        
+
         search += File.separatorChar + path + File.separator;
         do {
             search = search.substring(0, search.lastIndexOf(File.separator));
@@ -464,7 +463,7 @@ public class Script implements Callable<String> {
     public static String runSimpleBashScript(String command) {
         return Script.runSimpleBashScript(command, 0);
     }
-    
+
     public static String runSimpleBashScript(String command, int timeout) {
 
         Script s = new Script("/bin/bash", timeout);

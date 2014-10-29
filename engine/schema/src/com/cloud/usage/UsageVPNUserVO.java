@@ -25,81 +25,82 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 @Entity
-@Table(name="usage_vpn_user")
+@Table(name = "usage_vpn_user")
 public class UsageVPNUserVO {
-	
-	@Column(name="zone_id")
+
+    @Column(name = "zone_id")
     private long zoneId;
-	
-	@Column(name="account_id")
+
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="domain_id")
-	private long domainId;
+    @Column(name = "domain_id")
+    private long domainId;
 
-	@Column(name="user_id")
-	private long userId;
+    @Column(name = "user_id")
+    private long userId;
 
-	@Column(name="user_name")
+    @Column(name = "user_name")
     private String username;
-	
-	@Column(name="created")
-	@Temporal(value=TemporalType.TIMESTAMP)
-	private Date created = null;
 
-	@Column(name="deleted")
-	@Temporal(value=TemporalType.TIMESTAMP)
-	private Date deleted = null;
+    @Column(name = "created")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date created = null;
 
-	protected UsageVPNUserVO() {
-	}
+    @Column(name = "deleted")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date deleted = null;
 
-	public UsageVPNUserVO(long zoneId, long accountId, long domainId, long userId, String username, Date created, Date deleted) {
-		this.zoneId = zoneId;
-		this.accountId = accountId;
-		this.domainId = domainId;
-		this.userId = userId;
-		this.username = username;
-		this.created = created;
-		this.deleted = deleted;
-	}
+    protected UsageVPNUserVO() {
+    }
 
-	public long getZoneId() {
-		return zoneId;
-	}
-	
-	public long getAccountId() {
-		return accountId;
-	}
+    public UsageVPNUserVO(long zoneId, long accountId, long domainId, long userId, String username, Date created, Date deleted) {
+        this.zoneId = zoneId;
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.userId = userId;
+        this.username = username;
+        this.created = created;
+        this.deleted = deleted;
+    }
 
-	public long getDomainId() {
-	    return domainId;
-	}
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public long getAccountId() {
+        return accountId;
+    }
+
+    public long getDomainId() {
+        return domainId;
+    }
 
     public Date getCreated() {
-		return created;
-	}
+        return created;
+    }
 
-	public Date getDeleted() {
-		return deleted;
-	}
-	public void setDeleted(Date deleted) {
-	    this.deleted = deleted;
-	}
+    public Date getDeleted() {
+        return deleted;
+    }
 
-	public long getUserId() {
-		return userId;
-	}
+    public void setDeleted(Date deleted) {
+        this.deleted = deleted;
+    }
 
-	public void setUserId(long userId) {
-		this.userId = userId;
-	}
+    public long getUserId() {
+        return userId;
+    }
 
-	public String getUsername() {
-		return username;
-	}
+    public void setUserId(long userId) {
+        this.userId = userId;
+    }
 
-	public void setUsername(String username) {
-		this.username = username;
-	}
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
 }

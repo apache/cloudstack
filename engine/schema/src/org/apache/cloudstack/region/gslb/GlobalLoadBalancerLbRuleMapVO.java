@@ -17,8 +17,6 @@
 
 package org.apache.cloudstack.region.gslb;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -26,24 +24,26 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 @Entity
-@Table(name=("global_load_balancer_lb_rule_map"))
+@Table(name = ("global_load_balancer_lb_rule_map"))
 public class GlobalLoadBalancerLbRuleMapVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="lb_rule_id")
+    @Column(name = "lb_rule_id")
     private long loadBalancerId;
 
-    @Column(name="gslb_rule_id")
+    @Column(name = "gslb_rule_id")
     private long gslbLoadBalancerId;
 
-    @Column(name="weight")
+    @Column(name = "weight")
     private long weight;
 
-    @Column(name="revoke")
+    @Column(name = "revoke")
     private boolean revoke = false;
 
     public GlobalLoadBalancerLbRuleMapVO() {
@@ -57,6 +57,7 @@ public class GlobalLoadBalancerLbRuleMapVO implements InternalIdentity {
         this.weight = weight;
     }
 
+    @Override
     public long getId() {
         return id;
     }

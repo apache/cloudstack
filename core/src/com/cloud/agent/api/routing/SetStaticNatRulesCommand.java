@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,13 +15,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api.routing;
+//
 
-import java.util.List;
+package com.cloud.agent.api.routing;
 
 import com.cloud.agent.api.to.StaticNatRuleTO;
 
-public class SetStaticNatRulesCommand extends NetworkElementCommand{
+import java.util.List;
+
+public class SetStaticNatRulesCommand extends NetworkElementCommand {
 
     StaticNatRuleTO[] rules;
     Long vpcId;
@@ -43,5 +46,10 @@ public class SetStaticNatRulesCommand extends NetworkElementCommand{
 
     public Long getVpcId() {
         return vpcId;
+    }
+
+    @Override
+    public int getAnswersCount() {
+        return rules.length;
     }
 }

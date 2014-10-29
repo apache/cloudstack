@@ -29,12 +29,11 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={RemoteAccessVpnDao.class})
+@Local(value = {RemoteAccessVpnDao.class})
 public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Long> implements RemoteAccessVpnDao {
     private static final Logger s_logger = Logger.getLogger(RemoteAccessVpnDaoImpl.class);
-    
-    private final SearchBuilder<RemoteAccessVpnVO> AllFieldsSearch;
 
+    private final SearchBuilder<RemoteAccessVpnVO> AllFieldsSearch;
 
     protected RemoteAccessVpnDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -69,25 +68,25 @@ public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Lo
         return findOneBy(sc);
     }
 
-	@Override
-	public List<RemoteAccessVpnVO> findByAccount(Long accountId) {
-		SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
+    @Override
+    public List<RemoteAccessVpnVO> findByAccount(Long accountId) {
+        SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         return listBy(sc);
-	}
-	
-	@Override
-	public RemoteAccessVpnVO findByPublicIpAddressAndState(long ipAddressId, RemoteAccessVpn.State state) {
-	    SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
+    }
+
+    @Override
+    public RemoteAccessVpnVO findByPublicIpAddressAndState(long ipAddressId, RemoteAccessVpn.State state) {
+        SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
         sc.setParameters("ipAddress", ipAddressId);
         sc.setParameters("state", state);
         return findOneBy(sc);
-	}
-	
-	@Override
-	public List<RemoteAccessVpnVO> listByNetworkId(Long networkId) {
-	    SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
+    }
+
+    @Override
+    public List<RemoteAccessVpnVO> listByNetworkId(Long networkId) {
+        SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
         sc.setParameters("networkId", networkId);
         return listBy(sc);
-	}
+    }
 }

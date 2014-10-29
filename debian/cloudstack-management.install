@@ -17,7 +17,6 @@
 
 /etc/cloudstack/management/catalina.policy
 /etc/cloudstack/management/catalina.properties
-/etc/cloudstack/management/cloudmanagementserver.keystore
 /etc/cloudstack/management/logging.properties
 /etc/cloudstack/management/commands.properties
 /etc/cloudstack/management/ehcache.xml

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,21 +15,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
-
 public class RecurringNetworkUsageAnswer extends Answer {
-	
 
-	protected RecurringNetworkUsageAnswer() {
+    protected RecurringNetworkUsageAnswer() {
     }
-	
-	public RecurringNetworkUsageAnswer(Command command) {
-		super(command);
-	}
-	
-	public RecurringNetworkUsageAnswer(Command command, Exception e) {
-		super(command, e);
-	}
-	
+
+    public RecurringNetworkUsageAnswer(Command command) {
+        super(command);
+    }
+
+    public RecurringNetworkUsageAnswer(Command command, Exception e) {
+        super(command, e);
+    }
+
 }

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,16 +15,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.nicira;
 
 import java.util.List;
 
 public class NiciraNvpList<T> {
     private List<T> results;
-    private int result_count;
+    private int resultCount;
 
     public List<T> getResults() {
-        return results;
+        return this.results;
     }
 
     public void setResults(List<T> results) {
@@ -31,15 +34,15 @@ public class NiciraNvpList<T> {
     }
 
     public int getResultCount() {
-        return result_count;
+        return resultCount;
     }
 
-    public void setResultCount(int result_count) {
-        this.result_count = result_count;
+    public void setResultCount(int resultCount) {
+        this.resultCount = resultCount;
     }
 
     public boolean isEmpty() {
-        return result_count == 0;
+        return this.resultCount == 0;
     }
 
 }

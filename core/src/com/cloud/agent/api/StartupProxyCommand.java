@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,15 +15,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import com.cloud.host.Host;
 
 public class StartupProxyCommand extends StartupCommand {
     private int proxyPort;
-	private long proxyVmId;
+    private long proxyVmId;
 
-	public StartupProxyCommand() {
+    public StartupProxyCommand() {
         super(Host.Type.ConsoleProxy);
         setIqn("NoIqn");
     }
@@ -41,9 +44,10 @@ public class StartupProxyCommand extends StartupCommand {
     }
 
     public long getProxyVmId() {
-		return proxyVmId;
-	}
-	public void setProxyVmId(long proxyVmId) {
-		this.proxyVmId = proxyVmId;
-	}
+        return proxyVmId;
+    }
+
+    public void setProxyVmId(long proxyVmId) {
+        this.proxyVmId = proxyVmId;
+    }
 }

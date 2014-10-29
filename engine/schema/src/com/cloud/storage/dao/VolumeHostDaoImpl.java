@@ -21,11 +21,12 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.storage.VolumeHostVO;
 import com.cloud.utils.db.GenericDaoBase;
@@ -35,7 +36,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.UpdateBuilder;
 
 @Component
-@Local(value = { VolumeHostDao.class })
+@Local(value = {VolumeHostDao.class})
 public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implements VolumeHostDao {
     private static final Logger s_logger = Logger.getLogger(VolumeHostDaoImpl.class);
     protected final SearchBuilder<VolumeHostVO> HostVolumeSearch;
@@ -124,7 +125,7 @@ public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implem
 
     @Override
     public boolean updateState(State currentState, Event event, State nextState, DataObjectInStore vo, Object data) {
-        VolumeHostVO volHost = (VolumeHostVO) vo;
+        VolumeHostVO volHost = (VolumeHostVO)vo;
         Long oldUpdated = volHost.getUpdatedCount();
         Date oldUpdatedTime = volHost.getUpdated();
 
@@ -139,23 +140,41 @@ public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implem
         builder.set(vo, "state", nextState);
         builder.set(vo, "updated", new Date());
 
-        int rows = update((VolumeHostVO) vo, sc);
+        int rows = update((VolumeHostVO)vo, sc);
         if (rows == 0 && s_logger.isDebugEnabled()) {
             VolumeHostVO dbVol = findByIdIncludingRemoved(volHost.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-                str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState())
-                        .append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
-                        .append(dbVol.getUpdated());
-                str.append(": New Data={id=").append(volHost.getId()).append("; state=").append(nextState)
-                        .append("; event=").append(event).append("; updatecount=").append(volHost.getUpdatedCount())
-                        .append("; updatedTime=").append(volHost.getUpdated());
-                str.append(": stale Data={id=").append(volHost.getId()).append("; state=").append(currentState)
-                        .append("; event=").append(event).append("; updatecount=").append(oldUpdated)
-                        .append("; updatedTime=").append(oldUpdatedTime);
+                str.append(": DB Data={id=")
+                    .append(dbVol.getId())
+                    .append("; state=")
+                    .append(dbVol.getState())
+                    .append("; updatecount=")
+                    .append(dbVol.getUpdatedCount())
+                    .append(";updatedTime=")
+                    .append(dbVol.getUpdated());
+                str.append(": New Data={id=")
+                    .append(volHost.getId())
+                    .append("; state=")
+                    .append(nextState)
+                    .append("; event=")
+                    .append(event)
+                    .append("; updatecount=")
+                    .append(volHost.getUpdatedCount())
+                    .append("; updatedTime=")
+                    .append(volHost.getUpdated());
+                str.append(": stale Data={id=")
+                    .append(volHost.getId())
+                    .append("; state=")
+                    .append(currentState)
+                    .append("; event=")
+                    .append(event)
+                    .append("; updatecount=")
+                    .append(oldUpdated)
+                    .append("; updatedTime=")
+                    .append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update objectIndatastore: id=" + volHost.getId()
-                        + ", as there is no such object exists in the database anymore");
+                s_logger.debug("Unable to update objectIndatastore: id=" + volHost.getId() + ", as there is no such object exists in the database anymore");
             }
         }
         return rows > 0;

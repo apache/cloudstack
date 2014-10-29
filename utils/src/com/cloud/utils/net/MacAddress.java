@@ -1,12 +1,13 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// the License.  You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -14,7 +15,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils.net;
+
+import com.cloud.utils.NumbersUtil;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -23,8 +28,6 @@ import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Formatter;
-
-import com.cloud.utils.NumbersUtil;
 
 /**
  * copied from the public domain utility from John Burkard.
@@ -59,13 +62,8 @@ public class MacAddress {
     public String toString(String separator) {
         StringBuilder buff = new StringBuilder();
         Formatter formatter = new Formatter(buff);
-        formatter.format("%02x%s%02x%s%02x%s%02x%s%02x%s%02x",
-                _addr >> 40 & 0xff, separator,
-                _addr >> 32 & 0xff, separator,
-                _addr >> 24 & 0xff, separator,
-                _addr >> 16 & 0xff, separator,
-                _addr >> 8 & 0xff, separator,
-                _addr & 0xff);
+        formatter.format("%02x%s%02x%s%02x%s%02x%s%02x%s%02x", _addr >> 40 & 0xff, separator, _addr >> 32 & 0xff, separator, _addr >> 24 & 0xff, separator,
+            _addr >> 16 & 0xff, separator, _addr >> 8 & 0xff, separator, _addr & 0xff);
         return buff.toString();
 
         /*
@@ -98,18 +96,17 @@ public class MacAddress {
             String osname = System.getProperty("os.name");
 
             if (osname.startsWith("Windows")) {
-                p = Runtime.getRuntime().exec(new String[] { "ipconfig", "/all"}, null);
+                p = Runtime.getRuntime().exec(new String[] {"ipconfig", "/all"}, null);
             } else if (osname.startsWith("Solaris") || osname.startsWith("SunOS")) {
                 // Solaris code must appear before the generic code
-                String hostName = MacAddress.getFirstLineOfCommand(new String[] { "uname",
-                "-n"});
+                String hostName = MacAddress.getFirstLineOfCommand(new String[] {"uname", "-n"});
                 if (hostName != null) {
-                    p = Runtime.getRuntime().exec(new String[] { "/usr/sbin/arp", hostName}, null);
+                    p = Runtime.getRuntime().exec(new String[] {"/usr/sbin/arp", hostName}, null);
                 }
             } else if (new File("/usr/sbin/lanscan").exists()) {
-                p = Runtime.getRuntime().exec(new String[] { "/usr/sbin/lanscan"}, null);
+                p = Runtime.getRuntime().exec(new String[] {"/usr/sbin/lanscan"}, null);
             } else if (new File("/sbin/ifconfig").exists()) {
-                p = Runtime.getRuntime().exec(new String[] { "/sbin/ifconfig", "-a"}, null);
+                p = Runtime.getRuntime().exec(new String[] {"/sbin/ifconfig", "-a"}, null);
             }
 
             if (p != null) {
@@ -117,8 +114,12 @@ public class MacAddress {
                 String l = null;
                 while ((l = in.readLine()) != null) {
                     macAddress = MacAddress.parse(l);
-                    if (macAddress != null && MacAddress.parseShort(macAddress) != 0xff)
-                        break;
+                    if (macAddress != null) {
+                        short parsedShortMacAddress = MacAddress.parseShort(macAddress);
+                        if (parsedShortMacAddress != 0xff && parsedShortMacAddress != 0x00)
+                            break;
+                    }
+                    macAddress = null;
                 }
             }
 
@@ -160,7 +161,7 @@ public class MacAddress {
                 clockSeqAndNode |= (local[2] << 8) & 0xFF00;
                 clockSeqAndNode |= local[3] & 0xFF;
             } catch (UnknownHostException ex) {
-                clockSeqAndNode |= (long) (Math.random() * 0x7FFFFFFF);
+                clockSeqAndNode |= (long)(Math.random() * 0x7FFFFFFF);
             }
         }
 
@@ -212,7 +213,7 @@ public class MacAddress {
      *
      * This is copied from the author below.  The author encouraged copying
      * it.
-     * 
+     *
      */
     static String parse(String in) {
 
@@ -235,7 +236,8 @@ public class MacAddress {
 
         lastIndex = in.lastIndexOf(':');
 
-        if (lastIndex > in.length() - 2) return null;
+        if (lastIndex > in.length() - 2)
+            return null;
 
         end = Math.min(in.length(), lastIndex + 3);
 
@@ -266,7 +268,7 @@ public class MacAddress {
      * Parses a <code>long</code> from a hex encoded number. This method will skip
      * all characters that are not 0-9 and a-f (the String is lower cased first).
      * Returns 0 if the String does not contain any interesting characters.
-     * 
+     *
      * @param s the String to extract a <code>long</code> from, may not be <code>null</code>
      * @return a <code>long</code>
      * @throws NullPointerException if the String is <code>null</code>
@@ -282,8 +284,7 @@ public class MacAddress {
                 out <<= 4;
                 ++shifts;
                 out |= c - 48;
-            }
-            else if ((c > 96) && (c < 103)) {
+            } else if ((c > 96) && (c < 103)) {
                 ++shifts;
                 out <<= 4;
                 out |= c - 87;
@@ -296,7 +297,7 @@ public class MacAddress {
      * Parses an <code>int</code> from a hex encoded number. This method will skip
      * all characters that are not 0-9 and a-f (the String is lower cased first).
      * Returns 0 if the String does not contain any interesting characters.
-     * 
+     *
      * @param s the String to extract an <code>int</code> from, may not be <code>null</code>
      * @return an <code>int</code>
      * @throws NullPointerException if the String is <code>null</code>
@@ -312,8 +313,7 @@ public class MacAddress {
                 out <<= 4;
                 ++shifts;
                 out |= c - 48;
-            }
-            else if ((c > 96) && (c < 103)) {
+            } else if ((c > 96) && (c < 103)) {
                 ++shifts;
                 out <<= 4;
                 out |= c - 87;
@@ -326,7 +326,7 @@ public class MacAddress {
      * Parses a <code>short</code> from a hex encoded number. This method will skip
      * all characters that are not 0-9 and a-f (the String is lower cased first).
      * Returns 0 if the String does not contain any interesting characters.
-     * 
+     *
      * @param s the String to extract a <code>short</code> from, may not be <code>null</code>
      * @return a <code>short</code>
      * @throws NullPointerException if the String is <code>null</code>
@@ -342,8 +342,7 @@ public class MacAddress {
                 out <<= 4;
                 ++shifts;
                 out |= c - 48;
-            }
-            else if ((c > 96) && (c < 103)) {
+            } else if ((c > 96) && (c < 103)) {
                 ++shifts;
                 out <<= 4;
                 out |= c - 87;
@@ -356,7 +355,7 @@ public class MacAddress {
      * Parses a <code>byte</code> from a hex encoded number. This method will skip
      * all characters that are not 0-9 and a-f (the String is lower cased first).
      * Returns 0 if the String does not contain any interesting characters.
-     * 
+     *
      * @param s the String to extract a <code>byte</code> from, may not be <code>null</code>
      * @return a <code>byte</code>
      * @throws NullPointerException if the String is <code>null</code>
@@ -372,8 +371,7 @@ public class MacAddress {
                 out <<= 4;
                 ++shifts;
                 out |= c - 48;
-            }
-            else if ((c > 96) && (c < 103)) {
+            } else if ((c > 96) && (c < 103)) {
                 ++shifts;
                 out <<= 4;
                 out |= c - 87;

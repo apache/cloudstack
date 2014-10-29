@@ -18,6 +18,9 @@ package org.apache.cloudstack.api.command.user.autoscale;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,7 +32,6 @@ import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -37,7 +39,11 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.rules.LoadBalancer;
 
-@APICommand(name = "createAutoScaleVmGroup", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = AutoScaleVmGroupResponse.class)
+@APICommand(name = "createAutoScaleVmGroup",
+            description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.",
+        responseObject = AutoScaleVmGroupResponse.class, entityType = {AutoScaleVmGroup.class},
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAutoScaleVmGroupCmd.class.getName());
 
@@ -47,35 +53,57 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class,
-            required = true, description = "the ID of the load balancer rule")
+    @Parameter(name = ApiConstants.LBID,
+               type = CommandType.UUID,
+               entityType = FirewallRuleResponse.class,
+               required = true,
+               description = "the ID of the load balancer rule")
     private long lbRuleId;
 
-    @Parameter(name = ApiConstants.MIN_MEMBERS, type = CommandType.INTEGER, required = true, description = "the minimum number of members in the vmgroup, the number of instances in the vm group will be equal to or more than this number.")
+    @Parameter(name = ApiConstants.MIN_MEMBERS,
+               type = CommandType.INTEGER,
+               required = true,
+               description = "the minimum number of members in the vmgroup, the number of instances in the vm group will be equal to or more than this number.")
     private int minMembers;
 
-    @Parameter(name = ApiConstants.MAX_MEMBERS, type = CommandType.INTEGER, required = true, description = "the maximum number of members in the vmgroup, The number of instances in the vm group will be equal to or less than this number.")
+    @Parameter(name = ApiConstants.MAX_MEMBERS,
+               type = CommandType.INTEGER,
+               required = true,
+               description = "the maximum number of members in the vmgroup, The number of instances in the vm group will be equal to or less than this number.")
     private int maxMembers;
 
     @Parameter(name = ApiConstants.INTERVAL, type = CommandType.INTEGER, description = "the frequency at which the conditions have to be evaluated")
     private Integer interval;
 
-    @Parameter(name = ApiConstants.SCALEUP_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AutoScalePolicyResponse.class,
-            required = true, description = "list of scaleup autoscale policies")
+    @Parameter(name = ApiConstants.SCALEUP_POLICY_IDS,
+               type = CommandType.LIST,
+               collectionType = CommandType.UUID,
+               entityType = AutoScalePolicyResponse.class,
+               required = true,
+               description = "list of scaleup autoscale policies")
     private List<Long> scaleUpPolicyIds;
 
-    @Parameter(name = ApiConstants.SCALEDOWN_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AutoScalePolicyResponse.class,
-            required = true, description = "list of scaledown autoscale policies")
+    @Parameter(name = ApiConstants.SCALEDOWN_POLICY_IDS,
+               type = CommandType.LIST,
+               collectionType = CommandType.UUID,
+               entityType = AutoScalePolicyResponse.class,
+               required = true,
+               description = "list of scaledown autoscale policies")
     private List<Long> scaleDownPolicyIds;
 
-    @Parameter(name = ApiConstants.VMPROFILE_ID, type = CommandType.UUID, entityType = AutoScaleVmProfileResponse.class,
-            required = true, description = "the autoscale profile that contains information about the vms in the vm group.")
+    @Parameter(name = ApiConstants.VMPROFILE_ID,
+               type = CommandType.UUID,
+               entityType = AutoScaleVmProfileResponse.class,
+               required = true,
+               description = "the autoscale profile that contains information about the vms in the vm group.")
     private long profileId;
+
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the group to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-
 
     public int getMinMembers() {
         return minMembers;
@@ -156,12 +184,25 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
         return ApiCommandJobType.AutoScaleVmGroup;
     }
 
+    @Deprecated
+    public Boolean getDisplay() {
+        return display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        if(display == null)
+            return true;
+        else
+            return display;
+    }
+
     @Override
     public void create() throws ResourceAllocationException {
         AutoScaleVmGroup result = _autoScaleService.createAutoScaleVmGroup(this);
         if (result != null) {
-            this.setEntityId(result.getId());
-            this.setEntityUuid(result.getUuid());
+            setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Autoscale Vm Group");
         }
@@ -171,8 +212,7 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
     public void execute() {
         boolean success = false;
         AutoScaleVmGroup vmGroup = null;
-        try
-        {
+        try {
             success = _autoScaleService.configureAutoScaleVmGroup(this);
             if (success) {
                 vmGroup = _entityMgr.findById(AutoScaleVmGroup.class, getEntityId());

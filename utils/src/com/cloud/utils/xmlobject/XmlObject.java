@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils.xmlobject;
 
 import java.lang.reflect.Field;
@@ -24,15 +27,21 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class XmlObject {
+    private final Logger logger = Logger.getLogger(XmlObject.class.getName());
     private final Map<String, Object> elements = new HashMap<String, Object>();
     private String text;
     private String tag;
 
     XmlObject() {
+    }
+
+    public void removeAllChildren() {
+        elements.clear();
     }
 
     public XmlObject(String tag) {
@@ -63,6 +72,10 @@ public class XmlObject {
         return this;
     }
 
+    public void removeElement(String key) {
+        elements.remove(key);
+    }
+
     private Object recurGet(XmlObject obj, Iterator<String> it) {
         String key = it.next();
         Object e = obj.elements.get(key);
@@ -76,7 +89,7 @@ public class XmlObject {
             if (!(e instanceof XmlObject)) {
                 throw new CloudRuntimeException(String.format("%s doesn't reference to a XmlObject", it.next()));
             }
-            return recurGet((XmlObject) e, it);
+            return recurGet((XmlObject)e, it);
         }
     }
 
@@ -92,8 +105,12 @@ public class XmlObject {
         if (e instanceof List) {
             return (List<T>)e;
         }
+
         List lst = new ArrayList(1);
-        lst.add(e);
+        if (e != null) {
+            lst.add(e);
+        }
+
         return lst;
     }
 
@@ -122,19 +139,21 @@ public class XmlObject {
         for (Map.Entry<String, Object> e : elements.entrySet()) {
             String key = e.getKey();
             Object val = e.getValue();
-            if (val instanceof String)  {
+            if (val instanceof String) {
                 sb.append(String.format(" %s=\"%s\"", key, val.toString()));
             } else if (val instanceof XmlObject) {
-                children.add((XmlObject) val);
+                children.add((XmlObject)val);
             } else if (val instanceof List) {
-                children.addAll((Collection<? extends XmlObject>) val);
+                children.addAll((Collection<? extends XmlObject>)val);
             } else {
-                throw new CloudRuntimeException(String.format("unsupported element type[tag:%s, class: %s], only allowed type of [String, List<XmlObject>, Object]", key, val.getClass().getName()));
+                throw new CloudRuntimeException(String.format("unsupported element type[tag:%s, class: %s], only allowed type of [String, List<XmlObject>, Object]", key,
+                    val.getClass().getName()));
             }
         }
 
         if (!children.isEmpty() && text != null) {
-            throw new CloudRuntimeException(String.format("element %s cannot have both text[%s] and child elements", tag, text));
+            logger.info(String.format("element %s cannot have both text[%s] and child elements, set text to null", tag, text));
+            text = null;
         }
 
         if (!children.isEmpty()) {

@@ -19,21 +19,34 @@ package com.cloud.api.response;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseGsonHelper;
 import com.cloud.api.ApiServer;
+import com.cloud.serializer.Param;
+import com.cloud.user.Account;
+import com.cloud.utils.HttpUtils;
 import com.cloud.utils.encoding.URLEncoder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.response.*;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.AuthenticationCmdResponse;
+import org.apache.cloudstack.api.response.CreateCmdResponse;
+import org.apache.cloudstack.api.response.ExceptionResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,7 +55,7 @@ public class ApiResponseSerializer {
 
     public static String toSerializedString(ResponseObject result, String responseType) {
         s_logger.trace("===Serializing Response===");
-        if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
+        if (HttpUtils.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             return toJSONSerializedString(result);
         } else {
             return toXMLSerializedString(result);
@@ -55,7 +68,7 @@ public class ApiResponseSerializer {
         String str = escaped;
         Matcher matcher = s_unicodeEscapePattern.matcher(str);
         while (matcher.find()) {
-            str = str.replaceAll("\\" + matcher.group(0), Character.toString((char) Integer.parseInt(matcher.group(1), 16)));
+            str = str.replaceAll("\\" + matcher.group(0), Character.toString((char)Integer.parseInt(matcher.group(1), 16)));
         }
         return str;
     }
@@ -68,8 +81,8 @@ public class ApiResponseSerializer {
 
             sb.append("{ \"").append(result.getResponseName()).append("\" : ");
             if (result instanceof ListResponse) {
-                List<? extends ResponseObject> responses = ((ListResponse) result).getResponses();
-                Integer count = ((ListResponse) result).getCount();
+                List<? extends ResponseObject> responses = ((ListResponse)result).getResponses();
+                Integer count = ((ListResponse)result).getCount();
                 boolean nonZeroCount = (count != null && count.longValue() != 0);
                 if (nonZeroCount) {
                     sb.append("{ \"").append(ApiConstants.COUNT).append("\":").append(count);
@@ -83,30 +96,30 @@ public class ApiResponseSerializer {
                         sb.append(" ,\"").append(responses.get(0).getObjectName()).append("\" : [  ").append(jsonStr);
                     }
 
-                    for (int i = 1; i < ((ListResponse) result).getResponses().size(); i++) {
+                    for (int i = 1; i < ((ListResponse)result).getResponses().size(); i++) {
                         jsonStr = gson.toJson(responses.get(i));
                         jsonStr = unescape(jsonStr);
                         sb.append(", ").append(jsonStr);
                     }
                     sb.append(" ] }");
                 } else  {
-                    if (!nonZeroCount){
+                    if (!nonZeroCount) {
                         sb.append("{");
                     }
 
                     sb.append(" }");
                 }
             } else if (result instanceof SuccessResponse) {
-                sb.append("{ \"success\" : \"").append(((SuccessResponse) result).getSuccess()).append("\"} ");
+                sb.append("{ \"success\" : \"").append(((SuccessResponse)result).getSuccess()).append("\"} ");
             } else if (result instanceof ExceptionResponse) {
-            	String jsonErrorText = gson.toJson((ExceptionResponse) result);
-            	jsonErrorText = unescape(jsonErrorText);
-            	sb.append(jsonErrorText);
+                String jsonErrorText = gson.toJson(result);
+                jsonErrorText = unescape(jsonErrorText);
+                sb.append(jsonErrorText);
             } else {
                 String jsonStr = gson.toJson(result);
                 if ((jsonStr != null) && !"".equals(jsonStr)) {
                     jsonStr = unescape(jsonStr);
-                    if (result instanceof AsyncJobResponse || result instanceof CreateCmdResponse) {
+                    if (result instanceof AsyncJobResponse || result instanceof CreateCmdResponse || result instanceof AuthenticationCmdResponse) {
                         sb.append(jsonStr);
                     } else {
                         sb.append(" { \"").append(result.getObjectName()).append("\" : ").append(jsonStr).append(" } ");
@@ -127,20 +140,19 @@ public class ApiResponseSerializer {
         sb.append("<").append(result.getResponseName()).append(" cloud-stack-version=\"").append(ApiDBUtils.getVersion()).append("\">");
 
         if (result instanceof ListResponse) {
-            Integer count = ((ListResponse) result).getCount();
+            Integer count = ((ListResponse)result).getCount();
 
             if (count != null && count != 0) {
-                sb.append("<").append(ApiConstants.COUNT).append(">").append(((ListResponse) result).getCount()).
-                append("</").append(ApiConstants.COUNT).append(">");
+                sb.append("<").append(ApiConstants.COUNT).append(">").append(((ListResponse)result).getCount()).append("</").append(ApiConstants.COUNT).append(">");
             }
-            List<? extends ResponseObject> responses = ((ListResponse) result).getResponses();
+            List<? extends ResponseObject> responses = ((ListResponse)result).getResponses();
             if ((responses != null) && !responses.isEmpty()) {
                 for (ResponseObject obj : responses) {
                     serializeResponseObjXML(sb, obj);
                 }
             }
         } else {
-            if (result instanceof CreateCmdResponse || result instanceof AsyncJobResponse) {
+            if (result instanceof CreateCmdResponse || result instanceof AsyncJobResponse || result instanceof AuthenticationCmdResponse) {
                 serializeResponseObjFieldsXML(sb, result);
             } else {
                 serializeResponseObjXML(sb, result);
@@ -182,9 +194,29 @@ public class ApiResponseSerializer {
                 continue; // skip transient fields
             }
 
+
             SerializedName serializedName = field.getAnnotation(SerializedName.class);
             if (serializedName == null) {
                 continue; // skip fields w/o serialized name
+            }
+
+            Param param = field.getAnnotation(Param.class);
+            if (param != null) {
+                RoleType[] allowedRoles = param.authorized();
+                if (allowedRoles.length > 0) {
+                    boolean permittedParameter = false;
+                    Account caller = CallContext.current().getCallingAccount();
+                    for (RoleType allowedRole : allowedRoles) {
+                        if (allowedRole.getValue() == caller.getType()) {
+                            permittedParameter = true;
+                            break;
+                        }
+                    }
+                    if (!permittedParameter) {
+                        s_logger.trace("Ignoring paremeter " + param.name() + " as the caller is not authorized to see it");
+                        continue;
+                    }
+                }
             }
 
             field.setAccessible(true);
@@ -198,7 +230,7 @@ public class ApiResponseSerializer {
             }
             if (fieldValue != null) {
                 if (fieldValue instanceof ResponseObject) {
-                    ResponseObject subObj = (ResponseObject) fieldValue;
+                    ResponseObject subObj = (ResponseObject)fieldValue;
                     if (isAsync) {
                         sb.append("<jobresult>");
                     }
@@ -207,11 +239,11 @@ public class ApiResponseSerializer {
                         sb.append("</jobresult>");
                     }
                 } else if (fieldValue instanceof Collection<?>) {
-                    Collection<?> subResponseList = (Collection<?>) fieldValue;
+                    Collection<?> subResponseList = (Collection<?>)fieldValue;
                     boolean usedUuidList = false;
                     for (Object value : subResponseList) {
                         if (value instanceof ResponseObject) {
-                            ResponseObject subObj = (ResponseObject) value;
+                            ResponseObject subObj = (ResponseObject)value;
                             if (serializedName != null) {
                                 subObj.setObjectName(serializedName.value());
                             }
@@ -219,7 +251,7 @@ public class ApiResponseSerializer {
                         } else if (value instanceof ExceptionProxyObject) {
                             // Only exception reponses carry a list of
                             // ExceptionProxyObject objects.
-                            ExceptionProxyObject idProxy = (ExceptionProxyObject) value;
+                            ExceptionProxyObject idProxy = (ExceptionProxyObject)value;
                             // If this is the first IdentityProxy field
                             // encountered, put in a uuidList tag.
                             if (!usedUuidList) {
@@ -232,6 +264,8 @@ public class ApiResponseSerializer {
                             if (idFieldName != null) {
                                 sb.append("<" + "uuidProperty" + ">" + idFieldName + "</" + "uuidProperty" + ">");
                             }
+                        } else if (value instanceof String) {
+                            sb.append("<").append(serializedName.value()).append(">").append(value).append("</").append(serializedName.value()).append(">");
                         }
                     }
                     if (usedUuidList) {
@@ -239,8 +273,13 @@ public class ApiResponseSerializer {
                         sb.append("</").append(serializedName.value()).append(">");
                     }
                 } else if (fieldValue instanceof Date) {
-                    sb.append("<").append(serializedName.value()).append(">").append(BaseCmd.getDateString((Date) fieldValue)).
-                    append("</").append(serializedName.value()).append(">");
+                    sb.append("<")
+                        .append(serializedName.value())
+                        .append(">")
+                        .append(BaseCmd.getDateString((Date)fieldValue))
+                        .append("</")
+                        .append(serializedName.value())
+                        .append(">");
                 } else {
                     String resultString = escapeSpecialXmlChars(fieldValue.toString());
                     if (!(obj instanceof ExceptionResponse)) {
@@ -277,7 +316,7 @@ public class ApiResponseSerializer {
     }
 
     private static String encodeParam(String value) {
-        if (!ApiServer.encodeApiResponse) {
+        if (!ApiServer.isEncodeApiResponse()) {
             return value;
         }
         try {

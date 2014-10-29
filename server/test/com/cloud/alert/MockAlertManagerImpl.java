@@ -63,7 +63,7 @@ public class MockAlertManagerImpl extends ManagerBase implements AlertManager {
      * @see com.cloud.alert.AlertManager#clearAlert(short, long, long)
      */
     @Override
-    public void clearAlert(short alertType, long dataCenterId, long podId) {
+    public void clearAlert(AlertType alertType, long dataCenterId, long podId) {
         // TODO Auto-generated method stub
 
     }
@@ -72,7 +72,7 @@ public class MockAlertManagerImpl extends ManagerBase implements AlertManager {
      * @see com.cloud.alert.AlertManager#sendAlert(short, long, java.lang.Long, java.lang.String, java.lang.String)
      */
     @Override
-    public void sendAlert(short alertType, long dataCenterId, Long podId, String subject, String body) {
+    public void sendAlert(AlertType alertType, long dataCenterId, Long podId, String subject, String body) {
         // TODO Auto-generated method stub
 
     }
@@ -84,6 +84,12 @@ public class MockAlertManagerImpl extends ManagerBase implements AlertManager {
     public void recalculateCapacity() {
         // TODO Auto-generated method stub
 
+    }
+
+    @Override
+    public boolean generateAlert(AlertType alertType, long dataCenterId, Long podId, String msg) {
+        // TODO Auto-generated method stub
+        return false;
     }
 
 }

@@ -27,9 +27,13 @@ import com.cloud.vm.NicProfile;
  */
 public interface SspUuidDao extends GenericDao<SspUuidVO, Long> {
     public String findUuidByNetwork(Network network);
+
     public String findUuidByNicProfile(NicProfile nicProfile);
+
     public Long findNetworkIdByUuid(String uuid);
+
     public Long findNicProfileIdByUuid(String uuid);
+
     public int removeUuid(String uuid);
 
     public List<SspUuidVO> listUUidVoByNicProfile(NicProfile nicProfile);

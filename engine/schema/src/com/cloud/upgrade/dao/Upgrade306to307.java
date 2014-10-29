@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 package com.cloud.upgrade.dao;
 
 import java.io.File;
@@ -34,7 +33,7 @@ public class Upgrade306to307 extends Upgrade30xBase implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "3.0.6", "3.0.7" };
+        return new String[] {"3.0.6", "3.0.7"};
     }
 
     @Override
@@ -54,12 +53,12 @@ public class Upgrade306to307 extends Upgrade30xBase implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find db/schema-306to307.sql");
         }
 
-        return new File[] { new File(script) };
+        return new File[] {new File(script)};
     }
 
     @Override
     public void performDataMigration(Connection conn) {
-         updateConcurrentConnectionsInNetworkOfferings(conn);
+        updateConcurrentConnectionsInNetworkOfferings(conn);
     }
 
     @Override
@@ -85,7 +84,7 @@ public class Upgrade306to307 extends Upgrade30xBase implements DbUpgrade {
                 if (rs1.next()) {
                     long network_offering_id = rs1.getLong(1);
                     pstmt = conn.prepareStatement("select concurrent_connections from `cloud`.`network_offerings` where id= ?");
-                    pstmt.setLong(1,network_offering_id);
+                    pstmt.setLong(1, network_offering_id);
                     rs2 = pstmt.executeQuery();
                     if ((!rs2.next()) || (rs2.getInt(1) < maxconnections)) {
                         pstmt = conn.prepareStatement("update network_offerings set concurrent_connections=? where id=?");
@@ -98,8 +97,7 @@ public class Upgrade306to307 extends Upgrade30xBase implements DbUpgrade {
             pstmt = conn.prepareStatement("drop table `cloud`.`network_details`");
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            }
-        finally {
+        } finally {
             try {
                 if (rs != null) {
                     rs.close();

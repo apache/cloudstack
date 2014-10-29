@@ -20,68 +20,68 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackDiskOffering {
-	@SerializedName(ApiConstants.ID)
-	private String id;
-	@SerializedName(ApiConstants.NAME)
-	private String name;
-	@SerializedName(ApiConstants.DISPLAY_TEXT)
-	private String displayText;
-	@SerializedName(ApiConstants.DISK_SIZE)
-	private Long diskSize;
-	@SerializedName(ApiConstants.CREATED)
-	private String created;
-	@SerializedName(ApiConstants.IS_CUSTOMIZED)
-	private boolean isCustomized;
+    @SerializedName(ApiConstants.ID)
+    private String id;
+    @SerializedName(ApiConstants.NAME)
+    private String name;
+    @SerializedName(ApiConstants.DISPLAY_TEXT)
+    private String displayText;
+    @SerializedName(ApiConstants.DISK_SIZE)
+    private Long diskSize;
+    @SerializedName(ApiConstants.CREATED)
+    private String created;
+    @SerializedName(ApiConstants.IS_CUSTOMIZED)
+    private boolean isCustomized;
     @SerializedName(ApiConstants.TAGS)
     private String tags;
 
-	/**
-	 * 
-	 */
-	public CloudStackDiskOffering() {
-	}
+    /**
+     *
+     */
+    public CloudStackDiskOffering() {
+    }
 
-	/**
-	 * @return the id
-	 */
-	public String getId() {
-		return id;
-	}
+    /**
+     * @return the id
+     */
+    public String getId() {
+        return id;
+    }
 
-	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
 
-	/**
-	 * @return the displayText
-	 */
-	public String getDisplayText() {
-		return displayText;
-	}
+    /**
+     * @return the displayText
+     */
+    public String getDisplayText() {
+        return displayText;
+    }
 
-	/**
-	 * @return the diskSize
-	 */
-	public Long getDiskSize() {
-		return diskSize;
-	}
+    /**
+     * @return the diskSize
+     */
+    public Long getDiskSize() {
+        return diskSize;
+    }
 
-	/**
-	 * @return the created
-	 */
-	public String getCreated() {
-		return created;
-	}
+    /**
+     * @return the created
+     */
+    public String getCreated() {
+        return created;
+    }
 
-	/**
-	 * @return the isCustomized
-	 */
-	public boolean isCustomized() {
-		return isCustomized;
-	}
+    /**
+     * @return the isCustomized
+     */
+    public boolean isCustomized() {
+        return isCustomized;
+    }
 
     /**
      * @return the tags

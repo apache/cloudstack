@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,12 +15,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import java.util.Map;
+
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.agent.api.to.NicTO;
 
 public class MigrateWithStorageSendCommand extends Command {
     VirtualMachineTO vm;
@@ -27,8 +31,7 @@ public class MigrateWithStorageSendCommand extends Command {
     Map<NicTO, Object> nicToNetwork;
     Map<String, String> token;
 
-    public MigrateWithStorageSendCommand(VirtualMachineTO vm, Map<VolumeTO, Object> volumeToSr,
-            Map<NicTO, Object> nicToNetwork, Map<String, String> token) {
+    public MigrateWithStorageSendCommand(VirtualMachineTO vm, Map<VolumeTO, Object> volumeToSr, Map<NicTO, Object> nicToNetwork, Map<String, String> token) {
         this.vm = vm;
         this.volumeToSr = volumeToSr;
         this.nicToNetwork = nicToNetwork;

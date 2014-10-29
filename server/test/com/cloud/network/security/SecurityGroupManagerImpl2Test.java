@@ -39,7 +39,7 @@ import com.cloud.utils.component.ComponentContext;
 public class SecurityGroupManagerImpl2Test extends TestCase {
     @Inject
     SecurityGroupManagerImpl2 _sgMgr = null;
-    
+
     @Before
     public void setup() throws Exception {
         ComponentContext.initComponentsLifeCycle();
@@ -61,8 +61,7 @@ public class SecurityGroupManagerImpl2Test extends TestCase {
         _sgMgr.scheduleRulesetUpdateToHosts(work, false, null);
         profiler.stop();
 
-        System.out.println("Done " + numVms + " in " + profiler.getDuration()
-                + " ms");
+        System.out.println("Done " + numVms + " in " + profiler.getDuration() + " ms");
     }
 
     @Test

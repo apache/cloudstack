@@ -22,6 +22,7 @@ import com.cloud.org.Grouping;
 
 public interface NetworkAsa1000vMap extends Grouping, InternalIdentity {
 
+    @Override
     long getId();
 
     long getNetworkId();

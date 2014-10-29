@@ -28,14 +28,13 @@ import javax.persistence.SecondaryTable;
 import javax.persistence.SecondaryTables;
 import javax.persistence.Table;
 
-import com.cloud.utils.net.Ip;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.net.Ip;
 
 @Entity
 @Table(name = ("elastic_lb_vm_map"))
-@SecondaryTables({ 
-        @SecondaryTable(name = "user_ip_address", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "ip_addr_id", referencedColumnName = "id") })
-        })
+@SecondaryTables({@SecondaryTable(name = "user_ip_address", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "ip_addr_id", referencedColumnName = "id")})})
 public class ElasticLbVmMapVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,7 +43,7 @@ public class ElasticLbVmMapVO implements InternalIdentity {
 
     @Column(name = "lb_id")
     private Long lbId;
-    
+
     @Column(name = "ip_addr_id")
     private long ipAddressId;
 
@@ -53,11 +52,11 @@ public class ElasticLbVmMapVO implements InternalIdentity {
 
     /*@Column(name = "name", table = "load_balancing_rules", insertable = false, updatable = false)
     private String lbName;*/
-    
+
     @Column(name = "public_ip_address", table = "user_ip_address", insertable = false, updatable = false)
-    @Enumerated(value=EnumType.STRING)
+    @Enumerated(value = EnumType.STRING)
     private Ip address = null;
-    
+
     public ElasticLbVmMapVO() {
     }
 
@@ -67,6 +66,7 @@ public class ElasticLbVmMapVO implements InternalIdentity {
         this.lbId = lbId;
     }
 
+    @Override
     public long getId() {
         return id;
     }
@@ -75,16 +75,13 @@ public class ElasticLbVmMapVO implements InternalIdentity {
         return lbId;
     }
 
-
     public long getElbVmId() {
         return elbVmId;
     }
 
-
 //    public String getLbName() {
 //        return lbName;
 //    }
-
 
     public long getIpAddressId() {
         return ipAddressId;
@@ -97,6 +94,5 @@ public class ElasticLbVmMapVO implements InternalIdentity {
     public Ip getAddress() {
         return address;
     }
-    
-}
 
+}

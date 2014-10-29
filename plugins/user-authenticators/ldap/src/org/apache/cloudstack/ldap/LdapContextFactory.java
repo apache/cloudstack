@@ -16,121 +16,99 @@
 // under the License.
 package org.apache.cloudstack.ldap;
 
+import java.io.IOException;
 import java.util.Hashtable;
 
 import javax.inject.Inject;
 import javax.naming.Context;
 import javax.naming.NamingException;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
+import javax.naming.ldap.InitialLdapContext;
+import javax.naming.ldap.LdapContext;
 
 import org.apache.log4j.Logger;
 
 public class LdapContextFactory {
-	private static final Logger s_logger = Logger
-			.getLogger(LdapContextFactory.class.getName());
+    private static final Logger s_logger = Logger.getLogger(LdapContextFactory.class.getName());
 
-	@Inject
-	private LdapConfiguration _ldapConfiguration;
+    @Inject
+    private LdapConfiguration _ldapConfiguration;
 
-	public LdapContextFactory() {
-	}
+    public LdapContextFactory() {
+    }
 
-	public LdapContextFactory(final LdapConfiguration ldapConfiguration) {
-		_ldapConfiguration = ldapConfiguration;
-	}
+    public LdapContextFactory(final LdapConfiguration ldapConfiguration) {
+        _ldapConfiguration = ldapConfiguration;
+    }
 
-	public DirContext createBindContext() throws NamingException {
-		return createBindContext(null);
-	}
+    public LdapContext createBindContext() throws NamingException, IOException {
+        return createBindContext(null);
+    }
 
-	public DirContext createBindContext(final String providerUrl)
-			throws NamingException {
-		final String bindPrincipal = _ldapConfiguration.getBindPrincipal();
-		final String bindPassword = _ldapConfiguration.getBindPassword();
-		return createInitialDirContext(bindPrincipal, bindPassword,
-				providerUrl, true);
-	}
+    public LdapContext createBindContext(final String providerUrl) throws NamingException, IOException {
+        final String bindPrincipal = _ldapConfiguration.getBindPrincipal();
+        final String bindPassword = _ldapConfiguration.getBindPassword();
+        return createInitialDirContext(bindPrincipal, bindPassword, providerUrl, true);
+    }
 
-	private DirContext createInitialDirContext(final String principal,
-			final String password, final boolean isSystemContext)
-			throws NamingException {
-		return createInitialDirContext(principal, password, null,
-				isSystemContext);
-	}
+    private LdapContext createInitialDirContext(final String principal, final String password, final boolean isSystemContext) throws NamingException, IOException {
+        return createInitialDirContext(principal, password, null, isSystemContext);
+    }
 
-	private DirContext createInitialDirContext(final String principal,
-			final String password, final String providerUrl,
-			final boolean isSystemContext) throws NamingException {
-		return new InitialDirContext(getEnvironment(principal, password,
-				providerUrl, isSystemContext));
-	}
+    private LdapContext createInitialDirContext(final String principal, final String password, final String providerUrl, final boolean isSystemContext)
+        throws NamingException, IOException {
+        Hashtable<String, String> environment = getEnvironment(principal, password, providerUrl, isSystemContext);
+        s_logger.debug("initializing ldap with provider url: " + environment.get(Context.PROVIDER_URL));
+        return new InitialLdapContext(environment, null);
+    }
 
-	public DirContext createUserContext(final String principal,
-			final String password) throws NamingException {
-		return createInitialDirContext(principal, password, false);
-	}
+    public LdapContext createUserContext(final String principal, final String password) throws NamingException, IOException {
+        return createInitialDirContext(principal, password, false);
+    }
 
-	private void enableSSL(final Hashtable<String, String> environment) {
-		final boolean sslStatus = _ldapConfiguration.getSSLStatus();
+    private void enableSSL(final Hashtable<String, String> environment) {
+        final boolean sslStatus = _ldapConfiguration.getSSLStatus();
 
-		if (sslStatus) {
-			s_logger.info("LDAP SSL enabled.");
-			environment.put(Context.SECURITY_PROTOCOL, "ssl");
-			System.setProperty("javax.net.ssl.trustStore",
-					_ldapConfiguration.getTrustStore());
-			System.setProperty("javax.net.ssl.trustStorePassword",
-					_ldapConfiguration.getTrustStorePassword());
-		}
-	}
+        if (sslStatus) {
+            s_logger.info("LDAP SSL enabled.");
+            environment.put(Context.SECURITY_PROTOCOL, "ssl");
+            System.setProperty("javax.net.ssl.trustStore", _ldapConfiguration.getTrustStore());
+            System.setProperty("javax.net.ssl.trustStorePassword", _ldapConfiguration.getTrustStorePassword());
+        }
+    }
 
-	private Hashtable<String, String> getEnvironment(final String principal,
-			final String password, final String providerUrl,
-			final boolean isSystemContext) {
-		final String factory = _ldapConfiguration.getFactory();
-		final String url = providerUrl == null ? _ldapConfiguration
-				.getProviderUrl() : providerUrl;
+    private Hashtable<String, String> getEnvironment(final String principal, final String password, final String providerUrl, final boolean isSystemContext) {
+        final String factory = _ldapConfiguration.getFactory();
+        final String url = providerUrl == null ? _ldapConfiguration.getProviderUrl() : providerUrl;
 
-		final Hashtable<String, String> environment = new Hashtable<String, String>();
+        final Hashtable<String, String> environment = new Hashtable<String, String>();
 
-		environment.put(Context.INITIAL_CONTEXT_FACTORY, factory);
-		environment.put(Context.PROVIDER_URL, url);
-		environment.put("com.sun.jndi.ldap.read.timeout", "500");
-		environment.put("com.sun.jndi.ldap.connect.pool", "true");
+        environment.put(Context.INITIAL_CONTEXT_FACTORY, factory);
+        environment.put(Context.PROVIDER_URL, url);
+        environment.put("com.sun.jndi.ldap.read.timeout", _ldapConfiguration.getReadTimeout().toString());
+        environment.put("com.sun.jndi.ldap.connect.pool", "true");
 
-		enableSSL(environment);
-		setAuthentication(environment, isSystemContext);
+        enableSSL(environment);
+        setAuthentication(environment, isSystemContext);
 
-		if (principal != null) {
-			environment.put(Context.SECURITY_PRINCIPAL, principal);
-		}
+        if (principal != null) {
+            environment.put(Context.SECURITY_PRINCIPAL, principal);
+        }
 
-		if (password != null) {
-			environment.put(Context.SECURITY_CREDENTIALS, password);
-		}
+        if (password != null) {
+            environment.put(Context.SECURITY_CREDENTIALS, password);
+        }
 
-		return environment;
-	}
+        return environment;
+    }
 
-	private void setAuthentication(final Hashtable<String, String> environment,
-			final boolean isSystemContext) {
-		final String authentication = _ldapConfiguration.getAuthentication();
+    private void setAuthentication(final Hashtable<String, String> environment, final boolean isSystemContext) {
+        final String authentication = _ldapConfiguration.getAuthentication();
 
-		if ("none".equals(authentication) && !isSystemContext) {
-			environment.put(Context.SECURITY_AUTHENTICATION, "simple");
-		} else {
-			environment.put(Context.SECURITY_AUTHENTICATION, authentication);
-		}
-	}
+        if ("none".equals(authentication) && !isSystemContext) {
+            environment.put(Context.SECURITY_AUTHENTICATION, "simple");
+        } else {
+            environment.put(Context.SECURITY_AUTHENTICATION, authentication);
+        }
+    }
 
-	public void testConnection(final String providerUrl) throws NamingException {
-		try {
-			createBindContext(providerUrl);
-			s_logger.info("LDAP Connection was successful");
-		} catch (final NamingException e) {
-			s_logger.warn("LDAP Connection failed");
-			s_logger.error(e.getMessage(), e);
-			throw e;
-		}
-	}
 }

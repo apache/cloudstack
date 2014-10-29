@@ -16,38 +16,47 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.domain.Domain;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Domain.class)
 public class DomainResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the ID of the domain")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the ID of the domain")
     private String id;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the name of the domain")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the name of the domain")
     private String domainName;
 
-    @SerializedName(ApiConstants.LEVEL) @Param(description="the level of the domain")
+    @SerializedName(ApiConstants.LEVEL)
+    @Param(description = "the level of the domain")
     private Integer level;
 
-    @SerializedName("parentdomainid") @Param(description="the domain ID of the parent domain")
+    @SerializedName("parentdomainid")
+    @Param(description = "the domain ID of the parent domain")
     private String parentDomainId;
 
-    @SerializedName("parentdomainname") @Param(description="the domain name of the parent domain")
+    @SerializedName("parentdomainname")
+    @Param(description = "the domain name of the parent domain")
     private String parentDomainName;
 
-    @SerializedName("haschild") @Param(description="whether the domain has one or more sub-domains")
+    @SerializedName("haschild")
+    @Param(description = "whether the domain has one or more sub-domains")
     private boolean hasChild;
 
-    @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain")
+    @SerializedName(ApiConstants.NETWORK_DOMAIN)
+    @Param(description = "the network domain")
     private String networkDomain;
 
-    @SerializedName(ApiConstants.PATH) @Param(description="the path of the domain")
+    @SerializedName(ApiConstants.PATH)
+    @Param(description = "the path of the domain")
     private String path;
 
     public String getId() {

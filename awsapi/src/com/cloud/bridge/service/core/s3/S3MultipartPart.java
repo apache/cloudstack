@@ -19,52 +19,52 @@ package com.cloud.bridge.service.core.s3;
 import java.util.Calendar;
 
 public class S3MultipartPart {
-	private int partNumber = -1;
-	private Calendar lastModified = null;
-	private String eTag = null;
-	private String path = null;
-	private int size = -1;
-	
-	public S3MultipartPart() {
-	}
+    private int partNumber = -1;
+    private Calendar lastModified = null;
+    private String eTag = null;
+    private String path = null;
+    private int size = -1;
 
-	public int getPartNumber() {
-		return partNumber;
-	}
-	
-	public void setPartNumber(int partNumber) {
-		this.partNumber = partNumber;
-	}
-	
-	public Calendar getLastModified() {
-		return lastModified;
-	}
-	
-	public void setLastModified(Calendar lastModified) {
-	    this.lastModified = lastModified;	
-	}
-	
-	public String getETag() {
-		return eTag;
-	}
-	
-	public void setEtag(String eTag) {
-		this.eTag = eTag;
-	}
+    public S3MultipartPart() {
+    }
 
-	public String getPath() {
-		return path;
-	}
-	
-	public void setPath(String path) {
-		this.path = path;
-	}
+    public int getPartNumber() {
+        return partNumber;
+    }
 
-	public int getSize() {
-		return size;
-	}
-	
-	public void setSize(int size) {
-		this.size = size;
-	}
+    public void setPartNumber(int partNumber) {
+        this.partNumber = partNumber;
+    }
+
+    public Calendar getLastModified() {
+        return lastModified;
+    }
+
+    public void setLastModified(Calendar lastModified) {
+        this.lastModified = lastModified;
+    }
+
+    public String getETag() {
+        return eTag;
+    }
+
+    public void setEtag(String eTag) {
+        this.eTag = eTag;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
+    }
 }

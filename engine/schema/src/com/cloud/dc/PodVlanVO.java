@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.dc;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -29,31 +27,33 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 @Entity
-@Table(name="op_pod_vlan_alloc")
+@Table(name = "op_pod_vlan_alloc")
 public class PodVlanVO implements InternalIdentity {
-    
+
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     Long id;
-    
-    @Column(name="taken", nullable=true)
-    @Temporal(value=TemporalType.TIMESTAMP)
+
+    @Column(name = "taken", nullable = true)
+    @Temporal(value = TemporalType.TIMESTAMP)
     Date takenAt;
 
-    @Column(name="vlan", updatable=false, nullable=false)
+    @Column(name = "vlan", updatable = false, nullable = false)
     protected String vlan;
-    
-    @Column(name="data_center_id") 
+
+    @Column(name = "data_center_id")
     long dataCenterId;
-    
-    @Column(name="pod_id", updatable=false, nullable=false)
+
+    @Column(name = "pod_id", updatable = false, nullable = false)
     protected long podId;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     protected Long accountId;
-    
+
     public Date getTakenAt() {
         return takenAt;
     }
@@ -68,15 +68,16 @@ public class PodVlanVO implements InternalIdentity {
         this.podId = podId;
         this.takenAt = null;
     }
-    
+
+    @Override
     public long getId() {
         return id;
     }
-    
+
     public Long getAccountId() {
-    	return accountId;
+        return accountId;
     }
-    
+
     public String getVlan() {
         return vlan;
     }
@@ -90,9 +91,9 @@ public class PodVlanVO implements InternalIdentity {
     }
 
     public void setAccountId(Long accountId) {
-    	this.accountId = accountId;
+        this.accountId = accountId;
     }
-    
+
     protected PodVlanVO() {
     }
 }

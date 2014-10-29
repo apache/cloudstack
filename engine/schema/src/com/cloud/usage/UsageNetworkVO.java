@@ -22,93 +22,95 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="usage_network")
+@Table(name = "usage_network")
 public class UsageNetworkVO {
-	@Id
-    @Column(name="account_id")
+    @Id
+    @Column(name = "account_id")
     private long accountId;
 
-	@Column(name="zone_id")
-	private long zoneId;
-	
-	@Column(name="host_id")
-	private long hostId;
-	
-	@Column(name="host_type")
-	private String hostType;
-	
-	@Column(name="network_id")
-	private Long networkId;
+    @Column(name = "zone_id")
+    private long zoneId;
 
-	
-	@Column(name="bytes_sent")
-	private long bytesSent;
+    @Column(name = "host_id")
+    private long hostId;
 
-    @Column(name="bytes_received")
+    @Column(name = "host_type")
+    private String hostType;
+
+    @Column(name = "network_id")
+    private Long networkId;
+
+    @Column(name = "bytes_sent")
+    private long bytesSent;
+
+    @Column(name = "bytes_received")
     private long bytesReceived;
 
-    @Column(name="agg_bytes_received")
+    @Column(name = "agg_bytes_received")
     private long aggBytesReceived;
-    
-    @Column(name="agg_bytes_sent")
+
+    @Column(name = "agg_bytes_sent")
     private long aggBytesSent;
-    
-	@Column(name="event_time_millis")
-	private long eventTimeMillis = 0;
-	
-	protected UsageNetworkVO() {
-	}
 
-	public UsageNetworkVO(Long accountId, long zoneId, long hostId, String hostType, Long networkId, long bytesSent, long bytesReceived, long aggBytesReceived, long aggBytesSent, long eventTimeMillis) {
-		this.accountId = accountId;
-		this.zoneId = zoneId;
-		this.hostId = hostId;
-		this.hostType = hostType;
-		this.networkId = networkId;
-		this.bytesSent = bytesSent;
+    @Column(name = "event_time_millis")
+    private long eventTimeMillis = 0;
+
+    protected UsageNetworkVO() {
+    }
+
+    public UsageNetworkVO(Long accountId, long zoneId, long hostId, String hostType, Long networkId, long bytesSent, long bytesReceived, long aggBytesReceived,
+            long aggBytesSent, long eventTimeMillis) {
+        this.accountId = accountId;
+        this.zoneId = zoneId;
+        this.hostId = hostId;
+        this.hostType = hostType;
+        this.networkId = networkId;
+        this.bytesSent = bytesSent;
         this.bytesReceived = bytesReceived;
-		this.aggBytesReceived = aggBytesReceived;
-		this.aggBytesSent = aggBytesSent;
-		this.eventTimeMillis = eventTimeMillis;
-	}
+        this.aggBytesReceived = aggBytesReceived;
+        this.aggBytesSent = aggBytesSent;
+        this.eventTimeMillis = eventTimeMillis;
+    }
 
-	public long getAccountId() {
-		return accountId;
-	}
+    public long getAccountId() {
+        return accountId;
+    }
 
-	public void setAccountId(long accountId) {
-		this.accountId = accountId;
-	}
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
+    }
 
-	public long getZoneId() {
-	    return zoneId;
-	}
-	public void setZoneId(long zoneId) {
-	    this.zoneId = zoneId;
-	}
+    public long getZoneId() {
+        return zoneId;
+    }
 
-	public Long getBytesSent() {
-		return bytesSent;
-	}
-	
-	public void setBytesSent(Long bytesSent) {
-	    this.bytesSent = bytesSent;
-	}
+    public void setZoneId(long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public Long getBytesSent() {
+        return bytesSent;
+    }
+
+    public void setBytesSent(Long bytesSent) {
+        this.bytesSent = bytesSent;
+    }
 
     public Long getBytesReceived() {
         return bytesReceived;
     }
-    
+
     public void setBytes(Long bytesReceived) {
         this.bytesReceived = bytesReceived;
     }
 
     public long getEventTimeMillis() {
-	    return eventTimeMillis;
-	}
-	public void setEventTimeMillis(long eventTimeMillis) {
-	    this.eventTimeMillis = eventTimeMillis;
-	}
+        return eventTimeMillis;
+    }
+
+    public void setEventTimeMillis(long eventTimeMillis) {
+        this.eventTimeMillis = eventTimeMillis;
+    }
 
     public void setHostId(long hostId) {
         this.hostId = hostId;
@@ -117,28 +119,28 @@ public class UsageNetworkVO {
     public long getHostId() {
         return hostId;
     }
-    
+
     public String getHostType() {
         return hostType;
     }
-    
+
     public Long getNetworkId() {
         return networkId;
     }
 
-	public long getAggBytesReceived() {
-		return aggBytesReceived;
-	}
+    public long getAggBytesReceived() {
+        return aggBytesReceived;
+    }
 
-	public void setAggBytesReceived(long aggBytesReceived) {
-		this.aggBytesReceived = aggBytesReceived;
-	}
+    public void setAggBytesReceived(long aggBytesReceived) {
+        this.aggBytesReceived = aggBytesReceived;
+    }
 
-	public long getAggBytesSent() {
-		return aggBytesSent;
-	}
+    public long getAggBytesSent() {
+        return aggBytesSent;
+    }
 
-	public void setAggBytesSent(long aggBytesSent) {
-		this.aggBytesSent = aggBytesSent;
-	}
+    public void setAggBytesSent(long aggBytesSent) {
+        this.aggBytesSent = aggBytesSent;
+    }
 }

@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.network.as;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,21 +23,24 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 @Entity
-@Table(name=("autoscale_vmgroup_policy_map"))
+@Table(name = ("autoscale_vmgroup_policy_map"))
 public class AutoScaleVmGroupPolicyMapVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="vmgroup_id")
+    @Column(name = "vmgroup_id")
     private long vmGroupId;
 
-    @Column(name="policy_id")
+    @Column(name = "policy_id")
     private long policyId;
 
-    public AutoScaleVmGroupPolicyMapVO() { }
+    public AutoScaleVmGroupPolicyMapVO() {
+    }
 
     public AutoScaleVmGroupPolicyMapVO(long vmGroupId, long policyId) {
         this.vmGroupId = vmGroupId;
@@ -50,6 +51,7 @@ public class AutoScaleVmGroupPolicyMapVO implements InternalIdentity {
         this(vmgroupId, policyId);
     }
 
+    @Override
     public long getId() {
         return id;
     }

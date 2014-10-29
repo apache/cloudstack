@@ -14,7 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from utilities import Distribution, serviceOpsRedhat,serviceOpsUbuntu
+from utilities import Distribution, serviceOpsRedhat,serviceOpsUbuntu,serviceOpsRedhat7
 from serviceConfig import *
 class sysConfigFactory:
     @staticmethod
@@ -41,6 +41,8 @@ class sysConfigAgentFactory:
             return sysConfigRedhat6(glbEnv)
         elif distribution == "CentOS" or distribution == "RHEL5":
             return sysConfigRedhat5(glbEnv)
+        elif distribution == "RHEL7":
+            return sysConfigRedhat7(glbEnv)
         else:
             print "Can't find the distribution version"
             return sysConfig()
@@ -139,7 +141,12 @@ class sysConfigAgentRedhatBase(sysConfigAgent):
     def __init__(self, env):
         self.svo = serviceOpsRedhat()
         super(sysConfigAgentRedhatBase, self).__init__(env)
-   
+
+class sysConfigAgentRedhat7Base(sysConfigAgent):
+    def __init__(self, env):
+        self.svo = serviceOpsRedhat7()
+        super(sysConfigAgentRedhat7Base, self).__init__(env)
+
 class sysConfigAgentUbuntu(sysConfigAgent):
     def __init__(self, glbEnv):
         super(sysConfigAgentUbuntu, self).__init__(glbEnv)
@@ -175,6 +182,17 @@ class sysConfigRedhat5(sysConfigAgentRedhatBase):
                          firewallConfigAgent(self),
                          cloudAgentConfig(self)]
         
+#it covers RHEL7
+class sysConfigRedhat7(sysConfigAgentRedhat7Base):
+    def __init__(self, glbEnv):
+        super(sysConfigRedhat7, self).__init__(glbEnv)
+        self.services = [securityPolicyConfigRedhat(self),
+                         networkConfigRedhat(self),
+                         libvirtConfigRedhat(self),
+                         firewallConfigAgent(self),
+                         nfsConfig(self),
+                         cloudAgentConfig(self)]
+
 class sysConfigServer(sysConfig):
     def check(self):
         if os.geteuid() != 0:

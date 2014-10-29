@@ -17,7 +17,7 @@
 package com.cloud.bridge.service.core.s3;
 
 public class S3ListAllMyBucketsRequest extends S3Request {
-	public S3ListAllMyBucketsRequest() {
-		super();
-	}
+    public S3ListAllMyBucketsRequest() {
+        super();
+    }
 }

@@ -16,50 +16,60 @@
 // under the License.
 package com.cloud.server.api.response;
 
-import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.NetworkDeviceResponse;
+
+import com.cloud.serializer.Param;
 
 public class NwDevicePxeServerResponse extends NetworkDeviceResponse {
 
-	@SerializedName(ApiConstants.ZONE_ID) @Param(description="Zone where to add PXE server")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "Zone where to add PXE server")
     private String zoneId;
 
-	@SerializedName(ApiConstants.POD_ID) @Param(description="Pod where to add PXE server")
+    @SerializedName(ApiConstants.POD_ID)
+    @Param(description = "Pod where to add PXE server")
     private String podId;
 
-	@SerializedName(ApiConstants.URL) @Param(description="Ip of PXE server")
+    @SerializedName(ApiConstants.URL)
+    @Param(description = "Ip of PXE server")
     private String url;
 
-	@SerializedName(ApiConstants.TYPE) @Param(description="Type of add PXE server")
+    @SerializedName(ApiConstants.TYPE)
+    @Param(description = "Type of add PXE server")
     private String type;
 
-	public void setZoneId(String zoneId) {
-		this.zoneId = zoneId;
-	}
-	public String getZoneId() {
-		return zoneId;
-	}
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
+    }
 
-	public void setPodId(String podId) {
-		this.podId = podId;
-	}
-	public String getPodId() {
-		return podId;
-	}
+    public String getZoneId() {
+        return zoneId;
+    }
 
-	public void setUrl(String url) {
-		this.url = url;
-	}
-	public String getUrl() {
-		return url;
-	}
+    public void setPodId(String podId) {
+        this.podId = podId;
+    }
 
-	public void setType(String type) {
-		this.type = type;
-	}
-	public String getType() {
-		return type;
-	}
+    public String getPodId() {
+        return podId;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getType() {
+        return type;
+    }
 }

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 /**
@@ -21,11 +24,11 @@ package com.cloud.agent.api;
  */
 public class ConfigurePortForwardingRulesOnLogicalRouterAnswer extends Answer {
 
-    public ConfigurePortForwardingRulesOnLogicalRouterAnswer(Command command, boolean success, String details) {
+    public ConfigurePortForwardingRulesOnLogicalRouterAnswer(final Command command, final boolean success, final String details) {
         super(command, success, details);
     }
 
-    public ConfigurePortForwardingRulesOnLogicalRouterAnswer(Command command, Exception e) {
+    public ConfigurePortForwardingRulesOnLogicalRouterAnswer(final Command command, final Exception e) {
         super(command, e);
     }
 

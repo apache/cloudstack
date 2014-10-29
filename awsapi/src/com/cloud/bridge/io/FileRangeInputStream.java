@@ -22,73 +22,73 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 
 public class FileRangeInputStream extends InputStream {
-	private RandomAccessFile randomAccessFile;
-	private long curPos;
-	private long endPos; 
-	private long fileLength;
-	
-	public FileRangeInputStream(File file, long startPos, long endPos) throws IOException {
-		fileLength = file.length();
-		
-		if(startPos > fileLength)
-			startPos = fileLength;
-		
-		if(endPos > fileLength)
-			endPos = fileLength;
-		
-		if(startPos > endPos)
-			throw new IllegalArgumentException("Invalid file range " + startPos + "-" + endPos);
+    private RandomAccessFile randomAccessFile;
+    private long curPos;
+    private long endPos;
+    private long fileLength;
 
-		this.curPos = startPos;
-		this.endPos = endPos;
-		randomAccessFile = new RandomAccessFile(file, "r");
-		randomAccessFile.seek(startPos);
-	}
-	
-	@Override
-	public int available() throws IOException {
-		return (int)(endPos - curPos);
-	}
+    public FileRangeInputStream(File file, long startPos, long endPos) throws IOException {
+        fileLength = file.length();
 
-	@Override
-	public int read() throws IOException {
-		if(available() > 0) {
-			int value = randomAccessFile.read();
-			curPos++;
-			return value;
-		}
-		return -1;
-	}
-	
-	@Override
-	public int read(byte[] b) throws IOException {
-		return read(b, 0, b.length);
-	}
-	
-	@Override
-	public int read(byte[] b, int off, int len) throws IOException {
-		int bytesToRead = Math.min(len, available());
-		if(bytesToRead == 0)
-			return -1;
-		
-		int bytesRead = randomAccessFile.read(b, off, bytesToRead);
-		if(bytesRead < 0)
-			return -1;
-		
-		curPos += bytesRead;
-		return bytesRead;
-	}
-	
-	@Override
-	public long skip(long n) throws IOException {
-		long skipped = Math.min(n, available());
-		randomAccessFile.skipBytes((int)skipped);
-		curPos += skipped;
-		return skipped;
-	}
-	
-	@Override
-	public void close() throws IOException {
-		randomAccessFile.close();
-	}
+        if (startPos > fileLength)
+            startPos = fileLength;
+
+        if (endPos > fileLength)
+            endPos = fileLength;
+
+        if (startPos > endPos)
+            throw new IllegalArgumentException("Invalid file range " + startPos + "-" + endPos);
+
+        this.curPos = startPos;
+        this.endPos = endPos;
+        randomAccessFile = new RandomAccessFile(file, "r");
+        randomAccessFile.seek(startPos);
+    }
+
+    @Override
+    public int available() throws IOException {
+        return (int)(endPos - curPos);
+    }
+
+    @Override
+    public int read() throws IOException {
+        if (available() > 0) {
+            int value = randomAccessFile.read();
+            curPos++;
+            return value;
+        }
+        return -1;
+    }
+
+    @Override
+    public int read(byte[] b) throws IOException {
+        return read(b, 0, b.length);
+    }
+
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
+        int bytesToRead = Math.min(len, available());
+        if (bytesToRead == 0)
+            return -1;
+
+        int bytesRead = randomAccessFile.read(b, off, bytesToRead);
+        if (bytesRead < 0)
+            return -1;
+
+        curPos += bytesRead;
+        return bytesRead;
+    }
+
+    @Override
+    public long skip(long n) throws IOException {
+        long skipped = Math.min(n, available());
+        randomAccessFile.skipBytes((int)skipped);
+        curPos += skipped;
+        return skipped;
+    }
+
+    @Override
+    public void close() throws IOException {
+        randomAccessFile.close();
+    }
 }

@@ -28,7 +28,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 
 @Component
-@Local(value={LoadBalancerVMMapDao.class})
+@Local(value = {LoadBalancerVMMapDao.class})
 public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO, Long> implements LoadBalancerVMMapDao {
 
     @Override
@@ -52,9 +52,32 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
     }
 
     @Override
+    public void remove(long loadBalancerId, long instanceId, String instanceIp, Boolean revoke) {
+        SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
+        sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
+        sc.addAnd("instanceId", SearchCriteria.Op.IN, instanceId);
+        sc.addAnd("instanceIp", SearchCriteria.Op.EQ, instanceIp);
+
+        if (revoke != null) {
+            sc.addAnd("revoke", SearchCriteria.Op.EQ, revoke);
+        }
+
+        expunge(sc);
+    }
+
+
+    @Override
     public List<LoadBalancerVMMapVO> listByInstanceId(long instanceId) {
         SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
         sc.addAnd("instanceId", SearchCriteria.Op.EQ, instanceId);
+
+        return listBy(sc);
+    }
+
+    @Override
+    public List<LoadBalancerVMMapVO> listByInstanceIp(String instanceIp) {
+        SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
+        sc.addAnd("instanceIp", SearchCriteria.Op.EQ, instanceIp);
 
         return listBy(sc);
     }
@@ -75,7 +98,7 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
 
         return listBy(sc);
     }
-    
+
     @Override
     public LoadBalancerVMMapVO findByLoadBalancerIdAndVmId(long loadBalancerId, long instanceId) {
         SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
@@ -83,6 +106,18 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
         sc.addAnd("instanceId", SearchCriteria.Op.EQ, instanceId);
         return findOneBy(sc);
     }
+
+
+    @Override
+    public LoadBalancerVMMapVO findByLoadBalancerIdAndVmIdVmIp(long loadBalancerId, long instanceId, String instanceIp) {
+        SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
+        sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
+        sc.addAnd("instanceId", SearchCriteria.Op.EQ, instanceId);
+        sc.addAnd("instanceIp", SearchCriteria.Op.EQ, instanceIp);
+
+        return findOneBy(sc);
+    }
+
 
     @Override
     public boolean isVmAttachedToLoadBalancer(long loadBalancerId) {
@@ -93,5 +128,13 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
         SearchCriteria<Long> sc = CountByAccount.create();
         sc.setParameters("loadBalancerId", loadBalancerId);
         return customSearch(sc, null).get(0) > 0;
+    }
+
+    @Override
+    public List<LoadBalancerVMMapVO> listByLoadBalancerIdAndVmId(long loadBalancerId, long instanceId) {
+        SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
+        sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
+        sc.addAnd("instanceId", SearchCriteria.Op.EQ, instanceId);
+        return listBy(sc);
     }
 }

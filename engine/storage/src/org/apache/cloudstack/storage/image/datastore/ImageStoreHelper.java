@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.storage.image.datastore;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
@@ -26,6 +28,7 @@ import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailVO;
@@ -33,8 +36,10 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -47,53 +52,76 @@ public class ImageStoreHelper {
     SnapshotDataStoreDao snapshotStoreDao;
 
     public ImageStoreVO createImageStore(Map<String, Object> params) {
-        ImageStoreVO store = imageStoreDao.findByName((String) params.get("name"));
+        ImageStoreVO store = imageStoreDao.findByName((String)params.get("name"));
         if (store != null) {
             return store;
         }
         store = new ImageStoreVO();
-        store.setProtocol((String) params.get("protocol"));
-        store.setProviderName((String) params.get("providerName"));
-        store.setScope((ScopeType) params.get("scope"));
-        store.setDataCenterId((Long) params.get("zoneId"));
-        String uuid = (String) params.get("uuid");
+        store.setProtocol((String)params.get("protocol"));
+        store.setProviderName((String)params.get("providerName"));
+        store.setScope((ScopeType)params.get("scope"));
+        store.setDataCenterId((Long)params.get("zoneId"));
+        String uuid = (String)params.get("uuid");
         if (uuid != null) {
             store.setUuid(uuid);
         } else {
             store.setUuid(UUID.randomUUID().toString());
         }
-        store.setName((String) params.get("name"));
+        store.setName((String)params.get("name"));
         if (store.getName() == null) {
             store.setName(store.getUuid());
         }
-        store.setUrl((String) params.get("url"));
-        store.setRole((DataStoreRole) params.get("role"));
+        store.setUrl((String)params.get("url"));
+        store.setRole((DataStoreRole)params.get("role"));
         store = imageStoreDao.persist(store);
         return store;
     }
 
     public ImageStoreVO createImageStore(Map<String, Object> params, Map<String, String> details) {
-        ImageStoreVO store = imageStoreDao.findByName((String) params.get("name"));
+        ImageStoreVO store = imageStoreDao.findByName((String)params.get("name"));
         if (store != null) {
             return store;
         }
         store = new ImageStoreVO();
-        store.setProtocol((String) params.get("protocol"));
-        store.setProviderName((String) params.get("providerName"));
-        store.setScope((ScopeType) params.get("scope"));
-        store.setDataCenterId((Long) params.get("zoneId"));
-        String uuid = (String) params.get("uuid");
+        store.setProtocol((String)params.get("protocol"));
+        store.setProviderName((String)params.get("providerName"));
+        store.setScope((ScopeType)params.get("scope"));
+        store.setDataCenterId((Long)params.get("zoneId"));
+        String uuid = (String)params.get("uuid");
         if (uuid != null) {
             store.setUuid(uuid);
         } else {
             store.setUuid(UUID.randomUUID().toString());
         }
-        store.setUrl((String) params.get("url"));
-        store.setName((String) params.get("name"));
+        store.setUrl((String)params.get("url"));
+        store.setName((String)params.get("name"));
         if (store.getName() == null) {
             store.setName(store.getUuid());
         }
-        store.setRole((DataStoreRole) params.get("role"));
+
+        store.setRole((DataStoreRole)params.get("role"));
+
+        if ("cifs".equalsIgnoreCase((String) params.get("protocol")) && details != null) {
+            String user = details.get("user");
+            String password = details.get("password");
+            String domain = details.get("domain");
+            String updatedPath = (String) params.get("url");
+
+            if (user == null || password == null) {
+                String errMsg = "Missing cifs user and password details. Add them as details parameter.";
+                throw new InvalidParameterValueException(errMsg);
+            } else {
+                try {
+                    password = DBEncryptionUtil.encrypt(URLEncoder.encode(password, "UTF-8"));
+                    details.put("password", password);
+                    updatedPath += "?user=" + user + "&password=" + password + "&domain=" + domain;
+                } catch (UnsupportedEncodingException e) {
+                    throw new CloudRuntimeException("Error while generating the cifs url. " + e.getMessage());
+                }
+                store.setUrl(updatedPath);
+            }
+        }
+
         store = imageStoreDao.persist(store);
 
         // persist details
@@ -104,7 +132,12 @@ public class ImageStoreHelper {
                 ImageStoreDetailVO detail = new ImageStoreDetailVO();
                 detail.setStoreId(store.getId());
                 detail.setName(key);
-                detail.setValue(details.get(key));
+                String value = details.get(key);
+                // encrypt swift key or s3 secret key
+                if (key.equals(ApiConstants.KEY) || key.equals(ApiConstants.S3_SECRET_KEY)) {
+                    value = DBEncryptionUtil.encrypt(value);
+                }
+                detail.setValue(value);
                 imageStoreDetailsDao.persist(detail);
             }
         }

@@ -20,6 +20,8 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import junit.framework.TestCase;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+import com.cloud.utils.Pair;
 
 public class LibvirtVMDefTest extends TestCase {
 
@@ -27,11 +29,9 @@ public class LibvirtVMDefTest extends TestCase {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
         ifDef.defEthernet("targetDeviceName", "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.nicModel.VIRTIO);
 
-        String expected = "<interface type='ethernet'>\n" +
-                "<target dev='targetDeviceName'/>\n" +
-                "<mac address='00:11:22:aa:bb:dd'/>\n" +
-                "<model type='virtio'/>\n" +
-                "</interface>\n";
+        String expected =
+            "<interface type='ethernet'>\n" + "<target dev='targetDeviceName'/>\n" + "<mac address='00:11:22:aa:bb:dd'/>\n" + "<model type='virtio'/>\n"
+                + "</interface>\n";
 
         assertEquals(expected, ifDef.toString());
     }
@@ -40,16 +40,14 @@ public class LibvirtVMDefTest extends TestCase {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
         ifDef.defDirectNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.nicModel.VIRTIO, "private");
 
-        String expected = "<interface type='" + LibvirtVMDef.InterfaceDef.guestNetType.DIRECT + "'>\n" +
-                "<source dev='targetDeviceName' mode='private'/>\n" +
-                "<mac address='00:11:22:aa:bb:dd'/>\n" +
-                "<model type='virtio'/>\n" +
-                "</interface>\n";
+        String expected =
+            "<interface type='" + LibvirtVMDef.InterfaceDef.guestNetType.DIRECT + "'>\n" + "<source dev='targetDeviceName' mode='private'/>\n" +
+                "<mac address='00:11:22:aa:bb:dd'/>\n" + "<model type='virtio'/>\n" + "</interface>\n";
 
         assertEquals(expected, ifDef.toString());
     }
 
-    public void testCpuModeDef(){
+    public void testCpuModeDef() {
         LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
         cpuModeDef.setMode("custom");
         cpuModeDef.setModel("Nehalem");
@@ -67,6 +65,51 @@ public class LibvirtVMDefTest extends TestCase {
         String expected3 = "<cpu mode='host-passthrough'></cpu>";
         assertEquals(expected3, cpuModeDef.toString());
 
+    }
+
+    public void testDiskDef() {
+        String filePath = "/var/lib/libvirt/images/disk.qcow2";
+        String diskLabel = "vda";
+
+        DiskDef disk = new DiskDef();
+        DiskDef.diskBus bus = DiskDef.diskBus.VIRTIO;
+        DiskDef.diskFmtType type = DiskDef.diskFmtType.QCOW2;
+        DiskDef.diskCacheMode cacheMode = DiskDef.diskCacheMode.WRITEBACK;
+
+        disk.defFileBasedDisk(filePath, diskLabel, bus, type);
+        disk.setCacheMode(cacheMode);
+
+        assertEquals(filePath, disk.getDiskPath());
+        assertEquals(diskLabel, disk.getDiskLabel());
+        assertEquals(bus, disk.getBusType());
+        assertEquals(DiskDef.deviceType.DISK, disk.getDeviceType());
+
+        String xmlDef = disk.toString();
+        String expectedXml = "<disk  device='disk' type='file'>\n<driver name='qemu' type='" + type.toString() + "' cache='" + cacheMode.toString() + "' />\n" +
+                             "<source file='" + filePath + "'/>\n<target dev='" + diskLabel + "' bus='" + bus.toString() + "'/>\n</disk>\n";
+
+        assertEquals(xmlDef, expectedXml);
+    }
+
+    public void testHypervEnlightDef() {
+        LibvirtVMDef.FeaturesDef featuresDef = new LibvirtVMDef.FeaturesDef();
+        LibvirtVMDef.HyperVEnlightenmentFeatureDef hyperVEnlightenmentFeatureDef = new LibvirtVMDef.HyperVEnlightenmentFeatureDef();
+        hyperVEnlightenmentFeatureDef.setRelaxed(true);
+        featuresDef.addHyperVFeature(hyperVEnlightenmentFeatureDef);
+        String defs = featuresDef.toString();
+        assertTrue(defs.contains("relaxed"));
+
+        featuresDef = new LibvirtVMDef.FeaturesDef();
+        featuresDef.addFeatures("pae");
+        defs = featuresDef.toString();
+        assertFalse(defs.contains("relaxed"));
+
+        assertTrue("Windows Server 2008 R2".contains("Windows Server 2008"));
+
+        Pair<Integer,Integer> hostOsVersion = new Pair<Integer,Integer>(6,5);
+        assertTrue((hostOsVersion.first() == 6 && hostOsVersion.second() >= 5) || (hostOsVersion.first() >= 7));
+        hostOsVersion = new Pair<Integer,Integer>(7,1);
+        assertTrue((hostOsVersion.first() == 6 && hostOsVersion.second() >= 5) || (hostOsVersion.first() >= 7));
     }
 
 }

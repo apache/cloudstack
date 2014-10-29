@@ -22,9 +22,8 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.vpc.VpcOfferingServiceMapVO;
 import com.cloud.utils.db.GenericDao;
 
+public interface VpcOfferingServiceMapDao extends GenericDao<VpcOfferingServiceMapVO, Long> {
 
-public interface VpcOfferingServiceMapDao extends GenericDao<VpcOfferingServiceMapVO, Long>{
-    
     List<VpcOfferingServiceMapVO> listByVpcOffId(long vpcOffId);
 
     /**
@@ -33,9 +32,9 @@ public interface VpcOfferingServiceMapDao extends GenericDao<VpcOfferingServiceM
      * @return
      */
     boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service[] services);
-    
+
     List<String> listServicesForVpcOffering(long vpcOfferingId);
-    
+
     VpcOfferingServiceMapVO findByServiceProviderAndOfferingId(String service, String provider, long vpcOfferingId);
 
 }

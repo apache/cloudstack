@@ -21,16 +21,16 @@ import java.util.List;
 
 public class EC2RebootInstances {
 
-	private List<String> instancesSet = new ArrayList<String>();    // a list of strings identifying instances
+    private List<String> instancesSet = new ArrayList<String>();    // a list of strings identifying instances
 
-	public EC2RebootInstances() {
-	}
+    public EC2RebootInstances() {
+    }
 
-	public void addInstanceId( String param ) {
-		instancesSet.add( param );
-	}
-	
-	public String[] getInstancesSet() {
-		return instancesSet.toArray(new String[0]);
-	}
+    public void addInstanceId(String param) {
+        instancesSet.add(param);
+    }
+
+    public String[] getInstancesSet() {
+        return instancesSet.toArray(new String[0]);
+    }
 }

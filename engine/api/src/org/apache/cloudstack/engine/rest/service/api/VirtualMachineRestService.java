@@ -32,20 +32,20 @@ import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 @Produces("application/xml")
 public class VirtualMachineRestService {
 
-    @GET @Path("/vm/{vmid}")
+    @GET
+    @Path("/vm/{vmid}")
     public VirtualMachineEntity get(@PathParam("vmid") String vmId) {
         return null;
     }
 
-    @PUT @Path("/vm/create")
-    public VirtualMachineEntity create(
-            @QueryParam("xid") String xid,
-            @QueryParam("hostname") String hostname,
-            @QueryParam("display-name") String displayName) {
+    @PUT
+    @Path("/vm/create")
+    public VirtualMachineEntity create(@QueryParam("xid") String xid, @QueryParam("hostname") String hostname, @QueryParam("display-name") String displayName) {
         return null;
     }
 
-    @GET @Path("/vms")
+    @GET
+    @Path("/vms")
     public List<VirtualMachineEntity> listAll() {
         return null;
     }

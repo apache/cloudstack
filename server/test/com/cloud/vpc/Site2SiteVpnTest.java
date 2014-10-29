@@ -25,7 +25,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations="classpath:/VpcTestContext.xml")
+@ContextConfiguration(locations = "classpath:/VpcTestContext.xml")
 public class Site2SiteVpnTest {
     private final static Logger s_logger = Logger.getLogger(Site2SiteVpnTest.class);
 
@@ -58,10 +58,9 @@ public class Site2SiteVpnTest {
     public void tearDown() throws Exception {
     }
 
-
     @Test
-    public void testInjected() throws Exception  {
-//        List<Pair<String, Class<? extends Site2SiteVpnServiceProvider>>> list = 
+    public void testInjected() throws Exception {
+//        List<Pair<String, Class<? extends Site2SiteVpnServiceProvider>>> list =
 //                new ArrayList<Pair<String, Class<? extends Site2SiteVpnServiceProvider>>>();
 //        list.add(new Pair<String, Class<? extends Site2SiteVpnServiceProvider>>("Site2SiteVpnServiceProvider", MockSite2SiteVpnServiceProvider.class));
 //        locator.addAdapterChain(Site2SiteVpnServiceProvider.class, list);
@@ -74,6 +73,5 @@ public class Site2SiteVpnTest {
 //        Assert.assertTrue(vpnMgr.start());
 
     }
-
 
 }

@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.bridge.service.core.ec2;
 
-
 public class EC2ModifyInstanceAttribute {
     private String instanceId;
     private String instanceType;

@@ -22,8 +22,7 @@ import com.cloud.bridge.model.MultiPartUploadsVO;
 import com.cloud.bridge.util.OrderedPair;
 import com.cloud.utils.db.GenericDao;
 
-public interface MultiPartUploadsDao extends
-        GenericDao<MultiPartUploadsVO, Long> {
+public interface MultiPartUploadsDao extends GenericDao<MultiPartUploadsVO, Long> {
 
     OrderedPair<String, String> multipartExits(int uploadId);
 
@@ -31,7 +30,6 @@ public interface MultiPartUploadsDao extends
 
     String getAtrributeValue(String attribute, int uploadid);
 
-    List<MultiPartUploadsVO> getInitiatedUploads(String bucketName,
-            int maxParts, String prefix, String keyMarker, String uploadIdMarker);
+    List<MultiPartUploadsVO> getInitiatedUploads(String bucketName, int maxParts, String prefix, String keyMarker, String uploadIdMarker);
 
 }

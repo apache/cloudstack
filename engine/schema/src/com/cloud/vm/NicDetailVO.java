@@ -26,31 +26,33 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
-@Table(name="nic_details")
+@Table(name = "nic_details")
 public class NicDetailVO implements ResourceDetail {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="nic_id")
+    @Column(name = "nic_id")
     private long resourceId;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="value", length=1024)
+    @Column(name = "value", length = 1024)
     private String value;
-    
-    @Column(name="display")
-    private boolean display;
 
-    public NicDetailVO() {}
+    @Column(name = "display")
+    private boolean display = true;
 
-    public NicDetailVO(long nicId, String name, String value) {
+    public NicDetailVO() {
+    }
+
+    public NicDetailVO(long nicId, String name, String value, boolean display) {
         this.resourceId = nicId;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

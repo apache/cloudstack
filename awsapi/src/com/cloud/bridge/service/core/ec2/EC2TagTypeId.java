@@ -29,7 +29,7 @@ public class EC2TagTypeId {
         resourceType = null;
     }
 
-    public void setResourceType( String resourceType ) {
+    public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
 
@@ -37,8 +37,8 @@ public class EC2TagTypeId {
         return this.resourceType;
     }
 
-    public void addResourceId( String param ) {
-        resourceIdSet.add( param );
+    public void addResourceId(String param) {
+        resourceIdSet.add(param);
     }
 
     public String[] getResourceIds() {

@@ -16,19 +16,17 @@
 // under the License.
 package com.cloud.event.dao;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.response.EventResponse;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.EventJoinVO;
-
-import org.apache.cloudstack.api.response.EventResponse;
-import org.springframework.stereotype.Component;
-
 import com.cloud.event.Event;
 import com.cloud.event.Event.State;
 import com.cloud.utils.db.Filter;
@@ -37,7 +35,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={EventJoinDao.class})
+@Local(value = {EventJoinDao.class})
 public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implements EventJoinDao {
     public static final Logger s_logger = Logger.getLogger(EventJoinDaoImpl.class);
 
@@ -58,22 +56,17 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
         vrIdSearch.done();
 
         CompletedEventSearch = createSearchBuilder();
-        CompletedEventSearch.and("state",CompletedEventSearch.entity().getState(),SearchCriteria.Op.EQ);
+        CompletedEventSearch.and("state", CompletedEventSearch.entity().getState(), SearchCriteria.Op.EQ);
         CompletedEventSearch.and("startId", CompletedEventSearch.entity().getStartId(), SearchCriteria.Op.EQ);
         CompletedEventSearch.done();
 
-
         this._count = "select count(distinct id) from event_view WHERE ";
     }
-
-
 
     @Override
     public List<EventJoinVO> searchAllEvents(SearchCriteria<EventJoinVO> sc, Filter filter) {
         return listIncludingRemovedBy(sc, filter);
     }
-
-
 
     @Override
     public EventJoinVO findCompletedEvent(long startId) {
@@ -82,8 +75,6 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
         sc.setParameters("startId", startId);
         return findOneIncludingRemovedBy(sc);
     }
-
-
 
     @Override
     public EventResponse newEventResponse(EventJoinVO event) {
@@ -102,15 +93,12 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
         return responseEvent;
     }
 
-
-
     @Override
     public List<EventJoinVO> searchByIds(Long... ids) {
         SearchCriteria<EventJoinVO> sc = vrSearch.create();
         sc.setParameters("idIN", ids);
         return searchIncludingRemoved(sc, null, null, false);
     }
-
 
     @Override
     public EventJoinVO newEventView(Event vr) {

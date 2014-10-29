@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.agent.manager;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.exception.AgentUnavailableException;
@@ -25,12 +24,10 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ClusteredDirectAgentAttache extends DirectAgentAttache implements Routable {
-    private final ClusteredAgentManagerImpl _mgr;
     private final long _nodeId;
 
-    public ClusteredDirectAgentAttache(AgentManagerImpl agentMgr, long id, String name, long mgmtId, ServerResource resource, boolean maintenance, ClusteredAgentManagerImpl mgr) {
-        super(agentMgr, id, name, resource, maintenance, mgr);
-        _mgr = mgr;
+    public ClusteredDirectAgentAttache(ClusteredAgentManagerImpl agentMgr, long id, String name, long mgmtId, ServerResource resource, boolean maintenance) {
+        super(agentMgr, id, name, resource, maintenance);
         _nodeId = mgmtId;
     }
 
@@ -46,7 +43,7 @@ public class ClusteredDirectAgentAttache extends DirectAgentAttache implements R
         }
 
         if (req instanceof Response) {
-            super.process(((Response) req).getAnswers());
+            super.process(((Response)req).getAnswers());
         } else {
             super.send(req);
         }
@@ -56,7 +53,7 @@ public class ClusteredDirectAgentAttache extends DirectAgentAttache implements R
     public boolean processAnswers(long seq, Response response) {
         long mgmtId = response.getManagementServerId();
         if (mgmtId != -1 && mgmtId != _nodeId) {
-            _mgr.routeToPeer(Long.toString(mgmtId), response.getBytes());
+            ((ClusteredAgentManagerImpl)_agentMgr).routeToPeer(Long.toString(mgmtId), response.getBytes());
             if (response.executeInSequence()) {
                 sendNext(response.getSequence());
             }
@@ -65,5 +62,5 @@ public class ClusteredDirectAgentAttache extends DirectAgentAttache implements R
             return super.processAnswers(seq, response);
         }
     }
-    
+
 }

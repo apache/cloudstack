@@ -24,6 +24,6 @@ public class ControlClusterStatus {
     }
 
     public void setStatus(boolean status) {
-	this.healthy = status;
+        this.healthy = status;
     }
 }

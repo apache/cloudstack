@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.storage.template;
 
 import java.io.File;
@@ -30,8 +33,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.storage.StorageLayer;
 
-
-
 public class LocalTemplateDownloader extends TemplateDownloaderBase implements TemplateDownloader {
     public static final Logger s_logger = Logger.getLogger(LocalTemplateDownloader.class);
 
@@ -43,9 +44,7 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
 
     @Override
     public long download(boolean resume, DownloadCompleteCallback callback) {
-        if (_status == Status.ABORTED ||
-                _status == Status.UNRECOVERABLE_ERROR ||
-                _status == Status.DOWNLOAD_FINISHED) {
+        if (_status == Status.ABORTED || _status == Status.UNRECOVERABLE_ERROR || _status == Status.DOWNLOAD_FINISHED) {
             return 0;
         }
 
@@ -158,11 +157,11 @@ public class LocalTemplateDownloader extends TemplateDownloaderBase implements T
     }
 
     public static void main(String[] args) {
-        String url ="file:///home/ahuang/Download/E3921_P5N7A-VM_manual.zip";
-        TemplateDownloader td = new LocalTemplateDownloader(null, url,"/tmp/mysql", TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES, null);
+        String url = "file:///home/ahuang/Download/E3921_P5N7A-VM_manual.zip";
+        TemplateDownloader td = new LocalTemplateDownloader(null, url, "/tmp/mysql", TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES, null);
         long bytes = td.download(true, null);
         if (bytes > 0) {
-            System.out.println("Downloaded  (" + bytes + " bytes)" + " in " + td.getDownloadTime()/1000 + " secs");
+            System.out.println("Downloaded  (" + bytes + " bytes)" + " in " + td.getDownloadTime() / 1000 + " secs");
         } else {
             System.out.println("Failed download");
         }

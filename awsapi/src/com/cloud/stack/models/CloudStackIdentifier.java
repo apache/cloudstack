@@ -20,30 +20,32 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackIdentifier {
-	@SerializedName(ApiConstants.CLOUD_IDENTIFIER)
-	private String cloudIdentifier;
-	@SerializedName(ApiConstants.SIGNATURE)
-	private String signature;
-	@SerializedName(ApiConstants.USER_ID)
-	private String userId;
-	
-	/**
-	 * @return the cloudIdentifier
-	 */
-	public String getCloudIdentifier() {
-		return cloudIdentifier;
-	}
-	/**
-	 * @return the signature
-	 */
-	public String getSignature() {
-		return signature;
-	}
-	/**
-	 * @return the userId
-	 */
-	public String getUserId() {
-		return userId;
-	}
-	
+    @SerializedName(ApiConstants.CLOUD_IDENTIFIER)
+    private String cloudIdentifier;
+    @SerializedName(ApiConstants.SIGNATURE)
+    private String signature;
+    @SerializedName(ApiConstants.USER_ID)
+    private String userId;
+
+    /**
+     * @return the cloudIdentifier
+     */
+    public String getCloudIdentifier() {
+        return cloudIdentifier;
+    }
+
+    /**
+     * @return the signature
+     */
+    public String getSignature() {
+        return signature;
+    }
+
+    /**
+     * @return the userId
+     */
+    public String getUserId() {
+        return userId;
+    }
+
 }

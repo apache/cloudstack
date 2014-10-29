@@ -61,4 +61,11 @@ then
   maxmem=$eightypcnt
 fi
 
-java -Djavax.net.ssl.trustStore=./certs/realhostip.keystore -Dlog.home=$LOGHOME -mx${maxmem}m -cp $CP com.cloud.agent.AgentShell $keyvalues $@
+if [ "$(uname -m | grep '64')" == "" ]; then
+  let "maxmem32bit=2600"
+  if [ $maxmem -gt $maxmem32bit ]; then
+    maxmem=$maxmem32bit
+  fi
+fi
+
+java -Djavax.net.ssl.trustStore=./certs/realhostip.keystore -Djsse.enableSNIExtension=false -Dlog.home=$LOGHOME -mx${maxmem}m -cp $CP com.cloud.agent.AgentShell $keyvalues $@

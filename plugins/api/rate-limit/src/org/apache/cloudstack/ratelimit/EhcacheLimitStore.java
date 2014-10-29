@@ -27,9 +27,7 @@ import net.sf.ehcache.constructs.blocking.LockTimeoutException;
  */
 public class EhcacheLimitStore implements LimitStore {
 
-
     private BlockingCache cache;
-
 
     public void setCache(Ehcache cache) {
         BlockingCache ref;
@@ -38,12 +36,11 @@ public class EhcacheLimitStore implements LimitStore {
             ref = new BlockingCache(cache);
             cache.getCacheManager().replaceCacheWithDecoratedCache(cache, new BlockingCache(cache));
         } else {
-            ref = (BlockingCache) cache;
+            ref = (BlockingCache)cache;
         }
 
         this.cache = ref;
     }
-
 
     @Override
     public StoreEntry create(Long key, int timeToLive) {
@@ -79,20 +76,16 @@ public class EhcacheLimitStore implements LimitStore {
              * We don't need to check isExpired() on the result, since ehcache takes care of expiring entries for us.
              * c.f. the get(Key) implementation in this class.
              */
-            result = (StoreEntry) entry.getObjectValue();
+            result = (StoreEntry)entry.getObjectValue();
         }
 
         return result;
     }
-
-
 
     @Override
     public void resetCounters() {
         cache.removeAll();
 
     }
-
-
 
 }

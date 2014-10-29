@@ -21,9 +21,9 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.projects.ProjectAccount;
@@ -32,10 +32,9 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={ProjectAccountJoinDao.class})
+@Local(value = {ProjectAccountJoinDao.class})
 public class ProjectAccountJoinDaoImpl extends GenericDaoBase<ProjectAccountJoinVO, Long> implements ProjectAccountJoinDao {
     public static final Logger s_logger = Logger.getLogger(ProjectAccountJoinDaoImpl.class);
-
 
     private SearchBuilder<ProjectAccountJoinVO> paIdSearch;
 
@@ -48,9 +47,6 @@ public class ProjectAccountJoinDaoImpl extends GenericDaoBase<ProjectAccountJoin
 
         this._count = "select count(distinct id) from project_account_view WHERE ";
     }
-
-
-
 
     @Override
     public ProjectAccountResponse newProjectAccountResponse(ProjectAccountJoinVO proj) {
@@ -71,9 +67,6 @@ public class ProjectAccountJoinDaoImpl extends GenericDaoBase<ProjectAccountJoin
         return projectAccountResponse;
     }
 
-
-
-
     @Override
     public ProjectAccountJoinVO newProjectAccountView(ProjectAccount proj) {
         SearchCriteria<ProjectAccountJoinVO> sc = paIdSearch.create();
@@ -83,6 +76,5 @@ public class ProjectAccountJoinDaoImpl extends GenericDaoBase<ProjectAccountJoin
         assert grps != null && grps.size() == 1 : "No project account found for account id = " + proj.getAccountId() + " and project id = " + proj.getProjectId();
         return grps.get(0);
     }
-
 
 }

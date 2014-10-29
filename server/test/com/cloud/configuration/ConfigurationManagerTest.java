@@ -32,13 +32,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import junit.framework.Assert;
-
 import org.apache.log4j.Logger;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
@@ -56,6 +56,8 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -67,7 +69,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.net.Ip;
 
@@ -83,20 +84,38 @@ public class ConfigurationManagerTest {
     ReleasePublicIpRangeCmd releasePublicIpRangesCmd = new ReleasePublicIpRangeCmdExtn();
     Class<?> _releasePublicIpRangeClass = releasePublicIpRangesCmd.getClass().getSuperclass();
 
-    @Mock AccountManager _accountMgr;
-    @Mock ProjectManager _projectMgr;
-    @Mock ResourceLimitService _resourceLimitMgr;
-    @Mock NetworkOrchestrationService _networkMgr;
-    @Mock AccountDao _accountDao;
-    @Mock VlanDao _vlanDao;
-    @Mock AccountVlanMapDao _accountVlanMapDao;
-    @Mock IPAddressDao _publicIpAddressDao;
-    @Mock DataCenterDao _zoneDao;
-    @Mock FirewallRulesDao _firewallDao;
+    @Mock
+    AccountManager _accountMgr;
+    @Mock
+    ProjectManager _projectMgr;
+    @Mock
+    ResourceLimitService _resourceLimitMgr;
+    @Mock
+    NetworkOrchestrationService _networkMgr;
+    @Mock
+    AccountDao _accountDao;
+    @Mock
+    VlanDao _vlanDao;
+    @Mock
+    AccountVlanMapDao _accountVlanMapDao;
+    @Mock
+    IPAddressDao _publicIpAddressDao;
+    @Mock
+    DataCenterDao _zoneDao;
+    @Mock
+    FirewallRulesDao _firewallDao;
     @Mock
     IpAddressManager _ipAddrMgr;
+    @Mock
+    NetworkModel _networkModel;
 
-    VlanVO vlan = new VlanVO(Vlan.VlanType.VirtualNetwork, "vlantag", "vlangateway","vlannetmask", 1L, "iprange", 1L, 1L, null, null, null);
+    VlanVO vlan = new VlanVO(Vlan.VlanType.VirtualNetwork, "vlantag", "vlangateway", "vlannetmask", 1L, "iprange", 1L, 1L, null, null, null);
+
+    @Mock
+    Network network;
+
+    @Mock
+    Account account;
 
     @Before
     public void setup() throws Exception {
@@ -112,8 +131,9 @@ public class ConfigurationManagerTest {
         configurationMgr._zoneDao = _zoneDao;
         configurationMgr._firewallDao = _firewallDao;
         configurationMgr._ipAddrMgr = _ipAddrMgr;
+        configurationMgr._networkModel = _networkModel;
 
-        Account account = new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(configurationMgr._accountMgr.getAccount(anyLong())).thenReturn(account);
         when(configurationMgr._accountDao.findActiveAccount(anyString(), anyLong())).thenReturn(account);
         when(configurationMgr._accountMgr.getActiveAccountById(anyLong())).thenReturn(account);
@@ -123,8 +143,7 @@ public class ConfigurationManagerTest {
 
         when(configurationMgr._publicIpAddressDao.countIPs(anyLong(), anyLong(), anyBoolean())).thenReturn(1);
 
-        doNothing().when(configurationMgr._resourceLimitMgr).checkResourceLimit(any(Account.class),
-                any(ResourceType.class), anyLong());
+        doNothing().when(configurationMgr._resourceLimitMgr).checkResourceLimit(any(Account.class), any(ResourceType.class), anyLong());
 
         when(configurationMgr._accountVlanMapDao.persist(any(AccountVlanMapVO.class))).thenReturn(new AccountVlanMapVO());
 
@@ -170,14 +189,14 @@ public class ConfigurationManagerTest {
          * TEST 2: given invalid public ip range DedicatePublicIpRange should fail
          */
         runDedicatePublicIpRangeInvalidRange();
-         /*
-         * TEST 3: given public IP range that is already dedicated to a different account DedicatePublicIpRange should fail
-         */
+        /*
+        * TEST 3: given public IP range that is already dedicated to a different account DedicatePublicIpRange should fail
+        */
         runDedicatePublicIpRangeDedicatedRange();
 
-         /*
-         * TEST 4: given zone is of type Basic DedicatePublicIpRange should fail
-         */
+        /*
+        * TEST 4: given zone is of type Basic DedicatePublicIpRange should fail
+        */
         runDedicatePublicIpRangeInvalidZone();
 
         /*
@@ -219,8 +238,9 @@ public class ConfigurationManagerTest {
 
         when(configurationMgr._accountVlanMapDao.listAccountVlanMapsByAccount(anyLong())).thenReturn(null);
 
-        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,  "10.0.0.1/24",
-                null, null, NetworkType.Advanced, null, null, true,  true, null, null);
+        DataCenterVO dc =
+            new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Advanced, null, null, true,
+                true, null, null);
         when(configurationMgr._zoneDao.findById(anyLong())).thenReturn(dc);
 
         List<IPAddressVO> ipAddressList = new ArrayList<IPAddressVO>();
@@ -262,8 +282,9 @@ public class ConfigurationManagerTest {
         accountVlanMaps.add(accountVlanMap);
         when(configurationMgr._accountVlanMapDao.listAccountVlanMapsByVlan(anyLong())).thenReturn(accountVlanMaps);
 
-        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,  "10.0.0.1/24",
-                null, null, NetworkType.Advanced, null, null, true,  true, null, null);
+        DataCenterVO dc =
+            new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Advanced, null, null, true,
+                true, null, null);
         when(configurationMgr._zoneDao.findById(anyLong())).thenReturn(dc);
 
         List<IPAddressVO> ipAddressList = new ArrayList<IPAddressVO>();
@@ -288,8 +309,9 @@ public class ConfigurationManagerTest {
         when(configurationMgr._accountVlanMapDao.listAccountVlanMapsByVlan(anyLong())).thenReturn(null);
 
         // public ip range belongs to zone of type basic
-        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,  "10.0.0.1/24",
-                null, null, NetworkType.Basic, null, null, true,  true, null, null);
+        DataCenterVO dc =
+            new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
+                true, null, null);
         when(configurationMgr._zoneDao.findById(anyLong())).thenReturn(dc);
 
         List<IPAddressVO> ipAddressList = new ArrayList<IPAddressVO>();
@@ -313,8 +335,9 @@ public class ConfigurationManagerTest {
 
         when(configurationMgr._accountVlanMapDao.listAccountVlanMapsByAccount(anyLong())).thenReturn(null);
 
-        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,  "10.0.0.1/24",
-                null, null, NetworkType.Advanced, null, null, true,  true, null, null);
+        DataCenterVO dc =
+            new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Advanced, null, null, true,
+                true, null, null);
         when(configurationMgr._zoneDao.findById(anyLong())).thenReturn(dc);
 
         // one of the ip addresses of the range is allocated to different account
@@ -434,12 +457,11 @@ public class ConfigurationManagerTest {
         boolean caught = false;
         try {
             configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
-        }
-        catch (InvalidParameterValueException e) {
-            Assert.assertTrue(e.getMessage(),e.getMessage().contains("(frue and talse)"));
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("(frue and talse)"));
             caught = true;
         }
-        Assert.assertTrue("should not be accepted",caught);
+        Assert.assertTrue("should not be accepted", caught);
     }
 
     @Test
@@ -450,6 +472,7 @@ public class ConfigurationManagerTest {
 
         configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
     }
+
     @Test
     public void validateFTStaticNatServiceCapablitiesTest() {
         Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
@@ -458,6 +481,7 @@ public class ConfigurationManagerTest {
 
         configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
     }
+
     @Test
     public void validateTFStaticNatServiceCapablitiesTest() {
         Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
@@ -467,14 +491,16 @@ public class ConfigurationManagerTest {
         boolean caught = false;
         try {
             configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
-        }
-        catch (InvalidParameterValueException e) {
-            Assert.assertTrue(e.getMessage(),e.getMessage().contains("Capability " + Capability.AssociatePublicIP.getName()
-                        + " can only be set when capability " + Capability.ElasticIp.getName() + " is true"));
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(
+                e.getMessage(),
+                e.getMessage().contains(
+                    "Capability " + Capability.AssociatePublicIP.getName() + " can only be set when capability " + Capability.ElasticIp.getName() + " is true"));
             caught = true;
         }
-        Assert.assertTrue("should not be accepted",caught);
+        Assert.assertTrue("should not be accepted", caught);
     }
+
     @Test
     public void validateFFStaticNatServiceCapablitiesTest() {
         Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
@@ -496,5 +522,14 @@ public class ConfigurationManagerTest {
         public long getEntityOwnerId() {
             return 1;
         }
+    }
+
+    @Test
+    public void getVlanAccount() {
+        Mockito.when(_vlanDao.findById(42l)).thenReturn(vlan);
+        Mockito.when(_networkModel.getNetwork(1l)).thenReturn(network);
+        Mockito.when(network.getAccountId()).thenReturn(1l);
+        Mockito.when(_accountMgr.getAccount(1l)).thenReturn(account);
+        Assert.assertNotNull(configurationMgr.getVlanAccount(42l));
     }
 }

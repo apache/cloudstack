@@ -20,49 +20,49 @@ package org.apache.cloudstack.framework.rpc;
 
 import org.apache.cloudstack.framework.serializer.OnwireName;
 
-@OnwireName(name="RpcRequest")
+@OnwireName(name = "RpcRequest")
 public class RpcCallRequestPdu {
-	
-	private long requestTag;
-	private long requestStartTick;
-	
-	private String command;
-	private String serializedCommandArg;
 
-	public RpcCallRequestPdu() {
-		requestTag = 0;
-		requestStartTick = System.currentTimeMillis();
-	}
-	
-	public long getRequestTag() {
-		return requestTag;
-	}
-	
-	public void setRequestTag(long requestTag) {
-		this.requestTag = requestTag;
-	}
-	
-	public long getRequestStartTick() {
-		return requestStartTick;
-	}
-	
-	public void setRequestStartTick(long requestStartTick) {
-		this.requestStartTick = requestStartTick;
-	}
-	
-	public String getCommand() {
-		return command;
-	}
-	
-	public void setCommand(String command) {
-		this.command = command;
-	}
-	
-	public String getSerializedCommandArg() {
-		return serializedCommandArg;
-	}
-	
-	public void setSerializedCommandArg(String serializedCommandArg) {
-		this.serializedCommandArg = serializedCommandArg;
-	}
+    private long requestTag;
+    private long requestStartTick;
+
+    private String command;
+    private String serializedCommandArg;
+
+    public RpcCallRequestPdu() {
+        requestTag = 0;
+        requestStartTick = System.currentTimeMillis();
+    }
+
+    public long getRequestTag() {
+        return requestTag;
+    }
+
+    public void setRequestTag(long requestTag) {
+        this.requestTag = requestTag;
+    }
+
+    public long getRequestStartTick() {
+        return requestStartTick;
+    }
+
+    public void setRequestStartTick(long requestStartTick) {
+        this.requestStartTick = requestStartTick;
+    }
+
+    public String getCommand() {
+        return command;
+    }
+
+    public void setCommand(String command) {
+        this.command = command;
+    }
+
+    public String getSerializedCommandArg() {
+        return serializedCommandArg;
+    }
+
+    public void setSerializedCommandArg(String serializedCommandArg) {
+        this.serializedCommandArg = serializedCommandArg;
+    }
 }

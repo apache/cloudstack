@@ -16,41 +16,52 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 public class CapacityResponse extends BaseResponse {
-    @SerializedName(ApiConstants.TYPE) @Param(description="the capacity type")
+    @SerializedName(ApiConstants.TYPE)
+    @Param(description = "the capacity type")
     private Short capacityType;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the Zone ID")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "the Zone ID")
     private String zoneId;
 
-    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name")
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "the Zone name")
     private String zoneName;
 
-    @SerializedName(ApiConstants.POD_ID) @Param(description="the Pod ID")
+    @SerializedName(ApiConstants.POD_ID)
+    @Param(description = "the Pod ID")
     private String podId;
 
-    @SerializedName("podname") @Param(description="the Pod name")
+    @SerializedName("podname")
+    @Param(description = "the Pod name")
     private String podName;
 
-    @SerializedName(ApiConstants.CLUSTER_ID) @Param(description="the Cluster ID")
+    @SerializedName(ApiConstants.CLUSTER_ID)
+    @Param(description = "the Cluster ID")
     private String clusterId;
 
-    @SerializedName("clustername") @Param(description="the Cluster name")
+    @SerializedName("clustername")
+    @Param(description = "the Cluster name")
     private String clusterName;
 
-    @SerializedName("capacityused") @Param(description="the capacity currently in use")
+    @SerializedName("capacityused")
+    @Param(description = "the capacity currently in use")
     private Long capacityUsed;
 
-    @SerializedName("capacitytotal") @Param(description="the total capacity available")
+    @SerializedName("capacitytotal")
+    @Param(description = "the total capacity available")
     private Long capacityTotal;
 
-    @SerializedName("percentused") @Param(description="the percentage of capacity currently in use")
+    @SerializedName("percentused")
+    @Param(description = "the percentage of capacity currently in use")
     private String percentUsed;
 
     public Short getCapacityType() {

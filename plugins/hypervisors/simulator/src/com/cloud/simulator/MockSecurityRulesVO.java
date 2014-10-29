@@ -25,31 +25,30 @@ import javax.persistence.Table;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
-
 @Entity
-@Table(name="mocksecurityrules")
+@Table(name = "mocksecurityrules")
 public class MockSecurityRulesVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="vmid")
+    @Column(name = "vmid")
     private Long vmId;
 
-    @Column(name="signature")
+    @Column(name = "signature")
     private String signature;
 
-    @Column(name="seqnum")
+    @Column(name = "seqnum")
     private Long seqNum;
 
-    @Column(name="ruleset")
+    @Column(name = "ruleset")
     private String ruleSet;
 
-    @Column(name="hostid")
+    @Column(name = "hostid")
     private String hostId;
 
-    @Column(name="vmname")
+    @Column(name = "vmname")
     public String vmName;
 
     public String getVmName() {
@@ -68,6 +67,7 @@ public class MockSecurityRulesVO implements InternalIdentity {
         this.hostId = hostId;
     }
 
+    @Override
     public long getId() {
         return this.id;
     }

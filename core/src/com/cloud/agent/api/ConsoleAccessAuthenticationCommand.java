@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,55 +15,57 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 public class ConsoleAccessAuthenticationCommand extends AgentControlCommand {
 
-	private String _host;
-	private String _port;
-	private String _vmId;
-	private String _sid;
-	private String _ticket;
+    private String _host;
+    private String _port;
+    private String _vmId;
+    private String _sid;
+    private String _ticket;
 
-	private boolean _isReauthenticating;
+    private boolean _isReauthenticating;
 
-	public ConsoleAccessAuthenticationCommand() {
-		_isReauthenticating = false;
-	}
+    public ConsoleAccessAuthenticationCommand() {
+        _isReauthenticating = false;
+    }
 
-	public ConsoleAccessAuthenticationCommand(String host, String port, String vmId, String sid, String ticket) {
-		_host = host;
-		_port = port;
-		_vmId = vmId;
-		_sid = sid;
-		_ticket = ticket;
-	}
+    public ConsoleAccessAuthenticationCommand(String host, String port, String vmId, String sid, String ticket) {
+        _host = host;
+        _port = port;
+        _vmId = vmId;
+        _sid = sid;
+        _ticket = ticket;
+    }
 
-	public String getHost() {
-		return _host;
-	}
+    public String getHost() {
+        return _host;
+    }
 
-	public String getPort() {
-		return _port;
-	}
+    public String getPort() {
+        return _port;
+    }
 
-	public String getVmId() {
-		return _vmId;
-	}
+    public String getVmId() {
+        return _vmId;
+    }
 
-	public String getSid() {
-		return _sid;
-	}
+    public String getSid() {
+        return _sid;
+    }
 
-	public String getTicket() {
-		return _ticket;
-	}
+    public String getTicket() {
+        return _ticket;
+    }
 
-	public boolean isReauthenticating() {
-		return _isReauthenticating;
-	}
+    public boolean isReauthenticating() {
+        return _isReauthenticating;
+    }
 
-	public void setReauthenticating(boolean value) {
-		_isReauthenticating = value;
-	}
+    public void setReauthenticating(boolean value) {
+        _isReauthenticating = value;
+    }
 }

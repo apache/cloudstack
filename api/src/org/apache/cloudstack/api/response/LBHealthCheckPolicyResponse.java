@@ -16,10 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+
 import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.BaseResponse;
 
 public class LBHealthCheckPolicyResponse extends BaseResponse {
     @SerializedName("id")
@@ -53,6 +56,10 @@ public class LBHealthCheckPolicyResponse extends BaseResponse {
     @SerializedName("unhealthcheckthresshold")
     @Param(description = "Number of consecutive health check failures before declaring an instance unhealthy.")
     private int unhealthcheckthresshold;
+
+    @SerializedName(ApiConstants.FOR_DISPLAY)
+    @Param(description = "is policy for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean forDisplay;
 
     public void setId(String id) {
         this.id = id;
@@ -93,6 +100,12 @@ public class LBHealthCheckPolicyResponse extends BaseResponse {
         this.responseTime = healthcheckpolicy.getResponseTime();
         this.healthcheckthresshold = healthcheckpolicy.getHealthcheckThresshold();
         this.unhealthcheckthresshold = healthcheckpolicy.getUnhealthThresshold();
+        this.forDisplay = healthcheckpolicy.isDisplay();
+        this.description = healthcheckpolicy.getDescription();
         setObjectName("healthcheckpolicy");
+    }
+
+    public void setForDisplay(Boolean forDisplay) {
+        this.forDisplay = forDisplay;
     }
 }

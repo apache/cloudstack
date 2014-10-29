@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,14 +15,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api;
+//
 
+package com.cloud.agent.api;
 
 public class ManageSnapshotAnswer extends Answer {
     // For create Snapshot
     private String _snapshotPath;
 
-    public ManageSnapshotAnswer() {}
+    public ManageSnapshotAnswer() {
+    }
 
     public ManageSnapshotAnswer(Command cmd, boolean success, String result) {
         super(cmd, success, result);
@@ -29,12 +32,12 @@ public class ManageSnapshotAnswer extends Answer {
 
     // For XenServer
     public ManageSnapshotAnswer(ManageSnapshotCommand cmd, long snapshotId, String snapshotPath, boolean success, String result) {
-    	super(cmd, success, result);
-    	_snapshotPath = snapshotPath;
+        super(cmd, success, result);
+        _snapshotPath = snapshotPath;
     }
 
     public String getSnapshotPath() {
-    	return _snapshotPath;
+        return _snapshotPath;
     }
 
 }

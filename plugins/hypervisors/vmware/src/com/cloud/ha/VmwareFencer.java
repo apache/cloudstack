@@ -22,14 +22,14 @@ import com.cloud.host.Host;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
-@Local(value=FenceBuilder.class)
+@Local(value = FenceBuilder.class)
 public class VmwareFencer extends AdapterBase implements FenceBuilder {
 
     @Override
     public Boolean fenceOff(VirtualMachine vm, Host host) {
-    	return null;
+        return null;
     }
-	
+
     public VmwareFencer() {
         super();
     }

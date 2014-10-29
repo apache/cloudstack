@@ -21,25 +21,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EC2DescribeKeyPairsResponse {
-	
-	protected List<EC2SSHKeyPair> keyPairSet = new ArrayList<EC2SSHKeyPair>();    
 
-	/**
-	 * 
-	 */
-	public EC2DescribeKeyPairsResponse() {
-	}
-	
-	public void reset() {
-		keyPairSet.clear();
-	}
-	
-	public void addKeyPair( EC2SSHKeyPair param ) {
-		keyPairSet.add( param );
-	}
-	
-	public EC2SSHKeyPair[] getKeyPairSet() {
-		return keyPairSet.toArray(new EC2SSHKeyPair[0]);
-	}
+    protected List<EC2SSHKeyPair> keyPairSet = new ArrayList<EC2SSHKeyPair>();
+
+    /**
+     *
+     */
+    public EC2DescribeKeyPairsResponse() {
+    }
+
+    public void reset() {
+        keyPairSet.clear();
+    }
+
+    public void addKeyPair(EC2SSHKeyPair param) {
+        keyPairSet.add(param);
+    }
+
+    public EC2SSHKeyPair[] getKeyPairSet() {
+        return keyPairSet.toArray(new EC2SSHKeyPair[0]);
+    }
 
 }

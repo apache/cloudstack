@@ -31,7 +31,7 @@ import com.cloud.utils.db.GenericDaoBase;
 
 /**
  * Join table for storage pools and hosts
- * 
+ *
  */
 @Entity
 @Table(name = "storage_pool_host_ref")

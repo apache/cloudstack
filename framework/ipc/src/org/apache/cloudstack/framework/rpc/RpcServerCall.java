@@ -19,9 +19,10 @@
 package org.apache.cloudstack.framework.rpc;
 
 public interface RpcServerCall {
-	String getCommand();
-	<T> T getCommandArgument();
+    String getCommand();
 
-	// for receiver to response call
-	void completeCall(Object returnObject);
+    <T> T getCommandArgument();
+
+    // for receiver to response call
+    void completeCall(Object returnObject);
 }

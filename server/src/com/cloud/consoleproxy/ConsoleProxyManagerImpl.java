@@ -17,6 +17,8 @@
 package com.cloud.consoleproxy;
 
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -28,18 +30,20 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.security.keys.KeysManager;
+import org.apache.cloudstack.framework.security.keystore.KeystoreDao;
+import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
+import org.apache.cloudstack.framework.security.keystore.KeystoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -51,7 +55,6 @@ import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.manager.Commands;
-import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ZoneConfig;
@@ -80,9 +83,6 @@ import com.cloud.info.ConsoleProxyStatus;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.info.RunningHostInfoAgregator;
 import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
-import com.cloud.keystore.KeystoreDao;
-import com.cloud.keystore.KeystoreManager;
-import com.cloud.keystore.KeystoreVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
@@ -99,16 +99,14 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.StorageManager;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
@@ -118,10 +116,10 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.QueryBuilder;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -141,22 +139,23 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 //
 // Possible console proxy state transition cases
-//		Stopped --> Starting -> Running
-//		HA -> Stopped -> Starting -> Running
-//		Migrating -> Running	(if previous state is Running before it enters into Migrating state
-//		Migrating -> Stopped	(if previous state is not Running before it enters into Migrating state)
-//		Running -> HA			(if agent lost connection)
-//		Stopped -> Destroyed
+//        Stopped --> Starting -> Running
+//        HA -> Stopped -> Starting -> Running
+//        Migrating -> Running    (if previous state is Running before it enters into Migrating state
+//        Migrating -> Stopped    (if previous state is not Running before it enters into Migrating state)
+//        Running -> HA            (if agent lost connection)
+//        Stopped -> Destroyed
 //
 // Starting, HA, Migrating, Running state are all counted as "Open" for available capacity calculation
 // because sooner or later, it will be driven into Running state
 //
-@Local(value = { ConsoleProxyManager.class, ConsoleProxyService.class })
-public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxyManager,
-VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
+@Local(value = {ConsoleProxyManager.class, ConsoleProxyService.class})
+public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxyManager, VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30 seconds
@@ -166,7 +165,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
     private int _consoleProxyPort = ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT;
 
-    private int _mgmt_port = 8250;
+    private int _mgmtPort = 8250;
 
     private List<ConsoleProxyAllocator> _consoleProxyAllocators;
 
@@ -183,56 +182,43 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     @Inject
     private ConfigurationDao _configDao;
     @Inject
-    private CertificateDao _certDao;
-    @Inject
     private VMInstanceDao _instanceDao;
     @Inject
     private TemplateDataStoreDao _vmTemplateStoreDao;
     @Inject
     private AgentManager _agentMgr;
     @Inject
-    private StorageManager _storageMgr;
+    private NetworkOrchestrationService _networkMgr;
     @Inject
-    NetworkOrchestrationService _networkMgr;
+    private NetworkModel _networkModel;
     @Inject
-    NetworkModel _networkModel;
+    private AccountManager _accountMgr;
     @Inject
-    AccountManager _accountMgr;
+    private ServiceOfferingDao _offeringDao;
     @Inject
-    ServiceOfferingDao _offeringDao;
+    private DiskOfferingDao _diskOfferingDao;
     @Inject
-    DiskOfferingDao _diskOfferingDao;
+    private NetworkOfferingDao _networkOfferingDao;
     @Inject
-    NetworkOfferingDao _networkOfferingDao;
+    private PrimaryDataStoreDao _storagePoolDao;
     @Inject
-    PrimaryDataStoreDao _storagePoolDao;
+    private UserVmDetailsDao _vmDetailsDao;
     @Inject
-    UserVmDetailsDao _vmDetailsDao;
+    private ResourceManager _resourceMgr;
     @Inject
-    ResourceManager _resourceMgr;
+    private NetworkDao _networkDao;
     @Inject
-    NetworkDao _networkDao;
+    private RulesManager _rulesMgr;
     @Inject
-    RulesManager _rulesMgr;
+    private IPAddressDao _ipAddressDao;
     @Inject
-    TemplateManager templateMgr;
+    private KeysManager _keysMgr;
     @Inject
-    IPAddressDao _ipAddressDao;
-    @Inject
-    ManagementServer _ms;
-    @Inject
-    ClusterManager _clusterMgr;
+    private VirtualMachineManager _itMgr;
 
     private ConsoleProxyListener _listener;
 
     private ServiceOfferingVO _serviceOffering;
-
-    NetworkOffering _publicNetworkOffering;
-    NetworkOffering _managementNetworkOffering;
-    NetworkOffering _linkLocalNetworkOffering;
-
-    @Inject
-    private VirtualMachineManager _itMgr;
 
     /*
      * private final ExecutorService _requestHandlerScheduler = Executors.newCachedThreadPool(new
@@ -242,13 +228,14 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     private int _capacityPerProxy = ConsoleProxyManager.DEFAULT_PROXY_CAPACITY;
     private int _standbyCapacity = ConsoleProxyManager.DEFAULT_STANDBY_CAPACITY;
 
-    private boolean _use_lvm;
-    private boolean _use_storage_vm;
-    private boolean _disable_rp_filter = false;
+    private boolean _useLvm;
+    private boolean _useStorageVm;
+    private boolean _disableRpFilter = false;
     private String _instance;
 
     private int _proxySessionTimeoutValue = DEFAULT_PROXY_SESSION_TIMEOUT;
     private boolean _sslEnabled = true;
+    private String _consoleProxyUrlDomain;
 
     // global load picture at zone basis
     private SystemVmLoadScanner<Long> _loadScanner;
@@ -268,9 +255,8 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
     public class VmBasedAgentHook extends AgentHookBase {
 
-        public VmBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao,
-                KeystoreManager ksMgr, AgentManager agentMgr, ManagementServer ms) {
-            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr, ms);
+        public VmBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr, AgentManager agentMgr, KeysManager keysMgr) {
+            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr, keysMgr);
         }
 
         @Override
@@ -359,8 +345,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
                              */
                         } else {
                             if (s_logger.isInfoEnabled()) {
-                                s_logger.info("Console proxy agent disconnected but corresponding console proxy VM no longer exists in DB, proxy: "
-                                        + name);
+                                s_logger.info("Console proxy agent disconnected but corresponding console proxy VM no longer exists in DB, proxy: " + name);
                             }
                         }
                     } else {
@@ -402,9 +387,9 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
         assert (ksVo != null);
 
         if (_staticPublicIp == null) {
-            return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), _consoleProxyPort, proxy.getPort(), ksVo.getDomainSuffix());
+            return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), _consoleProxyPort, proxy.getPort(), _consoleProxyUrlDomain);
         } else {
-            return new ConsoleProxyInfo(proxy.isSslEnabled(), _staticPublicIp, _consoleProxyPort, _staticPort, ksVo.getDomainSuffix());
+            return new ConsoleProxyInfo(proxy.isSslEnabled(), _staticPublicIp, _consoleProxyPort, _staticPort, _consoleProxyUrlDomain);
         }
     }
 
@@ -458,7 +443,8 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
                 _allocProxyLock.unlock();
             }
         } else {
-            s_logger.error("Unable to acquire synchronization lock to get/allocate proxy resource for vm :" + vmId + ". Previous console proxy allocation is taking too long");
+            s_logger.error("Unable to acquire synchronization lock to get/allocate proxy resource for vm :" + vmId +
+                ". Previous console proxy allocation is taking too long");
         }
 
         if (proxy == null) {
@@ -502,7 +488,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
             byte[] details = proxy.getSessionDetails();
             status = gson.fromJson(details != null ? new String(details, Charset.forName("US-ASCII")) : null, ConsoleProxyStatus.class);
         } catch (Throwable e) {
-            s_logger.warn("Unable to parse proxy session details : " + proxy.getSessionDetails());
+            s_logger.warn("Unable to parse proxy session details : " + Arrays.toString(proxy.getSessionDetails()));
         }
 
         if (status != null && status.getConnections() != null) {
@@ -551,7 +537,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
             }
 
             if (proxy.getState() == VirtualMachine.State.Stopped) {
-                _itMgr.advanceStart(proxy.getUuid(), null);
+                _itMgr.advanceStart(proxy.getUuid(), null, null);
                 proxy = _consoleProxyDao.findById(proxy.getId());
             }
 
@@ -596,7 +582,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
             Iterator<ConsoleProxyVO> it = runningList.iterator();
             while (it.hasNext()) {
                 ConsoleProxyVO proxy = it.next();
-                if(proxy.getActiveSession() >= _capacityPerProxy){
+                if (proxy.getActiveSession() >= _capacityPerProxy) {
                     it.remove();
                 }
             }
@@ -665,7 +651,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
         Map<String, Object> context = createProxyInstance(dataCenterId, template);
 
-        long proxyVmId = (Long) context.get("proxyVmId");
+        long proxyVmId = (Long)context.get("proxyVmId");
         if (proxyVmId == 0) {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Creating proxy instance failed, data center id : " + dataCenterId);
@@ -676,7 +662,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
         if (proxy != null) {
             SubscriptionMgr.getInstance().notifySubscribers(ConsoleProxyManager.ALERT_SUBJECT, this,
-                    new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_CREATED, dataCenterId, proxy.getId(), proxy, null));
+                new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_CREATED, dataCenterId, proxy.getId(), proxy, null));
             return proxy;
         } else {
             if (s_logger.isDebugEnabled()) {
@@ -684,7 +670,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
             }
 
             SubscriptionMgr.getInstance().notifySubscribers(ConsoleProxyManager.ALERT_SUBJECT, this,
-                    new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_CREATE_FAILURE, dataCenterId, proxyVmId, null, "Unable to allocate storage"));
+                new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_CREATE_FAILURE, dataCenterId, proxyVmId, null, "Unable to allocate storage"));
         }
         return null;
     }
@@ -714,26 +700,28 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
             // api should never allow this situation to happen
             if (defaultNetworks.size() != 1) {
-                throw new CloudRuntimeException("Found " + defaultNetworks.size() + " networks of type "
-                        + defaultTrafficType + " when expect to find 1");
+                throw new CloudRuntimeException("Found " + defaultNetworks.size() + " networks of type " + defaultTrafficType + " when expect to find 1");
             }
             defaultNetwork = defaultNetworks.get(0);
         }
 
-        List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork, NetworkOffering.SystemManagementNetwork);
-        LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>(offerings.size() + 1);
+        List<? extends NetworkOffering> offerings =
+            _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork, NetworkOffering.SystemManagementNetwork);
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(offerings.size() + 1);
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
 
-        networks.put(_networkMgr.setupNetwork(systemAcct, _networkOfferingDao.findById(defaultNetwork.getNetworkOfferingId()), plan, null, null, false).get(0), defaultNic);
+        networks.put(_networkMgr.setupNetwork(systemAcct, _networkOfferingDao.findById(defaultNetwork.getNetworkOfferingId()), plan, null, null, false).get(0),
+                new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
 
         for (NetworkOffering offering : offerings) {
-            networks.put(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), null);
+            networks.put(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), new ArrayList<NicProfile>());
         }
 
-        ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(),
-                systemAcct.getId(), 0, _serviceOffering.getOfferHA());
+        ConsoleProxyVO proxy =
+            new ConsoleProxyVO(id, _serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
+                systemAcct.getDomainId(), systemAcct.getId(), 0, _serviceOffering.getOfferHA());
         proxy.setDynamicallyScalable(template.isDynamicallyScalable());
         proxy = _consoleProxyDao.persist(proxy);
         try {
@@ -754,7 +742,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
     private ConsoleProxyAllocator getCurrentAllocator() {
         // for now, only one adapter is supported
-        for(ConsoleProxyAllocator allocator : _consoleProxyAllocators) {
+        for (ConsoleProxyAllocator allocator : _consoleProxyAllocators) {
             return allocator;
         }
 
@@ -796,8 +784,6 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
             // TODO : something is wrong with the VM, restart it?
         }
     }
-
-
 
     public void handleAgentDisconnect(long agentId, com.cloud.host.Status state) {
         if (state == com.cloud.host.Status.Alert || state == com.cloud.host.Status.Disconnected) {
@@ -877,19 +863,13 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
             }
             return false;
         }
-        List<ConsoleProxyVO> l = _consoleProxyDao.getProxyListInStates(dcId, VirtualMachine.State.Starting, VirtualMachine.State.Running, VirtualMachine.State.Stopping, VirtualMachine.State.Stopped,
-                VirtualMachine.State.Migrating, VirtualMachine.State.Shutdowned, VirtualMachine.State.Unknown);
+        List<ConsoleProxyVO> l =
+            _consoleProxyDao.getProxyListInStates(dcId, VirtualMachine.State.Starting, VirtualMachine.State.Running, VirtualMachine.State.Stopping,
+                VirtualMachine.State.Stopped, VirtualMachine.State.Migrating, VirtualMachine.State.Shutdowned, VirtualMachine.State.Unknown);
 
         String value = _configDao.getValue(Config.ConsoleProxyLaunchMax.key());
         int launchLimit = NumbersUtil.parseInt(value, 10);
         return l.size() < launchLimit;
-    }
-
-    private HypervisorType currentHypervisorType(long dcId) {
-        List<ConsoleProxyVO> l = _consoleProxyDao.getProxyListInStates(dcId, VirtualMachine.State.Starting, VirtualMachine.State.Running, VirtualMachine.State.Stopping, VirtualMachine.State.Stopped,
-                VirtualMachine.State.Migrating, VirtualMachine.State.Shutdowned, VirtualMachine.State.Unknown);
-
-        return l.size() > 0 ? l.get(0).getHypervisorType() : HypervisorType.Any;
     }
 
     private boolean checkCapacity(ConsoleProxyLoadInfo proxyCountInfo, ConsoleProxyLoadInfo vmCountInfo) {
@@ -956,11 +936,10 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
                 }
                 return false;
             }
-            TemplateDataStoreVO templateHostRef = _vmTemplateStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dataCenterId,
-                    Status.DOWNLOADED);
+            TemplateDataStoreVO templateHostRef = _vmTemplateStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dataCenterId, Status.DOWNLOADED);
 
             if (templateHostRef != null) {
-                List<Pair<Long, Integer>> l = _consoleProxyDao.getDatacenterStoragePoolHostInfo(dataCenterId, _use_lvm);
+                List<Pair<Long, Integer>> l = _consoleProxyDao.getDatacenterStoragePoolHostInfo(dataCenterId, _useLvm);
                 if (l != null && l.size() > 0 && l.get(0).second().intValue() > 0) {
                     return true;
                 } else {
@@ -970,11 +949,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
                 }
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    if (template == null) {
-                        s_logger.debug("Zone host is ready, but console proxy template is null");
-                    } else {
-                        s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() + " is not ready on secondary storage.");
-                    }
+                    s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() + " is not ready on secondary storage.");
                 }
             }
         }
@@ -983,7 +958,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
     private boolean isZoneHostReady(ZoneHostInfo zoneHostInfo) {
         int expectedFlags = 0;
-        if (_use_storage_vm) {
+        if (_useStorageVm) {
             expectedFlags = RunningHostInfoAgregator.ZoneHostInfo.ROUTING_HOST_MASK;
         } else {
             expectedFlags = RunningHostInfoAgregator.ZoneHostInfo.ALL_HOST_MASK;
@@ -1139,7 +1114,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
                 }
 
                 SubscriptionMgr.getInstance().notifySubscribers(ConsoleProxyManager.ALERT_SUBJECT, this,
-                        new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_REBOOTED, proxy.getDataCenterId(), proxy.getId(), proxy, null));
+                    new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_REBOOTED, proxy.getDataCenterId(), proxy.getId(), proxy, null));
 
                 return true;
             } else {
@@ -1167,8 +1142,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
             proxy.setPrivateIpAddress(null);
             _consoleProxyDao.update(proxy.getId(), proxy);
             _consoleProxyDao.remove(vmId);
-            HostVO host = _hostDao.findByTypeNameAndZoneId(proxy.getDataCenterId(), proxy.getHostName(),
-                    Host.Type.ConsoleProxy);
+            HostVO host = _hostDao.findByTypeNameAndZoneId(proxy.getDataCenterId(), proxy.getHostName(), Host.Type.ConsoleProxy);
             if (host != null) {
                 s_logger.debug("Removing host entry for proxy id=" + vmId);
                 return _hostDao.remove(host.getId());
@@ -1220,6 +1194,12 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
             _sslEnabled = true;
         }
 
+        _consoleProxyUrlDomain = configs.get(Config.ConsoleProxyUrlDomain.key());
+        if( _sslEnabled && (_consoleProxyUrlDomain == null || _consoleProxyUrlDomain.isEmpty())) {
+            s_logger.warn("Empty console proxy domain, explicitly disabling SSL");
+            _sslEnabled = false;
+        }
+
         value = configs.get(Config.ConsoleProxyCapacityScanInterval.key());
         _capacityScanInterval = NumbersUtil.parseLong(value, DEFAULT_CAPACITY_SCAN_INTERVAL);
 
@@ -1234,17 +1214,17 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
         value = configs.get(Config.ConsoleProxyDisableRpFilter.key());
         if (value != null && value.equalsIgnoreCase("true")) {
-            _disable_rp_filter = true;
+            _disableRpFilter = true;
         }
 
         value = configs.get(Config.SystemVMUseLocalStorage.key());
         if (value != null && value.equalsIgnoreCase("true")) {
-            _use_lvm = true;
+            _useLvm = true;
         }
 
         value = configs.get("secondary.storage.vm");
         if (value != null && value.equalsIgnoreCase("true")) {
-            _use_storage_vm = true;
+            _useStorageVm = true;
         }
 
         if (s_logger.isInfoEnabled()) {
@@ -1262,11 +1242,9 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
         Map<String, String> agentMgrConfigs = _configDao.getConfiguration("AgentManager", params);
 
         value = agentMgrConfigs.get("port");
-        _mgmt_port = NumbersUtil.parseInt(value, 8250);
+        _mgmtPort = NumbersUtil.parseInt(value, 8250);
 
-        _listener =
-                new ConsoleProxyListener(new VmBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr,
-                        _agentMgr, _ms));
+        _listener = new ConsoleProxyListener(new VmBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr, _agentMgr, _keysMgr));
         _agentMgr.registerForHostEvents(_listener, true, true, false);
 
         _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
@@ -1287,10 +1265,13 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
             }
         }
 
-        if(_serviceOffering == null || !_serviceOffering.getSystemUse()){
+        if (_serviceOffering == null || !_serviceOffering.getSystemUse()) {
             int ramSize = NumbersUtil.parseInt(_configDao.getValue("console.ram.size"), DEFAULT_PROXY_VM_RAMSIZE);
             int cpuFreq = NumbersUtil.parseInt(_configDao.getValue("console.cpu.mhz"), DEFAULT_PROXY_VM_CPUMHZ);
-            _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, ramSize, cpuFreq, 0, 0, false, null, useLocalStorage, true, null, true, VirtualMachine.Type.ConsoleProxy, true);
+            _serviceOffering =
+                new ServiceOfferingVO("System Offering For Console Proxy", 1, ramSize, cpuFreq, 0, 0, false, null,
+                    Storage.ProvisioningType.THIN, useLocalStorage, true, null, true,
+                    VirtualMachine.Type.ConsoleProxy, true);
             _serviceOffering.setUniqueName(ServiceOffering.consoleProxyDefaultOffUniqueName);
             _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
 
@@ -1317,8 +1298,6 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
         return true;
     }
 
-
-
     protected ConsoleProxyManagerImpl() {
     }
 
@@ -1331,8 +1310,8 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=consoleproxy");
-        buf.append(" host=").append(ClusterManager.ManagementHostIPAdr.value());
-        buf.append(" port=").append(_mgmt_port);
+        buf.append(" host=").append(ApiServiceConfiguration.ManagementHostIPAdr.value());
+        buf.append(" port=").append(_mgmtPort);
         buf.append(" name=").append(profile.getVirtualMachine().getHostName());
         if (_sslEnabled) {
             buf.append(" premium=true");
@@ -1341,7 +1320,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
         buf.append(" pod=").append(dest.getPod().getId());
         buf.append(" guid=Proxy.").append(profile.getId());
         buf.append(" proxy_vm=").append(profile.getId());
-        if (_disable_rp_filter) {
+        if (_disableRpFilter) {
             buf.append(" disable_rp_filter=true");
         }
 
@@ -1409,8 +1388,8 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
         DataCenter dc = dest.getDataCenter();
         List<NicProfile> nics = profile.getNics();
         for (NicProfile nic : nics) {
-            if ((nic.getTrafficType() == TrafficType.Public && dc.getNetworkType() == NetworkType.Advanced)
-                    || (nic.getTrafficType() == TrafficType.Guest && (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()))) {
+            if ((nic.getTrafficType() == TrafficType.Public && dc.getNetworkType() == NetworkType.Advanced) ||
+                (nic.getTrafficType() == TrafficType.Guest && (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()))) {
                 proxy.setPublicIpAddress(nic.getIp4Address());
                 proxy.setPublicNetmask(nic.getNetmask());
                 proxy.setPublicMacAddress(nic.getMacAddress());
@@ -1444,6 +1423,11 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
             controlNic = managementNic;
         }
 
+        // verify ssh access on management nic for system vm running on HyperV
+        if(profile.getHypervisorType() == HypervisorType.Hyperv) {
+            controlNic = managementNic;
+        }
+
         CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922);
         cmds.addCommand("checkSsh", check);
 
@@ -1452,7 +1436,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
     @Override
     public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
-        CheckSshAnswer answer = (CheckSshAnswer) cmds.getAnswer("checkSsh");
+        CheckSshAnswer answer = (CheckSshAnswer)cmds.getAnswer("checkSsh");
         if (answer == null || !answer.getResult()) {
             if (answer != null) {
                 s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
@@ -1500,7 +1484,8 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
             try {
                 _rulesMgr.disableStaticNat(ip.getId(), ctx.getCallingAccount(), ctx.getCallingUserId(), true);
             } catch (Exception ex) {
-                s_logger.warn("Failed to disable static nat and release system ip " + ip + " as a part of vm " + profile.getVirtualMachine() + " stop due to exception ", ex);
+                s_logger.warn("Failed to disable static nat and release system ip " + ip + " as a part of vm " + profile.getVirtualMachine() + " stop due to exception ",
+                    ex);
             }
         }
     }
@@ -1533,17 +1518,17 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
         ConsoleProxyManagementState state = getManagementState();
         if (state != null) {
             switch (state) {
-            case Auto:
-            case Manual:
-            case Suspending:
-                break;
+                case Auto:
+                case Manual:
+                case Suspending:
+                    break;
 
-            case ResetSuspending:
-                handleResetSuspending();
-                break;
+                case ResetSuspending:
+                    handleResetSuspending();
+                    break;
 
-            default:
-                assert (false);
+                default:
+                    assert (false);
             }
         }
     }
@@ -1674,15 +1659,12 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     }
 
     @Override
-    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
-            List<String> hostTags) {
-        // TODO Auto-generated method stub
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details, List<String> hostTags) {
         return null;
     }
 
     @Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -1703,7 +1685,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
     @Inject
     public void setConsoleProxyAllocators(List<ConsoleProxyAllocator> consoleProxyAllocators) {
-        this._consoleProxyAllocators = consoleProxyAllocators;
+        _consoleProxyAllocators = consoleProxyAllocators;
     }
 
 }

@@ -99,7 +99,7 @@ public class VolumeDataFactoryImpl implements VolumeDataFactory {
     @Override
     public VolumeInfo getVolume(DataObject volume, DataStore store) {
         VolumeInfo vol = getVolume(volume.getId(), store);
-        vol.addPayload(((VolumeInfo) volume).getpayload());
+        vol.addPayload(((VolumeInfo)volume).getpayload());
         return vol;
     }
 

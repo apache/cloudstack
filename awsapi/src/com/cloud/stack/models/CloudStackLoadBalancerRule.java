@@ -20,129 +20,129 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackLoadBalancerRule {
-	@SerializedName(ApiConstants.ID)
-	private String id;
-	@SerializedName(ApiConstants.ACCOUNT)
-	private String account;
-	@SerializedName(ApiConstants.ALGORITHM)
-	private String algorithm;  // source, roundrobin, leastconn
-	@SerializedName(ApiConstants.DESCRIPTION)
-	private String description;
-	@SerializedName(ApiConstants.DOMAIN)
-	private String domain;
-	@SerializedName(ApiConstants.DOMAIN_ID)
-	private String domainId;
-	@SerializedName(ApiConstants.NAME)
-	private String name;
-	@SerializedName(ApiConstants.PRIVATE_PORT)
-	private String privatePort;
-	@SerializedName(ApiConstants.PUBLIC_IP)
-	private String publicIp;
-	@SerializedName(ApiConstants.PUBLIC_IP_ID)
-	private String publicIpId;
-	@SerializedName(ApiConstants.PUBLIC_PORT)
-	private Long publicPort;
-	@SerializedName(ApiConstants.STATE)
-	private String state;
-	@SerializedName(ApiConstants.ZONE_ID)
-	private String zoneId;
-	
-	/**
-	 * 
-	 */
-	public CloudStackLoadBalancerRule() {
-		// TODO Auto-generated constructor stub
-	}
+    @SerializedName(ApiConstants.ID)
+    private String id;
+    @SerializedName(ApiConstants.ACCOUNT)
+    private String account;
+    @SerializedName(ApiConstants.ALGORITHM)
+    private String algorithm;  // source, roundrobin, leastconn
+    @SerializedName(ApiConstants.DESCRIPTION)
+    private String description;
+    @SerializedName(ApiConstants.DOMAIN)
+    private String domain;
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    private String domainId;
+    @SerializedName(ApiConstants.NAME)
+    private String name;
+    @SerializedName(ApiConstants.PRIVATE_PORT)
+    private String privatePort;
+    @SerializedName(ApiConstants.PUBLIC_IP)
+    private String publicIp;
+    @SerializedName(ApiConstants.PUBLIC_IP_ID)
+    private String publicIpId;
+    @SerializedName(ApiConstants.PUBLIC_PORT)
+    private Long publicPort;
+    @SerializedName(ApiConstants.STATE)
+    private String state;
+    @SerializedName(ApiConstants.ZONE_ID)
+    private String zoneId;
 
-	/**
-	 * @return the id
-	 */
-	public String getId() {
-		return id;
-	}
+    /**
+     *
+     */
+    public CloudStackLoadBalancerRule() {
+        // TODO Auto-generated constructor stub
+    }
 
-	/**
-	 * @return the account
-	 */
-	public String getAccount() {
-		return account;
-	}
+    /**
+     * @return the id
+     */
+    public String getId() {
+        return id;
+    }
 
-	/**
-	 * @return the algorithm
-	 */
-	public String getAlgorithm() {
-		return algorithm;
-	}
+    /**
+     * @return the account
+     */
+    public String getAccount() {
+        return account;
+    }
 
-	/**
-	 * @return the description
-	 */
-	public String getDescription() {
-		return description;
-	}
+    /**
+     * @return the algorithm
+     */
+    public String getAlgorithm() {
+        return algorithm;
+    }
 
-	/**
-	 * @return the domain
-	 */
-	public String getDomain() {
-		return domain;
-	}
+    /**
+     * @return the description
+     */
+    public String getDescription() {
+        return description;
+    }
 
-	/**
-	 * @return the domainId
-	 */
-	public String getDomainId() {
-		return domainId;
-	}
+    /**
+     * @return the domain
+     */
+    public String getDomain() {
+        return domain;
+    }
 
-	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
+    /**
+     * @return the domainId
+     */
+    public String getDomainId() {
+        return domainId;
+    }
 
-	/**
-	 * @return the privatePort
-	 */
-	public String getPrivatePort() {
-		return privatePort;
-	}
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
 
-	/**
-	 * @return the publicIp
-	 */
-	public String getPublicIp() {
-		return publicIp;
-	}
+    /**
+     * @return the privatePort
+     */
+    public String getPrivatePort() {
+        return privatePort;
+    }
 
-	/**
-	 * @return the publicIpId
-	 */
-	public String getPublicIpId() {
-		return publicIpId;
-	}
+    /**
+     * @return the publicIp
+     */
+    public String getPublicIp() {
+        return publicIp;
+    }
 
-	/**
-	 * @return the publicPort
-	 */
-	public Long getPublicPort() {
-		return publicPort;
-	}
+    /**
+     * @return the publicIpId
+     */
+    public String getPublicIpId() {
+        return publicIpId;
+    }
 
-	/**
-	 * @return the state
-	 */
-	public String getState() {
-		return state;
-	}
+    /**
+     * @return the publicPort
+     */
+    public Long getPublicPort() {
+        return publicPort;
+    }
 
-	/**
-	 * @return the zoneId
-	 */
-	public String getZoneId() {
-		return zoneId;
-	}
+    /**
+     * @return the state
+     */
+    public String getState() {
+        return state;
+    }
+
+    /**
+     * @return the zoneId
+     */
+    public String getZoneId() {
+        return zoneId;
+    }
 
 }

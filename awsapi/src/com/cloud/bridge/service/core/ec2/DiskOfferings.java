@@ -21,16 +21,16 @@ import java.util.List;
 
 public class DiskOfferings {
 
-	private List<DiskOffer> offerSet = new ArrayList<DiskOffer>();    
+    private List<DiskOffer> offerSet = new ArrayList<DiskOffer>();
 
-	public DiskOfferings() {
-	}
-	
-	public void addOffer( DiskOffer param ) {
-		offerSet.add( param );
-	}
-	
-	public DiskOffer[] getOfferSet() {
-		return offerSet.toArray(new DiskOffer[0]);
-	}
+    public DiskOfferings() {
+    }
+
+    public void addOffer(DiskOffer param) {
+        offerSet.add(param);
+    }
+
+    public DiskOffer[] getOfferSet() {
+        return offerSet.toArray(new DiskOffer[0]);
+    }
 }

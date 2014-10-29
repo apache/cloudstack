@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,26 +15,28 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 public class ConsoleProxyLoadReportCommand extends AgentControlCommand {
 
-	private long _proxyVmId;
-	private String _loadInfo;
+    private long _proxyVmId;
+    private String _loadInfo;
 
-	public ConsoleProxyLoadReportCommand() {
-	}
+    public ConsoleProxyLoadReportCommand() {
+    }
 
-	public ConsoleProxyLoadReportCommand(long proxyVmId, String loadInfo) {
-		_proxyVmId = proxyVmId;
-		_loadInfo = loadInfo;
-	}
+    public ConsoleProxyLoadReportCommand(long proxyVmId, String loadInfo) {
+        _proxyVmId = proxyVmId;
+        _loadInfo = loadInfo;
+    }
 
-	public long getProxyVmId() {
-		return _proxyVmId;
-	}
+    public long getProxyVmId() {
+        return _proxyVmId;
+    }
 
-	public String getLoadInfo() {
-		return _loadInfo;
-	}
+    public String getLoadInfo() {
+        return _loadInfo;
+    }
 }

@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

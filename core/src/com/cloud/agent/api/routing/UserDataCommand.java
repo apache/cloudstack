@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,8 +15,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api.routing;
+//
 
+package com.cloud.agent.api.routing;
 
 public class UserDataCommand extends NetworkElementCommand {
 
@@ -42,24 +44,24 @@ public class UserDataCommand extends NetworkElementCommand {
         this.executeInSequence = executeInSequence;
     }
 
-	public String getRouterPrivateIpAddress() {
-		return routerPrivateIpAddress;
-	}
+    public String getRouterPrivateIpAddress() {
+        return routerPrivateIpAddress;
+    }
 
-	public String getVmIpAddress() {
-		return vmIpAddress;
-	}
+    public String getVmIpAddress() {
+        return vmIpAddress;
+    }
 
-	public String getVmName() {
-		return vmName;
-	}
+    public String getVmName() {
+        return vmName;
+    }
 
-	public String getUserData() {
-		return userData;
-	}
+    public String getUserData() {
+        return userData;
+    }
 
-	public void setUserData(String userData) {
-		this.userData = userData;
-	}
+    public void setUserData(String userData) {
+        this.userData = userData;
+    }
 
 }

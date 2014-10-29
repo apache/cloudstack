@@ -16,104 +16,101 @@
 // under the License.
 package com.cloud.bridge.model;
 
-import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Set;
+public interface SHost {
 
-public interface SHost  {
-	
-	public static final int STORAGE_HOST_TYPE_LOCAL = 0;
-	public static final int STORAGE_HOST_TYPE_NFS = 1;
+    public static final int STORAGE_HOST_TYPE_LOCAL = 0;
+    public static final int STORAGE_HOST_TYPE_NFS = 1;
     public static final int STORAGE_HOST_TYPE_CASTOR = 2;
-	public static enum StorageHostType {
-	    STORAGE_HOST_TYPE_LOCAL, //0
+
+    public static enum StorageHostType {
+        STORAGE_HOST_TYPE_LOCAL, //0
         STORAGE_HOST_TYPE_NFS, //1
         STORAGE_HOST_TYPE_CASTOR //2
-	}
-/*	private Long id;
-	
-	private String host;
-	private int hostType;
-	private MHostVO mhost;
-	private String exportRoot;
-	private String userOnHost;
-	private String userPassword;
-	
-	private Set<SBucket> buckets = new HashSet<SBucket>();  
-	private Set<MHostMount> mounts = new HashSet<MHostMount>();
-	
-	public SHost() {
-	}
-	
-	public Long getId() {
-		return id;
-	}
+    }
+    /*    private Long id;
 
-	private void setId(Long id) {
-		this.id = id;
-	}
-	
-	public String getHost() {
-		return host;
-	}
-	
-	public void setHost(String host) {
-		this.host = host;
-	}
-	
-	public int getHostType() {
-		return hostType;
-	}
+        private String host;
+        private int hostType;
+        private MHostVO mhost;
+        private String exportRoot;
+        private String userOnHost;
+        private String userPassword;
 
-	public void setHostType(int hostType) {
-		this.hostType = hostType;
-	}
+        private Set<SBucket> buckets = new HashSet<SBucket>();
+        private Set<MHostMount> mounts = new HashSet<MHostMount>();
 
-	public String getExportRoot() {
-		return exportRoot;
-	}
+        public SHost() {
+        }
 
-	public void setExportRoot(String exportRoot) {
-		this.exportRoot = exportRoot;
-	}
+        public Long getId() {
+            return id;
+        }
 
-	public String getUserOnHost() {
-		return userOnHost;
-	}
-	
-	public void setUserOnHost(String userOnHost) {
-		this.userOnHost = userOnHost;
-	}
-	
-	public String getUserPassword() {
-		return userPassword;
-	}
-	
-	public void setUserPassword(String userPassword) {
-		this.userPassword = userPassword;
-	}
-	
-	public MHostVO getMhost() {
-		return mhost;
-	}
+        private void setId(Long id) {
+            this.id = id;
+        }
 
-	public void setMhost(MHostVO mhost) {
-		this.mhost = mhost;
-	}
+        public String getHost() {
+            return host;
+        }
 
-	public Set<SBucket> getBuckets() {
-		return buckets;
-	}
+        public void setHost(String host) {
+            this.host = host;
+        }
 
-	public void setBuckets(Set<SBucket> buckets) {
-		this.buckets = buckets;
-	}
-	
-	public Set<MHostMount> getMounts() {
-		return mounts;
-	}
+        public int getHostType() {
+            return hostType;
+        }
 
-	public void setMounts(Set<MHostMount> mounts) {
-		this.mounts = mounts;
-	}*/
+        public void setHostType(int hostType) {
+            this.hostType = hostType;
+        }
+
+        public String getExportRoot() {
+            return exportRoot;
+        }
+
+        public void setExportRoot(String exportRoot) {
+            this.exportRoot = exportRoot;
+        }
+
+        public String getUserOnHost() {
+            return userOnHost;
+        }
+
+        public void setUserOnHost(String userOnHost) {
+            this.userOnHost = userOnHost;
+        }
+
+        public String getUserPassword() {
+            return userPassword;
+        }
+
+        public void setUserPassword(String userPassword) {
+            this.userPassword = userPassword;
+        }
+
+        public MHostVO getMhost() {
+            return mhost;
+        }
+
+        public void setMhost(MHostVO mhost) {
+            this.mhost = mhost;
+        }
+
+        public Set<SBucket> getBuckets() {
+            return buckets;
+        }
+
+        public void setBuckets(Set<SBucket> buckets) {
+            this.buckets = buckets;
+        }
+
+        public Set<MHostMount> getMounts() {
+            return mounts;
+        }
+
+        public void setMounts(Set<MHostMount> mounts) {
+            this.mounts = mounts;
+        }*/
 }

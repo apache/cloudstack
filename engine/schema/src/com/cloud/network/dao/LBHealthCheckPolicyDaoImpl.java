@@ -26,12 +26,9 @@ import com.cloud.network.LBHealthCheckPolicyVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 
-
 @Component
-@Local(value = { LBHealthCheckPolicyDao.class })
-public class LBHealthCheckPolicyDaoImpl extends
-        GenericDaoBase<LBHealthCheckPolicyVO, Long> implements
-        LBHealthCheckPolicyDao {
+@Local(value = {LBHealthCheckPolicyDao.class})
+public class LBHealthCheckPolicyDaoImpl extends GenericDaoBase<LBHealthCheckPolicyVO, Long> implements LBHealthCheckPolicyDao {
 
     @Override
     public void remove(long loadBalancerId) {
@@ -51,16 +48,18 @@ public class LBHealthCheckPolicyDaoImpl extends
     }
 
     @Override
-    public List<LBHealthCheckPolicyVO> listByLoadBalancerId(long loadBalancerId) {
+    public List<LBHealthCheckPolicyVO> listByLoadBalancerIdAndDisplayFlag(long loadBalancerId, Boolean forDisplay) {
         SearchCriteria<LBHealthCheckPolicyVO> sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
+        if (forDisplay != null) {
+            sc.addAnd("display", SearchCriteria.Op.EQ, forDisplay);
+        }
 
         return listBy(sc);
     }
 
     @Override
-    public List<LBHealthCheckPolicyVO> listByLoadBalancerId(long loadBalancerId,
-            boolean pending) {
+    public List<LBHealthCheckPolicyVO> listByLoadBalancerId(long loadBalancerId, boolean pending) {
         SearchCriteria<LBHealthCheckPolicyVO> sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
         sc.addAnd("revoke", SearchCriteria.Op.EQ, pending);

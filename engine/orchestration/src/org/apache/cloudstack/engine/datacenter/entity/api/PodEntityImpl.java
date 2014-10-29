@@ -32,54 +32,53 @@ import com.cloud.utils.fsm.NoTransitionException;
 
 public class PodEntityImpl implements PodEntity {
 
-
-	private DataCenterResourceManager manager;
+    private DataCenterResourceManager manager;
 
     private EngineHostPodVO podVO;
 
     public PodEntityImpl(String uuid, DataCenterResourceManager manager) {
-	this.manager = manager;
-	podVO = manager.loadPod(uuid);
+        this.manager = manager;
+        podVO = manager.loadPod(uuid);
     }
 
     @Override
     public boolean enable() {
-	try {
-			manager.changeState(this, Event.EnableRequest);
-		} catch (NoTransitionException e) {
-			return false;
-		}
-	return true;
+        try {
+            manager.changeState(this, Event.EnableRequest);
+        } catch (NoTransitionException e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean disable() {
-	try {
-			manager.changeState(this, Event.DisableRequest);
-		} catch (NoTransitionException e) {
-			return false;
-		}
-	return true;
+        try {
+            manager.changeState(this, Event.DisableRequest);
+        } catch (NoTransitionException e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean deactivate() {
-	try {
-			manager.changeState(this, Event.DeactivateRequest);
-		} catch (NoTransitionException e) {
-			return false;
-		}
-	return true;
+        try {
+            manager.changeState(this, Event.DeactivateRequest);
+        } catch (NoTransitionException e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public boolean reactivate() {
-	try {
-			manager.changeState(this, Event.ActivatedRequest);
-		} catch (NoTransitionException e) {
-			return false;
-		}
-	return true;
+        try {
+            manager.changeState(this, Event.ActivatedRequest);
+        } catch (NoTransitionException e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -100,7 +99,7 @@ public class PodEntityImpl implements PodEntity {
     @Override
     public String getCurrentState() {
         // TODO Auto-generated method stub
-	return null;
+        return null;
     }
 
     @Override
@@ -123,7 +122,6 @@ public class PodEntityImpl implements PodEntity {
     public String getOwner() {
         return podVO.getOwner();
     }
-
 
     @Override
     public List<Method> getApplicableActions() {
@@ -172,40 +170,40 @@ public class PodEntityImpl implements PodEntity {
         return null;
     }
 
-	@Override
-	public void persist() {
-		manager.savePod(podVO);
+    @Override
+    public void persist() {
+        manager.savePod(podVO);
 
-	}
+    }
 
-	@Override
-	public Map<String, String> getDetails() {
-		return null;
-	}
+    @Override
+    public Map<String, String> getDetails() {
+        return null;
+    }
 
-	@Override
-	public void addDetail(String name, String value) {
-		// TODO Auto-generated method stub
+    @Override
+    public void addDetail(String name, String value) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	@Override
-	public void delDetail(String name, String value) {
-		// TODO Auto-generated method stub
+    @Override
+    public void delDetail(String name, String value) {
+        // TODO Auto-generated method stub
 
-	}
+    }
 
-	@Override
-	public void updateDetail(String name, String value) {
+    @Override
+    public void updateDetail(String name, String value) {
 
-	}
+    }
 
-	public void setOwner(String owner) {
-		podVO.setOwner(owner);
-	}
+    public void setOwner(String owner) {
+        podVO.setOwner(owner);
+    }
 
-	public void setName(String name) {
-		podVO.setName(name);
-	}
+    public void setName(String name) {
+        podVO.setName(name);
+    }
 
 }

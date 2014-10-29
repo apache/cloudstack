@@ -36,8 +36,7 @@ public interface AffinityGroupProcessor extends Adapter {
      * @param avoid
      *            avoid these data centers, pods, clusters, or hosts.
      */
-    void process(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid)
-            throws AffinityConflictException;
+    void process(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) throws AffinityConflictException;
 
     /**
      * getType() should return the affinity/anti-affinity group being
@@ -56,8 +55,7 @@ public interface AffinityGroupProcessor extends Adapter {
      * @param plannedDestination
      *            deployment destination where VM is planned to be deployed
      */
-    boolean check(VirtualMachineProfile vm, DeployDestination plannedDestination)
-            throws AffinityConflictException;
+    boolean check(VirtualMachineProfile vm, DeployDestination plannedDestination) throws AffinityConflictException;
 
     /**
      * isAdminControlledGroup() should return true if the affinity/anti-affinity
@@ -66,7 +64,6 @@ public interface AffinityGroupProcessor extends Adapter {
      * @return boolean true/false
      */
     boolean isAdminControlledGroup();
-
 
     /**
      * canBeSharedDomainWide() should return true if the affinity/anti-affinity
@@ -81,7 +78,7 @@ public interface AffinityGroupProcessor extends Adapter {
      * subDomainAccess() should return true if the affinity/anti-affinity group
      * can be created for a domain and used by the sub-domains. If true, all
      * accounts under the sub-domains can see this group and use it.
-     * 
+     *
      * @return boolean true/false
      */
     boolean subDomainAccess();

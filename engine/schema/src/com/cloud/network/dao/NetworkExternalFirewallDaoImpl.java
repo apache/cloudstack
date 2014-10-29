@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.dao;
 
-
 import java.util.List;
 
 import javax.ejb.Local;
@@ -30,11 +29,13 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=NetworkExternalFirewallDao.class) @DB()
+@Local(value = NetworkExternalFirewallDao.class)
+@DB()
 public class NetworkExternalFirewallDaoImpl extends GenericDaoBase<NetworkExternalFirewallVO, Long> implements NetworkExternalFirewallDao {
 
     final SearchBuilder<NetworkExternalFirewallVO> networkIdSearch;
     final SearchBuilder<NetworkExternalFirewallVO> deviceIdSearch;
+
     protected NetworkExternalFirewallDaoImpl() {
         super();
         networkIdSearch = createSearchBuilder();
@@ -57,5 +58,5 @@ public class NetworkExternalFirewallDaoImpl extends GenericDaoBase<NetworkExtern
         SearchCriteria<NetworkExternalFirewallVO> sc = deviceIdSearch.create();
         sc.setParameters("externalFWDeviceId", fwDeviceId);
         return search(sc, null);
-    }    
+    }
 }

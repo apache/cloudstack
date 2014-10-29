@@ -39,7 +39,8 @@ public class ClusterServiceServletImpl implements ClusterService {
     }
 
     public ClusterServiceServletImpl(String serviceUrl) {
-        s_logger.info("Setup cluster service servlet. service url: " + serviceUrl + ", request timeout: " + ClusterServiceAdapter.ClusterMessageTimeOut.value() + " seconds");
+        s_logger.info("Setup cluster service servlet. service url: " + serviceUrl + ", request timeout: " + ClusterServiceAdapter.ClusterMessageTimeOut.value() +
+            " seconds");
 
         _serviceUrl = serviceUrl;
     }
@@ -95,7 +96,7 @@ public class ClusterServiceServletImpl implements ClusterService {
                 }
             } else {
                 s_logger.error("Invalid response code : " + response + ", from : " + _serviceUrl + ", method : " + method.getParameter("method") + " responding time: " +
-                               (System.currentTimeMillis() - startTick));
+                    (System.currentTimeMillis() - startTick));
             }
         } catch (HttpException e) {
             s_logger.error("HttpException from : " + _serviceUrl + ", method : " + method.getParameter("method"));

@@ -36,7 +36,7 @@ public class Upgrade222to224 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "2.2.2", "2.2.3" };
+        return new String[] {"2.2.2", "2.2.3"};
     }
 
     @Override
@@ -56,7 +56,7 @@ public class Upgrade222to224 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find db/schema-222to224.sql");
         }
 
-        return new File[] { new File(script) };
+        return new File[] {new File(script)};
     }
 
     private void fixRelatedFkeyOnNetworksTable(Connection conn) throws SQLException {
@@ -68,7 +68,8 @@ public class Upgrade222to224 implements DbUpgrade {
         }
         pstmt.close();
 
-        pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__related` FOREIGN KEY(`related`) REFERENCES `networks`(`id`) ON DELETE CASCADE");
+        pstmt =
+            conn.prepareStatement("ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__related` FOREIGN KEY(`related`) REFERENCES `networks`(`id`) ON DELETE CASCADE");
         pstmt.executeUpdate();
         pstmt.close();
     }
@@ -101,7 +102,7 @@ public class Upgrade222to224 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find the upgrade script, schema-222to224-cleanup.sql");
         }
 
-        return new File[] { new File(file) };
+        return new File[] {new File(file)};
     }
 
     private void checkForDuplicatePublicNetworks(Connection conn) {
@@ -159,7 +160,8 @@ public class Upgrade222to224 implements DbUpgrade {
 
     // fixes bug 9597
     private void fixRecreatableVolumesProblem(Connection conn) throws SQLException {
-        PreparedStatement pstmt = conn.prepareStatement("UPDATE volumes as v SET recreatable=(SELECT recreatable FROM disk_offering d WHERE d.id = v.disk_offering_id) WHERE disk_offering_id != 0");
+        PreparedStatement pstmt =
+            conn.prepareStatement("UPDATE volumes as v SET recreatable=(SELECT recreatable FROM disk_offering d WHERE d.id = v.disk_offering_id) WHERE disk_offering_id != 0");
         pstmt.execute();
         pstmt.close();
 
@@ -183,14 +185,14 @@ public class Upgrade222to224 implements DbUpgrade {
                 String updateSQLSuffix = " where id = ? ) where host_id = ?";
                 String tableName = "host";
                 switch (capacityType) {
-                case Capacity.CAPACITY_TYPE_MEMORY:
-                case Capacity.CAPACITY_TYPE_CPU:
-                    tableName = "host";
-                    break;
-                case Capacity.CAPACITY_TYPE_STORAGE:
-                case Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED:
-                    tableName = "storage_pool";
-                    break;
+                    case Capacity.CAPACITY_TYPE_MEMORY:
+                    case Capacity.CAPACITY_TYPE_CPU:
+                        tableName = "host";
+                        break;
+                    case Capacity.CAPACITY_TYPE_STORAGE:
+                    case Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED:
+                        tableName = "storage_pool";
+                        break;
                 }
                 pstmtUpdate = conn.prepareStatement(updateSQLPrefix + tableName + updateSQLSuffix);
                 pstmtUpdate.setLong(1, hostId);
@@ -254,7 +256,8 @@ public class Upgrade222to224 implements DbUpgrade {
 
     private void updateUserStatsWithNetwork(Connection conn) {
         try {
-            PreparedStatement pstmt = conn.prepareStatement("SELECT id, device_id FROM user_statistics WHERE network_id=0 or network_id is NULL and public_ip_address is NULL");
+            PreparedStatement pstmt =
+                conn.prepareStatement("SELECT id, device_id FROM user_statistics WHERE network_id=0 or network_id is NULL and public_ip_address is NULL");
             ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {
@@ -293,19 +296,20 @@ public class Upgrade222to224 implements DbUpgrade {
 
             rs.close();
             pstmt.close();
-            
+
             s_logger.debug("Upgraded user_statistics with networkId for DomainRouter device type");
-            
+
             // update network_id information for ExternalFirewall and ExternalLoadBalancer device types
-            PreparedStatement pstmt1 = conn.prepareStatement("update user_statistics us, user_ip_address uip set us.network_id = uip.network_id where us.public_ip_address = uip.public_ip_address " +
-            		"and us.device_type in ('ExternalFirewall' , 'ExternalLoadBalancer')");
+            PreparedStatement pstmt1 =
+                conn.prepareStatement("update user_statistics us, user_ip_address uip set us.network_id = uip.network_id where us.public_ip_address = uip.public_ip_address "
+                    + "and us.device_type in ('ExternalFirewall' , 'ExternalLoadBalancer')");
             pstmt1.executeUpdate();
             pstmt1.close();
 
             s_logger.debug("Upgraded user_statistics with networkId for ExternalFirewall and ExternalLoadBalancer device types");
-            
+
             s_logger.debug("Successfully update user_statistics table with network_ids as a part of 222 to 224 upgrade");
-            
+
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update user_statistics table with network_ids as a part of 222 to 224 upgrade", e);
         }
@@ -462,8 +466,7 @@ public class Upgrade222to224 implements DbUpgrade {
         indexesToAdd.add("ALTER TABLE `cloud`.`data_center` ADD  INDEX `i_data_center__domain_id`(`domain_id`)");
 
         keysToAdd.add("ALTER TABLE `cloud`.`vlan` ADD CONSTRAINT `fk_vlan__data_center_id` FOREIGN KEY `fk_vlan__data_center_id`(`data_center_id`) REFERENCES `data_center`(`id`)");
-        keysToAdd
-                .add("ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD CONSTRAINT `fk_op_dc_ip_address_alloc__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE");
+        keysToAdd.add("ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD CONSTRAINT `fk_op_dc_ip_address_alloc__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE");
 
         keysToAdd.add("ALTER TABLE `cloud`.`networks` ADD INDEX `i_networks__removed` (`removed`)");
 
@@ -556,8 +559,7 @@ public class Upgrade222to224 implements DbUpgrade {
             }
 
             Long domainId = rs1.getLong(1);
-           
-            
+
             if (!domainIpsCount.containsKey(domainId)) {
                 domainIpsCount.put(domainId, count);
             } else {
@@ -566,20 +568,20 @@ public class Upgrade222to224 implements DbUpgrade {
                 domainIpsCount.put(domainId, newCount);
             }
             rs1.close();
-            
+
             Long parentId = 0L;
             while (parentId != null) {
                 pstmt = conn.prepareStatement("SELECT parent from domain where id=?");
                 pstmt.setLong(1, domainId);
                 ResultSet parentSet = pstmt.executeQuery();
-                
+
                 if (parentSet.next()) {
                     parentId = parentSet.getLong(1);
                     if (parentId == null || parentId.longValue() == 0) {
                         parentId = null;
                         continue;
                     }
-                    
+
                     if (!domainIpsCount.containsKey(parentId)) {
                         domainIpsCount.put(parentId, count);
                     } else {

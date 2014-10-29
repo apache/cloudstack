@@ -26,53 +26,53 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 @Entity
-@Table(name="op_user_stats_log")
+@Table(name = "op_user_stats_log")
 public class UserStatsLogVO {
-	@Id
-	@Column(name="user_stats_id")
-	private long userStatsId;
-	
-	@Column(name="net_bytes_received")
-	private long netBytesReceived;
-	
-	@Column(name="net_bytes_sent")
-	private long netBytesSent;
-	
-	@Column(name="current_bytes_received")
-	private long currentBytesReceived;
-	
-	@Column(name="current_bytes_sent")
-	private long currentBytesSent;
-	
-	@Column(name="agg_bytes_received")
-	private long aggBytesReceived;
-	
-	@Column(name="agg_bytes_sent")
-	private long aggBytesSent;
-	
-	@Column(name="updated")
-	@Temporal(value=TemporalType.TIMESTAMP)
-	private Date updatedTime;
-	
-	public UserStatsLogVO(){
-	}
-	
-	public UserStatsLogVO(long userStatsId, long netBytesReceived, long netBytesSent, long currentBytesReceived, long currentBytesSent, 
-							long aggBytesReceived, long aggBytesSent, Date updatedTime) {
-		this.userStatsId = userStatsId;
-		this.netBytesReceived = netBytesReceived;
-		this.netBytesSent = netBytesSent;
-		this.currentBytesReceived = currentBytesReceived;
-		this.currentBytesSent = currentBytesSent;
-		this.aggBytesReceived = aggBytesReceived;
-		this.aggBytesSent = aggBytesSent;
-		this.updatedTime = updatedTime;
-	}
+    @Id
+    @Column(name = "user_stats_id")
+    private long userStatsId;
 
-	public Long getUserStatsId() {
+    @Column(name = "net_bytes_received")
+    private long netBytesReceived;
+
+    @Column(name = "net_bytes_sent")
+    private long netBytesSent;
+
+    @Column(name = "current_bytes_received")
+    private long currentBytesReceived;
+
+    @Column(name = "current_bytes_sent")
+    private long currentBytesSent;
+
+    @Column(name = "agg_bytes_received")
+    private long aggBytesReceived;
+
+    @Column(name = "agg_bytes_sent")
+    private long aggBytesSent;
+
+    @Column(name = "updated")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date updatedTime;
+
+    public UserStatsLogVO() {
+    }
+
+    public UserStatsLogVO(long userStatsId, long netBytesReceived, long netBytesSent, long currentBytesReceived, long currentBytesSent, long aggBytesReceived,
+            long aggBytesSent, Date updatedTime) {
+        this.userStatsId = userStatsId;
+        this.netBytesReceived = netBytesReceived;
+        this.netBytesSent = netBytesSent;
+        this.currentBytesReceived = currentBytesReceived;
+        this.currentBytesSent = currentBytesSent;
+        this.aggBytesReceived = aggBytesReceived;
+        this.aggBytesSent = aggBytesSent;
+        this.updatedTime = updatedTime;
+    }
+
+    public Long getUserStatsId() {
         return userStatsId;
     }
-    
+
     public long getCurrentBytesReceived() {
         return currentBytesReceived;
     }
@@ -90,43 +90,43 @@ public class UserStatsLogVO {
     }
 
     public long getNetBytesReceived() {
-		return netBytesReceived;
-	}
+        return netBytesReceived;
+    }
 
-	public long getNetBytesSent() {
-		return netBytesSent;
-	}
+    public long getNetBytesSent() {
+        return netBytesSent;
+    }
 
-	public void setNetBytesReceived(long netBytesReceived) {
-		this.netBytesReceived = netBytesReceived;
-	}
+    public void setNetBytesReceived(long netBytesReceived) {
+        this.netBytesReceived = netBytesReceived;
+    }
 
-	public void setNetBytesSent(long netBytesSent) {
-		this.netBytesSent = netBytesSent;
-	}
+    public void setNetBytesSent(long netBytesSent) {
+        this.netBytesSent = netBytesSent;
+    }
 
-	public long getAggBytesReceived() {
-		return aggBytesReceived;
-	}
+    public long getAggBytesReceived() {
+        return aggBytesReceived;
+    }
 
-	public void setAggBytesReceived(long aggBytesReceived) {
-		this.aggBytesReceived = aggBytesReceived;
-	}
+    public void setAggBytesReceived(long aggBytesReceived) {
+        this.aggBytesReceived = aggBytesReceived;
+    }
 
-	public long getAggBytesSent() {
-		return aggBytesSent;
-	}
+    public long getAggBytesSent() {
+        return aggBytesSent;
+    }
 
-	public void setAggBytesSent(long aggBytesSent) {
-		this.aggBytesSent = aggBytesSent;
-	}
+    public void setAggBytesSent(long aggBytesSent) {
+        this.aggBytesSent = aggBytesSent;
+    }
 
-	public Date getUpdatedTime() {
-		return updatedTime;
-	}
+    public Date getUpdatedTime() {
+        return updatedTime;
+    }
 
-	public void setUpdatedTime(Date updatedTime) {
-		this.updatedTime = updatedTime;
-	}
+    public void setUpdatedTime(Date updatedTime) {
+        this.updatedTime = updatedTime;
+    }
 
 }

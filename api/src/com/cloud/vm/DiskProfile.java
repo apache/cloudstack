@@ -18,6 +18,7 @@ package com.cloud.vm;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering;
+import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Volume;
 
 /**
@@ -35,17 +36,20 @@ public class DiskProfile {
     private Long templateId;
     private long volumeId;
     private String path;
+    private ProvisioningType provisioningType;
     private Long bytesReadRate;
     private Long bytesWriteRate;
     private Long iopsReadRate;
     private Long iopsWriteRate;
+    private String cacheMode;
 
     private HypervisorType hyperType;
 
     protected DiskProfile() {
     }
 
-    public DiskProfile(long volumeId, Volume.Type type, String name, long diskOfferingId, long size, String[] tags, boolean useLocalStorage, boolean recreatable, Long templateId) {
+    public DiskProfile(long volumeId, Volume.Type type, String name, long diskOfferingId, long size, String[] tags, boolean useLocalStorage, boolean recreatable,
+            Long templateId) {
         this.type = type;
         this.name = name;
         this.size = size;
@@ -58,12 +62,20 @@ public class DiskProfile {
     }
 
     public DiskProfile(Volume vol, DiskOffering offering, HypervisorType hyperType) {
-        this(vol.getId(), vol.getVolumeType(), vol.getName(), offering.getId(), vol.getSize(), offering.getTagsArray(), offering.getUseLocalStorage(), offering.isCustomized(), null);
+        this(vol.getId(),
+            vol.getVolumeType(),
+            vol.getName(),
+            offering.getId(),
+            vol.getSize(),
+            offering.getTagsArray(),
+            offering.getUseLocalStorage(),
+            offering.isCustomized(),
+            null);
         this.hyperType = hyperType;
     }
-    
+
     public DiskProfile(DiskProfile dp) {
-    	
+
     }
 
     /**
@@ -146,17 +158,25 @@ public class DiskProfile {
     public HypervisorType getHypervisorType() {
         return this.hyperType;
     }
-    
+
     public void setPath(String path) {
-    	this.path = path;
+        this.path = path;
     }
-    
+
     public String getPath() {
-    	return this.path;
+        return this.path;
     }
-    
+
+    public void setProvisioningType(ProvisioningType provisioningType){
+        this.provisioningType = provisioningType;
+    }
+
+    public ProvisioningType getProvisioningType(){
+        return this.provisioningType;
+    }
+
     public void setSize(long size) {
-    	this.size = size;
+        this.size = size;
     }
 
     public void setBytesReadRate(Long bytesReadRate) {
@@ -189,5 +209,13 @@ public class DiskProfile {
 
     public Long getIopsWriteRate() {
         return iopsWriteRate;
+    }
+
+    public void setCacheMode(String cacheMode) {
+        this.cacheMode = cacheMode;
+    }
+
+    public String getCacheMode() {
+        return cacheMode;
     }
 }

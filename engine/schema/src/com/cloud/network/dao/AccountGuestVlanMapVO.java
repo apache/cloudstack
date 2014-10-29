@@ -16,33 +16,39 @@
 // under the License.
 package com.cloud.network.dao;
 
-import com.cloud.network.GuestVlan;
-
-import javax.persistence.*;
 import java.util.UUID;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import com.cloud.network.GuestVlan;
+
 @Entity
-@Table(name="account_vnet_map")
+@Table(name = "account_vnet_map")
 public class AccountGuestVlanMapVO implements GuestVlan {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="vnet_range")
+    @Column(name = "vnet_range")
     private String guestVlanRange;
 
-    @Column(name="physical_network_id")
+    @Column(name = "physical_network_id")
     private long physicalNetworkId;
 
-    public AccountGuestVlanMapVO(long accountId,long physicalNetworkId) {
+    public AccountGuestVlanMapVO(long accountId, long physicalNetworkId) {
         this.accountId = accountId;
         this.physicalNetworkId = physicalNetworkId;
         this.guestVlanRange = null;
@@ -67,7 +73,6 @@ public class AccountGuestVlanMapVO implements GuestVlan {
     public String getGuestVlanRange() {
         return guestVlanRange;
     }
-
 
     public void setGuestVlanRange(String guestVlanRange) {
         this.guestVlanRange = guestVlanRange;

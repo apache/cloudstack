@@ -32,13 +32,14 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.vm.Nic;
 import com.cloud.vm.VirtualMachine;
 
-@Local(value={Investigator.class})
+@Local(value = {Investigator.class})
 public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
     private static final Logger s_logger = Logger.getLogger(ManagementIPSystemVMInvestigator.class);
 
-    @Inject private final HostDao _hostDao = null;
-    @Inject private final NetworkModel _networkMgr = null;
-
+    @Inject
+    private final HostDao _hostDao = null;
+    @Inject
+    private final NetworkModel _networkMgr = null;
 
     @Override
     public Boolean isVmAlive(VirtualMachine vm, Host host) {
@@ -92,7 +93,8 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
                     Status vmHostState = testIpAddress(otherHost, vmHost.getPrivateIpAddress());
                     if ((vmHostState != null) && (vmHostState == Status.Up)) {
                         if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("successfully pinged vm's host IP (" + vmHost.getPrivateIpAddress() + "), but could not ping VM, returning that the VM is down");
+                            s_logger.debug("successfully pinged vm's host IP (" + vmHost.getPrivateIpAddress() +
+                                "), but could not ping VM, returning that the VM is down");
                         }
                         return Boolean.FALSE;
                     }
@@ -108,7 +110,7 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
 
     @Override
     public Status isAgentAlive(Host agent) {
-    	return null;
+        return null;
     }
 
     @Override

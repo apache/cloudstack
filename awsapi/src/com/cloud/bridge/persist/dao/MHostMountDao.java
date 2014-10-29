@@ -22,6 +22,5 @@ import com.cloud.utils.db.GenericDao;
 public interface MHostMountDao extends GenericDao<MHostMountVO, Long> {
 
     MHostMountVO getHostMount(long mHostId, long sHostId);
-    
 
 }

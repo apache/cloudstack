@@ -18,11 +18,12 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 public class UpgradeVmResponse extends BaseResponse {
     @SerializedName("id")
@@ -224,75 +225,99 @@ public class UpgradeVmResponse extends BaseResponse {
         return id;
     }
 
-    @SerializedName("name") @Param(description="the ID of the virtual machine")
+    @SerializedName("name")
+    @Param(description = "the ID of the virtual machine")
     private String name;
 
-    @SerializedName("created") @Param(description="the date when this virtual machine was created")
+    @SerializedName("created")
+    @Param(description = "the date when this virtual machine was created")
     private Date created;
 
-    @SerializedName("ipaddress") @Param(description="the ip address of the virtual machine")
+    @SerializedName("ipaddress")
+    @Param(description = "the ip address of the virtual machine")
     private String ipAddress;
 
-    @SerializedName("state") @Param(description="the state of the virtual machine")
+    @SerializedName("state")
+    @Param(description = "the state of the virtual machine")
     private String state;
 
-    @SerializedName("account") @Param(description="the account associated with the virtual machine")
+    @SerializedName("account")
+    @Param(description = "the account associated with the virtual machine")
     private String account;
 
-    @SerializedName("domainid") @Param(description="the ID of the domain in which the virtual machine exists")
+    @SerializedName("domainid")
+    @Param(description = "the ID of the domain in which the virtual machine exists")
     private String domainId;
 
-    @SerializedName("domain") @Param(description="the name of the domain in which the virtual machine exists")
+    @SerializedName("domain")
+    @Param(description = "the name of the domain in which the virtual machine exists")
     private String domain;
 
-    @SerializedName("haenable") @Param(description="true if high-availability is enabled, false otherwise")
+    @SerializedName("haenable")
+    @Param(description = "true if high-availability is enabled, false otherwise")
     private boolean haEnable;
 
-    @SerializedName("zoneid") @Param(description="the ID of the availablility zone for the virtual machine")
+    @SerializedName("zoneid")
+    @Param(description = "the ID of the availablility zone for the virtual machine")
     private String zoneId;
 
-    @SerializedName("displayname") @Param(description="user generated name. The name of the virtual machine is returned if no displayname exists.")
+    @SerializedName("displayname")
+    @Param(description = "user generated name. The name of the virtual machine is returned if no displayname exists.")
     private String displayName;
 
-    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the availability zone for the virtual machine")
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "the name of the availability zone for the virtual machine")
     private String zoneName;
 
-    @SerializedName("hostid") @Param(description="the ID of the host for the virtual machine")
+    @SerializedName("hostid")
+    @Param(description = "the ID of the host for the virtual machine")
     private String hostId;
 
-    @SerializedName("hostname") @Param(description="the name of the host for the virtual machine")
+    @SerializedName("hostname")
+    @Param(description = "the name of the host for the virtual machine")
     private String hostName;
 
-    @SerializedName("templateid") @Param(description="the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
+    @SerializedName("templateid")
+    @Param(description = "the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
     private String templateId;
 
-    @SerializedName("templatename") @Param(description="the name of the template for the virtual machine")
+    @SerializedName("templatename")
+    @Param(description = "the name of the template for the virtual machine")
     private String templateName;
 
-    @SerializedName("templatedisplaytext") @Param(description=" an alternate display text of the template for the virtual machine")
+    @SerializedName("templatedisplaytext")
+    @Param(description = " an alternate display text of the template for the virtual machine")
     private String templateDisplayText;
 
-    @SerializedName("passwordenabled") @Param(description="true if the password rest feature is enabled, false otherwise")
+    @SerializedName("passwordenabled")
+    @Param(description = "true if the password rest feature is enabled, false otherwise")
     private boolean passwordEnabled;
 
-    @SerializedName("serviceofferingid") @Param(description="the ID of the service offering of the virtual machine")
+    @SerializedName("serviceofferingid")
+    @Param(description = "the ID of the service offering of the virtual machine")
     private String serviceOfferingId;
 
-    @SerializedName("serviceofferingname") @Param(description="the name of the service offering of the virtual machine")
+    @SerializedName("serviceofferingname")
+    @Param(description = "the name of the service offering of the virtual machine")
     private String serviceOfferingName;
 
-    @SerializedName("cpunumber") @Param(description="the number of cpu this virtual machine is running with")
+    @SerializedName("cpunumber")
+    @Param(description = "the number of cpu this virtual machine is running with")
     private long cpuSpeed;
 
-    @SerializedName("memory")  @Param(description="the memory allocated for the virtual machine")
+    @SerializedName("memory")
+    @Param(description = "the memory allocated for the virtual machine")
     private long memory;
 
-    @SerializedName("cpuused") @Param(description="the amount of the vm's CPU currently used")
+    @SerializedName("cpuused")
+    @Param(description = "the amount of the vm's CPU currently used")
     private long cpuUsed;
 
-    @SerializedName("networkkbsread") @Param(description="the incoming network traffic on the vm")
+    @SerializedName("networkkbsread")
+    @Param(description = "the incoming network traffic on the vm")
     private long networkKbsRead;
 
-    @SerializedName("networkkbswrite") @Param(description="the outgoing network traffic on the host")
+    @SerializedName("networkkbswrite")
+    @Param(description = "the outgoing network traffic on the host")
     private long networkKbsWrite;
 }

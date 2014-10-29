@@ -76,12 +76,12 @@ public class StorageStrategyFactoryImpl implements StorageStrategyFactory {
 
     @Override
     public VMSnapshotStrategy getVmSnapshotStrategy(final VMSnapshot vmSnapshot) {
-       return bestMatch(vmSnapshotStrategies, new CanHandle<VMSnapshotStrategy>() {
-           @Override
-           public StrategyPriority canHandle(VMSnapshotStrategy strategy) {
+        return bestMatch(vmSnapshotStrategies, new CanHandle<VMSnapshotStrategy>() {
+            @Override
+            public StrategyPriority canHandle(VMSnapshotStrategy strategy) {
                 return strategy.canHandle(vmSnapshot);
-           }
-       });
+            }
+        });
     }
 
     private static <T> T bestMatch(Collection<T> collection, final CanHandle<T> canHandle) {
@@ -101,7 +101,7 @@ public class StorageStrategyFactoryImpl implements StorageStrategyFactory {
 
         return strategyToUse;
     }
-    
+
     private static interface CanHandle<T> {
         StrategyPriority canHandle(T strategy);
     }

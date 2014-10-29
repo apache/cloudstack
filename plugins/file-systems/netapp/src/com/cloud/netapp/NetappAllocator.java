@@ -16,10 +16,9 @@
 // under the License.
 package com.cloud.netapp;
 
+public interface NetappAllocator {
 
-public interface NetappAllocator{
+    public NetappVolumeVO chooseVolumeFromPool(String poolName, long lunSizeGb);
 
-	public NetappVolumeVO chooseVolumeFromPool(String poolName, long lunSizeGb) ;
-
-	public NetappVolumeVO chooseLeastFullVolumeFromPool(String poolName,long lunSizeGb);
+    public NetappVolumeVO chooseLeastFullVolumeFromPool(String poolName, long lunSizeGb);
 }

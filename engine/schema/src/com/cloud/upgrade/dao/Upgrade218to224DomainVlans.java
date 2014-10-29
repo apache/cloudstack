@@ -99,7 +99,7 @@ public class Upgrade218to224DomainVlans implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "2.1.8", "2.1.8" };
+        return new String[] {"2.1.8", "2.1.8"};
     }
 
     @Override

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import com.cloud.agent.api.to.HostTO;
@@ -24,7 +27,6 @@ public class CheckOnHostCommand extends Command {
 
     protected CheckOnHostCommand() {
     }
-
 
     public CheckOnHostCommand(Host host) {
         this.host = new HostTO(host);

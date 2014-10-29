@@ -31,12 +31,12 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 @Local(value = VpcOfferingDao.class)
 @DB()
-public class VpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> implements VpcOfferingDao{
+public class VpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> implements VpcOfferingDao {
     final SearchBuilder<VpcOfferingVO> AllFieldsSearch;
 
     protected VpcOfferingDaoImpl() {
         super();
-        
+
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
@@ -45,7 +45,7 @@ public class VpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> impl
         AllFieldsSearch.and("displayText", AllFieldsSearch.entity().getDisplayText(), Op.EQ);
         AllFieldsSearch.and("svcOffId", AllFieldsSearch.entity().getServiceOfferingId(), Op.EQ);
         AllFieldsSearch.done();
-        
+
     }
 
     @Override
@@ -60,7 +60,6 @@ public class VpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> impl
         txn.commit();
         return result;
     }
-
 
     @Override
     public VpcOfferingVO findByUniqueName(String uniqueName) {

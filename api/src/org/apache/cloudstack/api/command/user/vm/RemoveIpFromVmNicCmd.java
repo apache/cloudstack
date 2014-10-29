@@ -32,14 +32,14 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.user.Account;
-import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 
-@APICommand(name = "removeIpFromNic", description="Assigns secondary IP to NIC.", responseObject=SuccessResponse.class)
+
+@APICommand(name = "removeIpFromNic", description = "Removes secondary IP from the NIC.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveIpFromVmNicCmd.class.getName());
     private static final String s_name = "removeipfromnicresponse";
@@ -47,13 +47,15 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, required = true, entityType = NicSecondaryIpResponse.class,
-            description="the ID of the secondary ip address to nic")
-            private Long id;
+    @Parameter(name = ApiConstants.ID,
+            type = CommandType.UUID,
+            required = true,
+            entityType = NicSecondaryIpResponse.class,
+            description = "the ID of the secondary ip address to nic")
+    private Long id;
 
     // unexposed parameter needed for events logging
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.UUID, expose=false)
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, expose = false)
     private Long ownerId;
 
     /////////////////////////////////////////////////////
@@ -84,7 +86,7 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_NET_IP_ASSIGN;
+        return EventTypes.EVENT_NIC_SECONDARY_IP_UNASSIGN;
     }
 
     public NicSecondaryIp getIpEntry() {
@@ -129,6 +131,13 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
         return null;
     }
 
+
+    private boolean isZoneSGEnabled() {
+        Network ntwk = _entityMgr.findById(Network.class, getNetworkId());
+        DataCenter dc = _entityMgr.findById(DataCenter.class, ntwk.getDataCenterId());
+        return dc.isSecurityGroupEnabled();
+    }
+
     @Override
     public void execute() throws InvalidParameterValueException {
         CallContext.current().setEventDetails("Ip Id: " + id);
@@ -138,10 +147,10 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Invalid IP id is passed");
         }
 
-        if (getNetworkType() == NetworkType.Basic) {
+        if (isZoneSGEnabled()) {
             //remove the security group rules for this secondary ip
             boolean success = false;
-            success = _securityGroupService.securityGroupRulesForVmSecIp(nicSecIp.getNicId(), nicSecIp.getNetworkId(),nicSecIp.getIp4Address(), false);
+            success = _securityGroupService.securityGroupRulesForVmSecIp(nicSecIp.getNicId(), nicSecIp.getIp4Address(), false);
             if (success == false) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to set security group rules for the secondary ip");
             }
@@ -151,7 +160,7 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
             boolean result = _networkService.releaseSecondaryIpFromNic(id);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove secondary  ip address for the nic");
             }

@@ -24,10 +24,11 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -41,11 +42,15 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 public class RemoteHostEndPoint implements EndPoint {
     private static final Logger s_logger = Logger.getLogger(RemoteHostEndPoint.class);
@@ -56,37 +61,56 @@ public class RemoteHostEndPoint implements EndPoint {
     AgentManager agentMgr;
     @Inject
     protected HypervisorGuruManager _hvGuruMgr;
+    @Inject
+    protected SecondaryStorageVmDao vmDao;
+    @Inject
+    protected HostDao _hostDao;
     private ScheduledExecutorService executor;
 
     public RemoteHostEndPoint() {
         executor = Executors.newScheduledThreadPool(10, new NamedThreadFactory("RemoteHostEndPoint"));
     }
 
-    private void configure(long hostId, String hostAddress, String publicAddress) {
-        this.hostId = hostId;
-        this.hostAddress = hostAddress;
-        this.publicAddress = publicAddress;
+    private void configure(Host host) {
+        hostId = host.getId();
+        hostAddress = host.getPrivateIpAddress();
+        publicAddress = host.getPublicIpAddress();
+        if (Host.Type.SecondaryStorageVM == host.getType()) {
+            String vmName = host.getName();
+            SecondaryStorageVmVO ssvm = vmDao.findByInstanceName(vmName);
+            if (ssvm != null) {
+                publicAddress = ssvm.getPublicIpAddress();
+            }
+        }
     }
 
-    public static RemoteHostEndPoint getHypervisorHostEndPoint(long hostId, String hostAddress, String publicAddress) {
+    public static RemoteHostEndPoint getHypervisorHostEndPoint(Host host) {
         RemoteHostEndPoint ep = ComponentContext.inject(RemoteHostEndPoint.class);
-        ep.configure(hostId, hostAddress, publicAddress);
+        ep.configure(host);
         return ep;
     }
 
     @Override
     public String getHostAddr() {
-        return this.hostAddress;
+        return hostAddress;
     }
 
     @Override
     public String getPublicAddr() {
-        return this.publicAddress;
+        return publicAddress;
     }
 
     @Override
     public long getId() {
-        return this.hostId;
+        return hostId;
+    }
+
+    // used when HypervisorGuruManager choose a different host to send command
+    private void setId(long id) {
+        HostVO host = _hostDao.findById(id);
+        if (host != null) {
+            configure(host);
+        }
     }
 
     @Override
@@ -94,6 +118,10 @@ public class RemoteHostEndPoint implements EndPoint {
         String errMsg = null;
         try {
             long newHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(hostId, cmd);
+            if (newHostId != hostId) {
+                // update endpoint with new host if changed
+                setId(newHostId);
+            }
             return agentMgr.send(newHostId, cmd);
         } catch (AgentUnavailableException e) {
             errMsg = e.toString();
@@ -115,7 +143,7 @@ public class RemoteHostEndPoint implements EndPoint {
 
         @Override
         public boolean processAnswers(long agentId, long seq, Answer[] answers) {
-            this.answer = answers[0];
+            answer = answers[0];
             executor.schedule(this, 10, TimeUnit.SECONDS);
             return true;
         }
@@ -171,7 +199,11 @@ public class RemoteHostEndPoint implements EndPoint {
     @Override
     public void sendMessageAsync(Command cmd, AsyncCompletionCallback<Answer> callback) {
         try {
-            long newHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(this.hostId, cmd);
+            long newHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(hostId, cmd);
+            if (newHostId != hostId) {
+                // update endpoint with new host if changed
+                setId(newHostId);
+            }
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Sending command " + cmd.toString() + " to host: " + newHostId);
             }

@@ -1,12 +1,13 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// the License.  You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils;
 
 import org.junit.Assert;
@@ -45,9 +48,7 @@ public class PasswordGeneratorTest {
         // the transformation it is reversable
         Assert.assertEquals("abc", PasswordGenerator.rot13("nop"));
         // which means for any string
-        Assert.assertEquals("abcdefghijklmnooprstuvxyzuv1234?",
-                PasswordGenerator.rot13(PasswordGenerator
-                        .rot13("abcdefghijklmnooprstuvxyzuv1234?")));
+        Assert.assertEquals("abcdefghijklmnooprstuvxyzuv1234?", PasswordGenerator.rot13(PasswordGenerator.rot13("abcdefghijklmnooprstuvxyzuv1234?")));
         // same for capital letters
         Assert.assertEquals("ABC", PasswordGenerator.rot13("NOP"));
         Assert.assertEquals("NOP", PasswordGenerator.rot13("ABC"));

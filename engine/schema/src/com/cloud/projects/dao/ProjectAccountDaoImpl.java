@@ -33,7 +33,7 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value = { ProjectAccountDao.class })
+@Local(value = {ProjectAccountDao.class})
 public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long> implements ProjectAccountDao {
     protected final SearchBuilder<ProjectAccountVO> AllFieldsSearch;
     final GenericSearchBuilder<ProjectAccountVO, Long> AdminSearch;
@@ -142,7 +142,7 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         sc.setParameters("role", role);
         return customSearch(sc, null).get(0);
     }
-    
+
     @Override
     public void removeAccountFromProjects(long accountId) {
         SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();

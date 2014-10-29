@@ -21,31 +21,31 @@ import java.util.List;
 
 public class EC2DescribeSnapshots {
 
-	private List<String> snapshotSet = new ArrayList<String>();    // a list of strings identifying snapshots
-	private EC2SnapshotFilterSet sfs = null;
+    private List<String> snapshotSet = new ArrayList<String>();    // a list of strings identifying snapshots
+    private EC2SnapshotFilterSet sfs = null;
     private List<EC2TagKeyValue> resourceTagSet = new ArrayList<EC2TagKeyValue>();
 
-	public EC2DescribeSnapshots() {
-	}
+    public EC2DescribeSnapshots() {
+    }
 
-	public void addSnapshotId( String param ) {
-		snapshotSet.add( param );
-	}
-	
-	public String[] getSnapshotSet() {
-		return snapshotSet.toArray(new String[0]);
-	}
-	
-	public EC2SnapshotFilterSet getFilterSet() {
-		return sfs;
-	}
-	
-	public void setFilterSet( EC2SnapshotFilterSet param ) {
-		sfs = param;
-	}
+    public void addSnapshotId(String param) {
+        snapshotSet.add(param);
+    }
 
-    public void addResourceTag( EC2TagKeyValue param ) {
-        resourceTagSet.add( param );
+    public String[] getSnapshotSet() {
+        return snapshotSet.toArray(new String[0]);
+    }
+
+    public EC2SnapshotFilterSet getFilterSet() {
+        return sfs;
+    }
+
+    public void setFilterSet(EC2SnapshotFilterSet param) {
+        sfs = param;
+    }
+
+    public void addResourceTag(EC2TagKeyValue param) {
+        resourceTagSet.add(param);
     }
 
     public EC2TagKeyValue[] getResourceTagSet() {

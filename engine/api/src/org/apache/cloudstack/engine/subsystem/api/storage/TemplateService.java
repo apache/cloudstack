@@ -42,11 +42,9 @@ public interface TemplateService {
 
     void createTemplateAsync(TemplateInfo template, DataStore store, AsyncCompletionCallback<TemplateApiResult> callback);
 
-    AsyncCallFuture<TemplateApiResult> createTemplateFromSnapshotAsync(SnapshotInfo snapshot, TemplateInfo template,
-            DataStore store);
+    AsyncCallFuture<TemplateApiResult> createTemplateFromSnapshotAsync(SnapshotInfo snapshot, TemplateInfo template, DataStore store);
 
-    AsyncCallFuture<TemplateApiResult> createTemplateFromVolumeAsync(VolumeInfo volume, TemplateInfo template,
-            DataStore store);
+    AsyncCallFuture<TemplateApiResult> createTemplateFromVolumeAsync(VolumeInfo volume, TemplateInfo template, DataStore store);
 
     AsyncCallFuture<TemplateApiResult> deleteTemplateAsync(TemplateInfo template);
 
@@ -63,7 +61,7 @@ public interface TemplateService {
     void downloadBootstrapSysTemplate(DataStore store);
 
     void addSystemVMTemplatesToSecondary(DataStore store);
-    
+
     void associateTemplateToZone(long templateId, Long zoneId);
 
     void associateCrosszoneTemplatesToZone(long dcId);

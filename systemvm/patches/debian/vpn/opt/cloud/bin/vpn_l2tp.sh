@@ -35,21 +35,41 @@ get_intf_ip() {
 iptables_() {
    local op=$1
    local public_ip=$2
+   local is_vpc=false
+   local forward_action="ACCEPT"
+   if grep "vpcrouter" /var/cache/cloud/cmdline &> /dev/null
+   then
+	is_vpc=true
+   fi
 
    sudo iptables $op INPUT -i $dev --dst $public_ip -p udp -m udp --dport 500 -j ACCEPT
    sudo iptables $op INPUT -i $dev --dst $public_ip -p udp -m udp --dport 4500 -j ACCEPT
    sudo iptables $op INPUT -i $dev --dst $public_ip -p udp -m udp --dport 1701 -j ACCEPT
    sudo iptables $op INPUT -i $dev -p ah -j ACCEPT
    sudo iptables $op INPUT -i $dev -p esp -j ACCEPT
-   sudo iptables $op FORWARD -i ppp+ -d $cidr -j ACCEPT
-   sudo iptables $op FORWARD -s $cidr -o ppp+ -j ACCEPT
-   sudo iptables $op FORWARD -i ppp+ -o ppp+ -j ACCEPT
+   if $is_vpc
+   then
+       # Need to apply the following ACL rules as well.
+       if sudo iptables -N VPN_FORWARD &> /dev/null
+       then
+           sudo iptables -I FORWARD -i ppp+ -j VPN_FORWARD
+           sudo iptables -I FORWARD -o ppp+ -j VPN_FORWARD
+           sudo iptables -A VPN_FORWARD -j DROP
+       fi
+       sudo iptables $op VPN_FORWARD -i ppp+ -o ppp+ -j RETURN
+       sudo iptables $op VPN_FORWARD -i ppp+ -d $cidr -j RETURN
+       sudo iptables $op VPN_FORWARD -s $cidr -o ppp+ -j RETURN
+   else
+       sudo iptables $op FORWARD -i ppp+ -d $cidr -j ACCEPT
+       sudo iptables $op FORWARD -s $cidr -o ppp+ -j ACCEPT
+       sudo iptables $op FORWARD -i ppp+ -o ppp+ -j ACCEPT
+   fi
    sudo iptables $op INPUT -i ppp+ -m udp -p udp --dport 53 -j ACCEPT
    sudo iptables $op INPUT -i ppp+ -m tcp -p tcp --dport 53 -j ACCEPT
    sudo iptables -t nat $op PREROUTING -i ppp+ -p tcp -m tcp --dport 53 -j  DNAT --to-destination $local_ip
    sudo iptables -t nat $op PREROUTING -i ppp+ -p udp -m udp --dport 53 -j  DNAT --to-destination $local_ip
 
-   if grep "vpcrouter" /var/cache/cloud/cmdline &> /dev/null
+   if $is_vpc
    then
        return
    fi
@@ -150,8 +170,12 @@ add_l2tp_ipsec_user() {
    local u=$1
    local passwd=$2
 
-   remove_l2tp_ipsec_user $u
-   echo "$u * $passwd *" >> /etc/ppp/chap-secrets
+   uptodate=$(grep "^$u \* $passwd \*$" /etc/ppp/chap-secrets)
+   if [ "$uptodate" == "" ]
+   then
+       remove_l2tp_ipsec_user $u
+       echo "$u * $passwd *" >> /etc/ppp/chap-secrets
+   fi
 }
 
 rflag=

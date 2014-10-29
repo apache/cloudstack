@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,34 +15,36 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import com.cloud.vm.VirtualMachine;
 
 public class NetworkRulesSystemVmCommand extends Command {
-    
-     private String vmName;
-     private VirtualMachine.Type type;
-    
-     protected NetworkRulesSystemVmCommand() {
-    
-     }
-    
-     public NetworkRulesSystemVmCommand(String vmName, VirtualMachine.Type type) {
-         this.vmName = vmName;
-         this.type = type;
-     }
-     
-    
-     public String getVmName() {
-         return vmName;
-     }
-     
-     public VirtualMachine.Type getType() {
-         return type;
-     }
-     @Override
-     public boolean executeInSequence() {
-     return false;
-     }
+
+    private String vmName;
+    private VirtualMachine.Type type;
+
+    protected NetworkRulesSystemVmCommand() {
+
+    }
+
+    public NetworkRulesSystemVmCommand(String vmName, VirtualMachine.Type type) {
+        this.vmName = vmName;
+        this.type = type;
+    }
+
+    public String getVmName() {
+        return vmName;
+    }
+
+    public VirtualMachine.Type getType() {
+        return type;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 }

@@ -1,7 +1,7 @@
 /*
  * Slightly modified version of the com.ibatis.common.jdbc.ScriptRunner class
  * from the iBATIS Apache project. Only removed dependency on Resource class
- * and a constructor 
+ * and a constructor
  */
 /*
  *  Copyright 2004 Clinton Begin
@@ -35,7 +35,7 @@ import org.apache.log4j.Logger;
  * Tool to run database scripts
  */
 public class ScriptRunner {
-    private static Logger s_logger = Logger.getLogger(ScriptRunner.class); 
+    private static Logger s_logger = Logger.getLogger(ScriptRunner.class);
 
     private static final String DEFAULT_DELIMITER = ";";
 
@@ -73,7 +73,7 @@ public class ScriptRunner {
 
     /**
      * Runs an SQL script (read in using the Reader parameter)
-     * 
+     *
      * @param reader
      *            - the source of the script
      */
@@ -100,7 +100,7 @@ public class ScriptRunner {
     /**
      * Runs an SQL script (read in using the Reader parameter) using the
      * connection passed in
-     * 
+     *
      * @param conn
      *            - the connection to use for the script
      * @param reader
@@ -126,57 +126,49 @@ public class ScriptRunner {
                     // Do nothing
                 } else if (trimmedLine.length() < 1 || trimmedLine.startsWith("--")) {
                     // Do nothing
-                } else if (trimmedLine.length() < 1 || trimmedLine.startsWith("#")) { 
-                    // Do nothing  
+                } else if (trimmedLine.length() < 1 || trimmedLine.startsWith("#")) {
+                    // Do nothing
                 } else if (!fullLineDelimiter && trimmedLine.endsWith(getDelimiter()) || fullLineDelimiter && trimmedLine.equals(getDelimiter())) {
                     command.append(line.substring(0, line.lastIndexOf(getDelimiter())));
                     command.append(" ");
-                    Statement statement = conn.createStatement();
-
-                    println(command);
-
-                    boolean hasResults = false;
-                    if (stopOnError) {
-                        hasResults = statement.execute(command.toString());
-                    } else {
-                        try {
-                            statement.execute(command.toString());
-                        } catch (SQLException e) {
-                            e.fillInStackTrace();
-                            printlnError("Error executing: " + command);
-                            printlnError(e);
-                        }
-                    }
-
-                    if (autoCommit && !conn.getAutoCommit()) {
-                        conn.commit();
-                    }
-
-                    ResultSet rs = statement.getResultSet();
-                    if (hasResults && rs != null) {
-                        ResultSetMetaData md = rs.getMetaData();
-                        int cols = md.getColumnCount();
-                        for (int i = 0; i < cols; i++) {
-                            String name = md.getColumnLabel(i);
-                            print(name + "\t");
-                        }
-                        println("");
-                        while (rs.next()) {
-                            for (int i = 0; i < cols; i++) {
-                                String value = rs.getString(i);
-                                print(value + "\t");
+                    try (Statement statement = conn.createStatement();) {
+                        println(command);
+                        boolean hasResults = false;
+                        if (stopOnError) {
+                            hasResults = statement.execute(command.toString());
+                        } else {
+                            try {
+                                statement.execute(command.toString());
+                            } catch (SQLException e) {
+                                e.fillInStackTrace();
+                                printlnError("Error executing: " + command);
+                                printlnError(e);
                             }
-                            println("");
+                        }
+                        if (autoCommit && !conn.getAutoCommit()) {
+                            conn.commit();
+                        }
+                        try(ResultSet rs = statement.getResultSet();) {
+                            if (hasResults && rs != null) {
+                                ResultSetMetaData md = rs.getMetaData();
+                                int cols = md.getColumnCount();
+                                for (int i = 0; i < cols; i++) {
+                                    String name = md.getColumnLabel(i);
+                                    print(name + "\t");
+                                }
+                                println("");
+                                while (rs.next()) {
+                                    for (int i = 1; i <= cols; i++) {
+                                        String value = rs.getString(i);
+                                        print(value + "\t");
+                                    }
+                                    println("");
+                                }
+                            }
+                            command = null;
+                            Thread.yield();
                         }
                     }
-
-                    command = null;
-                    try {
-                        statement.close();
-                    } catch (Exception e) {
-                        // Ignore to workaround a bug in Jakarta DBCP
-                    }
-                    Thread.yield();
                 } else {
                     int idx = line.indexOf("--");
                     if (idx != -1)

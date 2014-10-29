@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.resource;
 
 import java.net.URI;
@@ -31,8 +34,8 @@ public interface ResourceListener {
     static final Integer EVENT_CANCEL_MAINTENANCE_AFTER = 0x1 << 5;
     static final Integer EVENT_PREPARE_MAINTENANCE_BEFORE = 0x1 << 6;
     static final Integer EVENT_PREPARE_MAINTENANCE_AFTER = 0x1 << 7;
-    static final Integer EVENT_ALL = (EVENT_DISCOVER_BEFORE | EVENT_DISCOVER_AFTER | EVENT_DELETE_HOST_BEFORE | EVENT_DELETE_HOST_AFTER
-            | EVENT_CANCEL_MAINTENANCE_BEFORE | EVENT_CANCEL_MAINTENANCE_AFTER | EVENT_PREPARE_MAINTENANCE_BEFORE | EVENT_PREPARE_MAINTENANCE_AFTER);
+    static final Integer EVENT_ALL = (EVENT_DISCOVER_BEFORE | EVENT_DISCOVER_AFTER | EVENT_DELETE_HOST_BEFORE | EVENT_DELETE_HOST_AFTER |
+        EVENT_CANCEL_MAINTENANCE_BEFORE | EVENT_CANCEL_MAINTENANCE_AFTER | EVENT_PREPARE_MAINTENANCE_BEFORE | EVENT_PREPARE_MAINTENANCE_AFTER);
 
     /**
      *

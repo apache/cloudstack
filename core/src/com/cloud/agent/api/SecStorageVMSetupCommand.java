@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,44 +15,46 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 public class SecStorageVMSetupCommand extends Command {
-	String [] allowedInternalSites = new String[0];
-	String copyUserName;
-	String copyPassword;
+    String[] allowedInternalSites = new String[0];
+    String copyUserName;
+    String copyPassword;
 
-	public SecStorageVMSetupCommand() {
-		super();
-	}
+    public SecStorageVMSetupCommand() {
+        super();
+    }
 
-	@Override
-	public boolean executeInSequence() {
-		return true;
-	}
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 
-	public String[] getAllowedInternalSites() {
-		return allowedInternalSites;
-	}
+    public String[] getAllowedInternalSites() {
+        return allowedInternalSites;
+    }
 
-	public void setAllowedInternalSites(String[] allowedInternalSites) {
-		this.allowedInternalSites = allowedInternalSites;
-	}
+    public void setAllowedInternalSites(String[] allowedInternalSites) {
+        this.allowedInternalSites = allowedInternalSites;
+    }
 
-	public String getCopyUserName() {
-		return copyUserName;
-	}
+    public String getCopyUserName() {
+        return copyUserName;
+    }
 
-	public void setCopyUserName(String copyUserName) {
-		this.copyUserName = copyUserName;
-	}
+    public void setCopyUserName(String copyUserName) {
+        this.copyUserName = copyUserName;
+    }
 
-	public String getCopyPassword() {
-		return copyPassword;
-	}
+    public String getCopyPassword() {
+        return copyPassword;
+    }
 
-	public void setCopyPassword(String copyPassword) {
-		this.copyPassword = copyPassword;
-	}
+    public void setCopyPassword(String copyPassword) {
+        this.copyPassword = copyPassword;
+    }
 
 }

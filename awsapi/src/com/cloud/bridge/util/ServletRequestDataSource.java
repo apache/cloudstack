@@ -29,31 +29,31 @@ public class ServletRequestDataSource implements DataSource {
     protected final static Logger logger = Logger.getLogger(ServletRequestDataSource.class);
 
     private HttpServletRequest request;
-    
+
     public ServletRequestDataSource(HttpServletRequest request) {
-    	this.request = request;
+        this.request = request;
     }
-    
-	@Override
-	public String getContentType() {
-		assert(false);
-		return null;
-	}
 
-	@Override
-	public InputStream getInputStream() throws IOException {
-		return request.getInputStream();
-	}
+    @Override
+    public String getContentType() {
+        assert (false);
+        return null;
+    }
 
-	@Override
-	public String getName() {
-		assert(false);
-		return null;
-	}
+    @Override
+    public InputStream getInputStream() throws IOException {
+        return request.getInputStream();
+    }
 
-	@Override
-	public OutputStream getOutputStream() throws IOException {
-		assert(false);
-		return null;
-	}
+    @Override
+    public String getName() {
+        assert (false);
+        return null;
+    }
+
+    @Override
+    public OutputStream getOutputStream() throws IOException {
+        assert (false);
+        return null;
+    }
 }

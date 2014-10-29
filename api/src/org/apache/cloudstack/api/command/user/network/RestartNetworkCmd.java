@@ -16,6 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -25,7 +29,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -35,7 +38,11 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 
-@APICommand(name = "restartNetwork", description="Restarts the network; includes 1) restarting network elements - virtual routers, dhcp servers 2) reapplying all public ips 3) reapplying loadBalancing/portForwarding rules", responseObject=IPAddressResponse.class)
+@APICommand(name = "restartNetwork",
+            description = "Restarts the network; includes 1) restarting network elements - virtual routers, dhcp servers 2) reapplying all public ips 3) reapplying loadBalancing/portForwarding rules",
+        responseObject = IPAddressResponse.class, entityType = {Network.class},
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class RestartNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RestartNetworkCmd.class.getName());
     private static final String s_name = "restartnetworkresponse";
@@ -43,14 +50,12 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = NetworkResponse.class,
-            required=true, description="The id of the network to restart.")
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "The id of the network to restart.")
     private Long id;
 
-    @Parameter(name=ApiConstants.CLEANUP, type=CommandType.BOOLEAN, required=false, description="If cleanup old network elements")
+    @Parameter(name = ApiConstants.CLEANUP, type = CommandType.BOOLEAN, required = false, description = "If cleanup old network elements")
     private Boolean cleanup;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -72,11 +77,9 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
         return true;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
 
     @Override
     public String getCommandName() {
@@ -92,7 +95,7 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
         boolean result = _networkService.restartNetwork(this, getCleanup());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to restart network");
         }
@@ -108,8 +111,9 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
         return id;
     }
 
+    @Override
     public String getEventDescription() {
-        return  "Restarting network: " + getNetworkId();
+        return "Restarting network: " + getNetworkId();
     }
 
     @Override

@@ -28,5 +28,5 @@ public interface StoreEntry {
 
     boolean isExpired();
 
-    long getExpireDuration();  /* seconds to reset counter */
+    long getExpireDuration(); /* seconds to reset counter */
 }

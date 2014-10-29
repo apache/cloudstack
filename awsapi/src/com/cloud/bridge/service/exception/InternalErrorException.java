@@ -17,20 +17,20 @@
 package com.cloud.bridge.service.exception;
 
 public class InternalErrorException extends RuntimeException {
-	private static final long serialVersionUID = 2996134346433756736L;
+    private static final long serialVersionUID = 2996134346433756736L;
 
-	public InternalErrorException() {
-	}
-	
-	public InternalErrorException(String message) {
-		super(message);
-	}
+    public InternalErrorException() {
+    }
 
-	public InternalErrorException(Throwable e) {
-		super(e);
-	}
-	
-	public InternalErrorException(String message, Throwable e) {
-		super(message, e);
-	}
+    public InternalErrorException(String message) {
+        super(message);
+    }
+
+    public InternalErrorException(Throwable e) {
+        super(e);
+    }
+
+    public InternalErrorException(String message, Throwable e) {
+        super(message, e);
+    }
 }

@@ -17,34 +17,34 @@
 package com.cloud.network.bigswitch;
 
 public class AttachmentData {
-	private Attachment attachment;
+    private Attachment attachment;
 
-	public Attachment getAttachment() {
-		return attachment;
-	}
+    public Attachment getAttachment() {
+        return attachment;
+    }
 
-	public AttachmentData() {
-		this.attachment = new Attachment();
-	}
+    public AttachmentData() {
+        this.attachment = new Attachment();
+    }
 
-	public class Attachment {
-	    private String id;
-	    private String mac;
+    public class Attachment {
+        private String id;
+        private String mac;
 
-	    public String getId() {
-	        return id;
-	    }
+        public String getId() {
+            return id;
+        }
 
-	    public void setId(String id) {
-	        this.id = id;
-	    }
+        public void setId(String id) {
+            this.id = id;
+        }
 
-	    public String getMac() {
-	        return mac;
-	    }
+        public String getMac() {
+            return mac;
+        }
 
-	    public void setMac(String mac) {
-	        this.mac = mac;
-	    }
-	}
+        public void setMac(String mac) {
+            this.mac = mac;
+        }
+    }
 }

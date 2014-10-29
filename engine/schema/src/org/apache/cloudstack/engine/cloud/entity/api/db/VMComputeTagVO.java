@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "vm_compute_tags")
-public class VMComputeTagVO implements InternalIdentity{
+public class VMComputeTagVO implements InternalIdentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,6 +52,7 @@ public class VMComputeTagVO implements InternalIdentity{
         this.computeTag = tag;
     }
 
+    @Override
     public long getId() {
         return id;
     }

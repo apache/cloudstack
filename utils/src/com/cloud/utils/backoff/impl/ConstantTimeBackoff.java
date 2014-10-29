@@ -1,12 +1,13 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// the License.  You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils.backoff.impl;
 
 import java.util.Collection;
@@ -32,17 +35,17 @@ import com.cloud.utils.component.AdapterBase;
 /**
  * An implementation of BackoffAlgorithm that waits for some seconds.
  * After the time the client can try to perform the operation again.
- * 
+ *
  * @config
- * {@table 
+ * {@table
  *    || Param Name | Description | Values | Default ||
  *    || seconds    | seconds to sleep | integer | 5 ||
  *  }
- **/ 
-@Local(value={BackoffAlgorithm.class})
+ **/
+@Local(value = {BackoffAlgorithm.class})
 public class ConstantTimeBackoff extends AdapterBase implements BackoffAlgorithm, ConstantTimeBackoffMBean {
     long _time;
-    private final ConcurrentHashMap<String, Thread> _asleep = new ConcurrentHashMap<String, Thread>();
+    private final Map<String, Thread> _asleep = new ConcurrentHashMap<String, Thread>();
     private final static Log LOG = LogFactory.getLog(ConstantTimeBackoff.class);
 
     @Override
@@ -54,8 +57,7 @@ public class ConstantTimeBackoff extends AdapterBase implements BackoffAlgorithm
         } catch (InterruptedException e) {
             // JMX or other threads may interrupt this thread, but let's log it
             // anyway, no exception to log as this is not an error
-            LOG.info("Thread " + current.getName()
-                    + " interrupted while waiting for retry");
+            LOG.info("Thread " + current.getName() + " interrupted while waiting for retry");
         } finally {
             _asleep.remove(current.getName());
         }
@@ -84,7 +86,7 @@ public class ConstantTimeBackoff extends AdapterBase implements BackoffAlgorithm
             th.interrupt();
             return true;
         }
-        
+
         return false;
     }
 

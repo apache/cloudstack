@@ -32,27 +32,28 @@ import org.apache.cloudstack.engine.cloud.entity.api.NetworkEntity;
 
 @Produces("application/json")
 public class NetworkRestService {
-    @PUT @Path("/network/create")
-    public NetworkEntity create(
-            @QueryParam("xid") String xid,
-            @QueryParam("display-name") String displayName) {
+    @PUT
+    @Path("/network/create")
+    public NetworkEntity create(@QueryParam("xid") String xid, @QueryParam("display-name") String displayName) {
         return null;
     }
 
-    @GET @Path("/network/{network-id}")
+    @GET
+    @Path("/network/{network-id}")
     public NetworkEntity get(@PathParam("network-id") String networkId) {
         return null;
     }
 
-    @GET @Path("/networks")
+    @GET
+    @Path("/networks")
     public List<NetworkEntity> listAll() {
         return null;
     }
 
-    @POST @Path("/network/{network-id}/")
+    @POST
+    @Path("/network/{network-id}/")
     public String deploy(@PathParam("network-id") String networkId) {
         return null;
     }
-
 
 }

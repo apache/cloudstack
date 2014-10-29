@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.dao;
 
 import java.util.List;
@@ -29,9 +32,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=NiciraNvpDao.class)
-public class NiciraNvpDaoImpl extends GenericDaoBase<NiciraNvpDeviceVO, Long>
-implements NiciraNvpDao {
+@Local(value = NiciraNvpDao.class)
+public class NiciraNvpDaoImpl extends GenericDaoBase<NiciraNvpDeviceVO, Long> implements NiciraNvpDao {
 
     protected final SearchBuilder<NiciraNvpDeviceVO> physicalNetworkIdSearch;
 
@@ -42,7 +44,7 @@ implements NiciraNvpDao {
     }
 
     @Override
-    public List<NiciraNvpDeviceVO> listByPhysicalNetwork(long physicalNetworkId) {
+    public List<NiciraNvpDeviceVO> listByPhysicalNetwork(final long physicalNetworkId) {
         SearchCriteria<NiciraNvpDeviceVO> sc = physicalNetworkIdSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         return search(sc, null);

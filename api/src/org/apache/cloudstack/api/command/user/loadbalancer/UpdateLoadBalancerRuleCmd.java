@@ -16,25 +16,28 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.context.CallContext;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateLoadBalancerRule", description="Updates load balancer", responseObject=LoadBalancerResponse.class)
-public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
+@APICommand(name = "updateLoadBalancerRule", description = "Updates load balancer", responseObject = LoadBalancerResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class UpdateLoadBalancerRuleCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateLoadBalancerRuleCmd.class.getName());
     private static final String s_name = "updateloadbalancerruleresponse";
 
@@ -42,18 +45,24 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ALGORITHM, type=CommandType.STRING, description="load balancer algorithm (source, roundrobin, leastconn)")
+    @Parameter(name = ApiConstants.ALGORITHM, type = CommandType.STRING, description = "load balancer algorithm (source, roundrobin, leastconn)")
     private String algorithm;
 
-    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="the description of the load balancer rule", length=4096)
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the load balancer rule", length = 4096)
     private String description;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = FirewallRuleResponse.class,
-            required=true, description="the id of the load balancer rule to update")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = FirewallRuleResponse.class,
+               required = true,
+               description = "the id of the load balancer rule to update")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the load balancer rule")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the load balancer rule")
     private String loadBalancerName;
+
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -73,6 +82,10 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     public String getLoadBalancerName() {
         return loadBalancerName;
+    }
+
+    public Boolean getDisplay() {
+        return display;
     }
 
     /////////////////////////////////////////////////////
@@ -100,14 +113,14 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "updating load balancer rule";
+        return "updating load balancer rule";
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Load balancer Id: "+getId());
+    public void execute() {
+        CallContext.current().setEventDetails("Load balancer Id: " + getId());
         LoadBalancer result = _lbService.updateLoadBalancerRule(this);
-        if (result != null){
+        if (result != null) {
             LoadBalancerResponse response = _responseGenerator.createLoadBalancerResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
@@ -128,5 +141,12 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
             throw new InvalidParameterValueException("Unable to find load balancer rule " + getId());
         }
         return lb.getNetworkId();
+    }
+
+    @Override
+    public void checkUuid() {
+        if (this.getCustomId() != null) {
+            _uuidMgr.checkUuid(this.getCustomId(), FirewallRule.class);
+        }
     }
 }

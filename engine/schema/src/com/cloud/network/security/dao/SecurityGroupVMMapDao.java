@@ -26,13 +26,22 @@ import com.cloud.vm.VirtualMachine.State;
 
 public interface SecurityGroupVMMapDao extends GenericDao<SecurityGroupVMMapVO, Long> {
     List<SecurityGroupVMMapVO> listByIpAndInstanceId(String ipAddress, long instanceId);
+
     List<SecurityGroupVMMapVO> listByInstanceId(long instanceId);
+
     Pair<List<SecurityGroupVMMapVO>, Integer> listByInstanceId(long instanceId, Filter filter);
+
     List<SecurityGroupVMMapVO> listByIp(String ipAddress);
+
     List<SecurityGroupVMMapVO> listBySecurityGroup(long securityGroupId);
-    List<SecurityGroupVMMapVO> listBySecurityGroup(long securityGroupId, State ... vmStates);
+
+    List<SecurityGroupVMMapVO> listBySecurityGroup(long securityGroupId, State... vmStates);
+
     int deleteVM(long instanceid);
-	List<Long> listVmIdsBySecurityGroup(long securityGroupId);
-	SecurityGroupVMMapVO findByVmIdGroupId(long instanceId, long securityGroupId);
-	long countSGForVm(long instanceId);
+
+    List<Long> listVmIdsBySecurityGroup(long securityGroupId);
+
+    SecurityGroupVMMapVO findByVmIdGroupId(long instanceId, long securityGroupId);
+
+    long countSGForVm(long instanceId);
 }

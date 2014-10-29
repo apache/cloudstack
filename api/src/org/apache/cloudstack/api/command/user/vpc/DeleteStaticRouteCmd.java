@@ -16,6 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,30 +32,28 @@ import org.apache.cloudstack.api.response.StaticRouteResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.StaticRoute;
 
-@APICommand(name = "deleteStaticRoute", description="Deletes a static route", responseObject=SuccessResponse.class)
-public class DeleteStaticRouteCmd extends BaseAsyncCmd{
+@APICommand(name = "deleteStaticRoute", description = "Deletes a static route", responseObject = SuccessResponse.class, entityType = {StaticRoute.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class DeleteStaticRouteCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteStaticRouteCmd.class.getName());
     private static final String s_name = "deletestaticrouteresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = StaticRouteResponse.class,
-            required=true, description="the ID of the static route")
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StaticRouteResponse.class, required = true, description = "the ID of the static route")
     private Long id;
 
     // unexposed parameter needed for events logging
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.UUID, entityType = AccountResponse.class,
-            expose=false)
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, expose = false)
     private Long ownerId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -75,7 +77,7 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd{
 
     @Override
     public String getEventDescription() {
-        return  ("Deleting static route id=" + id);
+        return ("Deleting static route id=" + id);
     }
 
     @Override
@@ -98,12 +100,11 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd{
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete static route");
         }
     }
-
 
     @Override
     public String getSyncObjType() {
@@ -112,7 +113,7 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd{
 
     @Override
     public Long getSyncObjId() {
-        StaticRoute route =  _vpcService.getStaticRoute(id);
+        StaticRoute route = _vpcService.getStaticRoute(id);
         if (route == null) {
             throw new InvalidParameterValueException("Invalid id is specified for the static route");
         }

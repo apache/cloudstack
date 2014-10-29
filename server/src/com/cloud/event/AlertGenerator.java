@@ -17,62 +17,75 @@
 
 package com.cloud.event;
 
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.HostPodDao;
-import com.cloud.server.ManagementServer;
-import com.cloud.utils.component.ComponentContext;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.text.SimpleDateFormat;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventBusException;
+
+import com.cloud.configuration.Config;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.server.ManagementService;
+import com.cloud.utils.component.ComponentContext;
 
 @Component
 public class AlertGenerator {
 
     private static final Logger s_logger = Logger.getLogger(AlertGenerator.class);
-    private static DataCenterDao _dcDao;
-    private static HostPodDao _podDao;
-    protected static EventBus _eventBus = null;
+    private static DataCenterDao s_dcDao;
+    private static HostPodDao s_podDao;
+    protected static EventBus s_eventBus = null;
+    protected static ConfigurationDao s_configDao;
 
-    @Inject DataCenterDao dcDao;
-    @Inject HostPodDao podDao;
+    @Inject
+    DataCenterDao dcDao;
+    @Inject
+    HostPodDao podDao;
+    @Inject
+    ConfigurationDao configDao;
 
     public AlertGenerator() {
     }
-    
+
     @PostConstruct
     void init() {
-    	_dcDao = dcDao;
-    	_podDao = podDao;
+        s_dcDao = dcDao;
+        s_podDao = podDao;
+        s_configDao = configDao;
     }
-    
+
     public static void publishAlertOnEventBus(String alertType, long dataCenterId, Long podId, String subject, String body) {
+
+        String configKey = Config.PublishAlertEvent.key();
+        String value = s_configDao.getValue(configKey);
+        boolean configValue = Boolean.parseBoolean(value);
+        if(!configValue)
+            return;
         try {
-            _eventBus = ComponentContext.getComponent(EventBus.class);
-        } catch(NoSuchBeanDefinitionException nbe) {
+            s_eventBus = ComponentContext.getComponent(EventBus.class);
+        } catch (NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
         }
 
         org.apache.cloudstack.framework.events.Event event =
-                new org.apache.cloudstack.framework.events.Event(ManagementServer.Name,
-                        EventCategory.ALERT_EVENT.getName(),
-                        alertType,
-                        null,
-                        null);
+            new org.apache.cloudstack.framework.events.Event(ManagementService.Name, EventCategory.ALERT_EVENT.getName(), alertType, null, null);
 
         Map<String, String> eventDescription = new HashMap<String, String>();
-        DataCenterVO dc = _dcDao.findById(dataCenterId);
-        HostPodVO pod = _podDao.findById(podId);
+        DataCenterVO dc = s_dcDao.findById(dataCenterId);
+        HostPodVO pod = s_podDao.findById(podId);
 
         eventDescription.put("event", alertType);
         if (dc != null) {
@@ -94,7 +107,7 @@ public class AlertGenerator {
         event.setDescription(eventDescription);
 
         try {
-            _eventBus.publish(event);
+            s_eventBus.publish(event);
         } catch (EventBusException e) {
             s_logger.warn("Failed to publish alert on the the event bus.");
         }

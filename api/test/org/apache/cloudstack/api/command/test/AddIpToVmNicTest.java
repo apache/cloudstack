@@ -16,23 +16,20 @@
 // under the License.
 package org.apache.cloudstack.api.command.test;
 
-import com.cloud.vm.NicSecondaryIp;
 import junit.framework.Assert;
 import junit.framework.TestCase;
-
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.command.user.vm.AddIpToVmNicCmd;
-import org.apache.cloudstack.api.command.user.vm.RemoveIpFromVmNicCmd;
-import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
-
-
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.command.user.vm.AddIpToVmNicCmd;
+import org.apache.cloudstack.api.command.user.vm.RemoveIpFromVmNicCmd;
+import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -41,7 +38,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkService;
-import com.cloud.user.Account;
+import com.cloud.vm.NicSecondaryIp;
 
 public class AddIpToVmNicTest extends TestCase {
 
@@ -53,6 +50,7 @@ public class AddIpToVmNicTest extends TestCase {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    @Override
     @Before
     public void setUp() {
         addIpToVmNicCmd = new AddIpToVmNicCmd() {
@@ -68,7 +66,8 @@ public class AddIpToVmNicTest extends TestCase {
         NicSecondaryIp secIp = Mockito.mock(NicSecondaryIp.class);
 
         Mockito.when(
-                networkService.allocateSecondaryGuestIP(Mockito.any(Account.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString())).thenReturn(secIp);
+            networkService.allocateSecondaryGuestIP(Matchers.anyLong(), Matchers.anyString()))
+            .thenReturn(secIp);
 
         ipTonicCmd._networkService = networkService;
         responseGenerator = Mockito.mock(ResponseGenerator.class);
@@ -87,7 +86,8 @@ public class AddIpToVmNicTest extends TestCase {
         AddIpToVmNicCmd ipTonicCmd = Mockito.mock(AddIpToVmNicCmd.class);
 
         Mockito.when(
-                networkService.allocateSecondaryGuestIP(Mockito.any(Account.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString())).thenReturn(null);
+            networkService.allocateSecondaryGuestIP(Matchers.anyLong(), Matchers.anyString()))
+            .thenReturn(null);
 
         ipTonicCmd._networkService = networkService;
 
@@ -99,13 +99,13 @@ public class AddIpToVmNicTest extends TestCase {
     }
 
     @Test
-    public void testRemoveIpFromVmNicSuccess() throws ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
+    public void testRemoveIpFromVmNicSuccess() throws ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException,
+        InsufficientCapacityException {
 
         NetworkService networkService = Mockito.mock(NetworkService.class);
         RemoveIpFromVmNicCmd removeIpFromNic = Mockito.mock(RemoveIpFromVmNicCmd.class);
 
-        Mockito.when(
-                networkService.releaseSecondaryIpFromNic(Mockito.anyInt())).thenReturn(true);
+        Mockito.when(networkService.releaseSecondaryIpFromNic(Matchers.anyInt())).thenReturn(true);
 
         removeIpFromNic._networkService = networkService;
         successResponseGenerator = Mockito.mock(SuccessResponse.class);
@@ -118,8 +118,7 @@ public class AddIpToVmNicTest extends TestCase {
         NetworkService networkService = Mockito.mock(NetworkService.class);
         RemoveIpFromVmNicCmd removeIpFromNic = Mockito.mock(RemoveIpFromVmNicCmd.class);
 
-        Mockito.when(
-                networkService.releaseSecondaryIpFromNic(Mockito.anyInt())).thenReturn(false);
+        Mockito.when(networkService.releaseSecondaryIpFromNic(Matchers.anyInt())).thenReturn(false);
 
         removeIpFromNic._networkService = networkService;
         successResponseGenerator = Mockito.mock(SuccessResponse.class);
@@ -127,8 +126,7 @@ public class AddIpToVmNicTest extends TestCase {
         try {
             removeIpFromNic.execute();
         } catch (InvalidParameterValueException exception) {
-            Assert.assertEquals("Failed to remove secondary  ip address for the nic",
-                    exception.getLocalizedMessage());
+            Assert.assertEquals("Failed to remove secondary  ip address for the nic", exception.getLocalizedMessage());
         }
     }
 }

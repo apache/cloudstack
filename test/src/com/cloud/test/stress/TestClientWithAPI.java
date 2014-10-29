@@ -49,11 +49,12 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.SCPClient;
 import com.trilead.ssh2.Session;
+
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class TestClientWithAPI {
     private static long sleepTime = 180000L; // default 0
@@ -63,38 +64,38 @@ public class TestClientWithAPI {
     private static int numOfUsers = 0;
     private static String[] users = null;
     private static boolean internet = false;
-    private static ThreadLocal<String> _linuxIP = new ThreadLocal<String>();
-    private static ThreadLocal<String> _linuxIpId = new ThreadLocal<String>();
-    private static ThreadLocal<String> _linuxVmId = new ThreadLocal<String>();
-    private static ThreadLocal<String> _linuxPassword = new ThreadLocal<String>();
-    private static ThreadLocal<String> _windowsIP = new ThreadLocal<String>();
-    private static ThreadLocal<String> _windowsIpId = new ThreadLocal<String>();
-    private static ThreadLocal<String> _windowsVmId = new ThreadLocal<String>();
-    private static ThreadLocal<String> _secretKey = new ThreadLocal<String>();
-    private static ThreadLocal<String> _apiKey = new ThreadLocal<String>();
-    private static ThreadLocal<Long> _userId = new ThreadLocal<Long>();
-    private static ThreadLocal<Long> _accountId = new ThreadLocal<Long>();
-    private static ThreadLocal<String> _account = new ThreadLocal<String>();
-    private static ThreadLocal<String> _domainRouterId = new ThreadLocal<String>();
-    private static ThreadLocal<String> _pfGroupId = new ThreadLocal<String>();
-    private static ThreadLocal<String> _windowsLb = new ThreadLocal<String>();
-    private static ThreadLocal<String> _linuxLb = new ThreadLocal<String>();
-    private static ThreadLocal<String> _dataVolume = new ThreadLocal<String>();
-    private static ThreadLocal<String> _rootVolume = new ThreadLocal<String>();
-    private static ThreadLocal<String> _newVolume = new ThreadLocal<String>();
-    private static ThreadLocal<String> _snapshot = new ThreadLocal<String>();
-    private static ThreadLocal<String> _volumeFromSnapshot = new ThreadLocal<String>();
-    private static ThreadLocal<String> _networkId = new ThreadLocal<String>();
-    private static ThreadLocal<String> _publicIpId = new ThreadLocal<String>();
-    private static ThreadLocal<String> _winipfwdid = new ThreadLocal<String>();
-    private static ThreadLocal<String> _linipfwdid = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_linuxIP = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_linuxIpId = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_linuxVmId = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_linuxPassword = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_windowsIP = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_windowsIpId = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_windowsVmId = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_secretKey = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_apiKey = new ThreadLocal<String>();
+    private static ThreadLocal<Long> s_userId = new ThreadLocal<Long>();
+    private static ThreadLocal<Long> s_accountId = new ThreadLocal<Long>();
+    private static ThreadLocal<String> s_account = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_domainRouterId = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_pfGroupId = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_windowsLb = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_linuxLb = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_dataVolume = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_rootVolume = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_newVolume = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_snapshot = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_volumeFromSnapshot = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_networkId = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_publicIpId = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_winipfwdid = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_linipfwdid = new ThreadLocal<String>();
     private static DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     private static int usageIterator = 1;
     private static int numThreads = 1;
     private static int wait = 5000;
     private static String accountName = null;
     private static String zoneId = "1";
-    private static String snapshot_test = "no";
+    private static String snapshotTest = "no";
     private static String serviceOfferingId = "1";
     private static String diskOfferingId = "4";
     private static String networkOfferingId = "6";
@@ -167,7 +168,7 @@ public class TestClientWithAPI {
                 }
 
                 if (arg.equals("-snapshot")) {
-                    snapshot_test = "yes";
+                    snapshotTest = "yes";
                 }
 
                 if (arg.equals("-so")) {
@@ -224,7 +225,7 @@ public class TestClientWithAPI {
                                 NDC.push(username);
 
                                 s_logger.info("Starting test for the user " + username);
-                                int response = executeDeployment(server, developerServer, username, snapshot_test);
+                                int response = executeDeployment(server, developerServer, username, snapshotTest);
                                 boolean success = false;
                                 String reason = null;
 
@@ -238,22 +239,22 @@ public class TestClientWithAPI {
                                         // can boot up and do a sys prep.
 
                                         if (accountName == null) {
-                                            s_logger.info("Begin Linux SSH test for account " + _account.get());
-                                            reason = sshTest(_linuxIP.get(), _linuxPassword.get(), snapshot_test);
+                                            s_logger.info("Begin Linux SSH test for account " + s_account.get());
+                                            reason = sshTest(s_linuxIP.get(), s_linuxPassword.get(), snapshotTest);
                                         }
 
                                         if (reason == null) {
-                                            s_logger.info("Linux SSH test successful for account " + _account.get());
-                                            s_logger.info("Begin WindowsSSH test for account " + _account.get());
+                                            s_logger.info("Linux SSH test successful for account " + s_account.get());
+                                            s_logger.info("Begin WindowsSSH test for account " + s_account.get());
 
-                                            reason = sshTest(_linuxIP.get(), _linuxPassword.get(), snapshot_test);
-                                            // reason = sshWinTest(_windowsIP.get());
+                                            reason = sshTest(s_linuxIP.get(), s_linuxPassword.get(), snapshotTest);
+                                            // reason = sshWinTest(s_windowsIP.get());
                                         }
 
                                         // release the linux IP now...
-                                        _linuxIP.set(null);
+                                        s_linuxIP.set(null);
                                         // release the Windows IP now
-                                        _windowsIP.set(null);
+                                        s_windowsIP.set(null);
                                     }
 
                                     // sleep for 3 min before getting the latest network stat
@@ -262,7 +263,7 @@ public class TestClientWithAPI {
                                     // verify that network stat is correct for the user; if it's not - stop all the resources
                                     // for the user
                                     // if ((reason == null) && (getNetworkStat(server) == false) ) {
-                                    // s_logger.error("Stopping all the resources for the account " + _account.get() +
+                                    // s_logger.error("Stopping all the resources for the account " + s_account.get() +
                                     // " as network stat is incorrect");
                                     // int stopResponseCode = executeStop(
                                     // server, developerServer,
@@ -275,7 +276,7 @@ public class TestClientWithAPI {
                                     // } else
                                     if (reason == null) {
                                         if (internet) {
-                                            s_logger.info("Windows SSH test successful for account " + _account.get());
+                                            s_logger.info("Windows SSH test successful for account " + s_account.get());
                                         } else {
                                             s_logger.info("deploy test successful....now cleaning up");
                                             if (cleanUp) {
@@ -292,7 +293,8 @@ public class TestClientWithAPI {
                                             usageIterator = 1;
 
                                         } else {
-                                            s_logger.info("Skipping events and usage records for this user: usageIterator " + usageIterator + " and number of Threads " + numThreads);
+                                            s_logger.info("Skipping events and usage records for this user: usageIterator " + usageIterator + " and number of Threads " +
+                                                numThreads);
                                             usageIterator++;
                                         }
 
@@ -311,7 +313,7 @@ public class TestClientWithAPI {
                                     } else {
                                         // Just stop but don't destroy the
                                         // VMs/Routers
-                                        s_logger.info("SSH test failed for account " + _account.get() + "with reason '" + reason + "', stopping VMs");
+                                        s_logger.info("SSH test failed for account " + s_account.get() + "with reason '" + reason + "', stopping VMs");
                                         int stopResponseCode = executeStop(server, developerServer, username, false);
                                         s_logger.info("stop command finished with response code: " + stopResponseCode);
                                         success = false; // since the SSH test
@@ -334,7 +336,8 @@ public class TestClientWithAPI {
                                     s_logger.info("***** Completed test for user : " + username + " in " + ((System.currentTimeMillis() - now) / 1000L) + " seconds");
 
                                 } else {
-                                    s_logger.info("##### FAILED test for user : " + username + " in " + ((System.currentTimeMillis() - now) / 1000L) + " seconds with reason : " + reason);
+                                    s_logger.info("##### FAILED test for user : " + username + " in " + ((System.currentTimeMillis() - now) / 1000L) +
+                                        " seconds with reason : " + reason);
                                 }
                                 s_logger.info("Sleeping for " + wait + " seconds before starting next iteration");
                                 Thread.sleep(wait);
@@ -472,15 +475,11 @@ public class TestClientWithAPI {
                 for (int j = 0; j < childNodes.getLength(); j++) {
                     Node n = childNodes.item(j);
                     //Id is being used instead of ipaddress. Changes need to done later to ipaddress variable
-                    if ("id".equals(n.getNodeName())) 
-                    {
+                    if ("id".equals(n.getNodeName())) {
                         ipAddressId = n.getTextContent();
-                    }
-                    else if("ipaddress".equals(n.getNodeName()))
-                    {
+                    } else if ("ipaddress".equals(n.getNodeName())) {
                         ipAddress = n.getTextContent();
-                    }
-                    else if ("issourcenat".equals(n.getNodeName())) {
+                    } else if ("issourcenat".equals(n.getNodeName())) {
                         isSourceNat = Boolean.parseBoolean(n.getTextContent());
                     }
                 }
@@ -496,7 +495,7 @@ public class TestClientWithAPI {
     }
 
     private static String executeRegistration(String server, String username, String password) throws HttpException, IOException {
-        String url = server + "?command=registerUserKeys&id=" + _userId.get().toString();
+        String url = server + "?command=registerUserKeys&id=" + s_userId.get().toString();
         s_logger.info("registering: " + username);
         String returnValue = null;
         HttpClient client = new HttpClient();
@@ -504,8 +503,8 @@ public class TestClientWithAPI {
         int responseCode = client.executeMethod(method);
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
-            Map<String, String> requestKeyValues = getSingleValueFromXML(is, new String[] { "apikey", "secretkey" });
-            _apiKey.set(requestKeyValues.get("apikey"));
+            Map<String, String> requestKeyValues = getSingleValueFromXML(is, new String[] {"apikey", "secretkey"});
+            s_apiKey.set(requestKeyValues.get("apikey"));
             returnValue = requestKeyValues.get("secretkey");
         } else {
             s_logger.error("registration failed with error code: " + responseCode);
@@ -513,7 +512,7 @@ public class TestClientWithAPI {
         return returnValue;
     }
 
-    private static Integer executeDeployment(String server, String developerServer, String username, String snapshot_test) throws HttpException, IOException {
+    private static Integer executeDeployment(String server, String developerServer, String username, String snapshotTest) throws HttpException, IOException {
         // test steps:
         // - create user
         // - deploy Windows VM
@@ -531,7 +530,9 @@ public class TestClientWithAPI {
         String encryptedPassword = createMD5Password(username);
         String encodedPassword = URLEncoder.encode(encryptedPassword, "UTF-8");
 
-        String url = server + "?command=createAccount&username=" + encodedUsername + "&account=" + encodedUsername + "&password=" + encodedPassword + "&firstname=Test&lastname=Test&email=test@vmops.com&domainId=1&accounttype=0";
+        String url =
+            server + "?command=createAccount&username=" + encodedUsername + "&account=" + encodedUsername + "&password=" + encodedPassword +
+                "&firstname=Test&lastname=Test&email=test@vmops.com&domainId=1&accounttype=0";
 
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(url);
@@ -539,20 +540,21 @@ public class TestClientWithAPI {
         long accountId = -1;
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
-            Map<String, String> accountValues = getSingleValueFromXML(is, new String[] { "id", "name" });
+            Map<String, String> accountValues = getSingleValueFromXML(is, new String[] {"id", "name"});
             String accountIdStr = accountValues.get("id");
             s_logger.info("created account " + username + " with id " + accountIdStr);
             if (accountIdStr != null) {
                 accountId = Long.parseLong(accountIdStr);
-                _accountId.set(accountId);
-                _account.set(accountValues.get("name"));
+                s_accountId.set(accountId);
+                s_account.set(accountValues.get("name"));
                 if (accountId == -1) {
                     s_logger.error("create account (" + username + ") failed to retrieve a valid user id, aborting depolyment test");
                     return -1;
                 }
             }
         } else {
-            s_logger.error("create account test failed for account " + username + " with error code :" + responseCode + ", aborting deployment test. The command was sent with url " + url);
+            s_logger.error("create account test failed for account " + username + " with error code :" + responseCode +
+                ", aborting deployment test. The command was sent with url " + url);
             return -1;
         }
 
@@ -564,49 +566,53 @@ public class TestClientWithAPI {
         long userId = -1;
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
-            Map<String, String> userIdValues = getSingleValueFromXML(is, new String[] { "id" });
+            Map<String, String> userIdValues = getSingleValueFromXML(is, new String[] {"id"});
             String userIdStr = userIdValues.get("id");
             s_logger.info("listed user " + username + " with id " + userIdStr);
             if (userIdStr != null) {
                 userId = Long.parseLong(userIdStr);
-                _userId.set(userId);
+                s_userId.set(userId);
                 if (userId == -1) {
                     s_logger.error("list user by username " + username + ") failed to retrieve a valid user id, aborting depolyment test");
                     return -1;
                 }
             }
         } else {
-            s_logger.error("list user test failed for account " + username + " with error code :" + responseCode + ", aborting deployment test. The command was sent with url " + url);
+            s_logger.error("list user test failed for account " + username + " with error code :" + responseCode +
+                ", aborting deployment test. The command was sent with url " + url);
             return -1;
         }
 
-        _secretKey.set(executeRegistration(server, username, username));
+        s_secretKey.set(executeRegistration(server, username, username));
 
-        if (_secretKey.get() == null) {
+        if (s_secretKey.get() == null) {
             s_logger.error("FAILED to retrieve secret key during registration, skipping user: " + username);
             return -1;
         } else {
-            s_logger.info("got secret key: " + _secretKey.get());
-            s_logger.info("got api key: " + _apiKey.get());
+            s_logger.info("got secret key: " + s_secretKey.get());
+            s_logger.info("got api key: " + s_apiKey.get());
         }
 
         // ---------------------------------
         // CREATE VIRTUAL NETWORK
         // ---------------------------------
-        url = server + "?command=createNetwork&networkofferingid=" + networkOfferingId + "&account=" + encodedUsername + "&domainId=1" + "&zoneId=" + zoneId + "&name=virtualnetwork-" + encodedUsername + "&displaytext=virtualnetwork-" + encodedUsername;
+        url =
+            server + "?command=createNetwork&networkofferingid=" + networkOfferingId + "&account=" + encodedUsername + "&domainId=1" + "&zoneId=" + zoneId +
+                "&name=virtualnetwork-" + encodedUsername + "&displaytext=virtualnetwork-" + encodedUsername;
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
-            Map<String, String> networkValues = getSingleValueFromXML(is, new String[] { "id" });
+            Map<String, String> networkValues = getSingleValueFromXML(is, new String[] {"id"});
             String networkIdStr = networkValues.get("id");
             s_logger.info("Created virtual network with name virtualnetwork-" + encodedUsername + " and id " + networkIdStr);
             if (networkIdStr != null) {
-                _networkId.set(networkIdStr);
+                s_networkId.set(networkIdStr);
             }
         } else {
-            s_logger.error("Create virtual network failed for account " + username + " with error code :" + responseCode + ", aborting deployment test. The command was sent with url " + url);
+            s_logger.error("Create virtual network failed for account " + username + " with error code :" + responseCode +
+                ", aborting deployment test. The command was sent with url " + url);
             return -1;
         }
         /*
@@ -623,14 +629,13 @@ public class TestClientWithAPI {
             String networkIdStr = networkValues.get("id");
             s_logger.info("Created direct network with name directnetwork-" + encodedUsername + " and id " + networkIdStr);
             if (networkIdStr != null) {
-                _networkId_dir.set(networkIdStr);
+                s_networkId_dir.set(networkIdStr);
             }
         } else {
             s_logger.error("Create direct network failed for account " + username + " with error code :" + responseCode + ", aborting deployment test. The command was sent with url " + url);
             return -1;
         }
          */
-
 
         // ---------------------------------
         // DEPLOY LINUX VM
@@ -642,22 +647,25 @@ public class TestClientWithAPI {
             String encodedZoneId = URLEncoder.encode("" + zoneId, "UTF-8");
             String encodedServiceOfferingId = URLEncoder.encode("" + serviceOfferingId, "UTF-8");
             String encodedTemplateId = URLEncoder.encode("" + templateId, "UTF-8");
-            String encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
-            String encodedNetworkIds = URLEncoder.encode(_networkId.get()+",206","UTF-8");
-            String requestToSign = "apikey=" + encodedApiKey + "&command=deployVirtualMachine&diskofferingid=" + diskOfferingId + "&networkids=" + encodedNetworkIds + "&serviceofferingid=" + encodedServiceOfferingId + "&templateid=" + encodedTemplateId
-                    + "&zoneid=" + encodedZoneId;
+            String encodedApiKey = URLEncoder.encode(s_apiKey.get(), "UTF-8");
+            String encodedNetworkIds = URLEncoder.encode(s_networkId.get() + ",206", "UTF-8");
+            String requestToSign =
+                "apikey=" + encodedApiKey + "&command=deployVirtualMachine&diskofferingid=" + diskOfferingId + "&networkids=" + encodedNetworkIds +
+                    "&serviceofferingid=" + encodedServiceOfferingId + "&templateid=" + encodedTemplateId + "&zoneid=" + encodedZoneId;
             requestToSign = requestToSign.toLowerCase();
-            String signature = signRequest(requestToSign, _secretKey.get());
+            String signature = signRequest(requestToSign, s_secretKey.get());
             String encodedSignature = URLEncoder.encode(signature, "UTF-8");
-            url = developerServer + "?command=deployVirtualMachine" + "&zoneid=" + encodedZoneId + "&serviceofferingid=" + encodedServiceOfferingId + "&diskofferingid=" + diskOfferingId + "&networkids=" + encodedNetworkIds + "&templateid=" + encodedTemplateId
-                    + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
+            url =
+                developerServer + "?command=deployVirtualMachine" + "&zoneid=" + encodedZoneId + "&serviceofferingid=" + encodedServiceOfferingId + "&diskofferingid=" +
+                    diskOfferingId + "&networkids=" + encodedNetworkIds + "&templateid=" + encodedTemplateId + "&apikey=" + encodedApiKey + "&signature=" +
+                    encodedSignature;
 
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
             if (responseCode == 200) {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
-                Map<String, String> values = getSingleValueFromXML(el, new String[] { "id", "ipaddress" });
+                Map<String, String> values = getSingleValueFromXML(el, new String[] {"id", "ipaddress"});
 
                 if ((values.get("ipaddress") == null) || (values.get("id") == null)) {
                     s_logger.info("deploy linux vm response code: 401, the command was sent with url " + url);
@@ -666,11 +674,11 @@ public class TestClientWithAPI {
                     s_logger.info("deploy linux vm response code: " + responseCode);
                     long linuxVMId = Long.parseLong(values.get("id"));
                     s_logger.info("got linux virtual machine id: " + linuxVMId);
-                    _linuxVmId.set(values.get("id"));
+                    s_linuxVmId.set(values.get("id"));
                     linuxVMPrivateIP = values.get("ipaddress");
-                    // _linuxPassword.set(values.get("password"));
-                    _linuxPassword.set(vmPassword);
-                    s_logger.info("got linux virtual machine password: " + _linuxPassword.get());
+                    // s_linuxPassword.set(values.get("password"));
+                    s_linuxPassword.set(vmPassword);
+                    s_logger.info("got linux virtual machine password: " + s_linuxPassword.get());
                 }
             } else {
                 s_logger.error("deploy linux vm failed with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -684,10 +692,10 @@ public class TestClientWithAPI {
             // ---------------------------------
             String ipAddr = null;
 
-            String encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
+            String encodedApiKey = URLEncoder.encode(s_apiKey.get(), "UTF-8");
             String requestToSign = "apikey=" + encodedApiKey + "&command=associateIpAddress" + "&zoneid=" + zoneId;
             requestToSign = requestToSign.toLowerCase();
-            String signature = signRequest(requestToSign, _secretKey.get());
+            String signature = signRequest(requestToSign, s_secretKey.get());
             String encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
             url = developerServer + "?command=associateIpAddress" + "&apikey=" + encodedApiKey + "&zoneid=" + zoneId + "&signature=" + encodedSignature;
@@ -698,28 +706,26 @@ public class TestClientWithAPI {
                 InputStream is = method.getResponseBodyAsStream();
                 /*Asynchronous Job - Corresponding Changes Made*/
                 Element associpel = queryAsyncJobResult(server, is);
-                Map<String, String> values = getSingleValueFromXML(associpel, new String[] {"id", "ipaddress" });
+                Map<String, String> values = getSingleValueFromXML(associpel, new String[] {"id", "ipaddress"});
 
-                if ((values.get("ipaddress") == null)|| (values.get("id") == null)) {
+                if ((values.get("ipaddress") == null) || (values.get("id") == null)) {
                     s_logger.info("associate ip for Windows response code: 401, the command was sent with url " + url);
                     return 401;
-                } 
-                else
-                {
+                } else {
                     s_logger.info("Associate IP Address response code: " + responseCode);
                     long publicIpId = Long.parseLong(values.get("id"));
                     s_logger.info("Associate IP's Id: " + publicIpId);
-                    _publicIpId.set(values.get("id"));         
-                }	
+                    s_publicIpId.set(values.get("id"));
+                }
             } else {
                 s_logger.error("associate ip address for windows vm failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
 
-            String encodedPublicIpId = URLEncoder.encode(_publicIpId.get(), "UTF-8");
-            requestToSign = "apikey=" + encodedApiKey + "&command=listPublicIpAddresses"+"&id="+ encodedPublicIpId;
+            String encodedPublicIpId = URLEncoder.encode(s_publicIpId.get(), "UTF-8");
+            requestToSign = "apikey=" + encodedApiKey + "&command=listPublicIpAddresses" + "&id=" + encodedPublicIpId;
             requestToSign = requestToSign.toLowerCase();
-            signature = signRequest(requestToSign, _secretKey.get());
+            signature = signRequest(requestToSign, s_secretKey.get());
             encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
             url = developerServer + "?command=listPublicIpAddresses&apikey=" + encodedApiKey + "&id=" + encodedPublicIpId + "&signature=" + encodedSignature;
@@ -734,8 +740,8 @@ public class TestClientWithAPI {
                 List<String> ipAddressValues = getIPs(is, false);
                 //       List<String> ipAddressVals = getIPs(is, false, true);
                 if ((ipAddressValues != null) && !ipAddressValues.isEmpty()) {
-                    _windowsIpId.set(ipAddressValues.get(0));
-                    _windowsIP.set(ipAddressValues.get(1));
+                    s_windowsIpId.set(ipAddressValues.get(0));
+                    s_windowsIP.set(ipAddressValues.get(1));
                     s_logger.info("For Windows, using non-sourceNat IP address ID: " + ipAddressValues.get(0));
                     s_logger.info("For Windows, using non-sourceNat IP address: " + ipAddressValues.get(1));
                 }
@@ -750,7 +756,7 @@ public class TestClientWithAPI {
             {
                 requestToSign = "apikey=" + encodedApiKey + "&command=listPublicIpAddresses";
                 requestToSign = requestToSign.toLowerCase();
-                signature = signRequest(requestToSign, _secretKey.get());
+                signature = signRequest(requestToSign, s_secretKey.get());
                 encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
                 url = developerServer + "?command=listPublicIpAddresses&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
@@ -766,8 +772,8 @@ public class TestClientWithAPI {
 //                    is = method.getResponseBodyAsStream();
 //                    List<String> ipAddressVals = getIPs(is, true, true);
                     if ((ipAddressValues != null) && !ipAddressValues.isEmpty()) {
-                        _linuxIpId.set(ipAddressValues.get(0));
-                        _linuxIP.set(ipAddressValues.get(1));
+                        s_linuxIpId.set(ipAddressValues.get(0));
+                        s_linuxIP.set(ipAddressValues.get(1));
                         s_logger.info("For linux, using sourceNat IP address ID: " + ipAddressValues.get(0));
                         s_logger.info("For linux, using sourceNat IP address: " + ipAddressValues.get(1));
                     }
@@ -780,11 +786,11 @@ public class TestClientWithAPI {
             //--------------------------------------------
             // Enable Static NAT for the Source NAT Ip
             //--------------------------------------------
-            String encodedSourceNatPublicIpId = URLEncoder.encode(_linuxIpId.get(), "UTF-8");
+            String encodedSourceNatPublicIpId = URLEncoder.encode(s_linuxIpId.get(), "UTF-8");
 
             /*          requestToSign = "apikey=" + encodedApiKey + "&command=enableStaticNat"+"&id=" + encodedSourceNatPublicIpId + "&virtualMachineId=" + encodedVmId;;
             requestToSign = requestToSign.toLowerCase();
-            signature = signRequest(requestToSign, _secretKey.get());
+            signature = signRequest(requestToSign, s_secretKey.get());
             encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
             url = developerServer + "?command=enableStaticNat&apikey=" + encodedApiKey + "&signature=" + encodedSignature + "&id=" + encodedSourceNatPublicIpId + "&virtualMachineId=" + encodedVmId;
@@ -801,18 +807,22 @@ public class TestClientWithAPI {
                 s_logger.error("Enable Static NAT failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
-             */          
+             */
             // -------------------------------------------------------------
             // CREATE IP FORWARDING RULE -- Linux VM
             // -------------------------------------------------------------
-            String encodedVmId = URLEncoder.encode(_linuxVmId.get(), "UTF-8");
-            String encodedIpAddress = URLEncoder.encode(_linuxIpId.get(), "UTF-8");
-            requestToSign = "apikey=" + encodedApiKey + "&command=createPortForwardingRule&ipaddressid=" + encodedIpAddress + "&privateport=22&protocol=TCP&publicport=22" + "&virtualmachineid=" + encodedVmId ;
+            String encodedVmId = URLEncoder.encode(s_linuxVmId.get(), "UTF-8");
+            String encodedIpAddress = URLEncoder.encode(s_linuxIpId.get(), "UTF-8");
+            requestToSign =
+                "apikey=" + encodedApiKey + "&command=createPortForwardingRule&ipaddressid=" + encodedIpAddress + "&privateport=22&protocol=TCP&publicport=22" +
+                    "&virtualmachineid=" + encodedVmId;
             requestToSign = requestToSign.toLowerCase();
-            signature = signRequest(requestToSign, _secretKey.get());
+            signature = signRequest(requestToSign, s_secretKey.get());
             encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
-            url = developerServer + "?command=createPortForwardingRule&apikey=" + encodedApiKey + "&ipaddressid=" + encodedIpAddress + "&privateport=22&protocol=TCP&publicport=22&virtualmachineid=" + encodedVmId + "&signature=" + encodedSignature;
+            url =
+                developerServer + "?command=createPortForwardingRule&apikey=" + encodedApiKey + "&ipaddressid=" + encodedIpAddress +
+                    "&privateport=22&protocol=TCP&publicport=22&virtualmachineid=" + encodedVmId + "&signature=" + encodedSignature;
 
             s_logger.info("Created port forwarding rule with " + url);
             method = new GetMethod(url);
@@ -824,7 +834,7 @@ public class TestClientWithAPI {
                 s_logger.info("Port forwarding rule was assigned successfully to Linux VM");
                 long ipfwdid = Long.parseLong(values.get("id"));
                 s_logger.info("got Port Forwarding Rule's Id:" + ipfwdid);
-                _linipfwdid.set(values.get("id"));
+                s_linipfwdid.set(values.get("id"));
 
             } else {
                 s_logger.error("Port forwarding rule creation failed with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -832,11 +842,11 @@ public class TestClientWithAPI {
             }
 
             // Create snapshot recurring policy if needed; otherwise create windows vm
-            if (snapshot_test.equals("yes")) {
+            if (snapshotTest.equals("yes")) {
 
                 // list volumes for linux vm
                 {
-                    url = server + "?command=listVolumes&virtualMachineId=" + _linuxVmId.get() + "&type=root";
+                    url = server + "?command=listVolumes&virtualMachineId=" + s_linuxVmId.get() + "&type=root";
                     s_logger.info("Getting rootDisk id of Centos vm");
                     client = new HttpClient();
                     method = new GetMethod(url);
@@ -844,12 +854,12 @@ public class TestClientWithAPI {
                     s_logger.info("List volumes response code: " + responseCode);
                     if (responseCode == 200) {
                         InputStream is = method.getResponseBodyAsStream();
-                        Map<String, String> success = getSingleValueFromXML(is, new String[] { "id" });
+                        Map<String, String> success = getSingleValueFromXML(is, new String[] {"id"});
                         if (success.get("id") == null) {
                             s_logger.error("Unable to get root volume for linux vm. Followin url was sent: " + url);
                         }
                         s_logger.info("Got rootVolume for linux vm with id " + success.get("id"));
-                        _rootVolume.set(success.get("id"));
+                        s_rootVolume.set(success.get("id"));
                     } else {
                         s_logger.error("List volumes for linux vm failed with error code: " + responseCode + ". Following URL was sent: " + url);
                         return responseCode;
@@ -858,14 +868,17 @@ public class TestClientWithAPI {
                 // Create recurring snapshot policy for linux vm
                 {
                     String encodedTimeZone = URLEncoder.encode("America/Los Angeles", "UTF-8");
-                    url = server + "?command=createSnapshotPolicy&intervaltype=hourly&schedule=10&maxsnaps=4&volumeid=" + _rootVolume.get() + "&timezone=" + encodedTimeZone;
+                    url =
+                        server + "?command=createSnapshotPolicy&intervaltype=hourly&schedule=10&maxsnaps=4&volumeid=" + s_rootVolume.get() + "&timezone=" +
+                            encodedTimeZone;
                     s_logger.info("Creating recurring snapshot policy for linux vm ROOT disk");
                     client = new HttpClient();
                     method = new GetMethod(url);
                     responseCode = client.executeMethod(method);
                     s_logger.info("Create recurring snapshot policy for linux vm ROOT disk: " + responseCode);
                     if (responseCode != 200) {
-                        s_logger.error("Create recurring snapshot policy for linux vm ROOT disk failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                        s_logger.error("Create recurring snapshot policy for linux vm ROOT disk failed with error code: " + responseCode + ". Following URL was sent: " +
+                            url);
                         return responseCode;
                     }
                 }
@@ -880,24 +893,27 @@ public class TestClientWithAPI {
                     String encodedZoneId = URLEncoder.encode("" + zoneId, "UTF-8");
                     String encodedServiceOfferingId = URLEncoder.encode("" + serviceOfferingId, "UTF-8");
                     String encodedTemplateId = URLEncoder.encode("" + templateId, "UTF-8");
-                    encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
-                    String encodedNetworkIds = URLEncoder.encode(_networkId.get()+",206","UTF-8");
+                    encodedApiKey = URLEncoder.encode(s_apiKey.get(), "UTF-8");
+                    String encodedNetworkIds = URLEncoder.encode(s_networkId.get() + ",206", "UTF-8");
 
-                    requestToSign = "apikey=" + encodedApiKey + "&command=deployVirtualMachine&diskofferingid=" + diskOfferingId + "&networkids=" + encodedNetworkIds + "&serviceofferingid=" + encodedServiceOfferingId + "&templateid=" + encodedTemplateId
-                            + "&zoneid=" + encodedZoneId;
+                    requestToSign =
+                        "apikey=" + encodedApiKey + "&command=deployVirtualMachine&diskofferingid=" + diskOfferingId + "&networkids=" + encodedNetworkIds +
+                            "&serviceofferingid=" + encodedServiceOfferingId + "&templateid=" + encodedTemplateId + "&zoneid=" + encodedZoneId;
                     requestToSign = requestToSign.toLowerCase();
-                    signature = signRequest(requestToSign, _secretKey.get());
+                    signature = signRequest(requestToSign, s_secretKey.get());
                     encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
-                    url = developerServer + "?command=deployVirtualMachine" + "&zoneid=" + encodedZoneId + "&serviceofferingid=" + encodedServiceOfferingId + "&diskofferingid=" + diskOfferingId + "&networkids=" + encodedNetworkIds + "&templateid="
-                            + encodedTemplateId + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
+                    url =
+                        developerServer + "?command=deployVirtualMachine" + "&zoneid=" + encodedZoneId + "&serviceofferingid=" + encodedServiceOfferingId +
+                            "&diskofferingid=" + diskOfferingId + "&networkids=" + encodedNetworkIds + "&templateid=" + encodedTemplateId + "&apikey=" + encodedApiKey +
+                            "&signature=" + encodedSignature;
 
                     method = new GetMethod(url);
                     responseCode = client.executeMethod(method);
                     if (responseCode == 200) {
                         InputStream input = method.getResponseBodyAsStream();
                         Element el = queryAsyncJobResult(server, input);
-                        Map<String, String> values = getSingleValueFromXML(el, new String[] { "id", "ipaddress" });
+                        Map<String, String> values = getSingleValueFromXML(el, new String[] {"id", "ipaddress"});
 
                         if ((values.get("ipaddress") == null) || (values.get("id") == null)) {
                             s_logger.info("deploy windows vm response code: 401, the command was sent with url " + url);
@@ -907,7 +923,7 @@ public class TestClientWithAPI {
                             windowsVMPrivateIP = values.get("ipaddress");
                             long windowsVMId = Long.parseLong(values.get("id"));
                             s_logger.info("got windows virtual machine id: " + windowsVMId);
-                            _windowsVmId.set(values.get("id"));
+                            s_windowsVmId.set(values.get("id"));
                         }
                     } else {
                         s_logger.error("deploy windows vm failes with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -919,14 +935,16 @@ public class TestClientWithAPI {
                 // Enable Static NAT for the Non Source NAT Ip
                 //--------------------------------------------
 
-                encodedVmId = URLEncoder.encode(_windowsVmId.get(), "UTF-8");
-                encodedPublicIpId = URLEncoder.encode(_publicIpId.get(), "UTF-8");
-                requestToSign = "apikey=" + encodedApiKey + "&command=enableStaticNat"+"&ipaddressid="+ encodedPublicIpId + "&virtualMachineId=" + encodedVmId;
+                encodedVmId = URLEncoder.encode(s_windowsVmId.get(), "UTF-8");
+                encodedPublicIpId = URLEncoder.encode(s_publicIpId.get(), "UTF-8");
+                requestToSign = "apikey=" + encodedApiKey + "&command=enableStaticNat" + "&ipaddressid=" + encodedPublicIpId + "&virtualMachineId=" + encodedVmId;
                 requestToSign = requestToSign.toLowerCase();
-                signature = signRequest(requestToSign, _secretKey.get());
+                signature = signRequest(requestToSign, s_secretKey.get());
                 encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
-                url = developerServer + "?command=enableStaticNat&apikey=" + encodedApiKey + "&ipaddressid=" + encodedPublicIpId + "&signature=" + encodedSignature + "&virtualMachineId=" + encodedVmId;
+                url =
+                    developerServer + "?command=enableStaticNat&apikey=" + encodedApiKey + "&ipaddressid=" + encodedPublicIpId + "&signature=" + encodedSignature +
+                        "&virtualMachineId=" + encodedVmId;
                 client = new HttpClient();
                 method = new GetMethod(url);
                 responseCode = client.executeMethod(method);
@@ -934,28 +952,29 @@ public class TestClientWithAPI {
                 s_logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
                 if (responseCode == 200) {
                     InputStream is = method.getResponseBodyAsStream();
-                    Map<String, String> success = getSingleValueFromXML(is, new String[] { "success" });
+                    Map<String, String> success = getSingleValueFromXML(is, new String[] {"success"});
                     s_logger.info("Enable Static NAT..success? " + success.get("success"));
                 } else {
                     s_logger.error("Enable Static NAT failed with error code: " + responseCode + ". Following URL was sent: " + url);
                     return responseCode;
-                }                                            
-
+                }
 
                 // -------------------------------------------------------------
                 // CREATE IP FORWARDING RULE -- Windows VM
                 // -------------------------------------------------------------
 
                 // create port forwarding rule for window vm
-                encodedIpAddress = URLEncoder.encode(_windowsIpId.get(), "UTF-8");
-                //encodedVmId = URLEncoder.encode(_windowsVmId.get(), "UTF-8");
+                encodedIpAddress = URLEncoder.encode(s_windowsIpId.get(), "UTF-8");
+                //encodedVmId = URLEncoder.encode(s_windowsVmId.get(), "UTF-8");
 
                 requestToSign = "apikey=" + encodedApiKey + "&command=createIpForwardingRule&endPort=22&ipaddressid=" + encodedIpAddress + "&protocol=TCP&startPort=22";
                 requestToSign = requestToSign.toLowerCase();
-                signature = signRequest(requestToSign, _secretKey.get());
+                signature = signRequest(requestToSign, s_secretKey.get());
                 encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
-                url = developerServer + "?command=createIpForwardingRule&apikey=" + encodedApiKey + "&endPort=22&ipaddressid=" + encodedIpAddress + "&protocol=TCP&signature=" + encodedSignature + "&startPort=22";
+                url =
+                    developerServer + "?command=createIpForwardingRule&apikey=" + encodedApiKey + "&endPort=22&ipaddressid=" + encodedIpAddress +
+                        "&protocol=TCP&signature=" + encodedSignature + "&startPort=22";
 
                 s_logger.info("Created Ip forwarding rule with " + url);
                 method = new GetMethod(url);
@@ -967,7 +986,7 @@ public class TestClientWithAPI {
                     s_logger.info("Port forwarding rule was assigned successfully to Windows VM");
                     long ipfwdid = Long.parseLong(values.get("id"));
                     s_logger.info("got Ip Forwarding Rule's Id:" + ipfwdid);
-                    _winipfwdid.set(values.get("id"));
+                    s_winipfwdid.set(values.get("id"));
                 } else {
                     s_logger.error("Port forwarding rule creation failed with error code: " + responseCode + ". Following URL was sent: " + url);
                     return responseCode;
@@ -985,7 +1004,7 @@ public class TestClientWithAPI {
         // -----------------------------
         // GET USER
         // -----------------------------
-        String userId = _userId.get().toString();
+        String userId = s_userId.get().toString();
         String encodedUserId = URLEncoder.encode(userId, "UTF-8");
         String url = server + "?command=listUsers&id=" + encodedUserId;
         s_logger.info("Cleaning up resources for user: " + userId + " with url " + url);
@@ -995,7 +1014,7 @@ public class TestClientWithAPI {
         s_logger.info("get user response code: " + responseCode);
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
-            Map<String, String> userInfo = getSingleValueFromXML(is, new String[] { "username", "id", "account" });
+            Map<String, String> userInfo = getSingleValueFromXML(is, new String[] {"username", "id", "account"});
             if (!username.equals(userInfo.get("username"))) {
                 s_logger.error("get user failed to retrieve requested user, aborting cleanup test" + ". Following URL was sent: " + url);
                 return -1;
@@ -1017,7 +1036,7 @@ public class TestClientWithAPI {
             s_logger.info("update user response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
-                Map<String, String> success = getSingleValueFromXML(is, new String[] { "success" });
+                Map<String, String> success = getSingleValueFromXML(is, new String[] {"success"});
                 s_logger.info("update user..success? " + success.get("success"));
             } else {
                 s_logger.error("update user failed with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -1029,7 +1048,7 @@ public class TestClientWithAPI {
         // Detach existin dataVolume, create a new volume, attach it to the vm
         // -----------------------------
         {
-            url = server + "?command=listVolumes&virtualMachineId=" + _linuxVmId.get() + "&type=dataDisk";
+            url = server + "?command=listVolumes&virtualMachineId=" + s_linuxVmId.get() + "&type=dataDisk";
             s_logger.info("Getting dataDisk id of Centos vm");
             client = new HttpClient();
             method = new GetMethod(url);
@@ -1037,9 +1056,9 @@ public class TestClientWithAPI {
             s_logger.info("List volumes response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
-                Map<String, String> success = getSingleValueFromXML(is, new String[] { "id" });
+                Map<String, String> success = getSingleValueFromXML(is, new String[] {"id"});
                 s_logger.info("Got dataDiskVolume with id " + success.get("id"));
-                _dataVolume.set(success.get("id"));
+                s_dataVolume.set(success.get("id"));
             } else {
                 s_logger.error("List volumes failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
@@ -1048,8 +1067,8 @@ public class TestClientWithAPI {
 
         // Detach volume
         {
-            url = server + "?command=detachVolume&id=" + _dataVolume.get();
-            s_logger.info("Detaching volume with id " + _dataVolume.get());
+            url = server + "?command=detachVolume&id=" + s_dataVolume.get();
+            s_logger.info("Detaching volume with id " + s_dataVolume.get());
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
@@ -1066,8 +1085,8 @@ public class TestClientWithAPI {
 
         // Delete a volume
         {
-            url = server + "?command=deleteVolume&id=" + _dataVolume.get();
-            s_logger.info("Deleting volume with id " + _dataVolume.get());
+            url = server + "?command=deleteVolume&id=" + s_dataVolume.get();
+            s_logger.info("Deleting volume with id " + s_dataVolume.get());
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
@@ -1082,7 +1101,7 @@ public class TestClientWithAPI {
 
         // Create a new volume
         {
-            url = server + "?command=createVolume&diskofferingid=" + diskOfferingId + "&zoneid=" + zoneId + "&name=newvolume&account=" + _account.get() + "&domainid=1";
+            url = server + "?command=createVolume&diskofferingid=" + diskOfferingId + "&zoneid=" + zoneId + "&name=newvolume&account=" + s_account.get() + "&domainid=1";
             s_logger.info("Creating volume....");
             client = new HttpClient();
             method = new GetMethod(url);
@@ -1090,7 +1109,7 @@ public class TestClientWithAPI {
             if (responseCode == 200) {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
-                Map<String, String> values = getSingleValueFromXML(el, new String[] { "id" });
+                Map<String, String> values = getSingleValueFromXML(el, new String[] {"id"});
 
                 if (values.get("id") == null) {
                     s_logger.info("create volume response code: 401");
@@ -1099,7 +1118,7 @@ public class TestClientWithAPI {
                     s_logger.info("create volume response code: " + responseCode);
                     long volumeId = Long.parseLong(values.get("id"));
                     s_logger.info("got volume id: " + volumeId);
-                    _newVolume.set(values.get("id"));
+                    s_newVolume.set(values.get("id"));
                 }
             } else {
                 s_logger.error("create volume failed with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -1109,8 +1128,8 @@ public class TestClientWithAPI {
 
         // attach a new volume to the vm
         {
-            url = server + "?command=attachVolume&id=" + _newVolume.get() + "&virtualmachineid=" + _linuxVmId.get();
-            s_logger.info("Attaching volume with id " + _newVolume.get() + " to the vm " + _linuxVmId.get());
+            url = server + "?command=attachVolume&id=" + s_newVolume.get() + "&virtualmachineid=" + s_linuxVmId.get();
+            s_logger.info("Attaching volume with id " + s_newVolume.get() + " to the vm " + s_linuxVmId.get());
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
@@ -1128,7 +1147,7 @@ public class TestClientWithAPI {
         // Create a snapshot
         // list volumes
         {
-            url = server + "?command=listVolumes&virtualMachineId=" + _linuxVmId.get() + "&type=root";
+            url = server + "?command=listVolumes&virtualMachineId=" + s_linuxVmId.get() + "&type=root";
             s_logger.info("Getting rootDisk id of Centos vm");
             client = new HttpClient();
             method = new GetMethod(url);
@@ -1136,12 +1155,12 @@ public class TestClientWithAPI {
             s_logger.info("List volumes response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
-                Map<String, String> success = getSingleValueFromXML(is, new String[] { "id" });
+                Map<String, String> success = getSingleValueFromXML(is, new String[] {"id"});
                 if (success.get("id") == null) {
                     s_logger.error("Unable to get root volume. Followin url was sent: " + url);
                 }
                 s_logger.info("Got rootVolume with id " + success.get("id"));
-                _rootVolume.set(success.get("id"));
+                s_rootVolume.set(success.get("id"));
             } else {
                 s_logger.error("List volumes failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
@@ -1149,13 +1168,13 @@ public class TestClientWithAPI {
         }
 
         // //Create snapshot from root disk volume
-        String encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
-        String requestToSign = "apikey=" + encodedApiKey + "&command=createSnapshot&volumeid=" + _rootVolume.get();
+        String encodedApiKey = URLEncoder.encode(s_apiKey.get(), "UTF-8");
+        String requestToSign = "apikey=" + encodedApiKey + "&command=createSnapshot&volumeid=" + s_rootVolume.get();
         requestToSign = requestToSign.toLowerCase();
-        String signature = signRequest(requestToSign, _secretKey.get());
+        String signature = signRequest(requestToSign, s_secretKey.get());
         String encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
-        url = developerServer + "?command=createSnapshot&volumeid=" + _rootVolume.get() + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
+        url = developerServer + "?command=createSnapshot&volumeid=" + s_rootVolume.get() + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
@@ -1163,14 +1182,14 @@ public class TestClientWithAPI {
         if (responseCode == 200) {
             InputStream input = method.getResponseBodyAsStream();
             Element el = queryAsyncJobResult(server, input);
-            Map<String, String> values = getSingleValueFromXML(el, new String[] { "id" });
+            Map<String, String> values = getSingleValueFromXML(el, new String[] {"id"});
 
             if (values.get("id") == null) {
                 s_logger.info("create snapshot response code: 401");
                 return 401;
             } else {
                 s_logger.info("create snapshot response code: " + responseCode + ". Got snapshot with id " + values.get("id"));
-                _snapshot.set(values.get("id"));
+                s_snapshot.set(values.get("id"));
             }
         } else {
             s_logger.error("create snapshot failed with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -1178,13 +1197,13 @@ public class TestClientWithAPI {
         }
 
         // Create volume from the snapshot created on the previous step and attach it to the running vm
-        /*      encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
-        requestToSign = "apikey=" + encodedApiKey + "&command=createVolume&name=" + _account.get() + "&snapshotid=" + _snapshot.get();
+        /*      encodedApiKey = URLEncoder.encode(s_apiKey.get(), "UTF-8");
+        requestToSign = "apikey=" + encodedApiKey + "&command=createVolume&name=" + s_account.get() + "&snapshotid=" + s_snapshot.get();
         requestToSign = requestToSign.toLowerCase();
-        signature = signRequest(requestToSign, _secretKey.get());
+        signature = signRequest(requestToSign, s_secretKey.get());
         encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
-        url = developerServer + "?command=createVolume&name=" + _account.get() + "&snapshotid=" + _snapshot.get() + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
+        url = developerServer + "?command=createVolume&name=" + s_account.get() + "&snapshotid=" + s_snapshot.get() + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
@@ -1199,7 +1218,7 @@ public class TestClientWithAPI {
                 return 401;
             } else {
                 s_logger.info("create volume from snapshot response code: " + responseCode + ". Got volume with id " + values.get("id") + ". The command was sent with url " + url);
-                _volumeFromSnapshot.set(values.get("id"));
+                s_volumeFromSnapshot.set(values.get("id"));
             }
         } else {
             s_logger.error("create volume from snapshot failed with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -1207,8 +1226,8 @@ public class TestClientWithAPI {
         }
 
         {
-            url = server + "?command=attachVolume&id=" + _volumeFromSnapshot.get() + "&virtualmachineid=" + _linuxVmId.get();
-            s_logger.info("Attaching volume with id " + _volumeFromSnapshot.get() + " to the vm " + _linuxVmId.get());
+            url = server + "?command=attachVolume&id=" + s_volumeFromSnapshot.get() + "&virtualmachineid=" + s_linuxVmId.get();
+            s_logger.info("Attaching volume with id " + s_volumeFromSnapshot.get() + " to the vm " + s_linuxVmId.get());
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
@@ -1228,12 +1247,12 @@ public class TestClientWithAPI {
         // -----------------------------
 
         // Reboot windows VM
-        requestToSign = "apikey=" + encodedApiKey + "&command=rebootVirtualMachine&id=" + _windowsVmId.get();
+        requestToSign = "apikey=" + encodedApiKey + "&command=rebootVirtualMachine&id=" + s_windowsVmId.get();
         requestToSign = requestToSign.toLowerCase();
-        signature = signRequest(requestToSign, _secretKey.get());
+        signature = signRequest(requestToSign, s_secretKey.get());
         encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
-        url = developerServer + "?command=rebootVirtualMachine&id=" + _windowsVmId.get() + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
+        url = developerServer + "?command=rebootVirtualMachine&id=" + s_windowsVmId.get() + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
@@ -1241,7 +1260,7 @@ public class TestClientWithAPI {
         if (responseCode == 200) {
             InputStream input = method.getResponseBodyAsStream();
             Element el = queryAsyncJobResult(server, input);
-            Map<String, String> success = getSingleValueFromXML(el, new String[] { "success" });
+            Map<String, String> success = getSingleValueFromXML(el, new String[] {"success"});
             s_logger.info("Windows VM was rebooted with the status: " + success.get("success"));
         } else {
             s_logger.error("Reboot windows VM test failed with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -1249,12 +1268,12 @@ public class TestClientWithAPI {
         }
 
         // Stop centos VM
-        requestToSign = "apikey=" + encodedApiKey + "&command=stopVirtualMachine&id=" + _linuxVmId.get();
+        requestToSign = "apikey=" + encodedApiKey + "&command=stopVirtualMachine&id=" + s_linuxVmId.get();
         requestToSign = requestToSign.toLowerCase();
-        signature = signRequest(requestToSign, _secretKey.get());
+        signature = signRequest(requestToSign, s_secretKey.get());
         encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
-        url = developerServer + "?command=stopVirtualMachine&id=" + _linuxVmId.get() + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
+        url = developerServer + "?command=stopVirtualMachine&id=" + s_linuxVmId.get() + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
@@ -1262,7 +1281,7 @@ public class TestClientWithAPI {
         if (responseCode == 200) {
             InputStream input = method.getResponseBodyAsStream();
             Element el = queryAsyncJobResult(server, input);
-            Map<String, String> success = getSingleValueFromXML(el, new String[] { "success" });
+            Map<String, String> success = getSingleValueFromXML(el, new String[] {"success"});
             s_logger.info("Linux VM was stopped with the status: " + success.get("success"));
         } else {
             s_logger.error("Stop linux VM test failed with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -1270,12 +1289,16 @@ public class TestClientWithAPI {
         }
 
         // Create private template from root disk volume
-        requestToSign = "apikey=" + encodedApiKey + "&command=createTemplate" + "&displaytext=" + _account.get() + "&name=" + _account.get() + "&ostypeid=11" + "&snapshotid=" + _snapshot.get();
+        requestToSign =
+            "apikey=" + encodedApiKey + "&command=createTemplate" + "&displaytext=" + s_account.get() + "&name=" + s_account.get() + "&ostypeid=11" + "&snapshotid=" +
+                s_snapshot.get();
         requestToSign = requestToSign.toLowerCase();
-        signature = signRequest(requestToSign, _secretKey.get());
+        signature = signRequest(requestToSign, s_secretKey.get());
         encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
-        url = developerServer + "?command=createTemplate" + "&displaytext=" + _account.get() + "&name=" + _account.get() + "&ostypeid=11" + "&snapshotid=" + _snapshot.get() + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
+        url =
+            developerServer + "?command=createTemplate" + "&displaytext=" + s_account.get() + "&name=" + s_account.get() + "&ostypeid=11" + "&snapshotid=" +
+                s_snapshot.get() + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
@@ -1283,7 +1306,7 @@ public class TestClientWithAPI {
         if (responseCode == 200) {
             InputStream input = method.getResponseBodyAsStream();
             Element el = queryAsyncJobResult(server, input);
-            Map<String, String> values = getSingleValueFromXML(el, new String[] { "id" });
+            Map<String, String> values = getSingleValueFromXML(el, new String[] {"id"});
 
             if (values.get("id") == null) {
                 s_logger.info("create private template response code: 401");
@@ -1297,12 +1320,12 @@ public class TestClientWithAPI {
         }
 
         // Start centos VM
-        requestToSign = "apikey=" + encodedApiKey + "&command=startVirtualMachine&id=" + _windowsVmId.get();
+        requestToSign = "apikey=" + encodedApiKey + "&command=startVirtualMachine&id=" + s_windowsVmId.get();
         requestToSign = requestToSign.toLowerCase();
-        signature = signRequest(requestToSign, _secretKey.get());
+        signature = signRequest(requestToSign, s_secretKey.get());
         encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
-        url = developerServer + "?command=startVirtualMachine&id=" + _windowsVmId.get() + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
+        url = developerServer + "?command=startVirtualMachine&id=" + s_windowsVmId.get() + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
@@ -1314,16 +1337,16 @@ public class TestClientWithAPI {
 
         // get domainRouter id
         {
-            url = server + "?command=listRouters&zoneid=" + zoneId + "&account=" + _account.get() + "&domainid=1";
+            url = server + "?command=listRouters&zoneid=" + zoneId + "&account=" + s_account.get() + "&domainid=1";
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
             s_logger.info("List domain routers response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
-                Map<String, String> success = getSingleValueFromXML(is, new String[] { "id" });
+                Map<String, String> success = getSingleValueFromXML(is, new String[] {"id"});
                 s_logger.info("Got the domR with id " + success.get("id"));
-                _domainRouterId.set(success.get("id"));
+                s_domainRouterId.set(success.get("id"));
             } else {
                 s_logger.error("List domain routers failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
@@ -1332,8 +1355,8 @@ public class TestClientWithAPI {
 
         // reboot the domain router
         {
-            url = server + "?command=rebootRouter&id=" + _domainRouterId.get();
-            s_logger.info("Rebooting domR with id " + _domainRouterId.get());
+            url = server + "?command=rebootRouter&id=" + s_domainRouterId.get();
+            s_logger.info("Rebooting domR with id " + s_domainRouterId.get());
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
@@ -1352,7 +1375,7 @@ public class TestClientWithAPI {
         // DELETE ACCOUNT
         // -----------------------------
         {
-            url = server + "?command=deleteAccount&id=" + _accountId.get();
+            url = server + "?command=deleteAccount&id=" + s_accountId.get();
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
@@ -1378,16 +1401,16 @@ public class TestClientWithAPI {
         // -----------------------------
         // GET EVENTS
         // -----------------------------
-        String url = server + "?command=listEvents&page=1&pagesize=100&&account=" + _account.get();
+        String url = server + "?command=listEvents&page=1&pagesize=100&&account=" + s_account.get();
 
-        s_logger.info("Getting events for the account " + _account.get());
+        s_logger.info("Getting events for the account " + s_account.get());
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(url);
         int responseCode = client.executeMethod(method);
         s_logger.info("get events response code: " + responseCode);
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
-            Map<String, List<String>> eventDescriptions = getMultipleValuesFromXML(is, new String[] { "description" });
+            Map<String, List<String>> eventDescriptions = getMultipleValuesFromXML(is, new String[] {"description"});
             List<String> descriptionText = eventDescriptions.get("description");
             if (descriptionText == null) {
                 s_logger.info("no events retrieved...");
@@ -1417,7 +1440,7 @@ public class TestClientWithAPI {
         s_logger.info("generate usage records response code: " + responseCode);
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
-            Map<String, String> successStr = getSingleValueFromXML(is, new String[] { "success" });
+            Map<String, String> successStr = getSingleValueFromXML(is, new String[] {"success"});
             s_logger.info("successfully generated usage records? " + successStr.get("success"));
         } else {
             s_logger.error("generate usage records failed with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -1434,7 +1457,7 @@ public class TestClientWithAPI {
         // --------------------------------
         // GET USAGE RECORDS
         // --------------------------------
-        url = server + "?command=listUsageRecords&startdate=2009-09-01&enddate=" + endDate + "&account=" + _account.get() + "&domaindid=1";
+        url = server + "?command=listUsageRecords&startdate=2009-09-01&enddate=" + endDate + "&account=" + s_account.get() + "&domaindid=1";
         s_logger.info("Getting all usage records with request: " + url);
         client = new HttpClient();
         method = new GetMethod(url);
@@ -1442,7 +1465,7 @@ public class TestClientWithAPI {
         s_logger.info("get usage records response code: " + responseCode);
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
-            Map<String, List<String>> usageRecValues = getMultipleValuesFromXML(is, new String[] { "description", "usage" });
+            Map<String, List<String>> usageRecValues = getMultipleValuesFromXML(is, new String[] {"description", "usage"});
             if ((usageRecValues.containsKey("description") == true) && (usageRecValues.containsKey("usage") == true)) {
                 List<String> descriptions = usageRecValues.get("description");
                 List<String> usages = usageRecValues.get("usage");
@@ -1468,21 +1491,22 @@ public class TestClientWithAPI {
 
     private static boolean getNetworkStat(String server) {
         try {
-            String url = server + "?command=listAccountStatistics&account=" + _account.get();
+            String url = server + "?command=listAccountStatistics&account=" + s_account.get();
             HttpClient client = new HttpClient();
             HttpMethod method = new GetMethod(url);
             int responseCode = client.executeMethod(method);
             s_logger.info("listAccountStatistics response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
-                Map<String, String> requestKeyValues = getSingleValueFromXML(is, new String[] { "receivedbytes", "sentbytes" });
+                Map<String, String> requestKeyValues = getSingleValueFromXML(is, new String[] {"receivedbytes", "sentbytes"});
                 int bytesReceived = Integer.parseInt(requestKeyValues.get("receivedbytes"));
                 int bytesSent = Integer.parseInt(requestKeyValues.get("sentbytes"));
                 if ((bytesReceived > 100000000) && (bytesSent > 0)) {
-                    s_logger.info("Network stat is correct for account" + _account.get() + "; bytest received is " + bytesReceived + " and bytes sent is " + bytesSent);
+                    s_logger.info("Network stat is correct for account" + s_account.get() + "; bytest received is " + bytesReceived + " and bytes sent is " + bytesSent);
                     return true;
                 } else {
-                    s_logger.error("Incorrect value for bytes received/sent for the account " + _account.get() + ". We got " + bytesReceived + " bytes received; " + " and " + bytesSent + " bytes sent");
+                    s_logger.error("Incorrect value for bytes received/sent for the account " + s_account.get() + ". We got " + bytesReceived + " bytes received; " +
+                        " and " + bytesSent + " bytes sent");
                     return false;
                 }
 
@@ -1507,7 +1531,7 @@ public class TestClientWithAPI {
         // -----------------------------
         // GET USER
         // -----------------------------
-        String userId = _userId.get().toString();
+        String userId = s_userId.get().toString();
         String encodedUserId = URLEncoder.encode(userId, "UTF-8");
 
         String url = server + "?command=listUsers&id=" + encodedUserId;
@@ -1518,7 +1542,7 @@ public class TestClientWithAPI {
         s_logger.info("get user response code: " + responseCode);
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
-            Map<String, String> userIdValues = getSingleValueFromXML(is, new String[] { "id" });
+            Map<String, String> userIdValues = getSingleValueFromXML(is, new String[] {"id"});
             String userIdStr = userIdValues.get("id");
             if (userIdStr != null) {
                 userId = userIdStr;
@@ -1536,10 +1560,10 @@ public class TestClientWithAPI {
             // ----------------------------------
             // LIST VIRTUAL MACHINES
             // ----------------------------------
-            String encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
+            String encodedApiKey = URLEncoder.encode(s_apiKey.get(), "UTF-8");
             String requestToSign = "apikey=" + encodedApiKey + "&command=listVirtualMachines";
             requestToSign = requestToSign.toLowerCase();
-            String signature = signRequest(requestToSign, _secretKey.get());
+            String signature = signRequest(requestToSign, s_secretKey.get());
             String encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
             url = developerServer + "?command=listVirtualMachines&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
@@ -1552,7 +1576,7 @@ public class TestClientWithAPI {
             s_logger.info("list virtual machines response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
-                Map<String, List<String>> vmIdValues = getMultipleValuesFromXML(is, new String[] { "id" });
+                Map<String, List<String>> vmIdValues = getMultipleValuesFromXML(is, new String[] {"id"});
                 if (vmIdValues.containsKey("id")) {
                     List<String> vmIdList = vmIdValues.get("id");
                     if (vmIdList != null) {
@@ -1580,7 +1604,7 @@ public class TestClientWithAPI {
 
             requestToSign = "apikey=" + encodedApiKey + "&command=listPublicIpAddresses";
             requestToSign = requestToSign.toLowerCase();
-            signature = signRequest(requestToSign, _secretKey.get());
+            signature = signRequest(requestToSign, s_secretKey.get());
             encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
             url = developerServer + "?command=listPublicIpAddresses&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
@@ -1591,7 +1615,7 @@ public class TestClientWithAPI {
             s_logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
-                Map<String, List<String>> ipAddressValues = getMultipleValuesFromXML(is, new String[] { "ipaddress" });
+                Map<String, List<String>> ipAddressValues = getMultipleValuesFromXML(is, new String[] {"ipaddress"});
                 if (ipAddressValues.containsKey("ipaddress")) {
                     List<String> ipAddressList = ipAddressValues.get("ipaddress");
                     if (ipAddressList != null) {
@@ -1619,7 +1643,7 @@ public class TestClientWithAPI {
 
             requestToSign = "apikey=" + encodedApiKey + "&command=listZones";
             requestToSign = requestToSign.toLowerCase();
-            signature = signRequest(requestToSign, _secretKey.get());
+            signature = signRequest(requestToSign, s_secretKey.get());
             encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
             url = developerServer + "?command=listZones&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
@@ -1630,7 +1654,7 @@ public class TestClientWithAPI {
             s_logger.info("list zones response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
-                Map<String, List<String>> zoneNameValues = getMultipleValuesFromXML(is, new String[] { "name" });
+                Map<String, List<String>> zoneNameValues = getMultipleValuesFromXML(is, new String[] {"name"});
                 if (zoneNameValues.containsKey("name")) {
                     List<String> zoneNameList = zoneNameValues.get("name");
                     if (zoneNameList != null) {
@@ -1660,7 +1684,7 @@ public class TestClientWithAPI {
 
             requestToSign = "apikey=" + encodedApiKey + "&command=listAccounts";
             requestToSign = requestToSign.toLowerCase();
-            signature = signRequest(requestToSign, _secretKey.get());
+            signature = signRequest(requestToSign, s_secretKey.get());
             encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
             url = developerServer + "?command=listAccounts&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
@@ -1671,7 +1695,7 @@ public class TestClientWithAPI {
             s_logger.info("listAccountStatistics response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
-                Map<String, List<String>> statValues = getMultipleValuesFromXML(is, new String[] { "receivedbytes" });
+                Map<String, List<String>> statValues = getMultipleValuesFromXML(is, new String[] {"receivedbytes"});
                 if (statValues.containsKey("receivedbytes")) {
                     List<String> statList = statValues.get("receivedbytes");
                     if (statList != null) {
@@ -1701,7 +1725,7 @@ public class TestClientWithAPI {
 
             requestToSign = "apikey=" + encodedApiKey + "&command=listTemplates@templatefilter=self";
             requestToSign = requestToSign.toLowerCase();
-            signature = signRequest(requestToSign, _secretKey.get());
+            signature = signRequest(requestToSign, s_secretKey.get());
             encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
             url = developerServer + "?command=listTemplates&apikey=" + encodedApiKey + "&templatefilter=self&signature=" + encodedSignature;
@@ -1712,7 +1736,7 @@ public class TestClientWithAPI {
             s_logger.info("list templates response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
-                Map<String, List<String>> templateNameValues = getMultipleValuesFromXML(is, new String[] { "name" });
+                Map<String, List<String>> templateNameValues = getMultipleValuesFromXML(is, new String[] {"name"});
 
                 if (templateNameValues.containsKey("name")) {
                     List<String> templateNameList = templateNameValues.get("name");
@@ -1743,7 +1767,7 @@ public class TestClientWithAPI {
 
             requestToSign = "apikey=" + encodedApiKey + "&command=listServiceOfferings";
             requestToSign = requestToSign.toLowerCase();
-            signature = signRequest(requestToSign, _secretKey.get());
+            signature = signRequest(requestToSign, s_secretKey.get());
             encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
             url = developerServer + "?command=listServiceOfferings&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
@@ -1754,7 +1778,7 @@ public class TestClientWithAPI {
             s_logger.info("list service offerings response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
-                Map<String, List<String>> serviceOfferingNameValues = getMultipleValuesFromXML(is, new String[] { "name" });
+                Map<String, List<String>> serviceOfferingNameValues = getMultipleValuesFromXML(is, new String[] {"name"});
 
                 if (serviceOfferingNameValues.containsKey("name")) {
                     List<String> serviceOfferingNameList = serviceOfferingNameValues.get("name");
@@ -1781,7 +1805,7 @@ public class TestClientWithAPI {
             // LIST EVENTS
             // ---------------------------------
 
-            url = server + "?command=listEvents&page=1&pagesize=100&&account=" + _account.get();
+            url = server + "?command=listEvents&page=1&pagesize=100&&account=" + s_account.get();
             String[] eventDescriptions = null;
             client = new HttpClient();
             method = new GetMethod(url);
@@ -1789,7 +1813,7 @@ public class TestClientWithAPI {
             s_logger.info("list events response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
-                Map<String, List<String>> eventNameValues = getMultipleValuesFromXML(is, new String[] { "description" });
+                Map<String, List<String>> eventNameValues = getMultipleValuesFromXML(is, new String[] {"description"});
 
                 if (eventNameValues.containsKey("description")) {
                     List<String> eventNameList = eventNameValues.get("description");
@@ -1820,7 +1844,7 @@ public class TestClientWithAPI {
                 for (String vmId : vmIds) {
                     requestToSign = "apikey=" + encodedApiKey + "&command=" + cmdName + "&id=" + vmId;
                     requestToSign = requestToSign.toLowerCase();
-                    signature = signRequest(requestToSign, _secretKey.get());
+                    signature = signRequest(requestToSign, s_secretKey.get());
                     encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
                     url = developerServer + "?command=" + cmdName + "&id=" + vmId + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
@@ -1831,7 +1855,7 @@ public class TestClientWithAPI {
                     if (responseCode == 200) {
                         InputStream input = method.getResponseBodyAsStream();
                         Element el = queryAsyncJobResult(server, input);
-                        Map<String, String> success = getSingleValueFromXML(el, new String[] { "success" });
+                        Map<String, String> success = getSingleValueFromXML(el, new String[] {"success"});
                         s_logger.info(cmdName + "..success? " + success.get("success"));
                     } else {
                         s_logger.error(cmdName + "test failed with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -1846,10 +1870,10 @@ public class TestClientWithAPI {
             // -----------------------------------------
             // LIST NAT IP ADDRESSES
             // -----------------------------------------
-            String encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
+            String encodedApiKey = URLEncoder.encode(s_apiKey.get(), "UTF-8");
             String requestToSign = "apikey=" + encodedApiKey + "&command=listPublicIpAddresses";
             requestToSign = requestToSign.toLowerCase();
-            String signature = signRequest(requestToSign, _secretKey.get());
+            String signature = signRequest(requestToSign, s_secretKey.get());
             String encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
             url = developerServer + "?command=listPublicIpAddresses&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
@@ -1880,11 +1904,11 @@ public class TestClientWithAPI {
             // -------------------------------------------------------------
             // Delete IP FORWARDING RULE -- Windows VM
             // -------------------------------------------------------------
-            String encodedIpFwdId = URLEncoder.encode(_winipfwdid.get(), "UTF-8");
+            String encodedIpFwdId = URLEncoder.encode(s_winipfwdid.get(), "UTF-8");
 
             requestToSign = "apikey=" + encodedApiKey + "&command=deleteIpForwardingRule&id=" + encodedIpFwdId;
             requestToSign = requestToSign.toLowerCase();
-            signature = signRequest(requestToSign, _secretKey.get());
+            signature = signRequest(requestToSign, s_secretKey.get());
             encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
             url = developerServer + "?command=deleteIpForwardingRule&apikey=" + encodedApiKey + "&id=" + encodedIpFwdId + "&signature=" + encodedSignature;
@@ -1895,7 +1919,7 @@ public class TestClientWithAPI {
             if (responseCode == 200) {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
-                s_logger.info("IP forwarding rule was successfully deleted");        
+                s_logger.info("IP forwarding rule was successfully deleted");
 
             } else {
                 s_logger.error("IP forwarding rule creation failed with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -1905,14 +1929,14 @@ public class TestClientWithAPI {
             //--------------------------------------------
             // Disable Static NAT for the Source NAT Ip
             //--------------------------------------------
-            encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
-            String encodedPublicIpId = URLEncoder.encode(_publicIpId.get(), "UTF-8");       
-            requestToSign = "apikey=" + encodedApiKey + "&command=disableStaticNat"+"&id=" + encodedPublicIpId;
+            encodedApiKey = URLEncoder.encode(s_apiKey.get(), "UTF-8");
+            String encodedPublicIpId = URLEncoder.encode(s_publicIpId.get(), "UTF-8");
+            requestToSign = "apikey=" + encodedApiKey + "&command=disableStaticNat" + "&id=" + encodedPublicIpId;
             requestToSign = requestToSign.toLowerCase();
-            signature = signRequest(requestToSign, _secretKey.get());
+            signature = signRequest(requestToSign, s_secretKey.get());
             encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
-            url = developerServer + "?command=disableStaticNat&apikey=" + encodedApiKey + "&id=" + encodedPublicIpId + "&signature=" + encodedSignature ;
+            url = developerServer + "?command=disableStaticNat&apikey=" + encodedApiKey + "&id=" + encodedPublicIpId + "&signature=" + encodedSignature;
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
@@ -1920,7 +1944,7 @@ public class TestClientWithAPI {
             s_logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
-                Map<String, String> success = getSingleValueFromXML(is, new String[] { "success" });
+                Map<String, String> success = getSingleValueFromXML(is, new String[] {"success"});
                 s_logger.info("Disable Static NAT..success? " + success.get("success"));
             } else {
                 s_logger.error("Disable Static NAT failed with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -1934,7 +1958,7 @@ public class TestClientWithAPI {
                 for (String ipAddress : ipAddresses) {
                     requestToSign = "apikey=" + encodedApiKey + "&command=disassociateIpAddress&id=" + ipAddress;
                     requestToSign = requestToSign.toLowerCase();
-                    signature = signRequest(requestToSign, _secretKey.get());
+                    signature = signRequest(requestToSign, s_secretKey.get());
                     encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
                     url = developerServer + "?command=disassociateIpAddress&apikey=" + encodedApiKey + "&id=" + ipAddress + "&signature=" + encodedSignature;
@@ -1955,18 +1979,18 @@ public class TestClientWithAPI {
                 }
             }
         }
-        _linuxIP.set("");
-        _linuxIpId.set("");
-        _linuxVmId.set("");
-        _linuxPassword.set("");
-        _windowsIP.set("");
-        _windowsIpId.set("");
-        _windowsVmId.set("");
-        _secretKey.set("");
-        _apiKey.set("");
-        _userId.set(Long.parseLong("0"));
-        _account.set("");
-        _domainRouterId.set("");
+        s_linuxIP.set("");
+        s_linuxIpId.set("");
+        s_linuxVmId.set("");
+        s_linuxPassword.set("");
+        s_windowsIP.set("");
+        s_windowsIpId.set("");
+        s_windowsVmId.set("");
+        s_secretKey.set("");
+        s_apiKey.set("");
+        s_userId.set(Long.parseLong("0"));
+        s_account.set("");
+        s_domainRouterId.set("");
         return responseCode;
     }
 
@@ -1996,16 +2020,16 @@ public class TestClientWithAPI {
         while (true) {
             try {
                 if (retry > 0) {
-                    s_logger.info("Retry attempt : " + retry + " ...sleeping 300 seconds before next attempt. Account is " + _account.get());
+                    s_logger.info("Retry attempt : " + retry + " ...sleeping 300 seconds before next attempt. Account is " + s_account.get());
                     Thread.sleep(300000);
                 }
 
-                s_logger.info("Attempting to SSH into windows host " + host + " with retry attempt: " + retry + " for account " + _account.get());
+                s_logger.info("Attempting to SSH into windows host " + host + " with retry attempt: " + retry + " for account " + s_account.get());
 
                 Connection conn = new Connection(host);
                 conn.connect(null, 60000, 60000);
 
-                s_logger.info("User " + _account.get() + " ssHed successfully into windows host " + host);
+                s_logger.info("User " + s_account.get() + " ssHed successfully into windows host " + host);
                 boolean success = false;
                 boolean isAuthenticated = conn.authenticateWithPassword("Administrator", "password");
                 if (isAuthenticated == false) {
@@ -2027,7 +2051,7 @@ public class TestClientWithAPI {
                 }
                 Session sess = conn.openSession();
 
-                s_logger.info("User + " + _account.get() + " executing : wget http://" + downloadUrl);
+                s_logger.info("User + " + s_account.get() + " executing : wget http://" + downloadUrl);
                 String downloadCommand = "wget http://" + downloadUrl + " && dir dump.bin";
                 sess.execCommand(downloadCommand);
 
@@ -2070,7 +2094,7 @@ public class TestClientWithAPI {
                 } else {
                     retry++;
                     if (retry == MAX_RETRY_WIN) {
-                        return "SSH Windows Network test fail for account " + _account.get();
+                        return "SSH Windows Network test fail for account " + s_account.get();
                     }
                 }
             } catch (Exception e) {
@@ -2083,7 +2107,7 @@ public class TestClientWithAPI {
         }
     }
 
-    private static String sshTest(String host, String password, String snapshot_test) {
+    private static String sshTest(String host, String password, String snapshotTest) {
         int i = 0;
         if (host == null) {
             s_logger.info("Did not receive a host back from test, ignoring ssh test");
@@ -2102,16 +2126,16 @@ public class TestClientWithAPI {
         while (true) {
             try {
                 if (retry > 0) {
-                    s_logger.info("Retry attempt : " + retry + " ...sleeping 120 seconds before next attempt. Account is " + _account.get());
+                    s_logger.info("Retry attempt : " + retry + " ...sleeping 120 seconds before next attempt. Account is " + s_account.get());
                     Thread.sleep(120000);
                 }
 
-                s_logger.info("Attempting to SSH into linux host " + host + " with retry attempt: " + retry + ". Account is " + _account.get());
+                s_logger.info("Attempting to SSH into linux host " + host + " with retry attempt: " + retry + ". Account is " + s_account.get());
 
                 Connection conn = new Connection(host);
                 conn.connect(null, 60000, 60000);
 
-                s_logger.info("User + " + _account.get() + " ssHed successfully into linux host " + host);
+                s_logger.info("User + " + s_account.get() + " ssHed successfully into linux host " + host);
 
                 boolean isAuthenticated = conn.authenticateWithPassword("root", password);
 
@@ -2130,7 +2154,7 @@ public class TestClientWithAPI {
                     linuxCommand = "wget http://" + downloadUrl + " && ls -al dump.bin";
 
                 Session sess = conn.openSession();
-                s_logger.info("User " + _account.get() + " executing : " + linuxCommand);
+                s_logger.info("User " + s_account.get() + " executing : " + linuxCommand);
                 sess.execCommand(linuxCommand);
 
                 InputStream stdout = sess.getStdout();
@@ -2175,7 +2199,7 @@ public class TestClientWithAPI {
                     }
                 }
 
-                if (snapshot_test.equals("no"))
+                if (snapshotTest.equals("no"))
                     return result;
                 else {
                     Long sleep = 300000L;
@@ -2185,7 +2209,7 @@ public class TestClientWithAPI {
             } catch (Exception e) {
                 retry++;
                 s_logger.error("SSH Linux Network test fail with error");
-                if ((retry == MAX_RETRY_LINUX) && (snapshot_test.equals("no"))) {
+                if ((retry == MAX_RETRY_LINUX) && (snapshotTest.equals("no"))) {
                     return "SSH Linux Network test fail with error " + e.getMessage();
                 }
             }
@@ -2219,7 +2243,7 @@ public class TestClientWithAPI {
     public static Element queryAsyncJobResult(String host, InputStream inputStream) {
         Element returnBody = null;
 
-        Map<String, String> values = getSingleValueFromXML(inputStream, new String[] { "jobid" });
+        Map<String, String> values = getSingleValueFromXML(inputStream, new String[] {"jobid"});
         String jobId = values.get("jobid");
 
         if (jobId == null) {
@@ -2241,7 +2265,7 @@ public class TestClientWithAPI {
                 Document doc = builder.parse(is);
                 returnBody = doc.getDocumentElement();
                 doc.getDocumentElement().normalize();
-                Element jobStatusTag = (Element) returnBody.getElementsByTagName("jobstatus").item(0);
+                Element jobStatusTag = (Element)returnBody.getElementsByTagName("jobstatus").item(0);
                 String jobStatus = jobStatusTag.getTextContent();
                 if (jobStatus.equals("0")) {
                     try {

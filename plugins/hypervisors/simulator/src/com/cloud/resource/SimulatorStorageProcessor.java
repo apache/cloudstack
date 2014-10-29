@@ -22,6 +22,8 @@ package com.cloud.resource;
 import java.io.File;
 import java.util.UUID;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -33,10 +35,11 @@ import org.apache.cloudstack.storage.command.DettachAnswer;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -54,6 +57,13 @@ public class SimulatorStorageProcessor implements StorageProcessor {
 
     public SimulatorStorageProcessor(SimulatorManager resource) {
         this.hypervisorResource = resource;
+    }
+
+    @Override
+    public SnapshotAndCopyAnswer snapshotAndCopy(SnapshotAndCopyCommand cmd) {
+        s_logger.info("'SnapshotAndCopyAnswer snapshotAndCopy(SnapshotAndCopyCommand)' not currently used for SimulatorStorageProcessor");
+
+        return new SnapshotAndCopyAnswer();
     }
 
     @Override
@@ -94,9 +104,11 @@ public class SimulatorStorageProcessor implements StorageProcessor {
     @Override
     public Answer createTemplateFromVolume(CopyCommand cmd) {
         DataTO destData = cmd.getDestTO();
+        VolumeObjectTO srcData = (VolumeObjectTO)cmd.getSrcTO();
         TemplateObjectTO template = new TemplateObjectTO();
         template.setPath(template.getName());
         template.setFormat(Storage.ImageFormat.RAW);
+        template.setSize(srcData.getSize());
         DataStoreTO imageStore = destData.getDataStore();
         if (!(imageStore instanceof NfsTO)) {
             return new CopyCmdAnswer("unsupported protocol");
@@ -112,7 +124,7 @@ public class SimulatorStorageProcessor implements StorageProcessor {
         String details;
 
         try {
-            if (!(imageStore instanceof  NfsTO)) {
+            if (!(imageStore instanceof NfsTO)) {
                 return new CopyCmdAnswer("Only support create template from snapshot, when the dest store is nfs");
             }
 
@@ -130,7 +142,7 @@ public class SimulatorStorageProcessor implements StorageProcessor {
     public Answer backupSnapshot(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
-        SnapshotObjectTO snapshot = (SnapshotObjectTO) srcData;
+        SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
         DataStoreTO imageStore = destData.getDataStore();
         if (!(imageStore instanceof NfsTO)) {
             return new CopyCmdAnswer("unsupported protocol");
@@ -148,7 +160,7 @@ public class SimulatorStorageProcessor implements StorageProcessor {
     @Override
     public Answer attachIso(AttachCommand cmd) {
         DiskTO disk = cmd.getDisk();
-        TemplateObjectTO isoTO = (TemplateObjectTO) disk.getData();
+        TemplateObjectTO isoTO = (TemplateObjectTO)disk.getData();
         DataStoreTO store = isoTO.getDataStore();
         if (!(store instanceof NfsTO)) {
             return new AttachAnswer("unsupported protocol");
@@ -165,7 +177,7 @@ public class SimulatorStorageProcessor implements StorageProcessor {
     @Override
     public Answer dettachIso(DettachCommand cmd) {
         DiskTO disk = cmd.getDisk();
-        TemplateObjectTO isoTO = (TemplateObjectTO) disk.getData();
+        TemplateObjectTO isoTO = (TemplateObjectTO)disk.getData();
         DataStoreTO store = isoTO.getDataStore();
         if (!(store instanceof NfsTO)) {
             return new AttachAnswer("unsupported protocol");
@@ -181,7 +193,7 @@ public class SimulatorStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer createVolume(CreateObjectCommand cmd) {
-        VolumeObjectTO volume = (VolumeObjectTO) cmd.getData();
+        VolumeObjectTO volume = (VolumeObjectTO)cmd.getData();
         VolumeObjectTO newVol = new VolumeObjectTO();
         newVol.setPath(volume.getName());
         return new CreateObjectAnswer(newVol);
@@ -203,7 +215,7 @@ public class SimulatorStorageProcessor implements StorageProcessor {
     @Override
     public Answer createVolumeFromSnapshot(CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
-        SnapshotObjectTO snapshot = (SnapshotObjectTO) srcData;
+        SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
         String snapshotPath = snapshot.getPath();
         int index = snapshotPath.lastIndexOf("/");
         snapshotPath = snapshotPath.substring(0, index);

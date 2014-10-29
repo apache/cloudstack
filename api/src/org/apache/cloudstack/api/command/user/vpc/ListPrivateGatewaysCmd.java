@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.user.vpc;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
@@ -26,13 +28,14 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.VpcGateway;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listPrivateGateways", description="List private gateways", responseObject=PrivateGatewayResponse.class)
-public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCmd{
+@APICommand(name = "listPrivateGateways", description = "List private gateways", responseObject = PrivateGatewayResponse.class, entityType = {VpcGateway.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPrivateGatewaysCmd.class.getName());
 
     private static final String s_name = "listprivategatewaysresponse";
@@ -40,27 +43,24 @@ public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCm
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=PrivateGatewayResponse.class,
-            description="list private gateway by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PrivateGatewayResponse.class, description = "list private gateway by id")
     private Long id;
 
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="list gateways by ip address")
+    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "list gateways by ip address")
     private String ipAddress;
 
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="list gateways by vlan")
+    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "list gateways by vlan")
     private String vlan;
 
-    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.UUID, entityType=VpcResponse.class,
-            description="list gateways by vpc")
+    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "list gateways by vpc")
     private Long vpcId;
 
-    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list gateways by state")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "list gateways by state")
     private String state;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public String getVlan() {
         return vlan;
@@ -102,6 +102,6 @@ public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCm
         response.setResponses(projectResponses, gateways.second());
         response.setResponseName(getCommandName());
 
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

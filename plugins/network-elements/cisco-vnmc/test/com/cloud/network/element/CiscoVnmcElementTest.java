@@ -141,7 +141,7 @@ public class CiscoVnmcElementTest {
 
     @Test
     public void implementTest() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-    	URI uri = URI.create("vlan://123");
+        URI uri = URI.create("vlan://123");
 
         Network network = mock(Network.class);
         when(network.getId()).thenReturn(1L);
@@ -228,13 +228,13 @@ public class CiscoVnmcElementTest {
         when(_agentMgr.easySend(anyLong(), any(ConfigureNexusVsmForAsaCommand.class))).thenReturn(answer);
         when(_agentMgr.easySend(anyLong(), any(SetSourceNatCommand.class))).thenReturn(answer);
         when(_agentMgr.easySend(anyLong(), any(AssociateAsaWithLogicalEdgeFirewallCommand.class))).thenReturn(answer);
-        
+
         assertTrue(_element.implement(network, offering, dest, context));
     }
 
     @Test
     public void shutdownTest() throws ConcurrentOperationException, ResourceUnavailableException {
-    	URI uri = URI.create("vlan://123");
+        URI uri = URI.create("vlan://123");
 
         Network network = mock(Network.class);
         when(network.getId()).thenReturn(1L);
@@ -259,12 +259,12 @@ public class CiscoVnmcElementTest {
 
         when(_agentMgr.easySend(anyLong(), any(CleanupLogicalEdgeFirewallCommand.class))).thenReturn(answer);
 
-    	assertTrue(_element.shutdown(network, context, true));
+        assertTrue(_element.shutdown(network, context, true));
     }
 
     @Test
     public void applyFWRulesTest() throws ResourceUnavailableException {
-    	URI uri = URI.create("vlan://123");
+        URI uri = URI.create("vlan://123");
 
         Network network = mock(Network.class);
         when(network.getId()).thenReturn(1L);
@@ -308,7 +308,7 @@ public class CiscoVnmcElementTest {
 
     @Test
     public void applyPRulesTest() throws ResourceUnavailableException {
-    	URI uri = URI.create("vlan://123");
+        URI uri = URI.create("vlan://123");
 
         Network network = mock(Network.class);
         when(network.getId()).thenReturn(1L);
@@ -358,7 +358,7 @@ public class CiscoVnmcElementTest {
 
     @Test
     public void applyStaticNatsTest() throws ResourceUnavailableException {
-    	URI uri = URI.create("vlan://123");
+        URI uri = URI.create("vlan://123");
 
         Network network = mock(Network.class);
         when(network.getId()).thenReturn(1L);

@@ -18,9 +18,6 @@ package org.apache.cloudstack.storage.allocator;
 
 import java.io.IOException;
 
-import org.apache.cloudstack.storage.allocator.StorageAllocatorTestConfiguration.Library;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
-import org.apache.cloudstack.test.utils.SpringUtils;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -31,6 +28,10 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
+import org.apache.cloudstack.storage.allocator.StorageAllocatorTestConfiguration.Library;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
+import org.apache.cloudstack.test.utils.SpringUtils;
+
 import com.cloud.dc.dao.DataCenterDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
@@ -40,9 +41,8 @@ import com.cloud.storage.dao.VMTemplateDaoImpl;
 import com.cloud.vm.UserVmManager;
 
 @Configuration
-@ComponentScan(basePackageClasses = { StoragePoolDetailsDaoImpl.class, PrimaryDataStoreDaoImpl.class,
-        VMTemplateDaoImpl.class, HostDaoImpl.class, DomainDaoImpl.class, DataCenterDaoImpl.class },
-        includeFilters = { @Filter(value = Library.class, type = FilterType.CUSTOM) }, useDefaultFilters = false)
+@ComponentScan(basePackageClasses = {StoragePoolDetailsDaoImpl.class, PrimaryDataStoreDaoImpl.class, VMTemplateDaoImpl.class, HostDaoImpl.class, DomainDaoImpl.class,
+    DataCenterDaoImpl.class}, includeFilters = {@Filter(value = Library.class, type = FilterType.CUSTOM)}, useDefaultFilters = false)
 public class StorageAllocatorTestConfiguration {
     @Bean
     public UserVmManager UserVmManager() {

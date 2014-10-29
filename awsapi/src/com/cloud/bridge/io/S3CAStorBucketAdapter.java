@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.bridge.io;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -30,11 +28,28 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.HashSet;
 
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
 
+import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
+
+import com.caringo.client.ResettableFileInputStream;
+import com.caringo.client.ScspClient;
+import com.caringo.client.ScspExecutionException;
+import com.caringo.client.ScspHeaders;
+import com.caringo.client.ScspQueryArgs;
+import com.caringo.client.ScspResponse;
+import com.caringo.client.locate.Locator;
+import com.caringo.client.locate.StaticLocator;
+import com.caringo.client.locate.ZeroconfLocator;
 
 import com.cloud.bridge.service.core.s3.S3BucketAdapter;
 import com.cloud.bridge.service.core.s3.S3MultipartPart;
@@ -43,23 +58,8 @@ import com.cloud.bridge.service.exception.FileNotExistException;
 import com.cloud.bridge.service.exception.InternalErrorException;
 import com.cloud.bridge.service.exception.OutOfStorageException;
 import com.cloud.bridge.service.exception.UnsupportedException;
-import com.cloud.bridge.util.StringHelper;
 import com.cloud.bridge.util.OrderedPair;
-
-import com.caringo.client.locate.Locator;
-import com.caringo.client.locate.StaticLocator;
-import com.caringo.client.locate.ZeroconfLocator;
-import com.caringo.client.ResettableFileInputStream;
-import com.caringo.client.ScspClient;
-import com.caringo.client.ScspExecutionException;
-import com.caringo.client.ScspHeaders;
-import com.caringo.client.ScspQueryArgs;
-import com.caringo.client.ScspResponse;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import com.cloud.bridge.util.StringHelper;
 
 /**
  * Creates an SCSP client to a CAStor cluster, configured in "storage.root",
@@ -87,7 +87,7 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
     private String _domain;          // domain where all CloudStack streams will live
 
     private synchronized ScspClient myClient(String mountedRoot) {
-        if (_scspClient!=null) {
+        if (_scspClient != null) {
             return _scspClient;
         }
         // The castor cluster is specified either by listing the ip addresses of some nodes, or
@@ -95,11 +95,11 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
         // The "domain" to store streams can be specified. If not specified, streams will be written
         // without a "domain" query arg, so they will go into the castor default domain.
         // The port is optional and must be at the end of the config string, defaults to 80.
-        // Examples: "castor 172.16.78.130 172.16.78.131 80", "castor 172.16.78.130 domain=mycluster.example.com", 
+        // Examples: "castor 172.16.78.130 172.16.78.131 80", "castor 172.16.78.130 domain=mycluster.example.com",
         // "castor zeroconf=mycluster.example.com domain=mycluster.example.com 80"
         String[] cfg = mountedRoot.split(" ");
-        int numIPs = cfg.length-1;
-        String possiblePort = cfg[cfg.length-1];
+        int numIPs = cfg.length - 1;
+        String possiblePort = cfg[cfg.length - 1];
         int castorPort = DEFAULT_SCSP_PORT;
         try {
             castorPort = Integer.parseInt(possiblePort);
@@ -112,8 +112,8 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
         }
         HashSet<String> ips = new HashSet<String>();
         String clusterName = null;
-        for ( int i = 0; i < numIPs; ++i ) {
-            String option = cfg[i+1]; // ip address or zeroconf=mycluster.example.com or domain=mydomain.example.com
+        for (int i = 0; i < numIPs; ++i) {
+            String option = cfg[i + 1]; // ip address or zeroconf=mycluster.example.com or domain=mydomain.example.com
             if (option.toLowerCase().startsWith("zeroconf=")) {
                 String[] confStr = option.split("=");
                 if (confStr.length != 2) {
@@ -139,8 +139,7 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
                 _locator = new StaticLocator(castorNodes, castorPort, LOCATOR_RETRY_TIMEOUT);
                 _locator.start();
             } catch (IOException e) {
-                throw new ConfigurationException("Could not create CAStor static locator for '" + 
-                                                 Arrays.toString(castorNodes) + "'");
+                throw new ConfigurationException("Could not create CAStor static locator for '" + Arrays.toString(castorNodes) + "'");
             }
         } else {
             try {
@@ -152,7 +151,8 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
             }
         }
         try {
-            s_logger.info("CAStor client starting: " + (_domain==null ? "default domain" : "domain " + _domain) + " " + (clusterName==null ? Arrays.toString(castorNodes) : clusterName) + " :" + castorPort);
+            s_logger.info("CAStor client starting: " + (_domain == null ? "default domain" : "domain " + _domain) + " " +
+                (clusterName == null ? Arrays.toString(castorNodes) : clusterName) + " :" + castorPort);
             _scspClient = new ScspClient(_locator, castorPort, DEFAULT_MAX_POOL_SIZE, DEFAULT_MAX_RETRIES, CONNECTION_TIMEOUT, CM_IDLE_TIMEOUT);
             _scspClient.start();
         } catch (Exception e) {
@@ -175,11 +175,9 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
         InetAddress nodeInetAddr = nodeAddr.getAddress();
         if (nodeInetAddr == null) {
             _locator.foundDead(nodeAddr);
-            throw new ConfigurationException("Unable to resolve CAStor node name '" + nodeAddr.getHostName() +
-                                             "' to IP address");
+            throw new ConfigurationException("Unable to resolve CAStor node name '" + nodeAddr.getHostName() + "' to IP address");
         }
-        return "http://" + nodeInetAddr.getHostAddress() + ":" + nodeAddr.getPort() + "/" + bucket + "/" + fileName +
-            (_domain==null ? "" : "?domain=" + _domain);
+        return "http://" + nodeInetAddr.getHostAddress() + ":" + nodeAddr.getPort() + "/" + bucket + "/" + fileName + (_domain == null ? "" : "?domain=" + _domain);
     }
 
     private ScspQueryArgs domainQueryArg() {
@@ -200,12 +198,11 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
             ScspResponse bwResponse = myClient(mountedRoot).write(bucket, new ByteArrayInputStream("".getBytes()), 0, domainQueryArg(), new ScspHeaders());
             if (bwResponse.getHttpStatusCode() != HTTP_CREATED) {
                 if (bwResponse.getHttpStatusCode() == HTTP_PRECONDITION_FAILED)
-                    s_logger.error("CAStor unable to create bucket " + bucket + " because domain " +
-                                   (this._domain==null ? "(default)" : this._domain) + " does not exist");
+                    s_logger.error("CAStor unable to create bucket " + bucket + " because domain " + (this._domain == null ? "(default)" : this._domain) +
+                        " does not exist");
                 else
                     s_logger.error("CAStor unable to create bucket " + bucket + ": " + bwResponse.getHttpStatusCode());
-                throw new OutOfStorageException("CAStor unable to create bucket " + bucket + ": " +
-                                                bwResponse.getHttpStatusCode());
+                throw new OutOfStorageException("CAStor unable to create bucket " + bucket + ": " + bwResponse.getHttpStatusCode());
             }
         } catch (ScspExecutionException e) {
             s_logger.error("CAStor unable to create bucket " + bucket, e);
@@ -219,8 +216,7 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
             ScspResponse bwResponse = myClient(mountedRoot).delete("", bucket, domainQueryArg(), new ScspHeaders());
             if (bwResponse.getHttpStatusCode() >= HTTP_UNSUCCESSFUL) {
                 s_logger.error("CAStor unable to delete bucket " + bucket + ": " + bwResponse.getHttpStatusCode());
-                throw new OutOfStorageException("CAStor unable to delete bucket " + bucket + ": " +
-                                                bwResponse.getHttpStatusCode());
+                throw new OutOfStorageException("CAStor unable to delete bucket " + bucket + ": " + bwResponse.getHttpStatusCode());
             }
         } catch (ScspExecutionException e) {
             s_logger.error("CAStor unable to delete bucket " + bucket, e);
@@ -229,8 +225,7 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
     }
 
     @Override
-    public String saveObject(InputStream is, String mountedRoot, String bucket, String fileName)
-    {
+    public String saveObject(InputStream is, String mountedRoot, String bucket, String fileName) {
         // TODO: Currently this writes the object to a temporary file,
         // so that the MD5 can be computed and so that we have the
         // stream length needed by this version of CAStor SDK. Will
@@ -262,7 +257,7 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
                 fos = new FileOutputStream(spoolFile);
                 byte[] buffer = new byte[4096];
                 int len = 0;
-                while( (len = is.read(buffer)) > 0) {
+                while ((len = is.read(buffer)) > 0) {
                     fos.write(buffer, 0, len);
                     streamLen = streamLen + len;
                     md5.update(buffer, 0, len);
@@ -271,38 +266,32 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
                 //Convert MD5 digest to (lowercase) hex String
                 retVal = StringHelper.toHexString(md5.digest());
 
-            } catch(IOException e) {
+            } catch (IOException e) {
                 s_logger.error("Unexpected exception " + e.getMessage(), e);
                 throw new OutOfStorageException(e);
             } finally {
                 try {
                     if (null != fos)
                         fos.close();
-                } catch( Exception e ) {
-                    s_logger.error("Can't close CAStor spool file " +
-                                   spoolFile.getAbsolutePath() + ": " + e.getMessage(), e);
+                } catch (Exception e) {
+                    s_logger.error("Can't close CAStor spool file " + spoolFile.getAbsolutePath() + ": " + e.getMessage(), e);
                     throw new OutOfStorageException("Unable to close CAStor spool file: " + e.getMessage(), e);
                 }
             }
 
             try {
                 ScspResponse bwResponse =
-                    myClient(mountedRoot).write(bucket + "/" + fileName,
-                                                new ResettableFileInputStream(spoolFile), streamLen,
-                                                domainQueryArg(), new ScspHeaders());
+                    myClient(mountedRoot).write(bucket + "/" + fileName, new ResettableFileInputStream(spoolFile), streamLen, domainQueryArg(), new ScspHeaders());
                 if (bwResponse.getHttpStatusCode() >= HTTP_UNSUCCESSFUL) {
                     s_logger.error("CAStor write responded with error " + bwResponse.getHttpStatusCode());
-                    throw new OutOfStorageException("Unable to write object to CAStor " +
-                                                    bucket + "/" + fileName + ": " + bwResponse.getHttpStatusCode());
+                    throw new OutOfStorageException("Unable to write object to CAStor " + bucket + "/" + fileName + ": " + bwResponse.getHttpStatusCode());
                 }
             } catch (ScspExecutionException e) {
                 s_logger.error("Unable to write object to CAStor " + bucket + "/" + fileName, e);
-                throw new OutOfStorageException("Unable to write object to CAStor " + bucket + "/" + fileName + ": " +
-                                                e.getMessage());
+                throw new OutOfStorageException("Unable to write object to CAStor " + bucket + "/" + fileName + ": " + e.getMessage());
             } catch (IOException ie) {
                 s_logger.error("Unable to write object to CAStor " + bucket + "/" + fileName, ie);
-                throw new OutOfStorageException("Unable to write object to CAStor " + bucket + "/" + fileName + ": " +
-                                                ie.getMessage());
+                throw new OutOfStorageException("Unable to write object to CAStor " + bucket + "/" + fileName + ": " + ie.getMessage());
             }
             return retVal;
         } finally {
@@ -331,8 +320,8 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
      * @return OrderedPair with the first value the MD5 of the final object, and the second value the length of the final object
      */
     @Override
-    public OrderedPair<String,Long> concatentateObjects(String mountedRoot, String destBucket, String fileName, String sourceBucket, S3MultipartPart[] parts, OutputStream client)
-    {
+    public OrderedPair<String, Long> concatentateObjects(String mountedRoot, String destBucket, String fileName, String sourceBucket, S3MultipartPart[] parts,
+        OutputStream client) {
         // TODO
         throw new UnsupportedException("Multipart upload support not yet implemented in CAStor plugin");
 
@@ -404,8 +393,7 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
             ScspResponse bwResponse = myClient(mountedRoot).delete("", filePath, domainQueryArg(), new ScspHeaders());
             if (bwResponse.getHttpStatusCode() != HTTP_OK) {
                 s_logger.error("CAStor delete object responded with error " + bwResponse.getHttpStatusCode());
-                throw new OutOfStorageException("CAStor unable to delete object " + filePath + ": " +
-                                                bwResponse.getHttpStatusCode());
+                throw new OutOfStorageException("CAStor unable to delete object " + filePath + ": " + bwResponse.getHttpStatusCode());
             }
         } catch (ScspExecutionException e) {
             s_logger.error("CAStor unable to delete object " + filePath, e);
@@ -416,33 +404,38 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
     public class ScspDataSource implements DataSource {
         String content_type = null;
         byte content[] = null;
+
         public ScspDataSource(GetMethod method) {
             Header h = method.getResponseHeader("Content-type");
             if (h != null) {
                 content_type = h.getValue();
             }
-            try{
+            try {
                 content = method.getResponseBody();
-            }catch(IOException e){
+            } catch (IOException e) {
                 s_logger.error("CAStor loadObjectRange getInputStream error", e);
             }
         }
+
         @Override
         public String getContentType() {
             return content_type;
         }
+
         @Override
         public InputStream getInputStream() {
             return new ByteArrayInputStream(content);
         }
+
         @Override
         public String getName() {
-            assert(false);
+            assert (false);
             return null;
         }
+
         @Override
         public OutputStream getOutputStream() throws IOException {
-            assert(false);
+            assert (false);
             return null;
         }
     }
@@ -464,7 +457,7 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
             throw new FileNotExistException("CAStor loadObjectRange failure: " + e);
         }
         if (statusCode < HTTP_OK || statusCode >= HTTP_UNSUCCESSFUL) {
-            s_logger.error("CAStor loadObjectRange response: "+  statusCode);
+            s_logger.error("CAStor loadObjectRange response: " + statusCode);
             throw new FileNotExistException("CAStor loadObjectRange response: " + statusCode);
         }
         DataHandler ret = new DataHandler(new ScspDataSource(method));

@@ -36,35 +36,32 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={VmDiskStatisticsDao.class})
+@Local(value = {VmDiskStatisticsDao.class})
 public class VmDiskStatisticsDaoImpl extends GenericDaoBase<VmDiskStatisticsVO, Long> implements VmDiskStatisticsDao {
     private static final Logger s_logger = Logger.getLogger(VmDiskStatisticsDaoImpl.class);
-    private static final String ACTIVE_AND_RECENTLY_DELETED_SEARCH = "SELECT vns.id, vns.data_center_id, vns.account_id, vns.vm_id, vns.volume_id, vns.agg_io_read, vns.agg_io_write, vns.agg_bytes_read, vns.agg_bytes_write " +
-                                                                     "FROM vm_disk_statistics vns, account a " +
-                                                                     "WHERE vns.account_id = a.id AND (a.removed IS NULL OR a.removed >= ?) " +
-                                                                     "ORDER BY vns.id";
-    private static final String UPDATED_VM_NETWORK_STATS_SEARCH = "SELECT id, current_io_read, current_io_write, net_io_read, net_io_write, agg_io_read, agg_io_write, " +
-                                                                     "current_bytes_read, current_bytes_write, net_bytes_read, net_bytes_write, agg_bytes_read, agg_bytes_write " +
-                                                                     "from  vm_disk_statistics " +
-                                                                     "where (agg_io_read < net_io_read + current_io_read) OR (agg_io_write < net_io_write + current_io_write) OR " +
-                                                                     "(agg_bytes_read < net_bytes_read + current_bytes_read) OR (agg_bytes_write < net_bytes_write + current_bytes_write)";
+    private static final String ACTIVE_AND_RECENTLY_DELETED_SEARCH =
+        "SELECT vns.id, vns.data_center_id, vns.account_id, vns.vm_id, vns.volume_id, vns.agg_io_read, vns.agg_io_write, vns.agg_bytes_read, vns.agg_bytes_write "
+            + "FROM vm_disk_statistics vns, account a " + "WHERE vns.account_id = a.id AND (a.removed IS NULL OR a.removed >= ?) " + "ORDER BY vns.id";
+    private static final String UPDATED_VM_NETWORK_STATS_SEARCH = "SELECT id, current_io_read, current_io_write, net_io_read, net_io_write, agg_io_read, agg_io_write, "
+        + "current_bytes_read, current_bytes_write, net_bytes_read, net_bytes_write, agg_bytes_read, agg_bytes_write " + "from  vm_disk_statistics "
+        + "where (agg_io_read < net_io_read + current_io_read) OR (agg_io_write < net_io_write + current_io_write) OR "
+        + "(agg_bytes_read < net_bytes_read + current_bytes_read) OR (agg_bytes_write < net_bytes_write + current_bytes_write)";
     private final SearchBuilder<VmDiskStatisticsVO> AllFieldsSearch;
     private final SearchBuilder<VmDiskStatisticsVO> AccountSearch;
-    
-    
-    public VmDiskStatisticsDaoImpl() {
-    	AccountSearch = createSearchBuilder();
-    	AccountSearch.and("account", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-    	AccountSearch.done();
 
-    	AllFieldsSearch = createSearchBuilder();
+    public VmDiskStatisticsDaoImpl() {
+        AccountSearch = createSearchBuilder();
+        AccountSearch.and("account", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AccountSearch.done();
+
+        AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("dc", AllFieldsSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("volume", AllFieldsSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("vm", AllFieldsSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
-    
+
     @Override
     public VmDiskStatisticsVO findBy(long accountId, long dcId, long vmId, long volumeId) {
         SearchCriteria<VmDiskStatisticsVO> sc = AllFieldsSearch.create();
@@ -81,7 +78,7 @@ public class VmDiskStatisticsDaoImpl extends GenericDaoBase<VmDiskStatisticsVO, 
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
         sc.setParameters("volume", volumeId);
-        sc.setParameters("vm", vmId);    
+        sc.setParameters("vm", vmId);
         return lockOneRandomRow(sc, true);
     }
 
@@ -95,7 +92,8 @@ public class VmDiskStatisticsDaoImpl extends GenericDaoBase<VmDiskStatisticsVO, 
     @Override
     public List<VmDiskStatisticsVO> listActiveAndRecentlyDeleted(Date minRemovedDate, int startIndex, int limit) {
         List<VmDiskStatisticsVO> vmDiskStats = new ArrayList<VmDiskStatisticsVO>();
-        if (minRemovedDate == null) return vmDiskStats;
+        if (minRemovedDate == null)
+            return vmDiskStats;
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
@@ -105,7 +103,7 @@ public class VmDiskStatisticsDaoImpl extends GenericDaoBase<VmDiskStatisticsVO, 
             pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), minRemovedDate));
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-            	vmDiskStats.add(toEntityBean(rs, false));
+                vmDiskStats.add(toEntityBean(rs, false));
             }
         } catch (Exception ex) {
             s_logger.error("error saving vm disk stats to cloud_usage db", ex);
@@ -123,12 +121,12 @@ public class VmDiskStatisticsDaoImpl extends GenericDaoBase<VmDiskStatisticsVO, 
             pstmt = txn.prepareAutoCloseStatement(UPDATED_VM_NETWORK_STATS_SEARCH);
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-            	vmDiskStats.add(toEntityBean(rs, false));
+                vmDiskStats.add(toEntityBean(rs, false));
             }
         } catch (Exception ex) {
             s_logger.error("error lisitng updated vm disk stats", ex);
         }
         return vmDiskStats;
     }
-    
+
 }

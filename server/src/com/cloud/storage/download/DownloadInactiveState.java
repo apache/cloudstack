@@ -20,38 +20,32 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 
 public abstract class DownloadInactiveState extends DownloadState {
 
-	public DownloadInactiveState(DownloadListener dl) {
-		super(dl);
-	}
+    public DownloadInactiveState(DownloadListener dl) {
+        super(dl);
+    }
 
+    @Override
+    public String handleAnswer(DownloadAnswer answer) {
+        // ignore and stay put
+        return getName();
+    }
 
-	@Override
-	public String handleAnswer(DownloadAnswer answer) {
-		// ignore and stay put
-		return getName();
-	}
+    @Override
+    public String handleAbort() {
+        // ignore and stay put
+        return getName();
+    }
 
+    @Override
+    public String handleDisconnect() {
+        //ignore and stay put
+        return getName();
+    }
 
-	@Override
-	public String handleAbort() {
-		// ignore and stay put
-		return getName();
-	}
-
-
-	@Override
-	public String handleDisconnect() {
-		//ignore and stay put
-		return getName();
-	}
-
-
-	@Override
-	public String handleTimeout(long updateMs) {
-		// ignore and stay put
-		return getName();
-	}
-
-
+    @Override
+    public String handleTimeout(long updateMs) {
+        // ignore and stay put
+        return getName();
+    }
 
 }

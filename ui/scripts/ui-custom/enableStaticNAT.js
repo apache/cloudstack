@@ -33,6 +33,8 @@
                     uiCustom: true
                 });
 
+                instances.listView.multiSelect = false;
+
                 instances.listView.actions = {
                     select: {
                         label: _l('label.select.instance'),

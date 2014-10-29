@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import java.util.List;
@@ -24,7 +27,7 @@ public class ConfigurePublicIpsOnLogicalRouterCommand extends Command {
     private String l3GatewayServiceUuid;
     private List<String> publicCidrs;
 
-    public ConfigurePublicIpsOnLogicalRouterCommand(String logicalRouterUuid, String l3GatewayServiceUuid, List<String> publicCidrs) {
+    public ConfigurePublicIpsOnLogicalRouterCommand(final String logicalRouterUuid, final String l3GatewayServiceUuid, final List<String> publicCidrs) {
         super();
         this.logicalRouterUuid = logicalRouterUuid;
         this.publicCidrs = publicCidrs;
@@ -35,7 +38,7 @@ public class ConfigurePublicIpsOnLogicalRouterCommand extends Command {
         return logicalRouterUuid;
     }
 
-    public void setLogicalRouterUuid(String logicalRouterUuid) {
+    public void setLogicalRouterUuid(final String logicalRouterUuid) {
         this.logicalRouterUuid = logicalRouterUuid;
     }
 
@@ -43,7 +46,7 @@ public class ConfigurePublicIpsOnLogicalRouterCommand extends Command {
         return l3GatewayServiceUuid;
     }
 
-    public void setL3GatewayServiceUuid(String l3GatewayServiceUuid) {
+    public void setL3GatewayServiceUuid(final String l3GatewayServiceUuid) {
         this.l3GatewayServiceUuid = l3GatewayServiceUuid;
     }
 
@@ -51,7 +54,7 @@ public class ConfigurePublicIpsOnLogicalRouterCommand extends Command {
         return publicCidrs;
     }
 
-    public void setPublicCidrs(List<String> publicCidrs) {
+    public void setPublicCidrs(final List<String> publicCidrs) {
         this.publicCidrs = publicCidrs;
     }
 

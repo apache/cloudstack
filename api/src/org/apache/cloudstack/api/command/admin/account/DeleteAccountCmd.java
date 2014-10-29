@@ -18,6 +18,10 @@ package org.apache.cloudstack.api.command.admin.account;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -30,13 +34,12 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 
-@APICommand(name = "deleteAccount", description="Deletes a account, and all users associated with this account", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteAccount", description = "Deletes a account, and all users associated with this account", responseObject = SuccessResponse.class, entityType = {Account.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteAccountCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteAccountCmd.class.getName());
     private static final String s_name = "deleteaccountresponse";
@@ -44,17 +47,16 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=AccountResponse.class,
-            required=true, description="Account id")
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AccountResponse.class, required = true, description = "Account id")
     private Long id;
 
-    @Inject RegionService _regionService;
+    @Inject
+    RegionService _regionService;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public Long getId() {
         return id;
@@ -91,17 +93,18 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         User user = _responseGenerator.findUserById(getId());
-        return (user != null ? ("deleting User " + user.getUsername() + " (id: " + user.getId() + ") and accountId = " + user.getAccountId()) : "user delete, but this user does not exist in the system");
+        return (user != null ? ("deleting User " + user.getUsername() + " (id: " + user.getId() + ") and accountId = " + user.getAccountId())
+            : "user delete, but this user does not exist in the system");
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Account Id: "+getId());
+    public void execute() {
+        CallContext.current().setEventDetails("Account Id: " + getId());
 
-        boolean	result = _regionService.deleteUserAccount(this);
+        boolean result = _regionService.deleteUserAccount(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete user account and all corresponding users");
         }

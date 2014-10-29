@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
@@ -28,6 +31,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
@@ -42,19 +46,24 @@ import com.cloud.network.Network;
 import com.cloud.network.element.NiciraNvpElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listNiciraNvpDeviceNetworks", responseObject=NetworkResponse.class, description="lists network that are using a nicira nvp device")
+@APICommand(name = "listNiciraNvpDeviceNetworks", responseObject = NetworkResponse.class, description = "lists network that are using a nicira nvp device",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNiciraNvpDeviceNetworksCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListNiciraNvpDeviceNetworksCmd.class.getName());
     private static final String s_name = "listniciranvpdevicenetworks";
-    @Inject NiciraNvpElementService _niciraNvpElementService;
+    @Inject
+    protected NiciraNvpElementService niciraNvpElementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.NICIRA_NVP_DEVICE_ID, type=CommandType.UUID, entityType = NiciraNvpDeviceResponse.class,
-            required = true, description="nicira nvp device ID")
+    @Parameter(name = ApiConstants.NICIRA_NVP_DEVICE_ID,
+               type = CommandType.UUID,
+               entityType = NiciraNvpDeviceResponse.class,
+               required = true,
+               description = "nicira nvp device ID")
     private Long niciraNvpDeviceId;
 
     /////////////////////////////////////////////////////
@@ -70,15 +79,16 @@ public class ListNiciraNvpDeviceNetworksCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
-            List<? extends Network> networks  = _niciraNvpElementService.listNiciraNvpDeviceNetworks(this);
+            List<? extends Network> networks = niciraNvpElementService.listNiciraNvpDeviceNetworks(this);
             ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
             List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
 
             if (networks != null && !networks.isEmpty()) {
                 for (Network network : networks) {
-                    NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(network);
+                    NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(ResponseView.Full, network);
                     networkResponses.add(networkResponse);
                 }
             }

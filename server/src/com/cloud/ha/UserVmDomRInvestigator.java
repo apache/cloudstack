@@ -39,14 +39,18 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
 
-@Local(value={Investigator.class})
+@Local(value = {Investigator.class})
 public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
     private static final Logger s_logger = Logger.getLogger(UserVmDomRInvestigator.class);
 
-    @Inject private final UserVmDao _userVmDao = null;
-    @Inject private final AgentManager _agentMgr = null;
-    @Inject private final NetworkModel _networkMgr = null;
-    @Inject private final VpcVirtualNetworkApplianceManager _vnaMgr = null;
+    @Inject
+    private final UserVmDao _userVmDao = null;
+    @Inject
+    private final AgentManager _agentMgr = null;
+    @Inject
+    private final NetworkModel _networkMgr = null;
+    @Inject
+    private final VpcVirtualNetworkApplianceManager _vnaMgr = null;
 
     @Override
     public Boolean isVmAlive(VirtualMachine vm, Host host) {
@@ -122,7 +126,8 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
             }
             if (hostState == Status.Up) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("ping from (" + hostId + ") to agent's host ip address (" + agent.getPrivateIpAddress() + ") successful, returning that agent is disconnected");
+                    s_logger.debug("ping from (" + hostId + ") to agent's host ip address (" + agent.getPrivateIpAddress() +
+                        ") successful, returning that agent is disconnected");
                 }
                 return Status.Disconnected; // the computing host ip is ping-able, but the computing agent is down, report that the agent is disconnected
             } else if (hostState == Status.Down) {
@@ -155,19 +160,18 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
         String routerPrivateIp = router.getPrivateIpAddress();
 
         List<Long> otherHosts = new ArrayList<Long>();
-        if(vm.getHypervisorType() == HypervisorType.XenServer
-        		|| vm.getHypervisorType() == HypervisorType.KVM){
-        	otherHosts.add(router.getHostId());
-        }else{
-        	otherHosts = findHostByPod(router.getPodIdToDeployIn(), null);
+        if (vm.getHypervisorType() == HypervisorType.XenServer || vm.getHypervisorType() == HypervisorType.KVM) {
+            otherHosts.add(router.getHostId());
+        } else {
+            otherHosts = findHostByPod(router.getPodIdToDeployIn(), null);
         }
         for (Long hostId : otherHosts) {
             try {
                 Answer pingTestAnswer = _agentMgr.easySend(hostId, new PingTestCommand(routerPrivateIp, privateIp));
-                if (pingTestAnswer!=null && pingTestAnswer.getResult()) {
+                if (pingTestAnswer != null && pingTestAnswer.getResult()) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("user vm's " + vm.getHostName() + " ip address "+ privateIp + "  has been successfully pinged from the Virtual Router "
-                                + router.getHostName() + ", returning that vm is alive");
+                        s_logger.debug("user vm's " + vm.getHostName() + " ip address " + privateIp + "  has been successfully pinged from the Virtual Router " +
+                            router.getHostName() + ", returning that vm is alive");
                     }
                     return Boolean.TRUE;
                 }

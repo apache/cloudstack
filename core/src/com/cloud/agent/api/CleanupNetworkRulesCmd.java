@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,20 +15,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.api;
+//
 
+package com.cloud.agent.api;
 
 public class CleanupNetworkRulesCmd extends Command implements CronCommand {
 
-    private int interval = 10*60;
+    private int interval = 10 * 60;
 
     @Override
     public boolean executeInSequence() {
         return false;
     }
-
-
-
 
     public CleanupNetworkRulesCmd(int intervalSecs) {
         super();
@@ -37,7 +36,6 @@ public class CleanupNetworkRulesCmd extends Command implements CronCommand {
     public CleanupNetworkRulesCmd() {
 
     }
-
 
     @Override
     public int getInterval() {

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,15 +15,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
-import com.cloud.agent.api.storage.ssCommand;
+import com.cloud.agent.api.storage.SsCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 
-
-public class ComputeChecksumCommand extends ssCommand {
-	private DataStoreTO store;
+public class ComputeChecksumCommand extends SsCommand {
+    private DataStoreTO store;
     private String templatePath;
+
     public ComputeChecksumCommand() {
         super();
     }
@@ -36,13 +39,12 @@ public class ComputeChecksumCommand extends ssCommand {
         return templatePath;
     }
 
-	public DataStoreTO getStore() {
-		return store;
-	}
+    public DataStoreTO getStore() {
+        return store;
+    }
 
-	public void setStore(DataStoreTO store) {
-		this.store = store;
-	}
-
+    public void setStore(DataStoreTO store) {
+        this.store = store;
+    }
 
 }

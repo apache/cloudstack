@@ -24,6 +24,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -32,8 +34,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.image.BaseImageStoreDriverImpl;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.configuration.Config;
@@ -41,7 +41,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.S3Utils;
 
-public class S3ImageStoreDriverImpl extends  BaseImageStoreDriverImpl {
+public class S3ImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     private static final Logger s_logger = Logger.getLogger(S3ImageStoreDriverImpl.class);
 
     @Inject
@@ -50,28 +50,19 @@ public class S3ImageStoreDriverImpl extends  BaseImageStoreDriverImpl {
     @Inject
     ConfigurationDao _configDao;
 
-
     @Override
     public DataStoreTO getStoreTO(DataStore store) {
-        ImageStoreImpl imgStore = (ImageStoreImpl) store;
+        ImageStoreImpl imgStore = (ImageStoreImpl)store;
         Map<String, String> details = _imageStoreDetailsDao.getDetails(imgStore.getId());
-        return new S3TO(imgStore.getId(), imgStore.getUuid(), details.get(ApiConstants.S3_ACCESS_KEY),
-                details.get(ApiConstants.S3_SECRET_KEY), details.get(ApiConstants.S3_END_POINT),
-                details.get(ApiConstants.S3_BUCKET_NAME), details.get(ApiConstants.S3_HTTPS_FLAG) == null ? false
-                        : Boolean.parseBoolean(details.get(ApiConstants.S3_HTTPS_FLAG)),
-                details.get(ApiConstants.S3_CONNECTION_TIMEOUT) == null ? null : Integer.valueOf(details
-                        .get(ApiConstants.S3_CONNECTION_TIMEOUT)),
-                details.get(ApiConstants.S3_MAX_ERROR_RETRY) == null ? null : Integer.valueOf(details
-                        .get(ApiConstants.S3_MAX_ERROR_RETRY)),
-                details.get(ApiConstants.S3_SOCKET_TIMEOUT) == null ? null : Integer.valueOf(details
-                        .get(ApiConstants.S3_SOCKET_TIMEOUT)), imgStore.getCreated(),
-                _configDao.getValue(Config.S3EnableRRS.toString()) == null ? false : Boolean.parseBoolean(_configDao
-                        .getValue(Config.S3EnableRRS.toString())),
-                getMaxSingleUploadSizeInBytes()                      
-                );
+        return new S3TO(imgStore.getId(), imgStore.getUuid(), details.get(ApiConstants.S3_ACCESS_KEY), details.get(ApiConstants.S3_SECRET_KEY),
+            details.get(ApiConstants.S3_END_POINT), details.get(ApiConstants.S3_BUCKET_NAME), details.get(ApiConstants.S3_HTTPS_FLAG) == null ? false
+                : Boolean.parseBoolean(details.get(ApiConstants.S3_HTTPS_FLAG)), details.get(ApiConstants.S3_CONNECTION_TIMEOUT) == null ? null
+                : Integer.valueOf(details.get(ApiConstants.S3_CONNECTION_TIMEOUT)), details.get(ApiConstants.S3_MAX_ERROR_RETRY) == null ? null
+                : Integer.valueOf(details.get(ApiConstants.S3_MAX_ERROR_RETRY)), details.get(ApiConstants.S3_SOCKET_TIMEOUT) == null ? null
+                : Integer.valueOf(details.get(ApiConstants.S3_SOCKET_TIMEOUT)), imgStore.getCreated(), _configDao.getValue(Config.S3EnableRRS.toString()) == null ? false
+                : Boolean.parseBoolean(_configDao.getValue(Config.S3EnableRRS.toString())), getMaxSingleUploadSizeInBytes());
 
     }
-
 
     private long getMaxSingleUploadSizeInBytes() {
         try {
@@ -81,7 +72,7 @@ public class S3ImageStoreDriverImpl extends  BaseImageStoreDriverImpl {
             return 5L * 1024L * 1024L * 1024L;
         }
     }
-    
+
     @Override
     public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format, DataObject dataObject) {
         // for S3, no need to do anything, just return template url for
@@ -93,7 +84,7 @@ public class S3ImageStoreDriverImpl extends  BaseImageStoreDriverImpl {
         s_logger.info("Generating pre-signed s3 entity extraction URL.");
         Date expiration = new Date();
         long milliSeconds = expiration.getTime();
-        
+
         // get extract url expiration interval set in global configuration (in seconds)
         String urlExpirationInterval = _configDao.getValue(Config.ExtractURLExpirationInterval.toString());
         int expirationInterval = NumbersUtil.parseInt(urlExpirationInterval, 14400);
@@ -106,6 +97,5 @@ public class S3ImageStoreDriverImpl extends  BaseImageStoreDriverImpl {
 
         return s3url.toString();
     }
-
 
 }

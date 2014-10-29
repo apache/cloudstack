@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.netapp;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,52 +23,55 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 @Entity
-@Table(name="netapp_pool")
+@Table(name = "netapp_pool")
 public class PoolVO implements InternalIdentity {
-	
-	public long getId() {
-		return id;
-	}
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    @Override
+    public long getId() {
+        return id;
+    }
 
-	public String getName() {
-		return name;
-	}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public String getAlgorithm() {
-		return algorithm;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public void setAlgorithm(String algorithm) {
-		this.algorithm = algorithm;
-	}
+    public String getAlgorithm() {
+        return algorithm;
+    }
 
-	@Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
+    }
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
-	
-	@Column(name="name")
+
+    @Column(name = "name")
     private String name;
 
-    @Column(name="algorithm")
-	private String algorithm;
+    @Column(name = "algorithm")
+    private String algorithm;
 
-	public PoolVO(){
-		
-	}
-	
-	public PoolVO(String name, String algorithm) {
-		this.name = name;
-		this.algorithm = algorithm;
-	}
+    public PoolVO() {
+
+    }
+
+    public PoolVO(String name, String algorithm) {
+        this.name = name;
+        this.algorithm = algorithm;
+    }
 
 }

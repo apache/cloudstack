@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -21,13 +21,13 @@ import java.util.Map;
 
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.Network.State;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.fsm.StateDao;
 
-public interface NetworkDao extends GenericDao<NetworkVO, Long> , StateDao<State, Network.Event, Network> {
+public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State, Network.Event, Network> {
 
     List<NetworkVO> listByOwner(long ownerId);
 
@@ -49,7 +49,7 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> , StateDao<State
 
     /**
      * Retrieves the next available mac address in this network configuration.
-     * 
+     *
      * @param networkConfigId
      *            id
      * @return mac address if there is one. null if not.
@@ -59,7 +59,7 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> , StateDao<State
     List<NetworkVO> listBy(long accountId, long networkId);
 
     long countByZoneAndUri(long zoneId, String broadcastUri);
-    
+
     long countByZoneUriAndGuestType(long zoneId, String broadcastUri, GuestType guestType);
 
     List<NetworkVO> listByZone(long zoneId);
@@ -93,19 +93,19 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> , StateDao<State
     List<NetworkVO> listByZoneAndTrafficType(long zoneId, TrafficType trafficType);
 
     void setCheckForGc(long networkId);
-    
+
     int getNetworkCountByNetworkOffId(long networkOfferingId);
-    
+
     long countNetworksUserCanCreate(long ownerId);
 
     List<NetworkVO> listSourceNATEnabledNetworks(long accountId, long dataCenterId, GuestType type);
-    
+
     int getNetworkCountByVpcId(long vpcId);
-    
+
     List<NetworkVO> listByVpc(long vpcId);
-    
+
     NetworkVO getPrivateNetwork(String broadcastUri, String cidr, long accountId, long zoneId, Long networkOfferingId);
-    
+
     long countVpcNetworks(long vpcId);
 
     List<NetworkVO> listNetworksByAccount(long accountId, long zoneId, Network.GuestType type, boolean isSystem);

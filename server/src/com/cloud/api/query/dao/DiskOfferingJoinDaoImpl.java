@@ -34,15 +34,14 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={DiskOfferingJoinDao.class})
+@Local(value = {DiskOfferingJoinDao.class})
 public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, Long> implements DiskOfferingJoinDao {
     public static final Logger s_logger = Logger.getLogger(DiskOfferingJoinDaoImpl.class);
-
 
     private final SearchBuilder<DiskOfferingJoinVO> dofIdSearch;
     private final Attribute _typeAttr;
 
-     protected DiskOfferingJoinDaoImpl() {
+    protected DiskOfferingJoinDaoImpl() {
 
         dofIdSearch = createSearchBuilder();
         dofIdSearch.and("id", dofIdSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -53,8 +52,6 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         _count = "select count(distinct id) from disk_offering_view WHERE ";
     }
 
-
-
     @Override
     public DiskOfferingResponse newDiskOfferingResponse(DiskOfferingJoinVO offering) {
 
@@ -62,6 +59,7 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         diskOfferingResponse.setId(offering.getUuid());
         diskOfferingResponse.setName(offering.getName());
         diskOfferingResponse.setDisplayText(offering.getDisplayText());
+        diskOfferingResponse.setProvisioningType(offering.getProvisioningType().toString());
         diskOfferingResponse.setCreated(offering.getCreated());
         diskOfferingResponse.setDiskSize(offering.getDiskSize() / (1024 * 1024 * 1024));
         diskOfferingResponse.setMinIops(offering.getMinIops());
@@ -74,16 +72,17 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         diskOfferingResponse.setTags(offering.getTags());
         diskOfferingResponse.setCustomized(offering.isCustomized());
         diskOfferingResponse.setCustomizedIops(offering.isCustomizedIops());
+        diskOfferingResponse.setHypervisorSnapshotReserve(offering.getHypervisorSnapshotReserve());
         diskOfferingResponse.setStorageType(offering.isUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
         diskOfferingResponse.setBytesReadRate(offering.getBytesReadRate());
         diskOfferingResponse.setBytesWriteRate(offering.getBytesWriteRate());
         diskOfferingResponse.setIopsReadRate(offering.getIopsReadRate());
         diskOfferingResponse.setIopsWriteRate(offering.getIopsWriteRate());
+        diskOfferingResponse.setCacheMode(offering.getCacheMode());
         diskOfferingResponse.setObjectName("diskoffering");
 
         return diskOfferingResponse;
     }
-
 
     @Override
     public DiskOfferingJoinVO newDiskOfferingView(DiskOffering offering) {

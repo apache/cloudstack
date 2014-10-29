@@ -44,6 +44,7 @@ public interface PrivateIp {
     String getMacAddress();
 
     long getNetworkId();
+
     boolean getSourceNat();
 
 }

@@ -53,22 +53,15 @@ public class MockVmMgr implements VmMgr {
     }
 
     @Override
-    public String startVM(String vmName, String vnetId, String gateway,
-            String dns, String privateIP, String privateMac,
-            String privateMask, String publicIP, String publicMac,
-            String publicMask, int cpuCount, int cpuUtilization, long ramSize,
-            String localPath, String vncPassword) {
+    public String startVM(String vmName, String vnetId, String gateway, String dns, String privateIP, String privateMac, String privateMask, String publicIP,
+        String publicMac, String publicMask, int cpuCount, int cpuUtilization, long ramSize, String localPath, String vncPassword) {
 
         if (s_logger.isInfoEnabled()) {
             StringBuffer sb = new StringBuffer();
-            sb.append("Start VM. name: " + vmName + ", vnet: " + vnetId
-                    + ", dns: " + dns);
-            sb.append(", privateIP: " + privateIP + ", privateMac: "
-                    + privateMac + ", privateMask: " + privateMask);
-            sb.append(", publicIP: " + publicIP + ", publicMac: " + publicMac
-                    + ", publicMask: " + publicMask);
-            sb.append(", cpu count: " + cpuCount + ", cpuUtilization: "
-                    + cpuUtilization + ", ram : " + ramSize);
+            sb.append("Start VM. name: " + vmName + ", vnet: " + vnetId + ", dns: " + dns);
+            sb.append(", privateIP: " + privateIP + ", privateMac: " + privateMac + ", privateMask: " + privateMask);
+            sb.append(", publicIP: " + publicIP + ", publicMac: " + publicMac + ", publicMask: " + publicMask);
+            sb.append(", cpu count: " + cpuCount + ", cpuUtilization: " + cpuUtilization + ", ram : " + ramSize);
             sb.append(", localPath: " + localPath);
             s_logger.info(sb.toString());
         }
@@ -83,8 +76,7 @@ public class MockVmMgr implements VmMgr {
                 if (vncPort < 0)
                     return "Unable to allocate VNC port";
 
-                vm = new MockVm(vmName, State.Running, ramSize, cpuCount,
-                        cpuUtilization, vncPort);
+                vm = new MockVm(vmName, State.Running, ramSize, cpuCount, cpuUtilization, vncPort);
                 vms.put(vmName, vm);
             }
         }
@@ -140,6 +132,7 @@ public class MockVmMgr implements VmMgr {
         return false;
     }
 
+    @Override
     public MockVm getVm(String vmName) {
         synchronized (this) {
             MockVm vm = vms.get(vmName);
@@ -272,12 +265,10 @@ public class MockVmMgr implements VmMgr {
                 int vncPort = allocVncPort();
                 if (vncPort < 0) {
                     s_logger.debug("Unable to allocate VNC port");
-                    throw new CloudRuntimeException(
-                            "Unable to allocate vnc port");
+                    throw new CloudRuntimeException("Unable to allocate vnc port");
                 }
 
-                vm = new MockVm(vmName, State.Running, ramSize,
-                        vmSpec.getCpus(), utilizationPercent, vncPort);
+                vm = new MockVm(vmName, State.Running, ramSize, vmSpec.getCpus(), utilizationPercent, vncPort);
                 vms.put(vmName, vm);
             }
         }
@@ -302,7 +293,7 @@ public class MockVmMgr implements VmMgr {
     }
 
     protected Long getConfiguredProperty(String key, Long defaultValue) {
-        String val = (String) _params.get(key);
+        String val = (String)_params.get(key);
 
         if (val != null) {
             Long result = Long.parseLong(val);
@@ -312,7 +303,7 @@ public class MockVmMgr implements VmMgr {
     }
 
     protected Integer getConfiguredProperty(String key, Integer defaultValue) {
-        String val = (String) _params.get(key);
+        String val = (String)_params.get(key);
 
         if (val != null) {
             Integer result = Integer.parseInt(val);
