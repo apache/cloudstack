@@ -168,12 +168,11 @@ public class OnwireClassRegistry {
                         try {
                             Class<?> clz = Class.forName(className.replace('/', '.'));
                             classes.add(clz);
-                        } catch (ClassNotFoundException e) {
-                        } catch (NoClassDefFoundError e) {
+                        } catch (ClassNotFoundException | NoClassDefFoundError e) {
+                            s_logger.warn("Unable to load class from jar file", e);
                         }
                     }
                 }
-                IOUtils.closeQuietly(jarFile);
             }
         } while (jarEntry != null);
 
