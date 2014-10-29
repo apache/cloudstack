@@ -218,7 +218,7 @@ public class LibvirtVMDef {
             }
             if (hyperVEnlightenmentFeatureDef != null) {
                 String hpervF = hyperVEnlightenmentFeatureDef.toString();
-                if (hpervF != "") {
+                if (!hpervF.isEmpty()) {
                     feaBuilder.append(hpervF);
                 }
             }
@@ -583,7 +583,7 @@ public class LibvirtVMDef {
         }
 
         public void defNetworkBasedDisk(String diskName, String sourceHost, int sourcePort, String authUserName, String authSecretUUID, int devId, diskBus bus,
-            diskProtocol protocol, diskFmtType diskFmtType) {
+                diskProtocol protocol, diskFmtType diskFmtType) {
             _diskType = diskType.NETWORK;
             _deviceType = deviceType.DISK;
             _diskFmtType = diskFmtType;
@@ -599,7 +599,7 @@ public class LibvirtVMDef {
         }
 
         public void defNetworkBasedDisk(String diskName, String sourceHost, int sourcePort, String authUserName, String authSecretUUID, String diskLabel, diskBus bus,
-            diskProtocol protocol, diskFmtType diskFmtType) {
+                diskProtocol protocol, diskFmtType diskFmtType) {
             _diskType = diskType.NETWORK;
             _deviceType = deviceType.DISK;
             _diskFmtType = diskFmtType;
@@ -745,10 +745,10 @@ public class LibvirtVMDef {
             diskBuilder.append("/>\n");
 
             if ((_deviceType != deviceType.CDROM) &&
-                (s_libvirtVersion >= 9008) &&
-                (s_qemuVersion >= 1001000) &&
-                (((_bytesReadRate != null) && (_bytesReadRate > 0)) || ((_bytesWriteRate != null) && (_bytesWriteRate > 0)) ||
-                    ((_iopsReadRate != null) && (_iopsReadRate > 0)) || ((_iopsWriteRate != null) && (_iopsWriteRate > 0)))) { // not CDROM, from libvirt 0.9.8 and QEMU 1.1.0
+                    (s_libvirtVersion >= 9008) &&
+                    (s_qemuVersion >= 1001000) &&
+                    (((_bytesReadRate != null) && (_bytesReadRate > 0)) || ((_bytesWriteRate != null) && (_bytesWriteRate > 0)) ||
+                            ((_iopsReadRate != null) && (_iopsReadRate > 0)) || ((_iopsWriteRate != null) && (_iopsWriteRate > 0)))) { // not CDROM, from libvirt 0.9.8 and QEMU 1.1.0
                 diskBuilder.append("<iotune>\n");
                 if ((_bytesReadRate != null) && (_bytesReadRate > 0))
                     diskBuilder.append("<read_bytes_sec>" + _bytesReadRate + "</read_bytes_sec>\n");
@@ -800,9 +800,9 @@ public class LibvirtVMDef {
         }
 
         private guestNetType _netType; /*
-                                         * bridge, ethernet, network, user,
-                                         * internal
-                                         */
+         * bridge, ethernet, network, user,
+         * internal
+         */
         private hostNicType _hostNetType; /* Only used by agent java code */
         private String _netSourceMode;
         private String _sourceName;
