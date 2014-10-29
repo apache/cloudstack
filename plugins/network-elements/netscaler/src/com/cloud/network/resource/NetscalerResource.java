@@ -72,7 +72,6 @@ import com.citrix.netscaler.nitro.resource.config.ssl.sslvserver_sslcertkey_bind
 import com.citrix.netscaler.nitro.resource.stat.lb.lbvserver_stats;
 import com.citrix.netscaler.nitro.service.nitro_service;
 import com.citrix.netscaler.nitro.util.filtervalue;
-import com.citrix.sdx.nitro.resource.config.mps.device_profile;
 import com.citrix.sdx.nitro.resource.config.mps.mps;
 import com.citrix.sdx.nitro.resource.config.ns.ns;
 import com.citrix.sdx.nitro.resource.config.xen.xen_nsvpx_image;
@@ -923,14 +922,6 @@ public class NetscalerResource implements ServerResource {
             ns_obj.set_throughput(new Double(1000));
             ns_obj.set_pps(new Double(1000000));
             ns_obj.set_number_of_ssl_cores(0);
-
-            // use the first device profile available on the SDX to create an instance of VPX
-            device_profile[] profiles = device_profile.get(_netscalerSdxService);
-            if (!(profiles != null && profiles.length >= 1)) {
-                new Answer(cmd, new ExecutionException("Failed to create VPX instance on the netscaler SDX device " + _ip +
-                        " as there are no admin profile to use for creating VPX."));
-            }
-            String profileName = profiles[0].get_name();
             ns_obj.set_profile_name("ns_nsroot_profile");
 
             // use the first VPX image of the available VPX images on the SDX to create an instance of VPX
