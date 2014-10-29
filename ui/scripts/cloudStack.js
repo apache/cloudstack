@@ -93,26 +93,6 @@
                     message: parseXMLHttpResponse(data),
                     clickAction: clickAction
                 });
-            },
-            beforeSend: function(XMLHttpRequest) {
-                if (g_mySession == $.cookie("JSESSIONID")) {
-                    return true;
-                } else {
-                    var clickAction = function() {
-                        $('#user-options a').eq(0).trigger('click');
-                    };
-
-                    if ($('.notification-box:visible').size()) {
-                        $('.notification-box, div.overlay:first').remove();
-                    }
-
-                    cloudStack.dialog.notice({
-                        message: _l('label.session.expired'),
-                        clickAction: clickAction
-                    }).closest('.ui-dialog').overlay();
-
-                    return false;
-                }
             }
         });
 
@@ -137,7 +117,6 @@
                         }
                         return cookieValue;
                     };
-                    g_mySession = $.cookie('JSESSIONID');
                     g_sessionKey = unBoxCookieValue('sessionKey');
                     g_role = unBoxCookieValue('role');
                     g_userid = unBoxCookieValue('userid');
@@ -147,7 +126,6 @@
                     g_userfullname = unBoxCookieValue('userfullname');
                     g_timezone = unBoxCookieValue('timezone');                    
                 } else { //single-sign-on	(bypass login screen)
-                    g_mySession = $.cookie('JSESSIONID');
                     g_sessionKey = encodeURIComponent(g_loginResponse.sessionkey);
                     g_role = g_loginResponse.type;
                     g_username = g_loginResponse.username;
@@ -238,8 +216,7 @@
                     async: false,
                     success: function(json) {
                         var loginresponse = json.loginresponse;
-
-                        g_mySession = $.cookie('JSESSIONID');
+                        
                         g_sessionKey = encodeURIComponent(loginresponse.sessionkey);
                         g_role = loginresponse.type;
                         g_username = loginresponse.username;
@@ -335,8 +312,7 @@
                 $.ajax({
                     url: createURL('logout'),
                     async: false,
-                    success: function() {
-                        g_mySession = null;
+                    success: function() {                        
                         g_sessionKey = null;
                         g_username = null;
                         g_account = null;
@@ -347,8 +323,7 @@
                         g_kvmsnapshotenabled = null;
                         g_regionsecondaryenabled = null;
                         g_loginCmdText = null;
-
-                        $.cookie('JSESSIONID', null);
+                        
                         $.cookie('sessionKey', null);
                         $.cookie('username', null);
                         $.cookie('account', null);
