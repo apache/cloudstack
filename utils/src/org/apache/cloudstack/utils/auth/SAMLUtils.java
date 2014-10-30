@@ -102,7 +102,8 @@ public class SAMLUtils {
     public static final String CERTIFICATE_NAME = "SAMLSP_CERTIFICATE";
 
     public static String createSAMLId(String uid) {
-        return SAML_NS + uid;
+        String samlUuid = SAML_NS + uid;
+        return samlUuid.length() > 40 ? samlUuid.substring(0, 40) : samlUuid;
     }
 
     public static Boolean checkSAMLUserId(String uuid) {
