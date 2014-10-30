@@ -1131,6 +1131,7 @@ setup_storage_network() {
 	echo "auto eth3" >> /etc/network/interfaces
 	
 	setup_interface "3" "$STORAGE_IP" "$STORAGE_NETMASK"
+        [ -n "$MTU" ] && ifconfig eth3 mtu $MTU
 	#ip route add "$STORAGE_CIDR" via "$STORAGE_IP"
 	log_it "Successfully setup storage network with STORAGE_IP:$STORAGE_IP, STORAGE_NETMASK:$STORAGE_NETMASK, STORAGE_CIDR:$STORAGE_CIDR"
 }
@@ -1141,7 +1142,6 @@ setup_secstorage() {
   local hyp=$1
   setup_common eth0 eth1 eth2
   setup_storage_network
-  [ -n "$MTU" ] && ifconfig eth1 mtu $MTU
   sed -i  /gateway/d /etc/hosts
   public_ip=$ETH2_IP
   [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
