@@ -23,8 +23,8 @@ login=15
 logout=15
 
 ### SAML SSO/SLO commands
-samlsso=15
-samlslo=15
+samlSso=15
+samlSlo=15
 getSPMetadata=15
 
 ### Account commands
