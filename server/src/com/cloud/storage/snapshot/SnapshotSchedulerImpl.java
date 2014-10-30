@@ -64,6 +64,7 @@ import com.cloud.utils.concurrency.TestClock;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = {SnapshotScheduler.class})
@@ -333,6 +334,8 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             spstSchedVO = new SnapshotScheduleVO(policy.getVolumeId(), policyId, nextSnapshotTimestamp);
             _snapshotScheduleDao.persist(spstSchedVO);
         } else {
+            TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+
             try {
                 spstSchedVO = _snapshotScheduleDao.acquireInLockTable(spstSchedVO.getId());
                 spstSchedVO.setPolicyId(policyId);
@@ -340,10 +343,12 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 spstSchedVO.setAsyncJobId(null);
                 spstSchedVO.setSnapshotId(null);
                 _snapshotScheduleDao.update(spstSchedVO.getId(), spstSchedVO);
+                txn.commit();
             } finally {
                 if (spstSchedVO != null) {
                     _snapshotScheduleDao.releaseFromLockTable(spstSchedVO.getId());
                 }
+                txn.close();
             }
         }
         return nextSnapshotTimestamp;
