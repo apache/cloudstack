@@ -2107,7 +2107,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         _haMgr.cancelScheduledMigrations(host);
         List<VMInstanceVO> vms = _haMgr.findTakenMigrationWork();
         for (VMInstanceVO vm : vms) {
-            if (vm.getHostId() != null && vm.getHostId() == hostId) {
+            if (vm != null && vm.getHostId() != null && vm.getHostId() == hostId) {
                 s_logger.info("Unable to cancel migration because the vm is being migrated: " + vm);
                 return false;
             }
