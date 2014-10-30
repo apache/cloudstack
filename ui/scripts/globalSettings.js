@@ -234,7 +234,7 @@
                         }
                     }
                 }
-            },           
+            },    
             baremetalRct: {
                 type: 'select',
                 title: 'Baremetal Rack Configuration',
@@ -303,9 +303,71 @@
                                 poll: pollAsyncJobResult
                             }
                         }
-                    }
+                    },                    
+                    
+                    detailView: {
+                    	name: "details",
+                    	actions: {
+                    		remove: {
+                                label: 'Delete Baremetal Rack Configuration',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'Please confirm that you want to delete Baremetal Rack Configuration.';
+                                    },
+                                    notification: function(args) {
+                                        return 'Delete Baremetal Rack Configuration';
+                                    }
+                                },
+                                action: function(args) {                                	
+                                    var data = {
+                                        id: args.context.baremetalRct[0].id
+                                    };
+                                    $.ajax({
+                                        url: createURL('deleteBaremetalRct'),
+                                        data: data,
+                                        success: function(json) {
+                                        	var jid = json.deletebaremetalrctresponse.jobid;                                        	                                   	
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });                                        	
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }
+                    	},                    	
+                    	tabs: {
+                            details: {
+                                title: 'label.details',
+                                fields: [{
+                                	id: {
+                                		label: 'label.id'
+                                	},
+                                    url: {
+                                        label: 'label.url'
+                                    }
+                                }],
+                                dataProvider: function(args) {                                	
+                                    var data = {
+                                        id: args.context.baremetalRct[0].id
+                                    };                                    
+                                    $.ajax({
+                                    	url: createURL("listBaremetalRct"),
+                                    	data: data,
+                                    	success: function(json) {                                         		
+                                    		args.response.success({ data: json.listbaremetalrctresponse.baremetalrct[0] });
+                                    	}
+                                    });                                       
+                                }
+                            }
+                        }                    	
+                    }                    
                 }
-            },            
+            },     
             hypervisorCapabilities: {
                 type: 'select',
                 title: 'label.hypervisor.capabilities',
