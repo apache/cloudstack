@@ -177,7 +177,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         "ELSE (SELECT config.value FROM `cloud`.`configuration` config WHERE config.name = ?) " +
         "END configValue " +
         "FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`cluster_details` overcommit ON overcommit.cluster_id = capacity.cluster_id " +
-        "WHERE capacity.data_center_id = ? AND capacity.capacity_type = ? AND capacity.total_capacity > 0 AND overcommit.name = ?) cluster " +
+        "WHERE capacity.data_center_id = ? AND capacity.capacity_type = ? AND capacity.total_capacity > 0 AND overcommit.name = ? AND capacity.capacity_state='Enabled') cluster " +
 
         "GROUP BY cluster.cluster_id)  clusterList " +
         "WHERE clusterList.ratio > clusterList.value; ";
