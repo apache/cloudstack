@@ -35,6 +35,7 @@ public class DiskTO {
     public static final String MOUNT_POINT = "mountpoint";
     public static final String PROTOCOL_TYPE = "protocoltype";
     public static final String PATH = "path";
+    public static final String UUID = "uuid";
 
     private DataTO data;
     private Long diskSeq;

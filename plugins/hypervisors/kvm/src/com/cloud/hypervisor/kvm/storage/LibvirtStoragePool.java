@@ -256,6 +256,11 @@ public class LibvirtStoragePool implements KVMStoragePool {
         return this._pool;
     }
 
+    public void setPool(StoragePool pool) {
+        this._pool = pool;
+    }
+
+
     @Override
     public boolean delete() {
         try {

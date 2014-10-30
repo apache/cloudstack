@@ -131,7 +131,8 @@ public class Storage {
         EXT(false), // XenServer local EXT SR
         OCFS2(true),
         SMB(true),
-        Gluster(true);
+        Gluster(true),
+        ManagedNFS(true);
 
         boolean shared;
 

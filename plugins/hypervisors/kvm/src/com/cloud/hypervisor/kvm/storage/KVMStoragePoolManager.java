@@ -96,6 +96,7 @@ public class KVMStoragePoolManager {
         // add other storage adaptors here
         // this._storageMapper.put("newadaptor", new NewStorageAdaptor(storagelayer));
         this._storageMapper.put(StoragePoolType.Iscsi.toString(), new IscsiAdmStorageAdaptor());
+        this._storageMapper.put(StoragePoolType.ManagedNFS.toString(), new ManagedNfsStorageAdaptor(storagelayer));
     }
 
     public boolean connectPhysicalDisk(StoragePoolType type, String poolUuid, String volPath, Map<String, String> details) {
