@@ -1423,7 +1423,7 @@ public enum Config {
             ManagementServer.class,
             String.class,
             "saml2.sp.sso.url",
-            "http://localhost:8080/client/api?command=samlsso",
+            "http://localhost:8080/client/api?command=samlSso",
             "SAML2 CloudStack Service Provider Single Sign On URL",
             null),
     SAMLServiceProviderSingleLogOutURL(
@@ -1431,7 +1431,7 @@ public enum Config {
             ManagementServer.class,
             String.class,
             "saml2.sp.slo.url",
-            "http://localhost:8080/client/api?command=samlslo",
+            "http://localhost:8080/client/api?command=samlSlo",
             "SAML2 CloudStack Service Provider Single Log Out URL",
             null),
     SAMLIdentityProviderID(

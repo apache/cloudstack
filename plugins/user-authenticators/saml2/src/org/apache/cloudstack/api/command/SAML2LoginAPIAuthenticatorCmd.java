@@ -73,7 +73,7 @@ import java.security.PrivateKey;
 import java.util.List;
 import java.util.Map;
 
-@APICommand(name = "samlsso", description = "SP initiated SAML Single Sign On", requestHasSensitiveInfo = true, responseObject = LoginCmdResponse.class, entityType = {})
+@APICommand(name = "samlSso", description = "SP initiated SAML Single Sign On", requestHasSensitiveInfo = true, responseObject = LoginCmdResponse.class, entityType = {})
 public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
     public static final Logger s_logger = Logger.getLogger(SAML2LoginAPIAuthenticatorCmd.class.getName());
     private static final String s_name = "loginresponse";

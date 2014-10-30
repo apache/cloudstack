@@ -51,7 +51,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-@APICommand(name = "samlslo", description = "SAML Global Log Out API", responseObject = LogoutCmdResponse.class, entityType = {})
+@APICommand(name = "samlSlo", description = "SAML Global Log Out API", responseObject = LogoutCmdResponse.class, entityType = {})
 public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
     public static final Logger s_logger = Logger.getLogger(SAML2LogoutAPIAuthenticatorCmd.class.getName());
     private static final String s_name = "logoutresponse";
