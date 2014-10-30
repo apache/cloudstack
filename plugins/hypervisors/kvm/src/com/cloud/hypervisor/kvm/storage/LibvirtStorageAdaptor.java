@@ -1083,6 +1083,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
                         rbd.clone(template.getName(), rbdTemplateSnapName, io, disk.getName(), rbdFeatures, rbdOrder);
                         s_logger.debug("Succesfully cloned " + template.getName() + "@" + rbdTemplateSnapName + " to " + disk.getName());
+                        /* We also need to resize the image if the VM was deployed with a larger root disk size */
+                        if (disk.getVirtualSize() > template.getVirtualSize()) {
+                            RbdImage diskImage = rbd.open(disk.getName());
+                            diskImage.resize(disk.getVirtualSize());
+                            rbd.close(diskImage);
+                            s_logger.debug("Resized " + disk.getName() + " to " + disk.getVirtualSize());
+                        }
+
                     }
 
                     rbd.close(srcImage);
