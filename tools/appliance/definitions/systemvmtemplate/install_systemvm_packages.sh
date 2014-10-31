@@ -72,7 +72,8 @@ function install_packages() {
     libtcnative-1 libssl-dev libapr1-dev \
     open-vm-tools \
     haproxy \
-    radvd
+    radvd \
+    sharutils
 
   # commented out installation of vmware-tools as we are using the open source open-vm-tools:
   # ${apt_install} build-essential linux-headers-`uname -r`
