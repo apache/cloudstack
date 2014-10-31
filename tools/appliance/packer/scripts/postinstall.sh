@@ -235,9 +235,9 @@ configure_services() {
    cp -rv $snapshot_dir/systemvm/patches/debian/vpn/* / 
   mkdir -p /usr/share/cloud/
   cd $snapshot_dir/systemvm/patches/debian/config
-  tar -cvf /usr/share/cloud/cloud-scripts.tar *
+  tar -cvfz /usr/share/cloud/cloud-scripts.tgz *
   cd $snapshot_dir/systemvm/patches/debian/vpn
-  tar -rvf /usr/share/cloud/cloud-scripts.tar *
+  tar -rvfz /usr/share/cloud/cloud-scripts.tgz *
   cd /opt
  
   chkconfig --add cloud-early-config

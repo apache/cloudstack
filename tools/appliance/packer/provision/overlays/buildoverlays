@@ -1,0 +1,50 @@
+#!/bin/bash
+#set -x
+
+
+scriptroot=$PWD
+snapshot_dir=$PWD/../../../../..
+echo $scriptroot
+tarwork=$scriptroot"/tarwork"
+echo $tarwork
+base=$scriptroot"/overlayimage"
+echo $base
+mkdir $base
+
+
+  echo "Cloudstack Release $CLOUDSTACK_RELEASE $(date)" > $base/etc/cloudstack-release
+
+ mkdir -p $base/var/www/html
+  mkdir -p $base/opt/cloud/bin
+  mkdir -p $base/var/cache/cloud
+  mkdir -p $base/usr/share/cloud
+  mkdir -p $base/usr/local/cloud
+  mkdir -p $base/root/.ssh
+  # Fix haproxy directory issue
+  mkdir -p $base/var/lib/haproxy
+  # config files from master place in appropriate spots
+  # by Packer file provisioner
+   chmod -R 755 $snapshot_dir/systemvm/patches/debian/config/*
+   chmod -R 755 $snapshot_dir/systemvm/patches/debian/vpn/*
+   cp -rv $snapshot_dir/systemvm/patches/debian/config/* $base
+   cp -rv $snapshot_dir/systemvm/patches/debian/vpn/* $base 
+  mkdir -p $tarwork/usr/share
+  cd $snapshot_dir/systemvm/patches/debian/config
+  tar -cvf $tarwork/usr/share/cloud/cloud-scripts.tar *
+  cd $snapshot_dir/systemvm/patches/debian/vpn
+  tar -rvf $tarwork/usr/share/cloud/cloud-scripts.tar *
+  cd $base/opt
+  mkdir -p $base/var/cache/cloud/
+  gzip -c $tarwork/usr/share/cloud/cloud-scripts.tar > $base/usr/share/cloud/cloud-scripts.tgz
+  md5sum $base/usr/share/cloud/cloud-scripts.tgz | awk '{print $1}' > $base/var/cache/cloud/cloud-scripts-signature
+ mkdir $base/overlayisoimage/
+cd $base/overlayisoimage/
+
+#get script overlay images
+cp $base/usr/share/cloud/cloud-scripts.tgz .
+#get ssh keys
+cp $scriptroot/authorized_keys .
+
+mkisofs -l -r -o $scriptroot"/../../iso/testing.iso" .
+echo "iso built in $scriptroot/../../iso/testing.iso"
+
