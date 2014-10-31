@@ -71,6 +71,7 @@ function install_packages() {
     iptables-persistent \
     libtcnative-1 libssl-dev libapr1-dev \
     open-vm-tools \
+    python-flask \
     haproxy \
     radvd \
     sharutils
