@@ -27,7 +27,6 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
@@ -38,6 +37,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -311,7 +311,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             }
         }
         // Determine the VM's OS description
-        GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
+        GuestOSVO guestOS = _guestOsDao.findByIdIncludingRemoved(vm.getVirtualMachine().getGuestOSId());
         to.setOs(guestOS.getDisplayName());
         to.setHostName(vm.getHostName());
         HostVO host = _hostDao.findById(vm.getVirtualMachine().getHostId());
