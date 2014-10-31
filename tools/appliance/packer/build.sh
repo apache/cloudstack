@@ -97,6 +97,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       vb.customize ["modifyvm", :id, "--nic2", "hostonly"]
       vb.customize ["modifyvm", :id, "--nic3", "nat"]     
       vb.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
+      vb.customize ["storageattach", :id, "--storagectl","IDE Controller", "--medium","../../iso/testing.iso","--device","0","--port","1"]
  #	 vb.customize("post-boot", ["guestcontrol", :id, "exec", "--username", "vagrant", "--password", "vagrant", "touch /home/vagrant/tpp.test"]) 
   end
 
