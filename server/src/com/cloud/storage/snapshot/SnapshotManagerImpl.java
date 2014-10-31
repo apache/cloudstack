@@ -971,11 +971,11 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             snapshotStrategy.takeSnapshot(snapshot);
 
             try {
-            postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId());
-
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(),
-                    null, null, volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
+                postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId());
                 SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Image);
+                // FIXME - snapshotStoreRef.getSize() refers to physical size, correct that
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(),
+                    null, null, snapshotStoreRef.getSize(), volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
                 // Correct the resource count of snapshot in case of delta snapshots.
                 _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage, new Long(volume.getSize() - snapshotStoreRef.getSize()));
             } catch (Exception e) {
