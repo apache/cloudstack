@@ -79,6 +79,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.mgmt.JmxUtil;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
     // Advanced
@@ -86,6 +87,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         "Time (in minutes) for async-jobs to be kept in system", true, ConfigKey.Scope.Global);
     private static final ConfigKey<Long> JobCancelThresholdMinutes = new ConfigKey<Long>("Advanced", Long.class, "job.cancel.threshold.minutes", "60",
         "Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long", true, ConfigKey.Scope.Global);
+    private static final ConfigKey<Integer> VmJobLockTimeout = new ConfigKey<Integer>("Advanced",
+            Integer.class, "vm.job.lock.timeout", "1800",
+            "Time in seconds to wait in acquiring lock to submit a vm worker job", false);
 
     private static final Logger s_logger = Logger.getLogger(AsyncJobManagerImpl.class);
 
@@ -111,6 +115,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private MessageBus _messageBus;
     @Inject
     private AsyncJobMonitor _jobMonitor;
+    @Inject
+    private VMInstanceDao _vmInstanceDao;
 
     private volatile long _executionRunNumber = 1;
 
@@ -125,7 +131,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {JobExpireMinutes, JobCancelThresholdMinutes};
+        return new ConfigKey<?>[] {JobExpireMinutes, JobCancelThresholdMinutes, VmJobLockTimeout};
     }
 
     @Override
@@ -185,18 +191,27 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             @SuppressWarnings("rawtypes")
             final GenericDao dao = GenericDaoBase.getDao(job.getClass());
 
-            return Transaction.execute(new TransactionCallback<Long>() {
-                @Override
-                public Long doInTransaction(TransactionStatus status) {
-                    job.setInitMsid(getMsid());
-                    dao.persist(job);
+            publishOnEventBus(job, "submit");
 
-                    publishOnEventBus(job, "submit");
-                    syncAsyncJobExecution(job, syncObjType, syncObjId, 1);
+            if (!_vmInstanceDao.lockInLockTable(String.valueOf(syncObjId), VmJobLockTimeout.value())){
+                throw new CloudRuntimeException("Failed to acquire lock in submitting async job: " + job.getCmd() + " with timeout value = " + VmJobLockTimeout.value());
+            }
 
-                    return job.getId();
-                }
-            });
+            try {
+                // lock is acquired
+                return Transaction.execute(new TransactionCallback<Long>() {
+                    @Override
+                    public Long doInTransaction(TransactionStatus status) {
+                        job.setInitMsid(getMsid());
+                        dao.persist(job);
+
+                        syncAsyncJobExecution(job, syncObjType, syncObjId, 1);
+                        return job.getId();
+                    }
+                });
+            } finally {
+                _vmInstanceDao.unlockFromLockTable(String.valueOf(syncObjId));
+            }
         } catch (Exception e) {
             String errMsg = "Unable to schedule async job for command " + job.getCmd() + ", unexpected exception.";
             s_logger.warn(errMsg, e);
@@ -239,13 +254,13 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         publishOnEventBus(job, "complete"); // publish before the instance type and ID are wiped out
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Wake up jobs related to job- " + jobId);
+            s_logger.debug("Wake up jobs related to job-" + jobId);
         }
         List<Long> wakeupList = Transaction.execute(new TransactionCallback<List<Long>>() {
             @Override
             public List<Long> doInTransaction(TransactionStatus status) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Update db status for job- " + jobId);
+                    s_logger.debug("Update db status for job-" + jobId);
                 }
                 job.setCompleteMsid(getMsid());
                 job.setStatus(jobStatus);
@@ -262,15 +277,13 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 _jobDao.update(jobId, job);
 
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Wake up jobs joined with job- " + jobId + " and disjoin all subjobs created from job- " + jobId);
+                    s_logger.debug("Wake up jobs joined with job-" + jobId + " and disjoin all subjobs created from job- " + jobId);
                 }
                 List<Long> wakeupList = wakeupByJoinedJobCompletion(jobId);
                 _joinMapDao.disjoinAllJobs(jobId);
 
                 // purge the job sync item from queue
-                if (job.getSyncSource() != null) {
-                    _queueMgr.purgeItem(job.getSyncSource().getId());
-                }
+                _queueMgr.purgeAsyncJobQueueItemId(jobId);
 
                 return wakeupList;
             }
@@ -856,20 +869,16 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             final SearchCriteria<AsyncJobVO> jobsSC = JobIdsSearch.create("ids", ids);
             final SearchCriteria<SyncQueueItemVO> queueItemsSC = QueueJobIdsSearch.create("contentIds", ids);
 
-            Transaction.execute(new TransactionCallbackNoReturn() {
-                @Override
-                public void doInTransactionWithoutResult(TransactionStatus status) {
-                    AsyncJobVO job = _jobDao.createForUpdate();
-                    job.setPendingSignals(AsyncJob.Constants.SIGNAL_MASK_WAKEUP);
-                    _jobDao.update(job, jobsSC);
+            AsyncJobVO job = _jobDao.createForUpdate();
+            job.setPendingSignals(AsyncJob.Constants.SIGNAL_MASK_WAKEUP);
+            _jobDao.update(job, jobsSC);
 
-                    SyncQueueItemVO item = _queueItemDao.createForUpdate();
-                    item.setLastProcessNumber(null);
-                    item.setLastProcessMsid(null);
-                    _queueItemDao.update(item, queueItemsSC);
-                }
-            });
+            SyncQueueItemVO item = _queueItemDao.createForUpdate();
+            item.setLastProcessNumber(null);
+            item.setLastProcessMsid(null);
+            _queueItemDao.update(item, queueItemsSC);
         }
+
         return _joinMapDao.findJobsToWake(joinedJobId);
     }
 
