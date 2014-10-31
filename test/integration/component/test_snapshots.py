@@ -186,37 +186,17 @@ class TestSnapshots(cloudstackTestCase):
         cls.services["zoneid"] = cls.zone.id
         cls.services["diskoffering"] = cls.disk_offering.id
 
-        # Create VMs, NAT Rules etc
-        cls.account = Account.create(
-                            cls.api_client,
-                            cls.services["account"],
-                            domainid=cls.domain.id
-                            )
-
-        cls.services["account"] = cls.account.name
-
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
-        cls.virtual_machine = cls.virtual_machine_with_disk = \
-                    VirtualMachine.create(
-                                cls.api_client,
-                                cls.services["server_with_disk"],
-                                templateid=cls.template.id,
-                                accountid=cls.account.name,
-                                domainid=cls.account.domainid,
-                                serviceofferingid=cls.service_offering.id,
-                                mode=cls.services["mode"]
-                                )
 
         # Get Hypervisor Type
         cls.hypervisor = (get_hypervisor_type(cls.api_client)).lower()
 
         cls._cleanup = [
                         cls.service_offering,
-                        cls.disk_offering,
-                        cls.account,
+                        cls.disk_offering
                         ]
         return
 
@@ -233,7 +213,25 @@ class TestSnapshots(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.hypervisor = str(self.testClient.getHypervisorInfo()).lower()
         self.dbclient = self.testClient.getDbConnection()
-        self.cleanup = []
+
+        # Create VMs, NAT Rules etc
+        self.account = Account.create(
+                            self.apiclient,
+                            self.services["account"],
+                            domainid=self.domain.id
+                            )
+
+        self.virtual_machine = self.virtual_machine_with_disk = \
+                    VirtualMachine.create(
+                                self.api_client,
+                                self.services["server_with_disk"],
+                                templateid=self.template.id,
+                                accountid=self.account.name,
+                                domainid=self.account.domainid,
+                                serviceofferingid=self.service_offering.id,
+                                mode=self.services["mode"]
+                                )
+        self.cleanup = [self.account, ]
         return
 
     def tearDown(self):
@@ -853,8 +851,6 @@ class TestSnapshots(cloudstackTestCase):
                                     serviceofferingid=self.service_offering.id,
                                     mode=self.services["mode"]
                                     )
-        self.cleanup.append(new_virtual_machine)
-
         try:
             #Login to VM & mount directory
             ssh = new_virtual_machine.get_ssh_client()
@@ -941,8 +937,6 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-
-        cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
