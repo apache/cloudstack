@@ -830,6 +830,7 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         VolumeVO newVol = new VolumeVO(volume);
+        newVol.setInstanceId(null);
         newVol.setPoolId(pool.getId());
         newVol.setFolder(folder);
         newVol.setPodId(pool.getPodId());
@@ -1021,11 +1022,15 @@ public class VolumeServiceImpl implements VolumeService {
             srcVolume.processEvent(Event.OperationSuccessed);
             destVolume.processEvent(Event.OperationSuccessed, result.getAnswer());
             _volumeDao.updateUuid(srcVolume.getId(), destVolume.getId());
-            destroyVolume(srcVolume.getId());
-            srcVolume = volFactory.getVolume(srcVolume.getId());
-            AsyncCallFuture<VolumeApiResult> destroyFuture = expungeVolumeAsync(srcVolume);
-            destroyFuture.get();
-            future.complete(res);
+            try {
+                destroyVolume(srcVolume.getId());
+                srcVolume = volFactory.getVolume(srcVolume.getId());
+                AsyncCallFuture<VolumeApiResult> destroyFuture = expungeVolumeAsync(srcVolume);
+                destroyFuture.get();
+                future.complete(res);
+            } catch (Exception e) {
+                s_logger.debug("failed to clean up volume on storage", e);
+            }
             return null;
         } catch (Exception e) {
             s_logger.debug("Failed to process copy volume callback", e);
