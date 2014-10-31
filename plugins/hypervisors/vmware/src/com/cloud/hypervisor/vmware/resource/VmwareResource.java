@@ -1834,10 +1834,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private Pair<String, String> composeVmNames(VirtualMachineTO vmSpec) {
         String vmInternalCSName = vmSpec.getName();
         String vmNameOnVcenter = vmSpec.getName();
-        if (vmSpec.getType() == VirtualMachine.Type.User && _instanceNameFlag && vmSpec.getHostName() != null) {
-            String[] tokens = vmInternalCSName.split("-");
-            assert (tokens.length >= 3); // vmInternalCSName has format i-x-y-<instance.name>
-            vmNameOnVcenter = String.format("%s-%s-%s-%s", tokens[0], tokens[1], tokens[2], vmSpec.getHostName());
+        if (_instanceNameFlag && vmSpec.getHostName() != null) {
+            vmNameOnVcenter = vmSpec.getHostName();
         }
         return new Pair<String, String>(vmInternalCSName, vmNameOnVcenter);
     }
