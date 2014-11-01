@@ -320,7 +320,6 @@ public class CertServiceImpl implements CertService {
         response.setObjectName("sslcert");
         response.setId(cert.getUuid());
         response.setCertificate(cert.getCertificate());
-        response.setPrivatekey(cert.getKey());
         response.setFingerprint(cert.getFingerPrint());
 
         if (cert.getChain() != null)
