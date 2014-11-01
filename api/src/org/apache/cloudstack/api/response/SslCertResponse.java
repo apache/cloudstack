@@ -37,10 +37,6 @@ public class SslCertResponse extends BaseResponse {
     @Param(description = "certificate")
     private String certificate;
 
-    @SerializedName(ApiConstants.PRIVATE_KEY)
-    @Param(description = "private key")
-    private String privatekey;
-
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "account for the certificate")
     private String accountName;
@@ -66,10 +62,6 @@ public class SslCertResponse extends BaseResponse {
 
     public void setCertificate(String cert) {
         this.certificate = cert;
-    }
-
-    public void setPrivatekey(String key) {
-        this.privatekey = key;
     }
 
     public void setAccountName(String accountName) {
