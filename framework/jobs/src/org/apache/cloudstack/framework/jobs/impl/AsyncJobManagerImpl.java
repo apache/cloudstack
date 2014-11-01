@@ -60,6 +60,7 @@ import com.cloud.cluster.ManagementServerHost;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Predicate;
+import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -970,7 +971,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private GenericSearchBuilder<AsyncJobJoinMapVO, Long> JoinJobTimeSearch;
 
     protected AsyncJobManagerImpl() {
-
+        // override default run level for manager components to start this early, otherwise, VirtualMachineManagerImpl will
+        // get stuck in non-initializing job queue
+        setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK);
     }
 
     private void publishOnEventBus(AsyncJob job, String jobEvent) {
