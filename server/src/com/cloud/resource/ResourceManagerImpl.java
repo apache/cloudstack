@@ -99,6 +99,7 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.gpu.GPU;
 import com.cloud.gpu.HostGpuGroupsVO;
 import com.cloud.gpu.VGPUTypesVO;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
@@ -125,6 +126,7 @@ import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.org.Managed;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -223,6 +225,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     PlannerHostReservationDao _plannerHostReserveDao;
     @Inject
     private DedicatedResourceDao _dedicatedDao;
+    @Inject
+    private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
 
     private List<? extends Discoverer> _discoverers;
 
@@ -1193,7 +1197,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
             List<HostVO> hosts = listAllUpAndEnabledHosts(Host.Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
             for (final VMInstanceVO vm : vms) {
-                if (hosts == null || hosts.isEmpty() || !answer.getMigrate()) {
+                if (hosts == null || hosts.isEmpty() || !answer.getMigrate()
+                        || _serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.vgpuType.toString()) != null) {
+                    // Migration is not supported for VGPU Vms so stop them.
                     // for the last host in this cluster, stop all the VMs
                     _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
                 } else if (HypervisorType.LXC.equals(host.getHypervisorType()) && VirtualMachine.Type.User.equals(vm.getType())){
