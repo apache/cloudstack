@@ -754,3 +754,4 @@ ALTER TABLE `cloud_usage`.`usage_vpn_user` CHANGE `user_name` `user_name` VARCHA
 --Increase key value size generated from RSA-8192 to be stored.
 ALTER TABLE `cloud`.`user_vm_details` MODIFY `value` VARCHAR(5120);
 
+UPDATE `cloud`.`host` SET resource = REPLACE(resource, 'com.cloud.hypervisor.xen.resource', 'com.cloud.hypervisor.xenserver.resource') WHERE hypervisor_type='XenServer' AND REMOVED IS NULL;
