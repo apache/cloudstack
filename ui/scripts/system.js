@@ -19318,6 +19318,12 @@
                         },
                         endipv6: {
                             label: 'label.ipv6.end.ip'
+                        },
+                        gateway: {
+                        	label: 'label.gateway'
+                        },
+                        netmask: {
+                        	label: 'label.netmask'
                         }
                     },
                     
