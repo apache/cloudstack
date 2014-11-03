@@ -49,6 +49,7 @@ import com.cloud.agent.api.routing.AggregationControlCommand.Action;
 import com.cloud.agent.api.routing.GetRouterAlertsCommand;
 import com.cloud.agent.api.routing.GroupAnswer;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.resource.virtualnetwork.facade.AbstractConfigItemFacade;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -325,7 +326,14 @@ public class VirtualRoutingResource {
     }
 
     private List<ConfigItem> generateCommandCfg(NetworkElementCommand cmd) {
-        return ConfigHelper.generateCommandCfg(cmd);
+        /*
+         * [TODO] Still have to migrate LoadBalancerConfigCommand and BumpUpPriorityCommand
+         * [FIXME] Have a look at SetSourceNatConfigItem
+         */
+
+        final AbstractConfigItemFacade configItemFacade = AbstractConfigItemFacade.getInstance(cmd.getClass());
+
+        return configItemFacade.generateConfig(cmd);
     }
 
     private Answer execute(AggregationControlCommand cmd) {
