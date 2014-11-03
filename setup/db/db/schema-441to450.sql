@@ -758,3 +758,6 @@ CREATE TABLE `cloud`.`baremetal_rct` (
   `rct` text NOT NULL,
    PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+
+--Remove duplicates from guest_os_hypervisor table
+DELETE t1 FROM guest_os_hypervisor t1, guest_os_hypervisor t2 WHERE (t1.hypervisor_type = t2.hypervisor_type AND t1.hypervisor_version = t2.hypervisor_version AND t1.guest_os_id = t2.guest_os_id AND t1.id > t2.id AND t1.is_user_defined=0);
