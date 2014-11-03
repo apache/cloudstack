@@ -30,6 +30,9 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.serializer.MessageSerializer;
 
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
+
 public class MessageBusBase implements MessageBus {
 
     private final Gate _gate;
@@ -158,7 +161,11 @@ public class MessageBusBase implements MessageBus {
 
     @Override
     public void publish(String senderAddress, String subject, PublishScope scope, Object args) {
-
+        // publish cannot be in DB transaction, which may hold DB lock too long, and we are guarding this here
+        if (!noDbTxn()){
+            String errMsg = "NO EVENT PUBLISH CAN BE WRAPPED WITHIN DB TRANSACTION!";
+            s_logger.error(errMsg, new CloudRuntimeException(errMsg));
+        }
         if (_gate.enter(true)) {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Enter gate in message bus publish");
@@ -254,6 +261,11 @@ public class MessageBusBase implements MessageBus {
         } else {
             return next;
         }
+    }
+
+    private boolean noDbTxn() {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        return !txn.dbTxnStarted();
     }
 
     //
