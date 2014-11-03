@@ -309,17 +309,21 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             throw new InvalidParameterValueException("Volume is not in ready state");
         }
 
-        boolean backedUp = false;
+
         // does the caller have the authority to act on this volume
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
 
         SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
-
+        if(snapshot != null)
+        {
+            s_logger.debug("Failed to create snapshot");
+            throw new CloudRuntimeException("Failed to create snapshot");
+        }
         try {
             postCreateSnapshot(volumeId, snapshot.getId(), policyId);
             //Check if the snapshot was removed while backingUp. If yes, do not log snapshot create usage event
             SnapshotVO freshSnapshot = _snapshotDao.findById(snapshot.getId());
-            if ((freshSnapshot != null) && backedUp) {
+            if (freshSnapshot != null)  {
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(),
                     null, null, volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
             }

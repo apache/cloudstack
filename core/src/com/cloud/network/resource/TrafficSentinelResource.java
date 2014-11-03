@@ -222,9 +222,6 @@ public class TrafficSentinelResource implements ServerResource {
                         String publicIp = st.nextToken();
                         Long bytesSent = new Long(st.nextToken());
                         Long bytesRcvd = new Long(st.nextToken());
-                        if (bytesSent == null || bytesRcvd == null) {
-                            s_logger.debug("Incorrect bytes for IP: " + publicIp);
-                        }
                         long[] bytesSentAndReceived = new long[2];
                         bytesSentAndReceived[0] = bytesSent;
                         bytesSentAndReceived[1] = bytesRcvd;

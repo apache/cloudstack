@@ -1073,7 +1073,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                                                  volume.getProvisioningType(), disksize);
 
             VolumeObjectTO newVol = new VolumeObjectTO();
-            newVol.setPath(vol.getName());
+            if(vol != null) {
+                newVol.setPath(vol.getName());
+            }
             newVol.setSize(volume.getSize());
             newVol.setFormat(ImageFormat.valueOf(format.toString().toUpperCase()));
 

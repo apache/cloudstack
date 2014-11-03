@@ -1007,11 +1007,12 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             if (host != null) {
                 s_logger.debug("Removing host entry for ssvm id=" + vmId);
                 _hostDao.remove(host.getId());
+                //Expire the download urls in the entire zone for templates and volumes.
+                _tmplStoreDao.expireDnldUrlsForZone(host.getDataCenterId());
+                _volumeStoreDao.expireDnldUrlsForZone(host.getDataCenterId());
+                return true;
             }
-            //Expire the download urls in the entire zone for templates and volumes.
-            _tmplStoreDao.expireDnldUrlsForZone(host.getDataCenterId());
-            _volumeStoreDao.expireDnldUrlsForZone(host.getDataCenterId());
-            return true;
+            return false;
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to expunge " + ssvm, e);
             return false;

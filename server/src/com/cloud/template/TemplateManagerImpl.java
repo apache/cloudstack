@@ -155,7 +155,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
-import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
@@ -1352,10 +1351,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating template", async = true)
     public VirtualMachineTemplate createPrivateTemplate(CreateTemplateCmd command) throws CloudRuntimeException {
-        Long userId = CallContext.current().getCallingUserId();
-        if (userId == null) {
-            userId = User.UID_SYSTEM;
-        }
         final long templateId = command.getEntityId();
         Long volumeId = command.getVolumeId();
         Long snapshotId = command.getSnapshotId();

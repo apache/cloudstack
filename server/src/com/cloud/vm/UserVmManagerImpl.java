@@ -746,12 +746,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } catch (CloudException e) {
             throw new CloudRuntimeException("Unable to contact the agent to stop the virtual machine " + vm, e);
         }
-
-        if (status) {
-            return status;
-        } else {
-            return status;
-        }
+        return status;
     }
 
     private UserVm rebootVirtualMachine(long userId, long vmId) throws InsufficientCapacityException, ResourceUnavailableException {
@@ -1335,16 +1330,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (vmSnapshots.size() > 0) {
                 throw new InvalidParameterValueException("Unable to scale VM, please remove VM snapshots before scaling VM");
             }
+            if (vmInstance.getState().equals(State.Stopped)) {
+                upgradeStoppedVirtualMachine(vmId, newServiceOfferingId, customParameters);
+                return true;
+            }
+            if (vmInstance.getState().equals(State.Running)) {
+                return upgradeRunningVirtualMachine(vmId, newServiceOfferingId, customParameters);
+            }
         }
-
-        if (vmInstance.getState().equals(State.Stopped)) {
-            upgradeStoppedVirtualMachine(vmId, newServiceOfferingId, customParameters);
-            return true;
-        }
-        if (vmInstance.getState().equals(State.Running)) {
-            return upgradeRunningVirtualMachine(vmId, newServiceOfferingId, customParameters);
-        }
-        return false;
+    return false;
     }
 
     private boolean upgradeRunningVirtualMachine(Long vmId, Long newServiceOfferingId, Map<String, String> customParameters) throws ResourceUnavailableException,
