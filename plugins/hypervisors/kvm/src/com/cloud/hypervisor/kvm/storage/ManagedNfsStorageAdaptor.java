@@ -100,6 +100,9 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
         LibvirtStoragePoolDef spd = null;
         try {
             conn = LibvirtConnection.getConnection();
+            if (conn == null) {
+                throw new CloudRuntimeException("Failed to create Libvrt Connection");
+            }
 
             targetPath = "/mnt" + volumeUuid;
             spd = new LibvirtStoragePoolDef(poolType.NETFS, volumeUuid, details.get(DiskTO.UUID), pool.getSourceHost(), details.get(DiskTO.MOUNT_POINT), targetPath);
@@ -140,7 +143,7 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
                 if (result == null) {
                     s_logger.error("Succeeded in unmounting " + targetPath);
                     try {
-                        sp = conn.storagePoolCreateXML(spd.toString(), 0);
+                        conn.storagePoolCreateXML(spd.toString(), 0);
                         s_logger.error("Succeeded in redefining storage");
                         return true;
                     } catch (LibvirtException l) {
@@ -176,9 +179,6 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
         }
 
         LibvirtStorageVolumeDef.volFormat libvirtformat = null;
-        String volPath = null;
-        String volName = null;
-        long volAllocation = 0;
         long volCapacity = 0;
         // check whether the volume is present on the given pool
         StorageVol vol = getVolume(virtPool, volumeUuid);
@@ -194,13 +194,8 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
                 s_logger.debug(volDef.toString());
 
                 vol = virtPool.storageVolCreateXML(volDef.toString(), 0);
-                volPath = vol.getPath();
-                volName = vol.getName();
-                volAllocation = vol.getInfo().allocation;
-                volCapacity = vol.getInfo().capacity;
 
             }
-
             KVMPhysicalDisk disk = new KVMPhysicalDisk(vol.getPath(), volumeUuid, pool);
             disk.setFormat(PhysicalDiskFormat.QCOW2);
             disk.setSize(vol.getInfo().allocation);

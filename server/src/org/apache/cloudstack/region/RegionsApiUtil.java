@@ -237,11 +237,6 @@ public class RegionsApiUtil {
 
         String apiKey = "";
         String secretKey = "";
-
-        if (apiKey == null || secretKey == null) {
-            return region.getEndPoint() + "?" + apiParams;
-        }
-
         String encodedApiKey;
         try {
             encodedApiKey = URLEncoder.encode(apiKey, "UTF-8");

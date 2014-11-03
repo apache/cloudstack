@@ -404,14 +404,14 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
 
         Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
+        if(mapCapabilities != null) {
+            String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
+            Boolean supportsStorageSystemSnapshots = new Boolean(value);
 
-        String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
-        Boolean supportsStorageSystemSnapshots = new Boolean(value);
-
-        if (supportsStorageSystemSnapshots) {
-            return StrategyPriority.HIGHEST;
+            if (supportsStorageSystemSnapshots) {
+                return StrategyPriority.HIGHEST;
+            }
         }
-
         return StrategyPriority.CANT_HANDLE;
     }
 }

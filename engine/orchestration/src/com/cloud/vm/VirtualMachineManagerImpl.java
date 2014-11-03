@@ -2675,12 +2675,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.debug("Not processing listener " + this + " as connect happens on rebalance process");
             return;
         }
-
-        if (forRebalance) {
-            s_logger.debug("Not processing listener " + this + " as connect happens on rebalance process");
-            return;
-        }
-
         Long clusterId = agent.getClusterId();
         long agentId = agent.getId();
 

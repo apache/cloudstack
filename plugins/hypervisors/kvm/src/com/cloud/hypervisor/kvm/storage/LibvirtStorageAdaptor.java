@@ -915,6 +915,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             try {
                 String newUuid = name;
                 disk = destPool.createPhysicalDisk(newUuid, format, provisioningType, template.getVirtualSize());
+                if (disk == null) {
+                    throw new CloudRuntimeException("Failed to create disk from template " + template.getName());
+                }
                 if (template.getFormat() == PhysicalDiskFormat.TAR) {
                     Script.runSimpleBashScript("tar -x -f " + template.getPath() + " -C " + disk.getPath(), timeout); // TO BE FIXED to aware provisioningType
                 } else if (template.getFormat() == PhysicalDiskFormat.DIR) {
@@ -960,9 +963,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
         }
 
-        if (disk == null) {
-            throw new CloudRuntimeException("Failed to create disk from template " + template.getName());
-        }
 
         return disk;
     }
