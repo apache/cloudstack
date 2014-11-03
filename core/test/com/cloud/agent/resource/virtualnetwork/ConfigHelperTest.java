@@ -29,6 +29,10 @@ import java.util.UUID;
 
 import org.junit.Test;
 
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import com.cloud.agent.api.routing.DeleteIpAliasCommand;
 import com.cloud.agent.api.routing.DnsMasqConfigCommand;
 import com.cloud.agent.api.routing.IpAliasTO;
@@ -41,6 +45,7 @@ import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
+import com.cloud.agent.resource.virtualnetwork.facade.AbstractConfigItemFacade;
 import com.cloud.agent.resource.virtualnetwork.model.DhcpConfig;
 import com.cloud.agent.resource.virtualnetwork.model.DhcpConfigEntry;
 import com.cloud.agent.resource.virtualnetwork.model.ForwardingRule;
@@ -52,9 +57,6 @@ import com.cloud.agent.resource.virtualnetwork.model.IpAssociation;
 import com.cloud.agent.resource.virtualnetwork.model.LoadBalancerRule;
 import com.cloud.agent.resource.virtualnetwork.model.LoadBalancerRules;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 public class ConfigHelperTest {
 
@@ -67,7 +69,9 @@ public class ConfigHelperTest {
 
         final LoadBalancerConfigCommand command = generateLoadBalancerConfigCommand();
 
-        final List<ConfigItem> config = ConfigHelper.generateCommandCfg(command);
+        final AbstractConfigItemFacade configItemFacade = AbstractConfigItemFacade.getInstance(command.getClass());
+
+        final List<ConfigItem> config = configItemFacade.generateConfig(command);
         assertTrue(config.size() > 0);
 
         final ConfigItem fileConfig = config.get(0);
@@ -96,7 +100,9 @@ public class ConfigHelperTest {
 
         final SetPortForwardingRulesVpcCommand command = generateSetPortForwardingRulesVpcCommand();
 
-        final List<ConfigItem> config = ConfigHelper.generateCommandCfg(command);
+        final AbstractConfigItemFacade configItemFacade = AbstractConfigItemFacade.getInstance(command.getClass());
+
+        final List<ConfigItem> config = configItemFacade.generateConfig(command);
         assertTrue(config.size() > 0);
 
         final ConfigItem fileConfig = config.get(0);
@@ -125,7 +131,9 @@ public class ConfigHelperTest {
 
         final IpAssocVpcCommand command = generateIpAssocVpcCommand();
 
-        final List<ConfigItem> config = ConfigHelper.generateCommandCfg(command);
+        final AbstractConfigItemFacade configItemFacade = AbstractConfigItemFacade.getInstance(command.getClass());
+
+        final List<ConfigItem> config = configItemFacade.generateConfig(command);
         assertTrue(config.size() > 0);
 
         final ConfigItem fileConfig = config.get(0);
@@ -154,7 +162,9 @@ public class ConfigHelperTest {
 
         final DnsMasqConfigCommand command = generateDnsMasqConfigCommand();
 
-        final List<ConfigItem> config = ConfigHelper.generateCommandCfg(command);
+        final AbstractConfigItemFacade configItemFacade = AbstractConfigItemFacade.getInstance(command.getClass());
+
+        final List<ConfigItem> config = configItemFacade.generateConfig(command);
         assertTrue(config.size() > 0);
 
         final ConfigItem fileConfig = config.get(0);
@@ -183,7 +193,9 @@ public class ConfigHelperTest {
 
         final DeleteIpAliasCommand command = generateDeleteIpAliasCommand();
 
-        final List<ConfigItem> config = ConfigHelper.generateCommandCfg(command);
+        final AbstractConfigItemFacade configItemFacade = AbstractConfigItemFacade.getInstance(command.getClass());
+
+        final List<ConfigItem> config = configItemFacade.generateConfig(command);
         assertTrue(config.size() > 0);
 
         final ConfigItem fileConfig = config.get(0);
