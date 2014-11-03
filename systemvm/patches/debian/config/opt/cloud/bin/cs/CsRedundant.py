@@ -166,6 +166,7 @@ class CsRedundant(object):
             return
         ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
         for o in ads:
+            ## cmd2 = "ip link set %s up" % self.getDevice()
             CsHelper.execute("ifconfig %s down" % o.get_device())
             CsHelper.execute("ifconfig %s up" % o.get_device())
             CsHelper.execute("arping -I %s -A %s -c 1" % (o.get_device(), o.get_ip()))
