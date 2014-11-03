@@ -258,6 +258,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 }
 
                 job.setLastUpdated(DateUtil.currentGMTTime());
+                job.setExecutingMsid(null);
                 _jobDao.update(jobId, job);
 
                 if (s_logger.isDebugEnabled()) {
@@ -265,6 +266,11 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 }
                 List<Long> wakeupList = wakeupByJoinedJobCompletion(jobId);
                 _joinMapDao.disjoinAllJobs(jobId);
+
+                // purge the job sync item from queue
+                if (job.getSyncSource() != null) {
+                    _queueMgr.purgeItem(job.getSyncSource().getId());
+                }
 
                 return wakeupList;
             }
@@ -527,12 +533,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 } finally {
                     // guard final clause as well
                     try {
-                        AsyncJobVO jobToUpdate = _jobDao.findById(job.getId());
-                        jobToUpdate.setExecutingMsid(null);
-                        _jobDao.update(job.getId(), jobToUpdate);
-
                         if (job.getSyncSource() != null) {
-                            _queueMgr.purgeItem(job.getSyncSource().getId());
                             checkQueue(job.getSyncSource().getQueueId());
                         }
 
