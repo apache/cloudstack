@@ -1530,7 +1530,7 @@
                                             label: 'label.ipv4.cidr'
                                         },
                                         ip6cidr: {
-                                            label: 'label.ipv6.cidr'
+                                            label: 'label.ipv6.CIDR'
                                         }
                                         //scope: { label: 'label.scope' }
                                     },
