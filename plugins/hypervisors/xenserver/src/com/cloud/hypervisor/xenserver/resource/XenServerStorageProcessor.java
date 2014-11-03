@@ -226,7 +226,6 @@ public class XenServerStorageProcessor implements StorageProcessor {
     public AttachAnswer attachVolume(AttachCommand cmd) {
         DiskTO disk = cmd.getDisk();
         DataTO data = disk.getData();
-
         try {
             String vmName = cmd.getVmName();
             String vdiNameLabel = vmName + "-DATA";
@@ -303,20 +302,20 @@ public class XenServerStorageProcessor implements StorageProcessor {
             VBD vbd = VBD.create(conn, vbdr);
 
             // Attach the VBD to the VM
-            vbd.plug(conn);
-
+            try {
+                vbd.plug(conn);
+            } catch (Exception e) {
+                vbd.destroy(conn);
+                throw e;
+            }
             // Update the VDI's label to include the VM name
             vdi.setNameLabel(conn, vdiNameLabel);
 
             DiskTO newDisk = new DiskTO(disk.getData(), Long.parseLong(diskNumber), vdi.getUuid(conn), disk.getType());
 
             return new AttachAnswer(newDisk);
-        } catch (XenAPIException e) {
-            String msg = "Failed to attach volume" + " for uuid: " + data.getPath() + "  due to " + e.toString();
-            s_logger.warn(msg, e);
-            return new AttachAnswer(msg);
         } catch (Exception e) {
-            String msg = "Failed to attach volume" + " for uuid: " + data.getPath() + "  due to " + e.getMessage();
+            String msg = "Failed to attach volume" + " for uuid: " + data.getPath() + "  due to "  + e.toString();
             s_logger.warn(msg, e);
             return new AttachAnswer(msg);
         }
