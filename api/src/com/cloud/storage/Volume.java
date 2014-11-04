@@ -69,7 +69,6 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(Creating, Event.OperationRetry, Creating);
             s_fsm.addTransition(Creating, Event.OperationFailed, Allocated);
             s_fsm.addTransition(Creating, Event.OperationSucceeded, Ready);
-            s_fsm.addTransition(Creating, Event.DestroyRequested, Destroy);
             s_fsm.addTransition(Creating, Event.CreateRequested, Creating);
             s_fsm.addTransition(Ready, Event.ResizeRequested, Resizing);
             s_fsm.addTransition(Resizing, Event.OperationSucceeded, Ready);
