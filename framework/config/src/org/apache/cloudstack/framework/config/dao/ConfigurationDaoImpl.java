@@ -210,9 +210,6 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
                     update(name, category, initValue);
                 }
             } else {
-                if (category.equals("Hidden") || category.equals("Secure")) {
-                    initValue = DBEncryptionUtil.encrypt(initValue);
-                }
                 ConfigurationVO newConfig = new ConfigurationVO(category, "DEFAULT", "management-server", name, initValue, desc);
                 persist(newConfig);
             }
