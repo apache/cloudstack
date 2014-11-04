@@ -2974,18 +2974,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
         VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
 
-        // don't delete default NIC on a user VM
-        if (nic.isDefaultNic() && vm.getType() == VirtualMachine.Type.User) {
-            s_logger.warn("Failed to remove nic from " + vm + " in " + network + ", nic is default.");
-            throw new CloudRuntimeException("Failed to remove nic from " + vm + " in " + network + ", nic is default.");
-        }
-
-        // if specified nic is associated with PF/LB/Static NAT
-        if (rulesMgr.listAssociatedRulesForGuestNic(nic).size() > 0) {
-            throw new CloudRuntimeException("Failed to remove nic from " + vm + " in " + network +
-                    ", nic has associated Port forwarding or Load balancer or Static NAT rules.");
-        }
-
         NicProfile nicProfile =
                 new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), _networkModel.getNetworkRate(network.getId(), vm.getId()),
                         _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));

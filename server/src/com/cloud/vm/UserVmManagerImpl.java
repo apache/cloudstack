@@ -37,7 +37,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -1074,7 +1073,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         UserVmVO vmInstance = _vmDao.findById(vmId);
         if (vmInstance == null) {
-            throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+            throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
         }
 
         // Check that Vm does not have VM Snapshots
@@ -1084,11 +1083,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         NicVO nic = _nicDao.findById(nicId);
         if (nic == null) {
-            throw new InvalidParameterValueException("unable to find a nic with id " + nicId);
+            throw new InvalidParameterValueException("Unable to find a nic with id " + nicId);
         }
+
         NetworkVO network = _networkDao.findById(nic.getNetworkId());
         if (network == null) {
-            throw new InvalidParameterValueException("unable to find a network with id " + nic.getNetworkId());
+            throw new InvalidParameterValueException("Unable to find a network with id " + nic.getNetworkId());
         }
 
         // Perform permission check on VM
@@ -1097,19 +1097,28 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Verify that zone is not Basic
         DataCenterVO dc = _dcDao.findById(vmInstance.getDataCenterId());
         if (dc.getNetworkType() == DataCenter.NetworkType.Basic) {
-            throw new CloudRuntimeException("Zone " + vmInstance.getDataCenterId() + ", has a NetworkType of Basic. Can't remove a NIC from a VM on a Basic Network");
+            throw new InvalidParameterValueException("Zone " + vmInstance.getDataCenterId() + ", has a NetworkType of Basic. Can't remove a NIC from a VM on a Basic Network");
         }
 
-        //check to see if nic is attached to VM
+        // check to see if nic is attached to VM
         if (nic.getInstanceId() != vmId) {
-            throw new InvalidParameterValueException(nic + " is not a nic on  " + vmInstance);
+            throw new InvalidParameterValueException(nic + " is not a nic on " + vmInstance);
         }
 
         // Perform account permission check on network
         _accountMgr.checkAccess(caller, AccessType.UseEntry, false, network);
 
-        boolean nicremoved = false;
+        // don't delete default NIC on a user VM
+        if (nic.isDefaultNic() && vmInstance.getType() == VirtualMachine.Type.User) {
+            throw new InvalidParameterValueException("Unable to remove nic from " + vmInstance + " in " + network + ", nic is default.");
+        }
 
+        // if specified nic is associated with PF/LB/Static NAT
+        if (_rulesMgr.listAssociatedRulesForGuestNic(nic).size() > 0) {
+            throw new InvalidParameterValueException("Unable to remove nic from " + vmInstance + " in " + network + ", nic has associated Port forwarding or Load balancer or Static NAT rules.");
+        }
+
+        boolean nicremoved = false;
         try {
             nicremoved = _itMgr.removeNicFromVm(vmInstance, nic);
         } catch (ResourceUnavailableException e) {
@@ -1125,7 +1134,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         s_logger.debug("Successful removal of " + network + " from " + vmInstance);
         return _vmDao.findById(vmInstance.getId());
-
     }
 
     @Override

@@ -37,6 +37,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.jobs.JobInfo;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.component.AdapterBase;
@@ -77,7 +78,6 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             String acctIdStr = params.get("ctxAccountId");
             String contextDetails = params.get("ctxDetails");
 
-
             Long userId = null;
             Account accountObject = null;
 
@@ -109,6 +109,8 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
 
                 // serialize this to the async job table
                 _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, ApiSerializerHelper.toSerializedString(cmdObj.getResponseObject()));
+            } catch (InvalidParameterValueException ipve) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ipve.getMessage());
             } finally {
                 CallContext.unregister();
             }
