@@ -8256,7 +8256,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 
 .multi-edit .data .data-body .data-item > table tbody tr td span {
   overflow: hidden;
-  max-width: 78px;
+  max-width: 90%;
   display: block;
   float: left;
   text-overflow: ellipsis;
@@ -8413,6 +8413,17 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   max-width: 87px !important;
   font-size: 10px;
 }
+
+/* special case for 'Source CIDR' column - make it wide enough to fit a CIDR without ellipsizing*/
+.detail-view .multi-edit table tr th.cidrlist,
+.detail-view .multi-edit table tr td.cidrlist {
+  min-width: 112px !important;
+  max-width: 112px !important;
+}
+.detail-view .multi-edit td.cidrlist input {
+  width: 85%;
+}
+
 
 /** Header fields*/
 .multi-edit .header-fields {
