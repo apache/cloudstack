@@ -41,7 +41,7 @@ CATALINA_TMPDIR="@MSENVIRON@/temp"
 
 # Use JAVA_OPTS to set java.library.path for libtcnative.so
 #JAVA_OPTS="-Djava.library.path=/usr/lib64"
-JAVA_OPTS="-Djava.awt.headless=true -Dcom.sun.management.jmxremote=false -Xmx2g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=@MSLOGDIR@ -XX:PermSize=512M -XX:MaxPermSize=800m"
+JAVA_OPTS="-Djava.awt.headless=true -Dcom.sun.management.jmxremote=false -Xmx2g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=@MSLOGDIR@ -XX:PermSize=512M -XX:MaxPermSize=800m -Djava.security.properties=/etc/cloudstack/management/java.security.ciphers"
 
 # What user should run tomcat
 TOMCAT_USER="@MSUSER@"
