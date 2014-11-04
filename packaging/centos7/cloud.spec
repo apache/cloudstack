@@ -264,7 +264,7 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/cl
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
 for name in catalina.properties db.properties log4j-cloud.xml web.xml cloud-bridge.properties\
-            ec2-service.properties server.xml commons-logging.properties environment.properties tomcat-users.xml
+            ec2-service.properties server.xml commons-logging.properties environment.properties java.security.ciphers tomcat-users.xml
 do
   cp packaging/centos7/tomcat7/$name \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name

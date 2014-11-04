@@ -290,7 +290,7 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/cl
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
 for name in db.properties log4j-cloud.xml tomcat6-nonssl.conf tomcat6-ssl.conf server-ssl.xml server-nonssl.xml \
-            catalina.policy catalina.properties classpath.conf tomcat-users.xml web.xml environment.properties ; do
+            catalina.policy catalina.properties classpath.conf tomcat-users.xml web.xml environment.properties java.security.ciphers; do
   mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/$name \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
