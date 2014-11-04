@@ -1010,5 +1010,8 @@ dictionary2 = {
 'label.agent.state': '<fmt:message key="label.agent.state" />',
 'label.duration.in.sec': '<fmt:message key="label.duration.in.sec" />',
 'state.detached': '<fmt:message key="state.detached" />',
+'label.na': '<fmt:message key="label.na" />',
+'label.added.network.offering': '<fmt:message key="label.added.network.offering" />',
+'label.no': '<fmt:message key="label.no" />'
 };
 </script>
