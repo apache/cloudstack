@@ -24,6 +24,8 @@ from marvin.lib.base import (Account,
 from marvin.lib.common import (get_zone,
                                get_template,
                                get_domain)
+from marvin.lib.utils import validateList
+from marvin.codes import PASS
 from nose.plugins.attrib import attr
 
 import signal
@@ -149,7 +151,6 @@ class TestNic(cloudstackTestCase):
 
         hypervisorIsVmware = False
         isVmwareToolInstalled = False
-        assertForExceptionForNicOperations = False
         if self.hypervisor.lower() == "vmware":
             hypervisorIsVmware = True
 
@@ -163,59 +164,18 @@ class TestNic(cloudstackTestCase):
             mode=self.zone.networktype if hypervisorIsVmware else "default"
         )
 
-        # If hypervisor is Vmware, then check if
-        # the vmware tools are installed and the process is running
-        # Vmware tools are necessary for add and remove nic operations
-        if hypervisorIsVmware:
-            sshClient = self.virtual_machine.get_ssh_client()
-            result = str(
-                sshClient.execute("service vmware-tools status")).lower()
-            self.debug("and result is: %s" % result)
-            if "running" in result:
-                isVmwareToolInstalled = True
-
-        # If Vmware tools are not installed in case of vmware hypervisor
-        # then check for exception while performing add and remove nic
-        # operations
-        if hypervisorIsVmware and not isVmwareToolInstalled:
-            assertForExceptionForNicOperations = True
-
         self.cleanup.insert(0, self.virtual_machine)
-        list_vm_response = VirtualMachine.list(
+        vms = VirtualMachine.list(
             self.apiclient,
             id=self.virtual_machine.id
         )
 
-        self.debug(
-            "Verify listVirtualMachines response for virtual machine: %s"
-            % self.virtual_machine.id
-        )
-
         self.assertEqual(
-            isinstance(list_vm_response, list),
-            True,
-            "Check list response returns a valid list"
-        )
+                validateList(vms)[0],
+                PASS,
+                "vms list validation failed")
 
-        self.assertNotEqual(
-            len(list_vm_response),
-            0,
-            "Check VM available in List Virtual Machines"
-        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-
-            vm_response.id,
-            self.virtual_machine.id,
-            "Check virtual machine id in listVirtualMachines"
-        )
-
-        self.assertEqual(
-            vm_response.name,
-            self.virtual_machine.name,
-            "Check virtual machine name in listVirtualMachines"
-        )
+        vm_response = vms[0]
 
         self.assertEqual(
             len(vm_response.nic),
@@ -231,30 +191,40 @@ class TestNic(cloudstackTestCase):
         existing_nic_ip = vm_response.nic[0].ipaddress
         existing_nic_id = vm_response.nic[0].id
 
-        if assertForExceptionForNicOperations:
-            with self.assertRaises(Exception):
-                self.virtual_machine.add_nic(
+        self.virtual_machine.add_nic(
                     self.apiclient,
                     self.test_network2.id)
-
-        else:
-            # 1. add a nic
-            self.virtual_machine.add_nic(self.apiclient, self.test_network2.id)
-
-            time.sleep(5)
-            # now go get the vm list?
-
-            list_vm_response = VirtualMachine.list(
+        list_vm_response = VirtualMachine.list(
                 self.apiclient,
                 id=self.virtual_machine.id
             )
 
-            self.assertEqual(
+        self.assertEqual(
                 len(list_vm_response[0].nic),
                 2,
                 "Verify we have 2 NIC's now"
             )
 
+        # If hypervisor is Vmware, then check if
+        # the vmware tools are installed and the process is running
+        # Vmware tools are necessary for remove nic operations (vmware 5.5+)
+        if hypervisorIsVmware:
+            sshClient = self.virtual_machine.get_ssh_client()
+            result = str(
+                sshClient.execute("service vmware-tools status")).lower()
+            self.debug("and result is: %s" % result)
+            if "running" in result:
+                isVmwareToolInstalled = True
+
+        goForUnplugOperation = True
+        # If Vmware tools are not installed in case of vmware hypervisor
+        # then don't go further for unplug operation (remove nic) as it won't
+        # be supported
+        if hypervisorIsVmware and not isVmwareToolInstalled:
+            goForUnplugOperation = False
+
+
+        if goForUnplugOperation:
             new_nic_id = ""
             for nc in list_vm_response[0].nic:
                 if nc.ipaddress != existing_nic_ip:
