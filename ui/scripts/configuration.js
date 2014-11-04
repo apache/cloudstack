@@ -3167,7 +3167,7 @@
 
                             messages: {
                                 notification: function(args) {
-                                    return 'label.added.network.offering';
+                                    return 'label.add.network.offering';
                                 }
                             }
                         }
