@@ -35,7 +35,6 @@ import org.apache.cloudstack.api.AddBaremetalPxeCmd;
 import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand.BootDev;
@@ -43,6 +42,7 @@ import com.cloud.agent.api.baremetal.PrepareKickstartPxeServerCommand;
 import com.cloud.baremetal.database.BaremetalPxeDao;
 import com.cloud.baremetal.database.BaremetalPxeVO;
 import com.cloud.baremetal.networkservice.BaremetalPxeManager.BaremetalPxeType;
+import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
@@ -79,6 +79,22 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
+import org.apache.cloudstack.api.AddBaremetalPxeCmd;
+import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import java.io.File;
+import java.net.URI;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Local(value = BaremetalPxeService.class)
 public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase implements BaremetalPxeService {
@@ -374,7 +390,9 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
             return responses;
         }
 
-        List<BaremetalPxeVO> vos = _pxeDao.listAll();
+        QueryBuilder<BaremetalPxeVO> sc = QueryBuilder.create(BaremetalPxeVO.class);
+        sc.and(sc.entity().getPhysicalNetworkId(), Op.EQ, cmd.getPhysicalNetworkId());
+        List<BaremetalPxeVO> vos = sc.list();
         for (BaremetalPxeVO vo : vos) {
             responses.add(getApiResponse(vo));
         }
