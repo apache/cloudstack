@@ -17010,7 +17010,6 @@
                                     },
                                     provider: {
                                         label: 'label.provider',
-                                        docID: 'helpPrimaryStorageZone',
                                         validation: {
                                             required: true
                                         },
