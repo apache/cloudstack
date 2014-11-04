@@ -30,6 +30,7 @@
 /etc/cloudstack/management/tomcat6.conf
 /etc/cloudstack/management/web.xml
 /etc/cloudstack/management/environment.properties
+/etc/cloudstack/management/java.security.ciphers
 /etc/cloudstack/management/log4j-cloud.xml
 /etc/cloudstack/management/tomcat-users.xml
 /etc/cloudstack/management/context.xml
