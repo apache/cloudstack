@@ -1319,7 +1319,7 @@
                                                     });
                                                 } else {
                                                     cloudStack.dialog.notice({
-                                                        message: _l(dictionary['message.no.host.available'])
+                                                        message: _l('message.no.host.available')
                                                     }); //Only a single host in the set up
                                                 }
                                             }
@@ -2046,7 +2046,7 @@
                                                 }
                                             });
                                             cloudStack.dialog.notice({
-                                                message: _l(dictionary['message.set.default.NIC.manual'])
+                                                message: _l('message.set.default.NIC.manual')
                                             });
                                         }
                                     });

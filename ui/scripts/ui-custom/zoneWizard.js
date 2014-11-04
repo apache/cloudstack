@@ -177,7 +177,7 @@
             }
 
             cloudStack.dialog.notice({
-                message: dictionary['message.please.add.at.lease.one.traffic.range']
+                message: _l('message.please.add.at.lease.one.traffic.range')
             });
             return false;
         },
@@ -1038,7 +1038,7 @@
                             };
 
                             var enableZone = function() {
-                                makeMessage(dictionary['message.enabling.zone']);
+                                makeMessage(_l('message.enabling.zone'));
 
                                 enableZoneAction({
                                     formData: data,
@@ -1051,7 +1051,7 @@
 
                                         error: function(message) {
                                             cloudStack.dialog.notice({
-                                                message: dictionary['error.could.not.enable.zone'] + ':</br>' + message
+                                                message: _l('error.could.not.enable.zone') + ':</br>' + message
                                             });
                                         }
                                     }
@@ -1059,7 +1059,7 @@
                             };
 
                             cloudStack.dialog.confirm({
-                                message: dictionary['message.zone.creation.complete.would.you.like.to.enable.this.zone'],
+                                message: _l('message.zone.creation.complete.would.you.like.to.enable.this.zone'),
                                 action: function() {
                                     enableZone();
                                 },
@@ -1083,7 +1083,7 @@
                                 .removeClass('final')
                                 .html('<span>Fix errors</span>')
                                 .click(goNextOverride);
-                            makeMessage(dictionary['error.something.went.wrong.please.correct.the.following'] + ':<br/>' + message, true);
+                            makeMessage(_l('error.something.went.wrong.please.correct.the.following') + ':<br/>' + message, true);
                             $wizard.data('startfn', start);
                         },
                         message: makeMessage

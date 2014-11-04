@@ -128,34 +128,34 @@
         });
         
         if (trafficType.xenservernetworklabel == null || trafficType.xenservernetworklabel == 0)
-        trafficType.xenservernetworklabel = dictionary[ 'label.network.label.display.for.blank.value'];
+        trafficType.xenservernetworklabel = _l( 'label.network.label.display.for.blank.value');
         if (trafficType.kvmnetworklabel == null || trafficType.kvmnetworklabel == 0)
-        trafficType.kvmnetworklabel = dictionary[ 'label.network.label.display.for.blank.value'];
+        trafficType.kvmnetworklabel = _l( 'label.network.label.display.for.blank.value');
         if (trafficType.vmwarenetworklabel == null || trafficType.vmwarenetworklabel == 0)
-        trafficType.vmwarenetworklabel = dictionary[ 'label.network.label.display.for.blank.value'];
+        trafficType.vmwarenetworklabel = _l( 'label.network.label.display.for.blank.value');
         if (trafficType.ovmnetworklabel == null || trafficType.ovmnetworklabel == 0)
-        trafficType.ovmnetworklabel = dictionary[ 'label.network.label.display.for.blank.value'];
+        trafficType.ovmnetworklabel = _l( 'label.network.label.display.for.blank.value');
         if (trafficType.lxcnetworklabel == null || trafficType.lxcnetworklabel == 0)
-        trafficType.lxcnetworklabel = dictionary[ 'label.network.label.display.for.blank.value'];
+        trafficType.lxcnetworklabel = _l( 'label.network.label.display.for.blank.value');
         if (trafficType.hypervnetworklabel == null || trafficType.hypervnetworklabel == 0)
-        trafficType.hypervnetworklabel = dictionary[ 'label.network.label.display.for.blank.value'];
+        trafficType.hypervnetworklabel = _l( 'label.network.label.display.for.blank.value');
         
         return trafficType;
     };
     
     var updateTrafficLabels = function (trafficType, labels, complete) {
         var array1 =[];
-        if (labels.xenservernetworklabel != dictionary[ 'label.network.label.display.for.blank.value'])
+        if (labels.xenservernetworklabel != _l( 'label.network.label.display.for.blank.value'))
         array1.push("&xenservernetworklabel=" + labels.xenservernetworklabel);
-        if (labels.kvmnetworklabel != dictionary[ 'label.network.label.display.for.blank.value'])
+        if (labels.kvmnetworklabel != _l( 'label.network.label.display.for.blank.value'))
         array1.push("&kvmnetworklabel=" + labels.kvmnetworklabel);
-        if (labels.vmwarenetworklabel != dictionary[ 'label.network.label.display.for.blank.value'])
+        if (labels.vmwarenetworklabel != _l( 'label.network.label.display.for.blank.value'))
         array1.push("&vmwarenetworklabel=" + labels.vmwarenetworklabel);
-        if (labels.ovmnetworklabel != dictionary[ 'label.network.label.display.for.blank.value'])
+        if (labels.ovmnetworklabel != _l( 'label.network.label.display.for.blank.value'))
         array1.push("&ovmnetworklabel=" + labels.ovmnetworklabel);
-        if (labels.lxcnetworklabel != dictionary[ 'label.network.label.display.for.blank.value'])
+        if (labels.lxcnetworklabel != _l( 'label.network.label.display.for.blank.value'))
         array1.push("&lxcnetworklabel=" + labels.lxcnetworklabel);
-        if (labels.hypervnetworklabel != dictionary[ 'label.network.label.display.for.blank.value'])
+        if (labels.hypervnetworklabel != _l( 'label.network.label.display.for.blank.value'))
         array1.push("&hypervnetworklabel=" + labels.hypervnetworklabel);
         
         $.ajax({

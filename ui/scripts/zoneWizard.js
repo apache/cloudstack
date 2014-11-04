@@ -2372,7 +2372,7 @@
                 },
 
                 addPhysicalNetworks: function(args) {
-                    message(dictionary['message.creating.physical.networks']);
+                    message(_l('message.creating.physical.networks'));
 
                     var returnedPhysicalNetworks = [];
 
@@ -2711,7 +2711,7 @@
 
                 //afterCreateZonePhysicalNetworkTrafficTypes: enable physical network, enable virtual router element, enable network service provider
                 configurePhysicalNetwork: function(args) {
-                    message(dictionary['message.configuring.physical.networks']);
+                    message(_l('message.configuring.physical.networks'));
 
                     if (args.data.zone.networkType == "Basic") {
                         $.ajax({
@@ -2866,7 +2866,7 @@
                                                                                                                 selectedNetworkOfferingHavingSG = args.data.pluginFrom.selectedNetworkOfferingHavingSG;
                                                                                                             }
                                                                                                             if (selectedNetworkOfferingHavingSG == true) { //need to Enable security group provider first
-                                                                                                                message(dictionary['message.enabling.security.group.provider']);
+                                                                                                                message(_l('message.enabling.security.group.provider'));
 
                                                                                                                 // get network service provider ID of Security Group
                                                                                                                 var securityGroupProviderId;
@@ -3589,7 +3589,7 @@
                                                             });
                                                             // ***** VPC Virtual Router ***** (end) *****
                                                         } else { //args.data.zone.sgEnabled == true  //Advanced SG-enabled zone                                                         
-                                                            message(dictionary['message.enabling.security.group.provider']);
+                                                            message(_l('message.enabling.security.group.provider'));
 
                                                             // get network service provider ID of Security Group
                                                             var securityGroupProviderId;
@@ -3660,7 +3660,7 @@
                 addNetscalerProvider: function(args) {
 
                     if (selectedNetworkOfferingHavingNetscaler == true) {
-                        message(dictionary['message.adding.Netscaler.provider']);
+                        message(_l('message.adding.Netscaler.provider'));
 
                         $.ajax({
                             url: createURL("addNetworkServiceProvider&name=Netscaler&physicalnetworkid=" + args.data.returnedBasicPhysicalNetwork.id),
@@ -3707,7 +3707,7 @@
 
 
                 addNetscalerDevice: function(args) {
-                    message(dictionary['message.adding.Netscaler.device']);
+                    message(_l('message.adding.Netscaler.device'));
 
                     var array1 = [];
                     array1.push("&physicalnetworkid=" + args.data.returnedBasicPhysicalNetwork.id);
@@ -3867,7 +3867,7 @@
                 },
 
                 addGuestNetwork: function(args) { //create a guest network for Basic zone or Advanced zone with SG
-                    message(dictionary['message.creating.guest.network']);
+                    message(_l('message.creating.guest.network'));
 
                     var data = {
                         zoneid: args.data.returnedZone.id,
@@ -3911,7 +3911,7 @@
                 },
 
                 addPod: function(args) {
-                    message(dictionary['message.creating.pod']);
+                    message(_l('message.creating.pod'));
 
                     var array3 = [];
                     array3.push("&zoneId=" + args.data.returnedZone.id);
@@ -3948,7 +3948,7 @@
                 configurePublicTraffic: function(args) {
                     if ((args.data.zone.networkType == "Basic" && (selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true)) || (args.data.zone.networkType == "Advanced" && args.data.zone.sgEnabled != true)) {
 
-                        message(dictionary['message.configuring.public.traffic']);
+                        message(_l('message.configuring.public.traffic'));
 
                         var stopNow = false;
 
@@ -4054,7 +4054,7 @@
                         return complete({});
                     }
 
-                    message(dictionary['message.configuring.storage.traffic']);
+                    message(_l('message.configuring.storage.traffic'));
 
                     var storageIPRanges = args.data.storageTraffic;
                     var tasks = [];
@@ -4144,7 +4144,7 @@
                         return;
                     }
 
-                    message(dictionary['message.configuring.guest.traffic']);
+                    message(_l('message.configuring.guest.traffic'));
 
                     if (args.data.returnedZone.networktype == "Basic") { //create an VlanIpRange for guest network in basic zone
                         var array1 = [];
@@ -4261,7 +4261,7 @@
                 },
 
                 addCluster: function(args) {
-                    message(dictionary['message.creating.cluster']);
+                    message(_l('message.creating.cluster'));
 
                     // Have cluster use zone's hypervisor
                     args.data.cluster.hypervisor = args.data.zone.hypervisor ?
@@ -4403,7 +4403,7 @@
                 },
 
                 addHost: function(args) {
-                    message(dictionary['message.adding.host']);
+                    message(_l('message.adding.host'));
 
                     var data = {
                         zoneid: args.data.returnedZone.id,
@@ -4470,7 +4470,7 @@
                         return;
                     }
 
-                    message(dictionary['message.creating.primary.storage']);
+                    message(_l('message.creating.primary.storage'));
 
                     var array1 = [];
                     array1.push("&zoneid=" + args.data.returnedZone.id);
@@ -4566,7 +4566,7 @@
                 	}
                 	
                 	
-                	message(dictionary['message.creating.secondary.storage']);
+                	message(_l('message.creating.secondary.storage'));
 
                     var data = {};
                     if (args.data.secondaryStorage.name != null && args.data.secondaryStorage.name.length > 0) {
@@ -4775,7 +4775,7 @@
             };
 
             var complete = function(args) {
-                message(dictionary['message.Zone.creation.complete']);
+                message(_l('message.Zone.creation.complete'));
                 success(args);
             };
 

@@ -1060,15 +1060,15 @@
                                             var items = [];
                                             items.push({
                                                 id: 'domainrouter',
-                                                description: dictionary['label.domain.router']
+                                                description: _l('label.domain.router')
                                             });
                                             items.push({
                                                 id: 'consoleproxy',
-                                                description: dictionary['label.console.proxy']
+                                                description: _l('label.console.proxy')
                                             });
                                             items.push({
                                                 id: 'secondarystoragevm',
-                                                description: dictionary['label.secondary.storage.vm']
+                                                description: _l('label.secondary.storage.vm')
                                             });
                                             args.response.success({
                                                 data: items
@@ -1435,13 +1435,13 @@
                                             var text = '';
                                             switch (args) {
                                                 case 'domainrouter':
-                                                    text = dictionary['label.domain.router'];
+                                                    text = _l('label.domain.router');
                                                     break;
                                                 case 'consoleproxy':
-                                                    text = dictionary['label.console.proxy'];
+                                                    text = _l('label.console.proxy');
                                                     break;
                                                 case 'secondarystoragevm':
-                                                    text = dictionary['label.secondary.storage.vm'];
+                                                    text = _l('label.secondary.storage.vm');
                                                     break;
                                             }
                                             return text;
@@ -2679,34 +2679,34 @@
                                                         // Sanitize names
                                                         switch (serviceName) {
                                                             case 'Vpn':
-                                                                serviceDisplayName = dictionary['label.vpn'];
+                                                                serviceDisplayName = _l('label.vpn');
                                                                 break;
                                                             case 'Dhcp':
-                                                                serviceDisplayName = dictionary['label.dhcp'];
+                                                                serviceDisplayName = _l('label.dhcp');
                                                                 break;
                                                             case 'Dns':
-                                                                serviceDisplayName = dictionary['label.dns'];
+                                                                serviceDisplayName = _l('label.dns');
                                                                 break;
                                                             case 'Lb':
-                                                                serviceDisplayName = dictionary['label.load.balancer'];
+                                                                serviceDisplayName = _l('label.load.balancer');
                                                                 break;
                                                             case 'SourceNat':
-                                                                serviceDisplayName = dictionary['label.source.nat'];
+                                                                serviceDisplayName = _l('label.source.nat');
                                                                 break;
                                                             case 'StaticNat':
-                                                                serviceDisplayName = dictionary['label.static.nat'];
+                                                                serviceDisplayName = _l('label.static.nat');
                                                                 break;
                                                             case 'PortForwarding':
-                                                                serviceDisplayName = dictionary['label.port.forwarding'];
+                                                                serviceDisplayName = _l('label.port.forwarding');
                                                                 break;
                                                             case 'SecurityGroup':
-                                                                serviceDisplayName = dictionary['label.security.groups'];
+                                                                serviceDisplayName = _l('label.security.groups');
                                                                 break;
                                                             case 'UserData':
-                                                                serviceDisplayName = dictionary['label.user.data'];
+                                                                serviceDisplayName = _l('label.user.data');
                                                                 break;
                                                             case 'Connectivity':
-                                                                serviceDisplayName = dictionary['label.virtual.networking'];
+                                                                serviceDisplayName = _l('label.virtual.networking');
                                                                 break;
                                                             default:
                                                                 serviceDisplayName = serviceName;
@@ -3632,28 +3632,28 @@
                                                 // Sanitize names
                                                 switch (serviceName) {
                                                     case 'Vpn':
-                                                        serviceDisplayName = dictionary['label.vpn'];
+                                                        serviceDisplayName = _l('label.vpn');
                                                         break;
                                                     case 'Dhcp':
-                                                        serviceDisplayName = dictionary['label.dhcp'];
+                                                        serviceDisplayName = _l('label.dhcp');
                                                         break;
                                                     case 'Dns':
-                                                        serviceDisplayName = dictionary['label.dns'];
+                                                        serviceDisplayName = _l('label.dns');
                                                         break;
                                                     case 'Lb':
-                                                        serviceDisplayName = dictionary['label.load.balancer'];
+                                                        serviceDisplayName = _l('label.load.balancer');
                                                         break;
                                                     case 'SourceNat':
-                                                        serviceDisplayName = dictionary['label.source.nat'];
+                                                        serviceDisplayName = _l('label.source.nat');
                                                         break;
                                                     case 'StaticNat':
-                                                        serviceDisplayName = dictionary['label.static.nat'];
+                                                        serviceDisplayName = _l('label.static.nat');
                                                         break;
                                                     case 'PortForwarding':
-                                                        serviceDisplayName = dictionary['label.port.forwarding'];
+                                                        serviceDisplayName = _l('label.port.forwarding');
                                                         break;
                                                     case 'UserData':
-                                                        serviceDisplayName = dictionary['label.user.data'];
+                                                        serviceDisplayName = _l('label.user.data');
                                                         break;
                                                     default:
                                                         serviceDisplayName = serviceName;
