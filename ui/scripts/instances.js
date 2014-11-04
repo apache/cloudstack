@@ -2253,8 +2253,8 @@
             allowedActions.push("destroy");            
             allowedActions.push("reinstall");
              
-            //when userVm is running, scaleUp is not supported for KVM
-            if (jsonObj.hypervisor != 'KVM') {
+            //when userVm is running, scaleUp is not supported for KVM, LXC
+            if (jsonObj.hypervisor != 'KVM' && jsonObj.hypervisor != 'LXC') {
             	allowedActions.push("scaleUp");
             }              
 
