@@ -227,7 +227,7 @@ public class LDAPConfigCmd extends BaseCmd {
     }
 
     private boolean updateLDAP() {
-        LdapConfigurationResponse response = _ldapManager.addConfiguration(hostname, port);
+        _ldapManager.addConfiguration(hostname, port);
 
         /**
          * There is no query filter now. It is derived from ldap.user.object and ldap.search.group.principle
