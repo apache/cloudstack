@@ -1201,7 +1201,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 // Use getPath() from VolumeVO to get a fresh copy of what's in the DB.
                 // Before doing this, in a certain situation, getPath() from VolumeObjectTO
                 // returned null instead of an actual path (because it was out of date with the DB).
-                volumeMgr.updateVolumeDiskChain(vol.getId(), volume.getPath(), vol.getChainInfo());
+                if(vol.getPath() != null) {
+                    volumeMgr.updateVolumeDiskChain(vol.getId(), vol.getPath(), vol.getChainInfo());
+                } else {
+                    volumeMgr.updateVolumeDiskChain(vol.getId(), volume.getPath(), vol.getChainInfo());
+                }
             }
         }
     }
