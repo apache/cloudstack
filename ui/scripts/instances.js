@@ -973,8 +973,12 @@
                                         var items = [];
                                         var map = {};
                                         $.ajax({
-                                            url: createURL("listIsos&isReady=true&isofilter=featured"),
-                                            dataType: "json",
+                                            url: createURL("listIsos"),
+                                            data: {
+                                            	isofilter: 'featured',
+                                            	isReady: true,
+                                            	zoneid: args.context.instances[0].zoneid
+                                            },
                                             async: false,
                                             success: function(json) {
                                                 var isos = json.listisosresponse.iso;
@@ -988,8 +992,12 @@
                                             }
                                         });
                                         $.ajax({
-                                            url: createURL("listIsos&isReady=true&isofilter=community"),
-                                            dataType: "json",
+                                            url: createURL("listIsos"),
+                                            data: {
+                                            	isofilter: 'community',
+                                            	isReady: true,
+                                            	zoneid: args.context.instances[0].zoneid
+                                            },
                                             async: false,
                                             success: function(json) {
                                                 var isos = json.listisosresponse.iso;
@@ -1005,8 +1013,12 @@
                                             }
                                         });
                                         $.ajax({
-                                            url: createURL("listIsos&isReady=true&isofilter=selfexecutable"),
-                                            dataType: "json",
+                                            url: createURL("listIsos"),
+                                            data: {
+                                            	isofilter: 'selfexecutable',
+                                            	isReady: true,
+                                            	zoneid: args.context.instances[0].zoneid
+                                            },
                                             async: false,
                                             success: function(json) {
                                                 var isos = json.listisosresponse.iso;
