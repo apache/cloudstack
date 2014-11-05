@@ -198,7 +198,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         templateSizeSearch.done();
 
         snapshotSizeSearch = _snapshotDataStoreDao.createSearchBuilder(SumCount.class);
-        snapshotSizeSearch.select("sum", Func.SUM, snapshotSizeSearch.entity().getSize());
+        snapshotSizeSearch.select("sum", Func.SUM, snapshotSizeSearch.entity().getPhysicalSize());
         snapshotSizeSearch.and("state", snapshotSizeSearch.entity().getState(), Op.EQ);
         snapshotSizeSearch.and("storeRole", snapshotSizeSearch.entity().getRole(), Op.EQ);
         SearchBuilder<SnapshotVO> join2 = _snapshotDao.createSearchBuilder();

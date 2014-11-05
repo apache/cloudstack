@@ -329,8 +329,8 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                     }
                 }
             }
-            String backupUuid = dvdi.getUuid(conn);
-            return backupUuid;
+            String result = dvdi.getUuid(conn).concat("#").concat(dvdi.getPhysicalUtilisation(conn).toString());
+            return result;
         } catch (Exception e) {
             String msg = "Exception in backupsnapshot stage due to " + e.toString();
             s_logger.debug(msg);
@@ -392,6 +392,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         String details = null;
         String snapshotBackupUuid = null;
         boolean fullbackup = Boolean.parseBoolean(options.get("fullSnapshot"));
+        Long physicalSize = null;
         try {
             SR primaryStorageSR = hypervisorResource.getSRByNameLabelandHost(conn, primaryStorageNameLabel);
             if (primaryStorageSR == null) {
@@ -431,6 +432,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                     hypervisorResource.checkForSuccess(conn, task);
                     VDI backedVdi = Types.toVDI(task, conn);
                     snapshotBackupUuid = backedVdi.getUuid(conn);
+                    physicalSize = backedVdi.getPhysicalUtilisation(conn);
 
                     if( destStore instanceof SwiftTO) {
                         try {
@@ -488,9 +490,11 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                         throw new CloudRuntimeException("S3 upload of snapshots " + snapshotPaUuid + " failed");
                     }
                 } else {
-                    snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, localMountPoint, folder,
+                    String result = backupSnapshot(conn, primaryStorageSRUuid, localMountPoint, folder,
                             secondaryStorageMountPath, snapshotUuid, prevBackupUuid, prevSnapshotUuid, isISCSI, wait);
-
+                    String[] tmp = result.split("#");
+                    snapshotBackupUuid = tmp[0];
+                    physicalSize = Long.parseLong(tmp[1]);
                     finalPath = folder + File.separator + snapshotBackupUuid;
                 }
             }
@@ -499,6 +503,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
             SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
             newSnapshot.setPath(finalPath);
+            newSnapshot.setPhysicalSize(physicalSize);
             if (fullbackup) {
                 newSnapshot.setParentSnapshotPath(null);
             } else {

@@ -288,7 +288,7 @@ public class SnapshotObject implements SnapshotInfo {
                 snapshotStore.setInstallPath(snapshotTO.getPath());
                 if (snapshotTO.getPhysicalSize() != null) {
                     // For S3 delta snapshot, physical size is currently not set
-                snapshotStore.setSize(snapshotTO.getPhysicalSize());
+                snapshotStore.setPhysicalSize(snapshotTO.getPhysicalSize());
                 }
                 if (snapshotTO.getParentSnapshotPath() == null) {
                     snapshotStore.setParentSnapshotId(0L);
