@@ -253,7 +253,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Publish async job-" + jobId + " complete on message bus");
         }
-        publishOnEventBus(job, "complete"); // publish before the instance type and ID are wiped out
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Wake up jobs related to job-" + jobId);
@@ -290,6 +289,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 return wakeupList;
             }
         });
+
+        publishOnEventBus(job, "complete"); // publish before the instance type and ID are wiped out
 
         //
         // disable wakeup scheduling now, since all API jobs are currently using block-waiting for sub-jobs
