@@ -73,8 +73,8 @@ public class ConfigurationVO implements Configuration {
         this.instance = instance;
         this.component = component;
         this.name = name;
-        this.value = value;
         this.description = description;
+        setValue(value);
     }
 
     public ConfigurationVO(String component, ConfigKey<?> key) {
@@ -122,11 +122,23 @@ public class ConfigurationVO implements Configuration {
 
     @Override
     public String getValue() {
-        return (("Hidden".equals(getCategory()) || "Secure".equals(getCategory())) ? DBEncryptionUtil.decrypt(value) : value);
+        if(isEncryptedConfig()) {
+            return DBEncryptionUtil.decrypt(value);
+        } else {
+            return value;
+        }
     }
 
     public void setValue(String value) {
-        this.value = value;
+        if(isEncryptedConfig()) {
+            this.value = DBEncryptionUtil.encrypt(value);
+        } else {
+            this.value = value;
+        }
+    }
+
+    private boolean isEncryptedConfig() {
+        return "Hidden".equals(getCategory()) || "Secure".equals(getCategory());
     }
 
     @Override
