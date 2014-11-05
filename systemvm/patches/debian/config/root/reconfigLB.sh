@@ -23,23 +23,16 @@ new_config=$1
 
 # save previous state
   mv /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.old
-  mv /var/run/haproxy.pid /var/run/haproxy.pid.old
 
   mv $new_config /etc/haproxy/haproxy.cfg
-  kill -TTOU $(cat /var/run/haproxy.pid.old)
-  sleep 2
-  if haproxy -D -p /var/run/haproxy.pid -f /etc/haproxy/haproxy.cfg; then
+  if haproxy -p /var/run/haproxy.pid -f /etc/haproxy/haproxy.cfg -sf $(cat /var/run/haproxy.pid); then
     logger -t cloud "New haproxy instance successfully loaded, stopping previous one."
-    kill -KILL $(cat /var/run/haproxy.pid.old)
-    rm -f /var/run/haproxy.pid.old
     ret=0
   else
     logger -t cloud "New instance failed to start, resuming previous one."
-    kill -TTIN $(cat /var/run/haproxy.pid.old)
-    rm -f /var/run/haproxy.pid
-    mv /var/run/haproxy.pid.old /var/run/haproxy.pid
     mv /etc/haproxy/haproxy.cfg $new_config
     mv /etc/haproxy/haproxy.cfg.old /etc/haproxy/haproxy.cfg
+    haproxy -p /var/run/haproxy.pid -f /etc/haproxy/haproxy.cfg -sf $(cat /var/run/haproxy.pid)
     ret=1
   fi
 
