@@ -61,69 +61,94 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
     public Xenserver625StorageProcessor(CitrixResourceBase resource) {
         super(resource);
     }
+
     protected boolean mountNfs(Connection conn, String remoteDir, String localDir) {
         if (localDir == null) {
             localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(remoteDir.getBytes());
         }
+
         String results = hypervisorResource.callHostPluginAsync(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", 100 * 1000,
                 "localDir", localDir, "remoteDir", remoteDir);
+
         if (results == null || results.isEmpty()) {
             String errMsg = "Could not mount secondary storage " + remoteDir + " on host " + localDir;
+
             s_logger.warn(errMsg);
+
             throw new CloudRuntimeException(errMsg);
         }
+
         return true;
     }
 
     protected boolean makeDirectory(Connection conn, String path) {
         String result = hypervisorResource.callHostPlugin(conn, "cloud-plugin-storage", "makeDirectory", "path", path);
+
         if (result == null || result.isEmpty()) {
             return false;
         }
+
         return true;
     }
 
     protected SR createFileSR(Connection conn, String path) {
         SR sr = null;
         PBD pbd = null;
+
         try {
             String srname = hypervisorResource.getHost().uuid + path.trim();
+
             Set<SR> srs = SR.getByNameLabel(conn, srname);
-            if ( srs != null && !srs.isEmpty()) {
+
+            if (srs != null && !srs.isEmpty()) {
                 return srs.iterator().next();
             }
+
             Map<String, String> smConfig = new HashMap<String, String>();
+
             Host host = Host.getByUuid(conn, hypervisorResource.getHost().uuid);
             String uuid = UUID.randomUUID().toString();
 
             sr = SR.introduce(conn, uuid, srname, srname, "file", "file", false, smConfig);
+
             PBD.Record record = new PBD.Record();
+
             record.host = host;
             record.SR = sr;
+
             smConfig.put("location", path);
+
             record.deviceConfig = smConfig;
+
             pbd = PBD.create(conn, record);
+
             pbd.plug(conn);
+
             sr.scan(conn);
+
             return sr;
-        } catch (Exception e) {
+        } catch (Exception ex) {
             try {
                 if (pbd != null) {
                     pbd.destroy(conn);
                 }
             } catch (Exception e1) {
-                s_logger.debug("Failed to destroy pbd", e);
+                s_logger.debug("Failed to destroy PBD", ex);
             }
+
             try {
                 if (sr != null) {
                     sr.forget(conn);
                 }
             } catch (Exception e2) {
-                s_logger.error("Failed to forget sr", e);
+                s_logger.error("Failed to forget SR", ex);
             }
-            String msg = "createFileSR failed! due to " + e.toString();
-            s_logger.warn(msg, e);
-            throw new CloudRuntimeException(msg, e);
+
+            String msg = "createFileSR failed! due to the following: " + ex.toString();
+
+            s_logger.warn(msg, ex);
+
+            throw new CloudRuntimeException(msg, ex);
         }
     }
 

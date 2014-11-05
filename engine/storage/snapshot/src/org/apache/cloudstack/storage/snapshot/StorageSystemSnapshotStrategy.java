@@ -226,7 +226,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             sourceDetails = getSourceDetails(volumeInfo);
         }
 
-        HostVO hostVO = getHostId(hostId, volumeVO);
+        HostVO hostVO = getHost(hostId, volumeVO);
 
         long storagePoolId = volumeVO.getPoolId();
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
@@ -340,7 +340,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         return null;
     }
 
-    private HostVO getHostId(Long hostId, VolumeVO volumeVO) {
+    private HostVO getHost(Long hostId, VolumeVO volumeVO) {
         HostVO hostVO = _hostDao.findById(hostId);
 
         if (hostVO != null) {
@@ -404,7 +404,8 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
 
         Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
-        if(mapCapabilities != null) {
+
+        if (mapCapabilities != null) {
             String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
             Boolean supportsStorageSystemSnapshots = new Boolean(value);
 
@@ -412,6 +413,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 return StrategyPriority.HIGHEST;
             }
         }
+
         return StrategyPriority.CANT_HANDLE;
     }
 }
