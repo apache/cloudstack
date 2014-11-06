@@ -276,10 +276,10 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         }
 
         if (Version.compare(trimmedCurrentVersion, upgrades[upgrades.length - 1].getUpgradedVersion()) != 0) {
-            s_logger.error("The end upgrade version is actually at " + upgrades[upgrades.length - 1].getUpgradedVersion() +
-                    " but our management server code version is at " + currentVersion);
-            throw new CloudRuntimeException("The end upgrade version is actually at " + upgrades[upgrades.length - 1].getUpgradedVersion() +
-                    " but our management server code version is at " + currentVersion);
+            String errorMessage = "The end upgrade version is actually at " + upgrades[upgrades.length - 1].getUpgradedVersion() +
+                    " but our management server code version is at " + currentVersion;
+            s_logger.error(errorMessage);
+            throw new CloudRuntimeException(errorMessage);
         }
 
         boolean supportsRollingUpgrade = true;
@@ -292,9 +292,10 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
         if (!supportsRollingUpgrade && false) { // FIXME: Needs to detect if there are management servers running
             // ClusterManagerImpl.arePeersRunning(null)) {
-            s_logger.error("Unable to run upgrade because the upgrade sequence does not support rolling update and there are other management server nodes running");
-            throw new CloudRuntimeException(
-                    "Unable to run upgrade because the upgrade sequence does not support rolling update and there are other management server nodes running");
+            String errorMessage =
+                "Unable to run upgrade because the upgrade sequence does not support rolling update and there are other management server nodes running";
+            s_logger.error(errorMessage);
+            throw new CloudRuntimeException(errorMessage);
         }
 
         for (DbUpgrade upgrade : upgrades) {
@@ -307,8 +308,9 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 try {
                     conn = txn.getConnection();
                 } catch (SQLException e) {
-                    s_logger.error("Unable to upgrade the database", e);
-                    throw new CloudRuntimeException("Unable to upgrade the database", e);
+                    String errorMessage = "Unable to upgrade the database";
+                    s_logger.error(errorMessage, e);
+                    throw new CloudRuntimeException(errorMessage, e);
                 }
                 File[] scripts = upgrade.getPrepareScripts();
                 if (scripts != null) {
@@ -342,8 +344,9 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
                 txn.commit();
             } catch (CloudRuntimeException e) {
-                s_logger.error("Unable to upgrade the database", e);
-                throw new CloudRuntimeException("Unable to upgrade the database", e);
+                String errorMessage = "Unable to upgrade the database";
+                s_logger.error(errorMessage, e);
+                throw new CloudRuntimeException(errorMessage, e);
             } finally {
                 txn.close();
             }
@@ -382,8 +385,9 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                             try {
                                 conn = txn.getConnection();
                             } catch (SQLException e) {
-                                s_logger.error("Unable to cleanup the database", e);
-                                throw new CloudRuntimeException("Unable to cleanup the database", e);
+                                String errorMessage = "Unable to cleanup the database";
+                                s_logger.error(errorMessage, e);
+                                throw new CloudRuntimeException(errorMessage, e);
                             }
 
                             File[] scripts = upgrade.getCleanupScripts();
