@@ -762,5 +762,5 @@ CREATE TABLE `cloud`.`baremetal_rct` (
 --Remove duplicates from guest_os_hypervisor table
 DELETE t1 FROM guest_os_hypervisor t1, guest_os_hypervisor t2 WHERE (t1.hypervisor_type = t2.hypervisor_type AND t1.hypervisor_version = t2.hypervisor_version AND t1.guest_os_id = t2.guest_os_id AND t1.id > t2.id AND t1.is_user_defined=0);
 
--- Delete redundant built-in CentOS 5.3 template (if any) for XenServer, since CentOS 5.6 template already exists
-DELETE FROM `cloud`.`vm_template` WHERE unique_name="centos53-x86_64" AND hypervisor_type="XenServer";
+-- Set as removed built-in CentOS 5.3 template (if any) for XenServer, since CentOS 5.6 template already exists
+UPDATE `cloud`.`vm_template` SET removed=NOW() WHERE unique_name="centos53-x86_64" AND hypervisor_type="XenServer";
