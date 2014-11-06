@@ -87,7 +87,8 @@ handle_pid_file() {
 }
 
 start() {
-    source $(dirname $0)/tomcat.sh
+    readpath=$(readlink -f $0)
+    source `dirname $readpath`/tomcat.sh
 }
 
 # See how we were called.
