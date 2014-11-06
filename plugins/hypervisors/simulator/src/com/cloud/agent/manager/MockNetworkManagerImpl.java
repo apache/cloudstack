@@ -192,11 +192,10 @@ public class MockNetworkManagerImpl extends ManagerBase implements MockNetworkMa
     @Override
     public SetStaticRouteAnswer setStaticRoute(SetStaticRouteCommand cmd) {
         String[] results = new String[cmd.getStaticRoutes().length];
-        String[][] rules = cmd.generateSRouteRules();
+        String[] rules = cmd.generateSRouteRules();
         StringBuilder sb = new StringBuilder();
-        String[] srRules = rules[0];
-        for (int i = 0; i < srRules.length; i++) {
-            sb.append(srRules[i]).append(',');
+        for (int i = 0; i < rules.length; i++) {
+            sb.append(rules[i]).append(',');
         }
         return new SetStaticRouteAnswer(cmd, true, results);
     }
