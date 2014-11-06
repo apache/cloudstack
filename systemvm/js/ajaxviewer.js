@@ -138,7 +138,7 @@ KeyboardMapper.prototype = {
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_CTRL] 			= AjaxViewer.X11_KEY_CTRL;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_ALT] 				= AjaxViewer.X11_KEY_ALT;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_SELECT_KEY] 		= AjaxViewer.X11_KEY_SELECT_KEY;
-			this.jsX11KeysymMap[AjaxViewer.JS_KEY_DECIMAL_POINT] 	= AjaxViewer.X11_KEY_DECIMAL_POINT;
+			//this.jsX11KeysymMap[AjaxViewer.JS_KEY_DECIMAL_POINT] 	= AjaxViewer.X11_KEY_DECIMAL_POINT;
 			this.jsKeyPressX11KeysymMap[45] 				= [{type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SUBSTRACT, modifiers: 0, shift: true },
 															   {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SUBSTRACT, modifiers: 0, shift: true },
 															   {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SUBSTRACT, modifiers: 0, shift: false },
