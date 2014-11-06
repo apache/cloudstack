@@ -427,7 +427,7 @@ function kvm_export() {
     log INFO "creating kvm export"
     local hdd_path="${1}"
     vboxmanage internalcommands converttoraw -format vdi "${hdd_path}" raw.img
-    qemu-img convert -f raw -c -O qcow2 raw.img "${appliance_build_name}-kvm.qcow2"
+    qemu-img convert -o compat=0.10 -f raw -c -O qcow2 raw.img "${appliance_build_name}-kvm.qcow2"
     add_on_exit rm -f raw.img
     bzip2 "${appliance_build_name}-kvm.qcow2"
     mv "${appliance_build_name}-kvm.qcow2.bz2" dist/
