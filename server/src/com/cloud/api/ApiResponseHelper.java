@@ -149,6 +149,8 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
@@ -330,6 +332,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private VolumeDao _volumeDao;
     @Inject
     private DataStoreManager _dataStoreMgr;
+    @Inject
+    SnapshotDataStoreDao _snapshotStoreDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -497,10 +501,13 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     private DataStoreRole getDataStoreRole(Snapshot snapshot) {
-        long volumeId = snapshot.getVolumeId();
-        VolumeVO volumeVO = _volumeDao.findById(volumeId);
+        SnapshotDataStoreVO snapshotStore = _snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
 
-        long storagePoolId = volumeVO.getPoolId();
+        if (snapshotStore == null) {
+            return DataStoreRole.Image;
+        }
+
+        long storagePoolId = snapshotStore.getDataStoreId();
         DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
 
         Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();

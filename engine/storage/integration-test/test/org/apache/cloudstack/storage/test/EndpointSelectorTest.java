@@ -54,7 +54,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.AgentManager;
@@ -100,8 +99,6 @@ public class EndpointSelectorTest {
     SnapshotDataFactory snapshotDataFactory;
     @Inject
     PrimaryDataStoreProvider primaryDataStoreProvider;
-    @Inject
-    SnapshotDataStoreDao snapshotDataStoreDao;
     @Inject
     VolumeDao volumeDao;
     @Inject
