@@ -1131,7 +1131,7 @@ setup_storage_network() {
 	echo "auto eth3" >> /etc/network/interfaces
 	
 	setup_interface "3" "$STORAGE_IP" "$STORAGE_NETMASK"
-        [ -n "$MTU" ] && ifconfig eth3 mtu $MTU
+    [ -n "$MTU" ] && ifconfig eth3 mtu $MTU && echo "  mtu $MTU" >> /etc/network/interfaces
 	#ip route add "$STORAGE_CIDR" via "$STORAGE_IP"
 	log_it "Successfully setup storage network with STORAGE_IP:$STORAGE_IP, STORAGE_NETMASK:$STORAGE_NETMASK, STORAGE_CIDR:$STORAGE_CIDR"
 }
