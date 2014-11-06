@@ -1714,6 +1714,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public boolean expunge(UserVmVO vm, long callerUserId, Account caller) {
+        vm = _vmDao.acquireInLockTable(vm.getId());
+        if (vm == null) {
+            return false;
+        }
         try {
             List<VolumeVO> rootVol = _volsDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
             // expunge the vm
@@ -1750,6 +1754,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } catch (ConcurrentOperationException e) {
             s_logger.warn("Concurrent operations on expunging " + vm, e);
             return false;
+        } finally {
+            _vmDao.releaseFromLockTable(vm.getId());
         }
     }
 
