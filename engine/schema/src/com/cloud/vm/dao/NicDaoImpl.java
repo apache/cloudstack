@@ -46,6 +46,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     private SearchBuilder<NicVO> NonReleasedSearch;
     private GenericSearchBuilder<NicVO, Integer> CountBy;
     private GenericSearchBuilder<NicVO, Integer> CountByForStartingVms;
+    private GenericSearchBuilder<NicVO, Integer> CountByForRunningVms;
 
     @Inject
     VMInstanceDao _vmDao;
@@ -95,6 +96,17 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         join1.and("state", join1.entity().getState(), Op.EQ);
         CountByForStartingVms.join("vm", join1, CountByForStartingVms.entity().getInstanceId(), join1.entity().getId(), JoinBuilder.JoinType.INNER);
         CountByForStartingVms.done();
+
+        CountByForRunningVms = createSearchBuilder(Integer.class);
+        CountByForRunningVms.select(null, Func.COUNT, CountByForRunningVms.entity().getId());
+        CountByForRunningVms.and("networkId", CountByForRunningVms.entity().getNetworkId(), Op.EQ);
+        CountByForRunningVms.and("removed", CountByForRunningVms.entity().getRemoved(), Op.NULL);
+        SearchBuilder<VMInstanceVO> join2 = _vmDao.createSearchBuilder();
+        join2.and("state", join2.entity().getState(), Op.EQ);
+        join2.and("type", join2.entity().getType(), Op.EQ);
+        CountByForRunningVms.join("vm", join2, CountByForRunningVms.entity().getInstanceId(), join2.entity().getId(), JoinBuilder.JoinType.INNER);
+        CountByForRunningVms.done();
+
     }
     
     @Override
@@ -287,4 +299,13 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         return results.get(0);
     }
 
+    @Override
+    public int countNicsForRunningVms(long networkId) {
+        SearchCriteria<Integer> sc = CountByForRunningVms.create();
+        sc.setParameters("networkId", networkId);
+        sc.setJoinParameters("vm", "state", VirtualMachine.State.Running);
+        sc.setJoinParameters("vm", "type", VirtualMachine.Type.User);
+        List<Integer> results = customSearch(sc, null);
+        return results.get(0);
+    }
 }
