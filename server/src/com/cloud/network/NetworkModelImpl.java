@@ -2225,6 +2225,13 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             return false;
         }
 
+        // Due to VMSync issue, there can be cases where nic count is zero, but there can be VM's running in the network
+        // so add extra guard to check if network GC is actially required.
+        if (_nicDao.countNicsForRunningVms(networkId) > 0) {
+            s_logger.debug("Network id=" + networkId + " is not ready for GC as it has vms that are Running at the moment");
+            return false;
+        }
+
         return true;
     }
 
