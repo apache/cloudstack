@@ -44,7 +44,7 @@ d-i netcfg/choose_interface select eth2
 # Any hostname and domain names assigned from dhcp take precedence over
 # values set here. However, setting the values still prevents the questions
 # from being shown, even if values come from dhcp.
-d-i netcfg/get_hostname string systemvm
+d-i netcfg/get_hostname string systemvmtest
 d-i netcfg/get_domain string cloudstack.org
 
 # Disable that annoying WEP key dialog.
