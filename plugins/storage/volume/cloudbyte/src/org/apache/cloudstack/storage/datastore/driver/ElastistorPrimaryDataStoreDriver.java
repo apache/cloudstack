@@ -231,9 +231,6 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
             }
 
             if (result) {
-
-                _volumeDao.deleteVolumesByInstance(volumeInfo.getId());
-
                 long usedBytes = storagePool.getUsedBytes();
                 long capacityIops = storagePool.getCapacityIops();
 
