@@ -39,4 +39,6 @@ public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
     void resetJobProcess(long msid, int jobResultCode, String jobResultMessage);
 
     List<AsyncJobVO> getExpiredCompletedJobs(Date cutTime, int limit);
+
+    List<AsyncJobVO> getResetJobs(long msid);
 }
