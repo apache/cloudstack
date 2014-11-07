@@ -86,7 +86,7 @@ class CsAddress(CsDataBag):
     def add_netstats(self, address):
         # add in the network stats iptables rules
         dev = "eth%s" % address['nic_dev_id']
-        if address["nw_type"] == "public_ip":
+        if address["nw_type"] == "public":
             self.fw.append(["", "front", "-A FORWARD -j NETWORK_STATS"])
             self.fw.append(["", "front", "-A INPUT -j NETWORK_STATS"])
             self.fw.append(["", "front", "-A OUTPUT -j NETWORK_STATS"])
