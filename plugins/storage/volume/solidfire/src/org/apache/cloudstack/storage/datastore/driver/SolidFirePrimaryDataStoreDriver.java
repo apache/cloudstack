@@ -465,8 +465,6 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
                 _volumeDetailsDao.removeDetails(volumeId);
 
-                _volumeDao.deleteVolumesByInstance(volumeId);
-
                 StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
 
                 // getUsedBytes(StoragePool) will not include the volume to delete because it has already been deleted by this point
