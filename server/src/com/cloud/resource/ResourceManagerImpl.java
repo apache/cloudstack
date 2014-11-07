@@ -847,8 +847,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // delete host details
         _hostDetailsDao.deleteDetails(hostId);
 
-                // if host is GPU enabled, delete GPU entries
-                _hostGpuGroupsDao.deleteGpuEntries(hostId);
+        // if host is GPU enabled, delete GPU entries
+        _hostGpuGroupsDao.deleteGpuEntries(hostId);
+
+        // delete host tags
+        _hostTagsDao.deleteTags(hostId);
 
         host.setGuid(null);
         Long clusterId = host.getClusterId();
