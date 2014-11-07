@@ -1485,11 +1485,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
 
-        String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
-        Boolean supportsStorageSystemSnapshots = new Boolean(value);
+        if (mapCapabilities != null) {
+            String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
+            Boolean supportsStorageSystemSnapshots = new Boolean(value);
 
-        if (supportsStorageSystemSnapshots) {
-            return DataStoreRole.Primary;
+            if (supportsStorageSystemSnapshots) {
+                return DataStoreRole.Primary;
+            }
         }
 
         return DataStoreRole.Image;
