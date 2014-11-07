@@ -72,6 +72,16 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
     }
 
     @Override
+    public void deleteTags(long hostId) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
+        SearchCriteria<HostTagVO> sc = HostSearch.create();
+        sc.setParameters("hostId", hostId);
+        expunge(sc);
+        txn.commit();
+    }
+
+    @Override
     public void persist(long hostId, List<String> hostTags) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
 
