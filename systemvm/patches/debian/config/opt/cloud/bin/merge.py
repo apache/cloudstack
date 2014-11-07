@@ -141,12 +141,15 @@ class updateDataBag:
         # "eth0ip": "192.168.56.32",
         # "eth0mask": "255.255.255.0",
         self.newData = []
-        self.processCLItem('0')
-        self.processCLItem('1')
-        self.processCLItem('2')
+        if (self.qFile.data['cmd_line']['type'] == "router"):
+            self.processCLItem('0', "guest")
+            self.processCLItem('1', "control")
+            self.processCLItem('2', "public")
+        elif (self.qFile.data['cmd_line']['type'] == "vpcrouter"):
+            self.processCLItem('0', "control")
         return cs_cmdline.merge(dbag, self.qFile.data)
 
-    def processCLItem(self, num):
+    def processCLItem(self, num, nw_type):
         key = 'eth' + num + 'ip'
         dp  = {}
         if(key in self.qFile.data['cmd_line']):
@@ -160,7 +163,7 @@ class updateDataBag:
            else:
                dp['gateway'] = 'None'
            dp['nic_dev_id'] = num
-           dp['nw_type']    = 'control'
+           dp['nw_type']    = nw_type
            qf = loadQueueFile()
            qf.load({ 'ip_address' : [ dp ], 'type' : 'ips'})
 
