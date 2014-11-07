@@ -232,7 +232,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 s_logger.debug("job-" + jobId + " no longer exists, we just log completion info here. " + jobStatus + ", resultCode: " + resultCode + ", result: " +
                     resultObject);
             }
-
+            // still purge item from queue to avoid any blocking
+            _queueMgr.purgeAsyncJobQueueItemId(jobId);
             return;
         }
 
@@ -240,7 +241,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("job-" + jobId + " is already completed.");
             }
-
+            // still purge item from queue to avoid any blocking
+            _queueMgr.purgeAsyncJobQueueItemId(jobId);
             return;
         }
 
@@ -547,6 +549,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     // guard final clause as well
                     try {
                         if (job.getSyncSource() != null) {
+                            // here check queue item one more time to double make sure that queue item is removed in case of any uncaught exception
+                            _queueMgr.purgeItem(job.getSyncSource().getId());
                             checkQueue(job.getSyncSource().getQueueId());
                         }
 
@@ -976,6 +980,12 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     _queueMgr.cleanupActiveQueueItems(msid, true);
                     // reset job status for all jobs running on this ms node
                     _jobDao.resetJobProcess(msid, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), "job cancelled because of management server restart or shutdown");
+                    // purge those queue items for those cancelled jobs above, which may not be picked up by any MS node yet
+                    List<AsyncJobVO> cancelJobs = _jobDao.getResetJobs(msid);
+                    for (AsyncJobVO job : cancelJobs){
+                        _queueMgr.purgeAsyncJobQueueItemId(job.getId());
+                    }
+
                 }
             });
         } catch (Throwable e) {
