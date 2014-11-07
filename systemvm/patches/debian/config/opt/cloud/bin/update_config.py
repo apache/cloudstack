@@ -7,6 +7,7 @@ import subprocess
 from subprocess import PIPE, STDOUT
 import os
 import os.path
+import configure
 
 logging.basicConfig(filename='/var/log/cloud.log',level=logging.DEBUG, format='%(asctime)s %(message)s')
 
@@ -33,16 +34,6 @@ qf.setFile(sys.argv[1])
 qf.load(None)
 
 # Converge
-run = subprocess.Popen(["/opt/cloud/bin/configure.py"],
-                       stdin=PIPE, stdout=PIPE, stderr=PIPE)
-run.wait()
+returncode = configure.main([])
 
-if run.returncode:
-    print "stdout >>"
-    print run.stdout.read()
-    print "stderr >>"
-    print run.stderr.read()
-else:
-    print "Convergence is achieved - you have been assimilated!"
-
-sys.exit(run.returncode)
+sys.exit(returncode)
