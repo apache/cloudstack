@@ -1798,7 +1798,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="false")
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_07_delete_network_with_rules(self):
         """ Test delete network that has PF/staticNat/LB rules/Network Acl
         """
@@ -2352,7 +2352,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="false")
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_08_ip_reallocation_CS5986(self):
         """
         @Desc: Test to verify dnsmasq dhcp conflict issue due to /ect/hosts not getting udpated
