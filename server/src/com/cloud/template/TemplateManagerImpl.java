@@ -80,6 +80,8 @@ import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -245,6 +247,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private EndPointSelector _epSelector;
     @Inject
     private UserVmJoinDao _userVmJoinDao;
+    @Inject
+    private SnapshotDataStoreDao _snapshotStoreDao;
 
     @Inject
     MessageBus _messageBus;
@@ -1470,10 +1474,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     private DataStoreRole getDataStoreRole(Snapshot snapshot) {
-        long volumeId = snapshot.getVolumeId();
-        VolumeVO volumeVO = _volumeDao.findById(volumeId);
+        SnapshotDataStoreVO snapshotStore = _snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
 
-        long storagePoolId = volumeVO.getPoolId();
+        if (snapshotStore == null) {
+            return DataStoreRole.Image;
+        }
+
+        long storagePoolId = snapshotStore.getDataStoreId();
         DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
 
         Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();

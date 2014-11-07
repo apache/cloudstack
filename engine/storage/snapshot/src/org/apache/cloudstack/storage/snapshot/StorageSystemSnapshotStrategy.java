@@ -37,6 +37,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.AgentManager;
@@ -76,6 +78,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     @Inject private PrimaryDataStoreDao _storagePoolDao;
     @Inject private SnapshotDao _snapshotDao;
     @Inject private SnapshotDataFactory _snapshotDataFactory;
+    @Inject private SnapshotDataStoreDao _snapshotStoreDao;
     @Inject private SnapshotDetailsDao _snapshotDetailsDao;
     @Inject private VMInstanceDao _vmInstanceDao;
     @Inject private VolumeDao _volumeDao;
@@ -400,7 +403,22 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         long volumeId = snapshot.getVolumeId();
         VolumeVO volumeVO = _volumeDao.findById(volumeId);
 
-        long storagePoolId = volumeVO.getPoolId();
+        long storagePoolId;
+
+        if (volumeVO == null) {
+            SnapshotDataStoreVO snapshotStore = _snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
+
+            if (snapshotStore != null) {
+                storagePoolId = snapshotStore.getDataStoreId();
+            }
+            else {
+                throw new CloudRuntimeException("Unable to determine the storage pool of the snapshot");
+            }
+        }
+        else {
+            storagePoolId = volumeVO.getPoolId();
+        }
+
         DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
 
         Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();

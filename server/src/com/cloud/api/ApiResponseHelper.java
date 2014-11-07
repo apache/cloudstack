@@ -149,8 +149,10 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
@@ -295,6 +297,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
@@ -333,7 +336,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Inject
     private DataStoreManager _dataStoreMgr;
     @Inject
-    SnapshotDataStoreDao _snapshotStoreDao;
+    private SnapshotDataStoreDao _snapshotStoreDao;
+    @Inject
+    private PrimaryDataStoreDao _storagePoolDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -1447,14 +1452,41 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long snapshotId, Long volumeId, boolean readyOnly) {
-        VolumeVO volume = null;
+        Long zoneId = null;
+
         if (snapshotId != null) {
             Snapshot snapshot = ApiDBUtils.findSnapshotById(snapshotId);
-            volume = findVolumeById(snapshot.getVolumeId());
+            VolumeVO volume = findVolumeById(snapshot.getVolumeId());
+
+            // it seems that the volume can actually be removed from the DB at some point if it's deleted
+            // if volume comes back null, use another technique to try to discover the zone
+            if (volume == null) {
+                SnapshotDataStoreVO snapshotStore = _snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
+
+                if (snapshotStore != null) {
+                    long storagePoolId = snapshotStore.getDataStoreId();
+
+                    StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
+
+                    if (storagePool != null) {
+                        zoneId = storagePool.getDataCenterId();
+                    }
+                }
+            }
+            else {
+                zoneId = volume.getDataCenterId();
+            }
         } else {
-            volume = findVolumeById(volumeId);
+            VolumeVO volume = findVolumeById(volumeId);
+
+            zoneId = volume.getDataCenterId();
         }
-        return createTemplateResponses(view, templateId, volume.getDataCenterId(), readyOnly);
+
+        if (zoneId == null) {
+            throw new CloudRuntimeException("Unable to determine the zone ID");
+        }
+
+        return createTemplateResponses(view, templateId, zoneId, readyOnly);
     }
 
     @Override
