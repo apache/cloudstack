@@ -7,7 +7,7 @@
 	delaycompress
 	compress
 	postrotate
-		invoke-rc.d rsyslog reload > /dev/null
+		/usr/sbin/invoke-rc.d rsyslog reload > /dev/null
 	endscript
 }
 
@@ -32,6 +32,6 @@
 	delaycompress
 	sharedscripts
 	postrotate
-		invoke-rc.d rsyslog reload > /dev/null
+		/usr/sbin/nvoke-rc.d rsyslog reload > /dev/null
 	endscript
 }
