@@ -2747,6 +2747,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 try {
                     vdi.destroy(conn);
                 } catch (Exception e) {
+                    String msg = "Failed to destroy VDI : " + nameLabel + "due to " + e.toString() + "\n Force deleting VDI using system 'rm' command";
+                    s_logger.warn(msg);
+                    try {
+                        String srUUID = vdi.getSR(conn).getUuid(conn);
+                        String vdiUUID = vdi.getUuid(conn);
+                        String vdifile = "/var/run/sr-mount/" + srUUID + "/" + vdiUUID + ".vhd";
+                        String results = callHostPluginAsync(conn, "vmopspremium", "remove_corrupt_vdi", 10, "vdifile", vdifile);
+                    } catch (Exception e2) {
+                        s_logger.warn(e2);
+                    }
                 }
             }
         } catch (Exception e) {
