@@ -1081,9 +1081,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw ex;
         }
 
-        if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware)
-                && !vm.getHypervisorType().equals(HypervisorType.KVM) && !vm.getHypervisorType().equals(HypervisorType.Ovm)
-                && !vm.getHypervisorType().equals(HypervisorType.Hyperv)) {
+        if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM)
+                && !vm.getHypervisorType().equals(HypervisorType.Ovm) && !vm.getHypervisorType().equals(HypervisorType.Hyperv) && !vm.getHypervisorType().equals(HypervisorType.LXC)
+                && !vm.getHypervisorType().equals(HypervisorType.Simulator)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(vm + " is not XenServer/VMware/KVM/OVM/Hyperv, cannot migrate this VM.");
             }
