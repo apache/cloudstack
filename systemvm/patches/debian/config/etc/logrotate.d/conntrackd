@@ -7,7 +7,7 @@
 
     postrotate
         if [ -e /var/run/conntrackd.sock ]; then
-            invoke-rc.d conntrackd restart > /dev/null
+            /usr/sbin/invoke-rc.d conntrackd restart > /dev/null
         fi
     endscript
 }
