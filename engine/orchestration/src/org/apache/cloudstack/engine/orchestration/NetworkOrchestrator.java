@@ -2278,10 +2278,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                                 NetworkAccountVO networkAccount = _networkAccountDao.getAccountNetworkMapByNetworkId(networkFinal.getId());
                                 if (networkAccount != null)
                                     _networkAccountDao.remove(networkAccount.getId());
-
-                                // remove its related ACL permission
-                                Pair<Class<?>, Long> networkMsg = new Pair<Class<?>, Long>(Network.class, networkFinal.getId());
-                                _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, networkMsg);
                             }
 
                             NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, networkFinal.getNetworkOfferingId());
@@ -2292,6 +2288,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         }
                     }
                 });
+                if (_networksDao.findById(network.getId()) == null) {
+                    // remove its related ACL permission
+                    Pair<Class<?>, Long> networkMsg = new Pair<Class<?>, Long>(Network.class, networkFinal.getId());
+                    _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, networkMsg);
+                }
                 return true;
             } catch (CloudRuntimeException e) {
                 s_logger.error("Failed to delete network", e);
