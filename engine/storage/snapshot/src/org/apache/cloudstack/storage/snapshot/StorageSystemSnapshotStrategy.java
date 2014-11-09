@@ -219,9 +219,11 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
             // if the VM is not associated with a host
             if (hostId == null) {
-                sourceDetails = getSourceDetails(volumeInfo);
-
                 hostId = vmInstanceVO.getLastHostId();
+
+                if (hostId == null) {
+                    sourceDetails = getSourceDetails(volumeInfo);
+                }
             }
         }
         // volume to snapshot is not associated with a VM (could be a data disk in the detached state)
