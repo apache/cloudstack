@@ -1067,6 +1067,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         }
                     }
                     s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + (startAnswer == null ? " no start answer" : startAnswer.getDetails()));
+                    if (startAnswer.getContextParam("stopRetry") != null) {
+                        break;
+                    }
 
                 } catch (OperationTimedoutException e) {
                     s_logger.debug("Unable to send the start command to host " + dest.getHost());
