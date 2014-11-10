@@ -5,11 +5,19 @@ import static org.junit.Assert.assertNotNull;
 
 import java.util.List;
 
+import org.apache.commons.lang.StringEscapeUtils;
+
 public class XmlTestResultTest {
     private static final String NULL = "<nil/>";
 
     private String brack(String type, String s) {
         return "<" + type + ">" + s + "</" + type + ">";
+    }
+    public String escapeOrNot(String s) {
+        if(s.startsWith("<")) {
+            return StringEscapeUtils.escapeXml(s);
+        } 
+        return s;
     }
 
     public String errorResponseWrap(String message) {

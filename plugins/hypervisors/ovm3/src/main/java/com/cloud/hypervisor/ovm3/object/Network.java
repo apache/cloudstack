@@ -38,9 +38,9 @@ public class Network extends OvmObject {
         return interfaceList;
     }
 
-    public void setBridgeList(Map<String, Interface> list) {
+    /* public void setBridgeList(Map<String, Interface> list) {
         interfaceList = list;
-    }
+    } */
 
     public static class Interface {
         private final Map<String, String> iFace = new HashMap<String, String>() {
@@ -97,14 +97,14 @@ public class Network extends OvmObject {
             return iFace.put("Physical", ph);
         }
 
-        public String setAddress(String addr) {
+        /* public String setAddress(String addr) {
             return iFace.put("Address", addr);
         }
 
         public String setBroadcast(String bcast) {
             return iFace.put("Broadcast", bcast);
         }
-
+        */
         public String setMac(String mac) {
             return iFace.put("MAC", mac);
         }
@@ -125,6 +125,7 @@ public class Network extends OvmObject {
             }
         }
         LOGGER.debug("Unable to find " + key + " Interface by value: " + val);
+        this.setSuccess(false);
         return null;
     }
 
@@ -146,6 +147,7 @@ public class Network extends OvmObject {
             return getNetIface("Name", name);
         }
         LOGGER.debug("Unable to find bridge by name: " + name);
+        setSuccess(false);
         return null;
     }
 
@@ -154,6 +156,7 @@ public class Network extends OvmObject {
             return getNetIface("Address", ip);
         }
         LOGGER.debug("Unable to find bridge by ip: " + ip);
+        setSuccess(false);
         return null;
     }
 
@@ -193,6 +196,7 @@ public class Network extends OvmObject {
      * -VLAN MTU must less or equal to the MTU of the underlying physical
      * interface.
      */
+    /*
     public Boolean ovsChangeMtu(String net, int mtu) throws Ovm3ResourceException {
         Object x = callWrapper("ovs_change_mtu", net, mtu);
         if (x == null) {
@@ -200,16 +204,17 @@ public class Network extends OvmObject {
         }
         return false;
     }
-
+    */
     /*
      * ovs_async_bridge, <class 'agent.api.network.linux_network.LinuxNetwork'>
      * argument: self - default: None argument: action - default: None argument:
      * br_name - default: None argument: net_dev - default: None
      */
+    /*
     public Boolean ovsAsyncBridge(String action, String bridge, String netdev) throws Ovm3ResourceException {
         return nullIsTrueCallWrapper("ovs_async_bridge", action, bridge, netdev);
     }
-
+    */
     /*
      * ovs_bond_op, <class 'agent.api.network.linux_network.LinuxNetwork'>
      * argument: self - default: None argument: action - default: None argument:
@@ -373,15 +378,23 @@ public class Network extends OvmObject {
      * on failure
      */
     public Boolean startOvsLocalConfig(String br) throws Ovm3ResourceException {
-        return ovsLocalConfig("start", br);
+        String s = (String) ovsLocalConfig("start", br);
+        if (s.startsWith("start")) {
+            return true;
+        };
+        return false;
     }
 
     public Boolean stopOvsLocalConfig(String br) throws Ovm3ResourceException {
-        return ovsLocalConfig("stop", br);
+        String s = (String) ovsLocalConfig("stop", br);
+        if (s.startsWith("stop")) {
+            return true;
+        };
+        return false;
     }
 
-    public Boolean ovsLocalConfig(String action, String br) throws Ovm3ResourceException {
-        return nullIsTrueCallWrapper("ovs_local_config", action, br);
+    private Object ovsLocalConfig(String action, String br) throws Ovm3ResourceException {
+        return callWrapper("ovs_local_config", action, br);
     }
 
     /*
@@ -441,15 +454,24 @@ public class Network extends OvmObject {
      * bond
      */
     public Boolean startOvsBrConfig(String br, String dev) throws Ovm3ResourceException {
-        return ovsBrConfig("start", br, dev);
+        String s = (String) ovsBrConfig("start", br, dev);
+        if (s.startsWith("start")) {
+            return true;
+        };
+        return false;
     }
 
     public Boolean stopOvsBrConfig(String br, String dev) throws Ovm3ResourceException {
-        return ovsBrConfig("stop", br, dev);
+        String s = (String) ovsBrConfig("stop", br, dev);
+        if (s.startsWith("stop")) {
+            return true;
+        };
+        return false;
     }
 
-    public Boolean ovsBrConfig(String action, String br, String net) throws Ovm3ResourceException {
-        return nullIsTrueCallWrapper("ovs_br_config", action, br, net);
+    public Object ovsBrConfig(String action, String br, String net) throws Ovm3ResourceException {
+       Object x = callWrapper("ovs_br_config", action, br, net);
+       return x;
     }
 
     /*
@@ -471,19 +493,24 @@ public class Network extends OvmObject {
      * interface Raises an exception on failure
      */
     public Boolean stopOvsVlanBridge(String br, String net, int vlan) throws Ovm3ResourceException {
-        return ovsVlanBridge("stop", br, net, vlan);
+        String s = (String) ovsVlanBridge("stop", br, net, vlan);
+        if (s.startsWith("stop")) {
+            return true;
+        };
+        return false;
     }
 
     public Boolean startOvsVlanBridge(String br, String net, int vlan) throws Ovm3ResourceException {
-        return ovsVlanBridge("start", br, net, vlan);
+        String s = (String) ovsVlanBridge("start", br, net, vlan);
+        if (s.startsWith("start")) {
+            return true;
+        };
+        return false;
     }
 
-    public Boolean ovsVlanBridge(String action, String br, String net, int vlan) throws Ovm3ResourceException {
+    private Object ovsVlanBridge(String action, String br, String net, int vlan) throws Ovm3ResourceException {
         Object x = callWrapper("ovs_vlan_bridge", action, br, net, vlan);
-        if (x == null) {
-            return true;
-        }
-        return false;
+        return x;
     }
 
     /*

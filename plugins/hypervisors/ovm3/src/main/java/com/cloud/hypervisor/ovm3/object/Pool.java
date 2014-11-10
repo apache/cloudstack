@@ -29,8 +29,8 @@ public class Pool extends OvmObject {
 
     private List<String> validRoles = new ArrayList<String>() {
         {
-            add("utility");
             add("xen");
+            add("utility");
         }
     };
     private List<String> poolHosts = new ArrayList<String>();
@@ -38,7 +38,7 @@ public class Pool extends OvmObject {
     private List<String> poolMembers = new ArrayList<String>();
     private String poolMasterVip;
     private String poolAlias;
-    private String poolId;
+    private String poolId = "";
 
     public Pool(Connection c) {
         setClient(c);
@@ -66,7 +66,7 @@ public class Pool extends OvmObject {
     }
 
     public Boolean isInPool(String id) throws Ovm3ResourceException {
-        if (poolId == null) {
+        if (poolId.matches("")) {
             discoverServerPool();
         }
         if (isInAPool() && poolId.equals(id)) {
@@ -76,10 +76,10 @@ public class Pool extends OvmObject {
     }
 
     public Boolean isInAPool() throws Ovm3ResourceException {
-        if (poolId == null) {
+        if (poolId.matches("")) {
             discoverServerPool();
         }
-        if (poolId == null) {
+        if (poolId.matches("")) {
             return false;
         }
         return true;
@@ -96,7 +96,7 @@ public class Pool extends OvmObject {
     public Boolean createServerPool(String alias, String id, String vip,
             int num, String name, String host, List<String> roles) throws Ovm3ResourceException{
         String role = roles.toString();
-        role = "xen,utility";
+        role = StringUtils.join(this.getValidRoles(), ",");
         if (!this.isInAPool()) {
             Object x = callWrapper("create_server_pool", alias, id, vip, num, name,
                     host, role);
@@ -201,7 +201,7 @@ public class Pool extends OvmObject {
         this.poolAlias = xmlToString(path + "/Pool_Alias", xmlDocument);
         this.poolMasterVip = xmlToString(path + "/Master_Virtual_Ip",
                 xmlDocument);
-        this.setPoolMembers(xmlToList(path + "/Member_List", xmlDocument));
+        // this.setPoolMembers(xmlToList(path + "/Member_List", xmlDocument));
         this.poolHosts.addAll(xmlToList(path + "//Registered_IP", xmlDocument));
 
         return true;
@@ -304,7 +304,7 @@ public class Pool extends OvmObject {
     }
 
     public List<String> getPoolMemberList() throws Ovm3ResourceException {
-        if (poolId == null) {
+        if (poolId.matches("")) {
             discoverServerPool();
         }
         return poolHosts;
@@ -335,6 +335,7 @@ public class Pool extends OvmObject {
         return setPoolMemberList();
     }
 
+    /*
     public List<String> getPoolMembers() {
         return poolMembers;
     }
@@ -342,4 +343,5 @@ public class Pool extends OvmObject {
     public void setPoolMembers(List<String> poolMembers) {
         this.poolMembers = poolMembers;
     }
+    */
 }

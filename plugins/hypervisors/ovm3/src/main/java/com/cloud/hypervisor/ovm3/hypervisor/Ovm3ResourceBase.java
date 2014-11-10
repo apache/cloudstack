@@ -2303,7 +2303,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                        + " for repo " + primUuid);
                /* double check if we're not overwritting anything here!@ */
                poolFs.createPoolFs(fsType, mountPoint, clusterUuid,
-                       primUuid, ssUuid, managerId, primUuid);
+                       primUuid, ssUuid, managerId);
             } catch (Ovm3ResourceException e) {
                 throw e;
             }

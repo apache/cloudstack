@@ -1,7 +1,6 @@
 package com.cloud.hypervisor.ovm3.object;
 
 import org.junit.Test;
-import java.util.List;
 
 public class RepositoryTest {
     ConnectionTest con = new ConnectionTest();
