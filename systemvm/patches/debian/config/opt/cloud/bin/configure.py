@@ -85,20 +85,20 @@ class CsAcl(CsDataBag):
 
         def process(self, direction, rule_list):
             for i in rule_list:
-                r = self.AclRule(direction, self, i)
+                r = self.AclRule(direction, self, i, self.config)
                 r.create()
 
         class AclRule():
 
-            def __init__(self, direction, acl, rule):
+            def __init__(self, direction, acl, rule, config):
                 self.table = ""
                 self.device = acl.device
                 self.fw = acl.fw
-                self.chain = "ACL_INBOUND_%s" % self.device
+                self.chain = config.get_ingress_chain(self.device, acl.ip)
                 self.dest  = "-s %s" % rule['cidr']
                 if direction == "egress":
-                    self.table = "mangle"
-                    self.chain = "ACL_OUTBOUND_%s" % self.device
+                    self.table = config.get_efress_table()
+                    self.chain = config.get_egress_chain(self.device, ip)
                     self.dest  = "-d %s" % rule['cidr']
                 self.type = ""
                 self.type = rule['type']
