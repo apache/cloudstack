@@ -1776,6 +1776,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Boolean isRoutingTemplate = cmd.isRoutingType();
         Boolean bootable = cmd.isBootable();
         Integer sortKey = cmd.getSortKey();
+        Map details = cmd.getDetails();
         Account account = CallContext.current().getCallingAccount();
 
         // verify that template exists
@@ -1798,7 +1799,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         boolean updateNeeded =
                 !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null && bootable == null && sortKey == null &&
-                        isDynamicallyScalable == null && isRoutingTemplate == null);
+                        isDynamicallyScalable == null && isRoutingTemplate == null && details == null);
         if (!updateNeeded) {
             return template;
         }
@@ -1856,6 +1857,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             } else {
                 template.setTemplateType(TemplateType.USER);
             }
+        }
+
+        if (details != null && !details.isEmpty()) {
+            template.setDetails(details);
+            _tmpltDao.saveDetails(template);
         }
 
         _tmpltDao.update(id, template);
