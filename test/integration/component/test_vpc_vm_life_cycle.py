@@ -620,7 +620,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         self.validate_network_rules()
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced","multihost", "intervlan"])
     def test_05_destroy_instance_in_network(self):
         """ Test destroy an instance in VPC networks
         """
@@ -628,6 +628,11 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         # Validate the following
         # 1. Destory the virtual machines.
         # 2. Rules should be still configured on virtual router.
+        # 3. Recover the virtual machines.
+        # 4. Vm should be in stopped state. State both the instances
+        # 5. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 6. Make sure that we are able to access google.com from this user Vm
 
         self.debug("Validating if the network rules work properly or not?")
         self.validate_network_rules()
@@ -636,10 +641,23 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                                                 self.account.name)
         try:
             self.vm_1.delete(self.apiclient, expunge=False)
-            self.vm_2.delete(self.apiclient, expunge=False)
+
+            list_vm_response = list_virtual_machines(
+                                                 self.apiclient,
+                                                 id=self.vm_1.id
+                                                 )
+
+            vm_response = list_vm_response[0]
+
+            self.assertEqual(
+                    vm_response.state,
+                    'Destroyed',
+                    "VM state should be destroyed"
+                    )
+            
         except Exception as e:
             self.fail("Failed to stop the virtual instances, %s" % e)
-
+            
         # Check if the network rules still exists after Vm stop
         self.debug("Checking if NAT rules ")
         nat_rules = NATRule.list(
@@ -664,45 +682,107 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                          "List LB rules shall return a valid list"
                          )
 
-        #Recover the instances so that they don't get expunged before runing next test case in the suite
+        self.debug("Recovering the expunged virtual machine vm1 in account: %s" %
+                                                self.account.name)
         try:
             self.vm_1.recover(self.apiclient)
-            self.vm_2.recover(self.apiclient)
+
+            list_vm_response = list_virtual_machines(
+                                                 self.apiclient,
+                                                 id=self.vm_1.id
+                                                 )
+
+            vm_response = list_vm_response[0]
+
+            self.assertEqual(
+                    vm_response.state,
+                    'Stopped',
+                    "VM state should be stopped"
+                    )
+
         except Exception as e:
             self.fail("Failed to recover the virtual instances, %s" % e)
-        return
-
-    @attr(tags=["advanced", "intervlan"])
-    def test_06_recover_instance_in_network(self):
-        """ Test recover an instance in VPC networks
-        """
-
-        self.debug("Deleted instacnes ..")
+            
         try:
-            self.vm_1.delete(self.apiclient, expunge=False)
             self.vm_2.delete(self.apiclient, expunge=False)
+
+            list_vm_response = list_virtual_machines(
+                                                 self.apiclient,
+                                                 id=self.vm_2.id
+                                                 )
+
+            vm_response = list_vm_response[0]
+
+            self.assertEqual(
+                    vm_response.state,
+                    'Destroyed',
+                    "VM state should be destroyed"
+                    )
+
         except Exception as e:
             self.fail("Failed to stop the virtual instances, %s" % e)
 
+        self.debug("Recovering the expunged virtual machine vm2 in account: %s" %
+                                                self.account.name)            
         try:
-            self.vm_1.recover(self.apiclient)
             self.vm_2.recover(self.apiclient)
+
+            list_vm_response = list_virtual_machines(
+                                                 self.apiclient,
+                                                 id=self.vm_2.id
+                                                 )
+
+            vm_response = list_vm_response[0]
+
+            self.assertEqual(
+                    vm_response.state,
+                    'Stopped',
+                    "VM state should be stopped"
+                    )
         except Exception as e:
             self.fail("Failed to recover the virtual instances, %s" % e)
 
         self.debug("Starting the two instances..")
         try:
             self.vm_1.start(self.apiclient)
+
+            list_vm_response = list_virtual_machines(
+                                                 self.apiclient,
+                                                 id=self.vm_1.id
+                                                 )
+
+            vm_response = list_vm_response[0]
+
+            self.assertEqual(
+                    vm_response.state,
+                    'Running',
+                    "VM state should be running"
+                    )
+
             self.vm_2.start(self.apiclient)
+
+            list_vm_response = list_virtual_machines(
+                                                 self.apiclient,
+                                                 id=self.vm_2.id
+                                                 )
+
+            vm_response = list_vm_response[0]
+
+            self.assertEqual(
+                    vm_response.state,
+                    'Running',
+                    "VM state should be running"
+                    )
         except Exception as e:
             self.fail("Failed to start the instances, %s" % e)
 
         # Wait until vms are up
         time.sleep(120)
-
         self.debug("Validating if the network rules work properly or not?")
         self.validate_network_rules()
+
         return
+
 
     @attr(tags=["advanced", "intervlan"])
     def test_07_migrate_instance_in_network(self):
@@ -2412,7 +2492,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         self.validate_network_rules()
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced","multihost", "intervlan"])
     def test_05_destroy_instance_in_network(self):
         """ Test destroy an instance in VPC networks
         """
@@ -2420,6 +2500,11 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         # Validate the following
         # 1. Destory the virtual machines.
         # 2. Rules should be still configured on virtual router.
+        # 3. Recover the virtual machines.
+        # 4. Vm should be in stopped state. State both the instances
+        # 5. Make sure that all the PF,LB and Static NAT rules on this VM
+        #    works as expected.
+        # 6. Make sure that we are able to access google.com from this user Vm
 
         self.debug("Validating if the network rules work properly or not?")
         self.validate_network_rules()
@@ -2428,10 +2513,23 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
                                                 self.account.name)
         try:
             self.vm_1.delete(self.apiclient, expunge=False)
-            self.vm_2.delete(self.apiclient, expunge=False)
+
+            list_vm_response = list_virtual_machines(
+                                                 self.apiclient,
+                                                 id=self.vm_1.id
+                                                 )
+
+            vm_response = list_vm_response[0]
+
+            self.assertEqual(
+                    vm_response.state,
+                    'Destroyed',
+                    "VM state should be destroyed"
+                    )
+            
         except Exception as e:
             self.fail("Failed to stop the virtual instances, %s" % e)
-
+            
         # Check if the network rules still exists after Vm stop
         self.debug("Checking if NAT rules ")
         nat_rules = NATRule.list(
@@ -2455,38 +2553,108 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
                          True,
                          "List LB rules shall return a valid list"
                          )
-        return
 
-    @attr(tags=["advanced", "intervlan"])
-    def test_06_recover_instance_in_network(self):
-        """ Test recover an instance in VPC networks
-        """
-
-        # Validate the following
-        # 1. Recover the virtual machines.
-        # 2. Vm should be in stopped state. State both the instances
-        # 3. Make sure that all the PF,LB and Static NAT rules on this VM
-        #    works as expected.
-        # 3. Make sure that we are able to access google.com from this user Vm
-
-        self.debug("Recovering the expunged virtual machines in account: %s" %
+        self.debug("Recovering the expunged virtual machine vm1 in account: %s" %
                                                 self.account.name)
         try:
             self.vm_1.recover(self.apiclient)
+
+            list_vm_response = list_virtual_machines(
+                                                 self.apiclient,
+                                                 id=self.vm_1.id
+                                                 )
+
+            vm_response = list_vm_response[0]
+
+            self.assertEqual(
+                    vm_response.state,
+                    'Stopped',
+                    "VM state should be stopped"
+                    )
+
+        except Exception as e:
+            self.fail("Failed to recover the virtual instances, %s" % e)
+            
+        try:
+            self.vm_2.delete(self.apiclient, expunge=False)
+
+            list_vm_response = list_virtual_machines(
+                                                 self.apiclient,
+                                                 id=self.vm_2.id
+                                                 )
+
+            vm_response = list_vm_response[0]
+
+            self.assertEqual(
+                    vm_response.state,
+                    'Destroyed',
+                    "VM state should be destroyed"
+                    )
+
+        except Exception as e:
+            self.fail("Failed to stop the virtual instances, %s" % e)
+
+        self.debug("Recovering the expunged virtual machine vm2 in account: %s" %
+                                                self.account.name)            
+        try:
             self.vm_2.recover(self.apiclient)
+
+            list_vm_response = list_virtual_machines(
+                                                 self.apiclient,
+                                                 id=self.vm_2.id
+                                                 )
+
+            vm_response = list_vm_response[0]
+
+            self.assertEqual(
+                    vm_response.state,
+                    'Stopped',
+                    "VM state should be stopped"
+                    )
         except Exception as e:
             self.fail("Failed to recover the virtual instances, %s" % e)
 
         self.debug("Starting the two instances..")
         try:
             self.vm_1.start(self.apiclient)
+
+            list_vm_response = list_virtual_machines(
+                                                 self.apiclient,
+                                                 id=self.vm_1.id
+                                                 )
+
+            vm_response = list_vm_response[0]
+
+            self.assertEqual(
+                    vm_response.state,
+                    'Running',
+                    "VM state should be running"
+                    )
+
             self.vm_2.start(self.apiclient)
+
+            list_vm_response = list_virtual_machines(
+                                                 self.apiclient,
+                                                 id=self.vm_2.id
+                                                 )
+
+            vm_response = list_vm_response[0]
+
+            self.assertEqual(
+                    vm_response.state,
+                    'Running',
+                    "VM state should be running"
+                    )
         except Exception as e:
             self.fail("Failed to start the instances, %s" % e)
 
+        # Wait until vms are up
+        time.sleep(120)
         self.debug("Validating if the network rules work properly or not?")
         self.validate_network_rules()
+
         return
+
 
     @attr(tags=["advanced", "intervlan"])
     def test_07_migrate_instance_in_network(self):
@@ -3244,25 +3412,10 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                     'Destroyed',
                     "VM state should be destroyed"
                     )
-
-            self.vm_2.delete(self.apiclient, expunge=False)
-
-            list_vm_response = list_virtual_machines(
-                                                 self.apiclient,
-                                                 id=self.vm_2.id
-                                                 )
-
-            vm_response = list_vm_response[0]
-
-            self.assertEqual(
-                    vm_response.state,
-                    'Destroyed',
-                    "VM state should be destroyed"
-                    )
-
+            
         except Exception as e:
             self.fail("Failed to stop the virtual instances, %s" % e)
-
+            
         # Check if the network rules still exists after Vm stop
         self.debug("Checking if NAT rules ")
         nat_rules = NATRule.list(
@@ -3287,7 +3440,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                          "List LB rules shall return a valid list"
                          )
 
-        self.debug("Recovering the expunged virtual machines in account: %s" %
+        self.debug("Recovering the expunged virtual machine vm1 in account: %s" %
                                                 self.account.name)
         try:
             self.vm_1.recover(self.apiclient)
@@ -3305,6 +3458,31 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                     "VM state should be stopped"
                     )
 
+        except Exception as e:
+            self.fail("Failed to recover the virtual instances, %s" % e)
+            
+        try:
+            self.vm_2.delete(self.apiclient, expunge=False)
+
+            list_vm_response = list_virtual_machines(
+                                                 self.apiclient,
+                                                 id=self.vm_2.id
+                                                 )
+
+            vm_response = list_vm_response[0]
+
+            self.assertEqual(
+                    vm_response.state,
+                    'Destroyed',
+                    "VM state should be destroyed"
+                    )
+
+        except Exception as e:
+            self.fail("Failed to stop the virtual instances, %s" % e)
+
+        self.debug("Recovering the expunged virtual machine vm2 in account: %s" %
+                                                self.account.name)            
+        try:
             self.vm_2.recover(self.apiclient)
 
             list_vm_response = list_virtual_machines(
