@@ -6,7 +6,7 @@ public class LinuxTest {
     ConnectionTest con = new ConnectionTest();
     Linux lin = new Linux(con);
     XmlTestResultTest results = new XmlTestResultTest();
-    
+
     private String DISCOVERSERVER = "&lt;?xml version=\"1.0\" ?&gt;"
             + "&lt;Discover_Server_Result&gt;"
             + "&lt;Server&gt;"
@@ -85,8 +85,7 @@ public class LinuxTest {
             + "&lt;BOND_MODE_ADAPTIVE_LOAD_BALANCING&gt;True&lt;/BOND_MODE_ADAPTIVE_LOAD_BALANCING&gt;"
             + "&lt;VM_SUSPEND&gt;True&lt;/VM_SUSPEND&gt;"
             + "&lt;YUM_PACKAGE_MANAGEMENT&gt;True&lt;/YUM_PACKAGE_MANAGEMENT&gt;"
-            + "&lt;/Capabilities&gt;"
-            + "&lt;/Server&gt;"
+            + "&lt;/Capabilities&gt;" + "&lt;/Server&gt;"
             + "&lt;/Discover_Server_Result&gt;";
     private String DISCOVERHW = "&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;"
             + "&lt;Discover_Hardware_Result&gt;"
@@ -485,31 +484,35 @@ public class LinuxTest {
     private String VMMNT = "/nfsmnt/" + REPOID;
     private String DISCOVERFS = "&lt;?xml version=\"1.0\" ?&gt;"
             + "&lt;Discover_Mounted_File_Systems_Result&gt;"
-            + "&lt;Filesystem Type=\"" + FSTYPE + "\"&gt;"
-            + "&lt;Mount Dir=\"" + REPOMNT + "\"&gt;"
-            + "&lt;Device&gt;" + REMOTE + "&lt;/Device&gt;"
+            + "&lt;Filesystem Type=\""
+            + FSTYPE
+            + "\"&gt;"
+            + "&lt;Mount Dir=\""
+            + REPOMNT
+            + "\"&gt;"
+            + "&lt;Device&gt;"
+            + REMOTE
+            + "&lt;/Device&gt;"
             + "&lt;Mount_Options&gt;rw,relatime,vers=3,rsize=524288,wsize=524288,namlen=255,hard,proto=tcp,port=65535,timeo=600,retrans=2,sec=sys,local_lock=none,addr=192.168.1.61&lt;/Mount_Options&gt;"
             + "&lt;/Mount&gt;"
-            + "&lt;Mount Dir=\"" + VMMNT + "\"&gt;"
-            + "&lt;Device&gt;"+ REMOTE + "/VirtualMachines&lt;/Device&gt;"
+            + "&lt;Mount Dir=\""
+            + VMMNT
+            + "\"&gt;"
+            + "&lt;Device&gt;"
+            + REMOTE
+            + "/VirtualMachines&lt;/Device&gt;"
             + "&lt;Mount_Options&gt;rw,relatime,vers=3,rsize=524288,wsize=524288,namlen=255,hard,proto=tcp,port=65535,timeo=600,retrans=2,sec=sys,local_lock=none,addr=192.168.1.61&lt;/Mount_Options&gt;"
-            + "&lt;/Mount&gt;"
-            + "&lt;/Filesystem&gt;"
+            + "&lt;/Mount&gt;" + "&lt;/Filesystem&gt;"
             + "&lt;/Discover_Mounted_File_Systems_Result&gt;";
-    private String LASTBOOT = "<struct>"
-            + "<member>"
+    private String LASTBOOT = "<struct>" + "<member>"
             + "<name>last_boot_time</name>"
-            + "<value><i8>1413834408</i8></value>"
-            + "</member>"
-            + "<member>"
-            + "<name>local_time</name>"
-            + "<value><i8>1414082517</i8></value>"
-            + "</member>"
-            + "</struct>";
+            + "<value><i8>1413834408</i8></value>" + "</member>" + "<member>"
+            + "<name>local_time</name>" + "<value><i8>1414082517</i8></value>"
+            + "</member>" + "</struct>";
     private String TIMEZONE = "<array><data>"
             + "<value><string>Europe/Amsterdam</string></value>"
-            + "<value><boolean>1</boolean></value>"
-            + "</data></array>";
+            + "<value><boolean>1</boolean></value>" + "</data></array>";
+
     @Test
     public void testDiscoverServer() throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(this.DISCOVERSERVER));
@@ -521,16 +524,19 @@ public class LinuxTest {
         System.out.println(lin.getHypervisorVersion());
         System.out.println(lin.get("MAX_CONCURRENT_MIGRATION_IN"));
     }
+
     @Test
     public void testGetTimeZone() throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(this.TIMEZONE));
         System.out.println(lin.getTimeZone());
     }
+
     @Test
     public void testLastBootTime() throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(this.LASTBOOT));
         System.out.println(lin.getLastBootTime());
     }
+
     @Test
     public void testDiscoverHardware() throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(this.DISCOVERHW));
@@ -539,18 +545,31 @@ public class LinuxTest {
         System.out.println(lin.getFreeMemory());
         System.out.println(lin.get("UUID"));
     }
+
     @Test
     public void testDiscoverMountedFileSystems() throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(this.DISCOVERFS));
         lin.discoverMountedFs(FSTYPE);
-        results.basicBooleanTest(results.basicListHasString(lin.getFileSystemList(), REPOMNT), true);
-        results.basicBooleanTest(results.basicListHasString(lin.getFileSystemList(), VMMNT), true);
-        results.basicBooleanTest(results.basicListHasString(lin.getFileSystemList(), REMOTE), false);
-        results.basicStringTest(lin.getFileSystem(VMMNT, FSTYPE).getMountPoint(), VMMNT);
-        results.basicStringTest(lin.getFileSystem(VMMNT, FSTYPE).getHost(), REMOTEHOST);
-        results.basicStringTest(lin.getFileSystem(VMMNT, FSTYPE).getUuid(), REPOID);
-        results.basicStringTest(lin.getFileSystem(REPOMNT, FSTYPE).getUuid(), DDREPOID);
-        results.basicStringTest(lin.getFileSystem(REPOMNT, FSTYPE).getRemoteDir(), REMOTEDIR);
-        results.basicBooleanTest(lin.getFileSystem(VMMNT, FSTYPE).getDetails().containsKey("Uuid"), true);
+        results.basicBooleanTest(
+                results.basicListHasString(lin.getFileSystemList(), REPOMNT),
+                true);
+        results.basicBooleanTest(
+                results.basicListHasString(lin.getFileSystemList(), VMMNT),
+                true);
+        results.basicBooleanTest(
+                results.basicListHasString(lin.getFileSystemList(), REMOTE),
+                false);
+        results.basicStringTest(lin.getFileSystem(VMMNT, FSTYPE)
+                .getMountPoint(), VMMNT);
+        results.basicStringTest(lin.getFileSystem(VMMNT, FSTYPE).getHost(),
+                REMOTEHOST);
+        results.basicStringTest(lin.getFileSystem(VMMNT, FSTYPE).getUuid(),
+                REPOID);
+        results.basicStringTest(lin.getFileSystem(REPOMNT, FSTYPE).getUuid(),
+                DDREPOID);
+        results.basicStringTest(lin.getFileSystem(REPOMNT, FSTYPE)
+                .getRemoteDir(), REMOTEDIR);
+        results.basicBooleanTest(lin.getFileSystem(VMMNT, FSTYPE).getDetails()
+                .containsKey("Uuid"), true);
     }
 }

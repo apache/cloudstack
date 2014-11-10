@@ -13,10 +13,11 @@ public class XmlTestResultTest {
     private String brack(String type, String s) {
         return "<" + type + ">" + s + "</" + type + ">";
     }
+
     public String escapeOrNot(String s) {
-        if(s.startsWith("<")) {
+        if (s.startsWith("<")) {
             return StringEscapeUtils.escapeXml(s);
-        } 
+        }
         return s;
     }
 
@@ -96,11 +97,13 @@ public class XmlTestResultTest {
         assertNotNull(result);
         assertEquals(desired, result);
     }
+
     public void basicLongTest(Long result, Long desired) {
         assertEquals(desired, result);
     }
+
     public Boolean basicListHasString(List<String> list, String x) {
-        for (String y: list) {
+        for (String y : list) {
             if (y.matches(x)) {
                 return true;
             }
