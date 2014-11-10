@@ -137,4 +137,8 @@ public class CloudStackPlugin extends OvmObject {
     public boolean ovsCheckFile(String file) throws Ovm3ResourceException {
         return (Boolean) callWrapper("ovs_check_file", file);
     }
+
+    public boolean dom0HasIp(String ovm3PoolVip) throws Ovm3ResourceException {
+        return (Boolean) callWrapper("check_dom0_ip", ovm3PoolVip);
+    }
 }

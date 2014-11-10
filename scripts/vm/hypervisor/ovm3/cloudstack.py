@@ -48,6 +48,7 @@ class CloudStack(Agent):
             'exec_domr': domrExec,
             'check_domr_port': domrCheckPort,
             'check_domr_ssh': domrCheckSsh,
+            'check_dom0_ip': dom0CheckIp,
             'ovs_domr_upload_file': ovsDomrUploadFile,
             'ovs_control_interface': ovsControlInterface,
             'ovs_mkdir': ovsMkdir,
@@ -261,6 +262,18 @@ def ovsControlInterface(dev, cidr):
     command = ['ifconfig', dev, 'arp']
     subprocess.call(command, shell=False)
     return True
+
+def dom0CheckIp(ip):
+    command = ['ip addr show']
+    p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    while True:
+        line = p.stdout.readline()
+        if line != '':
+            if re.search("%s/" % (ip), line):
+                return True
+        else:
+            break
+    return False
 
 # create a dir if we need it
 def ovsMkdir(dir, mode=0700):

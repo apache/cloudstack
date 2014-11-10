@@ -2399,16 +2399,18 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
 
         try {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
-            Network net = new Network(c);
-            if (net.getInterfaceByIp(ovm3PoolVip) != null) {
-                LOGGER.debug("Host " + agentHostname + " is master, already had vip "
+            if (cSp.dom0HasIp(ovm3PoolVip)) {
+                LOGGER.debug("Host " + agentHostname
+                        + " is a master, already has vip "
                         + ovm3PoolVip);
                 agentIsMaster = true;
             } else if (cSp.ping(ovm3PoolVip)) {
-                LOGGER.debug("Host " + agentHostname + " has master, someone has vip ");
+                LOGGER.debug("Host " + agentHostname
+                        + " has a master, someone has vip " + ovm3PoolVip);
                 agentHasMaster = true;
             } else {
-                LOGGER.debug("Host " + agentHostname + " is master no, one has vip "
+                LOGGER.debug("Host " + agentHostname
+                        + " becomes a master, no one has vip "
                         + ovm3PoolVip);
                 agentIsMaster = true;
             }
