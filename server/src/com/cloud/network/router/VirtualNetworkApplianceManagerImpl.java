@@ -2230,7 +2230,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements
 
                     hType = HypervisorType.getType(peerHvType);
                     if (HypervisorType.XenServer.toString().equals(peerHvType)) {
-                        templateName = RouterTemplateXen.valueIn(de®st.getDataCenter().getId());
+                        templateName = RouterTemplateXen.valueIn(dest.getDataCenter().getId());
                     } else if (HypervisorType.KVM.toString().equals(peerHvType)) {
                         templateName = RouterTemplateKvm.valueIn(dest.getDataCenter().getId());
                     } else if (HypervisorType.VMware.toString().equals(peerHvType)) {
@@ -2239,7 +2239,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements
                         throw new CloudRuntimeException(String.format("Baremetal only supports peer hypervisor(XenServer/KVM/VMWare) right now, you specified %s", peerHvType));
                     }
                     break;
-                case OVM3:
+                case Ovm3:
                     templateName = RouterTemplateOvm3.valueIn(dest.getDataCenter().getId());
                     break;
                 default:

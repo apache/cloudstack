@@ -64,6 +64,8 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
         "Name of the default router template on Hyperv.", true, ConfigKey.Scope.Zone, null);
     static final ConfigKey<String> RouterTemplateLxc = new ConfigKey<String>(String.class, RouterTemplateLxcCK, "Advanced", "SystemVM Template (LXC)",
         "Name of the default router template on LXC.", true, ConfigKey.Scope.Zone, null);
+    static final ConfigKey<String> RouterTemplateOvm3 = new ConfigKey<String>(String.class, RouterTemplateLxcCK, "Advanced", "SystemVM Template (Ovm3)",
+            "Name of the default router template on Ovm3.", true, ConfigKey.Scope.Zone, null);
 
     static final ConfigKey<String> SetServiceMonitor = new ConfigKey<String>(String.class, SetServiceMonitorCK, "Advanced", "true",
             "service monitoring in router enable/disable option, default true", true, ConfigKey.Scope.Zone, null);
