@@ -232,7 +232,7 @@ class Test {
                 Linux host = new Linux(c);
 
                 Map<String, Linux.FileSystem> fsList = host
-                        .getFileSystemList("nfs");
+                        .getFileSystemMap("nfs");
                 Linux.FileSystem fs = fsList.get("nfs");
                 System.out.println(fs + " " + fsList);
             }
@@ -321,7 +321,7 @@ class Test {
                 Linux lin = new Linux(c);
                 lin.discoverServer();
                 System.out.println(lin.getCapabilities());
-                Map<String, FileSystem> fsList = lin.getFileSystemList("nfs");
+                Map<String, FileSystem> fsList = lin.getFileSystemMap("nfs");
                 System.out.println(fsList);
                 System.out.println(BigInteger.valueOf(lin.getMemory()
                         .longValue()));
