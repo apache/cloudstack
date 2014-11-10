@@ -16,9 +16,9 @@ package com.cloud.hypervisor.ovm3.object;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.w3c.dom.Document;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.w3c.dom.Document;
 
 /*
  * synonym to the pool python lib in the ovs-agent
@@ -60,11 +60,10 @@ public class Pool extends OvmObject {
         return this.validRoles;
     }
 
-    public void setPoolIps(List<String> ips) {
-        this.poolHosts = new ArrayList<String>();
-        this.poolHosts.addAll(ips);
-    }
-
+    /*
+     * public void setPoolIps(List<String> ips) { this.poolHosts = new
+     * ArrayList<String>(); this.poolHosts.addAll(ips); }
+     */
     public Boolean isInPool(String id) throws Ovm3ResourceException {
         if (poolId == null) {
             discoverServerPool();
@@ -119,10 +118,11 @@ public class Pool extends OvmObject {
                 getValidRoles());
     }
 
-    public Boolean createServerPool(int num, String name, String ip) throws Ovm3ResourceException{
-        return createServerPool(poolAlias, poolId, poolMasterVip, num, name,
-                ip, poolRoles);
-    }
+    /*
+     * public Boolean createServerPool(int num, String name, String ip) throws
+     * Ovm3ResourceException{ return createServerPool(poolAlias, poolId,
+     * poolMasterVip, num, name, ip, poolRoles); }
+     */
 
     /*
      * update_pool_virtual_ip, <class 'agent.api.serverpool.ServerPool'>
@@ -215,25 +215,15 @@ public class Pool extends OvmObject {
      * update_server_roles, <class 'agent.api.serverpool.ServerPool'> argument:
      * self - default: None argument: roles - default: None ?> list or sring
      */
-    private Boolean validPoolRole(String role)  {
-        for (String r : this.validRoles) {
-            if (r.contentEquals(role)) {
-                return true;
-            }
-        }
-        LOGGER.info("Illegal role: " + role);
-        return false;
-    }
-
-    private Boolean validPoolRole(List<String> roles) {
-        for (String r : roles) {
-            return validPoolRole(r);
-        }
-        return false;
-    }
-
+    /*
+     * private Boolean validPoolRole(String role) { for (String r :
+     * this.validRoles) { if (r.contentEquals(role)) { return true; } }
+     * LOGGER.info("Illegal role: " + role); return false; }
+     * private Boolean validPoolRole(List<String> roles) { for (String r :
+     * roles) { return validPoolRole(r); } return false; }
+     */
     public Boolean setServerRoles() throws Ovm3ResourceException{
-        validPoolRole(this.poolRoles);
+        // validPoolRole(this.poolRoles);
         String roles = StringUtils.join(this.poolRoles.toArray(), ",");
         return nullIsTrueCallWrapper("update_server_roles", roles);
     }
@@ -244,24 +234,14 @@ public class Pool extends OvmObject {
         return setServerRoles();
     }
 
-    public void addServerRole(String role) {
-        validPoolRole(role);
-        this.poolRoles.add(role);
-    }
-
-    public void removeServerRole(String role) {
-        this.poolRoles.remove(role);
-    }
-
-    public boolean serverHasRole(String role) {
-        for (String r : this.poolRoles) {
-            if (r.contentEquals(role)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
+    /*
+     * public void addServerRole(String role) { validPoolRole(role);
+     * this.poolRoles.add(role); }
+     * public void removeServerRole(String role) { this.poolRoles.remove(role);
+     * } /* public boolean serverHasRole(String role) { for (String r :
+     * this.poolRoles) { if (r.contentEquals(role)) { return true; } } return
+     * false; }
+     */
     /*
      * join_server_pool, <class 'agent.api.serverpool.ServerPool'> argument:
      * self - default: None argument: pool_alias - default: None argument:
@@ -293,46 +273,45 @@ public class Pool extends OvmObject {
         return joinServerPool(alias, id, vip, num, name, host, getValidRoles());
     }
 
-    public Boolean joinServerPool(int num, String name, String host) throws Ovm3ResourceException{
-        return joinServerPool(poolAlias, poolId, poolMasterVip, num, name, host,
-                poolRoles);
-    }
-
+    /*
+     * public Boolean joinServerPool(int num, String name, String host) throws
+     * Ovm3ResourceException{ return joinServerPool(poolAlias, poolId,
+     * poolMasterVip, num, name, host, poolRoles); }
+     */
     /*
      * set_pool_member_ip_list, <class 'agent.api.serverpool.ServerPool'>
      * argument: self - default: None argument: ip_list - default: None
      */
-    public Boolean setPoolMemberList() throws Ovm3ResourceException {
+
+    private Boolean setPoolMemberList() throws Ovm3ResourceException {
         // should throw exception if no poolHosts set
         return nullIsTrueCallWrapper("set_pool_member_ip_list", this.poolHosts);
     }
 
     public List<String> getPoolMemberList() throws Ovm3ResourceException {
-        if (poolId.matches("")) {
+        if (poolId == null) {
             discoverServerPool();
         }
         return poolHosts;
     }
 
-    public Boolean setPoolMemberList(String host) throws Ovm3ResourceException {
-        this.poolHosts = new ArrayList<String>();
-        this.poolHosts.add(host);
-        return setPoolMemberList();
-    }
-
+    /*
+     * public Boolean setPoolMemberList(String host) throws
+     * Ovm3ResourceException { this.poolHosts = new ArrayList<String>();
+     * this.poolHosts.add(host); return setPoolMemberList(); }
+     */
     public Boolean setPoolMemberList(List<String> hosts) throws Ovm3ResourceException {
         this.poolHosts = new ArrayList<String>();
         this.poolHosts.addAll(hosts);
         return setPoolMemberList();
     }
 
-    public Boolean addPoolMemberIp(String host) throws Ovm3ResourceException{
+    public Boolean addPoolMember(String host) throws Ovm3ResourceException {
         this.getPoolMemberList();
         this.poolHosts.add(host);
         return setPoolMemberList();
     }
 
-    /* meh */
     public Boolean removePoolMember(String host) throws Ovm3ResourceException {
         this.getPoolMemberList();
         this.poolHosts.remove(host);
