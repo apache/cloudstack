@@ -1199,12 +1199,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             if (disk.getFormat() == PhysicalDiskFormat.TAR) {
                 newDisk = destPool.createPhysicalDisk(name, PhysicalDiskFormat.DIR, Storage.ProvisioningType.THIN, disk.getVirtualSize());
             } else {
-                /* If the source device is on a RBD storage pool force the new disk to the same format (RAW) */
-                if (srcPool.getType() != StoragePoolType.RBD) {
                     newDisk = destPool.createPhysicalDisk(name, Storage.ProvisioningType.THIN, disk.getVirtualSize());
-                } else {
-                    newDisk = destPool.createPhysicalDisk(name, Storage.ProvisioningType.THIN, disk.getVirtualSize());
-                }
             }
         } else {
             newDisk = new KVMPhysicalDisk(destPool.getSourceDir() + "/" + name, name, destPool);
