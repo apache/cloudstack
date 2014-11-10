@@ -754,3 +754,5 @@ DELETE t1 FROM guest_os_hypervisor t1, guest_os_hypervisor t2 WHERE (t1.hypervis
 
 -- Set as removed built-in CentOS 5.3 template (if any) for XenServer, since CentOS 5.6 template already exists
 UPDATE `cloud`.`vm_template` SET removed=NOW() WHERE unique_name="centos53-x86_64" AND hypervisor_type="XenServer";
+
+ALTER TABLE `cloud_usage`.`usage_vpn_user` CHANGE `user_name` `user_name` VARCHAR(255);
