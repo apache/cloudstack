@@ -18,8 +18,10 @@ from pprint import pprint
 
 class dataBag:
 
-    bdata  = { }
     DPATH = "/etc/cloudstack"
+
+	def __init__(self):
+		self.bdata = { }
 
     def load(self):
         data = self.bdata
@@ -55,13 +57,12 @@ class dataBag:
 
 class updateDataBag:
 
-    qFile = {}
-    fpath = ''
-    bdata  = { }
     DPATH = "/etc/cloudstack"
 
     def __init__(self,qFile):
         self.qFile = qFile
+		self.fpath = ''
+		self.bdata = {}
         self.process()
 
     def process(self):
@@ -77,8 +78,6 @@ class updateDataBag:
           dbag = self.processIP(self.db.getDataBag())
        elif self.qFile.type == 'guestnetwork':
           dbag = self.processGuestNetwork(self.db.getDataBag())
-       elif self.qFile.type == 'cmdline':
-          dbag = self.processCL(self.db.getDataBag())
        elif self.qFile.type == 'cmdline':
           dbag = self.processCL(self.db.getDataBag())
        elif self.qFile.type == 'vmpassword':
