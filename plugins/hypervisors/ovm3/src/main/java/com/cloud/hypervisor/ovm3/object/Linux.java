@@ -16,12 +16,9 @@ package com.cloud.hypervisor.ovm3.object;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
-
-import com.cloud.hypervisor.ovm3.object.Network.Interface;
 
 public class Linux extends OvmObject {
     private static final Logger LOGGER = Logger
