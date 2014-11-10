@@ -38,6 +38,9 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
+import java.util.Collection;
+import java.util.Map;
+
 @APICommand(name = "updateVirtualMachine", description="Updates properties of a virtual machine. The VM has to be stopped and restarted for the " +
         "new properties to take effect. UpdateVirtualMachine does not first check whether the VM is stopped. " +
         "Therefore, stop the VM manually before issuing this call.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
@@ -87,6 +90,9 @@ public class UpdateVMCmd extends BaseCustomIdCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "new host name of the vm. The VM has to be stopped/started for this update to take affect", since = "4.4")
     private String name;
 
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Details in key/value pairs.")
+    protected Map details;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -121,6 +127,15 @@ public class UpdateVMCmd extends BaseCustomIdCmd {
 
     public String getHostName() {
         return name;
+    }
+
+    public Map getDetails() {
+        if (this.details == null || this.details.isEmpty()) {
+            return null;
+        }
+
+        Collection paramsCollection = this.details.values();
+        return (Map) (paramsCollection.toArray())[0];
     }
 
     /////////////////////////////////////////////////////

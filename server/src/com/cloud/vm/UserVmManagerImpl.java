@@ -1847,6 +1847,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String userData = cmd.getUserData();
         Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
         String hostName = cmd.getHostName();
+        Map details = cmd.getDetails();
         Account caller = CallContext.current().getCallingAccount();
 
         // Input validation and permission checks
@@ -1884,6 +1885,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 _volumeService.updateDisplay(dataVol, isDisplayVm);
             }
 
+        }
+
+        if (details != null && !details.isEmpty()) {
+            vmInstance.setDetails(details);
+            _vmDao.saveDetails(vmInstance);
         }
 
         return updateVirtualMachine(id, displayName, group, ha, isDisplayVm, osTypeId, userData, isDynamicallyScalable, cmd.getHttpMethod(), cmd.getCustomId(), hostName);
