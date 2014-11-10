@@ -4812,7 +4812,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 newVol = volumeMgr.allocateDuplicateVolume(root, null);
             }
 
-            // Create Usage event for the newly created volume
+            // 1. Save usage event and update resource count for user vm volumes
+            _resourceLimitMgr.incrementResourceCount(newVol.getAccountId(), ResourceType.volume, newVol.isDisplay());
+            _resourceLimitMgr.incrementResourceCount(newVol.getAccountId(), ResourceType.primary_storage, newVol.isDisplay(), new Long(newVol.getSize()));
+            // 2. Create Usage event for the newly created volume
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, newVol.getAccountId(), newVol.getDataCenterId(), newVol.getId(), newVol.getName(), newVol.getDiskOfferingId(), template.getId(), newVol.getSize());
             _usageEventDao.persist(usageEvent);
 
