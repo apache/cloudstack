@@ -304,7 +304,7 @@ class CsIP:
                     logging.error("Not able to setup sourcenat for a regular router yet")
                 else:
                     logging.error("Unable to process source nat configuration for router of type %s" % type)
-        route.flush()
+        #route.flush()
 
     def list(self):
         self.iplist = {}
