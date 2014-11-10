@@ -18,7 +18,7 @@
 set -x
 
 ROOTPW=password
-HOSTNAME=systemvm
+HOSTNAME=$SYSTEMVMNAME
 CLOUDSTACK_RELEASE=4.4.0
 
 add_backports () {
@@ -81,7 +81,7 @@ install_packages() {
   # vmware tools
   apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
   # commented installaion of vmware-tools  as we are using the opensource open-vm-tools:
-  # apt-get --no-install-recommends -q -y --force-yes install build-essential linux-headers-`uname -r`
+  #apt-get --no-install-recommends -q -y --force-yes install build-essential linux-headers-`uname -r`
   # df -h
   # PREVDIR=$PWD
   # cd /opt

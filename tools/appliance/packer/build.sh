@@ -1,23 +1,34 @@
 #!/bin/bash
 
-
-set -x
+#set -x
 
 vboxversion="4.3.18"
+varsystemvmname="systemvmtest"
+packjsonname="cssysvm_template"
+bbuildheader="FEATURE-CENIK123-VPCVRR"
 guestaddnpath="http://download.virtualbox.org/virtualbox/"$vboxversion"/VBoxGuestAdditions_"$vboxversion".iso"
+btimestamp=$(date +%s)
+userroot="~/Development/GitRepositories/SungardASCloudstack3"
+csroot=$userroot"/cloudstack"
+export PACKER_LOG=true
+packerroot=$csroot"/tools/appliance/packer"
+vmroot=$packerroot"/vm/"
+
 packercommand="build"
 
 #set +x
 
-while getopts 'V' OPTION
+while getopts 'VI' OPTION
 do
   case $OPTION in
   V) 
      packercommand="validate"
      ;;
-
+  I)
+     packercommand="inspect"
+     ;;
   ?)	usage
-                echo "build [Packer Validate => -V],[]"
+     echo "build [Packer Validate => -V],[ ]"
 		;;
   esac
 done
@@ -25,44 +36,33 @@ set +x
 
 echo "Packer command is ===>"$packercommand
 
-export PACKER_LOG=true
-csroot="/Users/karl.harris/Development/GitRepositories/SungardASCloudstack3/cloudstack"
 
-
-bbuildheader="FEATURE-CENIK123-VPCVRR"
 echo "Packer/Vagrant Build Header/Directory for this project ==> "$bbuildheader
 
-btimestamp=$(date +%s)
 echo "Packer/Vagrant Timestamp for this build => $btimestamp"
 
 bptstamp=$btimestamp
-
 bboxname="packerbuilt_"$btimestamp"_"$bbuildheader"_virtualbox"
-
 qbboxname=\"$bboxname\"
-
 echo "Virtualbox Name is ==> $bboxname"
 echo "QBBox Name(virtual box name with quotes) ==> $qbboxname"
-
 bboxtitle="TVM$btimestamp"
 echo "Virtualbox Title is (used for vagrant up) => $bboxtitle"
-
 xofn="output_"$btimestamp"_"$bbuildheader"_virtualbox"
 echo "Virtualbox output folder name is ==> $xofn"
-
 xfolder="./"$xofn"/"
-echo "Output folder is here ==> $xfolder"
-
+echo "vm relative Output folder is here ==> $xfolder"
 packertemplatefolder="packertemplate/"
-
-packerjsonfile=$packertemplatefolder"cssysvm_template"$btimestamp.json
+packerjsonfile=$packertemplatefolder$packjsonname$btimestamp.json
 echo "Packer json file goes here ==> $packerjsonfile"
-
 bvagrantoutput="Vagrantfile"
 echo "Vagrantfile goes here ==> $bvagrantoutput"
 
 bbuildoutput="build.sh"
 echo "build.sh file goes here ==> $bbuildoutput"
+
+boutputfolder=$vmroot$xofn
+echo "Build output folder is ==> $boutputfolder"
 
 #************************
 
@@ -128,6 +128,7 @@ mkdir -m 777 ./$packertemplatefolder
      "voutput":"",
      "buildheader":"",
      "vboxv":"",
+     "insysvmname":"systemvm",
      "dummy":"dummy"
    },
 
@@ -152,7 +153,8 @@ mkdir -m 777 ./$packertemplatefolder
     {	
       "type": "shell",
       "environment_vars": [
-          "VBOXVERSION={{user `vboxv`}}"
+          "VBOXVERSION={{user `vboxv`}}",
+          "SYSTEMVMNAME={{user `insysvmname`}}"
       ],
       "scripts": [
         "{{user `cloudstackroot`}}/tools/appliance/packer/scripts/postinstall.sh",
@@ -173,7 +175,7 @@ mkdir -m 777 ./$packertemplatefolder
       "name": "{{user `ptstamp` }}_{{user `buildheader`}}",
       "output_directory": "output/",
       "boot_wait": "10s",
-      "disk_size": 2500,
+      "disk_size": 10000,
       "guest_os_type": "Debian",
       "http_directory": "{{user `cloudstackroot`}}/tools/appliance/packer/http",
       "iso_checksum": "7339b668a81b417ac023d73739dc6a03",
@@ -211,6 +213,7 @@ mkdir -m 777 ./$packertemplatefolder
         ["modifyvm","{{.Name}}","--cpus","1"]
 
 
+
       ]
    }
 ],
@@ -231,6 +234,7 @@ vo=voutput=$xfolder
 csr=cloudstackroot=$csroot
 ga=guestadditionspath=$guestaddnpath
 vbv=vboxv=$vboxversion
+svmn=insysvmname=$varsystemvmname
 
 echo "Var's --> $v, $b, $vo"
 
@@ -246,6 +250,7 @@ packer $packercommand \
 -var $vo \
 -var $csr \
 -var $vbv \
+-var $svmn \
 ./${packerjsonfile} \
 2> ./${logoutput}build-$btimestamp.txt | tee ./${logoutput}packerbuild_$btimestamp-vagrant.log
 
@@ -258,12 +263,12 @@ chmod -R 777 $bbuildoutput
 # build the system.
 ./$bbuildoutput
 
-if [ "$packercommand" != 'validate' ]
+if [[($packercommand != validate)||($packercommand = inspect)]]
 then
     #ok let's bring the systemvm up
-    echo "Starting system vm \("$bboxname"\) in folder "$boutputfolder", using "$bboxtitle" as a title"
+    echo "Starting system vm"$bboxname" in folder "$boutputfolder", using "$bboxtitle" as a title"
+
     
     vagrant up
-    cd ./vm/$xofn
+    echo "Use the command ===>> cd "$boutputfolder" to access the vagrant box folder"
 fi
-
