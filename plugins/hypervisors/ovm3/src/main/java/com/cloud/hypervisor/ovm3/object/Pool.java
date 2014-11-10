@@ -98,8 +98,7 @@ public class Pool extends OvmObject {
      */
     public Boolean createServerPool(String alias, String id, String vip,
             int num, String name, String host, List<String> roles) throws Ovm3ResourceException{
-        String role = roles.toString();
-        role = StringUtils.join(this.getValidRoles(), ",");
+        String role = StringUtils.join(roles, ",");
         if (!this.isInAPool()) {
             Object x = callWrapper("create_server_pool", alias, id, vip, num, name,
                     host, role);

@@ -16,9 +16,12 @@ package com.cloud.hypervisor.ovm3.object;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
+
+import com.cloud.hypervisor.ovm3.object.Network.Interface;
 
 public class Linux extends OvmObject {
     private static final Logger LOGGER = Logger
@@ -354,9 +357,19 @@ public class Linux extends OvmObject {
         }
         return fsMap;
     }
-    public FileSystem getFileSystem(String name, String type) throws Ovm3ResourceException {
-        if (getFileSystemMap(type).containsKey(name)) {
-            return getFileSystemMap(type).get(name);
+    public FileSystem getFileSystem(String mountpoint, String type) throws Ovm3ResourceException {
+        this.getFileSystemMap(type);
+        if (getFileSystemMap(type).containsKey(mountpoint)) {
+            return getFileSystemMap(type).get(mountpoint);
+        }
+        return null;
+    }
+    public FileSystem getFileSystemByUuid(String uuid, String type) throws Ovm3ResourceException {
+        this.getFileSystemMap(type);
+        for (final Map.Entry<String, FileSystem> fs : fsMap.entrySet()) {
+            if (fs.getValue().getUuid().matches(uuid)) {
+                return fs.getValue();
+            };
         }
         return null;
     }
@@ -466,6 +479,7 @@ public class Linux extends OvmObject {
             String uuid = spl[spl.length - 1];
             f.setUuid(uuid);
             f.setMountPoint(mnt);
+            /* sets it up per mountpoint, not the ID!!! */
             fsMap.put(mnt, f);
         }
         setFileSystemMap(fsMap);

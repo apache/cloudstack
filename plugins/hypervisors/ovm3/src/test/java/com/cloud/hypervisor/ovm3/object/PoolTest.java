@@ -48,6 +48,7 @@ public class PoolTest {
     public void testDiscoverPool() throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(EMPTY));
         results.basicBooleanTest(pool.isInAPool(), false);
+        results.basicBooleanTest(pool.isInPool(UUID), false);
         results.basicBooleanTest(pool.discoverServerPool(), false);
         results.basicBooleanTest(pool.isInPool(UUID), false);
         con.setResult(results.simpleResponseWrapWrapper(DISCOVERPOOL));

@@ -1948,9 +1948,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         try {
             Linux host = new Linux(c);
             /* TODO: NFS only for now */
-            Map<String, Linux.FileSystem> fsList = host
-                    .getFileSystemMap("nfs");
-            Linux.FileSystem fs = fsList.get(cmd.getStorageId());
+            Linux.FileSystem fs = host.getFileSystemByUuid(cmd.getStorageId(), "nfs");
             StoragePlugin store = new StoragePlugin(c);
             String propUuid = store.deDash(cmd.getStorageId());
             String mntUuid = cmd.getStorageId();
@@ -2401,11 +2399,16 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
 
         try {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
-            if (cSp.ping(ovm3PoolVip)) {
-                LOGGER.debug("Host " + agentHostname + " has master");
+            Network net = new Network(c);
+            if (net.getInterfaceByIp(ovm3PoolVip) != null) {
+                LOGGER.debug("Host " + agentHostname + " is master, already had vip "
+                        + ovm3PoolVip);
+                agentIsMaster = true;
+            } else if (cSp.ping(ovm3PoolVip)) {
+                LOGGER.debug("Host " + agentHostname + " has master, someone has vip ");
                 agentHasMaster = true;
             } else {
-                LOGGER.debug("Host " + agentHostname + " is master "
+                LOGGER.debug("Host " + agentHostname + " is master no, one has vip "
                         + ovm3PoolVip);
                 agentIsMaster = true;
             }

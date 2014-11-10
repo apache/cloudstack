@@ -182,7 +182,6 @@ def ovmCsPatch(version="3.2.1"):
     version=ovmVersion()
 
     if version == "3.2.1":
-	print "should not be here"
         if grep(netcom, "_%s" % func) == 3 and grep(netbr, "_%s" % func) < 1:
             _replaceInFile(netbr, func, "_%s" % func, True)
         
