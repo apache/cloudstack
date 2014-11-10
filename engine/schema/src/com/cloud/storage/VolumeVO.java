@@ -247,7 +247,7 @@ public class VolumeVO implements Volume {
             that.get_iScsiName(),
             that.getVolumeType());
         recreatable = that.isRecreatable();
-        state = that.getState();
+        state = State.Allocated; //This should be in Allocated state before going into Ready state
         size = that.getSize();
         minIops = that.getMinIops();
         maxIops = that.getMaxIops();

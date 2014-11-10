@@ -984,7 +984,7 @@ public class VolumeServiceImpl implements VolumeService {
 
             VolumeVO destVol = duplicateVolumeOnAnotherStorage(srcVolume, (StoragePool)destStore);
             VolumeInfo destVolume = volFactory.getVolume(destVol.getId(), destStore);
-            destVolume.processEvent(Event.MigrationRequested);
+            destVolume.processEvent(Event.MigrationCopyRequested);
             srcVolume.processEvent(Event.MigrationRequested);
 
             CopyVolumeContext<VolumeApiResult> context = new CopyVolumeContext<VolumeApiResult>(null, future, srcVolume, destVolume, destStore);
@@ -1008,7 +1008,7 @@ public class VolumeServiceImpl implements VolumeService {
         try {
             if (result.isFailed()) {
                 res.setResult(result.getResult());
-                destVolume.processEvent(Event.OperationFailed);
+                destVolume.processEvent(Event.MigrationCopyFailed);
                 srcVolume.processEvent(Event.OperationFailed);
                 destroyVolume(destVolume.getId());
                 destVolume = volFactory.getVolume(destVolume.getId());
@@ -1018,7 +1018,7 @@ public class VolumeServiceImpl implements VolumeService {
                 return null;
             }
             srcVolume.processEvent(Event.OperationSuccessed);
-            destVolume.processEvent(Event.OperationSuccessed, result.getAnswer());
+            destVolume.processEvent(Event.MigrationCopySucceeded, result.getAnswer());
             _volumeDao.updateUuid(srcVolume.getId(), destVolume.getId());
             try {
                 destroyVolume(srcVolume.getId());

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.storage;
 
+import java.util.Arrays;
 import java.util.Date;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -64,38 +65,42 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
 
         private final static StateMachine2<State, Event, Volume> s_fsm = new StateMachine2<State, Event, Volume>();
         static {
-            s_fsm.addTransition(Allocated, Event.CreateRequested, Creating);
-            s_fsm.addTransition(Allocated, Event.DestroyRequested, Destroy);
-            s_fsm.addTransition(Creating, Event.OperationRetry, Creating);
-            s_fsm.addTransition(Creating, Event.OperationFailed, Allocated);
-            s_fsm.addTransition(Creating, Event.OperationSucceeded, Ready);
-            s_fsm.addTransition(Creating, Event.CreateRequested, Creating);
-            s_fsm.addTransition(Ready, Event.ResizeRequested, Resizing);
-            s_fsm.addTransition(Resizing, Event.OperationSucceeded, Ready);
-            s_fsm.addTransition(Resizing, Event.OperationFailed, Ready);
-            s_fsm.addTransition(Allocated, Event.UploadRequested, UploadOp);
-            s_fsm.addTransition(Uploaded, Event.CopyRequested, Copying);
-            s_fsm.addTransition(Copying, Event.OperationSucceeded, Ready);
-            s_fsm.addTransition(Copying, Event.OperationFailed, Uploaded);
-            s_fsm.addTransition(UploadOp, Event.DestroyRequested, Destroy);
-            s_fsm.addTransition(Ready, Event.DestroyRequested, Destroy);
-            s_fsm.addTransition(Destroy, Event.ExpungingRequested, Expunging);
-            s_fsm.addTransition(Expunging, Event.ExpungingRequested, Expunging);
-            s_fsm.addTransition(Expunging, Event.OperationSucceeded, Expunged);
-            s_fsm.addTransition(Expunging, Event.OperationFailed, Destroy);
-            s_fsm.addTransition(Ready, Event.SnapshotRequested, Snapshotting);
-            s_fsm.addTransition(Snapshotting, Event.OperationSucceeded, Ready);
-            s_fsm.addTransition(Snapshotting, Event.OperationFailed, Ready);
-            s_fsm.addTransition(Ready, Event.MigrationRequested, Migrating);
-            s_fsm.addTransition(Migrating, Event.OperationSucceeded, Ready);
-            s_fsm.addTransition(Migrating, Event.OperationFailed, Ready);
-            s_fsm.addTransition(Destroy, Event.OperationSucceeded, Destroy);
-            s_fsm.addTransition(UploadOp, Event.OperationSucceeded, Uploaded);
-            s_fsm.addTransition(UploadOp, Event.OperationFailed, Allocated);
-            s_fsm.addTransition(Uploaded, Event.DestroyRequested, Destroy);
-            s_fsm.addTransition(Expunged, Event.ExpungingRequested, Expunged);
-            s_fsm.addTransition(Expunged, Event.OperationSucceeded, Expunged);
-            s_fsm.addTransition(Expunged, Event.OperationFailed, Expunged);
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Allocated, Event.CreateRequested, Creating, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Allocated, Event.DestroyRequested, Destroy, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Creating, Event.OperationRetry, Creating, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Creating, Event.OperationFailed, Allocated, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Creating, Event.OperationSucceeded, Ready, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Creating, Event.DestroyRequested, Destroy, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Creating, Event.CreateRequested, Creating, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.ResizeRequested, Resizing, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Resizing, Event.OperationSucceeded, Ready, Arrays.asList(new StateMachine2.Transition.Impact[]{StateMachine2.Transition.Impact.USAGE})));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Resizing, Event.OperationFailed, Ready, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Allocated, Event.UploadRequested, UploadOp, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Uploaded, Event.CopyRequested, Copying, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Copying, Event.OperationSucceeded, Ready, Arrays.asList(new StateMachine2.Transition.Impact[]{StateMachine2.Transition.Impact.USAGE})));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Copying, Event.OperationFailed, Uploaded, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadOp, Event.DestroyRequested, Destroy, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.DestroyRequested, Destroy, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Destroy, Event.ExpungingRequested, Expunging, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunging, Event.ExpungingRequested, Expunging, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunging, Event.OperationSucceeded, Expunged,null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunging, Event.OperationFailed, Destroy, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.SnapshotRequested, Snapshotting, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Snapshotting, Event.OperationSucceeded, Ready, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Snapshotting, Event.OperationFailed, Ready,null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Allocated, Event.MigrationCopyRequested, Creating, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Creating, Event.MigrationCopyFailed, Allocated, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Creating, Event.MigrationCopySucceeded, Ready, Arrays.asList(new StateMachine2.Transition.Impact[]{StateMachine2.Transition.Impact.USAGE})));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.MigrationRequested, Migrating, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Migrating, Event.OperationSucceeded, Ready, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Migrating, Event.OperationFailed, Ready, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Destroy, Event.OperationSucceeded, Destroy, Arrays.asList(new StateMachine2.Transition.Impact[]{StateMachine2.Transition.Impact.USAGE})));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadOp, Event.OperationSucceeded, Uploaded, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadOp, Event.OperationFailed, Allocated, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Uploaded, Event.DestroyRequested, Destroy, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunged, Event.ExpungingRequested, Expunged, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunged, Event.OperationSucceeded, Expunged, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunged, Event.OperationFailed, Expunged,null));
         }
     }
 
@@ -109,6 +114,9 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         OperationRetry,
         UploadRequested,
         MigrationRequested,
+        MigrationCopyRequested,
+        MigrationCopySucceeded,
+        MigrationCopyFailed,
         SnapshotRequested,
         DestroyRequested,
         ExpungingRequested,
