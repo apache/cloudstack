@@ -1904,6 +1904,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long osTypeId = cmd.getOsTypeId();
         String userData = cmd.getUserData();
         Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
+        Map details = cmd.getDetails();
         Account caller = CallContext.current().getCallingAccount();
 
         // Input validation and permission checks
@@ -1920,6 +1921,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if(!_accountMgr.isRootAdmin(caller.getType())){
                 throw new PermissionDeniedException( "Cannot update parameter displayvm, only admin permitted ");
             }
+        }
+
+        if (details != null && !details.isEmpty()) {
+            vmInstance.setDetails(details);
+            _vmDao.saveDetails(vmInstance);
         }
 
         return updateVirtualMachine(id, displayName, group, ha, isDisplayVmEnabled, osTypeId, userData, isDynamicallyScalable, cmd.getHttpMethod());

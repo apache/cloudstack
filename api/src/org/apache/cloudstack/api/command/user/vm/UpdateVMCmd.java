@@ -33,6 +33,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
+import java.util.Collection;
+import java.util.Map;
 
 @APICommand(name = "updateVirtualMachine", description="Updates properties of a virtual machine. The VM has to be stopped and restarted for the " +
         "new properties to take effect. UpdateVirtualMachine does not first check whether the VM is stopped. " +
@@ -71,6 +73,9 @@ public class UpdateVMCmd extends BaseCmd{
     @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE, type = CommandType.BOOLEAN, description = "true if VM contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
     protected Boolean isDynamicallyScalable;
 
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Details in key/value pairs.")
+    protected Map details;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -101,6 +106,15 @@ public class UpdateVMCmd extends BaseCmd{
 
     public Boolean isDynamicallyScalable() {
         return isDynamicallyScalable;
+    }
+
+    public Map getDetails() {
+        if (this.details == null || this.details.isEmpty()) {
+            return null;
+        }
+
+        Collection paramsCollection = this.details.values();
+        return (Map) (paramsCollection.toArray())[0];
     }
 
     /////////////////////////////////////////////////////
