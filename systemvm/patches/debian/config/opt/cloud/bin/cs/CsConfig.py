@@ -48,7 +48,7 @@ class CsConfig(object):
         return self.__LOG_LEVEL
 
 	def is_vpc(self):
-		return self.cl.get_type() == "vpcrouter":
+		return self.cl.get_type() == "vpcrouter"
 
     def get_format(self):
         return self.__LOG_FORMAT
