@@ -20,8 +20,8 @@ class dataBag:
 
     DPATH = "/etc/cloudstack"
 
-	def __init__(self):
-		self.bdata = { }
+    def __init__(self):
+        self.bdata = { }
 
     def load(self):
         data = self.bdata
@@ -61,8 +61,8 @@ class updateDataBag:
 
     def __init__(self,qFile):
         self.qFile = qFile
-		self.fpath = ''
-		self.bdata = {}
+        self.fpath = ''
+        self.bdata = {}
         self.process()
 
     def process(self):
