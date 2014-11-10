@@ -38,7 +38,7 @@ public class Pool extends OvmObject {
     private List<String> poolMembers = new ArrayList<String>();
     private String poolMasterVip;
     private String poolAlias;
-    private String poolId = "";
+    private String poolId = null;
 
     public Pool(Connection c) {
         setClient(c);
@@ -66,8 +66,11 @@ public class Pool extends OvmObject {
     }
 
     public Boolean isInPool(String id) throws Ovm3ResourceException {
-        if (poolId.matches("")) {
+        if (poolId == null) {
             discoverServerPool();
+        }
+        if (poolId == null) {
+            return false;
         }
         if (isInAPool() && poolId.equals(id)) {
             return true;
@@ -76,10 +79,10 @@ public class Pool extends OvmObject {
     }
 
     public Boolean isInAPool() throws Ovm3ResourceException {
-        if (poolId.matches("")) {
+        if (poolId == null) {
             discoverServerPool();
         }
-        if (poolId.matches("")) {
+        if (poolId == null) {
             return false;
         }
         return true;
@@ -203,7 +206,9 @@ public class Pool extends OvmObject {
                 xmlDocument);
         // this.setPoolMembers(xmlToList(path + "/Member_List", xmlDocument));
         this.poolHosts.addAll(xmlToList(path + "//Registered_IP", xmlDocument));
-
+        if (this.poolId == null) {
+            return false;
+        }
         return true;
     }
 
