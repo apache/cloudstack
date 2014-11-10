@@ -22,7 +22,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -43,11 +48,13 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
 
     protected static EventBus s_eventBus = null;
     protected ConfigurationDao _configDao;
+    protected VMInstanceDao _vmInstanceDao;
 
     private static final Logger s_logger = Logger.getLogger(VolumeStateListener.class);
 
-    public VolumeStateListener(ConfigurationDao configDao) {
+    public VolumeStateListener(ConfigurationDao configDao, VMInstanceDao vmInstanceDao) {
         this._configDao = configDao;
+        this._vmInstanceDao = vmInstanceDao;
     }
 
     @Override
@@ -57,8 +64,32 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
     }
 
     @Override
-    public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, Volume vo, boolean status, Object opaque) {
-      pubishOnEventBus(transition.getEvent().name(), "postStateTransitionEvent", vo, transition.getCurrentState(), transition.getToState());
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, Volume vol, boolean status, Object opaque) {
+      pubishOnEventBus(transition.getEvent().name(), "postStateTransitionEvent", vol, transition.getCurrentState(), transition.getToState());
+      if(transition.isImpacted(StateMachine2.Transition.Impact.USAGE)) {
+        Long instanceId = vol.getInstanceId();
+        VMInstanceVO vmInstanceVO = null;
+        if(instanceId != null) {
+          vmInstanceVO = _vmInstanceDao.findById(instanceId);
+        }
+        if(instanceId == null || vmInstanceVO.getType() == VirtualMachine.Type.User) {
+          if (transition.getToState() == State.Ready) {
+            if (transition.getCurrentState() == State.Resizing) {
+              // Log usage event for volumes belonging user VM's only
+              UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(),
+                      vol.getDiskOfferingId(), vol.getTemplateId(), vol.getSize(), Volume.class.getName(), vol.getUuid());
+            } else {
+              UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), vol.getDiskOfferingId(), null, vol.getSize(),
+                      Volume.class.getName(), vol.getUuid(), vol.isDisplayVolume());
+            }
+          } else if (transition.getToState() == State.Destroy) {
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(),
+                    Volume.class.getName(), vol.getUuid(), vol.isDisplayVolume());
+          } else if (transition.getToState() == State.Uploaded) {
+            //Currently we are not capturing Usage for Secondary Storage so Usage for this operation will be captured when it is moved to primary storage
+          }
+        }
+      }
       return true;
     }
 

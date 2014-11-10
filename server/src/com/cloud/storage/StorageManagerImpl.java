@@ -499,7 +499,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         LocalStorageSearch.and("type", LocalStorageSearch.entity().getPoolType(), SearchCriteria.Op.IN);
         LocalStorageSearch.done();
 
-        Volume.State.getStateMachine().registerListener(new VolumeStateListener(_configDao));
+        Volume.State.getStateMachine().registerListener(new VolumeStateListener(_configDao, _vmInstanceDao));
 
         return true;
     }

@@ -1057,9 +1057,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             _volsDao.update(volume.getId(), volume);
-            // Log usage event for volumes belonging user VM's only
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
 
             /* Update resource count for the account on primary storage resource */
             if (!shrinkOk) {
@@ -1125,10 +1122,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     } else {
                         _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(), ResourceType.secondary_storage.getOrdinal());
                     }
-
-                    // Log usage event for volumes belonging user VM's only
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                            Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
                 }
             }
             // Mark volume as removed if volume has not been created on primary or secondary

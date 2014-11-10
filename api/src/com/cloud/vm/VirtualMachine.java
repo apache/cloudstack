@@ -98,7 +98,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
             s_fsm.addTransition(new Transition<State, Event>(State.Starting, VirtualMachine.Event.AgentReportRunning, State.Running, Arrays.asList(new Impact[]{Impact.USAGE})));
             s_fsm.addTransition(new Transition<State, Event>(State.Starting, VirtualMachine.Event.AgentReportStopped, State.Stopped, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Starting, VirtualMachine.Event.AgentReportShutdowned, State.Stopped, null));
-            s_fsm.addTransition(new Transition<State, Event>(State.Destroyed, VirtualMachine.Event.RecoveryRequested, State.Stopped, null));
+            s_fsm.addTransition(new Transition<State, Event>(State.Destroyed, VirtualMachine.Event.RecoveryRequested, State.Stopped, Arrays.asList(new Impact[]{Impact.USAGE})));
             s_fsm.addTransition(new Transition<State, Event>(State.Destroyed, VirtualMachine.Event.ExpungeOperation, State.Expunging, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Running, VirtualMachine.Event.MigrationRequested, State.Migrating, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Running, VirtualMachine.Event.AgentReportRunning, State.Running, null));

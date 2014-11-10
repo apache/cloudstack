@@ -178,7 +178,7 @@ public class VolumeObject implements VolumeInfo {
     }
 
     @Override
-    public boolean stateTransit(Volume.Event event) {
+    public boolean  stateTransit(Volume.Event event) {
         boolean result = false;
         try {
             volumeVO = volumeDao.findById(volumeVO.getId());
@@ -308,6 +308,8 @@ public class VolumeObject implements VolumeInfo {
                     volEvent = Volume.Event.CopyRequested;
                 } else if (event == ObjectInDataStoreStateMachine.Event.MigrationRequested) {
                     volEvent = Volume.Event.MigrationRequested;
+                } else if (event == ObjectInDataStoreStateMachine.Event.MigrationCopyRequested) {
+                    volEvent = Event.MigrationCopyRequested;
                 }
             }
 
@@ -317,8 +319,12 @@ public class VolumeObject implements VolumeInfo {
                 volEvent = Volume.Event.ExpungingRequested;
             } else if (event == ObjectInDataStoreStateMachine.Event.OperationSuccessed) {
                 volEvent = Volume.Event.OperationSucceeded;
+            } else if (event == ObjectInDataStoreStateMachine.Event.MigrationCopySucceeded) {
+              volEvent = Event.MigrationCopySucceeded;
             } else if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
                 volEvent = Volume.Event.OperationFailed;
+            } else if (event == ObjectInDataStoreStateMachine.Event.MigrationCopyFailed) {
+              volEvent = Event.MigrationCopyFailed;
             } else if (event == ObjectInDataStoreStateMachine.Event.ResizeRequested) {
                 volEvent = Volume.Event.ResizeRequested;
             }
