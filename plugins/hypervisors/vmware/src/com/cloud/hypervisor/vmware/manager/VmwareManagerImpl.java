@@ -183,10 +183,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private int _routerExtraPublicNics = 2;
     private int _vCenterSessionTimeout = 1200000; // Timeout in milliseconds
 
-    private String _reserveCpu = "false";
-
-    private String _reserveMem = "false";
-
     private String _rootDiskController = DiskControllerType.ide.toString();
 
     private final Map<String, String> _storageMounts = new HashMap<String, String>();
@@ -283,15 +279,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         _vCenterSessionTimeout = NumbersUtil.parseInt(_configDao.getValue(Config.VmwareVcenterSessionTimeout.key()), 1200) * 1000;
         s_logger.info("VmwareManagerImpl config - vmware.vcenter.session.timeout: " + _vCenterSessionTimeout);
-
-        _reserveCpu = _configDao.getValue(Config.VmwareReserveCpu.key());
-        if (_reserveCpu == null || _reserveCpu.isEmpty()) {
-            _reserveCpu = "false";
-        }
-        _reserveMem = _configDao.getValue(Config.VmwareReserveMem.key());
-        if (_reserveMem == null || _reserveMem.isEmpty()) {
-            _reserveMem = "false";
-        }
 
         _recycleHungWorker = _configDao.getValue(Config.VmwareRecycleHungWorker.key());
         if (_recycleHungWorker == null || _recycleHungWorker.isEmpty()) {

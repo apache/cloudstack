@@ -1190,22 +1190,6 @@ public enum Config {
             "Start port number of additional VNC port range",
             null),
     //VmwareGuestNicDeviceType("Advanced", ManagementServer.class, String.class, "vmware.guest.nic.device.type", "E1000", "Ethernet card type used in guest VM, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3", null),
-    VmwareReserveCpu(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "vmware.reserve.cpu",
-            "false",
-            "Specify whether or not to reserve CPU based on CPU overprovisioning factor",
-            null),
-    VmwareReserveMem(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "vmware.reserve.mem",
-            "false",
-            "Specify whether or not to reserve memory based on memory overprovisioning factor",
-            null),
     VmwareRootDiskControllerType(
             "Advanced",
             ManagementServer.class,
