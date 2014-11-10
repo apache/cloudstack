@@ -19,11 +19,20 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackAPI import (migrateVirtualMachine,
+                                  prepareHostForMaintenance,
+                                  cancelHostMaintenance)
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (Account,
+                             VirtualMachine,
+                             ServiceOffering)
+from marvin.lib.common import (get_zone,
+                               get_domain,
+                               get_template,
+                               list_hosts,
+                               list_virtual_machines,
+                               list_service_offering)
 import time
 
 
@@ -490,6 +499,7 @@ class TestHostHighAvailability(cloudstackTestCase):
         #Find out Non-Suitable host for VM migration
         list_hosts_response = list_hosts(
             self.apiclient,
+            type="Routing"
         )
         self.assertEqual(
             isinstance(list_hosts_response, list),
@@ -505,7 +515,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         notSuitableHost = None
         for host in list_hosts_response:
-            if not host.suitableformigration and host.hostid != vm.hostid:
+            if not host.suitableformigration and host.id != vm.hostid:
                 notSuitableHost = host
                 break
 
