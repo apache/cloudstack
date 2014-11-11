@@ -89,7 +89,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
  
   	config.vm.network "private_network", ip: "192.168.22.214", adapter: "2",auto_config: false
     
-	config.ssh.private_key_path ="../../validation/vagrant"
+	config.ssh.private_key_path ="$packerroot/validation/vagrant"
         config.ssh.host = "192.168.22.214"
         config.ssh.port = "3922"
         config.ssh.username = "root"
@@ -109,8 +109,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
  
   end
 
-   config.vm.provision "shell", path: "../../provision/enablevagrant.sh"
-   config.vm.provision "shell", path: "../../provision/proc_cmdline.sh"
+   config.vm.provision "shell", path: "$packerroot/provision/enablevagrant.sh"
+   config.vm.provision "shell", path: "$packerroot/provision/proc_cmdline.sh"
 end
 EOF2
 
