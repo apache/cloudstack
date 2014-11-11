@@ -150,8 +150,10 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
@@ -163,12 +165,15 @@ import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
@@ -317,6 +322,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     @Inject
     public SecurityGroupService _securityGroupService;
+
+    @Inject
+    MessageBus _messageBus;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -1328,70 +1336,80 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             final String ip6Cidr, final Boolean displayNetwork, final Long aclId, final String isolatedPvlan, final NetworkOfferingVO ntwkOff, final PhysicalNetwork pNtwk,
             final ACLType aclType, final Account ownerFinal, final String cidr, final boolean createVlan) throws InsufficientCapacityException, ResourceAllocationException {
         try {
-            return Transaction.execute(new TransactionCallbackWithException<Network, Exception>() {
+            Network network = Transaction.execute(new TransactionCallbackWithException<Network, Exception>() {
                 @Override
                 public Network doInTransaction(TransactionStatus status) throws InsufficientCapacityException, ResourceAllocationException {
                     Account owner = ownerFinal;
                     Boolean subdomainAccess = subdomainAccessFinal;
 
-        Long sharedDomainId = null;
-        if (isDomainSpecific) {
-            if (domainId != null) {
-                sharedDomainId = domainId;
-            } else {
-                sharedDomainId = _domainMgr.getDomain(Domain.ROOT_DOMAIN).getId();
-                subdomainAccess = true;
-            }
-        }
+                    Long sharedDomainId = null;
+                    if (isDomainSpecific) {
+                        if (domainId != null) {
+                            sharedDomainId = domainId;
+                        } else {
+                            sharedDomainId = _domainMgr.getDomain(Domain.ROOT_DOMAIN).getId();
+                            subdomainAccess = true;
+                        }
+                    }
 
-        // default owner to system if network has aclType=Domain
-        if (aclType == ACLType.Domain) {
-            owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
-        }
+                    // default owner to system if network has aclType=Domain
+                    if (aclType == ACLType.Domain) {
+                        owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
+                    }
 
-        //Create guest network
-        Network network = null;
-        if (vpcId != null) {
+                    // Create guest network
+                    Network network = null;
+                    if (vpcId != null) {
                         if (!_configMgr.isOfferingForVpc(ntwkOff)) {
-                throw new InvalidParameterValueException("Network offering can't be used for VPC networks");
-            }
+                            throw new InvalidParameterValueException("Network offering can't be used for VPC networks");
+                        }
 
                         if (aclId != null) {
-                NetworkACL acl = _networkACLDao.findById(aclId);
+                            NetworkACL acl = _networkACLDao.findById(aclId);
                             if (acl == null) {
-                    throw new InvalidParameterValueException("Unable to find specified NetworkACL");
-                }
+                                throw new InvalidParameterValueException("Unable to find specified NetworkACL");
+                            }
 
                             if (aclId != NetworkACL.DEFAULT_DENY && aclId != NetworkACL.DEFAULT_ALLOW) {
-                    //ACL is not default DENY/ALLOW
-                    // ACL should be associated with a VPC
+                                // ACL is not default DENY/ALLOW
+                                // ACL should be associated with a VPC
                                 if (!vpcId.equals(acl.getVpcId())) {
                                     throw new InvalidParameterValueException("ACL: " + aclId + " do not belong to the VPC");
-                    }
-                }
-            }
+                                }
+                            }
+                        }
                         network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, networkDomain, owner, sharedDomainId, pNtwk, zoneId,
                                 aclType, subdomainAccess, vpcId, aclId, caller, displayNetwork);
-        } else {
+                    } else {
                         if (_configMgr.isOfferingForVpc(ntwkOff)) {
-                throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
-            }
-            if (ntwkOff.getInternalLb()) {
-                throw new InvalidParameterValueException("Internal Lb can be enabled on vpc networks only");
-            }
+                            throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
+                        }
+                        if (ntwkOff.getInternalLb()) {
+                            throw new InvalidParameterValueException("Internal Lb can be enabled on vpc networks only");
+                        }
 
                         network = _networkMgr.createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, networkDomain, owner, sharedDomainId, pNtwk, zoneId,
                                 aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan);
-        }
+                    }
 
-        if (_accountMgr.isRootAdmin(caller.getId()) && createVlan && network != null) {
-            // Create vlan ip range
+                    if (_accountMgr.isRootAdmin(caller.getId()) && createVlan && network != null) {
+                        // Create vlan ip range
                         _configMgr.createVlanAndPublicIpRange(pNtwk.getDataCenterId(), network.getId(), physicalNetworkId, false, null, startIP, endIP, gateway, netmask, vlanId,
                                 null, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
-        }
+                    }
                     return network;
                 }
             });
+            if (domainId != null && aclType == ACLType.Domain) {
+                // send event for storing the domain wide resource access
+                Map<String, Object> params = new HashMap<String, Object>();
+                params.put(ApiConstants.ENTITY_TYPE, Network.class);
+                params.put(ApiConstants.ENTITY_ID, network.getId());
+                params.put(ApiConstants.DOMAIN_ID, domainId);
+                params.put(ApiConstants.SUBDOMAIN_ACCESS, subdomainAccessFinal == null ? true : subdomainAccessFinal);
+                _messageBus.publish(_name, EntityManager.MESSAGE_ADD_DOMAIN_WIDE_ENTITY_EVENT, PublishScope.LOCAL, params);
+            }
+            return network;
         } catch (Exception e) {
             ExceptionUtil.rethrowRuntime(e);
             ExceptionUtil.rethrow(e, InsufficientCapacityException.class);

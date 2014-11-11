@@ -39,7 +39,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
@@ -676,14 +675,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                         if (domainId != null && aclType == ACLType.Domain) {
                             _networksDao.addDomainToNetwork(id, domainId, subdomainAccess == null ? true : subdomainAccess);
-                            //send event for storing the domain wide resource access
-                            Map<String, Object> params = new HashMap<String, Object>();
-                            params.put(ApiConstants.ENTITY_TYPE, Network.class);
-                            params.put(ApiConstants.ENTITY_ID, id);
-                            params.put(ApiConstants.DOMAIN_ID, domainId);
-                            params.put(ApiConstants.SUBDOMAIN_ACCESS, subdomainAccess == null ? true : subdomainAccess);
-                            _messageBus.publish(_name, EntityManager.MESSAGE_ADD_DOMAIN_WIDE_ENTITY_EVENT,
-                                    PublishScope.LOCAL, params);
                         }
                     }
                 });
