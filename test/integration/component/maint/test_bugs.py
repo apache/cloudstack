@@ -27,9 +27,7 @@ from marvin.codes import *
 from nose.plugins.attrib import attr
 
 
-
 class Test42xBugsMgmtSvr(cloudstackTestCase):
-
     @classmethod
     def setUpClass(cls):
         try:
@@ -40,37 +38,41 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
             cls.hypervisor = cls.testClient.getHypervisorInfo()
             # Get Domain, Zone, Template
             cls.domain = get_domain(cls.api_client)
-            cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-            cls.pod = get_pod(cls.apiClient,zone_id=cls.zone.id)
+            cls.zone = get_zone(cls.api_client,
+                                cls.testClient.getZoneForTests())
+            cls.pod = get_pod(cls.apiClient, zone_id=cls.zone.id)
             cls.template = get_template(
-                                        cls.api_client,
-                                        cls.zone.id,
-                                        cls.services["ostype"]
-                                        )
+                cls.api_client,
+                cls.zone.id,
+                cls.services["ostype"]
+            )
 
             cls.services['mode'] = cls.zone.networktype
             cls.services["hypervisor"] = cls.testClient.getHypervisorInfo()
             # Creating Disk offering, Service Offering and Account
             cls.service_offering = ServiceOffering.create(
-                                            cls.apiClient,
-                                            cls.services["service_offerings"]
-                                            )
+                cls.apiClient,
+                cls.services["service_offerings"]
+            )
             cls.account = Account.create(
-                                         cls.api_client,
-                                         cls.services["account"],
-                                         domainid=cls.domain.id
-                                         )
+                cls.api_client,
+                cls.services["account"],
+                domainid=cls.domain.id
+            )
             # Create account
             cls.account_2 = Account.create(
-                                         cls.api_client,
-                                         cls.services["account2"],
-                                         domainid=cls.domain.id
-                                         )
+                cls.api_client,
+                cls.services["account2"],
+                domainid=cls.domain.id
+            )
 
             # Getting authentication for user in newly created Account
             cls.user = cls.account.user[0]
-            cls.userapiclient = cls.testClient.getUserApiClient(cls.user.username, cls.domain.name)
-            #add objects created in setUpCls to the _cleanup list
+            cls.userapiclient = cls.testClient.getUserApiClient(
+                cls.user.username,
+                cls.domain.name
+            )
+            # add objects created in setUpCls to the _cleanup list
             cls._cleanup = [cls.account,
                             cls.account_2,
                             cls.service_offering]
@@ -99,28 +101,34 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
 
         return
 
-
     @attr(tags=["advanced", "basic", "tested"])
     @attr(required_hardware="false")
     @attr(configuration='apply.allocation.algorithm.to.pods')
     def test_es_1223_apply_algo_to_pods(self):
         """
-        @Desc: Test VM creation while "apply.allocation.algorithm.to.pods" is set to true
+        @Desc: Test VM creation while "apply.allocation.algorithm.to.pods" is
+        set to true
         @Reference: https://issues.apache.org/jira/browse/CLOUDSTACK-4947
         @Steps:
-        Step1: Set global configuration "apply.allocation.algorithm.to.pods" to true
+        Step1: Set global configuration "apply.allocation.algorithm.to.pods"
+        to true
         Step2: Restart management server
         Step3: Verifying that VM creation is successful
         """
-        #Step1:  set global configuration "apply.allocation.algorithm.to.pods" to true
-        # Configurations.update(self.apiClient, "apply.allocation.algorithm.to.pods", "true")
+        # Step1:  set global configuration
+        # "apply.allocation.algorithm.to.pods" to true
+        # Configurations.update(self.apiClient,
+        # "apply.allocation.algorithm.to.pods", "true")
         # TODO: restart management server
-        if not is_config_suitable(apiclient=self.apiClient, name='apply.allocation.algorithm.to.pods', value='true'):
-            self.skipTest('apply.allocation.algorithm.to.pods should be true. skipping')
-        #TODO:Step2: Restart management server
+        if not is_config_suitable(apiclient=self.apiClient,
+                                  name='apply.allocation.algorithm.to.pods',
+                                  value='true'):
+            self.skipTest('apply.allocation.algorithm.to.pods '
+                          'should be true. skipping')
+        # TODO:Step2: Restart management server
         self.services["virtual_machine"]["zoneid"] = self.zone.id
         self.services["virtual_machine"]["template"] = self.template.id
-        #Step3: Verifying that VM creation is successful
+        # Step3: Verifying that VM creation is successful
         virtual_machine = VirtualMachine.create(
             self.apiClient,
             self.services["virtual_machine2"],
@@ -131,44 +139,53 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         self.cleanup.append(virtual_machine)
         # Verify VM state
         self.assertEqual(
-                            virtual_machine.state,
-                            'Running',
-                            "Check VM state is Running or not"
-                        )
+            virtual_machine.state,
+            'Running',
+            "Check VM state is Running or not"
+        )
 
-        #cleanup: set global configuration "apply.allocation.algorithm.to.pods" back to false
-        Configurations.update(self.apiClient, "apply.allocation.algorithm.to.pods", "false")
-        #TODO:cleanup: Restart management server
+        # cleanup: set global configuration
+        # "apply.allocation.algorithm.to.pods" back to false
+        Configurations.update(
+            self.apiClient,
+            "apply.allocation.algorithm.to.pods",
+            "false"
+        )
+        # TODO:cleanup: Restart management server
         return
 
-    @attr(tags=["advanced", "basic","tested"])
+    @attr(tags=["advanced", "basic", "tested"])
     @attr(required_hardware="false")
     def test_local_storage_data_disk_tag(self):
         """
-        @Desc: Test whether tags are honoured while creating data disks on local storage
+        @Desc: Test whether tags are honoured while creating
+        data disks on local storage
         @Steps:
         This test needs multiple local storages
         Step1: create a tag 'loc' on the local storage
         Step2: create a disk offering with this storage tag 'loc'
-        Step3: create a VM and create disk by selecting the disk offering created in step2
-        step4: check whether the data disk created in step3 is created on local storage with tag 'loc'
+        Step3: create a VM and create disk by selecting the disk offering
+         created in step2
+        step4: check whether the data disk created in step3 is created on
+        local storage with tag 'loc'
         """
-        if self.zone.localstorageenabled != True:
-            self.skipTest('Local storage is not enable for this zone. skipping')
+        if self.zone.localstorageenabled:
+            self.skipTest('Local storage is not enable for this '
+                          'zone. skipping')
 
         local_storages = StoragePool.list(self.apiClient,
                                           zoneid=self.zone.id,
                                           scope='HOST')
         self.assertEqual(
-                            isinstance(local_storages, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
+            isinstance(local_storages, list),
+            True,
+            "Check list response returns a valid list"
+        )
         self.assertNotEqual(
-                            local_storages,
-                            None,
-                            "Check if local storage pools exists in ListStoragePools"
-                            )
+            local_storages,
+            None,
+            "Check if local storage pools exists in ListStoragePools"
+        )
 
         cmd = updateStoragePool.updateStoragePoolCmd()
         cmd.zoneid = self.zone.id
@@ -179,12 +196,12 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         self.services["disk_offering"]["storagetype"] = 'local'
         self.services["disk_offering"]["tags"] = 'loc'
         disk_offering = DiskOffering.create(
-                                        self.apiClient,
-                                        self.services["disk_offering"]
-                                        )
+            self.apiClient,
+            self.services["disk_offering"]
+        )
         self.services["virtual_machine"]["zoneid"] = self.zone.id
         self.services["virtual_machine"]["template"] = self.template.id
-        #Step3: Verifying that VM creation is successful
+        # Step3: Verifying that VM creation is successful
         virtual_machine = VirtualMachine.create(
             self.apiClient,
             self.services["virtual_machine"],
@@ -192,60 +209,60 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
             mode=self.services["mode"]
-            )
+        )
         self.cleanup.append(virtual_machine)
         self.cleanup.append(disk_offering)
         # Verify VM state
         self.assertEqual(
-                            virtual_machine.state,
-                            'Running',
-                            "Check VM state is Running or not"
-                        )
-        self.volume = Volume.create(self.apiClient,self.services["volume"],
-                                    zoneid=self.zone.id,
-                                    account=self.account.name,
-                                    domainid=self.account.domainid,
-                                    diskofferingid=disk_offering.id
-                                    )
-
-
+            virtual_machine.state,
+            'Running',
+            "Check VM state is Running or not"
+        )
+        self.volume = Volume.create(
+            self.apiClient,
+            self.services["volume"],
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            diskofferingid=disk_offering.id
+        )
         virtual_machine.attach_volume(self.apiClient, self.volume)
 
         self.attached = True
         list_volume_response = Volume.list(
-                                                self.apiClient,
-                                                id=self.volume.id
-                                                )
+            self.apiClient,
+            id=self.volume.id
+        )
         self.assertEqual(
-                            isinstance(list_volume_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
+            isinstance(list_volume_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
         self.assertNotEqual(
-                            list_volume_response,
-                            None,
-                            "Check if volume exists in ListVolumes"
-                            )
+            list_volume_response,
+            None,
+            "Check if volume exists in ListVolumes"
+        )
         volume = list_volume_response[0]
         self.assertNotEqual(
-                            volume.virtualmachineid,
-                            None,
-                            "Check if volume state (attached) is reflected"
-                            )
+            volume.virtualmachineid,
+            None,
+            "Check if volume state (attached) is reflected"
+        )
 
         storage_pool = StoragePool.list(self.apiClient, id=volume.storageid)
 
         self.assertEqual(
-                            volume.storagetype,
-                            'local',
-                            "Check list storage pool response has local as storage type"
-                        )
+            volume.storagetype,
+            'local',
+            "Check list storage pool response has local as storage type"
+        )
 
         self.assertEqual(
-                            storage_pool[0].tags,
-                            'loc',
-                            "Check list storage pool response has tag"
-                        )
+            storage_pool[0].tags,
+            'loc',
+            "Check list storage pool response has tag"
+        )
         return
 
     @attr(tags=["advanced", "basic"])
@@ -258,50 +275,23 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         Step2: It should return a commit hash
         """
         # Step1: run cloudstack-sccs on management server
-        mgmt_ssh = SshClient(self.apiClient.connection.mgtSvr,
-                           22,
-                           self.apiClient.connection.user,
-                           self.apiClient.connection.passwd
-                             )
+        mgmt_ssh = SshClient(
+            self.apiClient.connection.mgtSvr,
+            22,
+            self.apiClient.connection.user,
+            self.apiClient.connection.passwd
+        )
         res = mgmt_ssh.execute("cloudstack-sccs")
         # Step2: It should return a commit hash
         return
-
-    @attr(tags=["advanced", "basic"])
-    @attr(required_hardware="true")
-    def test_add_cluster_datacenter_spaces(self):
-        """
-        @Desc: Add VmWare cluster to the CS with the data center name contains space in between
-        @Steps:
-        Step1: Add VmWare cluster to the CS with the data center name contains space in between.
-        """
-        if self.hypervisor.lower() != 'vmware':
-            self.skipTest('Can be run only on vmware zone. skipping')
-        cmd = addCluster.addClusterCmd()
-        cmd.zoneid = self.zone.id
-        cmd.hypervisor = self.hypervisor
-        cmd.clustertype= self.services["vmware_cluster"]["clustertype"]
-        cmd.podId = self.pod.id
-        cmd.username = self.services["vmware_cluster"]["username"]
-        cmd.password = self.services["vmware_cluster"]["password"]
-        cmd.publicswitchtype = 'vmwaredvs'
-        cmd.guestswitchtype = 'vmwaredvs'
-        cmd.url = self.services["vmware_cluster"]["url"]
-        cmd.clustername = self.services["vmware_cluster"]["url"]
-
-        self.apiClient.addCluster(cmd)
-
-        return
-
-
 
     @attr(tags=["advanced", "basic"])
     @attr(required_hardware="false")
     @attr(storage="s3")
     def test_es_1863_register_template_s3_domain_admin_user(self):
         """
-        @Desc: Test whether cloudstack allows Domain admin or user to register a template using
-        S3/Swift object store.
+        @Desc: Test whether cloudstack allows Domain admin or user
+        to register a template using S3/Swift object store.
         @Steps:
         Step1: create a Domain and users in it.
         Step2: Register a template as Domain admin.
@@ -310,9 +300,9 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         """
         # Step1: create a Domain and users in it.
         self.newdomain = Domain.create(self.apiClient,
-                               self.services["domain"])
+                                       self.services["domain"])
 
-        #create account in the domain
+        # create account in the domain
         self.account_domain = Account.create(
             self.apiClient,
             self.services["account"],
@@ -322,18 +312,20 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         self.cleanup.append(self.newdomain)
         # Getting authentication for user in newly created Account in domain
         self.domain_user = self.account_domain.user[0]
-        self.domain_userapiclient = self.testClient.getUserApiClient(self.domain_user.username, self.newdomain.name)
+        self.domain_userapiclient = self.testClient.getUserApiClient(
+            self.domain_user.username, self.newdomain.name
+        )
 
         # Step2: Register a template as Domain admin.
         self.services["templateregister"]["ostype"] = self.services["ostype"]
         self.domain_template = Template.register(
-                                        self.apiClient,
-                                        self.services["templateregister"],
-                                        zoneid=self.zone.id,
-                                        account=self.account_domain.name,
-                                        domainid=self.newdomain.id,
-                                        hypervisor=self.hypervisor
-                                        )
+            self.apiClient,
+            self.services["templateregister"],
+            zoneid=self.zone.id,
+            account=self.account_domain.name,
+            domainid=self.newdomain.id,
+            hypervisor=self.hypervisor
+        )
         # Wait for template to download
         self.domain_template.download(self.api_client)
 
@@ -341,20 +333,20 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         time.sleep(60)
         # Step3: Register a template as Domain user.
         self.domain_user_template = Template.register(
-                                        self.domain_userapiclient,
-                                        self.services["templateregister"],
-                                        zoneid=self.zone.id,
-                                        account=self.account_domain.name,
-                                        domainid=self.newdomain.id,
-                                        hypervisor=self.hypervisor
-                                        )
+            self.domain_userapiclient,
+            self.services["templateregister"],
+            zoneid=self.zone.id,
+            account=self.account_domain.name,
+            domainid=self.newdomain.id,
+            hypervisor=self.hypervisor
+        )
         # Wait for template to download
         self.domain_user_template.download(self.api_client)
 
         # Wait for template status to be changed across
         time.sleep(60)
 
-        #TODO: Step4: Template should be registered successfully.
+        # TODO: Step4: Template should be registered successfully.
         return
 
     @attr(tags=["advanced", "basic"])
@@ -365,17 +357,18 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         @Desc: Test root volume resize of stopped VM
         @Reference: https://issues.apache.org/jira/browse/CLOUDSTACK-6181
         @Steps:
-        Step1: Deploy VM in stopped state (startvm=false), resize via 'resizeVolume', start VM. Root is new size.
+        Step1: Deploy VM in stopped state (startvm=false),
+        resize via 'resizeVolume', start VM. Root is new size.
         """
         # Check whether usage server is running or not
 
-        if (self.hypervisor.lower() != 'kvm'):
+        if self.hypervisor.lower() != 'kvm':
             self.skipTest("Test can be run only on KVM hypervisor")
-        # deploy virtural machine in stopped state
+        # deploy virtual machine in stopped state
         self.services["virtual_machine"]["zoneid"] = self.zone.id
         self.services["virtual_machine"]["template"] = self.template.id
 
-        #Step3: Verifying that VM creation is successful
+        # Step3: Verifying that VM creation is successful
         virtual_machine = VirtualMachine.create(
             self.apiClient,
             self.services["virtual_machine"],
@@ -383,22 +376,22 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
             startvm=False
-            )
+        )
         self.cleanup.append(virtual_machine)
         # Verify VM state
         self.assertEqual(
-                            virtual_machine.state,
-                            'Stopped',
-                            "Check VM state is Stopped or not"
-                        )
+            virtual_machine.state,
+            'Stopped',
+            "Check VM state is Stopped or not"
+        )
         volumes = list_volumes(
-                            self.apiClient,
-                            virtualmachineid=self.virtual_machine.id,
-                            type='ROOT',
-                            listall=True
-                            )
+            self.apiClient,
+            virtualmachineid=virtual_machine.id,
+            type='ROOT',
+            listall=True
+        )
 
-        self.assertIsNotNone(volumes,"root volume is not returned properly")
+        self.assertIsNotNone(volumes, "root volume is not returned properly")
         newrootsize = (self.template.size >> 30) + 2
         cmd = resizeVolume.resizeVolumeCmd()
         cmd.id = volumes[0].id
@@ -408,11 +401,11 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         virtual_machine.start(self.apiClient)
 
         volumes_after_resize = list_volumes(
-                            self.apiClient,
-                            virtualmachineid=self.virtual_machine.id,
-                            type='ROOT',
-                            listall=True
-                            )
+            self.apiClient,
+            virtualmachineid=virtual_machine.id,
+            type='ROOT',
+            listall=True
+        )
 
         rootvolume = volumes_after_resize[0]
         success = False
@@ -420,10 +413,10 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
             success = True
 
         self.assertEqual(
-                         success,
-                         True,
-                         "Check if the root volume resized appropriately"
-                        )
+            success,
+            True,
+            "Check if the root volume resized appropriately"
+        )
         return
 
     @attr(tags=["advanced", "basic"])
@@ -438,13 +431,13 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         """
         # Check whether usage server is running or not
 
-        if (self.hypervisor.lower() != 'kvm'):
+        if self.hypervisor.lower() != 'kvm':
             self.skipTest("Test can be run only on KVM hypervisor")
-        # deploy virtural machine in stopped state
+        # deploy virtual machine in stopped state
         self.services["virtual_machine"]["zoneid"] = self.zone.id
         self.services["virtual_machine"]["template"] = self.template.id
 
-        #Step3: Verifying that VM creation is successful
+        # Step3: Verifying that VM creation is successful
         virtual_machine = VirtualMachine.create(
             self.apiClient,
             self.services["virtual_machine"],
@@ -455,18 +448,18 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         self.cleanup.append(virtual_machine)
         # Verify VM state
         self.assertEqual(
-                            virtual_machine.state,
-                            'Running',
-                            "Check VM state is Running or not"
-                        )
+            virtual_machine.state,
+            'Running',
+            "Check VM state is Running or not"
+        )
         volumes = list_volumes(
-                            self.apiClient,
-                            virtualmachineid=self.virtual_machine.id,
-                            type='ROOT',
-                            listall=True
-                            )
+            self.apiClient,
+            virtualmachineid=virtual_machine.id,
+            type='ROOT',
+            listall=True
+        )
 
-        self.assertIsNotNone(volumes,"root volume is not returned properly")
+        self.assertIsNotNone(volumes, "root volume is not returned properly")
         newrootsize = (self.template.size >> 30) + 2
         cmd = resizeVolume.resizeVolumeCmd()
         cmd.id = volumes[0].id
@@ -474,11 +467,11 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         self.apiClient.resizeVolume(cmd)
 
         volumes_after_resize = list_volumes(
-                            self.apiClient,
-                            virtualmachineid=self.virtual_machine.id,
-                            type='ROOT',
-                            listall=True
-                            )
+            self.apiClient,
+            virtualmachineid=virtual_machine.id,
+            type='ROOT',
+            listall=True
+        )
 
         rootvolume = volumes_after_resize[0]
         success = False
@@ -486,10 +479,10 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
             success = True
 
         self.assertEqual(
-                         success,
-                         True,
-                         "Check if the root volume resized appropriately"
-                        )
+            success,
+            True,
+            "Check if the root volume resized appropriately"
+        )
         return
 
     @unittest.skip('In progress')
@@ -497,13 +490,15 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
     @attr(required_hardware="false")
     def test_CLOUDSTACK_5023(self):
         """
-        @Desc: Test whether we are able to delete PF rule while rabbit mq is collecting usage events.
+        @Desc: Test whether we are able to delete PF rule while
+         rabbit mq is collecting usage events.
         @Steps:
         step1. Run Usage server
-        step2. Delete a PF rule and check whether it is succesful and usage event is generated
+        step2. Delete a PF rule and check whether it is
+        successful and usage event is generated
         Configure RabbitMQ for usage event generation
         """
-        #TBA
+        # TBA
         return
 
     @attr(tags=["advanced", "basic"])
@@ -511,25 +506,25 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
     @attr(configuration='apply.allocation.algorithm.to.pods')
     def test_es_47_list_os_types_win_2012(self):
         """
-        @Desc: Test VM creation while "apply.allocation.algorithm.to.pods" is set to true
+        @Desc: Test VM creation while "apply.allocation.algorithm.to.pods"
+        is set to true
         @Reference: https://issues.apache.org/jira/browse/CLOUDSTACK-4947
         @Steps:
         Step1: register windows 2012 VM template as windows 8 template
-        Step2: deploy a VM with windows2012 template and  Verify that VM creation is successful
+        Step2: deploy a VM with windows2012 template and  Verify
+        that VM creation is successful
 
          """
 
         # register windows 2012 VM template as windows 8 template
         self.win2012_template = Template.register(
-                                        self.apiClient,
-                                        self.services["win2012template"],
-                                        zoneid=self.zone.id,
-                                        account=self.account.name,
-                                        domainid=self.domain.id,
-                                        hypervisor=self.hypervisor
-                                        )
-
-
+            self.apiClient,
+            self.services["win2012template"],
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.domain.id,
+            hypervisor=self.hypervisor
+        )
         # Wait for template to download
         self.win2012_template.download(self.apiClient)
         self.cleanup.append(self.win2012_template)
@@ -545,24 +540,26 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
             self.services["virtual_machine"],
             accountid=self.account.name,
             domainid=self.account.domainid,
-            serviceofferingid=self.service_offering.id,
-            )
+            serviceofferingid=self.service_offering.id
+        )
         self.cleanup.append(vm1)
         # Verify VM state
         self.assertEqual(
-                            vm1.state,
-                            'Running',
-                            "Check VM state is Running or not"
-                        )
+            vm1.state,
+            'Running',
+            "Check VM state is Running or not"
+        )
         return
 
     @attr(tags=["advanced", "basic", "test"])
     @attr(required_hardware="true")
     def test_secondary_storage_stats(self):
         """
-        @Desc: Dashboard is not showing correct secondary storage statistics
+        @Desc: Dashboard is not showing correct secondary
+        storage statistics
         @Steps:
-        Step1: listCapacity api should show correct secondary storage statistics
+        Step1: listCapacity api should show correct secondary
+        storage statistics
         """
         cmd = listCapacity.listCapacityCmd()
         cmd.type = 6
@@ -570,17 +567,20 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         response = self.apiClient.listCapacity(cmd)
 
         self.assertEqual(
-                            isinstance(response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
+            isinstance(response, list),
+            True,
+            "Check list response returns a valid list"
+        )
         self.assertNotEqual(
-                            response,
-                            None,
-                            "Check if listCapacity has returned properly"
-                            )
-        self.assertNotEqual(response[0].capacitytotal, 0, "check the total capacity of secondary storage returned")
-
+            response,
+            None,
+            "Check if listCapacity has returned properly"
+        )
+        self.assertNotEqual(
+            response[0].capacitytotal,
+            0,
+            "check the total capacity of secondary storage returned"
+        )
         return
 
     @attr(tags=["advanced", "basic"])
@@ -593,11 +593,12 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         and see that it times out with in 30seconds
         """
         # Step1: run cloudstack-sccs on management server
-        mgmt_ssh = SshClient(self.apiClient.connection.mgtSvr,
-                           22,
-                           self.apiClient.connection.user,
-                           self.apiClient.connection.passwd
-                             )
+        mgmt_ssh = SshClient(
+            self.apiClient.connection.mgtSvr,
+            22,
+            self.apiClient.connection.user,
+            self.apiClient.connection.passwd
+        )
         res = mgmt_ssh.execute("time telnet localhost 8250")
 
         # Step2: It should return a commit hash
@@ -607,16 +608,18 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
     @attr(required_hardware="true")
     def test_add_cluster_datacenter_spaces(self):
         """
-        @Desc: Add VmWare cluster to the CS with the data center name contains space in between
+        @Desc: Add VmWare cluster to the CS with the data center
+        name contains space in between
         @Steps:
-        Step1: Add VmWare cluster to the CS with the data center name contains space in between.
+        Step1: Add VmWare cluster to the CS with the data center
+         name contains space in between.
         """
         if self.hypervisor.lower() != 'vmware':
             self.skipTest('Can be run only on vmware zone. skipping')
         cmd = addCluster.addClusterCmd()
         cmd.zoneid = self.zone.id
         cmd.hypervisor = self.hypervisor
-        cmd.clustertype= self.services["vmware_cluster"]["clustertype"]
+        cmd.clustertype = self.services["vmware_cluster"]["clustertype"]
         cmd.podId = self.pod.id
         cmd.username = self.services["vmware_cluster"]["username"]
         cmd.password = self.services["vmware_cluster"]["password"]
