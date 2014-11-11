@@ -223,7 +223,7 @@
                     });
 
                     if ($dependsOn.is('[type=checkbox]')) {
-                        
+
                         var isReverse = false;
                         if (args.form.fields[dependsOn])
                             isReverse = args.form.fields[dependsOn].isReverse;
@@ -235,10 +235,10 @@
 
                             if (($target.is(':checked') && !isReverse) ||
                                 ($target.is(':unchecked') && isReverse)) {
-                                
-                            	$dependent.css('display', 'inline-block'); //show dependent dropdown field
+
+                                $dependent.css('display', 'inline-block'); //show dependent dropdown field
                                 $dependent.change(); //trigger event handler for default option in dependent dropdown field (CLOUDSTACK-7826)
-                                
+
                                 $dependent.each(function() {
                                     if ($(this).data('dialog-select-fn')) {
                                         $(this).data('dialog-select-fn')();
