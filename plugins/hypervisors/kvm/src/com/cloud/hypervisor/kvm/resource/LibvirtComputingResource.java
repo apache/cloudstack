@@ -3255,7 +3255,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private Answer execute(GetHostStatsCommand cmd) {
         final Script cpuScript = new Script("/bin/bash", s_logger);
         cpuScript.add("-c");
-        cpuScript.add("idle=$(top -b -n 1|grep Cpu\\(s\\):|cut -d% -f4|cut -d, -f2);echo $idle");
+        cpuScript.add("idle=$(top -b -n 1| awk -F, '/^[%]*[Cc]pu/{$0=$4; gsub(/[^0-9.,]+/,""); print }'); echo $idle");
 
         final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
         String result = cpuScript.execute(parser);
