@@ -303,7 +303,7 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
         String mountPoint = _mountPoint + File.separator + uuid;
         File f = new File(mountPoint + File.separator + path);
         if (!f.exists()) {
-            f.mkdirs();
+            return f.mkdirs();
         }
         return true;
     }
