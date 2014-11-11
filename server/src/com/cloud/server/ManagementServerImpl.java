@@ -1696,9 +1696,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (scope != null && !scope.isEmpty()) {
             // getting the list of parameters at requested scope
-            if (id == null) {
-                throw new InvalidParameterValueException("Invalid id null, id is needed corresponding to the scope");
-            }
             sc.addAnd("scope", SearchCriteria.Op.EQ, scope);
         }
 

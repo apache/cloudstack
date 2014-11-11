@@ -43,9 +43,6 @@ public class ListCfgCmdTest extends TestCase {
     private ManagementService mgr;
     private ResponseGenerator responseGenerator;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Override
     @Before
     public void setUp() {
