@@ -314,7 +314,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
 
         SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
-        if(snapshot != null)
+        if(snapshot == null)
         {
             s_logger.debug("Failed to create snapshot");
             throw new CloudRuntimeException("Failed to create snapshot");
