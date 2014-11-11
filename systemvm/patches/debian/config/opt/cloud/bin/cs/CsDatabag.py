@@ -17,9 +17,10 @@
 # under the License.
 from merge import dataBag
 
+
 class CsDataBag(object):
 
-    def __init__(self, key, config = None):
+    def __init__(self, key, config=None):
         self.data = {}
         self.db = dataBag()
         self.db.setKey(key)
@@ -45,6 +46,7 @@ class CsDataBag(object):
         Use sparingly!
         """
         self.db.save(self.dbag)
+
 
 class CsCmdLine(CsDataBag):
     """ Get cmdline config parameters """
@@ -78,4 +80,3 @@ class CsCmdLine(CsDataBag):
         if "redundant_master" in self.dbag['config']:
             return self.dbag['config']['redundant_master'] == "true"
         return False
-

@@ -20,11 +20,12 @@ from netaddr import *
 from CsGuestNetwork import CsGuestNetwork
 
 NO_PRELOAD = False
-LEASES     = "/var/lib/misc/dnsmasq.leases"
+LEASES = "/var/lib/misc/dnsmasq.leases"
 DHCP_HOSTS = "/etc/dhcphosts.txt"
-DHCP_OPTS  = "/etc/dhcpopts.txt"
+DHCP_OPTS = "/etc/dhcpopts.txt"
 DNSMASQ_CONF = "/etc/dnsmasq.conf"
 CLOUD_CONF = "/etc/dnsmasq.d/cloud.conf"
+
 
 class CsDhcp(object):
     """ Manage dhcp entries """
@@ -51,10 +52,11 @@ class CsDhcp(object):
         dnsmasq.first_host = dnsmasqb4.first_host
         dnsmasq.configure_server()
 
+
 class CsDnsMasq(object):
 
-    def __init__(self, preload = True):
-        self.list  = []
+    def __init__(self, preload=True):
+        self.list = []
         self.hosts = []
         self.leases = []
         self.updated = False
@@ -72,17 +74,17 @@ class CsDnsMasq(object):
         try:
             for line in open(LEASES):
                 bits = line.strip().split(' ')
-                to = { "device" : bits[0],
-                        "mac" : bits[1],
-                        "ip" : bits[2],
-                        "host" : bits[3],
-                        "del" : False
-                        }
+                to = {"device": bits[0],
+                      "mac": bits[1],
+                      "ip": bits[2],
+                      "host": bits[3],
+                      "del": False
+                      }
                 for l in clist:
                     lbits = l.split(',')
                     if lbits[0] == to['mac'] or \
                        lbits[1] == to['ip']:
-                        to['del'] == True
+                        to['del'] is True
                         break
                 self.leases.append(to)
             for o in self.leases:
@@ -96,26 +98,25 @@ class CsDnsMasq(object):
 
     def configure_server(self):
         self.updated = self.updated | CsHelper.addifmissing(DNSMASQ_CONF, "dhcp-hostsfile=/etc/dhcphosts.txt")
-        #self.updated = self.updated | CsHelper.addifmissing(DNSMASQ_CONF, "dhcp-optsfile=%s:" % DHCP_OPTS)
+        # self.updated = self.updated | CsHelper.addifmissing(DNSMASQ_CONF, "dhcp-optsfile=%s:" % DHCP_OPTS)
         for i in self.devinfo:
             if not i['dnsmasq']:
                 continue
             device = i['dev']
             ip = i['ip'].split('/')[0]
-            line = "dhcp-range=interface:%s,set:interface-%s,%s,static" \
-                    % (device, device, ip)
+            line = "dhcp-range=interface:%s,set:interface-%s,%s,static" % (device, device, ip)
             self.updated = self.updated | CsHelper.addifmissing(CLOUD_CONF, line)
             # Next add the domain
             # if this is a guest network get it there otherwise use the value in resolv.conf
             gn = CsGuestNetwork(device)
-            line = "dhcp-option=tag:interface-%s,15,%s" % (device,gn.get_domain())
+            line = "dhcp-option=tag:interface-%s,15,%s" % (device, gn.get_domain())
             self.updated = self.updated | CsHelper.addifmissing(CLOUD_CONF, line)
         if self.updated:
             if self.first_host:
                 CsHelper.service("dnsmasq", "restart")
             else:
                 CsHelper.hup_dnsmasq("dnsmasq", "dnsmasq")
-            
+
     def parse_dnsmasq(self):
         self.first_host = False
         try:
@@ -157,7 +158,7 @@ class CsDnsMasq(object):
             b = line.split(',')
         handle.close()
 
-    def add(self,entry):
+    def add(self, entry):
         self.add_host(entry['ipv4_adress'], entry['host_name'])
         self.add_dnsmasq(entry['ipv4_adress'], entry['host_name'], entry['mac_address'])
         i = IPAddress(entry['ipv4_adress'])
@@ -165,7 +166,7 @@ class CsDnsMasq(object):
         for v in self.devinfo:
             if i > v['network'].network and i < v['network'].broadcast:
                 v['dnsmasq'] = True
-                
+
     def add_dnsmasq(self, ip, host, mac):
         self.list.append("%s,%s,%s,infinite" % (mac, ip, host))
 

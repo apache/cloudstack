@@ -38,6 +38,7 @@ from cs.CsFile import CsFile
 from cs.CsAddress import CsAddress
 from cs.CsApp import CsApache, CsPasswdSvc, CsDnsmasq
 
+
 class CsPassword(CsDataBag):
     """
       Update the password cache
@@ -58,6 +59,7 @@ class CsPassword(CsDataBag):
     def __update(self, file, ip, password):
         file.search("%s=" % ip, "%s=%s" % (ip, password))
 
+
 class CsAcl(CsDataBag):
     """
         Deal with Network acls
@@ -70,9 +72,9 @@ class CsAcl(CsDataBag):
             self.ingess = []
             self.egress = []
             self.device = obj['device']
-            self.ip     = obj['nic_ip']
-            self.netmask= obj['nic_netmask']
-            self.cidr   = "%s/%s" % (self.ip, self.netmask)
+            self.ip = obj['nic_ip']
+            self.netmask = obj['nic_netmask']
+            self.cidr = "%s/%s" % (self.ip, self.netmask)
             if "ingress_rules" in obj.keys():
                 self.ingress = obj['ingress_rules']
             if "egress_rules" in obj.keys():
@@ -95,11 +97,11 @@ class CsAcl(CsDataBag):
                 self.device = acl.device
                 self.fw = acl.fw
                 self.chain = config.get_ingress_chain(self.device, acl.ip)
-                self.dest  = "-s %s" % rule['cidr']
+                self.dest = "-s %s" % rule['cidr']
                 if direction == "egress":
                     self.table = config.get_efress_table()
                     self.chain = config.get_egress_chain(self.device, ip)
-                    self.dest  = "-d %s" % rule['cidr']
+                    self.dest = "-d %s" % rule['cidr']
                 self.type = ""
                 self.type = rule['type']
                 self.icmp_type = "any"
@@ -122,7 +124,6 @@ class CsAcl(CsDataBag):
                    rule['last_port'] != rule['first_port']:
                     self.dport = "%s:%s" % (self.dport, rule['last_port'])
 
-
             def create(self):
                 rstr = ""
                 rstr = "%s -A %s -p %s %s" % (rstr, self.chain, self.protocol, self.dest)
@@ -132,7 +133,6 @@ class CsAcl(CsDataBag):
                 rstr = rstr.replace("  ", " ").lstrip()
                 self.fw.append([self.table, "front", rstr])
 
-                    
     def process(self):
         for item in self.dbag:
             if item == "id":
@@ -149,8 +149,8 @@ class CsVmMetadata(CsDataBag):
             logging.info("Processing metadata for %s" % ip)
             for item in self.dbag[ip]:
                 folder = item[0]
-                file   = item[1]
-                data   = item[2]
+                file = item[1]
+                data = item[2]
 
                 # process only valid data
                 if folder != "userdata" and folder != "metadata":
@@ -175,7 +175,7 @@ class CsVmMetadata(CsDataBag):
     def __createfile(self, ip, folder, file, data):
         dest = "/var/www/html/" + folder + "/" + ip + "/" + file
         metamanifestdir = "/var/www/html/" + folder + "/" + ip
-        metamanifest =  metamanifestdir + "/meta-data"
+        metamanifest = metamanifestdir + "/meta-data"
 
         # base64 decode userdata
         if folder == "userdata" or folder == "user-data":
@@ -198,12 +198,12 @@ class CsVmMetadata(CsDataBag):
             except OSError as e:
                 # error 17 is already exists, we do it this way for concurrency
                 if e.errno != 17:
-                    print "failed to make directories " + metamanifestdir + " due to :" +e.strerror
+                    print "failed to make directories " + metamanifestdir + " due to :" + e.strerror
                     sys.exit(1)
             if os.path.exists(metamanifest):
                 fh = open(metamanifest, "r+a")
                 self.__exflock(fh)
-                if not file in fh.read():
+                if file not in fh.read():
                     fh.write(file + '\n')
                 self.__unflock(fh)
                 fh.close()
@@ -227,7 +227,7 @@ class CsVmMetadata(CsDataBag):
         if os.path.exists(htaccessFile):
             fh = open(htaccessFile, "r+a")
             self.__exflock(fh)
-            if not entry in fh.read():
+            if entry not in fh.read():
                 fh.write(entry + '\n')
             self.__unflock(fh)
             fh.close()
@@ -239,16 +239,16 @@ class CsVmMetadata(CsDataBag):
             self.__unflock(fh)
             fh.close()
 
-        entry="Options -Indexes\nOrder Deny,Allow\nDeny from all\nAllow from " + ip
+        entry = "Options -Indexes\nOrder Deny,Allow\nDeny from all\nAllow from " + ip
         htaccessFolder = "/var/www/html/" + folder + "/" + ip
         htaccessFile = htaccessFolder+"/.htaccess"
 
         try:
-            os.makedirs(htaccessFolder,0755)
+            os.makedirs(htaccessFolder, 0755)
         except OSError as e:
             # error 17 is already exists, we do it this way for sake of concurrency
             if e.errno != 17:
-                print "failed to make directories " + htaccessFolder + " due to :" +e.strerror
+                print "failed to make directories " + htaccessFolder + " due to :" + e.strerror
                 sys.exit(1)
 
         fh = open(htaccessFile, "w")
@@ -264,13 +264,13 @@ class CsVmMetadata(CsDataBag):
 
             fh = open(htaccessFile, "r+a")
             self.__exflock(fh)
-            if not entry in fh.read():
+            if entry not in fh.read():
                 fh.write(entry + '\n')
 
             entry = "RewriteRule ^meta-data/$  ../" + folder + "/%{REMOTE_ADDR}/meta-data [L,NC,QSA]"
 
             fh.seek(0)
-            if not entry in fh.read():
+            if entry not in fh.read():
                 fh.write(entry + '\n')
             self.__unflock(fh)
             fh.close()
@@ -280,7 +280,7 @@ class CsVmMetadata(CsDataBag):
             flock(file, LOCK_EX)
         except IOError as e:
             print "failed to lock file" + file.name + " due to : " + e.strerror
-            sys.exit(1) #FIXME
+            sys.exit(1)  # FIXME
         return True
 
     def __unflock(self, file):
@@ -288,7 +288,7 @@ class CsVmMetadata(CsDataBag):
             flock(file, LOCK_UN)
         except IOError:
             print "failed to unlock file" + file.name + " due to : " + e.strerror
-            sys.exit(1) #FIXME
+            sys.exit(1)  # FIXME
         return True
 
 
@@ -328,28 +328,32 @@ class CsSite2SiteVpn(CsDataBag):
         logging.info("Removinf VPN configuration for %s", ip)
         CsHelper.execute("ipsec auto --down vpn-%s" % ip)
         CsHelper.execute("ipsec auto --delete vpn-%s" % ip)
-        vpnconffile    = "%s/ipsec.vpn-%s.conf" % (self.VPNCONFDIR, ip)
+        vpnconffile = "%s/ipsec.vpn-%s.conf" % (self.VPNCONFDIR, ip)
         vpnsecretsfile = "%s/ipsec.vpn-%s.secrets" % (self.VPNCONFDIR, ip)
         os.remove(vpnconffile)
         os.remove(vpnsecretsfile)
         CsHelper.execute("ipsec auto --rereadall")
 
     def configure_iptables(self, dev, obj):
-        self.fw.append([ "", "front", "-A INPUT -i %s -p udp -m udp --dport 500 -j ACCEPT" % dev ])
-        self.fw.append([ "", "front", "-A INPUT -i %s -p udp -m udp --dport 4500 -j ACCEPT" % dev ])
-        self.fw.append([ "", "front", "-A INPUT -i %s -p esp -j ACCEPT" % dev ])
-        self.fw.append([ "nat", "front", "-A POSTROUTING -t nat -o %s-m mark --set-xmark 0x525/0xffffffff -j ACCEPT" % dev ])
+        self.fw.append(["", "front", "-A INPUT -i %s -p udp -m udp --dport 500 -j ACCEPT" % dev])
+        self.fw.append(["", "front", "-A INPUT -i %s -p udp -m udp --dport 4500 -j ACCEPT" % dev])
+        self.fw.append(["", "front", "-A INPUT -i %s -p esp -j ACCEPT" % dev])
+        self.fw.append(["nat", "front", "-A POSTROUTING -t nat -o %s-m mark --set-xmark 0x525/0xffffffff -j ACCEPT" % dev])
         for net in obj['peer_guest_cidr_list'].lstrip().rstrip().split(','):
-            self.fw.append([ "mangle", "front", "-A FORWARD -s %s -d %s -j MARK --set-xmark 0x525/0xffffffff" % (obj['local_guest_cidr'], net)])
-            self.fw.append([ "mangle", "", "-A OUTPUT -s %s -d %s -j MARK --set-xmark 0x525/0xffffffff" % (obj['local_guest_cidr'], net)])
-            self.fw.append([ "mangle", "front", "-A FORWARD -s %s -d %s -j MARK --set-xmark 0x524/0xffffffff" % (net, obj['local_guest_cidr'])])
-            self.fw.append([ "mangle", "", "-A INPUT -s %s -d %s -j MARK --set-xmark 0x524/0xffffffff"  % (net, obj['local_guest_cidr']) ])
+            self.fw.append(["mangle", "front",
+                            "-A FORWARD -s %s -d %s -j MARK --set-xmark 0x525/0xffffffff" % (obj['local_guest_cidr'], net)])
+            self.fw.append(["mangle", "",
+                            "-A OUTPUT -s %s -d %s -j MARK --set-xmark 0x525/0xffffffff" % (obj['local_guest_cidr'], net)])
+            self.fw.append(["mangle", "front",
+                            "-A FORWARD -s %s -d %s -j MARK --set-xmark 0x524/0xffffffff" % (net, obj['local_guest_cidr'])])
+            self.fw.append(["mangle", "",
+                            "-A INPUT -s %s -d %s -j MARK --set-xmark 0x524/0xffffffff" % (net, obj['local_guest_cidr'])])
 
     def configure_ipsec(self, obj):
-        leftpeer  = obj['local_public_ip']
+        leftpeer = obj['local_public_ip']
         rightpeer = obj['peer_gateway_ip']
-        peerlist  = obj['peer_guest_cidr_list'].lstrip().rstrip().replace(',', ' ')
-        vpnconffile    = "%s/ipsec.vpn-%s.conf" % (self.VPNCONFDIR, rightpeer)
+        peerlist = obj['peer_guest_cidr_list'].lstrip().rstrip().replace(',', ' ')
+        vpnconffile = "%s/ipsec.vpn-%s.conf" % (self.VPNCONFDIR, rightpeer)
         vpnsecretsfile = "%s/ipsec.vpn-%s.secrets" % (self.VPNCONFDIR, rightpeer)
         if rightpeer in self.confips:
             self.confips.remove(rightpeer)
@@ -390,7 +394,7 @@ class CsSite2SiteVpn(CsDataBag):
         hrs = int(val) / 3600
         return "%sh" % hrs
 
-                
+
 class CsForwardingRules(CsDataBag):
 
     def process(self):
@@ -413,14 +417,13 @@ class CsForwardingRules(CsDataBag):
                 if addy["public_ip"] == ip:
                     return device
         return None
-                    
+
     def portsToString(self, ports, delimiter):
         ports_parts = ports.split(":", 2)
         if ports_parts[0] == ports_parts[1]:
             return str(ports_parts[0])
         else:
             return "%s%s%s" % (port_parts, delimiter, port_parts[1])
-
 
     def processForwardRule(self, rule):
         # FIXME this seems to be different for regular VRs?
@@ -432,21 +435,22 @@ class CsForwardingRules(CsDataBag):
         fwrule += " -j DNAT --to-destination %s" % rule["internal_ip"]
         if not rule["internal_ports"] == "any":
             fwrule += ":" + self.portsToString(rule["internal_ports"], "-")
-        self.fw.append(["nat","",fwrule])
-        
+        self.fw.append(["nat", "", fwrule])
 
     def processStaticNatRule(self, rule):
         # FIXME this needs ordering with the VPN no nat rule
         device = self.getDeviceByIp(rule["public_ip"])
-        if device == None:
+        if device is None:
             raise Exception("Ip address %s has no device in the ips databag" % rule["public_ip"])
-        self.fw.append(["nat","front","-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % ( rule["public_ip"], rule["internal_ip"]) ])
-        self.fw.append(["nat","front","-A POSTROUTING -o %s -s %s/32 -j SNAT --to-source %s" % ( device, rule["internal_ip"], rule["public_ip"]) ])
+        self.fw.append(["nat", "front",
+                        "-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])
+        self.fw.append(["nat", "front",
+                        "-A POSTROUTING -o %s -s %s/32 -j SNAT --to-source %s" % (device, rule["internal_ip"], rule["public_ip"])])
 
 
 def main(argv):
-    config = CsConfig(False) 
-    logging.basicConfig(filename= config.get_logger(),
+    config = CsConfig(False)
+    logging.basicConfig(filename=config.get_logger(),
                         level=config.get_level(),
                         format=config.get_format())
     config.set_cl()

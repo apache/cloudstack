@@ -18,6 +18,7 @@
 import CsHelper
 import logging
 
+
 class CsRule:
     """ Manage iprules
     Supported Types:

@@ -1,5 +1,6 @@
 from pprint import pprint
 
+
 def merge(dbag, cmdline):
     if 'redundant_router' in cmdline['cmd_line']:
         cmdline['cmd_line']['redundant_router'] = "true"
