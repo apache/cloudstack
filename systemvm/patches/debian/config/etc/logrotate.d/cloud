@@ -22,6 +22,6 @@
         compress
         delaycompress
         postrotate
-                pkill socat > /dev/null
+                /usr/bin/pkill socat > /dev/null
         endscript
 }
