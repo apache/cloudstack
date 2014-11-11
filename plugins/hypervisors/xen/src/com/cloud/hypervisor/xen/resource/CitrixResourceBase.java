@@ -5053,8 +5053,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected SetupAnswer execute(SetupCommand cmd) {
         Connection conn = getConnection();
-        setupServer(conn);
         try {
+            Map<Pool, Pool.Record> poolRecs = Pool.getAllRecords(conn);
+            if (poolRecs.size() != 1) {
+                throw new CloudRuntimeException("There are " + poolRecs.size() + " pool for host :" + _host.uuid);
+            }
+            Host master = poolRecs.values().iterator().next().master;
+            setupServer(conn, master);
+            Host host = Host.getByUuid(conn, _host.uuid);
+            setupServer(conn, host);
+
             if (!setIptables(conn)) {
                 s_logger.warn("set xenserver Iptable failed");
                 return null;
@@ -5070,7 +5078,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             cleanupTemplateSR(conn);
-            Host host = Host.getByUuid(conn, _host.uuid);
             try {
                 if (cmd.useMultipath()) {
                     // the config value is set to true
@@ -5177,14 +5184,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     /* return : if setup is needed */
-    protected boolean setupServer(Connection conn) {
+    protected boolean setupServer(Connection conn, Host host) {
         String packageVersion = CitrixResourceBase.class.getPackage().getImplementationVersion();
         String version = this.getClass().getName() + "-" + ( packageVersion == null ? Long.toString(System.currentTimeMillis()) : packageVersion );
 
         try {
-            Host host = Host.getByUuid(conn, _host.uuid);
-            /* enable host in case it is disabled somehow */
-            host.enable(conn);
             /* push patches to XenServer */
             Host.Record hr = host.getRecord(conn);
 
