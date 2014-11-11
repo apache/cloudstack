@@ -108,7 +108,7 @@ public class Connection extends XmlRpcClient {
              * some parameters including hostUser password should not be printed in
              * log
              */
-            LOGGER.debug("Call Ovm3 agent: " + method + " with " + params);
+            LOGGER.debug("Call Ovm3 agent " + hostIp +": " + method + " with " + params);
         }
         long startTime = System.currentTimeMillis();
         try {

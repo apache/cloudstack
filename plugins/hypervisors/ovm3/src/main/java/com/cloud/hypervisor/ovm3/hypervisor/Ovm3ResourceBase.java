@@ -2319,11 +2319,13 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             } catch (Ovm3ResourceException e) {
                 throw e;
             }
-            try {
-                addMembers();
-            } catch (Ovm3ResourceException e) {
-                throw e;
+        }
+        try {
+            if (!addMembers()) {
+                return false;
             }
+        } catch (Ovm3ResourceException e) {
+            throw e;
         }
         return true;
     }
@@ -2335,19 +2337,30 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             Connection m = new Connection(ovm3PoolVip, agentOvsAgentPort,
                     agentOvsAgentUser, agentOvsAgentPassword);
             Pool poolMaster = new Pool(m);
-            members.addAll(poolMaster.getPoolMemberList());
-            if (!members.contains(agentIp)) {
-                members.add(agentIp);
+            if (poolMaster.isInAPool()) {
+                members.addAll(poolMaster.getPoolMemberList());
+                if (!poolMaster.getPoolMemberList().contains(agentIp)) {
+                    members.add(agentIp);
+                }
+            } else {
+                LOGGER.warn(agentIp + " noticed master " + ovm3PoolVip + " is not part of pool");
+                return false;
             }
             for (String member : members) {
                 Connection x = new Connection(member, agentOvsAgentPort,
                        agentOvsAgentUser, agentOvsAgentPassword);
-                final Pool xpool = new Pool(x);
-                xpool.setPoolMemberList(members);
-                LOGGER.debug("Added " + members + " to pool " + xpool.getPoolId() + " on member " + member);
+                Pool poolM = new Pool(x);
+                if (poolM.isInAPool()) {
+                    poolM.setPoolMemberList(members);
+                    LOGGER.debug("Added " + members + " to pool "
+                            + poolM.getPoolId() + " on member " + member);
+                } else {
+                    LOGGER.warn(member + " unable to be member of a pool it's not in");
+                    return false;
+                }
             }
         } catch (Exception e) {
-            throw new Ovm3ResourceException("Unable to add members: ", e);
+            throw new Ovm3ResourceException("Unable to add members: " + e.getMessage(), e);
         }
         return true;
     }
