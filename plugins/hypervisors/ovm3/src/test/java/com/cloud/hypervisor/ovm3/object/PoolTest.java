@@ -1,5 +1,8 @@
 package com.cloud.hypervisor.ovm3.object;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Test;
 
 public class PoolTest {
@@ -8,6 +11,7 @@ public class PoolTest {
     XmlTestResultTest results = new XmlTestResultTest();
 
     private String UUID = "0004fb0000020000ba9aaf00ae5e2d73";
+    private String BOGUSUUID = "deadbeefdeadbeefdeadbeefdeadbeef";
     private String VIP = "192.168.1.230";
     private String ALIAS = "Pool 0";
     private String HOST = "ovm-1";
@@ -41,11 +45,10 @@ public class PoolTest {
                     + "      </Member>"
                     + "    </Member_List>"
                     + "  </Server_Pool>" + "</Discover_Server_Pool_Result>");
-    private String CREATEPOOL = "";
-    private String JOINPOOL = "";
+
 
     @Test
-    public void testDiscoverPool() throws Ovm3ResourceException {
+    public void testDiscoverServerPool() throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(EMPTY));
         results.basicBooleanTest(pool.isInAPool(), false);
         results.basicBooleanTest(pool.isInPool(UUID), false);
@@ -64,16 +67,97 @@ public class PoolTest {
     }
 
     @Test
-    public void testCreatePool() throws Ovm3ResourceException {
-        // pool.createServerPool(ALIAS, UUID, VIP, 1,
-        //        HOST, IP);
+    public void poolMembers() throws Ovm3ResourceException {
+        List<String> poolHosts = new ArrayList<String>();
+        poolHosts.add(IP);
+        poolHosts.add(IP2);
+        con.setResult(results.simpleResponseWrapWrapper(EMPTY));
+        results.basicBooleanTest(pool.getPoolMemberList().contains(IP), false);
+
+        con.setResult(results.simpleResponseWrapWrapper(DISCOVERPOOL));
+        results.basicBooleanTest(pool.discoverServerPool());
+        con.setResult(results.getNil());
+        results.basicBooleanTest(pool.removePoolMember(IP), true);
+        results.basicBooleanTest(pool.addPoolMember(IP), true);
+        results.basicBooleanTest(pool.setPoolMemberList(poolHosts), true);
     }
 
     @Test
-    public void testJoinPool() throws Ovm3ResourceException {
-        //Integer poolsize = 2;
-        //pool.joinServerPool(ALIAS, UUID, VIP, poolsize,
-        //        HOST2, IP2);
+    public void testCreateServerPool() throws Ovm3ResourceException {
+        con.setResult(results.getNil());
+        results.basicBooleanTest(
+                pool.createServerPool(ALIAS, UUID, VIP, 1, HOST, IP), true);
+        con.setResult(results.simpleResponseWrapWrapper(DISCOVERPOOL));
+        results.basicBooleanTest(pool.discoverServerPool());
+        results.basicBooleanTest(
+                pool.createServerPool(ALIAS, UUID, VIP, 1, HOST, IP), true);
+
     }
 
+    @Test(expected = Ovm3ResourceException.class)
+    public void testCreateServerPoolFail1() throws Ovm3ResourceException {
+        con.setResult(results.simpleResponseWrapWrapper(DISCOVERPOOL));
+        results.basicBooleanTest(
+                pool.createServerPool(ALIAS, BOGUSUUID, VIP, 1, HOST, IP),
+                false);
+    }
+
+    @Test(expected = Ovm3ResourceException.class)
+    public void testCreateServerPoolFail2() throws Ovm3ResourceException {
+        con.setResult(results.errorResponseWrap(1,
+                "exceptions.Exception:Repository already exists"));
+        results.basicBooleanTest(
+                pool.createServerPool(ALIAS, UUID, VIP, 1, HOST, IP), false);
+    }
+
+    @Test
+    public void testJoinServerPool() throws Ovm3ResourceException {
+        con.setResult(results.getNil());
+        Integer poolsize = 2;
+        results.basicBooleanTest(
+                pool.joinServerPool(ALIAS, UUID, VIP, poolsize, HOST2, IP2),
+                true);
+        con.setResult(results.simpleResponseWrapWrapper(DISCOVERPOOL));
+        results.basicBooleanTest(pool.discoverServerPool());
+        results.basicBooleanTest(
+                pool.joinServerPool(ALIAS, UUID, VIP, poolsize, HOST2, IP2),
+                true);
+    }
+    @Test(expected = Ovm3ResourceException.class)
+    public void testJoinServerPoolFail1() throws Ovm3ResourceException {
+        Integer poolsize = 2;
+        con.setResult(results.simpleResponseWrapWrapper(DISCOVERPOOL));
+        results.basicBooleanTest(pool.joinServerPool(ALIAS, BOGUSUUID, VIP,
+                poolsize, HOST2, IP2), false);
+    }
+
+    @Test(expected = Ovm3ResourceException.class)
+    public void testJoinServerPoolFail() throws Ovm3ResourceException {
+        con.setResult(results
+                .errorResponseWrap(1,
+                        "exceptions.Exception:Server already a member of pool: "
+                                + UUID));
+        Integer poolsize = 2;
+        results.basicBooleanTest(pool.joinServerPool(ALIAS, UUID, VIP, poolsize,
+                HOST2, IP2), false);
+    }
+
+    @Test
+    public void testValidPoolRoles() throws Ovm3ResourceException {
+        con.setResult(results.getNil());
+        results.basicBooleanTest(pool.setServerRoles(pool.getValidRoles()),
+                true);
+
+    }
+
+    @Test(expected = Ovm3ResourceException.class)
+    public void testValidPoolRolesInvalid() throws Ovm3ResourceException {
+        String broken = "broken_token";
+        con.setResult(results
+                .errorResponseWrap(1,
+                "exceptions.Exception:Invalid roles: set(['xen', '" + broken
+                        + "', 'utility'])"));
+        results.basicBooleanTest(pool.setServerRoles(pool.getValidRoles()),
+                false);
+    }
 }
