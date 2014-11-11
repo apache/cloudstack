@@ -981,13 +981,20 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     // purge sync queue item running on this ms node
                     _queueMgr.cleanupActiveQueueItems(msid, true);
                     // reset job status for all jobs running on this ms node
-                    _jobDao.resetJobProcess(msid, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), "job cancelled because of management server restart or shutdown");
-                    // purge those queue items for those cancelled jobs above, which may not be picked up by any MS node yet
-                    List<AsyncJobVO> cancelJobs = _jobDao.getResetJobs(msid);
-                    for (AsyncJobVO job : cancelJobs){
+                    List<AsyncJobVO> jobs = _jobDao.getResetJobs(msid);
+                    for (AsyncJobVO job : jobs) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Cancel left-over job-" + job.getId());
+                        }
+                        job.setStatus(JobInfo.Status.FAILED);
+                        job.setResultCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
+                        job.setResult("job cancelled because of management server restart or shutdown");
+                        _jobDao.update(job.getId(), job);
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Purge queue item for cancelled job-" + job.getId());
+                        }
                         _queueMgr.purgeAsyncJobQueueItemId(job.getId());
                     }
-
                 }
             });
         } catch (Throwable e) {
