@@ -39,19 +39,19 @@ import CsHelper
 from CsFile import CsFile
 from CsConfig import CsConfig
 
+
 class CsRedundant(object):
 
     CS_RAMDISK_DIR = "/ramdisk"
-    CS_ROUTER_DIR  = "%s/rrouter" % CS_RAMDISK_DIR
+    CS_ROUTER_DIR = "%s/rrouter" % CS_RAMDISK_DIR
     CS_TEMPLATES = [
-            "heartbeat.sh.templ", "check_heartbeat.sh.templ",
-            "arping_gateways.sh.templ"
-            ]
-    CS_TEMPLATES_DIR  = "/opt/cloud/templates"
-    CONNTRACKD_BIN    = "/usr/sbin/conntrackd"
-    CONNTRACKD_LOCK   = "/var/lock/conntrack.lock"
+        "heartbeat.sh.templ", "check_heartbeat.sh.templ",
+        "arping_gateways.sh.templ"
+    ]
+    CS_TEMPLATES_DIR = "/opt/cloud/templates"
+    CONNTRACKD_BIN = "/usr/sbin/conntrackd"
+    CONNTRACKD_LOCK = "/var/lock/conntrack.lock"
     CONNTRACKD_CONFIG = "/etc/conntrackd/conntrackd.conf"
-
 
     def __init__(self, config, address):
         self.cl = config.get_cmdline()
@@ -114,7 +114,7 @@ class CsRedundant(object):
         cron = CsFile("/etc/cron.d/heartbeat")
         cron.add("SHELL=/bin/bash", 0)
         cron.add("PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
-        cron.add("*/1 * * * * root $SHELL %s/check_heartbeat.sh 2>&1 > /dev/null" %  self.CS_ROUTER_DIR, -1)
+        cron.add("*/1 * * * * root $SHELL %s/check_heartbeat.sh 2>&1 > /dev/null" % self.CS_ROUTER_DIR, -1)
         cron.commit()
 
     def set_fault(self):
@@ -166,7 +166,7 @@ class CsRedundant(object):
             return
         ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
         for o in ads:
-            ## cmd2 = "ip link set %s up" % self.getDevice()
+            # cmd2 = "ip link set %s up" % self.getDevice()
             CsHelper.execute("ifconfig %s down" % o.get_device())
             CsHelper.execute("ifconfig %s up" % o.get_device())
             CsHelper.execute("arping -I %s -A %s -c 1" % (o.get_device(), o.get_ip()))
@@ -192,7 +192,7 @@ class CsRedundant(object):
         """
         lines = []
         lines.append("\t\t\tIPv4_address %s\n" % "127.0.0.1")
-        lines.append("\t\t\tIPv4_address %s\n" %  self.address.get_control_if().get_ip())
+        lines.append("\t\t\tIPv4_address %s\n" % self.address.get_control_if().get_ip())
         # FIXME - Do we need to also add any internal network gateways?
         return lines
 

@@ -19,6 +19,7 @@ import logging
 import re
 import copy
 
+
 class CsFile:
     """ File editors """
 
@@ -28,7 +29,7 @@ class CsFile:
 
     def load(self):
         self.new_config = []
-        self.config     = []
+        self.config = []
         try:
             for line in open(self.filename):
                 self.new_config.append(line)
@@ -66,7 +67,7 @@ class CsFile:
         token = string.split('=')[0] + '='
         self.search(token, string)
 
-    def add(self, string, where = -1):
+    def add(self, string, where=-1):
         for index, line in enumerate(self.new_config):
             if line.strip() == string:
                 return
@@ -92,14 +93,14 @@ class CsFile:
         self.new_config = [w.replace(search, replace) for w in self.new_config]
 
     def search(self, search, replace):
-        found   = False
+        found = False
         logging.debug("Searching for %s and replacing with %s" % (search, replace))
         for index, line in enumerate(self.new_config):
             if line.lstrip().startswith("#"):
                 continue
             if re.search(search, line):
                 found = True
-                if not replace in line:
+                if replace not in line:
                     self.new_config[index] = replace + "\n"
         if not found:
-           self.new_config.append(replace + "\n")
+            self.new_config.append(replace + "\n")

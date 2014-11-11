@@ -16,23 +16,24 @@ import cs_site2sitevpn
 
 from pprint import pprint
 
+
 class dataBag:
 
     DPATH = "/etc/cloudstack"
 
     def __init__(self):
-        self.bdata = { }
+        self.bdata = {}
 
     def load(self):
         data = self.bdata
         if not os.path.exists(self.DPATH):
-           os.makedirs(self.DPATH)
+            os.makedirs(self.DPATH)
         self.fpath = self.DPATH + '/' + self.key + '.json'
         try:
             handle = open(self.fpath)
         except IOError:
             logging.debug("Creating data bag type %s", self.key)
-            data.update( { "id": self.key } )
+            data.update({"id": self.key})
         else:
             logging.debug("Loading data bag type %s",  self.key)
             data = json.load(handle)
@@ -55,61 +56,62 @@ class dataBag:
     def setKey(self, key):
         self.key = key
 
+
 class updateDataBag:
 
     DPATH = "/etc/cloudstack"
 
-    def __init__(self,qFile):
+    def __init__(self, qFile):
         self.qFile = qFile
         self.fpath = ''
         self.bdata = {}
         self.process()
 
     def process(self):
-       self.db = dataBag()
-       if ( self.qFile.type == "staticnatrules" or self.qFile.type == "forwardrules"):
+        self.db = dataBag()
+        if (self.qFile.type == "staticnatrules" or self.qFile.type == "forwardrules"):
             self.db.setKey("forwardingrules")
-       else:
-           self.db.setKey( self.qFile.type )
-       dbag = self.db.load( )
-       logging.info("Command of type %s received", self.qFile.type)
+        else:
+            self.db.setKey(self.qFile.type)
+        dbag = self.db.load()
+        logging.info("Command of type %s received", self.qFile.type)
 
-       if self.qFile.type == 'ips':
-          dbag = self.processIP(self.db.getDataBag())
-       elif self.qFile.type == 'guestnetwork':
-          dbag = self.processGuestNetwork(self.db.getDataBag())
-       elif self.qFile.type == 'cmdline':
-          dbag = self.processCL(self.db.getDataBag())
-       elif self.qFile.type == 'vmpassword':
-          dbag = self.processVMpassword(self.db.getDataBag())
-       elif self.qFile.type == 'networkacl':
-          dbag = self.process_network_acl(self.db.getDataBag())
-       elif self.qFile.type == 'vmdata':
-          dbag = self.processVmData(self.db.getDataBag())
-       elif self.qFile.type == 'dhcpentry':
-          dbag = self.process_dhcp_entry(self.db.getDataBag())
-       elif self.qFile.type == 'staticnatrules' or self.qFile.type == 'forwardrules':
-          dbag = self.processForwardingRules(self.db.getDataBag())
-       elif self.qFile.type == 'site2sitevpn':
-          dbag = self.process_site2sitevpn(self.db.getDataBag())
-       else:
-          logging.error("Error I do not know what to do with file of type %s", self.qFile.type)
-          return
-       self.db.save(dbag)
-  
+        if self.qFile.type == 'ips':
+            dbag = self.processIP(self.db.getDataBag())
+        elif self.qFile.type == 'guestnetwork':
+            dbag = self.processGuestNetwork(self.db.getDataBag())
+        elif self.qFile.type == 'cmdline':
+            dbag = self.processCL(self.db.getDataBag())
+        elif self.qFile.type == 'vmpassword':
+            dbag = self.processVMpassword(self.db.getDataBag())
+        elif self.qFile.type == 'networkacl':
+            dbag = self.process_network_acl(self.db.getDataBag())
+        elif self.qFile.type == 'vmdata':
+            dbag = self.processVmData(self.db.getDataBag())
+        elif self.qFile.type == 'dhcpentry':
+            dbag = self.process_dhcp_entry(self.db.getDataBag())
+        elif self.qFile.type == 'staticnatrules' or self.qFile.type == 'forwardrules':
+            dbag = self.processForwardingRules(self.db.getDataBag())
+        elif self.qFile.type == 'site2sitevpn':
+            dbag = self.process_site2sitevpn(self.db.getDataBag())
+        else:
+            logging.error("Error I do not know what to do with file of type %s", self.qFile.type)
+            return
+        self.db.save(dbag)
+
     def processGuestNetwork(self, dbag):
         d = self.qFile.data
         dp = {}
-        dp['public_ip']      = d['router_guest_ip']
-        dp['netmask']        = d['router_guest_netmask']
-        dp['source_nat']     = False
-        dp['add']            = d['add']
+        dp['public_ip'] = d['router_guest_ip']
+        dp['netmask'] = d['router_guest_netmask']
+        dp['source_nat'] = False
+        dp['add'] = d['add']
         dp['one_to_one_nat'] = False
-        dp['gateway']        = d['router_guest_gateway']
-        dp['nic_dev_id']     = d['device'][3]
-        dp['nw_type']        = 'guest'
+        dp['gateway'] = d['router_guest_gateway']
+        dp['nic_dev_id'] = d['device'][3]
+        dp['nw_type'] = 'guest'
         qf = loadQueueFile()
-        qf.load({ 'ip_address' : [ dp ], 'type' : 'ips'})
+        qf.load({'ip_address': [dp], 'type': 'ips'})
         if 'domain_name' not in d.keys() or d['domain_name'] == '':
             d['domain_name'] = "cloudnine.internal"
         return cs_guestnetwork.merge(dbag, self.qFile.data)
@@ -150,26 +152,27 @@ class updateDataBag:
 
     def processCLItem(self, num, nw_type):
         key = 'eth' + num + 'ip'
-        dp  = {}
+        dp = {}
         if(key in self.qFile.data['cmd_line']):
-           dp['public_ip']    = self.qFile.data['cmd_line'][key]
-           dp['netmask'] = self.qFile.data['cmd_line']['eth' + num + 'mask']
-           dp['source_nat'] = False
-           dp['add'] = True
-           dp['one_to_one_nat'] = False
-           if('localgw' in self.qFile.data['cmd_line']):
-               dp['gateway'] = self.qFile.data['cmd_line']['localgw']
-           else:
-               dp['gateway'] = 'None'
-           dp['nic_dev_id'] = num
-           dp['nw_type']    = nw_type
-           qf = loadQueueFile()
-           qf.load({ 'ip_address' : [ dp ], 'type' : 'ips'})
+            dp['public_ip'] = self.qFile.data['cmd_line'][key]
+            dp['netmask'] = self.qFile.data['cmd_line']['eth' + num + 'mask']
+            dp['source_nat'] = False
+            dp['add'] = True
+            dp['one_to_one_nat'] = False
+            if('localgw' in self.qFile.data['cmd_line']):
+                dp['gateway'] = self.qFile.data['cmd_line']['localgw']
+            else:
+                dp['gateway'] = 'None'
+            dp['nic_dev_id'] = num
+            dp['nw_type'] = nw_type
+            qf = loadQueueFile()
+            qf.load({'ip_address': [dp], 'type': 'ips'})
 
     def processVmData(self, dbag):
         cs_vmdata.merge(dbag, self.qFile.data)
         return dbag
-            
+
+
 class loadQueueFile:
 
     fileName = ''
@@ -203,9 +206,9 @@ class loadQueueFile:
 
     def getType(self):
         return self.type
-    
+
     def getData(self):
-        return self.data 
+        return self.data
 
     def setPath(self, path):
         self.configCache = path
@@ -215,4 +218,3 @@ class loadQueueFile:
             os.makedirs(path)
         timestamp = str(int(round(time.time())))
         os.rename(origPath, path + "/" + self.fileName + "." + timestamp)
-

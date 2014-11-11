@@ -35,8 +35,8 @@ parser.add_option("-f", "--fault",
                   help="Notify Fault")
 (options, args) = parser.parse_args()
 
-config = CsConfig(False) 
-logging.basicConfig(filename= config.get_logger(),
+config = CsConfig(False)
+logging.basicConfig(filename=config.get_logger(),
                     level=config.get_level(),
                     format=config.get_format())
 config.set_cl()

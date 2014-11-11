@@ -21,12 +21,14 @@ from CsFile import CsFile
 from CsProcess import CsProcess
 import CsHelper
 
+
 class CsApp:
     def __init__(self, ip):
-        self.dev     = ip.getDevice()
-        self.ip      = ip.get_ip_address()
-        self.type    = ip.get_type()
+        self.dev = ip.getDevice()
+        self.ip = ip.get_ip_address()
+        self.type = ip.get_type()
         self.fw = ip.fw
+
 
 class CsApache(CsApp):
     """ Set up Apache """
@@ -37,10 +39,9 @@ class CsApache(CsApp):
             os.remove(file)
             CsHelper.service("apache2", "restart")
 
-
     def setup(self):
         CsHelper.copy_if_needed("/etc/apache2/vhostexample.conf",
-                                  "/etc/apache2/conf.d/vhost%s.conf" % self.dev)
+                                "/etc/apache2/conf.d/vhost%s.conf" % self.dev)
 
         file = CsFile("/etc/apache2/conf.d/vhost%s.conf" % (self.dev))
         file.search("<VirtualHost.*:80>", "\t<VirtualHost %s:80>" % (self.ip))
@@ -54,8 +55,9 @@ class CsApache(CsApp):
             CsHelper.service("apache2", "restart")
 
         self.fw.append(["", "front",
-            "-A INPUT -i %s -d %s/32 -p tcp -m tcp -m state --state NEW --dport 80 -j ACCEPT" % (self.dev, self.ip)
-        ])
+                        "-A INPUT -i %s -d %s/32 -p tcp -m tcp -m state --state NEW --dport 80 -j ACCEPT" % (self.dev, self.ip)
+                        ])
+
 
 class CsPasswdSvc(CsApp):
     """
@@ -64,8 +66,8 @@ class CsPasswdSvc(CsApp):
 
     def setup(self):
         self.fw.append(["", "front",
-            "-A INPUT -i %s -d %s/32 -p tcp -m tcp -m state --state NEW --dport 8080 -j ACCEPT" % (self.dev, self.ip)
-        ])
+                        "-A INPUT -i %s -d %s/32 -p tcp -m tcp -m state --state NEW --dport 8080 -j ACCEPT" % (self.dev, self.ip)
+                        ])
 
         proc = CsProcess(['/opt/cloud/bin/vpc_passwd_server', self.ip])
         if not proc.find():
@@ -76,18 +78,16 @@ class CsDnsmasq(CsApp):
     """ Set up dnsmasq """
 
     def add_firewall_rules(self):
-        """ Add the necessary firewall rules 
+        """ Add the necessary firewall rules
         """
         self.fw.append(["", "front",
-            "-A INPUT -i %s -p udp -m udp --dport 67 -j ACCEPT" % self.dev
-        ])
+                        "-A INPUT -i %s -p udp -m udp --dport 67 -j ACCEPT" % self.dev
+                        ])
 
         self.fw.append(["", "front",
-            "-A INPUT -i %s -d %s/32 -p udp -m udp --dport 53 -j ACCEPT" % (self.dev, self.ip)
-        ])
+                        "-A INPUT -i %s -d %s/32 -p udp -m udp --dport 53 -j ACCEPT" % (self.dev, self.ip)
+                        ])
 
         self.fw.append(["", "front",
-            "-A INPUT -i %s -d %s/32 -p tcp -m tcp --dport 53 -j ACCEPT" % ( self.dev, self.ip )
-        ])
-
-
+                        "-A INPUT -i %s -d %s/32 -p tcp -m tcp --dport 53 -j ACCEPT" % (self.dev, self.ip)
+                        ])

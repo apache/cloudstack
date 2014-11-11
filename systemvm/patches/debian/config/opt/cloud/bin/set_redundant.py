@@ -19,7 +19,7 @@
 
 # This file is used by the tests to switch the redundancy status
 
-from cs.CsConfig  import CsConfig
+from cs.CsConfig import CsConfig
 from optparse import OptionParser
 import logging
 
@@ -33,8 +33,8 @@ parser.add_option("-d", "--disable",
 
 (options, args) = parser.parse_args()
 
-config = CsConfig(False) 
-logging.basicConfig(filename= config.get_logger(),
+config = CsConfig(False)
+logging.basicConfig(filename=config.get_logger(),
                     level=config.get_level(),
                     format=config.get_format())
 config.set_cl()

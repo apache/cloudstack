@@ -1,5 +1,6 @@
 from pprint import pprint
 
+
 def merge(dbag, rules):
     for rule in rules["rules"]:
         source_ip = rule["source_ip_address"]
@@ -17,10 +18,10 @@ def merge(dbag, rules):
             newrule["public_ports"] = rule["source_port_range"]
             newrule["internal_ports"] = rule["destination_port_range"]
             newrule["protocol"] = rule["protocol"]
-        
+
         if not revoke:
             if rules["type"] == "staticnatrules":
-                dbag[source_ip] = [ newrule ]
+                dbag[source_ip] = [newrule]
             elif rules["type"] == "forwardrules":
                 index = -1
                 if source_ip in dbag.keys():
@@ -32,7 +33,7 @@ def merge(dbag, rules):
                     else:
                         dbag[source_ip].append(newrule)
                 else:
-                    dbag[source_ip] = [ newrule ]
+                    dbag[source_ip] = [newrule]
         else:
             if rules["type"] == "staticnatrules":
                 if source_ip in dbag.keys():
@@ -47,8 +48,8 @@ def merge(dbag, rules):
                     if not index == -1:
                         del dbag[source_ip][index]
 
-
     return dbag
+
 
 # Compare function checks only the public side, those must be equal the internal details could change
 def ruleCompare(ruleA, ruleB):
@@ -57,4 +58,5 @@ def ruleCompare(ruleA, ruleB):
     if ruleA["type"] == "staticnat":
         return ruleA["public_ip"] == ruleB["public_ip"]
     elif ruleA["type"] == "forward":
-        return ruleA["public_ip"] == ruleB["public_ip"] and ruleA["public_ports"] == ruleB["public_ports"] and ruleA["protocol"] == ruleB["protocol"]
+        return ruleA["public_ip"] == ruleB["public_ip"] and ruleA["public_ports"] == ruleB["public_ports"] \
+            and ruleA["protocol"] == ruleB["protocol"]
