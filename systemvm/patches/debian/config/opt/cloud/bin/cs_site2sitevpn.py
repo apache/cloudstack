@@ -17,9 +17,10 @@
 # under the License.
 from pprint import pprint
 
+
 def merge(dbag, vpn):
     key = vpn['local_public_ip']
-    op  = vpn['create']
+    op = vpn['create']
     if key in dbag.keys() and not op:
         del(dbag[key])
     else:

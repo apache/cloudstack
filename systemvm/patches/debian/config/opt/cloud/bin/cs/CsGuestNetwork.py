@@ -17,6 +17,7 @@
 from merge import dataBag
 import CsHelper
 
+
 class CsGuestNetwork:
     def __init__(self, device):
         self.data = {}
@@ -26,9 +27,9 @@ class CsGuestNetwork:
         db.load()
         dbag = db.getDataBag()
         if device in dbag.keys() and len(dbag[device]) != 0:
-           self.data = dbag[device][0]
+            self.data = dbag[device][0]
         else:
-           self.guest = False
+            self.guest = False
 
     def is_guestnetwork(self):
         return self.guest

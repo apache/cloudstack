@@ -18,6 +18,7 @@
 import CsHelper
 import logging
 
+
 class CsRoute:
     """ Manage routes """
 
@@ -35,13 +36,13 @@ class CsRoute:
         CsHelper.execute("ip route flush table %s" % (self.table))
         CsHelper.execute("ip route flush cache")
 
-    def add(self, address, method = "add"):
+    def add(self, address, method="add"):
         # ip route show dev eth1 table Table_eth1 10.0.2.0/24
         if(method == "add"):
             cmd = "dev %s table %s %s" % (self.dev, self.table, address['network'])
             self.set_route(cmd, method)
 
-    def set_route(self, cmd, method = "add"):
+    def set_route(self, cmd, method="add"):
         """ Add a route is it is not already defined """
         found = False
         for i in CsHelper.execute("ip route show " + cmd):

@@ -20,6 +20,7 @@ from pprint import pprint
 from CsDatabag import CsDataBag, CsCmdLine
 import logging
 
+
 class CsChain(object):
 
     def __init__(self):
@@ -27,8 +28,8 @@ class CsChain(object):
         self.last_added = ''
 
     def add(self, table, chain):
-        if not table in self.chain.keys():
-            self.chain.setdefault(table, []).append( chain )
+        if table not in self.chain.keys():
+            self.chain.setdefault(table, []).append(chain)
         else:
             self.chain[table].append(chain)
         self.last_added = chain
@@ -40,11 +41,12 @@ class CsChain(object):
         return self.last_added
 
     def has_chain(self, table, chain):
-        if not table in self.chain.keys():
+        if table not in self.chain.keys():
             return False
-        if not chain in self.chain[table]:
+        if chain not in self.chain[table]:
             return False
         return True
+
 
 class CsTable(object):
 
@@ -53,7 +55,7 @@ class CsTable(object):
         self.last_added = ''
 
     def add(self, name):
-        if not name in self.table:
+        if name not in self.table:
             self.table.append(name)
             self.last_added = name
 
@@ -63,9 +65,10 @@ class CsTable(object):
     def last(self):
         return self.last_added
 
+
 class CsNetfilters(object):
 
-    def __init__(self, load = True):
+    def __init__(self, load=True):
         self.rules = []
         self.table = CsTable()
         self.chain = CsChain()
@@ -74,17 +77,17 @@ class CsNetfilters(object):
 
     def get_all_rules(self):
         for i in CsHelper.execute("iptables-save"):
-            if i.startswith('*'): # Table
+            if i.startswith('*'):  # Table
                 self.table.add(i[1:])
-            if i.startswith(':'): # Chain
+            if i.startswith(':'):  # Chain
                 self.chain.add(self.table.last(), i[1:].split(' ')[0])
-            if i.startswith('-A'): # Rule
+            if i.startswith('-A'):  # Rule
                 rule = CsNetfilter()
                 rule.parse(i)
                 rule.set_table(self.table.last())
                 self.save(rule)
 
-    def save(self,rule):
+    def save(self, rule):
         self.rules.append(rule)
 
     def get(self):
@@ -108,7 +111,7 @@ class CsNetfilters(object):
         for r in del_list:
             cmd = "iptables -t %s %s" % (r.get_table(), r.to_str(True))
             CsHelper.execute(cmd)
-            #print "Delete rule %s from table %s" % (r.to_str(True), r.get_table())
+            # print "Delete rule %s from table %s" % (r.to_str(True), r.get_table())
             logging.info("Delete rule %s from table %s", r.to_str(True), r.get_table())
 
     def compare(self, list):
@@ -125,7 +128,7 @@ class CsNetfilters(object):
             if self.has_rule(new_rule):
                 logging.debug("rule %s exists in table %s", fw[2], new_rule.get_table())
             else:
-                #print "Add rule %s in table %s" % ( fw[2], new_rule.get_table())
+                # print "Add rule %s in table %s" % ( fw[2], new_rule.get_table())
                 logging.info("Add rule %s in table %s", fw[2], new_rule.get_table())
                 # front means insert instead of append
                 cpy = fw[2]
@@ -136,15 +139,14 @@ class CsNetfilters(object):
         self.del_standard()
         self.get_unseen()
 
-
     def add_chain(self, rule):
         """ Add the given chain if it is not already present """
         if not self.has_chain(rule.get_table(), rule.get_chain()):
-           CsHelper.execute("iptables -t %s -N %s" % (rule.get_table(), rule.get_chain()))
-           self.chain.add(rule.get_table(), rule.get_chain())
+            CsHelper.execute("iptables -t %s -N %s" % (rule.get_table(), rule.get_chain()))
+            self.chain.add(rule.get_table(), rule.get_chain())
 
     def del_standard(self):
-        """ Del rules that are there but should not be deleted 
+        """ Del rules that are there but should not be deleted
         These standard firewall rules vary according to the device type
         """
         type = CsCmdLine("cmdline").get_type()
@@ -152,9 +154,9 @@ class CsNetfilters(object):
         try:
             table = ''
             for i in open("/etc/iptables/iptables-%s" % type):
-                if i.startswith('*'): # Table
+                if i.startswith('*'):  # Table
                     table = i[1:].strip()
-                if i.startswith('-A'): # Rule
+                if i.startswith('-A'):  # Rule
                     self.del_rule(table, i.strip())
         except IOError:
             # Nothing can be done
@@ -171,19 +173,20 @@ class CsNetfilters(object):
         The rule will not actually be removed on the host """
         self.rules[:] = [x for x in self.rules if not x == rule]
 
+
 class CsNetfilter(object):
-     
+
     def __init__(self):
         self.rule = {}
         self.table = ''
         self.chain = ''
-        self.seen  = False
+        self.seen = False
 
     def parse(self, rule):
         self.rule = self.__convert_to_dict(rule)
 
     def unseen(self):
-        return self.seen == False
+        return self.seen is False
 
     def mark_seen(self):
         self.seen = True
@@ -200,7 +203,7 @@ class CsNetfilter(object):
         rule = rule.replace('-m state', '-m2 state')
         rule = rule.replace('ESTABLISHED,RELATED', 'RELATED,ESTABLISHED')
         bits = rule.split(' ')
-        rule = dict(zip(bits[0::2],bits[1::2]))
+        rule = dict(zip(bits[0::2], bits[1::2]))
         if "-A" in rule.keys():
             self.chain = rule["-A"]
         return rule
@@ -222,12 +225,12 @@ class CsNetfilter(object):
     def get_rule(self):
         return self.rule
 
-    def to_str(self, delete = False):
+    def to_str(self, delete=False):
         """ Convert the rule back into aynactically correct iptables command """
-        # Order is important 
-        order = ['-A', '-s', '-d', '!_-d', '-i', '!_-i', '-p', '-m', '-m2', '--icmp-type', '--state', 
-                '--dport', '--destination-port', '-o', '!_-o', '-j', '--set-xmark', '--checksum',
-                 '--to-source', '--to-destination', '--mark' ]
+        # Order is important
+        order = ['-A', '-s', '-d', '!_-d', '-i', '!_-i', '-p', '-m', '-m2', '--icmp-type', '--state',
+                 '--dport', '--destination-port', '-o', '!_-o', '-j', '--set-xmark', '--checksum',
+                 '--to-source', '--to-destination', '--mark']
         str = ''
         for k in order:
             if k in self.rule.keys():
@@ -245,22 +248,11 @@ class CsNetfilter(object):
     def __eq__(self, rule):
         if rule.get_table() != self.get_table():
             return False
-        #if '-j' in self.get_rule().keys() and self.get_rule()['-j'] == "MARK" and self.get_rule()['--set-xmark'] == '0x524/0xffffffff' and \
-                #'-j' in rule.get_rule().keys() and rule.get_rule()['-j'] == "MARK" and rule.get_rule()['--set-xmark'] == '0x524/0xffffffff':
-            #pprint(self.get_rule())
-            #pprint(rule.get_rule())
-            #pprint(self.get_chain())
-            #pprint(rule.get_chain())
         if rule.get_chain() != self.get_chain():
             return False
         if len(rule.get_rule().items()) != len(self.get_rule().items()):
             return False
         common = set(rule.get_rule().items()) & set(self.get_rule().items())
-        #if '-j' in self.get_rule().keys() and self.get_rule()['-j'] == "MARK" and self.get_rule()['--set-xmark'] == '0x524/0xffffffff':
-            #pprint(self.get_rule())
-            #pprint(rule.get_rule())
-            #pprint(common)
         if len(common) != len(rule.get_rule()):
             return False
         return True
-

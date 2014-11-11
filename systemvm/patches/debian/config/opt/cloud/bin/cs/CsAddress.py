@@ -24,7 +24,8 @@ import subprocess
 from CsRoute import CsRoute
 from CsRule import CsRule
 
-VRRP_TYPES =  [ 'guest', 'public' ]
+VRRP_TYPES = ['guest', 'public']
+
 
 class CsAddress(CsDataBag):
 
@@ -42,7 +43,7 @@ class CsAddress(CsDataBag):
                 ret.append(CsInterface(ip))
         return ret
 
-    def needs_vrrp(self,o):
+    def needs_vrrp(self, o):
         """
         Returns if the ip needs to be managed by keepalived or not
         """
@@ -76,7 +77,7 @@ class CsAddress(CsDataBag):
                     logging.info("Address %s on device %s not configured", ip.ip(), dev)
                     if CsDevice(dev, self.config).waitfordevice():
                         ip.configure()
-                # This could go one level up but the ip type is stored in the 
+                # This could go one level up but the ip type is stored in the
                 # ip address object and not in the device object
                 # Call only once
                 if addcnt == 0:
@@ -106,6 +107,7 @@ class CsAddress(CsDataBag):
             self.fw.append(["mangle", "", "-A FORWARD -j VPN_STATS_%s" % dev])
             self.fw.append(["mangle", "", "-A VPN_STATS_%s -o %s -m mark --set-xmark 0x525/0xffffffff" % (dev, dev)])
             self.fw.append(["mangle", "", "-A VPN_STATS_%s -i %s -m mark --set-xmark 0x524/0xffffffff" % (dev, dev)])
+
 
 class CsInterface:
     """ Hold one single ip """
@@ -139,12 +141,13 @@ class CsInterface:
         return False
 
     def is_control(self):
-        if "nw_type" in self.address and self.address['nw_type'] in [ 'control' ]:
+        if "nw_type" in self.address and self.address['nw_type'] in ['control']:
             return True
         return False
 
     def to_str(self):
         pprint(self.address)
+
 
 class CsDevice:
     """ Configure Network Devices """
@@ -175,9 +178,8 @@ class CsDevice:
         for line in open('/proc/net/dev'):
             vals = line.lstrip().split(':')
             if (not vals[0].startswith("eth")):
-                 continue
+                continue
             self.devlist.append(vals[0])
-
 
     def waitfordevice(self):
         """ Wait up to 15 seconds for a device to become available """
@@ -187,13 +189,12 @@ class CsDevice:
                 return True
             time.sleep(1)
             count += 1
-            self.buildlist();
+            self.buildlist()
         logging.error("Device %s cannot be configured - device was not found", self.dev)
         return False
 
     def list(self):
         return self.devlist
-
 
 
 class CsIP:
@@ -221,7 +222,7 @@ class CsIP:
 
     def post_configure(self):
         """ The steps that must be done after a device is configured """
-        if not self.get_type() in [ "control" ]:
+        if not self.get_type() in ["control"]:
             route = CsRoute(self.dev)
             route.routeTable()
             CsRule(self.dev).addMark()
@@ -245,7 +246,7 @@ class CsIP:
 
     def set_mark(self):
         cmd = "-A PREROUTING -i %s -m state --state NEW -j CONNMARK --set-xmark 0x%s/0xffffffff" % \
-        (self.getDevice(), self.getDevice()[3])
+              (self.getDevice(), self.getDevice()[3])
         self.fw.append(["mangle", "", cmd])
 
     def get_type(self):
@@ -259,7 +260,7 @@ class CsIP:
         return "unknown"
 
     def get_ip_address(self):
-        """ 
+        """
         Return ip address if known
         """
         if "public_ip" in self.address:
@@ -271,40 +272,41 @@ class CsIP:
         route.routeTable()
         route.add(self.address, method)
         # On deletion nw_type will no longer be known
-        if self.get_type() in [ "guest" ]:
+        if self.get_type() in ["guest"]:
             devChain = "ACL_INBOUND_%s" % (self.dev)
             CsDevice(self.dev, self.config).configure_rp()
 
-            self.fw.append(["nat", "front", 
-            "-A POSTROUTING -s %s -o %s -j SNAT --to-source %s" % \
-            (self.address['network'], self.dev, self.address['public_ip'])
-            ])
+            self.fw.append(["nat", "front",
+                            "-A POSTROUTING -s %s -o %s -j SNAT --to-source %s" %
+                           (self.address['network'], self.dev,
+                            self.address['public_ip'])
+                            ])
             self.fw.append(["mangle", "front", "-A %s -j ACCEPT" % devChain])
 
-            self.fw.append(["", "front", 
-            "-A FORWARD -o %s -d %s -j %s" % (self.dev, self.address['network'], devChain)
-            ])
+            self.fw.append(["", "front",
+                            "-A FORWARD -o %s -d %s -j %s" % (self.dev, self.address['network'], devChain)
+                            ])
             self.fw.append(["", "", "-A %s -j DROP" % devChain])
-            self.fw.append(["mangle", "", 
-               "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j %s" % \
-               (self.dev, self.address['network'], self.address['public_ip'], devChain)
-            ])
+            self.fw.append(["mangle", "",
+                            "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j %s" %
+                            (self.dev, self.address['network'], self.address['public_ip'], devChain)
+                            ])
             dns = CsDnsmasq(self)
             dns.add_firewall_rules()
             app = CsApache(self)
             app.setup()
             pwdsvc = CsPasswdSvc(self).setup()
         elif self.get_type() == "public":
-            if self.address["source_nat"] == True:
+            if self.address["source_nat"]:
                 if self.cl.get_type() == "vpcrouter":
                     vpccidr = self.cl.get_vpccidr()
                     self.fw.append(["filter", "", "-A FORWARD -s %s ! -d %s -j ACCEPT" % (vpccidr, vpccidr)])
-                    self.fw.append(["nat","","-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
+                    self.fw.append(["nat", "", "-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
                 elif self.cl.get_type() == "router":
                     logging.error("Not able to setup sourcenat for a regular router yet")
                 else:
                     logging.error("Unable to process source nat configuration for router of type %s" % type)
-        #route.flush()
+        # route.flush()
 
     def list(self):
         self.iplist = {}
@@ -342,7 +344,7 @@ class CsIP:
 
     # Delete any ips that are configured but not in the bag
     def compare(self, bag):
-        if len(self.iplist) > 0 and (not self.dev in bag.keys() or len(bag[self.dev]) == 0):
+        if len(self.iplist) > 0 and (self.dev not in bag.keys() or len(bag[self.dev]) == 0):
             # Remove all IPs on this device
             logging.info("Will remove all configured addresses on device %s", self.dev)
             self.delete("all")
@@ -351,7 +353,7 @@ class CsIP:
 
         # This condition should not really happen but did :)
         # It means an apache file got orphaned after a guest network address was deleted
-        if len(self.iplist) == 0 and (not self.dev in bag.keys() or len(bag[self.dev]) == 0):
+        if len(self.iplist) == 0 and (self.dev not in bag.keys() or len(bag[self.dev]) == 0):
             app = CsApache(self)
             app.remove()
 
@@ -378,6 +380,7 @@ class CsIP:
             logging.info("Removed address %s from device %s", ip, self.dev)
             self.post_config_change("delete")
 
+
 class CsRpsrfs:
     """ Configure rpsrfs if there is more than one cpu """
 
@@ -385,9 +388,11 @@ class CsRpsrfs:
         self.dev = dev
 
     def enable(self):
-        if not self.inKernel(): return
+        if not self.inKernel():
+            return
         cpus = self.cpus()
-        if cpus < 2: return
+        if cpus < 2:
+            return
         val = format((1 << cpus) - 1, "x")
         filename = "/sys/class/net/%s/queues/rx-0/rps_cpus" % (self.dev)
         CsHelper.updatefile(filename, val, "w+")
@@ -409,7 +414,9 @@ class CsRpsrfs:
     def cpus(self):
         count = 0
         for line in open('/proc/cpuinfo'):
-            if "processor" not in line: continue
+            if "processor" not in line:
+                continue
             count += 1
-        if count < 2: logging.debug("Single CPU machine")
+        if count < 2:
+            logging.debug("Single CPU machine")
         return count

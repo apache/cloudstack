@@ -19,15 +19,16 @@
 from CsDatabag import CsCmdLine
 import logging
 
+
 class CsConfig(object):
     """
-    A class to cache all the stuff that the other classes need 
+    A class to cache all the stuff that the other classes need
     """
-    __LOG_FILE     = "/var/log/cloud.log"
-    __LOG_LEVEL    = "DEBUG"
-    __LOG_FORMAT   = "%(asctime)s %(levelname)-8s %(message)s"
+    __LOG_FILE = "/var/log/cloud.log"
+    __LOG_LEVEL = "DEBUG"
+    __LOG_FORMAT = "%(asctime)s %(levelname)-8s %(message)s"
 
-    def __init__(self, load = False):
+    def __init__(self, load=False):
         if load:
             self.cl = self_set_cl()
         self.fw = []
@@ -55,18 +56,18 @@ class CsConfig(object):
 
     def get_ingress_chain(self, device, ip):
         if self.is_vpc:
-           return "ACL_INBOUND_%s" % device
+            return "ACL_INBOUND_%s" % device
         else:
-           return "FIREWALL_" % ip
+            return "FIREWALL_" % ip
 
     def get_egress_chain(self, device, ip):
         if self.is_vpc:
-           return "ACL_OUTBOUND_%s" % device
+            return "ACL_OUTBOUND_%s" % device
         else:
-           return "FW_EGRESS_RULES"
+            return "FW_EGRESS_RULES"
 
     def get_egress_table(self):
         if self.is_vpc:
             return 'mangle'
         else:
-            return "";
+            return ""
