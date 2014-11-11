@@ -1478,9 +1478,7 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
         }
         return vmName;
     }
-
-var dictionary = {}, dictionary2 = {}; //for globalization
-    
+  
 var timezoneMap = new Object();
 timezoneMap["Etc/GMT+12"] = "Etc/GMT+12 [GMT-12:00]";
 timezoneMap["Etc/GMT+11"] = "Etc/GMT+11 [GMT-11:00]";
