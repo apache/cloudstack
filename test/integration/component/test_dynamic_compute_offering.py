@@ -423,6 +423,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
     def setUpClass(cls):
         cloudstackTestClient = super(TestScaleVmDynamicServiceOffering,cls).getClsTestClient()
         cls.api_client = cloudstackTestClient.getApiClient()
+        cls.hypervisor = cloudstackTestClient.getHypervisorInfo()
 
         # Fill services from the external config file
         cls.services = cloudstackTestClient.getParsedTestDataConfig()
@@ -438,7 +439,23 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
+
         cls._cleanup = []
+        cls.serviceOffering_static_1 = ServiceOffering.create(cls.api_client,
+                                                 cls.services["service_offering"])
+        cls._cleanup.append(cls.serviceOffering_static_1)
+
+        if cls.hypervisor.lower() == "vmware":
+            virtual_machine = VirtualMachine.create(cls.api_client,cls.services["virtual_machine"],
+                serviceofferingid=cls.serviceOffering_static_1.id, mode=cls.zone.networktype)
+            cls._cleanup.append(virtual_machine)
+            sshClient = virtual_machine.get_ssh_client()
+            result = str(
+                sshClient.execute("service vmware-tools status")).lower()
+            if not "running" in result:
+                cls.tearDownClass()
+                raise unittest.SkipTest("Skipping scale VM operation because\
+                    VMware tools are not installed on the VM")
         return
 
     @classmethod
