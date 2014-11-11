@@ -407,13 +407,10 @@
         // Localization
         if (!$.isFunction(cloudStack.localizationFn)) { // i.e., localize is overridden by a plugin/module
             cloudStack.localizationFn = function(str) {
-                return dictionary[str];
+                // look in dictionary first; if not found, try dictionary2
+                var localized = dictionary[str];
+                return localized ? localized : dictionary2[str]; 
             };
-        }
-        
-        //added for dictionary split up
-        if (dictionary != undefined && dictionary2 != undefined) {
-            $.extend(dictionary,dictionary2);
         }
 
         // Localize validation messages
