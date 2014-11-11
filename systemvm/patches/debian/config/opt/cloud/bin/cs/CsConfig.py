@@ -47,26 +47,26 @@ class CsConfig(object):
     def get_level(self):
         return self.__LOG_LEVEL
 
-	def is_vpc(self):
-		return self.cl.get_type() == "vpcrouter"
+    def is_vpc(self):
+        return self.cl.get_type() == "vpcrouter"
 
     def get_format(self):
         return self.__LOG_FORMAT
 
-	def get_ingress_chain(self, device, ip):
-		if self.is_vpc:
+    def get_ingress_chain(self, device, ip):
+        if self.is_vpc:
            return "ACL_INBOUND_%s" % device
-	    else:
-		   return "FIREWALL_" % ip
+        else:
+           return "FIREWALL_" % ip
 
-	def get_egress_chain(self, device, ip):
-		if self.is_vpc:
+    def get_egress_chain(self, device, ip):
+        if self.is_vpc:
            return "ACL_OUTBOUND_%s" % device
-	    else:
-		   return "FW_EGRESS_RULES"
+        else:
+           return "FW_EGRESS_RULES"
 
     def get_egress_table(self):
-		if self.is_vpc:
+        if self.is_vpc:
             return 'mangle'
         else:
             return "";
