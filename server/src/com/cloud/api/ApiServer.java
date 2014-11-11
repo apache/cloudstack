@@ -282,11 +282,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         try {
             eventBus.publish(event);
         } catch (EventBusException evx) {
-            String errMsg = "F" +
-                    "" +
-                    "ailed to publish async job event on the the event bus.";
+            String errMsg = "Failed to publish async job event on the the event bus.";
             s_logger.warn(errMsg, evx);
-            throw new CloudRuntimeException(errMsg);
         }
     }
 
