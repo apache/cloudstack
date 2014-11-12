@@ -20,15 +20,16 @@ import re
 import CsHelper
 import logging
 
+
 class CsProcess(object):
     """ Manipulate processes """
 
     def __init__(self, search):
         self.search = search
 
-    def start(self, thru, background = ''):
-        #if(background):
-            #cmd = cmd + " &"
+    def start(self, thru, background=''):
+        # if(background):
+        #     cmd = cmd + " &"
         logging.info("Started %s", " ".join(self.search))
         os.system("%s %s %s" % (thru, " ".join(self.search), background))
 
@@ -41,4 +42,3 @@ class CsProcess(object):
             if matches == items:
                 self.pid.append(re.split("\s+", i)[1])
         return len(self.pid) > 0
-
