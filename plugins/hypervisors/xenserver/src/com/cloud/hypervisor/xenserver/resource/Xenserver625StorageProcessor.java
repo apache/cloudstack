@@ -866,6 +866,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
     @Override
     public Answer createTemplateFromSnapshot(CopyCommand cmd) {
         Connection conn = hypervisorResource.getConnection();
+
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
 
@@ -874,18 +875,22 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         }
 
         int wait = cmd.getWait();
+
         SnapshotObjectTO srcObj = (SnapshotObjectTO)srcData;
         TemplateObjectTO destObj = (TemplateObjectTO)destData;
+
         NfsTO srcStore = (NfsTO)srcObj.getDataStore();
         NfsTO destStore = (NfsTO)destObj.getDataStore();
 
         URI srcUri = null;
         URI destUri = null;
+
         try {
             srcUri = new URI(srcStore.getUrl());
             destUri = new URI(destStore.getUrl());
         } catch (Exception e) {
             s_logger.debug("incorrect url", e);
+
             return new CopyCmdAnswer("incorrect url" + e.toString());
         }
 
@@ -893,61 +898,95 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         int index = srcPath.lastIndexOf("/");
         String srcDir = srcPath.substring(0, index);
         String destDir = destObj.getPath();
+
         SR srcSr = null;
         SR destSr = null;
+
         VDI destVdi = null;
+
         boolean result = false;
+
         try {
             srcSr = createFileSr(conn, srcUri.getHost() + ":" + srcUri.getPath(), srcDir);
 
             String destNfsPath = destUri.getHost() + ":" + destUri.getPath();
             String localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(destNfsPath.getBytes());
+
             mountNfs(conn, destUri.getHost() + ":" + destUri.getPath(), localDir);
             makeDirectory(conn, localDir + "/" + destDir);
+
             destSr = createFileSR(conn, localDir + "/" + destDir);
 
             String nameLabel = "cloud-" + UUID.randomUUID().toString();
 
             String[] parents = srcObj.getParents();
             List<VDI> snapshotChains = new ArrayList<VDI>();
+
             if (parents != null) {
-                for(int i = 0; i < parents.length; i++) {
+                for (int i = 0; i < parents.length; i++) {
                     String snChainPath = parents[i];
                     String uuid = getSnapshotUuid(snChainPath);
                     VDI chain = VDI.getByUuid(conn, uuid);
+
                     snapshotChains.add(chain);
                 }
             }
+
             String snapshotUuid = getSnapshotUuid(srcPath);
             VDI snapshotVdi = VDI.getByUuid(conn, snapshotUuid);
+
             snapshotChains.add(snapshotVdi);
 
             long templateVirtualSize = snapshotChains.get(0).getVirtualSize(conn);
+
             destVdi = createVdi(conn, nameLabel, destSr, templateVirtualSize);
+
             String destVdiUuid = destVdi.getUuid(conn);
 
-            for(VDI snapChain : snapshotChains) {
+            for (VDI snapChain : snapshotChains) {
                 Task task = snapChain.copyAsync(conn, null, null, destVdi);
                 // poll every 1 seconds ,
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
+
                 task.destroy(conn);
             }
 
             destVdi = VDI.getByUuid(conn, destVdiUuid);
-            String templatePath = destDir + "/" + destVdiUuid + ".vhd";
+
+            // scan makes XenServer pick up VDI physicalSize
+            destSr.scan(conn);
+
+            String templateUuid = destVdi.getUuid(conn);
+            String templateFilename = templateUuid + ".vhd";
+            long virtualSize = destVdi.getVirtualSize(conn);
+            long physicalSize = destVdi.getPhysicalUtilisation(conn);
+
+            String templatePath = destNfsPath + "/" + destDir;
+
             templatePath = templatePath.replaceAll("//","/");
+
+            result = hypervisorResource.postCreatePrivateTemplate(conn, templatePath, templateFilename, templateUuid, nameLabel, null,
+                    physicalSize, virtualSize, destObj.getId());
+
+            if (!result) {
+                throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir");
+            }
+
             TemplateObjectTO newTemplate = new TemplateObjectTO();
-            newTemplate.setPath(templatePath);
+
+            newTemplate.setPath(destDir + "/" + templateFilename);
             newTemplate.setFormat(Storage.ImageFormat.VHD);
             newTemplate.setSize(destVdi.getVirtualSize(conn));
             newTemplate.setPhysicalSize(destVdi.getPhysicalUtilisation(conn));
             newTemplate.setName(destVdiUuid);
 
             result = true;
+
             return new CopyCmdAnswer(newTemplate);
         } catch (Exception e) {
             s_logger.error("Failed create template from snapshot", e);
+
             return new CopyCmdAnswer("Failed create template from snapshot " + e.toString());
         } finally {
             if (!result) {
@@ -960,12 +999,12 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 }
             }
 
-            if (destSr != null) {
-                hypervisorResource.removeSR(conn, destSr);
-            }
-
             if (srcSr != null) {
                 hypervisorResource.removeSR(conn, srcSr);
+            }
+
+            if (destSr != null) {
+                hypervisorResource.removeSR(conn, destSr);
             }
         }
     }
@@ -1014,7 +1053,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             String destNfsPath = destUri.getHost() + ":" + destUri.getPath();
             String localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(destNfsPath.getBytes());
 
-            mountNfs(conn, destUri.getHost() + ":" + destUri.getPath(), localDir);
+            mountNfs(conn, destNfsPath, localDir);
             makeDirectory(conn, localDir + "/" + destDir);
 
             destSr = createFileSR(conn, localDir + "/" + destDir);
@@ -1040,6 +1079,13 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             String templatePath = destNfsPath + "/" + destDir;
 
             templatePath = templatePath.replaceAll("//", "/");
+
+            result = hypervisorResource.postCreatePrivateTemplate(conn, templatePath, templateFilename, templateUuid, nameLabel, null,
+                    physicalSize, virtualSize, templateObjTO.getId());
+
+            if (!result) {
+                throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir");
+            }
 
             TemplateObjectTO newTemplate = new TemplateObjectTO();
 
