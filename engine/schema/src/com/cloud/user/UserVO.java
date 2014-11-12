@@ -97,9 +97,6 @@ public class UserVO implements User, Identity, InternalIdentity {
     @Column(name = "default")
     boolean isDefault;
 
-    @Column(name = "domain_id")
-    private long domainId;
-
     public UserVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -273,7 +270,4 @@ public class UserVO implements User, Identity, InternalIdentity {
         return isDefault;
     }
 
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
-    }
 }
