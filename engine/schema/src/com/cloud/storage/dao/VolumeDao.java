@@ -61,6 +61,8 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> findByPoolId(long poolId);
 
+    VolumeVO findByPoolIdName(long poolId, String name);
+
     List<VolumeVO> findByPoolId(long poolId, Volume.Type volumeType);
 
     List<VolumeVO> findByInstanceAndDeviceId(long instanceId, long deviceId);

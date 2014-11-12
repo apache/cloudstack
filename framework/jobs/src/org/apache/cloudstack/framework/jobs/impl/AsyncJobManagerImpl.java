@@ -1052,4 +1052,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         _messageBus.publish(null, AsyncJob.Topics.JOB_EVENT_PUBLISH, PublishScope.LOCAL,
             new Pair<AsyncJob, String>(job, jobEvent));
     }
+
+    @Override
+    public List<AsyncJobVO> findFailureAsyncJobs(String... cmds) {
+        return _jobDao.getFailureJobsSinceLastMsStart(getMsid(), cmds);
+    }
 }

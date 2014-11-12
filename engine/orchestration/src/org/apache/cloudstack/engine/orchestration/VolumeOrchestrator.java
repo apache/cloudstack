@@ -53,6 +53,8 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -63,6 +65,7 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.allocator.PodAllocator;
+import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
@@ -116,6 +119,10 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
+import com.cloud.vm.VmWorkAttachVolume;
+import com.cloud.vm.VmWorkMigrateVolume;
+import com.cloud.vm.VmWorkSerializer;
+import com.cloud.vm.VmWorkTakeVolumeSnapshot;
 import com.cloud.vm.dao.UserVmDao;
 
 public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrationService, Configurable {
@@ -155,6 +162,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     SnapshotService _snapshotSrv;
     @Inject
     protected UserVmDao _userVmDao;
+    @Inject
+    protected AsyncJobManager _jobMgr;
+    @Inject
+    ClusterManager clusterManager;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -1342,9 +1353,71 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return true;
     }
 
+    private void cleanupVolumeDuringAttachFailure(Long volumeId) {
+        VolumeVO volume = _volsDao.findById(volumeId);
+        if (volume == null) {
+            return;
+        }
+
+        if (volume.getState().equals(Volume.State.Creating)) {
+            s_logger.debug("Remove volume: " + volume.getId() + ", as it's leftover from last mgt server stop");
+            _volsDao.remove(volume.getId());
+        }
+    }
+
+    private void cleanupVolumeDuringMigrationFailure(Long volumeId, Long destPoolId) {
+        StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(destPoolId, DataStoreRole.Primary);
+        if (destPool == null) {
+            return;
+        }
+
+        VolumeVO volume = _volsDao.findById(volumeId);
+        if (volume.getState() == Volume.State.Migrating) {
+            VolumeVO duplicateVol = _volsDao.findByPoolIdName(destPoolId, volume.getName());
+            if (duplicateVol != null) {
+                s_logger.debug("Remove volume " + duplicateVol.getId() + " on storage pool " + destPoolId);
+                _volsDao.remove(duplicateVol.getId());
+            }
+
+            s_logger.debug("change volume state to ready from migrating in case migration failure for vol: " + volumeId);
+            volume.setState(Volume.State.Ready);
+            _volsDao.update(volumeId, volume);
+        }
+
+    }
+
+    private void cleanupVolumeDuringSnapshotFailure(Long volumeId, Long snapshotId) {
+        _snapshotSrv.cleanupVolumeDuringSnapshotFailure(volumeId, snapshotId);
+        VolumeVO volume = _volsDao.findById(volumeId);
+        if (volume.getState() == Volume.State.Snapshotting) {
+            s_logger.debug("change volume state back to Ready: " + volume.getId());
+            volume.setState(Volume.State.Ready);
+            _volsDao.update(volume.getId(), volume);
+        }
+    }
+
     @Override
-    public boolean start() {
-        return true;
+    public void cleanupStorageJobs() {
+        //clean up failure jobs related to volume
+        List<AsyncJobVO> jobs = _jobMgr.findFailureAsyncJobs(VmWorkAttachVolume.class.getName(),
+                VmWorkMigrateVolume.class.getName(), VmWorkTakeVolumeSnapshot.class.getName());
+
+        for (AsyncJobVO job : jobs) {
+            try {
+                if (job.getCmd().equalsIgnoreCase(VmWorkAttachVolume.class.getName())) {
+                    VmWorkAttachVolume work = VmWorkSerializer.deserialize(VmWorkAttachVolume.class, job.getCmdInfo());
+                    cleanupVolumeDuringAttachFailure(work.getVolumeId());
+                } else if (job.getCmd().equalsIgnoreCase(VmWorkMigrateVolume.class.getName())) {
+                    VmWorkMigrateVolume work = VmWorkSerializer.deserialize(VmWorkMigrateVolume.class, job.getCmdInfo());
+                    cleanupVolumeDuringMigrationFailure(work.getVolumeId(), work.getDestPoolId());
+                } else if (job.getCmd().equalsIgnoreCase(VmWorkTakeVolumeSnapshot.class.getName())) {
+                    VmWorkTakeVolumeSnapshot work = VmWorkSerializer.deserialize(VmWorkTakeVolumeSnapshot.class, job.getCmdInfo());
+                    cleanupVolumeDuringSnapshotFailure(work.getVolumeId(), work.getSnapshotId());
+                }
+            } catch (Exception e) {
+                s_logger.debug("clean up job failure, will continue", e);
+            }
+        }
     }
 
     @Override
