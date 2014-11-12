@@ -260,7 +260,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
         /* URI to send statistics to. Currently only Graphite is supported */
         String externalStatsUri = configs.get("stats.output.uri");
-        if (externalStatsUri != null) {
+        if (externalStatsUri != null && !externalStatsUri.equals("")) {
             try {
                 URI uri = new URI(externalStatsUri);
                 String scheme = uri.getScheme();
