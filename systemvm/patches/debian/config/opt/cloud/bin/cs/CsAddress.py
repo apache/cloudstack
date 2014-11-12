@@ -273,7 +273,7 @@ class CsIP:
         route.routeTable()
         route.add(self.address, method)
         # On deletion nw_type will no longer be known
-        if (self.get_type() in ["guest"] and self.config.is_vpc()) or
+        if (self.get_type() in ["guest"] and self.config.is_vpc()) or \
            (self.get_type() in ['public'] and not self.config.is_vpc()):
             devChain = self.config.get_ingress_chain(self.dev, self.address['public_ip'])
             CsDevice(self.dev, self.config).configure_rp()
