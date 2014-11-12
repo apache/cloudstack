@@ -8189,6 +8189,12 @@
                                                 },
                                                 success: function (json) {
                                                     selectedZoneObj = json.listzonesresponse.zone[0];
+                                                                                                                                                            
+                                                    $(window).trigger('cloudStack.module.sharedFunctions.addExtraProperties', {
+                                                    	obj: selectedZoneObj,
+                                                    	objType: "Zone"
+                                                    });
+                                                                                                        
                                                     $.ajax({
                                                         url: createURL('listDedicatedZones'),
                                                         data: {
