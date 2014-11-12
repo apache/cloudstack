@@ -77,7 +77,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.DateUtil;
@@ -531,17 +530,16 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     @Override
     public long getUsedIops(StoragePoolVO pool) {
-        long usedIops = 0;
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
 
-        List<VolumeVO> volumes = _volumeDao.findByPoolId(pool.getId(), null);
+        if (storeDriver instanceof PrimaryDataStoreDriver) {
+            PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
 
-        if (volumes != null) {
-            for (VolumeVO volume : volumes) {
-                usedIops += volume.getMinIops() != null ? volume.getMinIops() : 0;
-            }
+            return primaryStoreDriver.getUsedIops(pool);
         }
 
-        return usedIops;
+        throw new CloudRuntimeException("Storage driver in CapacityManagerImpl.getUsedIops(StoragePoolVO) is not a PrimaryDataStoreDriver.");
     }
 
     @Override

@@ -93,6 +93,11 @@ public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver 
     }
 
     @Override
+    public long getUsedIops(StoragePool storagePool) {
+        return 0;
+    }
+
+    @Override
     public long getVolumeSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool) {
         return volume.getSize();
     }

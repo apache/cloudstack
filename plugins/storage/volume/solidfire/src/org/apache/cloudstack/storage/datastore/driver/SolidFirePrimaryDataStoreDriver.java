@@ -48,7 +48,6 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
-import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterDetailsDao;
@@ -79,7 +78,6 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Inject private AccountDao _accountDao;
     @Inject private AccountDetailsDao _accountDetailsDao;
-    @Inject private CapacityManager _capacityMgr;
     @Inject private ClusterDao _clusterDao;
     @Inject private ClusterDetailsDao _clusterDetailsDao;
     @Inject private HostDao _hostDao;
@@ -303,6 +301,21 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         return usedSpace;
+    }
+
+    @Override
+    public long getUsedIops(StoragePool storagePool) {
+        long usedIops = 0;
+
+        List<VolumeVO> volumes = _volumeDao.findByPoolId(storagePool.getId(), null);
+
+        if (volumes != null) {
+            for (VolumeVO volume : volumes) {
+                usedIops += volume.getMinIops() != null ? volume.getMinIops() : 0;
+            }
+        }
+
+        return usedIops;
     }
 
     @Override
@@ -536,9 +549,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             storagePool.setUsedBytes(usedBytes);
 
-            /** @todo Mike T. fill in the CloudStackVolumeSize */
             long sfNewVolumeId = SolidFireUtil.createSolidFireVolume(sfConnection, snapshotInfo.getUuid(), sfVolume.getAccountId(), sfVolumeSize,
-                    sfVolume.isEnable512e(), "", sfVolume.getMinIops(), sfVolume.getMaxIops(), sfVolume.getBurstIops());
+                    sfVolume.isEnable512e(), NumberFormat.getInstance().format(volumeInfo.getSize()), sfVolume.getMinIops(), 50000, 75000);
 
             // Now that we have successfully created a volume, update the space usage in the storage_pool table
             // (even though storage_pool.used_bytes is likely no longer in use).
@@ -691,7 +703,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         // if the desire is for more IOPS
         if (diffInMinIops > 0) {
-            long usedIops = _capacityMgr.getUsedIops(storagePool);
+            long usedIops = getUsedIops(storagePool);
             long capacityIops = storagePool.getCapacityIops();
 
             if (usedIops + diffInMinIops > capacityIops) {

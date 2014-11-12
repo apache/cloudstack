@@ -41,6 +41,11 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     // if not managed storage, return 0
     public long getUsedBytes(StoragePool storagePool);
 
+    // intended for managed storage (cloud.storage_pool.managed = true)
+    // if managed storage, return the total number of IOPS currently in use for the storage pool in question
+    // if not managed storage, return 0
+    public long getUsedIops(StoragePool storagePool);
+
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback);
 
     public void revertSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback);

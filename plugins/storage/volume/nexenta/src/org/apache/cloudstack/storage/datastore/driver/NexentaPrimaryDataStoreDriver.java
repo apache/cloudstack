@@ -73,6 +73,11 @@ public class NexentaPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
+    public long getUsedIops(StoragePool storagePool) {
+        return 0;
+    }
+
+    @Override
     public long getVolumeSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool) {
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
