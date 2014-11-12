@@ -44,6 +44,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
     private final SearchBuilder<AsyncJobVO> pseudoJobCleanupSearch;
     private final SearchBuilder<AsyncJobVO> expiringUnfinishedAsyncJobSearch;
     private final SearchBuilder<AsyncJobVO> expiringCompletedAsyncJobSearch;
+    private final SearchBuilder<AsyncJobVO> failureMsidAsyncJobSearch;
 
     public AsyncJobDaoImpl() {
         pendingAsyncJobSearch = createSearchBuilder();
@@ -83,6 +84,13 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         pseudoJobCleanupSearch = createSearchBuilder();
         pseudoJobCleanupSearch.and("initMsid", pseudoJobCleanupSearch.entity().getInitMsid(), Op.EQ);
         pseudoJobCleanupSearch.done();
+
+        failureMsidAsyncJobSearch = createSearchBuilder();
+        failureMsidAsyncJobSearch.and("initMsid", failureMsidAsyncJobSearch.entity().getInitMsid(), Op.EQ);
+        failureMsidAsyncJobSearch.and("instanceType", failureMsidAsyncJobSearch.entity().getInstanceType(), SearchCriteria.Op.EQ);
+        failureMsidAsyncJobSearch.and("status", failureMsidAsyncJobSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        failureMsidAsyncJobSearch.and("job_cmd", failureMsidAsyncJobSearch.entity().getCmd(), Op.IN);
+        failureMsidAsyncJobSearch.done();
 
     }
 
@@ -205,5 +213,14 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         Filter filter = new Filter(AsyncJobVO.class, "created", true, null, null);
         return listIncludingRemovedBy(sc, filter);
 
+    }
+
+    @Override
+    public List<AsyncJobVO> getFailureJobsSinceLastMsStart(long msId, String... cmds) {
+        SearchCriteria<AsyncJobVO> sc = failureMsidAsyncJobSearch.create();
+        sc.setParameters("initMsid", msId);
+        sc.setParameters("status", AsyncJobVO.Status.FAILED);
+        sc.setParameters("job_cmd", (Object[])cmds);
+        return listBy(sc);
     }
 }

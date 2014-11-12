@@ -129,4 +129,6 @@ public interface AsyncJobManager extends Manager {
     String marshallResultObject(Serializable obj);
 
     Object unmarshallResultObject(AsyncJob job);
+
+    List<AsyncJobVO> findFailureAsyncJobs(String... cmds);
 }

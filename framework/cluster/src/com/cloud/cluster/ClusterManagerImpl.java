@@ -41,12 +41,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.cluster.dao.ManagementServerHostPeerDao;
@@ -958,7 +959,6 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     mshost.setAlertCount(0);
                     mshost.setState(ManagementServerHost.State.Up);
                     _mshostDao.persist(mshost);
-
                     if (s_logger.isInfoEnabled()) {
                         s_logger.info("New instance of management server msid " + _msId + ", runId " + _runId + " is being started");
                     }

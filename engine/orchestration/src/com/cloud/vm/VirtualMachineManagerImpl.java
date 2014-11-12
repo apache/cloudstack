@@ -566,6 +566,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         _executor.scheduleAtFixedRate(new TransitionTask(),  VmOpCleanupInterval.value(), VmOpCleanupInterval.value(), TimeUnit.SECONDS);
         cancelWorkItems(_nodeId);
 
+        volumeMgr.cleanupStorageJobs();
         // cleanup left over place holder works
         _workJobDao.expungeLeftoverWorkJobs(ManagementServerNode.getManagementServerId());
         return true;

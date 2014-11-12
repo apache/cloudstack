@@ -14,41 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage;
+package com.cloud.vm;
 
-import com.cloud.vm.VmWork;
-
-public class VmWorkTakeVolumeSnapshot extends VmWork {
-
-    private static final long serialVersionUID = 341816293003023823L;
+public class VmWorkDetachVolume extends VmWork {
+    private static final long serialVersionUID = -8722243207385263101L;
 
     private Long volumeId;
-    private Long policyId;
-    private Long snapshotId;
-    private boolean quiesceVm;
 
-    public VmWorkTakeVolumeSnapshot(long userId, long accountId, long vmId, String handlerName,
-            Long volumeId, Long policyId, Long snapshotId, boolean quiesceVm) {
+    public VmWorkDetachVolume(long userId, long accountId, long vmId, String handlerName, Long volumeId) {
         super(userId, accountId, vmId, handlerName);
         this.volumeId = volumeId;
-        this.policyId = policyId;
-        this.snapshotId = snapshotId;
-        this.quiesceVm = quiesceVm;
     }
 
     public Long getVolumeId() {
         return volumeId;
-    }
-
-    public Long getPolicyId() {
-        return policyId;
-    }
-
-    public Long getSnapshotId() {
-        return snapshotId;
-    }
-
-    public boolean isQuiesceVm() {
-        return quiesceVm;
     }
 }

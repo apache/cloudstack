@@ -41,4 +41,6 @@ public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
     List<AsyncJobVO> getExpiredCompletedJobs(Date cutTime, int limit);
 
     List<AsyncJobVO> getResetJobs(long msid);
+
+    List<AsyncJobVO> getFailureJobsSinceLastMsStart(long msId, String... cmds);
 }

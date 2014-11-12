@@ -14,9 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage;
-
-import com.cloud.vm.VmWork;
+package com.cloud.vm;
 
 public class VmWorkResizeVolume extends VmWork {
     private static final long serialVersionUID = 6112366316907642498L;

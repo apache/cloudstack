@@ -446,6 +446,28 @@ public class SnapshotServiceImpl implements SnapshotService {
         }
     }
 
+    @Override
+    public void cleanupVolumeDuringSnapshotFailure(Long volumeId, Long snapshotId) {
+        SnapshotVO snaphsot = _snapshotDao.findById(snapshotId);
+
+        if (snaphsot != null) {
+            if (snaphsot.getState() != Snapshot.State.BackedUp) {
+                List<SnapshotDataStoreVO> snapshotDataStoreVOs = _snapshotStoreDao.findBySnapshotId(snapshotId);
+                for (SnapshotDataStoreVO snapshotDataStoreVO : snapshotDataStoreVOs) {
+                    s_logger.debug("Remove snapshot " + snapshotId + ", status " + snapshotDataStoreVO.getState() +
+                            " on snapshot_store_ref table with id: " + snapshotDataStoreVO.getId());
+
+                    _snapshotStoreDao.remove(snapshotDataStoreVO.getId());
+                }
+
+                s_logger.debug("Remove snapshot " + snapshotId + " status " + snaphsot.getState() + " from snapshot table");
+                _snapshotDao.remove(snapshotId);
+            }
+        }
+
+
+    }
+
     // push one individual snapshots currently on cache store to region store if it is not there already
     private void syncSnapshotToRegionStore(long snapshotId, DataStore store){
         // if snapshot is already on region wide object store, check if it is really downloaded there (by checking install_path). Sync snapshot to region
