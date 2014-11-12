@@ -1385,7 +1385,13 @@
                                         async: true,
                                         success: function(json) {
                                             var jsonObj = json.listnetworksresponse.network[0];
-                                            addExtraPropertiesToGuestNetworkObject(jsonObj);                                                                               
+                                            addExtraPropertiesToGuestNetworkObject(jsonObj);  
+                                            
+                                            $(window).trigger('cloudStack.module.sharedFunctions.addExtraProperties', {
+                                            	obj: jsonObj,
+                                            	objType: "Network"
+                                            });
+                                            
                                             args.response.success({
                                                 actionFilter: cloudStack.actionFilter.guestNetwork,
                                                 data: jsonObj
