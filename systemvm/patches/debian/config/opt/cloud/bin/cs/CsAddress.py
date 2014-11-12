@@ -98,7 +98,8 @@ class CsAddress(CsDataBag):
             self.fw.append(["", "", "-A NETWORK_STATS -o %s ! -i eth0 -p tcp" % dev])
             self.fw.append(["", "", "-A NETWORK_STATS -i %s ! -o eth0 -p tcp" % dev])
 
-        if address["nw_type"] == "guest":
+        # Netstats per interface only used on VPC
+        if address["nw_type"] == "guest" and self.config.is_vpc():
             self.fw.append(["", "front", "-A FORWARD -j NETWORK_STATS_%s" % dev])
             self.fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -s %s" % (dev, dev, address['network'])])
             self.fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -d %s" % (dev, dev, address['network'])])
@@ -272,8 +273,9 @@ class CsIP:
         route.routeTable()
         route.add(self.address, method)
         # On deletion nw_type will no longer be known
-        if self.get_type() in ["guest"]:
-            devChain = "ACL_INBOUND_%s" % (self.dev)
+        if (self.get_type() in ["guest"] and self.config.is_vpc()) or
+           (self.get_type() in ['public'] and not self.config.is_vpc()):
+            devChain = self.config.get_ingress_chain(self.dev, self.address['public_ip'])
             CsDevice(self.dev, self.config).configure_rp()
 
             self.fw.append(["nat", "front",
@@ -291,21 +293,18 @@ class CsIP:
                             "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j %s" %
                             (self.dev, self.address['network'], self.address['public_ip'], devChain)
                             ])
+            logging.error("Not able to setup sourcenat for a regular router yet")
             dns = CsDnsmasq(self)
             dns.add_firewall_rules()
             app = CsApache(self)
             app.setup()
             pwdsvc = CsPasswdSvc(self).setup()
-        elif self.get_type() == "public":
+
+        if self.get_type() == "public" and self.config.is_vpc():
             if self.address["source_nat"]:
-                if self.cl.get_type() == "vpcrouter":
-                    vpccidr = self.cl.get_vpccidr()
-                    self.fw.append(["filter", "", "-A FORWARD -s %s ! -d %s -j ACCEPT" % (vpccidr, vpccidr)])
-                    self.fw.append(["nat", "", "-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
-                elif self.cl.get_type() == "router":
-                    logging.error("Not able to setup sourcenat for a regular router yet")
-                else:
-                    logging.error("Unable to process source nat configuration for router of type %s" % type)
+                vpccidr = self.cl.get_vpccidr()
+                self.fw.append(["filter", "", "-A FORWARD -s %s ! -d %s -j ACCEPT" % (vpccidr, vpccidr)])
+                self.fw.append(["nat", "", "-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
         # route.flush()
 
     def list(self):
