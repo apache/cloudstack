@@ -2919,6 +2919,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     hostName = generateHostName(uuidName);
                 }
             }
+            // If global config vm.instancename.flag is set to true, then CS will set guest VM's name as it appears on the hypervisor, to its hostname.
+            // In case of VMware since VM name must be unique within a DC, check if VM with the same hostname already exists in the zone.
+            VMInstanceVO vmByHostName = _vmInstanceDao.findVMByHostNameInZone(hostName, zone.getId());
+            if (vmByHostName != null && vmByHostName.getState() != VirtualMachine.State.Expunging) {
+                 throw new InvalidParameterValueException("There already exists a VM by the name: " + hostName + ".");
+            }
         } else {
             if (hostName == null) {
                 //Generate name using uuid and instance.name global config

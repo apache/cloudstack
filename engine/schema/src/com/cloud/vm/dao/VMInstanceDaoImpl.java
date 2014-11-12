@@ -85,6 +85,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> HostUpSearch;
     protected SearchBuilder<VMInstanceVO> InstanceNameSearch;
     protected SearchBuilder<VMInstanceVO> HostNameSearch;
+    protected SearchBuilder<VMInstanceVO> HostNameAndZoneSearch;
     protected GenericSearchBuilder<VMInstanceVO, Long> FindIdsOfVirtualRoutersByAccount;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByHost;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByAccount;
@@ -217,6 +218,11 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         HostNameSearch = createSearchBuilder();
         HostNameSearch.and("hostName", HostNameSearch.entity().getHostName(), Op.EQ);
         HostNameSearch.done();
+
+        HostNameAndZoneSearch = createSearchBuilder();
+        HostNameAndZoneSearch.and("hostName", HostNameAndZoneSearch.entity().getHostName(), Op.EQ);
+        HostNameAndZoneSearch.and("zone", HostNameAndZoneSearch.entity().getDataCenterId(), Op.EQ);
+        HostNameAndZoneSearch.done();
 
         FindIdsOfVirtualRoutersByAccount = createSearchBuilder(Long.class);
         FindIdsOfVirtualRoutersByAccount.selectFields(FindIdsOfVirtualRoutersByAccount.entity().getId());
@@ -411,6 +417,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     public VMInstanceVO findVMByHostName(String hostName) {
         SearchCriteria<VMInstanceVO> sc = HostNameSearch.create();
         sc.setParameters("hostName", hostName);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public VMInstanceVO findVMByHostNameInZone(String hostName, long zoneId) {
+        SearchCriteria<VMInstanceVO> sc = HostNameAndZoneSearch.create();
+        sc.setParameters("hostName", hostName);
+        sc.setParameters("zone", zoneId);
         return findOneBy(sc);
     }
 
