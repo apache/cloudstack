@@ -1954,6 +1954,12 @@
                                                         success: function (json) {
                                                             selectedGuestNetworkObj = json.listnetworksresponse.network[0];
                                                             addExtraPropertiesToGuestNetworkObject(selectedGuestNetworkObj);
+                                                                                                                       
+                                                            $(window).trigger('cloudStack.module.sharedFunctions.addExtraProperties', {
+                                                            	obj: selectedGuestNetworkObj,
+                                                            	objType: "Network"
+                                                            });
+                                                                                                                       
                                                             args.response.success({
                                                                 actionFilter: cloudStack.actionFilter.guestNetwork,
                                                                 data: selectedGuestNetworkObj
