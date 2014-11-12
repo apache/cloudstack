@@ -198,6 +198,10 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
         }
 
         if (Snapshot.State.Error.equals(snapshotVO.getState())) {
+            List<SnapshotDataStoreVO> storeRefs = snapshotStoreDao.findBySnapshotId(snapshotId);
+            for (SnapshotDataStoreVO ref : storeRefs) {
+                snapshotStoreDao.expunge(ref.getId());
+            }
             snapshotDao.remove(snapshotId);
             return true;
         }
