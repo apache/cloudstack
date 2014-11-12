@@ -268,10 +268,54 @@ class CsIP:
             return self.address['public_ip']
         return "unknown"
 
+    def fw_router(self):
+        if self.config.is_vpc():
+            return
+        self.fw.append(["mangle", "front", "-A PREROUTING " +
+                        "-m state --state RELATED,ESTABLISHED " +
+                        "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"])
+        if self.get_type() in ["public"]:
+            self.fw.append(["mangle", "front",
+                            "-A PREROUTING " +
+                            "-i %s -m state --state NEW -j CONMARK --set-xmark 0x2/0xffffffff" %
+                            self.dev])
+        self.fw.append(["mangle", "front",
+                        "-A POSTROUTING",
+                        "-p udp -m udp --dport 68 -j CHECKSUM --checksum-fill"])
+        self.fw.append(["filter", "", "-A INPUT -d 224.0.0.18/32 -j ACCEPT"])
+        self.fw.append(["filter", "", "-A INPUT -d 225.0.0.50/32 -j ACCEPT"])
+        self.fw.append(["filter", "", "-A INPUT -i %s -m state --state RELATED,ESTABLISHED -j ACCEPT" %
+                       self.dev])
+        self.fw.append(["filter", "", "-A INPUT -p icmp -j ACCEPT"])
+        self.fw.append(["filter", "", "-A INPUT -i lo -j ACCEPT"])
+
+        if self.get_type() in ["guest"]:
+            self.fw.append(["filter", "", "-A INPUT -i %s -p udp -m udp --dport 67 -j ACCEPT" % self.dev])
+            self.fw.append(["filter", "", "-A INPUT -i %s -p udp -m udp --dport 53 -j ACCEPT" % self.dev])
+            self.fw.append(["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 53 -j ACCEPT" % self.dev])
+            self.fw.append(["filter", "", "-A INPUT -s %s -i %s -p tcp -m state --state NEW" +
+                            "-m tcp --dport 8080 -j ACCEPT" % (self.address['network'], self.dev)])
+            self.fw.append(["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 80 -m state --state NEW -j ACCEPT" self.dev])
+            self.fw.append(["filter", "", "-A FORWARD -i %s -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.dev])
+            self.fw.append(["filter", "", "-A FORWARD -i %s -o %s -m state --state NEW -j ACCEPT" % self.dev])
+            self.fw.append(["filter", "", "-A FORWARD -i eth2 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT"])
+            self.fw.append(["filter", "", "-A FORWARD -i eth0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT"])
+            self.fw.append(["filter", "", "-A FORWARD -i eth0 -o eth2 -j FW_OUTBOUND"])
+
+        if self.get_type() in ["control"]:
+            self.fw.append(["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 3922 -m state --state NEW -j ACCEPT" % self.dev])
+
+    def fw_vpcrouter(self):
+        if not self.config.is_vpc():
+            return
+        # TODO seperate out vpc rules
+
     def post_config_change(self, method):
         route = CsRoute(self.dev)
         route.routeTable()
         route.add(self.address, method)
+        self.fw_router()
+        self.fw_vpcrouter()
         # On deletion nw_type will no longer be known
         if (self.get_type() in ["guest"] and self.config.is_vpc()) or \
            (self.get_type() in ['public'] and not self.config.is_vpc()):
