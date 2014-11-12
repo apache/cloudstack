@@ -24,7 +24,7 @@ under the License.
 <fmt:setBundle basename="resources/messages"/>
 <% long now = System.currentTimeMillis(); %>
 <script type="text/javascript">
-dictionary2 = {
+$.extend(dictionary, {
 'label.rules': '<fmt:message key="label.rules" />',
 'label.running.vms': '<fmt:message key="label.running.vms" />',
 'label.s3.access_key': '<fmt:message key="label.s3.access_key" />',
@@ -1013,5 +1013,5 @@ dictionary2 = {
 'label.na': '<fmt:message key="label.na" />',
 'label.added.network.offering': '<fmt:message key="label.added.network.offering" />',
 'label.no': '<fmt:message key="label.no" />',
-};
+});
 </script>
