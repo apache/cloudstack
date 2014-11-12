@@ -44,6 +44,7 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -117,7 +118,13 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 ss.setSize(snapshotInfo.getSize()); // this is the virtual size of snapshot in primary storage.
                 SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), dataStore.getId(),snapshotInfo.getVolumeId());
                 if (snapshotDataStoreVO != null) {
-                    ss.setParentSnapshotId(snapshotDataStoreVO.getSnapshotId());
+                    //Double check the snapshot is removed or not
+                    SnapshotVO parentSnap = snapshotDao.findById(snapshotDataStoreVO.getSnapshotId());
+                    if (parentSnap != null) {
+                        ss.setParentSnapshotId(snapshotDataStoreVO.getSnapshotId());
+                    } else {
+                        s_logger.debug("find inconsistent db for snapshot " + snapshotDataStoreVO.getSnapshotId());
+                    }
                 }
                 ss.setState(ObjectInDataStoreStateMachine.State.Allocated);
                 ss = snapshotDataStoreDao.persist(ss);
