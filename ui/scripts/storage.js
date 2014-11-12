@@ -1537,7 +1537,13 @@
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
-                                            var jsonObj = json.listvolumesresponse.volume[0];                                            
+                                            var jsonObj = json.listvolumesresponse.volume[0];   
+                                                                                                                                 
+                                            $(window).trigger('cloudStack.module.sharedFunctions.addExtraProperties', {
+                                            	obj: jsonObj,
+                                            	objType: "Volume"
+                                            });
+                                                                                        
                                             args.response.success({
                                                 actionFilter: volumeActionfilter,
                                                 data: jsonObj
