@@ -262,7 +262,7 @@ var addGuestNetworkDialog = {
                                     if (items != null) {
                                         for (var i = 0; i < items.length; i++) {
                                             if (items[i].networktype == 'Advanced') {
-                                                addGuestNetworkDialog.zoneObjs.push(items[i]);
+                                                addGuestNetworkDialog.zoneObjs.push(items[i]); 
                                             }
                                         }
                                     }
@@ -288,42 +288,44 @@ var addGuestNetworkDialog = {
                         if ('physicalNetworks' in args.context) { //Infrastructure menu > zone detail > guest traffic type > network tab (only shown in advanced zone) > add guest network dialog
                             addGuestNetworkDialog.physicalNetworkObjs = args.context.physicalNetworks;
                         } else { //Network menu > guest network section > add guest network dialog
-                            var selectedZoneId = args.$form.find('.form-item[rel=zoneId]').find('select').val();
-                            $.ajax({
-                                url: createURL('listPhysicalNetworks'),
-                                data: {
-                                    zoneid: selectedZoneId
-                                },
-                                async: false,
-                                success: function(json) {                                    
-                                	var items = [];
-                                	var physicalnetworks = json.listphysicalnetworksresponse.physicalnetwork;
-                                	if (physicalnetworks != null) {
-                                	    for (var i = 0; i < physicalnetworks.length; i++) {
-                                	    	$.ajax({
-                                	    		url: createURL('listTrafficTypes'),
-                                	    		data: {
-                                	    			physicalnetworkid: physicalnetworks[i].id
-                                	    		},
-                                	    		async: false,
-                                	    		success: function(json) {                                	    			
-                                	    			var traffictypes = json.listtraffictypesresponse.traffictype;
-                                	    			if (traffictypes != null) {
-                                	    				for (var k = 0; k < traffictypes.length; k++) {
-                                	    					if (traffictypes[k].traffictype == 'Guest') {
-                                	    						items.push(physicalnetworks[i]);
-                                	    						break;
-                                	    					}
-                                	    				}
-                                	    			} 
-                                	    		}
-                                	    	});
-                                	    }	
-                                	}  
-                                	
-                                	addGuestNetworkDialog.physicalNetworkObjs = items;                                	
-                                }
-                            });
+                            var selectedZoneId = args.$form.find('.form-item[rel=zoneId]').find('select').val();                           
+                            if (selectedZoneId != undefined && selectedZoneId.length > 0) {
+	                            $.ajax({
+	                                url: createURL('listPhysicalNetworks'),
+	                                data: {
+	                                    zoneid: selectedZoneId
+	                                },
+	                                async: false,
+	                                success: function(json) {                                    
+	                                	var items = [];
+	                                	var physicalnetworks = json.listphysicalnetworksresponse.physicalnetwork;
+	                                	if (physicalnetworks != null) {
+	                                	    for (var i = 0; i < physicalnetworks.length; i++) {
+	                                	    	$.ajax({
+	                                	    		url: createURL('listTrafficTypes'),
+	                                	    		data: {
+	                                	    			physicalnetworkid: physicalnetworks[i].id
+	                                	    		},
+	                                	    		async: false,
+	                                	    		success: function(json) {                                	    			
+	                                	    			var traffictypes = json.listtraffictypesresponse.traffictype;
+	                                	    			if (traffictypes != null) {
+	                                	    				for (var k = 0; k < traffictypes.length; k++) {
+	                                	    					if (traffictypes[k].traffictype == 'Guest') {
+	                                	    						items.push(physicalnetworks[i]);
+	                                	    						break;
+	                                	    					}
+	                                	    				}
+	                                	    			} 
+	                                	    		}
+	                                	    	});
+	                                	    }	
+	                                	}  
+	                                	
+	                                	addGuestNetworkDialog.physicalNetworkObjs = items;                                	
+	                                }
+	                            });
+                            }
                         }
                         var items = [];
                         if (addGuestNetworkDialog.physicalNetworkObjs != null) {
