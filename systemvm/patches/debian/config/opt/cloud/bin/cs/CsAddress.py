@@ -289,12 +289,12 @@ class CsIP:
             self.fw.append(["mangle", "",
                             "-A VPN_%s -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.address['public_ip']])
             self.fw.append(["mangle", "",
-                            "-A VPN_%s RETURN" % self.address['public_ip']])
+                            "-A VPN_%s -j RETURN" % self.address['public_ip']])
             self.fw.append(["mangle", "front",
-                            "-A POSTROUTING",
+                            "-A POSTROUTING " +
                             "-p udp -m udp --dport 68 -j CHECKSUM --checksum-fill"])
             self.fw.append(["nat", "",
-                            "-A POSTROUTING -o eth2 -j SNAT --to-source 10.0.2.102" % self.address['public_ip']])
+                            "-A POSTROUTING -o eth2 -j SNAT --to-source %s" % self.address['public_ip']])
 
         self.fw.append(["filter", "", "-A INPUT -d 224.0.0.18/32 -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -d 225.0.0.50/32 -j ACCEPT"])
@@ -332,8 +332,7 @@ class CsIP:
         self.fw_router()
         self.fw_vpcrouter()
         # On deletion nw_type will no longer be known
-        if (self.get_type() in ["guest"] and self.config.is_vpc()) or \
-           (self.get_type() in ['public'] and not self.config.is_vpc()):
+        if self.get_type() in ["guest"] and self.config.is_vpc():
             devChain = self.config.get_ingress_chain(self.dev, self.address['public_ip'])
             CsDevice(self.dev, self.config).configure_rp()
 

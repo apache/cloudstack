@@ -122,11 +122,17 @@ class CsNetfilters(object):
             # Ensure all inbound chains have a default drop rule
             if c.startswith("ACL_INBOUND"):
                 list.append(["filter", "", "-A %s -j DROP" % c])
+        # PASS 1:  Ensure all chains are present
         for fw in list:
             new_rule = CsNetfilter()
             new_rule.parse(fw[2])
             new_rule.set_table(fw[0])
             self.add_chain(new_rule)
+        # PASS 2: Create rules
+        for fw in list:
+            new_rule = CsNetfilter()
+            new_rule.parse(fw[2])
+            new_rule.set_table(fw[0])
             if self.has_rule(new_rule):
                 logging.debug("rule %s exists in table %s", fw[2], new_rule.get_table())
             else:
