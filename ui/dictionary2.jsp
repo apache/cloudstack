@@ -1012,6 +1012,6 @@ $.extend(dictionary, {
 'state.detached': '<fmt:message key="state.detached" />',
 'label.na': '<fmt:message key="label.na" />',
 'label.added.network.offering': '<fmt:message key="label.added.network.offering" />',
-'label.no': '<fmt:message key="label.no" />',
+'label.no': '<fmt:message key="label.no" />'
 });
 </script>
