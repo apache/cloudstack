@@ -1065,7 +1065,7 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["basic", "advanced"], required_hardware="true")
     def test_01_reset_keypair_normal_user(self):
         """Verify API resetSSHKeyForVirtualMachine for non admin non root
             domain user"""
@@ -1183,7 +1183,7 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
         virtual_machine.delete(self.apiclient, expunge=True)
         return
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["basic", "advanced"], required_hardware="true")
     def test_02_reset_keypair_domain_admin(self):
         """Verify API resetSSHKeyForVirtualMachine for domain admin non root
             domain user"""
@@ -1322,7 +1322,7 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
         virtual_machine.delete(self.apiclient, expunge=True)
         return
 
-    @attr(tags=["simulator", "basic", "advanced"])
+    @attr(tags=["basic", "advanced"], required_hardware="true")
     def test_03_reset_keypair_root_admin(self):
         """Verify API resetSSHKeyForVirtualMachine for domain admin root
             domain user"""
