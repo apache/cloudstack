@@ -241,7 +241,7 @@ class TestVMPasswordEnabled(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_11_get_vm_password(self):
         """Test get VM password for password enabled template"""
 
