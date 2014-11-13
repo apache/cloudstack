@@ -1289,10 +1289,18 @@ start() {
      router)
          [ "$NAME" == "" ] && NAME=router
          setup_router
+         if [ -x /opt/cloud/bin/update_config.py ]
+         then
+	         /opt/cloud/bin/update_config.py cmd_line.json
+         fi
 	  ;;
      vpcrouter)
          [ "$NAME" == "" ] && NAME=vpcrouter
          setup_vpcrouter
+         if [ -x /opt/cloud/bin/update_config.py ]
+         then
+	         /opt/cloud/bin/update_config.py cmd_line.json
+         fi
 	  ;;
      dhcpsrvr)
          [ "$NAME" == "" ] && NAME=dhcpsrvr
@@ -1322,10 +1330,6 @@ start() {
     if [ "$hyp" == "hyperv" ]; then
     # eject the systemvm.iso
      eject
-  fi
-  if [ -x /opt/cloud/bin/update_config.py ]
-  then
-	  /opt/cloud/bin/update_config.py cmd_line.json
   fi
   return 0
 }
