@@ -69,7 +69,7 @@ def upload(args):
             if size > MAX_SEG_SIZE :        
                 segment = 1
         if segment :             
-            cmd = [SWIFT, "-A", url, "-U", account + ":" + username, "-K", key, "upload", "-S", MAX_SEG_SIZE, container, lfilename]
+            cmd = [SWIFT, "-A", url, "-U", account + ":" + username, "-K", key, "upload", "-S", str(MAX_SEG_SIZE), container, lfilename]
         else :
             cmd = [SWIFT, "-A", url ,"-U", account + ":" + username, "-K", key, "upload", container, lfilename]
         util.pread2(cmd)
