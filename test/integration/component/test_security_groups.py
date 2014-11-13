@@ -749,7 +749,7 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip", "basic"])
+    @attr(tags = ["sg", "eip", "basic"], required_hardware="true")
     def test_01_dhcpOnlyRouter(self):
         """Test router services for user account
         """
