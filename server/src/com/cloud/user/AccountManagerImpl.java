@@ -977,9 +977,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")
     })
     public UserAccount createUserAccount(final String userName, final String password, final String firstName, final String lastName, final String email,
-        final String timezone, String accountName,
-        final short accountType,
-                                         Long domainId, final String networkDomain, final Map<String, String> details, String accountUUID, final String userUUID) {
+        final String timezone, String accountName, final short accountType, Long domainId, final String networkDomain, final Map<String, String> details,
+        String accountUUID, final String userUUID) {
 
         if (accountName == null) {
             accountName = userName;
@@ -1045,19 +1044,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     user.setRegistrationToken(registrationToken);
                 }
 
-                // create correct account and group association based on accountType
-                if (accountType != Account.ACCOUNT_TYPE_PROJECT) {
-                    Map<Long, Long> accountGroupMap = new HashMap<Long, Long>();
-                    accountGroupMap.put(accountId, new Long(accountType + 1));
-                    _messageBus.publish(_name, MESSAGE_ADD_ACCOUNT_EVENT, PublishScope.LOCAL, accountGroupMap);
-                }
-
                 return new Pair<Long, Account>(user.getId(), account);
             }
         });
 
         long userId = pair.first();
         Account account = pair.second();
+
+        // create correct account and group association based on accountType
+        if (accountType != Account.ACCOUNT_TYPE_PROJECT) {
+            Map<Long, Long> accountGroupMap = new HashMap<Long, Long>();
+            accountGroupMap.put(account.getId(), new Long(accountType + 1));
+            _messageBus.publish(_name, MESSAGE_ADD_ACCOUNT_EVENT, PublishScope.LOCAL, accountGroupMap);
+        }
 
         CallContext.current().putContextParameter(Account.class, account.getUuid());
 
