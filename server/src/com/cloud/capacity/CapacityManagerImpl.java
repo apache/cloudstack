@@ -27,6 +27,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.resource.ResourceState;
+
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
@@ -49,7 +51,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.api.ApiDBUtils;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -67,7 +68,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceListener;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
@@ -597,6 +597,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         long usedMemory = 0;
         long reservedMemory = 0;
         long reservedCpu = 0;
+        final CapacityState capacityState = (host.getResourceState() == ResourceState.Enabled) ? CapacityState.Enabled : CapacityState.Disabled;
 
         List<VMInstanceVO> vms = _vmDao.listUpByHostId(host.getId());
         if (s_logger.isDebugEnabled()) {
@@ -680,6 +681,12 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 cpuCap.setTotalCapacity(hostTotalCpu);
 
             }
+            // Set the capacity state as per the host allocation state.
+            if(capacityState != cpuCap.getCapacityState()){
+                s_logger.debug("Calibrate cpu capacity state for host: " + host.getId() + " old capacity state:" + cpuCap.getTotalCapacity() + " new capacity state:" + hostTotalCpu);
+                cpuCap.setCapacityState(capacityState);
+            }
+            memCap.setCapacityState(capacityState);
 
             if (cpuCap.getUsedCapacity() == usedCpu && cpuCap.getReservedCapacity() == reservedCpu) {
                 s_logger.debug("No need to calibrate cpu capacity, host:" + host.getId() + " usedCpu: " + cpuCap.getUsedCapacity() + " reservedCpu: " +
@@ -701,6 +708,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                     host.getTotalMemory());
                 memCap.setTotalCapacity(host.getTotalMemory());
 
+            }
+            // Set the capacity state as per the host allocation state.
+            if(capacityState != memCap.getCapacityState()){
+                s_logger.debug("Calibrate memory capacity state for host: " + host.getId() + " old capacity state:" + cpuCap.getTotalCapacity() + " new capacity state:" + hostTotalCpu);
+                memCap.setCapacityState(capacityState);
             }
 
             if (memCap.getUsedCapacity() == usedMemory && memCap.getReservedCapacity() == reservedMemory) {
@@ -741,14 +753,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                         new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), host.getClusterId(), usedMemoryFinal, host.getTotalMemory(),
                             Capacity.CAPACITY_TYPE_MEMORY);
                     capacity.setReservedCapacity(reservedMemoryFinal);
-                    CapacityState capacityState = CapacityState.Enabled;
-                    if (host.getClusterId() != null) {
-                        ClusterVO cluster = ApiDBUtils.findClusterById(host.getClusterId());
-                        if (cluster != null) {
-                            capacityState = _configMgr.findClusterAllocationState(cluster) == AllocationState.Disabled ? CapacityState.Disabled : CapacityState.Enabled;
-                            capacity.setCapacityState(capacityState);
-                        }
-                    }
+                    capacity.setCapacityState(capacityState);
                     _capacityDao.persist(capacity);
 
                     capacity =
