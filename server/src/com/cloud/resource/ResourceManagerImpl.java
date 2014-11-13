@@ -1630,12 +1630,14 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             try {
                 clusterId = Long.valueOf(cluster);
             } catch (NumberFormatException e) {
-                ClusterVO c = _clusterDao.findBy(cluster, podId);
-                if (c == null) {
-                    c = new ClusterVO(dcId, podId, cluster);
-                    c = _clusterDao.persist(c);
+                if (podId != null) {
+                    ClusterVO c = _clusterDao.findBy(cluster, podId.longValue());
+                    if (c == null) {
+                        c = new ClusterVO(dcId, podId.longValue(), cluster);
+                        c = _clusterDao.persist(c);
+                    }
+                    clusterId = c.getId();
                 }
-                clusterId = c.getId();
             }
         }
         if (startup instanceof StartupRoutingCommand) {

@@ -405,12 +405,14 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             // Map<String, Collection<String>> parameterMap = paramMultiMap.asMap();
             final Map parameterMap = new HashMap<String, String[]>();
             String responseType = HttpUtils.RESPONSE_TYPE_XML;
-            for (final NameValuePair param : paramList) {
-                if (param.getName().equalsIgnoreCase("response")) {
-                    responseType = param.getValue();
-                    continue;
+            if(paramList != null) {
+                for (final NameValuePair param : paramList) {
+                    if (param.getName().equalsIgnoreCase("response")) {
+                        responseType = param.getValue();
+                        continue;
+                    }
+                    parameterMap.put(param.getName(), new String[]{param.getValue()});
                 }
-                parameterMap.put(param.getName(), new String[] {param.getValue()});
             }
 
             // Get the type of http method being used.

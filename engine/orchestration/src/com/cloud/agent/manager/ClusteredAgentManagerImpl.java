@@ -498,18 +498,17 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 } catch (UnknownHostException e) {
                     throw new CloudRuntimeException("Unable to resolve " + ip);
                 }
-                try {
-                    ch = SocketChannel.open(new InetSocketAddress(addr, Port.value()));
-                    ch.configureBlocking(true); // make sure we are working at blocking mode
-                    ch.socket().setKeepAlive(true);
-                    ch.socket().setSoTimeout(60 * 1000);
+                try (SocketChannel ch1 = SocketChannel.open(new InetSocketAddress(addr, Port.value()));){
+                    ch1.configureBlocking(true); // make sure we are working at blocking mode
+                    ch1.socket().setKeepAlive(true);
+                    ch1.socket().setSoTimeout(60 * 1000);
                     try {
                         SSLContext sslContext = Link.initSSLContext(true);
                         sslEngine = sslContext.createSSLEngine(ip, Port.value());
                         sslEngine.setUseClientMode(true);
                         sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
 
-                        Link.doHandshake(ch, sslEngine, true);
+                        Link.doHandshake(ch1, sslEngine, true);
                         s_logger.info("SSL: Handshake done");
                     } catch (Exception e) {
                         throw new IOException("SSL: Fail to init SSL! " + e);

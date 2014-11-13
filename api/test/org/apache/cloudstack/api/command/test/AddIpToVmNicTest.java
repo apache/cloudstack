@@ -47,15 +47,10 @@ public class AddIpToVmNicTest extends TestCase {
     private ResponseGenerator responseGenerator;
     private SuccessResponse successResponseGenerator;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Override
     @Before
     public void setUp() {
-        addIpToVmNicCmd = new AddIpToVmNicCmd() {
-        };
-        removeIpFromVmNicCmd = new RemoveIpFromVmNicCmd();
+
     }
 
     @Test
@@ -108,8 +103,6 @@ public class AddIpToVmNicTest extends TestCase {
         Mockito.when(networkService.releaseSecondaryIpFromNic(Matchers.anyInt())).thenReturn(true);
 
         removeIpFromNic._networkService = networkService;
-        successResponseGenerator = Mockito.mock(SuccessResponse.class);
-
         removeIpFromNic.execute();
     }
 

@@ -265,18 +265,20 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             "] is down." +
             ((sb != null) ? sb.toString() : ""));
 
-        for (VMInstanceVO vm : vms) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Notifying HA Mgr of to restart vm " + vm.getId() + "-" + vm.getInstanceName());
+        if (vms != null) {
+            for (VMInstanceVO vm : vms) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Notifying HA Mgr of to restart vm " + vm.getId() + "-" + vm.getInstanceName());
+                }
+                vm = _instanceDao.findByUuid(vm.getUuid());
+                Long hostId = vm.getHostId();
+                if (hostId != null && !hostId.equals(host.getId())) {
+                    s_logger.debug("VM " + vm.getInstanceName() + " is not on down host " + host.getId() + " it is on other host "
+                            + hostId + " VM HA is done");
+                    continue;
+                }
+                scheduleRestart(vm, investigate);
             }
-            vm = _instanceDao.findByUuid(vm.getUuid());
-            Long hostId = vm.getHostId();
-            if ( hostId != null && !hostId.equals(host.getId()) ) {
-                s_logger.debug("VM " + vm.getInstanceName() + " is not on down host " + host.getId() + " it is on other host "
-                        + hostId + " VM HA is done");
-                continue;
-            }
-            scheduleRestart(vm, investigate);
         }
     }
 

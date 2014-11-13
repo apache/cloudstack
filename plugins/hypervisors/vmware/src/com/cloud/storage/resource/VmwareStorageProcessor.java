@@ -327,9 +327,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
             TemplateObjectTO newTemplate = new TemplateObjectTO();
 
             if (managed) {
-                String path = dsMo.getDatastorePath(managedStoragePoolRootVolumeName + ".vmdk");
-
-                newTemplate.setPath(path);
+                if(dsMo != null) {
+                    String path = dsMo.getDatastorePath(managedStoragePoolRootVolumeName + ".vmdk");
+                    newTemplate.setPath(path);
+                }
             }
             else {
                 newTemplate.setPath(templateUuidName);
