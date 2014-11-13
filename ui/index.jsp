@@ -1692,6 +1692,10 @@
         <script src="lib/jquery.md5.js" type="text/javascript" ></script>
         <script src="lib/require.js" type="text/javascript"></script>
 
+        <!-- localized messages -->
+        <jsp:include page="dictionary.jsp" />
+        <jsp:include page="dictionary2.jsp" />
+
         <script src="lib/excanvas.js" type="text/javascript"></script>
         <script src="lib/flot/jquery.flot.js" type="text/javascript"></script>
         <script src="lib/flot/jquery.colorhelpers.js" type="text/javascript"></script>
@@ -1776,9 +1780,5 @@
         <script type="text/javascript" src="plugins/plugins.js?t=<%=now%>"></script>
         <script type="text/javascript" src="modules/modules.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/plugins.js?t=<%=now%>"></script>
-
-        <!-- localized messages -->
-        <jsp:include page="dictionary.jsp" />
-	<jsp:include page="dictionary2.jsp" />
     </body>
 </html>
