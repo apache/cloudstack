@@ -761,7 +761,9 @@ AjaxViewer.prototype = {
 			for (var j = 0; j < keyPressMaps.length; j++) {
 				var code = keyPressMaps[j].keycode;
 				var mappedEntry = keyPressMaps[j].entry;
-				this.keyboardMappers[keyboardType].jsKeyPressX11KeysymMap[code] = mappedEntry;
+				if(keyPressMaps[j].guestos == undefined || keyPressMaps[j].guestos == this.guestos) {
+					this.keyboardMappers[keyboardType].jsKeyPressX11KeysymMap[code] = mappedEntry;
+				}
 			}
 		}
 	}

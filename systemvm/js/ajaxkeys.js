@@ -289,47 +289,26 @@ var	keyboardTables = [
                             ]
            }
            }, {tindex: 2, keyboardType: KEYBOARD_TYPE_UK, mappingTable:
-                 {X11: [
-                          //[223 = `¬¦]
-                          {keycode: 223,		entry : 0x60, 	browser: "IE"},
-                          ],
+                 {X11: [],
                   keyPress: [
-                             //[34 = "]
-                          {keycode: 34, entry:
-                              [{type : KEY_DOWN, code : 0x40, modifiers : 64, shift : true}]
-                          },
+                          //[34 = "]
+                          {keycode: 34,		entry: 0x40,	guestos: "windows"},
                           //[35 = #]
-                          {keycode: 35, entry:
-                              [{type : KEY_DOWN, code : 0x5c, modifiers : 0, shift : false}]
-                          },
+                          {keycode: 35,		entry: 0x5c,	guestos: "windows"},
                           // [64 = @]
-                          {keycode: 64, entry:
-                              [{type : KEY_DOWN, code : 0x22, modifiers : 64, shift : true}]
-                          },
+                          {keycode: 64,		entry: 0x22,	guestos: "windows"},
                           // [92 = \]
-                          {keycode: 92, entry:
-                              [{type : KEY_DOWN, code : 0xa6, modifiers : 0, shift : false}]
-                          },
+                          {keycode: 92,		entry: 0xa6,	guestos: "windows"},
                           // [124 = |]
-                          {keycode: 124, entry:
-                              [{type : KEY_DOWN, code : 0xa6, modifiers : 64, shift : true}]
-                          },
+                          {keycode: 124,	entry: 0xa6,	guestos: "windows"},
                           // [126 = ~]
-                          {keycode: 126, entry:
-                              [{type : KEY_DOWN, code : 0x7c, modifiers : 64, shift : true}]
-                          },
+                          {keycode: 126,	entry: 0x7c,	guestos: "windows"},
                           // [163 = £]
-                          {keycode: 163, entry:
-                              [{type : KEY_DOWN, code : 0x23, modifiers : 64, shift : true}]
-                          },
+                          {keycode: 163,	entry: 0x23,	guestos: "windows"},
                           // [172 = ¬]
-                          {keycode: 172, entry:
-                              [{type : KEY_DOWN, code : 0x7e, modifiers : 64, shift : true}]
-                          },
+                          {keycode: 172,	entry: 0x7e,	guestos: "windows"},
                           // [166 = ¦]
-                          {keycode: 166, entry:
-                              [{type : KEY_DOWN, code : 0x60, modifiers : 896, shift : false}]
-                          }
+                          {keycode: 166,	entry: [{type : KEY_DOWN, code : 0x60, modifiers : 896, shift : false}],	guestos: "windows"}
                           ]
            }
            }]
