@@ -99,7 +99,6 @@ public class CertServiceTest {
         String certFile = getClass().getResource("/certs/rsa_ca_signed.crt").getFile();
         String keyFile = getClass().getResource("/certs/rsa_ca_signed.key").getFile();
         String chainFile = getClass().getResource("/certs/root_chain.crt").getFile();
-        String password = "user";
 
         String cert = readFileToString(new File(certFile));
         String key = readFileToString(new File(keyFile));
@@ -134,10 +133,6 @@ public class CertServiceTest {
         keyField.setAccessible(true);
         keyField.set(uploadCmd, key);
 
-        Field passField = _class.getDeclaredField("password");
-        passField.setAccessible(true);
-        passField.set(uploadCmd, password);
-
         Field chainField = _class.getDeclaredField("chain");
         chainField.setAccessible(true);
         chainField.set(uploadCmd, chain);
@@ -147,7 +142,7 @@ public class CertServiceTest {
 
     @Test
     /**
-     * Given a Self-signed Certificate with non-encrypted key, upload should succeed
+     * Given a Self-signed Certificate with encrypted key, upload should succeed
      */
     public void runUploadSslCertSelfSignedWithPassword() throws Exception {
 
@@ -198,7 +193,7 @@ public class CertServiceTest {
 
     @Test
     /**
-     * Given a Self-signed Certificate with encrypted key, upload should succeed
+     * Given a Self-signed Certificate with non-encrypted key, upload should succeed
      */
     public void runUploadSslCertSelfSignedNoPassword() throws Exception {
 
@@ -242,7 +237,7 @@ public class CertServiceTest {
         certService.uploadSslCert(uploadCmd);
     }
 
-    /*
+
     @Test
     public void runUploadSslCertBadChain() throws IOException, IllegalAccessException, NoSuchFieldException {
         Assume.assumeTrue(isOpenJdk() || isJCEInstalled());
@@ -250,7 +245,6 @@ public class CertServiceTest {
         String certFile = getClass().getResource("/certs/rsa_ca_signed.crt").getFile();
         String keyFile = getClass().getResource("/certs/rsa_ca_signed.key").getFile();
         String chainFile = getClass().getResource("/certs/rsa_self_signed.crt").getFile();
-        String password = "user";
 
         String cert = readFileToString(new File(certFile));
         String key = readFileToString(new File(keyFile));
@@ -281,10 +275,6 @@ public class CertServiceTest {
         Field keyField = _class.getDeclaredField("key");
         keyField.setAccessible(true);
         keyField.set(uploadCmd, key);
-
-        Field passField = _class.getDeclaredField("password");
-        passField.setAccessible(true);
-        passField.set(uploadCmd, password);
 
         Field chainField = _class.getDeclaredField("chain");
         chainField.setAccessible(true);
@@ -297,9 +287,8 @@ public class CertServiceTest {
             assertTrue(e.getMessage().contains("Invalid certificate chain"));
         }
     }
-    */
 
-    /*
+
     @Test
     public void runUploadSslCertNoRootCert() throws IOException, IllegalAccessException, NoSuchFieldException {
 
@@ -307,8 +296,7 @@ public class CertServiceTest {
 
         String certFile = getClass().getResource("/certs/rsa_ca_signed.crt").getFile();
         String keyFile = getClass().getResource("/certs/rsa_ca_signed.key").getFile();
-        String chainFile = getClass().getResource("/certs/rsa_ca_signed2.crt").getFile();
-        String password = "user";
+        String chainFile = getClass().getResource("/certs/non_root.crt").getFile();
 
         String cert = readFileToString(new File(certFile));
         String key = readFileToString(new File(keyFile));
@@ -340,78 +328,20 @@ public class CertServiceTest {
         keyField.setAccessible(true);
         keyField.set(uploadCmd, key);
 
-        Field passField = _class.getDeclaredField("password");
-        passField.setAccessible(true);
-        passField.set(uploadCmd, password);
-
         Field chainField = _class.getDeclaredField("chain");
         chainField.setAccessible(true);
         chainField.set(uploadCmd, chain);
 
         try {
             certService.uploadSslCert(uploadCmd);
-            fail("Chain is given but does not have root certificate");
+            fail("Chain is given but does not link to the certificate");
         } catch (Exception e) {
-            assertTrue(e.getMessage().contains("No root certificates found"));
+            assertTrue(e.getMessage().contains("Invalid certificate chain"));
         }
 
     }
-    */
 
-    /*
-    @Test
-    public void runUploadSslCertNoChain() throws IOException, IllegalAccessException, NoSuchFieldException {
 
-        Assume.assumeTrue(isOpenJdk() || isJCEInstalled());
-
-        String certFile = getClass().getResource("/certs/rsa_ca_signed.crt").getFile();
-        String keyFile = getClass().getResource("/certs/rsa_ca_signed.key").getFile();
-        String password = "user";
-
-        String cert = readFileToString(new File(certFile));
-        String key = readFileToString(new File(keyFile));
-
-        CertServiceImpl certService = new CertServiceImpl();
-
-        //setting mock objects
-        certService._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
-        when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
-
-        certService._domainDao = Mockito.mock(DomainDao.class);
-        DomainVO domain = new DomainVO("networkdomain", 1L, 1L, "networkdomain");
-        when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
-
-        certService._sslCertDao = Mockito.mock(SslCertDao.class);
-        when(certService._sslCertDao.persist(any(SslCertVO.class))).thenReturn(new SslCertVO());
-
-        //creating the command
-        UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
-        Class<?> _class = uploadCmd.getClass().getSuperclass();
-
-        Field certField = _class.getDeclaredField("cert");
-        certField.setAccessible(true);
-        certField.set(uploadCmd, cert);
-
-        Field keyField = _class.getDeclaredField("key");
-        keyField.setAccessible(true);
-        keyField.set(uploadCmd, key);
-
-        Field passField = _class.getDeclaredField("password");
-        passField.setAccessible(true);
-        passField.set(uploadCmd, password);
-
-        try {
-            certService.uploadSslCert(uploadCmd);
-            fail("If no chain is given, the certificate should be self signed. Else, uploadShould Fail");
-        } catch (Exception e) {
-            assertTrue(e.getMessage().contains("No chain given and certificate not self signed"));
-        }
-
-    }
-    */
-
-    /*
     @Test
     public void runUploadSslCertBadPassword() throws IOException, IllegalAccessException, NoSuchFieldException {
 
@@ -460,13 +390,12 @@ public class CertServiceTest {
         }
 
     }
-    */
 
     @Test
     public void runUploadSslCertBadkeyPair() throws IOException, IllegalAccessException, NoSuchFieldException {
         // Reading appropritate files
         String certFile = getClass().getResource("/certs/rsa_self_signed.crt").getFile();
-        String keyFile = getClass().getResource("/certs/rsa_random_pkey.key").getFile();
+        String keyFile = getClass().getResource("/certs/non_root.key").getFile();
 
         String cert = readFileToString(new File(certFile));
         String key = readFileToString(new File(keyFile));
