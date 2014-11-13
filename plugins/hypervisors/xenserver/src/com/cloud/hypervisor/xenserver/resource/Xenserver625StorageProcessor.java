@@ -904,10 +904,29 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             }
 
             destVdi = VDI.getByUuid(conn, destVdiUuid);
-            String templatePath = destDir + "/" + destVdiUuid + ".vhd";
-            templatePath = templatePath.replaceAll("//","/");
+
+            // scan makes XenServer pick up VDI physicalSize
+            destSr.scan(conn);
+
+            String templateUuid = destVdi.getUuid(conn);
+            String templateFilename = templateUuid + ".vhd";
+            long virtualSize = destVdi.getVirtualSize(conn);
+            long physicalSize = destVdi.getPhysicalUtilisation(conn);
+
+            String templatePath = destNfsPath + "/" + destDir;
+
+            templatePath = templatePath.replaceAll("//", "/");
+
+            result = hypervisorResource.postCreatePrivateTemplate(conn, templatePath, templateFilename, templateUuid, nameLabel, null,
+                    physicalSize, virtualSize, destObj.getId());
+
+            if (!result) {
+                throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir");
+            }
+
             TemplateObjectTO newTemplate = new TemplateObjectTO();
-            newTemplate.setPath(templatePath);
+
+            newTemplate.setPath(destDir + "/" + templateFilename);
             newTemplate.setFormat(Storage.ImageFormat.VHD);
             newTemplate.setSize(destVdi.getVirtualSize(conn));
             newTemplate.setPhysicalSize(destVdi.getPhysicalUtilisation(conn));
