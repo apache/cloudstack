@@ -191,16 +191,18 @@ public class JuniperSrxResource implements ServerResource {
                     throw new Exception("Failed to find Juniper SRX XML file: " + filename);
                 }
 
-                FileReader fr = new FileReader(xmlFilePath);
-                BufferedReader br = new BufferedReader(fr);
-
-                String xml = "";
-                String line;
-                while ((line = br.readLine()) != null) {
-                    xml += line.trim();
+                try(FileReader fr = new FileReader(xmlFilePath);
+                BufferedReader br = new BufferedReader(fr);) {
+                    String xml = "";
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        xml += line.trim();
+                    }
+                    return xml;
+                }catch (Exception e) {
+                    s_logger.debug(e);
+                    return null;
                 }
-
-                return xml;
             } catch (Exception e) {
                 s_logger.debug(e);
                 return null;

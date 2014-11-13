@@ -179,7 +179,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
     @Override
     public Integer getSourcePortStart() {
         if (publicStartPort != null) {
-            return publicStartPort.intValue();
+            return publicStartPort;
         }
         return null;
     }
@@ -188,12 +188,11 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
     public Integer getSourcePortEnd() {
         if (publicEndPort == null) {
             if (publicStartPort != null) {
-                return publicStartPort.intValue();
+                return publicStartPort;
             }
         } else {
-            return publicEndPort.intValue();
+            return publicEndPort;
         }
-
         return null;
     }
 

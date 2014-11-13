@@ -115,8 +115,11 @@ public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public Long getSyncObjId() {
-        return _firewallService.getFirewallRule(id).getNetworkId();
-    }
+        FirewallRule fw = _firewallService.getFirewallRule(id);
+        if (fw != null)
+            return fw.getNetworkId();
+        return null;
+     }
 
     @Override
     public ApiCommandJobType getInstanceType() {
