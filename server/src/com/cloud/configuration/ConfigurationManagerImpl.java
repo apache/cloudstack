@@ -1206,9 +1206,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             String ipRange = startIp + "-" + endIp;
             pod.setDescription(ipRange);
             Grouping.AllocationState allocationState = null;
-                    if (allocationStateStrFinal != null && !allocationStateStrFinal.isEmpty()) {
-                        allocationState = Grouping.AllocationState.valueOf(allocationStateStrFinal);
-                        _capacityDao.updateCapacityState(null, pod.getId(), null, null, allocationStateStrFinal);
+            if (allocationStateStrFinal != null && !allocationStateStrFinal.isEmpty()) {
+                allocationState = Grouping.AllocationState.valueOf(allocationStateStrFinal);
                 pod.setAllocationState(allocationState);
             }
 
@@ -1743,7 +1742,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException("Cannot enable this Zone since: " + ex.getMessage());
                 }
             }
-            _capacityDao.updateCapacityState(zone.getId(), null, null, null, allocationStateStr);
             zone.setAllocationState(allocationState);
         }
 

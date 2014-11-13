@@ -30,6 +30,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.capacity.CapacityState;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
@@ -67,7 +68,6 @@ import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.agent.transport.Request;
-import com.cloud.api.ApiDBUtils;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
@@ -123,7 +123,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
-import com.cloud.org.Grouping.AllocationState;
 import com.cloud.org.Managed;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -1038,7 +1037,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 s_logger.error("Unable to resolve " + allocationState + " to a valid supported allocation State");
                 throw new InvalidParameterValueException("Unable to resolve " + allocationState + " to a supported state");
             } else {
-                _capacityDao.updateCapacityState(null, null, cluster.getId(), null, allocationState);
                 cluster.setAllocationState(newAllocationState);
                 doUpdate = true;
             }
@@ -1160,14 +1158,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new NoTransitionException("No next resource state found for current state =" + currentState + " event =" + event);
         }
 
-        // TO DO - Make it more granular and have better conversion into
-        // capacity type
-
-        if (host.getType() == Type.Routing && host.getClusterId() != null) {
-            AllocationState capacityState = _configMgr.findClusterAllocationState(ApiDBUtils.findClusterById(host.getClusterId()));
-            if (capacityState == AllocationState.Enabled && nextState != ResourceState.Enabled) {
-                capacityState = AllocationState.Disabled;
-            }
+        // TO DO - Make it more granular and have better conversion into capacity type
+        if(host.getType() == Type.Routing){
+            CapacityState capacityState =  (nextState == ResourceState.Enabled) ? CapacityState.Enabled : CapacityState.Disabled;
             _capacityDao.updateCapacityState(null, null, null, host.getId(), capacityState.toString());
         }
         return _hostDao.updateResourceState(currentState, event, nextState, host);
