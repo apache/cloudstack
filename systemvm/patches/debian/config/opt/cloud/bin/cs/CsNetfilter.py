@@ -35,6 +35,8 @@ class CsChain(object):
         self.last_added = chain
 
     def get(self, table):
+        if table not in self.chain.keys():
+            return {}
         return self.chain[table]
 
     def last(self):
