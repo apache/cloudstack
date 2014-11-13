@@ -277,11 +277,25 @@ class CsIP:
         if self.get_type() in ["public"]:
             self.fw.append(["mangle", "front",
                             "-A PREROUTING " +
-                            "-i %s -m state --state NEW -j CONMARK --set-xmark 0x2/0xffffffff" %
-                            self.dev])
-        self.fw.append(["mangle", "front",
-                        "-A POSTROUTING",
-                        "-p udp -m udp --dport 68 -j CHECKSUM --checksum-fill"])
+                            "-d %s -j VPN_%s" % (self.address['cidr'], self.address['public_ip'])])
+            self.fw.append(["mangle", "front",
+                            "-A PREROUTING " +
+                            "-d %s -j FIREWALL_%s" % (self.address['cidr'], self.address['public_ip'])])
+            self.fw.append(["mangle", "front",
+                            "-A FIREWALL_%s " % self.address['public_ip'] +
+                            "-m state --state RELATED,ESTABLISHED -j ACCEPT"])
+            self.fw.append(["mangle", "",
+                            "-A FIREWALL_%s DROP" % self.address['public_ip']])
+            self.fw.append(["mangle", "",
+                            "-A VPN_%s -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.address['public_ip']])
+            self.fw.append(["mangle", "",
+                            "-A VPN_%s RETURN" % self.address['public_ip']])
+            self.fw.append(["mangle", "front",
+                            "-A POSTROUTING",
+                            "-p udp -m udp --dport 68 -j CHECKSUM --checksum-fill"])
+            self.fw.append(["nat", "",
+                            "-A POSTROUTING -o eth2 -j SNAT --to-source 10.0.2.102" % self.address['public_ip']])
+
         self.fw.append(["filter", "", "-A INPUT -d 224.0.0.18/32 -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -d 225.0.0.50/32 -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -i %s -m state --state RELATED,ESTABLISHED -j ACCEPT" %
@@ -303,6 +317,7 @@ class CsIP:
             self.fw.append(["filter", "", "-A FORWARD -i eth0 -o eth2 -j FW_OUTBOUND"])
 
         if self.get_type() in ["control"]:
+            self.fw.append(["filter", "", "-A FW_OUTBOUND -m state --state RELATED,ESTABLISHED -j ACCEPT"])
             self.fw.append(["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 3922 -m state --state NEW -j ACCEPT" % self.dev])
 
     def fw_vpcrouter(self):
