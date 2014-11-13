@@ -178,7 +178,7 @@ Group: System Environment/Libraries
 %description awsapi
 Apache Cloudstack AWS API compatibility wrapper
 
-%if "%{_ossnoss}" == "NOREDIST"
+%if "%{_ossnoss}" == "noredist"
 %package mysql-ha
 Summary: Apache CloudStack Balancing Strategy for MySQL
 Requires: mysql-connector-java
@@ -354,7 +354,7 @@ for name in cloud-bridge.properties commons-logging.properties ec2-service.prope
 done
 
 # MYSQL HA
-if [ "x%{_ossnoss}" == "xNOREDIST" ] ; then
+if [ "x%{_ossnoss}" == "xnoredist" ] ; then
   mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-mysql-ha/lib
   cp -r plugins/database/mysql-ha/target/cloud-plugin-database-mysqlha-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-mysql-ha/lib
 fi
@@ -381,7 +381,8 @@ install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-awsap
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-awsapi-%{version}/LICENSE
 install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/NOTICE
 install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-cli-%{version}/LICENSE
-if [ "x%{_ossnoss}" == "xNOREDIST" ] ; then
+
+if [ "x%{_ossnoss}" == "xnoredist" ] ; then
   install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-mysql-ha-%{version}/LICENSE
   install -D tools/whisker/NOTICE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-mysql-ha-%{version}/NOTICE
 fi
@@ -668,7 +669,7 @@ fi
 %files baremetal-agent
 %attr(0755,root,root) %{_bindir}/cloudstack-setup-baremetal
 
-%if "%{_ossnoss}" == "NOREDIST"
+%if "%{_ossnoss}" == "noredist"
 %files mysql-ha
 %defattr(0644,cloud,cloud,0755)
 %attr(0644,root,root) %{_datadir}/%{name}-mysql-ha/lib/*
