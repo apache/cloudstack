@@ -16,7 +16,7 @@
 -- under the License.
 
 --
--- Schema cleanup from 4.4.0 to 4.5.0
+-- Schema cleanup from 4.4.2 to 4.5.0
 --
 
 UPDATE `cloud`.`configuration`

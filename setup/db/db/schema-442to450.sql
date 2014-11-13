@@ -16,7 +16,7 @@
 -- under the License.
 
 --
--- Schema upgrade from 4.4.1 to 4.5.0
+-- Schema upgrade from 4.4.2 to 4.5.0
 --
 
 -- Disable foreign key checking
