@@ -2244,7 +2244,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     return false;
                 }
             }
-            throw new CloudRuntimeException("Can't move volume between scope: " + storeForNewStoreScope.getScopeType() + " and " + storeForExistingStoreScope.getScopeType());
+            throw new InvalidParameterValueException("Can't move volume between scope: " + storeForNewStoreScope.getScopeType() + " and " + storeForExistingStoreScope.getScopeType());
         }
 
         return !storeForExistingStoreScope.isSameScope(storeForNewStoreScope);
