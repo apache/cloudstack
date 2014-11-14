@@ -16,6 +16,14 @@
 // under the License.
 package org.cloud.network.router.deployment;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
@@ -60,12 +68,6 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 public class RouterDeploymentDefinition {
     private static final Logger logger = Logger.getLogger(RouterDeploymentDefinition.class);
@@ -108,7 +110,7 @@ public class RouterDeploymentDefinition {
     }
 
     public Long getServiceOfferingId() {
-        return this.serviceOfferingId;
+        return serviceOfferingId;
     }
 
     public Vpc getVpc() {
@@ -132,7 +134,7 @@ public class RouterDeploymentDefinition {
     }
 
     public boolean isRedundant() {
-        return this.guestNetwork.isRedundant();
+        return guestNetwork.isRedundant();
     }
 
     public DeploymentPlan getPlan() {
@@ -200,6 +202,7 @@ public class RouterDeploymentDefinition {
 
             for (final DeployDestination destination : destinations) {
                 dest = destination;
+                planDeploymentRouters();
                 generateDeploymentPlan();
                 executeDeployment();
             }
@@ -285,7 +288,7 @@ public class RouterDeploymentDefinition {
         // If old network is redundant but new is single router, then
         // routers.size() = 2 but routerCount = 1
         int routersExpected = 1;
-        if (this.isRedundant()) {
+        if (isRedundant()) {
             routersExpected = 2;
         }
         return routersExpected < routers.size() ? 0 : routersExpected - routers.size();
@@ -310,7 +313,7 @@ public class RouterDeploymentDefinition {
         isPublicNetwork = networkModel.isProviderSupportServiceInNetwork(guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter);
 
         boolean canProceed = true;
-        if (this.isRedundant() && !this.isPublicNetwork) {
+        if (isRedundant() && !isPublicNetwork) {
             // TODO Shouldn't be this throw an exception instead of log error and empty list of routers
             logger.error("Didn't support redundant virtual router without public network!");
             routers = new ArrayList<DomainRouterVO>();
@@ -333,13 +336,13 @@ public class RouterDeploymentDefinition {
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
         //Check current redundant routers, if possible(all routers are stopped), reset the priority
-        this.setupPriorityOfRedundantRouter();
+        setupPriorityOfRedundantRouter();
 
-        if (this.getNumberOfRoutersToDeploy() > 0 && this.prepareDeployment()) {
-            this.findVirtualProvider();
-            this.findServiceOfferingId();
-            this.findSourceNatIP();
-            this.deployAllVirtualRouters();
+        if (getNumberOfRoutersToDeploy() > 0 && prepareDeployment()) {
+            findVirtualProvider();
+            findServiceOfferingId();
+            findSourceNatIP();
+            deployAllVirtualRouters();
         }
     }
 
@@ -353,7 +356,7 @@ public class RouterDeploymentDefinition {
     protected void findServiceOfferingId() {
         Long networkOfferingId = networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
         if (networkOfferingId != null) {
-            this.serviceOfferingId = networkOfferingId;
+            serviceOfferingId = networkOfferingId;
         }
     }
 
@@ -443,8 +446,8 @@ public class RouterDeploymentDefinition {
      * reset all routers priorities
      */
     protected void setupPriorityOfRedundantRouter() {
-        if (this.isRedundant() && this.routersNeedReset()) {
-            for (final DomainRouterVO router : this.routers) {
+        if (isRedundant() && routersNeedReset()) {
+            for (final DomainRouterVO router : routers) {
                 // getUpdatedPriority() would update the value later
                 router.setPriority(0);
                 router.setIsPriorityBumpUp(false);
