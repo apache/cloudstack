@@ -3723,6 +3723,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Invalid value for Availability. Supported types: " + Availability.Required + ", " + Availability.Optional);
         }
 
+        if (networkRate != null && networkRate < 0) {
+            networkRate = 0;
+        }
+
         Long serviceOfferingId = cmd.getServiceOfferingId();
 
         if (serviceOfferingId != null) {
