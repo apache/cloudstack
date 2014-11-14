@@ -40,7 +40,8 @@ from marvin.lib.common import (get_domain,
                                get_template,
                                verifyNetworkState,
                                add_netscaler,
-                               wait_for_cleanup)
+                               wait_for_cleanup,
+                               GetNetscalerInfoFromConfig)
 from nose.plugins.attrib import attr
 from marvin.codes import PASS, FAIL, FAILED
 from marvin.sshClient import SshClient
@@ -97,6 +98,13 @@ class TestPersistentNetworks(cloudstackTestCase):
         cls.isolated_network_offering_netscaler = cls.createNetworkOffering(
             "nw_off_isolated_netscaler")
 
+        response = GetNetscalerInfoFromConfig(
+            cls.config
+        )
+        assert response[0] is not None, response[1]
+        cls.services["netscaler"] = response[0]
+        cls.services["netscaler"]["lbdevicededicated"] = False
+
         # Configure Netscaler device
         # If configuration succeeds, set ns_configured to True so that
         # Netscaler tests are executed
@@ -105,7 +113,7 @@ class TestPersistentNetworks(cloudstackTestCase):
             cls.netscaler = add_netscaler(
                 cls.api_client,
                 cls.zone.id,
-                cls.services["netscaler_VPX"])
+                cls.services["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.ns_configured = True
         except Exception:
@@ -1500,6 +1508,13 @@ class TestAssignVirtualMachine(cloudstackTestCase):
         cls.persistent_network_offering_netscaler = cls.createNetworkOffering(
             "nw_off_isolated_persistent_netscaler")
 
+        response = GetNetscalerInfoFromConfig(
+            cls.config
+        )
+        assert response[0] is not None, response[1]
+        cls.services["netscaler"] = response[0]
+        cls.services["netscaler"]["lbdevicededicated"] = False
+
         # Configure Netscaler device
         # If configuration succeeds, set ns_configured to True so that
         # Netscaler tests are executed
@@ -1508,7 +1523,7 @@ class TestAssignVirtualMachine(cloudstackTestCase):
             cls.netscaler = add_netscaler(
                 cls.api_client,
                 cls.zone.id,
-                cls.services["netscaler_VPX"])
+                cls.services["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.ns_configured = True
         except Exception:
@@ -1964,6 +1979,13 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
             cls.api_client,
             state="enabled")
 
+        response = GetNetscalerInfoFromConfig(
+            cls.config
+        )
+        assert response[0] is not None, response[1]
+        cls.services["netscaler"] = response[0]
+        cls.services["netscaler"]["lbdevicededicated"] = False
+
         # Configure Netscaler device
         # If configuration succeeds, set ns_configured to True so that
         # Netscaler tests are executed
@@ -1972,7 +1994,7 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
             cls.netscaler = add_netscaler(
                 cls.api_client,
                 cls.zone.id,
-                cls.services["netscaler_VPX"])
+                cls.services["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.ns_configured = True
         except Exception:
