@@ -202,7 +202,6 @@ public class RouterDeploymentDefinition {
 
             for (final DeployDestination destination : destinations) {
                 dest = destination;
-                planDeploymentRouters();
                 generateDeploymentPlan();
                 executeDeployment();
             }
@@ -334,8 +333,8 @@ public class RouterDeploymentDefinition {
      */
     protected void executeDeployment()
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-
         //Check current redundant routers, if possible(all routers are stopped), reset the priority
+        planDeploymentRouters();
         setupPriorityOfRedundantRouter();
 
         if (getNumberOfRoutersToDeploy() > 0 && prepareDeployment()) {
