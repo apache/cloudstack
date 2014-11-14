@@ -2462,6 +2462,13 @@ class Host:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.updateHost(cmd))
 
+    @classmethod
+    def reconnect(cls, apiclient, **kwargs):
+        """Reconnect the Host"""
+        
+        cmd = reconnectHost.reconnectHostCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.reconnectHost(cmd))
 
 class StoragePool:
     """Manage Storage pools (Primary Storage)"""
