@@ -304,9 +304,13 @@ test_data = {
         "lbdevicecapacity": 2,
         "port": 22
     },
-	"network_without_acl": {
-		"name": "TestNetwork",
-		"displaytext": "TestNetwork",
+    "netscaler_network": {
+        "name": "Netscaler",
+        "displaytext": "Netscaler",
+    },
+    "network_without_acl": {
+        "name": "TestNetwork",
+        "displaytext": "TestNetwork",
 	},
     "virtual_machine": {
         "displayname": "Test VM",
