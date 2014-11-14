@@ -9798,7 +9798,7 @@
                                         }
                                     },
                                     
-                                    scaleUp: {
+                                    scaleUp: { //*** Infrastructure > Virtual Routers > change service offering ***
                                         label: 'label.change.service.offering',
                                         createForm: {
                                             title: 'label.change.service.offering',
@@ -9819,7 +9819,8 @@
                                                             url: createURL('listServiceOfferings'),
                                                             data: {
                                                                 issystem: true,
-                                                                systemvmtype: 'domainrouter'
+                                                                systemvmtype: 'domainrouter',
+                                                                virtualmachineid: args.context.routers[0].id
                                                             },
                                                             success: function (json) {
                                                                 var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
@@ -11039,7 +11040,7 @@
                                 }
                             },
                             
-                            scaleUp: {
+                            scaleUp: { //*** Infrastructure > System VMs (consoleProxy or SSVM) > change service offering ***
                                 label: 'label.change.service.offering',
                                 createForm: {
                                     title: 'label.change.service.offering',
@@ -11056,14 +11057,23 @@
                                         serviceOfferingId: {
                                             label: 'label.compute.offering',
                                             select: function (args) {
-                                                var apiCmd = "listServiceOfferings&issystem=true";
-                                                if (args.context.systemVMs[0].systemvmtype == "secondarystoragevm")
-                                                apiCmd += "&systemvmtype=secondarystoragevm"; else if (args.context.systemVMs[0].systemvmtype == "consoleproxy")
-                                                apiCmd += "&systemvmtype=consoleproxy";
+                                            	var data1 = {
+                                                    issystem: 'true',
+                                                    virtualmachineid: args.context.systemVMs[0].id
+                                                };                                                
+                                                if (args.context.systemVMs[0].systemvmtype == "secondarystoragevm") {
+                                                	$.extend(data1, {
+                                                		systemvmtype: 'secondarystoragevm'
+                                                	});
+                                                }
+                                                else if (args.context.systemVMs[0].systemvmtype == "consoleproxy") {
+                                                	$.extend(data1, {
+                                                		systemvmtype: 'consoleproxy'
+                                                	});                                                	
+                                                }
                                                 $.ajax({
-                                                    url: createURL(apiCmd),
-                                                    dataType: "json",
-                                                    async: true,
+                                                    url: createURL('listServiceOfferings'),
+                                                    data: data1,
                                                     success: function (json) {
                                                         var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
                                                         var items =[];
