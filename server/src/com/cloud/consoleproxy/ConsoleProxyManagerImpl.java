@@ -924,6 +924,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
         }catch (Exception e){
            errorString = e.getMessage();
+           throw e;
         }finally {
             // TODO - For now put all the alerts as creation failure. Distinguish between creation vs start failure in future.
             // Also add failure reason since startvm masks some of them.
