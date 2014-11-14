@@ -1359,6 +1359,11 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
 
     function nfsURL(server, path) {
         var url;
+
+        if (path.substring(0, 1) != "/") {
+            path = "/" + path;
+        }
+
         if (server.indexOf("://") == -1)
             url = "nfs://" + server + path;
         else
@@ -1368,6 +1373,11 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
 
     function smbURL(server, path, smbUsername, smbPassword, smbDomain) {
         var url = '';
+
+        if (path.substring(0, 1) != "/") {
+            path = "/" + path;
+        }
+
         if (server.indexOf('://') == -1) {
         	url += 'cifs://';
         }
