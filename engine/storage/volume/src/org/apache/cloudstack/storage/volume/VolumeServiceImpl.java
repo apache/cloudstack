@@ -26,6 +26,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.RegisterVolumePayload;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -1370,7 +1371,7 @@ public class VolumeServiceImpl implements VolumeService {
                         return;
                     }
 
-                    List<VolumeDataStoreVO> dbVolumes = _volumeStoreDao.listByStoreId(storeId);
+                    List<VolumeDataStoreVO> dbVolumes = _volumeStoreDao.listUploadedVolumesByStoreId(storeId);
                     List<VolumeDataStoreVO> toBeDownloaded = new ArrayList<VolumeDataStoreVO>(dbVolumes);
                     for (VolumeDataStoreVO volumeStore : dbVolumes) {
                         VolumeVO volume = _volumeDao.findById(volumeStore.getVolumeId());
@@ -1467,6 +1468,8 @@ public class VolumeServiceImpl implements VolumeService {
                             s_logger.debug("Volume " + volumeHost.getVolumeId() + " needs to be downloaded to " + store.getName());
                             // TODO: pass a callback later
                             VolumeInfo vol = volFactory.getVolume(volumeHost.getVolumeId());
+                            RegisterVolumePayload payload = new RegisterVolumePayload(volumeHost.getDownloadUrl(), volumeHost.getChecksum(), vol.getFormat().toString());
+                            vol.addPayload(payload);
                             createVolumeAsync(vol, store);
                         }
                     }
