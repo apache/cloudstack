@@ -23,6 +23,7 @@ source_lang = en
 
 [CloudStack_UI.44xmessagesproperties]
 file_filter = translations/CloudStack_UI.44xmessagesproperties/<lang>.properties
+source_file = work-dir/messages.properties
 source_lang = en
 trans.ar = work-dir/messages_ar.properties
 trans.ca = work-dir/messages_ca.properties
