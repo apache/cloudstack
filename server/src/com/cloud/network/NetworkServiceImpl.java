@@ -1406,7 +1406,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 params.put(ApiConstants.ENTITY_TYPE, Network.class);
                 params.put(ApiConstants.ENTITY_ID, network.getId());
                 params.put(ApiConstants.DOMAIN_ID, domainId);
-                params.put(ApiConstants.SUBDOMAIN_ACCESS, subdomainAccessFinal == null ? true : subdomainAccessFinal);
+                params.put(ApiConstants.SUBDOMAIN_ACCESS, subdomainAccessFinal == null ? Boolean.TRUE : subdomainAccessFinal);
                 _messageBus.publish(_name, EntityManager.MESSAGE_ADD_DOMAIN_WIDE_ENTITY_EVENT, PublishScope.LOCAL, params);
             }
             return network;
