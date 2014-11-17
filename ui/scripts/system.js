@@ -17419,6 +17419,10 @@
                     
                     detailView: {
                         name: "Primary storage details",
+                        viewAll: {
+                            label: 'label.volumes',
+                            path: 'storage.volumes'
+                        },
                         isMaximized: true,
                         actions: {
                             edit: {

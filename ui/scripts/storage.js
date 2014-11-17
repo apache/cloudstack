@@ -477,7 +477,12 @@
                                 $.extend(data, {
                                     virtualMachineId: args.context.instances[0].id
                                 });
-                            }
+                            }                           
+                            if ("primarystorages" in args.context) {
+                                $.extend(data, {
+                                	storageid: args.context.primarystorages[0].id
+                                });
+                            }                           
                         }
 
                         $.ajax({
