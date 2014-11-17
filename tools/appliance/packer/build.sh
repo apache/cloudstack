@@ -92,7 +92,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 	config.ssh.private_key_path ="$packerroot/validation/vagrant"
         config.ssh.host = "192.168.22.214"
         config.ssh.port = "3922"
-        config.ssh.username = "root"
+        config.ssh.username = "vagrant"
 
 
         config.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
