@@ -13,7 +13,7 @@ class TestCsApp(unittest.TestCase):
     def test_init(self):
         csconfig = CsConfig()
         csconfig.set_cl()
-        csip = CsIP("eth0", csconfig);
+        csip = CsIP("eth0", csconfig)
         csapp = CsApp(csip)
         self.assertTrue(csapp is not None)
 
