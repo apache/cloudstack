@@ -307,6 +307,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                 srcSnapshot.processEvent(Event.OperationSuccessed);
 
                 srcSnapshot.processEvent(Snapshot.Event.OperationFailed);
+                _snapshotDao.remove(srcSnapshot.getId());
             } catch (NoTransitionException e) {
                 s_logger.debug("Failed to update state: " + e.toString());
             }
