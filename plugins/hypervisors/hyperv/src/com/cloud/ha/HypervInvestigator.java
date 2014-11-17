@@ -18,6 +18,13 @@
  */
 package com.cloud.ha;
 
+import java.util.List;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckOnHostCommand;
@@ -28,11 +35,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import java.util.List;
 
 @Local(value=Investigator.class)
 public class HypervInvestigator extends AdapterBase implements Investigator {
@@ -45,9 +47,9 @@ public class HypervInvestigator extends AdapterBase implements Investigator {
     public Boolean isVmAlive(com.cloud.vm.VirtualMachine vm, Host host) {
         Status status = isAgentAlive(host);
         if (status == null) {
-            return false;
+            return null;
         }
-        return status == Status.Up ? true : false;
+        return status == Status.Up ? true : null;
     }
 
     @Override
