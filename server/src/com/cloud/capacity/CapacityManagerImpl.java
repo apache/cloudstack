@@ -709,7 +709,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             }
             // Set the capacity state as per the host allocation state.
             if(capacityState != memCap.getCapacityState()){
-                s_logger.debug("Calibrate memory capacity state for host: " + host.getId() + " old capacity state:" + cpuCap.getTotalCapacity() + " new capacity state:" + hostTotalCpu);
+                s_logger.debug("Calibrate memory capacity state for host: " + host.getId() + " old capacity state:" + memCap.getTotalCapacity() + " new capacity state:" + hostTotalCpu);
                 memCap.setCapacityState(capacityState);
             }
 
