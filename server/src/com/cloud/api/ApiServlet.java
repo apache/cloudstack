@@ -16,23 +16,10 @@
 // under the License.
 package com.cloud.api;
 
-import org.apache.cloudstack.api.auth.APIAuthenticationManager;
-import org.apache.cloudstack.api.auth.APIAuthenticationType;
-import org.apache.cloudstack.api.auth.APIAuthenticator;
-import com.cloud.user.Account;
-import com.cloud.user.AccountService;
-import com.cloud.user.User;
-import com.cloud.utils.HttpUtils;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.db.EntityManager;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiServerService;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.managed.context.ManagedContext;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-import org.springframework.web.context.support.SpringBeanAutowiringSupport;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.inject.Inject;
 import javax.servlet.ServletConfig;
@@ -41,10 +28,26 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.util.HashMap;
-import java.util.Map;
+
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiServerService;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.auth.APIAuthenticationManager;
+import org.apache.cloudstack.api.auth.APIAuthenticationType;
+import org.apache.cloudstack.api.auth.APIAuthenticator;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.managed.context.ManagedContext;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.support.SpringBeanAutowiringSupport;
+
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
+import com.cloud.user.User;
+import com.cloud.utils.HttpUtils;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.net.NetUtils;
 
 @Component("apiServlet")
 @SuppressWarnings("serial")
@@ -120,7 +123,7 @@ public class ApiServlet extends HttpServlet {
     }
 
     void processRequestInContext(final HttpServletRequest req, final HttpServletResponse resp) {
-        final String remoteAddress = req.getRemoteAddr();
+        final String remoteAddress = getClientAddress(req);
         final StringBuilder auditTrailSb = new StringBuilder(128);
         auditTrailSb.append(" ").append(remoteAddress);
         auditTrailSb.append(" -- ").append(req.getMethod()).append(' ');
@@ -303,5 +306,54 @@ public class ApiServlet extends HttpServlet {
             // cleanup user context to prevent from being peeked in other request context
             CallContext.unregister();
         }
+    }
+
+    //This method will try to get login IP of user even if servlet is behind reverseProxy or loadBalancer
+    private String getClientAddress(HttpServletRequest request) {
+        String ip = null;
+        ip = request.getHeader("X-Forwarded-For");
+        ip = getCorrectIPAddress(ip);
+        if (ip != null) {
+            return ip;
+        }
+
+        ip = request.getHeader("HTTP_CLIENT_IP");
+        ip = getCorrectIPAddress(ip);
+        if (ip != null) {
+            return ip;
+        }
+
+        ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+        ip = getCorrectIPAddress(ip);
+        if (ip != null) {
+            return ip;
+        }
+
+        ip = request.getHeader("Remote_Addr");
+        ip = getCorrectIPAddress(ip);
+        if (ip != null) {
+            return ip;
+        }
+
+        ip = request.getRemoteAddr();
+        return ip;
+    }
+
+    private String getCorrectIPAddress(String ip) {
+        if(ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            return null;
+        }
+        if(NetUtils.isValidIp(ip)) {
+            return ip;
+        }
+        //it could be possible to have multiple IPs in HTTP header, this happens if there are multiple proxy in between
+        //the client and the servlet, so parse the client IP
+        String[] ips = ip.split(",");
+        for(String i : ips) {
+            if(NetUtils.isValidIp(i.trim())) {
+                return i.trim();
+            }
+        }
+        return null;
     }
 }
