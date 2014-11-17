@@ -7,7 +7,7 @@ import merge
 class TestCsHelper(unittest.TestCase):
 
     def setUp(self):
-        merge.dataBag.DPATH = "."
+        merge.DataBag.DPATH = "."
 
     @mock.patch('cs.CsHelper.subprocess')
     def test_execute(self, mock_subprocess):

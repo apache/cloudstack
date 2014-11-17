@@ -6,7 +6,7 @@ import merge
 class TestCsProcess(unittest.TestCase):
 
     def setUp(self):
-        merge.dataBag.DPATH = "."
+        merge.DataBag.DPATH = "."
 
     def test_init(self):
         csprocess = CsProcess({})

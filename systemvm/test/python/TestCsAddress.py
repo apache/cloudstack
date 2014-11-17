@@ -6,7 +6,7 @@ import merge
 class TestCsAddress(unittest.TestCase):
 
     def setUp(self):
-        merge.dataBag.DPATH = "."
+        merge.DataBag.DPATH = "."
 
     def test_needs_vrrp(self):
         csaddress = CsAddress("ips", {})

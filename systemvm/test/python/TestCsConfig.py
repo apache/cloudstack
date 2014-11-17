@@ -6,7 +6,7 @@ import merge
 class TestCsConfig(unittest.TestCase):
 
     def setUp(self):
-        merge.dataBag.DPATH = "."
+        merge.DataBag.DPATH = "."
 
     def test_ini(self):
         csconfig = CsConfig(False)
