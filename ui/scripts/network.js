@@ -1583,17 +1583,9 @@
                                             'algorithm': {
                                                 label: 'label.algorithm',
                                                 select: function(args) {
+                                                    var data = getLBAlgorithms(args.context.networks[0]);
                                                     args.response.success({
-                                                        data: [{
-                                                            name: 'roundrobin',
-                                                            description: _l('label.round.robin')
-                                                        }, {
-                                                            name: 'leastconn',
-                                                            description: _l('label.least.connections')
-                                                        }, {
-                                                            name: 'source',
-                                                            description: _l('label.source')
-                                                        }]
+                                                        data: data
                                                     });
                                                 }
                                             },
@@ -3355,20 +3347,9 @@
                                                 label: 'label.algorithm',
                                                 isEditable: true,
                                                 select: function(args) {
+                                                    var data = getLBAlgorithms(args.context.networks[0]);
                                                     args.response.success({
-                                                        data: [{
-                                                            id: 'roundrobin',
-                                                            name: 'roundrobin',
-                                                            description: _l('label.round.robin')
-                                                        }, {
-                                                            id: 'leastconn',
-                                                            name: 'leastconn',
-                                                            description: _l('label.least.connections')
-                                                        }, {
-                                                            id: 'source',
-                                                            name: 'source',
-                                                            description: _l('label.source')
-                                                        }]
+                                                        data: data
                                                     });
                                                 }
                                             },
@@ -6113,6 +6094,44 @@
 				});             		
         	} 
         }
+    };
+
+    var getLBAlgorithms = function(networkObj) {
+        if (!networkObj || !networkObj.service) {
+            return [];
+        }
+
+        var lbService = $.grep(networkObj.service, function(service) {
+            return service.name == 'Lb';
+        })[0];
+
+        if (!lbService || !lbService.capability) {
+            return [];
+        }
+
+        var algorithmCapabilities = $.grep(
+            lbService.capability,
+            function(capability) {
+                return capability.name == 'SupportedLbAlgorithms';
+            }
+        )[0];
+
+        if (!algorithmCapabilities) {
+            return [];
+        }
+
+        var algorithms = algorithmCapabilities.value.split(',');
+
+        if (!algorithms) {
+            return [];
+        }
+
+        var data = [];
+        $(algorithms).each(function() {
+            data.push({id: this.valueOf(), name: this.valueOf(), description: _l('label.lb.algorithm.' + this.valueOf())});
+        });
+
+        return data;
     }
 
 })(cloudStack, jQuery);
