@@ -35,6 +35,7 @@ import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -54,6 +55,8 @@ import com.xensource.xenapi.PBD;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Task;
 import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VDI;
 
 public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
@@ -1099,10 +1102,22 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             result = true;
 
             return new CopyCmdAnswer(newTemplate);
-        } catch (Exception ex) {
-            s_logger.error("Failed to create a template from a snapshot", ex);
+//        } catch (Exception ex) {
+//            s_logger.error("Failed to create a template from a snapshot", ex);
+//
+//            return new CopyCmdAnswer("Failed to create a template from a snapshot: " + ex.toString());
+        } catch (BadServerResponse e) {
+          s_logger.error("Failed to create a template from a snapshot due to incomprehensible server response", e);
 
-            return new CopyCmdAnswer("Failed to create a template from a snapshot: " + ex.toString());
+          return new CopyCmdAnswer("Failed to create a template from a snapshot: " + e.toString());
+        } catch (XenAPIException e) {
+          s_logger.error("Failed to create a template from a snapshot due to xenapi error", e);
+
+          return new CopyCmdAnswer("Failed to create a template from a snapshot: " + e.toString());
+        } catch (XmlRpcException e) {
+            s_logger.error("Failed to create a template from a snapshot due to rpc error", e);
+
+            return new CopyCmdAnswer("Failed to create a template from a snapshot: " + e.toString());
         } finally {
             if (!result) {
                 if (destVdi != null) {
