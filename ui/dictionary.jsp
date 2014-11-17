@@ -746,8 +746,10 @@ dictionary = {
 'label.latest.events': '<fmt:message key="label.latest.events" />',
 'label.launch': '<fmt:message key="label.launch" />',
 'label.launch.vm': '<fmt:message key="label.launch.vm" />',
+'label.lb.algorithm.leastconn': '<fmt:message key="label.lb.algorithm.leastconn" />',
+'label.lb.algorithm.roundrobin': '<fmt:message key="label.lb.algorithm.roundrobin" />',
+'label.lb.algorithm.source': '<fmt:message key="label.lb.algorithm.source" />',
 'label.LB.isolation': '<fmt:message key="label.LB.isolation" />',
-'label.least.connections': '<fmt:message key="label.least.connections" />',
 'label.level': '<fmt:message key="label.level" />',
 'label.linklocal.ip': '<fmt:message key="label.linklocal.ip" />',
 'label.load.balancer': '<fmt:message key="label.load.balancer" />',
@@ -1028,6 +1030,5 @@ dictionary = {
 'label.role': '<fmt:message key="label.role" />',
 'label.root.disk.controller': '<fmt:message key="label.root.disk.controller" />',
 'label.root.disk.offering': '<fmt:message key="label.root.disk.offering" />',
-'label.round.robin': '<fmt:message key="label.round.robin" />',
 };
 </script>
