@@ -33,7 +33,7 @@ import cs_site2sitevpn
 from pprint import pprint
 
 
-class dataBag:
+class DataBag:
 
     DPATH = "/etc/cloudstack"
 
@@ -84,7 +84,7 @@ class updateDataBag:
         self.process()
 
     def process(self):
-        self.db = dataBag()
+        self.db = DataBag()
         if (self.qFile.type == "staticnatrules" or self.qFile.type == "forwardrules"):
             self.db.setKey("forwardingrules")
         else:
@@ -126,7 +126,7 @@ class updateDataBag:
         dp['gateway'] = d['router_guest_gateway']
         dp['nic_dev_id'] = d['device'][3]
         dp['nw_type'] = 'guest'
-        qf = loadQueueFile()
+        qf = QueueFile()
         qf.load({'ip_address': [dp], 'type': 'ips'})
         if 'domain_name' not in d.keys() or d['domain_name'] == '':
             d['domain_name'] = "cloudnine.internal"
@@ -181,7 +181,7 @@ class updateDataBag:
                 dp['gateway'] = 'None'
             dp['nic_dev_id'] = num
             dp['nw_type'] = nw_type
-            qf = loadQueueFile()
+            qf = QueueFile()
             qf.load({'ip_address': [dp], 'type': 'ips'})
 
     def processVmData(self, dbag):
@@ -189,7 +189,7 @@ class updateDataBag:
         return dbag
 
 
-class loadQueueFile:
+class QueueFile:
 
     fileName = ''
     configCache = "/var/cache/cloud"

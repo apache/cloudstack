@@ -19,7 +19,7 @@
 import sys
 import os
 
-from merge import dataBag
+from merge import DataBag
 from pprint import pprint
 import subprocess
 import logging

@@ -14,7 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from merge import dataBag
+from merge import DataBag
 import CsHelper
 
 
@@ -22,7 +22,7 @@ class CsGuestNetwork:
     def __init__(self, device):
         self.data = {}
         self.guest = True
-        db = dataBag()
+        db = DataBag()
         db.setKey("guestnetwork")
         db.load()
         dbag = db.getDataBag()

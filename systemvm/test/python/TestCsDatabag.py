@@ -6,7 +6,7 @@ import merge
 class TestCsDatabag(unittest.TestCase):
 
     def setUp(self):
-        merge.dataBag.DPATH = "."
+        merge.DataBag.DPATH = "."
 
     def test_init(self):
         csdatabag = CsDataBag("koffie")
