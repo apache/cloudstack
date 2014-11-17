@@ -1,5 +1,5 @@
 import unittest
-import mock 
+import mock
 from cs.CsDhcp import CsDhcp
 from cs import CsHelper
 import merge

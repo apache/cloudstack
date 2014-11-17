@@ -9,7 +9,7 @@ class TestCsRoute(unittest.TestCase):
         merge.DataBag.DPATH = "."
 
     def test_init(self):
-        csroute = CsRoute(["one","two","three","four"])
+        csroute = CsRoute(["one", "two", "three", "four"])
         self.assertTrue(csroute is not None)
 
 if __name__ == '__main__':
