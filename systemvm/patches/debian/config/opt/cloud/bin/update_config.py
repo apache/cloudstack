@@ -17,7 +17,7 @@
 # under the License.
 
 import sys
-from merge import loadQueueFile
+from merge import QueueFile
 import logging
 import subprocess
 from subprocess import PIPE, STDOUT
@@ -41,11 +41,11 @@ if not (os.path.isfile(filePath) and os.access(filePath, os.R_OK)):
 # If the command line json file is unprocessed process it
 # This is important or, the control interfaces will get deleted!
 if os.path.isfile("filePath/%s" % "cmd_line.json"):
-    qf = loadQueueFile()
+    qf = QueueFile()
     qf.setFile("cmd_line.json")
     qf.load(None)
 
-qf = loadQueueFile()
+qf = QueueFile()
 qf.setFile(sys.argv[1])
 qf.load(None)
 

@@ -6,7 +6,7 @@ import merge
 class TestCsRule(unittest.TestCase):
 
     def setUp(self):
-        merge.dataBag.DPATH = "."
+        merge.DataBag.DPATH = "."
 
     def test_init(self):
         csrule = CsRule(["one", "two", "three", "four"])

@@ -15,14 +15,14 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from merge import dataBag
+from merge import DataBag
 
 
 class CsDataBag(object):
 
     def __init__(self, key, config=None):
         self.data = {}
-        self.db = dataBag()
+        self.db = DataBag()
         self.db.setKey(key)
         self.db.load()
         self.dbag = self.db.getDataBag()
