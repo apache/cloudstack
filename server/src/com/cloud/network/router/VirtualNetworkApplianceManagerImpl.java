@@ -2574,7 +2574,6 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
     @Override
     public boolean postStateTransitionEvent(final StateMachine2.Transition<State, VirtualMachine.Event> transition, final VirtualMachine vo, final boolean status, final Object opaque) {
-        final State oldState = transition.getCurrentState();
         final State newState = transition.getToState();
         final VirtualMachine.Event event = transition.getEvent();
         if (event == VirtualMachine.Event.FollowAgentPowerOnReport && newState == State.Running) {
