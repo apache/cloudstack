@@ -1781,6 +1781,12 @@ class TestListInstances(cloudstackTestCase):
             raise unittest.SkipTest(
                 "This feature is not supported on existing hypervisor.\
                         Hence, skipping the test")
+
+        hypervisorIsVmware = False
+
+        if self.hypervisor.lower() == "vmware":
+            hypervisorIsVmware = True
+
         # Listing all the VM's for a User
         list_vms_before = VirtualMachine.list(
             self.userapiclient,
@@ -1797,6 +1803,7 @@ class TestListInstances(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
+            mode=self.zone.networktype if hypervisorIsVmware else "default"
         )
         self.assertIsNotNone(
             vm_created,
@@ -2002,40 +2009,61 @@ class TestListInstances(cloudstackTestCase):
             default_nic.networkid,
             "Default NIC is not matching for VM"
         )
-        # Deleting non default NIC
-        vm_created.remove_nic(
-            self.userapiclient,
-            non_default_nic.id
-        )
-        # Listing the Vm details again
-        list_vms_after = VirtualMachine.list(
-            self.userapiclient,
-            id=vm_created.id
-        )
-        status = validateList(list_vms_after)
-        self.assertEquals(
+
+        # If hypervisor is Vmware, then check if
+        # the vmware tools are installed and the process is running
+        # Vmware tools are necessary for remove nic operations (vmware 5.5+)
+        isVmwareToolInstalled = False
+        if hypervisorIsVmware:
+            sshClient = vm_created.get_ssh_client()
+            result = str(
+                sshClient.execute("service vmware-tools status")).lower()
+            self.debug("and result is: %s" % result)
+            if "running" in result:
+                isVmwareToolInstalled = True
+
+        goForUnplugOperation = True
+        # If Vmware tools are not installed in case of vmware hypervisor
+        # then don't go further for unplug operation (remove nic) as it won't
+        # be supported
+        if hypervisorIsVmware and not isVmwareToolInstalled:
+            goForUnplugOperation = False
+
+        if goForUnplugOperation:
+            # Deleting non default NIC
+            vm_created.remove_nic(
+                self.userapiclient,
+                non_default_nic.id
+            )
+            # Listing the Vm details again
+            list_vms_after = VirtualMachine.list(
+                self.userapiclient,
+                id=vm_created.id
+            )
+            status = validateList(list_vms_after)
+            self.assertEquals(
             PASS,
             status[0],
             "Listing of VM failed"
-        )
-        vm = list_vms_after[0]
-        # Verifying that VM nics size is 1 now
-        vm_nics_after = vm.nic
-        self.assertIsNotNone(
+            )
+            vm = list_vms_after[0]
+            # Verifying that VM nics size is 1 now
+            vm_nics_after = vm.nic
+            self.assertIsNotNone(
             vm_nics_after,
             "Nic not found for the deployed VM"
-        )
-        self.assertEquals(
+            )
+            self.assertEquals(
             1,
             len(vm_nics_after),
             "VM NIC's count is not matching"
-        )
-        # Verifying the nic network is same as the default nic network
-        self.assertEquals(
+            )
+            # Verifying the nic network is same as the default nic network
+            self.assertEquals(
             network2.id,
             vm_nics_after[0].networkid,
             "VM NIC is not same as expected"
-        )
+            )
         return
 
 
