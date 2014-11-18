@@ -2777,17 +2777,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         });
     }
 
-    public NetUtils.supersetOrSubset checkIfSubsetOrSuperset(String newVlanGateway, String newVlanNetmask, VlanVO vlan, String startIP, String endIP) {
+    public NetUtils.SupersetOrSubset checkIfSubsetOrSuperset(String newVlanGateway, String newVlanNetmask, VlanVO vlan, String startIP, String endIP) {
         if (newVlanGateway == null && newVlanNetmask == null) {
             newVlanGateway = vlan.getVlanGateway();
             newVlanNetmask = vlan.getVlanNetmask();
             // this means he is trying to add to the existing subnet.
             if (NetUtils.sameSubnet(startIP, newVlanGateway, newVlanNetmask)) {
                 if (NetUtils.sameSubnet(endIP, newVlanGateway, newVlanNetmask)) {
-                    return NetUtils.supersetOrSubset.sameSubnet;
+                    return NetUtils.SupersetOrSubset.sameSubnet;
                 }
             }
-            return NetUtils.supersetOrSubset.neitherSubetNorSuperset;
+            return NetUtils.SupersetOrSubset.neitherSubetNorSuperset;
         } else if (newVlanGateway == null || newVlanNetmask == null) {
             throw new InvalidParameterValueException(
                     "either both netmask and gateway should be passed or both should me omited.");
@@ -2816,22 +2816,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     vlanGateway = vlan.getVlanGateway();
                     vlanNetmask = vlan.getVlanNetmask();
                     // check if subset or super set or neither.
-                    NetUtils.supersetOrSubset val = checkIfSubsetOrSuperset(newVlanGateway, newVlanNetmask, vlan, startIP, endIP);
-                    if (val == NetUtils.supersetOrSubset.isSuperset) {
+                    NetUtils.SupersetOrSubset val = checkIfSubsetOrSuperset(newVlanGateway, newVlanNetmask, vlan, startIP, endIP);
+                    if (val == NetUtils.SupersetOrSubset.isSuperset) {
                         // this means that new cidr is a superset of the
                         // existing subnet.
                         throw new InvalidParameterValueException("The subnet you are trying to add is a superset of the existing subnet having gateway" + vlan.getVlanGateway()
                                 + " and netmask  " + vlan.getVlanNetmask());
-                    } else if (val == NetUtils.supersetOrSubset.neitherSubetNorSuperset) {
+                    } else if (val == NetUtils.SupersetOrSubset.neitherSubetNorSuperset) {
                         // this implies the user is trying to add a new subnet
                         // which is not a superset or subset of this subnet.
                         // checking with the other subnets.
                         continue;
-                    } else if (val == NetUtils.supersetOrSubset.isSubset) {
+                    } else if (val == NetUtils.SupersetOrSubset.isSubset) {
                         // this means he is trying to add to the same subnet.
                         throw new InvalidParameterValueException("The subnet you are trying to add is a subset of the existing subnet having gateway" + vlan.getVlanGateway()
                                 + " and netmask  " + vlan.getVlanNetmask());
-                    } else if (val == NetUtils.supersetOrSubset.sameSubnet) {
+                    } else if (val == NetUtils.SupersetOrSubset.sameSubnet) {
                         sameSubnet = true;
                         //check if the gateway provided by the user is same as that of the subnet.
                         if (newVlanGateway != null && !newVlanGateway.equals(vlanGateway)) {
