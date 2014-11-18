@@ -19,16 +19,6 @@
 
 package com.cloud.utils.net;
 
-import com.cloud.utils.IteratorUtil;
-import com.cloud.utils.Pair;
-import com.cloud.utils.script.Script;
-import com.googlecode.ipv6.IPv6Address;
-import com.googlecode.ipv6.IPv6AddressRange;
-import com.googlecode.ipv6.IPv6Network;
-import org.apache.commons.lang.SystemUtils;
-import org.apache.commons.net.util.SubnetUtils;
-import org.apache.log4j.Logger;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -50,6 +40,18 @@ import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.net.util.SubnetUtils;
+import org.apache.log4j.Logger;
+
+import com.googlecode.ipv6.IPv6Address;
+import com.googlecode.ipv6.IPv6AddressRange;
+import com.googlecode.ipv6.IPv6Network;
+
+import com.cloud.utils.IteratorUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.script.Script;
 
 public class NetUtils {
     protected final static Logger s_logger = Logger.getLogger(NetUtils.class);
@@ -321,6 +323,8 @@ public class NetUtils {
             }
         } catch (SocketException e) {
             s_logger.error("SocketException when trying to retrieve MAC address", e);
+        } finally {
+            formatter.close();
         }
         return sb.toString();
     }
@@ -456,6 +460,7 @@ public class NetUtils {
         StringBuilder result = new StringBuilder(17);
         Formatter formatter = new Formatter(result);
         formatter.format("%02x:%02x:%02x:%02x:%02x:%02x", m[0], m[1], m[2], m[3], m[4], m[5]);
+        formatter.close();
         return result.toString();
     }
 
@@ -464,7 +469,7 @@ public class NetUtils {
         Formatter formatter = new Formatter(result);
         formatter.format("%02x:%02x:%02x:%02x:%02x:%02x", (macAddress >> 40) & 0xff, (macAddress >> 32) & 0xff, (macAddress >> 24) & 0xff, (macAddress >> 16) & 0xff,
                 (macAddress >> 8) & 0xff, (macAddress & 0xff));
-
+        formatter.close();
         return result.toString();
     }
 
@@ -1307,20 +1312,14 @@ public class NetUtils {
         if (ips.length > 1) {
             endIp = ips[1];
         }
-        IPv6Address start, end;
         try {
-            start = IPv6Address.fromString(startIp);
-            end = IPv6Address.fromString(endIp);
-        } catch (IllegalArgumentException ex) {
-            return null;
-        }
-        BigInteger startInt = convertIPv6AddressToBigInteger(start);
-        BigInteger endInt = convertIPv6AddressToBigInteger(end);
-        if (endInt != null) {
-            if (startInt == null || startInt.compareTo(endInt) > 0) {
-                return null;
+            BigInteger startInt = convertIPv6AddressToBigInteger(IPv6Address.fromString(startIp));
+            BigInteger endInt = convertIPv6AddressToBigInteger(IPv6Address.fromString(endIp));
+            if (endInt != null && startInt != null && startInt.compareTo(endInt) <= 0) {
+                return endInt.subtract(startInt).add(BigInteger.ONE);
             }
-            return endInt.subtract(startInt).add(BigInteger.ONE);
+        } catch (IllegalArgumentException ex) {
+            s_logger.error("Failed to convert a string to an IPv6 address", ex);
         }
         return null;
     }
