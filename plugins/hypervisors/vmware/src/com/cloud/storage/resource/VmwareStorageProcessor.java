@@ -1452,10 +1452,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             if (isAttach) {
                 String msg = "AttachIsoCommand(attach) failed due to " + VmwareHelper.getExceptionMessage(e);
+                msg = msg + " Also check if your guest os is a supported version";
                 s_logger.error(msg, e);
                 return new AttachAnswer(msg);
             } else {
                 String msg = "AttachIsoCommand(detach) failed due to " + VmwareHelper.getExceptionMessage(e);
+                msg = msg + " Also check if your guest os is a supported version";
                 s_logger.warn(msg, e);
                 return new AttachAnswer(msg);
             }
