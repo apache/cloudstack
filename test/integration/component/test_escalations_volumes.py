@@ -784,8 +784,6 @@ class TestVolumes(cloudstackTestCase):
 
         self.assertIsNotNone(snapshot_created, "Snapshot not created")
 
-        self.cleanup.append(snapshot_created)
-
         # Creating expected and actual values dictionaries
         expected_dict = {
             "id": volume_created.id,
@@ -1560,7 +1558,6 @@ class TestVolumes(cloudstackTestCase):
                 volume_created.id,
             )
             self.assertIsNotNone(snapshot_created, "Snapshot not created")
-            self.cleanup.append(snapshot_created)
 
             self.assertEquals(
                 volume_created.id,
@@ -1621,7 +1618,6 @@ class TestVolumes(cloudstackTestCase):
         # Deleting a single snapshot and verifying that snapshot does not
         # exists on page 2
         Snapshot.delete(snapshot_created, self.userapiclient)
-        self.cleanup.remove(snapshot_created)
 
         list_snapshot_page2 = Snapshot.list(
             self.userapiclient,
@@ -1855,7 +1851,6 @@ class TestVolumes(cloudstackTestCase):
             validateList(vol1_res)[0],
             PASS,
             "Volume list returned invalid response")
-        self.cleanup.append(vol1)
         vol1_size = vol1_res[0].size
         try:
             self.virtual_machine.attach_volume(self.userapiclient, vol1)
@@ -1875,7 +1870,6 @@ class TestVolumes(cloudstackTestCase):
             vol2,
             "Failed to create custom data disk with size %s" %
             self.services["custom_volume"]["customdisksize"])
-        self.cleanup.append(vol2)
         vol2_res = Volume.list(
             self.userapiclient,
             id=vol2.id
