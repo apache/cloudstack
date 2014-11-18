@@ -78,17 +78,14 @@ public class GraphiteClient {
      * @param timeStamp the timestamp
      */
     public void sendMetrics(Map<String, Integer> metrics, long timeStamp) {
-        try {
-            DatagramSocket sock = new DatagramSocket();
-            InetAddress addr = InetAddress.getByName(graphiteHost);
+        try (DatagramSocket sock = new DatagramSocket()){
+            InetAddress addr = InetAddress.getByName(this.graphiteHost);
 
             for (Map.Entry<String, Integer> metric: metrics.entrySet()) {
                 byte[] message = new String(metric.getKey() + " " + metric.getValue() + " " + timeStamp + "\n").getBytes();
                 DatagramPacket packet = new DatagramPacket(message, message.length, addr, graphitePort);
                 sock.send(packet);
             }
-
-            sock.close();
         } catch (UnknownHostException e) {
             throw new GraphiteException("Unknown host: " + graphiteHost);
         } catch (IOException e) {
