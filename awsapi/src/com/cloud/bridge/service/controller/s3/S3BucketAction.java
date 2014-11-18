@@ -24,6 +24,7 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
@@ -649,12 +650,12 @@ public class S3BucketAction implements ServletAction {
         if (null == keyMarker)
             xml.append("<KeyMarker/>");
         else
-            xml.append("<KeyMarker>").append(keyMarker).append("</KeyMarker");
+            xml.append("<KeyMarker>").append(StringEscapeUtils.escapeHtml(keyMarker)).append("</KeyMarker");
 
         if (null == versionIdMarker)
             xml.append("<VersionIdMarker/>");
         else
-            xml.append("<VersionIdMarker>").append(StringEscapeUtils.escapeHtml(keyMarker)).append("</VersionIdMarker");
+            xml.append("<VersionIdMarker>").append(StringEscapeUtils.escapeHtml(versionIdMarker)).append("</VersionIdMarker");
 
         xml.append("<MaxKeys>").append(engineResponse.getMaxKeys()).append("</MaxKeys>");
         xml.append("<IsTruncated>").append(engineResponse.isTruncated()).append("</IsTruncated>");
@@ -958,7 +959,7 @@ public class S3BucketAction implements ServletAction {
             OrderedPair<S3MultipartUpload[], Boolean> result = uploadDao.getInitiatedUploads(bucketName, maxUploads, prefix, keyMarker, uploadIdMarker);
             uploads = result.getFirst();
             isTruncated = result.getSecond().booleanValue();
-        } catch (Exception e) {
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | SQLException e) {
             logger.error("List Multipart Uploads failed due to " + e.getMessage(), e);
             response.setStatus(500);
         }
@@ -966,9 +967,9 @@ public class S3BucketAction implements ServletAction {
         StringBuffer xml = new StringBuffer();
         xml.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
         xml.append("<ListMultipartUploadsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">");
-        xml.append("<Bucket>").append(bucketName).append("</Bucket>");
+        xml.append("<Bucket>").append(StringEscapeUtils.escapeHtml(bucketName)).append("</Bucket>");
         xml.append("<KeyMarker>").append((null == keyMarker ? "" : StringEscapeUtils.escapeHtml(keyMarker))).append("</KeyMarker>");
-        xml.append("<UploadIdMarker>").append((null == uploadIdMarker ? "" : uploadIdMarker)).append("</UploadIdMarker>");
+        xml.append("<UploadIdMarker>").append((null == uploadIdMarker ? "" : StringEscapeUtils.escapeHtml(uploadIdMarker))).append("</UploadIdMarker>");
 
         // [C] Construct the contents of the <Upload> element
         StringBuffer partsList = new StringBuffer();
