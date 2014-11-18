@@ -86,12 +86,6 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             avoid.addPool(pool.getId());
         }
 
-        // make sure our matching pool was not in avoid set
-        for (StoragePoolVO pool : pools) {
-            s_logger.debug("Removing pool " + pool + " from avoid set, must have been inserted when searching for another disk's tag");
-            avoid.removePool(pool.getId());
-        }
-
         if (pools.size() == 0) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("No storage pools available for " + ServiceOffering.StorageType.shared.toString() + " volume allocation, returning");
