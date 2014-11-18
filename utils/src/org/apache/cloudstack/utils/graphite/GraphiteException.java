@@ -17,7 +17,7 @@
 // under the License.
 //
 
-package org.apache.cloudstack.graphite;
+package org.apache.cloudstack.utils.graphite;
 
 public class GraphiteException extends RuntimeException {
 

@@ -17,7 +17,7 @@
 // under the License.
 //
 
-package org.apache.cloudstack.graphite;
+package org.apache.cloudstack.utils.graphite;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -50,7 +50,7 @@ public class GraphiteClient {
      */
     public GraphiteClient(String graphiteHost) {
         this.graphiteHost = graphiteHost;
-        this.graphitePort = 2003;
+        graphitePort = 2003;
     }
 
     /**
@@ -68,7 +68,7 @@ public class GraphiteClient {
      * @param metrics the metrics as key-value-pairs
      */
     public void sendMetrics(Map<String, Integer> metrics) {
-        sendMetrics(metrics, this.getCurrentSystemTime());
+        sendMetrics(metrics, getCurrentSystemTime());
     }
 
     /**
@@ -80,11 +80,11 @@ public class GraphiteClient {
     public void sendMetrics(Map<String, Integer> metrics, long timeStamp) {
         try {
             DatagramSocket sock = new DatagramSocket();
-            InetAddress addr = InetAddress.getByName(this.graphiteHost);
+            InetAddress addr = InetAddress.getByName(graphiteHost);
 
             for (Map.Entry<String, Integer> metric: metrics.entrySet()) {
                 byte[] message = new String(metric.getKey() + " " + metric.getValue() + " " + timeStamp + "\n").getBytes();
-                DatagramPacket packet = new DatagramPacket(message, message.length, addr, this.graphitePort);
+                DatagramPacket packet = new DatagramPacket(message, message.length, addr, graphitePort);
                 sock.send(packet);
             }
 
@@ -105,7 +105,7 @@ public class GraphiteClient {
      * @throws GraphiteException if sending data to graphite failed
      */
     public void sendMetric(String key, int value) {
-        sendMetric(key, value, this.getCurrentSystemTime());
+        sendMetric(key, value, getCurrentSystemTime());
     }
 
     /**
