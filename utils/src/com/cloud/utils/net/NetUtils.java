@@ -1317,11 +1317,8 @@ public class NetUtils {
         BigInteger startInt = convertIPv6AddressToBigInteger(start);
         BigInteger endInt = convertIPv6AddressToBigInteger(end);
         if (endInt != null) {
-            if (startInt != null)
-            {
-                if(startInt.compareTo(endInt) > 0) {
-                    return null;
-                }
+            if (startInt == null || startInt.compareTo(endInt) > 0) {
+                return null;
             }
             return endInt.subtract(startInt).add(BigInteger.ONE);
         }
