@@ -1011,7 +1011,7 @@ $.extend(dictionary, {
 'label.duration.in.sec': '<fmt:message key="label.duration.in.sec" />',
 'state.detached': '<fmt:message key="state.detached" />',
 'label.na': '<fmt:message key="label.na" />',
+'label.migrate.volume': '<fmt:message key="label.migrate.volume" />',
 'label.added.network.offering': '<fmt:message key="label.added.network.offering" />',
-'label.no': '<fmt:message key="label.no" />'
 });
 </script>

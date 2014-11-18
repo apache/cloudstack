@@ -13619,12 +13619,12 @@
                                                         var podItem = json.listdedicatedpodsresponse.dedicatedpod[0];
                                                         if (podItem.domainid != null) {
                                                             $.extend(item, podItem, {
-                                                                isdedicated: 'label.yes'
+                                                                isdedicated: _l('label.yes')
                                                             });
                                                         }
                                                     } else
                                                     $.extend(item, {
-                                                        isdedicated: 'label.no'
+                                                        isdedicated: _l('label.no')
                                                     });
                                                     
                                                     args.response.success({
@@ -14756,12 +14756,12 @@
                                                         var clusterItem = json.listdedicatedclustersresponse.dedicatedcluster[0];
                                                         if (clusterItem.domainid != null) {
                                                             $.extend(item, clusterItem, {
-                                                                isdedicated: 'label.yes'
+                                                                isdedicated: _l('label.yes')
                                                             });
                                                         }
                                                     } else
                                                     $.extend(item, {
-                                                        isdedicated: 'label.no'
+                                                        isdedicated: _l('label.no')
                                                     })
                                                 },
                                                 error: function (json) {
