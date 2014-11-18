@@ -223,7 +223,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private String _usageTimeZone = "GMT";
     private final long mgmtSrvrId = MacAddress.getMacAddress().toLong();
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
-    private static final int USAGE_AGGREGATION_RANGE_MIN = 10; // 10 minutes, same to com.cloud.usage.UsageManagerImpl.USAGE_AGGREGATION_RANGE_MIN
+    public static final int USAGE_AGGREGATION_RANGE_MIN = 1;
     private boolean _dailyOrHourly = false;
 
     //private final GlobalLock m_capacityCheckLock = GlobalLock.getInternLock("capacity.check");
