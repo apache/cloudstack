@@ -372,6 +372,10 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 s_logger.debug("The last host of this VM cannot be found");
             } else if (avoids.shouldAvoid(host)) {
                 s_logger.debug("The last host of this VM is in avoid set");
+            } else if (plan.getClusterId() != null && host.getClusterId() != null
+                    && !plan.getClusterId().equals(host.getClusterId())) {
+                s_logger.debug("The last host of this VM cannot be picked as the plan specifies different clusterId: "
+                        + plan.getClusterId());
             } else if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
                 s_logger.debug("The last Host, hostId: " + host.getId() +
                         " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
