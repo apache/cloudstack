@@ -2953,9 +2953,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             return new MigrateAnswer(cmd, true, "migration succeeded", null);
         } catch (Exception e) {
-            String msg = "Catch Exception " + e.getClass().getName() + ": Migration failed due to " + e.toString();
-            s_logger.warn(msg, e);
-            return new MigrateAnswer(cmd, false, msg, null);
+            s_logger.warn(e.getMessage(), e);
+            return new MigrateAnswer(cmd, false, e.getMessage(), null);
         }
 
     }
@@ -3360,7 +3359,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 throw new CloudRuntimeException("migrate VM catch HandleInvalid and VM is not running on dest host");
             }
         } catch (XenAPIException e) {
-            String msg = "Unable to migrate VM(" + vmName + ") from host(" + _host.uuid + ") due to " + e.toString();
+            String msg = "Unable to migrate VM(" + vmName + ") from host(" + _host.uuid + ")";
             s_logger.warn(msg, e);
             throw new CloudRuntimeException(msg);
         } finally {
