@@ -303,6 +303,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         // store the public and private keys in the database
         updateKeyPairs();
 
+        // generate a PSK to communicate with SSVM
+        updateSecondaryStorageVMSharedKey();
+
         // generate a random password for system vm
         updateSystemvmPassword();
 
@@ -962,18 +965,33 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
     private void updateSSOKey() {
         try {
-            String encodedKey = null;
-
-            // Algorithm for SSO Keys is SHA1, should this be configurable?
-            KeyGenerator generator = KeyGenerator.getInstance("HmacSHA1");
-            SecretKey key = generator.generateKey();
-            encodedKey = Base64.encodeBase64URLSafeString(key.getEncoded());
-
-            _configDao.update(Config.SSOKey.key(), Config.SSOKey.getCategory(), encodedKey);
+            _configDao.update(Config.SSOKey.key(), Config.SSOKey.getCategory(), getPrivateKey());
         } catch (NoSuchAlgorithmException ex) {
             s_logger.error("error generating sso key", ex);
         }
     }
+
+    /**
+     * preshared key to be used by management server to communicate with SSVM during volume/template upload
+     */
+    private void updateSecondaryStorageVMSharedKey() {
+        try {
+            _configDao.update(Config.SSVMPSK.key(), Config.SSVMPSK.getCategory(), getPrivateKey());
+        } catch (NoSuchAlgorithmException ex) {
+            s_logger.error("error generating ssvm psk", ex);
+        }
+    }
+
+    private String getPrivateKey() throws NoSuchAlgorithmException {
+        String encodedKey = null;
+        // Algorithm for generating Key is SHA1, should this be configurable?
+        KeyGenerator generator = KeyGenerator.getInstance("HmacSHA1");
+        SecretKey key = generator.generateKey();
+        encodedKey = Base64.encodeBase64URLSafeString(key.getEncoded());
+        return encodedKey;
+
+    }
+
 
     @DB
     protected HostPodVO createPod(long userId, String podName, final long zoneId, String gateway, String cidr, final String startIp, String endIp)
