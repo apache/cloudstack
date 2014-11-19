@@ -1063,6 +1063,13 @@
                                     title: 'label.create.template',
                                     preFilter: cloudStack.preFilter.createTemplate,
                                     desc: '',
+                                    preFilter: function(args) {                                    	
+                                    	if (args.context.volumes[0].hypervisor == "XenServer") {     
+	                                    	if (isAdmin()) {                                            
+	                                            args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
+	                                        } 
+                                    	}                                    	
+                                    },
                                     fields: {
                                         name: {
                                             label: 'label.name',
@@ -1075,7 +1082,50 @@
                                             validation: {
                                                 required: true
                                             }
-                                        },
+                                        },                                        
+                                        xenserverToolsVersion61plus: {
+                                            label: 'label.xenserver.tools.version.61.plus',
+                                            isBoolean: true,
+                                            isChecked: function (args) {                                            	
+                                            	var b = false;
+                                            	var vmObj;                                            	                                        	
+                                            	$.ajax({
+                                            		url: createURL("listVirtualMachines"),
+                                            		data: {
+                                            			id: args.context.volumes[0].virtualmachineid
+                                            		},
+                                            		async: false,
+                                            		success: function(json) {                                            			
+                                            			vmObj = json.listvirtualmachinesresponse.virtualmachine[0];
+                                            		}                                            		
+                                            	});                                            	
+                                            	if (vmObj == undefined) { //e.g. VM has failed over                                            		
+                                            		if (isAdmin()) {
+                                                        $.ajax({
+                                                            url: createURL('listConfigurations'),
+                                                            data: {
+                                                                name: 'xenserver.pvdriver.version'
+                                                            },
+                                                            async: false,
+                                                            success: function (json) {
+                                                                if (json.listconfigurationsresponse.configuration != null && json.listconfigurationsresponse.configuration[0].value == 'xenserver61') {
+                                                                    b = true;
+                                                                }
+                                                            }
+                                                        });
+                                                    }
+                                            	} else {                                            		
+                                            		 if ('details' in vmObj && 'hypervisortoolsversion' in vmObj.details) {
+                                                         if (vmObj.details.hypervisortoolsversion == 'xenserver61')
+                                                             b = true;
+                                                         else
+                                                             b = false;
+                                                     }
+                                            	}                                         	                                  
+                                                return b;
+                                            },
+                                            isHidden: true
+                                        },                                       
                                         osTypeId: {
                                             label: 'label.os.type',
                                             select: function(args) {
@@ -1134,7 +1184,17 @@
                                             isfeatured: (args.data.isFeatured == "on")
                                         });
                                     }
-
+                                                                        
+                                    //XenServer only (starts here)                                    
+                                    if (args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').length > 0) {
+	                                    if (args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css("display") != "none") {
+	                                        $.extend(data, {
+	                                            'details[0].hypervisortoolsversion': (args.data.xenserverToolsVersion61plus == "on") ? "xenserver61" : "xenserver56"
+	                                        });
+	                                    }
+                                    }                                    
+                                    //XenServer only (ends here)     
+                                                                        
                                     $.ajax({
                                         url: createURL('createTemplate'),
                                         data: data,
