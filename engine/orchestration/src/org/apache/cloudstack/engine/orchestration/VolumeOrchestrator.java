@@ -988,7 +988,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             CommandResult result = future.get();
             if (result.isFailed()) {
                 s_logger.debug("Failed to migrated vm " + vm + " along with its volumes. " + result.getResult());
-                throw new CloudRuntimeException("Failed to migrated vm " + vm + " along with its volumes. " + result.getResult());
+                throw new CloudRuntimeException("Failed to migrated vm " + vm + " along with its volumes. ");
             }
         } catch (InterruptedException e) {
             s_logger.debug("Failed to migrated vm " + vm + " along with its volumes.", e);

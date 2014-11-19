@@ -1919,7 +1919,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 Answer ma = _agentMgr.send(vm.getLastHostId(), mc);
                 if (ma == null || !ma.getResult()) {
                     String details = (ma != null) ? ma.getDetails() : "null answer returned";
-                    throw new CloudRuntimeException("Unable to migrate due to " + details);
+                    throw new CloudRuntimeException(details);
                 }
             } catch (OperationTimedoutException e) {
                 if (e.isActive()) {
