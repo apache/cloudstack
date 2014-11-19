@@ -411,12 +411,12 @@
                         }).appendTo($value);
                     	var isChecked;
                     	if (typeof (field.isChecked) == 'function') {
-                    	    isChecked = field.isChecked();
+                    	    isChecked = field.isChecked(args);
                     	} else {
                     	    isChecked = field.isChecked;
                     	}
                         if (isChecked) {
-                        	$input.attr('checked', strOrFunc(field.isChecked));
+                        	$input.attr('checked', strOrFunc(field.isChecked, args));
                         } else {
                             // This is mainly for IE compatibility
                             setTimeout(function() {
