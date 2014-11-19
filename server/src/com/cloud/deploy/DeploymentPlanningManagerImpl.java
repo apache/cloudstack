@@ -950,7 +950,10 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
         // if all hosts or all pools in the cluster are in avoid set after this
         // pass, then put the cluster in avoid set.
-        boolean avoidAllHosts = true, avoidAllPools = true;
+        boolean avoidAllHosts = true;
+        boolean avoidAllPools = true;
+        boolean avoidAllLocalPools = true;
+        boolean avoidAllSharedPools = true;
 
         List<HostVO> allhostsInCluster = _hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, clusterVO.getId(),
                 clusterVO.getPodId(), clusterVO.getDataCenterId(), null);
@@ -985,7 +988,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                 for (StoragePoolVO pool : allPoolsInCluster) {
                     if (!allocatorAvoidOutput.shouldAvoid(pool)) {
                         // there's some pool in the cluster that is not yet in avoid set
-                        avoidAllPools = false;
+                        avoidAllSharedPools = false;
                         break;
                     }
                 }
@@ -999,10 +1002,18 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                     if (!allocatorAvoidOutput.shouldAvoid(pool)) {
                         // there's some pool in the cluster that is not yet
                         // in avoid set
-                        avoidAllPools = false;
+                        avoidAllLocalPools = false;
                         break;
                     }
                 }
+            }
+
+            if (vmRequiresSharedStorage && vmRequiresLocalStorege) {
+                avoidAllPools = (avoidAllLocalPools || avoidAllSharedPools) ? true : false;
+            } else if (vmRequiresSharedStorage) {
+                avoidAllPools = avoidAllSharedPools;
+            } else if (vmRequiresLocalStorege) {
+                avoidAllPools = avoidAllLocalPools;
             }
         }
 
