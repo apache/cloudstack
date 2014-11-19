@@ -31,6 +31,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
@@ -49,7 +51,6 @@ import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -991,7 +992,10 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
         // if all hosts or all pools in the cluster are in avoid set after this
         // pass, then put the cluster in avoid set.
-        boolean avoidAllHosts = true, avoidAllPools = true;
+        boolean avoidAllHosts = true;
+        boolean avoidAllPools = true;
+        boolean avoidAllLocalPools = true;
+        boolean avoidAllSharedPools = true;
 
         List<HostVO> allhostsInCluster =
             _hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, clusterVO.getId(), clusterVO.getPodId(), clusterVO.getDataCenterId(), null);
@@ -1025,8 +1029,8 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         for (StoragePoolVO pool : allPoolsInCluster) {
             if (!allocatorAvoidOutput.shouldAvoid(pool)) {
                 // there's some pool in the cluster that is not yet in avoid set
-                avoidAllPools = false;
-                    break;
+                        avoidAllSharedPools = false;
+                        break;
                 }
             }
             }
@@ -1039,10 +1043,18 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                     if (!allocatorAvoidOutput.shouldAvoid(pool)) {
                         // there's some pool in the cluster that is not yet
                         // in avoid set
-                        avoidAllPools = false;
+                        avoidAllLocalPools = false;
                         break;
                     }
                 }
+            }
+
+            if (vmRequiresSharedStorage && vmRequiresLocalStorege) {
+                avoidAllPools = (avoidAllLocalPools || avoidAllSharedPools) ? true : false;
+            } else if (vmRequiresSharedStorage) {
+                avoidAllPools = avoidAllSharedPools;
+            } else if (vmRequiresLocalStorege) {
+                avoidAllPools = avoidAllLocalPools;
             }
         }
 
