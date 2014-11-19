@@ -9306,10 +9306,14 @@
                                 	var totalHostCount = 0;                                                	
                                 	var currentPage = 1;
                                 	var returnedHostCount = 0;
+                                	                                	
+                                	var returnedHostCountForXenServer650 = 0;  //'XenServer 6.5.0'                               	
+                                	var returnedHostCpusocketsSumForXenServer650 = 0;    
+                                	
+                                	var returnedHostCountForXenServer620 = 0;  //'XenServer 6.2.0'                               	
+                                	var returnedHostCpusocketsSumForXenServer620 = 0;   
                                 	
                                 	var returnedHostCountForXenServer61x = 0;  //'XenServer 6.1.x and before'
-                                	var returnedHostCountForXenServer620 = 0;  //'XenServer 6.2.0'                               	
-                                	var returnedHostCpusocketsSumForXenServer620 = 0;    
                                 	
                                 	var callListHostsWithPage = function() {                                                		
                                 		$.ajax({
@@ -9330,9 +9334,13 @@
                                     			returnedHostCount += json.listhostsresponse.host.length;
                                     			                                                    			
                                     			var items = json.listhostsresponse.host;
-                                    			for (var i = 0; i < items.length; i++) {
-                                    				//"hypervisorversion" == "6.2.0"
-                                    				if (items[i].hypervisorversion == "6.2.0") {
+                                    			for (var i = 0; i < items.length; i++) {                                    				
+                                    				if (items[i].hypervisorversion == "6.5.0") {
+                                    					returnedHostCountForXenServer650 ++;
+                                    					if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
+                                        					returnedHostCpusocketsSumForXenServer650 += items[i].cpusockets;
+                                        				} 
+                                    				} else if (items[i].hypervisorversion == "6.2.0") {
                                     					returnedHostCountForXenServer620 ++;
                                     					if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
                                         					returnedHostCpusocketsSumForXenServer620 += items[i].cpusockets;
@@ -9353,9 +9361,9 @@
                                 	callListHostsWithPage();                                	                                                  	
                                 	
                                 	array1.push({
-                                        hypervisor: 'XenServer 6.1.x and before',
-                                        hosts: returnedHostCountForXenServer61x,
-                                        sockets: 'N/A'                                                   
+                                        hypervisor: 'XenServer 6.5.0',
+                                        hosts: returnedHostCountForXenServer650,
+                                        sockets: returnedHostCpusocketsSumForXenServer650                                                    
                                     });
                                 	
                                 	array1.push({
@@ -9363,6 +9371,13 @@
                                         hosts: returnedHostCountForXenServer620,
                                         sockets: returnedHostCpusocketsSumForXenServer620                                                    
                                     });
+                                	
+                                	array1.push({
+                                        hypervisor: 'XenServer 6.1.x and before',
+                                        hosts: returnedHostCountForXenServer61x,
+                                        sockets: 'N/A'                                                   
+                                    });                                	
+                                	
                                 	// ***** XenServer (end) *****
                                 	
                                 	
