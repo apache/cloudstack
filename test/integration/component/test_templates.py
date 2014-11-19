@@ -495,8 +495,12 @@ class TestTemplates(cloudstackTestCase):
         # 4. Deploy Virtual machine using this template
         # 5. VM should be in running state
 
+        userapiclient = self.testClient.getUserApiClient(
+                                    UserName=self.account.name,
+                                    DomainName=self.account.domain)
+
         volumes = Volume.list(
-                        self.apiclient,
+                        userapiclient,
                         virtualmachineid=self.virtual_machine.id,
                         type='ROOT',
                         listall=True
@@ -506,7 +510,7 @@ class TestTemplates(cloudstackTestCase):
         self.debug("Creating a snapshot from volume: %s" % volume.id)
         #Create a snapshot of volume
         snapshot = Snapshot.create(
-                                   self.apiclient,
+                                   userapiclient,
                                    volume.id,
                                    account=self.account.name,
                                    domainid=self.account.domainid
@@ -514,14 +518,14 @@ class TestTemplates(cloudstackTestCase):
         self.debug("Creating a template from snapshot: %s" % snapshot.id)
         # Generate template from the snapshot
         template = Template.create_from_snapshot(
-                                    self.apiclient,
+                                    userapiclient,
                                     snapshot,
                                     self.services["template"]
                                     )
         self.cleanup.append(template)
         # Verify created template
         templates = Template.list(
-                                self.apiclient,
+                                userapiclient,
                                 templatefilter=\
                                 self.services["template"]["templatefilter"],
                                 id=template.id
@@ -540,7 +544,7 @@ class TestTemplates(cloudstackTestCase):
         self.debug("Deploying a VM from template: %s" % template.id)
         # Deploy new virtual machine using template
         virtual_machine = VirtualMachine.create(
-                                    self.apiclient,
+                                    userapiclient,
                                     self.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=self.account.name,
@@ -550,7 +554,7 @@ class TestTemplates(cloudstackTestCase):
         self.cleanup.append(virtual_machine)
 
         vm_response = VirtualMachine.list(
-                                        self.apiclient,
+                                        userapiclient,
                                         id=virtual_machine.id,
                                         account=self.account.name,
                                         domainid=self.account.domainid
