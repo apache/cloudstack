@@ -398,12 +398,16 @@ setup_interface_ipv6() {
   sysctl net.ipv6.conf.all.disable_ipv6=0
   sysctl net.ipv6.conf.all.forwarding=1
   sysctl net.ipv6.conf.all.accept_ra=1
-  
+
+  sed  -i "s/net.ipv6.conf.all.disable_ipv6 =.*$/net.ipv6.conf.all.disable_ipv6 = 0/" /etc/sysctl.conf
+  sed  -i "s/net.ipv6.conf.all.forwarding =.*$/net.ipv6.conf.all.forwarding = 1/" /etc/sysctl.conf
+  sed  -i "s/net.ipv6.conf.all.accept_ra =.*$/net.ipv6.conf.all.accept_ra = 1/" /etc/sysctl.conf
+
   local intfnum=$1
   local ipv6="$2"
   local prelen="$3"
   local intf=eth${intfnum}
-  
+
   echo "iface $intf inet6 static" >> /etc/network/interfaces
   echo "  address $ipv6 " >> /etc/network/interfaces
   echo "  netmask $prelen" >> /etc/network/interfaces
