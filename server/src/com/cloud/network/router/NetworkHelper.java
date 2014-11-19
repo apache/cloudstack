@@ -38,7 +38,7 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 public interface NetworkHelper {
 
     public abstract boolean sendCommandsToRouter(VirtualRouter router,
-            Commands cmds) throws AgentUnavailableException;
+            Commands cmds) throws AgentUnavailableException, ResourceUnavailableException;
 
     public abstract void handleSingleWorkingRedundantRouter(
             List<? extends VirtualRouter> connectedRouters,

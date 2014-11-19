@@ -160,11 +160,11 @@ public class NetworkHelperImpl implements NetworkHelper {
     }
 
     @Override
-    public boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds) throws AgentUnavailableException {
+    public boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds) throws AgentUnavailableException, ResourceUnavailableException {
         if (!checkRouterVersion(router)) {
             s_logger.debug("Router requires upgrade. Unable to send command to router:" + router.getId() + ", router template version : " + router.getTemplateVersion()
                     + ", minimal required version : " + VirtualNetworkApplianceService.MinVRVersion);
-            throw new CloudRuntimeException("Unable to send command. Upgrade in progress. Please contact administrator.");
+            throw new ResourceUnavailableException("Unable to send command. Router requires upgrade", VirtualRouter.class, router.getId());
         }
         Answer[] answers = null;
         try {
