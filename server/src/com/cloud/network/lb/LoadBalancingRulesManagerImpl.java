@@ -2093,6 +2093,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             lb.setDisplay(forDisplay);
         }
 
+        // Validate rule in LB provider
+        LoadBalancingRule rule = getLoadBalancerRuleToApply(lb);
+        if (!validateLbRule(rule)) {
+            throw new InvalidParameterValueException("Modifications in lb rule " + lbRuleId + " are not supported.");
+        }
+
         boolean success = _lbDao.update(lbRuleId, lb);
 
         // If algorithm is changed, have to reapply the lb config
