@@ -691,6 +691,9 @@ addBaremetalPxePingServer=1
 addBaremetalDhcp=1
 listBaremetalDhcp=1
 listBaremetalPxeServers=1
+addBaremetalRct=1
+deleteBaremetalRct=1
+listBaremetalRct=1
 
 #### UCS commands
 addUcsManager=1
