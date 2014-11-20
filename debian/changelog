@@ -1,9 +1,3 @@
-cloudstack (4.3.2-snapshot) unstable; urgency=low
-
-  * Update the version to 4.3.2.snapshot
-
- -- Sebastien Goasguen <runseb@gmail.com>  Thu, 16 Sep 2014 15:00:00 +0000
-
 cloudstack (4.3.1) unstable; urgency=low
 
   * Update the version to 4.3.1
