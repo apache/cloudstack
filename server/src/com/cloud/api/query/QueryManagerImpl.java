@@ -653,8 +653,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("value", sb.entity().getValue(), SearchCriteria.Op.EQ);
 
         if (resourceId != null) {
-            sb.and("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
-            sb.and("resourceUuid", sb.entity().getResourceUuid(), SearchCriteria.Op.EQ);
+            sb.and().op("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+            sb.or("resourceUuid", sb.entity().getResourceUuid(), SearchCriteria.Op.EQ);
+            sb.cp();
         }
 
         sb.and("resourceType", sb.entity().getResourceType(), SearchCriteria.Op.EQ);
@@ -674,13 +675,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         if (resourceId != null) {
-            try {
-                long rid = Long.parseLong(resourceId);
-                sc.setParameters("resourceId", rid);
-            } catch (NumberFormatException ex) {
-                // internal id instead of resource id is passed
-                sc.setParameters("resourceUuid", resourceId);
-            }
+            sc.setParameters("resourceId", resourceId);
+            sc.setParameters("resourceUuid", resourceId);
         }
 
         if (resourceType != null) {
