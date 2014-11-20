@@ -39,7 +39,9 @@ from marvin.lib.base import (Project,
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
-                               list_volumes)
+                               list_volumes,
+                               get_builtin_template_info)
+import time
 
 class Services:
     """Test Snapshots Services
@@ -784,23 +786,76 @@ class TestTemplateUsage(cloudstackTestCase):
         """
         # Validate the following
         # 1. Create a account
-        # 2. Upload a template from this account. template.create event is
+        # 2. Register template in the project. template.create event is
         #    recorded in cloud.usage_event table for this account
         # 3. Delete the template. template.delete event is recorded in
         #    cloud.usage_event tables for this account
         # 4. Destroy the account
 
-        #Create template from Virtual machine and Volume ID
-        self.template = Template.create(
-                                self.userapiclient,
-                                self.services["templates"],
-                                self.volume.id,
-                                projectid=self.project.id
-                                )
-        self.debug("Created template with ID: %s" % self.template.id)
+        # Register the First Template in the project
+        self.debug("Register a Template in the project")
+        builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
+        self.services["templates"]["url"] = builtin_info[0]
+        self.services["templates"]["hypervisor"] = builtin_info[1]
+        self.services["templates"]["format"] = builtin_info[2]
+
+        # Register new template
+        template = Template.register(
+                                        self.userapiclient,
+                                        self.services["templates"],
+                                        zoneid=self.zone.id,
+                                        projectid=self.project.id
+                                        )
+        self.debug(
+                "Registered a template of format: %s with ID: %s" % (
+                                                                self.services["templates"]["format"],
+                                                                template.id
+                                                                ))
+
+        # Wait for template status to be changed across
+        time.sleep(self.services["sleep"])
+        timeout = self.services["timeout"]
+        while True:
+            list_template_response = Template.list(
+                                            self.apiclient,
+                                            templatefilter='all',
+                                            id=template.id,
+                                            zoneid=self.zone.id,
+                                            projectid=self.project.id,
+                                            )
+            if list_template_response[0].isready is True:
+                break
+            elif timeout == 0:
+                raise Exception("Template state is not ready, it is %s" % list_template_response[0].isready)
+
+            time.sleep(self.services["sleep"])
+            timeout = timeout - 1
+            
+        #Verify template response to check whether template added successfully
+        self.assertEqual(
+                        isinstance(list_template_response, list),
+                        True,
+                        "Check for list template response return valid data"
+                        )
+
+        self.assertNotEqual(
+                            len(list_template_response),
+                            0,
+                            "Check template available in List Templates"
+                        )
+
+        template_response = list_template_response[0]
+        self.assertEqual(
+                            template_response.isready,
+                            True,
+                            "Template state is not ready, it is %s" % template_response.isready
+                        )
+        
+        self.debug("Created template with ID: %s" % template.id)
+        
         # Delete template
-        self.template.delete(self.apiclient)
-        self.debug("Deleted template with ID: %s" % self.template.id)
+        template.delete(self.apiclient)
+        self.debug("Deleted template with ID: %s" % template.id)
 
         # Fetch project account ID from project UUID
         self.debug(
