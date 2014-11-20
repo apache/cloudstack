@@ -1,0 +1,2 @@
+cloud hard nofile 4096
+cloud soft nofile 4096

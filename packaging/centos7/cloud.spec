@@ -44,14 +44,14 @@ Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 
 BuildRequires: java-1.7.0-openjdk-devel
-BuildRequires: tomcat6
+BuildRequires: tomcat => 7.0
 BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
 BuildRequires: gcc
 BuildRequires: glibc-devel
 BuildRequires: /usr/bin/mkisofs
 BuildRequires: MySQL-python
-#BuildRequires: maven => 3.0.0
+BuildRequires: maven => 3.0.0
 
 %description
 CloudStack is a highly-scalable elastic, open source,
@@ -59,8 +59,8 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
-Requires: tomcat6
-Requires: java7
+Requires: tomcat => 7.0
+Requires: java => 1.7.0
 Requires: python
 Requires: bash
 Requires: bzip2
@@ -80,15 +80,10 @@ Requires: /sbin/chkconfig
 Requires: /usr/bin/ssh-keygen
 Requires: mkisofs
 Requires: MySQL-python
-Requires: python-paramiko
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}
 Requires: %{name}-awsapi = %{_ver}
-Obsoletes: cloud-client < 4.1.0
-Obsoletes: cloud-client-ui < 4.1.0
-Obsoletes: cloud-server < 4.1.0
-Obsoletes: cloud-test < 4.1.0
-Provides:  cloud-client
+Requires: iptables-services
 Group:     System Environment/Libraries
 %description management
 The CloudStack management server is the central point of coordination,
@@ -97,15 +92,6 @@ management, and intelligence in CloudStack.
 %package common
 Summary: Apache CloudStack common files and scripts
 Requires: python
-Obsoletes: cloud-test < 4.1.0 
-Obsoletes: cloud-scripts < 4.1.0
-Obsoletes: cloud-utils < 4.1.0
-Obsoletes: cloud-core < 4.1.0
-Obsoletes: cloud-deps < 4.1.0
-Obsoletes: cloud-python < 4.1.0
-Obsoletes: cloud-setup < 4.1.0
-Obsoletes: cloud-cli < 4.1.0
-Obsoletes: cloud-daemonize < 4.1.0
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
@@ -113,14 +99,14 @@ The Apache CloudStack files shared between agent and management server
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
 Requires: openssh-clients
-Requires: java7
+Requires: java => 1.7.0
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
 Requires: ebtables
 Requires: iptables
 Requires: ethtool
-Requires: vconfig
+Requires: iproute
 Requires: ipset
 Requires: jsvc
 Requires: jakarta-commons-daemon
@@ -130,9 +116,6 @@ Requires: libvirt-python
 Requires: qemu-img
 Requires: qemu-kvm
 Provides: cloud-agent
-Obsoletes: cloud-agent < 4.1.0
-Obsoletes: cloud-agent-libs < 4.1.0
-Obsoletes: cloud-test < 4.1.0
 Group: System Environment/Libraries
 %description agent
 The CloudStack agent for KVM hypervisors
@@ -151,13 +134,11 @@ The CloudStack baremetal agent
 
 %package usage
 Summary: CloudStack Usage calculation server
-Requires: java7
+Requires: java => 1.7.0
 Requires: jsvc
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
 Group: System Environment/Libraries
-Obsoletes: cloud-usage < 4.1.0
-Provides: cloud-usage 
 %description usage
 The CloudStack usage calculation service
 
@@ -172,8 +153,6 @@ Apache CloudStack command line interface
 %package awsapi
 Summary: Apache CloudStack AWS API compatibility wrapper
 Requires: %{name}-management = %{_ver}
-Obsoletes: cloud-aws-api < 4.1.0
-Provides: cloud-aws-api
 Group: System Environment/Libraries
 %description awsapi
 Apache Cloudstack AWS API compatibility wrapper
@@ -182,7 +161,7 @@ Apache Cloudstack AWS API compatibility wrapper
 %package mysql-ha
 Summary: Apache CloudStack Balancing Strategy for MySQL
 Requires: mysql-connector-java
-Requires: tomcat6
+Requires: tomcat => 7.0
 Group: System Environmnet/Libraries
 %description mysql-ha
 Apache CloudStack Balancing Strategy for MySQL
@@ -196,30 +175,23 @@ echo Doing CloudStack build
 
 %build
 
-cp packaging/centos63/replace.properties build/replace.properties
+cp packaging/centos7/replace.properties build/replace.properties
 echo VERSION=%{_maventag} >> build/replace.properties
 echo PACKAGE=%{name} >> build/replace.properties
 touch build/gitrev.txt
 echo $(git rev-parse HEAD) > build/gitrev.txt
 
 if [ "%{_ossnoss}" == "NOREDIST" -o "%{_ossnoss}" == "noredist" ] ; then
-   echo "Executing mvn packaging with non-redistributable libraries"
-   if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then 
-      echo "Executing mvn noredist packaging with simulator ..."
-      mvn -Pawsapi,systemvm -Dnoredist -Dsimulator clean package 
-   else
-      echo "Executing mvn noredist packaging without simulator..."
-      mvn -Pawsapi,systemvm -Dnoredist clean package
-   fi
-else
-   if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then 
-      echo "Executing mvn default packaging simulator ..."
-      mvn -Pawsapi,systemvm -Dsimulator clean package 
-   else
-      echo "Executing mvn default packaging without simulator ..."
-      mvn -Pawsapi,systemvm clean package
-   fi
+   echo "Adding noredist flag to the maven build"
+   FLAGS="$FLAGS -Dnoredist"
+fi
+
+if [ "%{_sim}" == "SIMULATOR" -o "%{_sim}" == "simulator" ] ; then 
+   echo "Adding simulator flag to the maven build"
+   FLAGS="$FLAGS -Dsimulator"
 fi 
+
+mvn -Pawsapi,systemvm -DskipTests $FLAGS clean package
 
 %install
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -248,7 +220,7 @@ cp -r python/lib/cloudutils ${RPM_BUILD_ROOT}%{python_sitearch}/
 python -m py_compile ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
 python -m compileall ${RPM_BUILD_ROOT}%{python_sitearch}/cloudutils
 cp build/gitrev.txt ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
-cp packaging/centos63/cloudstack-sccs ${RPM_BUILD_ROOT}/usr/bin
+cp packaging/centos7/cloudstack-sccs ${RPM_BUILD_ROOT}/usr/bin
  
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
 cp -r plugins/network-elements/cisco-vnmc/scripts/network/cisco/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts/network/cisco
@@ -260,12 +232,13 @@ mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/awsapi
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
+mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/run
 
 # Specific for tomcat
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
-ln -sf /usr/share/tomcat6/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/bin
+ln -sf /usr/share/tomcat/bin ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/bin
 ln -sf /etc/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/conf
-ln -sf /usr/share/tomcat6/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
+ln -sf /usr/share/tomcat/lib ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
 ln -sf /var/log/%{name}/management ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/logs
 ln -sf /var/cache/%{name}/management/temp ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/temp
 ln -sf /var/cache/%{name}/management/work ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/work
@@ -289,14 +262,15 @@ cp -r client/target/cloud-client-ui-%{_maventag}/* ${RPM_BUILD_ROOT}%{_datadir}/
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/scripts
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/vms
 
-for name in db.properties log4j-cloud.xml tomcat6-nonssl.conf tomcat6-ssl.conf server-ssl.xml server-nonssl.xml \
-            catalina.policy catalina.properties classpath.conf tomcat-users.xml web.xml environment.properties ; do
-  mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/$name \
+for name in catalina.properties db.properties log4j-cloud.xml web.xml cloud-bridge.properties\
+            ec2-service.properties server.xml commons-logging.properties environment.properties tomcat-users.xml
+do
+  cp packaging/centos7/tomcat7/$name \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/$name
 done
 
-ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml \
-    ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/log4j-cloud.xml
+#ln -s %{_sysconfdir}/%{name}/management/log4j-cloud.xml \
+#    ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/log4j-cloud.xml
 
 mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classes/context.xml \
     ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost/client
@@ -304,10 +278,12 @@ mv ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapps/client/WEB-INF/classe
 install python/bindir/cloud-external-ipallocator.py ${RPM_BUILD_ROOT}%{_bindir}/%{name}-external-ipallocator.py
 install -D client/target/pythonlibs/jasypt-1.9.0.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/jasypt-1.9.0.jar
 
-install -D packaging/centos63/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
-install -D packaging/centos63/cloud-management.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-management
-install -D packaging/centos63/cloud-management.sysconfig ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig/%{name}-management
-install -D packaging/centos63/tomcat.sh ${RPM_BUILD_ROOT}%{_initrddir}/tomcat.sh
+install -D packaging/centos7/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
+install -D packaging/centos7/cloud-management.sysconfig ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig/%{name}-management
+install -D packaging/centos7/cloud-management.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-management.service
+install -D packaging/centos7/cloud-management.sudoers ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
+install -D packaging/centos7/cloud.limits ${RPM_BUILD_ROOT}%{_sysconfdir}/security/limits.d/cloud
+touch ${RPM_BUILD_ROOT}%{_localstatedir}/run/%{name}-management.pid
 
 chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina
 chmod 770 ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/Catalina/localhost
@@ -324,7 +300,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/agent
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/plugins
-install -D packaging/centos63/cloud-agent.rc ${RPM_BUILD_ROOT}%{_sysconfdir}/init.d/%{name}-agent
+install -D packaging/centos7/cloud-agent.rc ${RPM_BUILD_ROOT}%{_sysconfdir}/init.d/%{name}-agent
 install -D agent/target/transformed/agent.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/agent.properties
 install -D agent/target/transformed/environment.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/environment.properties
 install -D agent/target/transformed/log4j-cloud.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/log4j-cloud.xml
@@ -342,7 +318,7 @@ install -D usage/target/cloud-usage-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir
 install -D usage/target/transformed/db.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage/db.properties
 install -D usage/target/transformed/log4j-cloud_usage.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage/log4j-cloud.xml
 cp usage/target/dependencies/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/lib/
-install -D packaging/centos63/cloud-usage.rc ${RPM_BUILD_ROOT}/%{_sysconfdir}/init.d/%{name}-usage
+install -D packaging/centos7/cloud-usage.rc ${RPM_BUILD_ROOT}/%{_sysconfdir}/init.d/%{name}-usage
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/usage/
 
 # CLI
@@ -406,35 +382,18 @@ id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged us
      -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
 
 %preun management
-/sbin/service cloudstack-management stop || true
-if [ "$1" == "0" ] ; then
-    /sbin/chkconfig --del cloudstack-management  > /dev/null 2>&1 || true
-    /sbin/service cloudstack-management stop > /dev/null 2>&1 || true
-fi
+/usr/bin/systemctl stop cloudstack-management || true
+/usr/bin/systemctl off cloudstack-management || true
 
 %pre management
 id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
 
-# set max file descriptors for cloud user to 4096
-sed -i /"cloud hard nofile"/d /etc/security/limits.conf
-sed -i /"cloud soft nofile"/d /etc/security/limits.conf
-echo "cloud hard nofile 4096" >> /etc/security/limits.conf
-echo "cloud soft nofile 4096" >> /etc/security/limits.conf
-rm -rf %{_localstatedir}/cache/cloud
 rm -rf %{_localstatedir}/cache/cloudstack
-# user harcoded here, also hardcoded on wscript
-
-# save old configs if they exist (for upgrade). Otherwise we may lose them
-# when the old packages are erased. There are a lot of properties files here.
-if [ -d "%{_sysconfdir}/cloud" ] ; then
-    mv %{_sysconfdir}/cloud %{_sysconfdir}/cloud.rpmsave
-fi
 
 %post management
 if [ "$1" == "1" ] ; then
-    /sbin/chkconfig --add cloudstack-management > /dev/null 2>&1 || true
-    /sbin/chkconfig --level 345 cloudstack-management on > /dev/null 2>&1 || true
+    /usr/bin/systemctl on cloudstack-management > /dev/null 2>&1 || true
 fi
 
 if [ -d "%{_datadir}/%{name}-management" ] ; then
@@ -444,64 +403,6 @@ fi
 if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util ] ; then
     echo Please download vhd-util from http://download.cloud.com.s3.amazonaws.com/tools/vhd-util and put it in 
     echo %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/
-fi
-
-# change cloud user's home to 4.1+ version if needed. Would do this via 'usermod', but it
-# requires that cloud user not be in use, so RPM could not be installed while management is running
-if getent passwd cloud | grep -q /var/lib/cloud; then 
-    sed -i 's/\/var\/lib\/cloud\/management/\/var\/cloudstack\/management/g' /etc/passwd
-fi
-
-# if saved configs from upgrade exist, copy them over
-if [ -f "%{_sysconfdir}/cloud.rpmsave/management/db.properties" ]; then
-    mv %{_sysconfdir}/%{name}/management/db.properties %{_sysconfdir}/%{name}/management/db.properties.rpmnew
-    cp -p %{_sysconfdir}/cloud.rpmsave/management/db.properties %{_sysconfdir}/%{name}/management
-    if [ -f "%{_sysconfdir}/cloud.rpmsave/management/key" ]; then    
-        cp -p %{_sysconfdir}/cloud.rpmsave/management/key %{_sysconfdir}/%{name}/management
-    fi
-    # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
-    mv %{_sysconfdir}/cloud.rpmsave/management/db.properties %{_sysconfdir}/cloud.rpmsave/management/db.properties.rpmsave
-fi
-
-# Choose server.xml and tomcat.conf links based on old config, if exists
-serverxml=%{_sysconfdir}/%{name}/management/server.xml
-oldserverxml=%{_sysconfdir}/cloud.rpmsave/management/server.xml
-if [ -f $oldserverxml ] || [ -L $oldserverxml ]; then
-    if stat -c %N $oldserverxml| grep -q server-ssl ; then
-        if [ -f $serverxml ] || [ -L $serverxml ]; then rm -f $serverxml; fi
-        ln -s %{_sysconfdir}/%{name}/management/server-ssl.xml $serverxml
-        echo Please verify the server.xml in saved folder, and make the required changes manually , saved folder available at $oldserverxml
-    else
-        if [ -f $serverxml ] || [ -L $serverxml ]; then rm -f $serverxml; fi
-        ln -s %{_sysconfdir}/%{name}/management/server-nonssl.xml $serverxml
-        echo Please verify the server.xml in saved folder, and make the required changes manually , saved folder available at $oldserverxml
-
-    fi
-else
-    echo "Unable to determine ssl settings for server.xml, please run cloudstack-setup-management manually"
-fi
-
-
-tomcatconf=%{_sysconfdir}/%{name}/management/tomcat6.conf
-oldtomcatconf=%{_sysconfdir}/cloud.rpmsave/management/tomcat6.conf
-if [ -f $oldtomcatconf ] || [ -L $oldtomcatconf ] ; then
-    if stat -c %N $oldtomcatconf| grep -q tomcat6-ssl ; then
-        if [ -f $tomcatconf ] || [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
-        ln -s %{_sysconfdir}/%{name}/management/tomcat6-ssl.conf $tomcatconf
-        echo Please verify the tomcat6.conf in saved folder, and make the required changes manually , saved folder available at $oldtomcatconf
-    else
-        if [ -f $tomcatconf ] || [ -L $tomcatconf ]; then rm -f $tomcatconf; fi
-        ln -s %{_sysconfdir}/%{name}/management/tomcat6-nonssl.conf $tomcatconf
-        echo Please verify the tomcat6.conf in saved folder, and make the required changes manually , saved folder available at $oldtomcatconf
-    fi
-else
-    echo "Unable to determine ssl settings for tomcat.conf, please run cloudstack-setup-management manually"
-fi
-
-if [ -f "%{_sysconfdir}/cloud.rpmsave/management/cloud.keystore" ]; then
-    cp -p %{_sysconfdir}/cloud.rpmsave/management/cloud.keystore %{_sysconfdir}/%{name}/management/cloudmanagementserver.keystore
-    # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
-    mv %{_sysconfdir}/cloud.rpmsave/management/cloud.keystore %{_sysconfdir}/cloud.rpmsave/management/cloud.keystore.rpmsave
 fi
 
 %preun agent
@@ -583,24 +484,21 @@ fi
 %dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/agent
 %dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/awsapi
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-management
+%config(noreplace) %{_sysconfdir}/sudoers.d/%{name}-management
+%config(noreplace) %{_sysconfdir}/security/limits.d/cloud
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-cloud.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6-nonssl.conf
-%config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6-ssl.conf
 %config(noreplace) %{_sysconfdir}/%{name}/management/Catalina/localhost/client/context.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/catalina.policy
 %config(noreplace) %{_sysconfdir}/%{name}/management/catalina.properties
-%config(noreplace) %{_sysconfdir}/%{name}/management/classpath.conf
-%config(noreplace) %{_sysconfdir}/%{name}/management/server-nonssl.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/server-ssl.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat-users.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/web.xml
+%config(noreplace) %{_sysconfdir}/%{name}/management/server.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/environment.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/cloud-bridge.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/commons-logging.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/ec2-service.properties
-%attr(0755,root,root) %{_initrddir}/%{name}-management
-%attr(0755,root,root) %{_initrddir}/tomcat.sh
+%attr(0755,root,root) %{_unitdir}/%{name}-management.service
+%attr(0755,cloud,cloud) %{_localstatedir}/run/%{name}-management.pid
 
 %attr(0755,root,root) %{_bindir}/%{name}-setup-management
 %attr(0755,root,root) %{_bindir}/%{name}-update-xenserver-licenses
@@ -697,8 +595,11 @@ fi
 %attr(0755,root,root) %{_bindir}/cloudstack-setup-baremetal
 
 %changelog
-* Fri Jul 04 2014 Hugo Trippaers <hugo@apache.org> 4.5.0
+* Wed Nov 19 2014 Hugo Trippaers <hugo@apache.org> 4.6.0
+- Create a specific spec for CentOS 7
+
+* Fri Jul 4 2014 Hugo Trippaers <hugo@apache.org> 4.5.0
 - Add a package for the mysql ha module
 
-* Fri Oct 03 2012 Hugo Trippaers <hugo@apache.org> 4.1.0
+* Fri Oct 5 2012 Hugo Trippaers <hugo@apache.org> 4.1.0
 - new style spec file
