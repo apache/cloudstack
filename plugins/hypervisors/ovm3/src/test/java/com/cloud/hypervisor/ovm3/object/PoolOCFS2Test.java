@@ -75,6 +75,16 @@ public class PoolOCFS2Test {
         poolfs.createPoolFs(TYPE, TARGET, CLUSTER, UUID, BASE, MANAGER);
     }
 
+    @Test
+    public void testDestroyPoolFS() throws Ovm3ResourceException {
+        con.setResult(results.getNil());
+        poolfs.destroyPoolFs(TYPE, TARGET, UUID, BASE);
+
+        con.setResult(results.simpleResponseWrapWrapper(DISCOVERPOOLFS));
+        results.basicBooleanTest(poolfs.hasPoolFs(UUID));
+        poolfs.createPoolFs(TYPE, TARGET, CLUSTER, UUID, BASE, MANAGER);
+    }
+
     @Test(expected = Ovm3ResourceException.class)
     public void testCreatePoolFSError() throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(DISCOVERPOOLFS));

@@ -3,14 +3,18 @@
 package com.cloud.hypervisor.ovm3.object;
 
 import static org.junit.Assert.assertEquals;
-import com.cloud.hypervisor.ovm3.object.CloudStackPlugin.ReturnCode;
-import java.util.Map;
-import org.junit.Test;
 import static org.junit.Assert.assertNotNull;
+
+import java.util.Map;
+
+import org.junit.Test;
+
+import com.cloud.hypervisor.ovm3.object.CloudStackPlugin.ReturnCode;
 
 public class CloudStackPluginTest {
     private static final String VMNAME = "test";
     String domrIp = "169.254.3.2";
+    String dom0Ip = "192.168.1.100";
     Integer domrPort = 3922;
     String host = "ovm-1";
     String path = "/tmp";
@@ -56,8 +60,17 @@ public class CloudStackPluginTest {
         results.basicBooleanTest(cSp.domrCheckPort(host, port, retries, interval));
         /* test nothing */
         con.setResult(null);
-        results.basicBooleanTest(cSp.domrCheckPort(host, port, retries, interval), (Boolean) false);
+        results.basicBooleanTest(
+                cSp.domrCheckPort(host, port, retries, interval), false);
         /* for the last test we need to fake the timeout... */
+    }
+
+    @Test
+    public void testDom0Ip() throws Ovm3ResourceException {
+        con.setResult(results.getBoolean(true));
+        results.basicBooleanTest(cSp.dom0HasIp(dom0Ip));
+        con.setResult(results.getBoolean(false));
+        results.basicBooleanTest(cSp.dom0HasIp(dom0Ip), false);
     }
 
     @Test

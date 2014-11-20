@@ -88,6 +88,8 @@ import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.PlugNicAnswer;
+import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyAnswer;
@@ -102,6 +104,8 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.UnPlugNicAnswer;
+import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -1138,19 +1142,31 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         return true;
     }
 
+    /* simple construct to create vifs for Vm */
     protected Boolean createVifs(Xen.Vm vm, VirtualMachineTO spec) {
         NicTO[] nics = spec.getNics();
+        return createVifs(vm, nics);
+    }
+
+    protected Boolean createVifs(Xen.Vm vm, NicTO[] nics) {
         for (NicTO nic : nics) {
-            try {
-                if (getNetwork(nic) != null) {
-                    vm.addVif(nic.getDeviceId(), getNetwork(nic), nic.getMac());
-                }
-            } catch (Exception e) {
-                String msg = "Unable to add vif " + nic.getType() + " for "
-                        + spec.getName() + " " + e.getMessage();
-                LOGGER.debug(msg);
-                throw new CloudRuntimeException(msg);
+            if (!createVif(vm, nic)) {
+                return false;
             }
+        }
+        return true;
+    }
+
+    protected Boolean createVif(Xen.Vm vm, NicTO nic) {
+        try {
+            if (getNetwork(nic) != null) {
+                vm.addVif(nic.getDeviceId(), getNetwork(nic), nic.getMac());
+            }
+        } catch (Exception e) {
+            String msg = "Unable to add vif " + nic.getType() + " for "
+                    + vm.getVmName() + " " + e.getMessage();
+            LOGGER.debug(msg);
+            return false;
         }
         vm.setupVifs();
         return true;
@@ -2624,6 +2640,10 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             return execute((CheckHealthCommand) cmd);
         } else if (clazz == NetworkUsageCommand.class) {
             return execute((NetworkUsageCommand) cmd);
+        } else if (clazz == PlugNicCommand.class) {
+            return execute((PlugNicCommand) cmd);
+        } else if (clazz == UnPlugNicCommand.class) {
+            return execute((UnPlugNicCommand) cmd);
         } else if (clazz == ReadyCommand.class) {
             return execute((ReadyCommand) cmd);
         } else if (clazz == CopyCommand.class) {
@@ -2792,6 +2812,35 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                             + " failed", e);
             return new Answer(cmd, false, e.getMessage());
         }
+    }
+
+    public PlugNicAnswer execute(PlugNicCommand cmd) {
+        String vmName = cmd.getVmName();
+        NicTO nic = cmd.getNic();
+        try {
+            Xen xen = new Xen(c);
+            Xen.Vm vm = xen.getVmConfig(vmName);
+            /* check running */
+            if (vm == null) {
+                return new PlugNicAnswer(cmd, false,
+                        "Unable to execute PlugNicCommand due to missing VM");
+            }
+            // setup the NIC in the VM config.
+            createVif(vm, nic);
+
+            // execute the change
+            xen.configureVm(ovmObject.deDash(vm.getPrimaryPoolUuid()),
+                    vm.getVmUuid());
+        } catch (Ovm3ResourceException e) {
+            return new PlugNicAnswer(cmd, false,
+                    "Unable to execute PlugNicCommand due to " + e.toString());
+        }
+        return new PlugNicAnswer(cmd, true, "");
+    }
+
+    /* TODO: implement */
+    public UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
+        return new UnPlugNicAnswer(cmd, true, "");
     }
 
     @Override
