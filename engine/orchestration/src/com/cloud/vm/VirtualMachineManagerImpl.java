@@ -1283,13 +1283,27 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         s_logger.debug("Cleaning up resources for the vm " + vm + " in " + state + " state");
         try {
             if (state == State.Starting) {
-                Step step = work.getStep();
-                if (step == Step.Starting && !cleanUpEvenIfUnableToStop) {
-                    s_logger.warn("Unable to cleanup vm " + vm + "; work state is incorrect: " + step);
-                    return false;
-                }
+                if (work != null) {
+                    Step step = work.getStep();
+                    if (step == Step.Starting && !cleanUpEvenIfUnableToStop) {
+                        s_logger.warn("Unable to cleanup vm " + vm + "; work state is incorrect: " + step);
+                        return false;
+                    }
 
-                if (step == Step.Started || step == Step.Starting || step == Step.Release) {
+                    if (step == Step.Started || step == Step.Starting || step == Step.Release) {
+                        if (vm.getHostId() != null) {
+                            if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop, false)) {
+                                s_logger.warn("Failed to stop vm " + vm + " in " + State.Starting + " state as a part of cleanup process");
+                                return false;
+                            }
+                        }
+                    }
+
+                    if (step != Step.Release && step != Step.Prepare && step != Step.Started && step != Step.Starting) {
+                        s_logger.debug("Cleanup is not needed for vm " + vm + "; work state is incorrect: " + step);
+                        return true;
+                     }
+                } else {
                     if (vm.getHostId() != null) {
                         if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop, false)) {
                             s_logger.warn("Failed to stop vm " + vm + " in " + State.Starting + " state as a part of cleanup process");
@@ -1298,10 +1312,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 }
 
-                if (step != Step.Release && step != Step.Prepare && step != Step.Started && step != Step.Starting) {
-                    s_logger.debug("Cleanup is not needed for vm " + vm + "; work state is incorrect: " + step);
-                    return true;
-                }
             } else if (state == State.Stopping) {
                 if (vm.getHostId() != null) {
                     if (!sendStop(guru, profile, cleanUpEvenIfUnableToStop, false)) {
@@ -1453,19 +1463,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (!cleanUpEvenIfUnableToStop) {
                 throw new CloudRuntimeException("We cannot stop " + vm + " when it is in state " + vm.getState());
             }
-            boolean doCleanup = false;
+            boolean doCleanup = true;
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to transition the state but we're moving on because it's forced stop");
-            }
-            if ((state == State.Starting) || (state == State.Migrating) || (state == State.Stopping)) {
-                if (work != null) {
-                    doCleanup = true;
-                } else {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Unable to cleanup VM: " + vm + " ,since outstanding work item is not found");
-                    }
-                    throw new CloudRuntimeException("Work item not found, We cannot stop " + vm + " when it is in state " + vm.getState());
-                }
             }
 
             if (doCleanup) {
