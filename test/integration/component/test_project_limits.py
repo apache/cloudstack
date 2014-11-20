@@ -42,7 +42,8 @@ from marvin.lib.common import (get_domain,
                                list_volumes,
                                list_configurations,
                                list_resource_limits,
-                               update_resource_limit
+                               update_resource_limit,
+                               get_builtin_template_info
                                )
 from marvin.codes import PASS
 import time
@@ -109,7 +110,7 @@ class Services:
                                     "ostype": 'CentOS 5.3 (64-bit)',
                                     "templatefilter": 'self',
                         },
-                        "network_offering": {
+                         "network_offering": {
                                     "name": 'Network offering-VR services',
                                     "displaytext": 'Network offering-VR services',
                                     "guestiptype": 'Isolated',
@@ -904,64 +905,76 @@ class TestResourceLimitsProject(cloudstackTestCase):
                               max=1,
                               projectid=self.project.id
                               )
+        
+        # Register the First Template in the project
+        self.debug("Register the First Template in the project")
+        builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
+        self.services["template"]["url"] = builtin_info[0]
+        self.services["template"]["hypervisor"] = builtin_info[1]
+        self.services["template"]["format"] = builtin_info[2]
 
-        self.debug("Deploying VM for account: %s" % self.account.name)
-        virtual_machine_1 = VirtualMachine.create(
-                                self.apiclient,
-                                self.services["server"],
-                                templateid=self.template.id,
-                                serviceofferingid=self.service_offering.id,
-                                projectid=self.project.id
-                                )
-        self.cleanup.append(virtual_machine_1)
-        # Verify VM state
+        # Register new template
+        template = Template.register(
+                                        self.userapiclient,
+                                        self.services["template"],
+                                        zoneid=self.zone.id,
+                                        projectid=self.project.id
+                                        )
+        self.debug(
+                "Registered a template of format: %s with ID: %s" % (
+                                                                self.services["template"]["format"],
+                                                                template.id
+                                                                ))
+        self.cleanup.append(template)
+
+        # Wait for template status to be changed across
+        time.sleep(self.services["sleep"])
+        timeout = self.services["timeout"]
+        while True:
+            list_template_response = Template.list(
+                                            self.apiclient,
+                                            templatefilter='all',
+                                            id=template.id,
+                                            zoneid=self.zone.id,
+                                            projectid=self.project.id,
+                                            )
+            if list_template_response[0].isready is True:
+                break
+            elif timeout == 0:
+                raise Exception("Template state is not ready, it is %s" % list_template_response[0].isready)
+
+            time.sleep(self.services["sleep"])
+            timeout = timeout - 1
+            
+        #Verify template response to check whether template added successfully
         self.assertEqual(
-                            virtual_machine_1.state,
-                            'Running',
-                            "Check VM state is Running or not"
-                        )
-        virtual_machine_1.stop(self.apiclient)
-        # Get the Root disk of VM
-        volumes = list_volumes(
-                            self.apiclient,
-                            virtualmachineid=virtual_machine_1.id,
-                            projectid=self.project.id,
-                            type='ROOT'
-                            )
-        self.assertEqual(
-                        isinstance(volumes, list),
+                        isinstance(list_template_response, list),
                         True,
-                        "Check for list volume response return valid data"
+                        "Check for list template response return valid data"
                         )
-        volume = volumes[0]
 
-        self.debug("Creating template from volume: %s" % volume.id)
-        # Create a template from the ROOTDISK
-        template_1 = Template.create(
-                            self.userapiclient,
-                            self.services["template"],
-                            volumeid=volume.id,
-                            projectid=self.project.id
-                            )
+        self.assertNotEqual(
+                            len(list_template_response),
+                            0,
+                            "Check template available in List Templates"
+                        )
 
-        self.cleanup.append(template_1)
-        # Verify Template state
+        template_response = list_template_response[0]
         self.assertEqual(
-                            template_1.isready,
+                            template_response.isready,
                             True,
-                            "Check Template is in ready state or not"
+                            "Template state is not ready, it is %s" % template_response.isready
                         )
 
         # Exception should be raised for second template
         with self.assertRaises(Exception):
-            Template.create(
-                            self.userapiclient,
-                            self.services["template"],
-                            volumeid=volume.id,
-                            projectid=self.project.id
+            Template.register(
+                                self.userapiclient,
+                                self.services["template"],
+                                zoneid=self.zone.id,
+                                projectid=self.project.id
                             )
         return
-
 
 class TestMaxProjectNetworks(cloudstackTestCase):
 
