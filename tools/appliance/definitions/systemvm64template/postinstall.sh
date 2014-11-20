@@ -19,7 +19,7 @@ set -x
 
 ROOTPW=password
 HOSTNAME=systemvm
-CLOUDSTACK_RELEASE=4.3.0
+CLOUDSTACK_RELEASE=4.3.1
 ARCH=64-bit
 
 add_backports () {
