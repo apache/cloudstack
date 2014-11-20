@@ -94,6 +94,11 @@ public class VPNUserUsageParser {
                 vuCreateDate = startDate;
             }
 
+            if (vuCreateDate.after(endDate)) {
+                //Ignore records created after endDate
+                continue;
+            }
+
             long currentDuration = (vuDeleteDate.getTime() - vuCreateDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
 
             updateVUUsageData(usageMap, key, usageVU.getUserId(), currentDuration);
