@@ -102,6 +102,18 @@ case "$currentversion" in
     ;;
 esac
 
+# set debian changelog entry
+tmpfilenm=$$.tmp
+echo "cloudstack ($version) unstable; urgency=low" >>$tmpfilenm 
+echo >>$tmpfilenm
+echo "  * Update the version to $version" >>$tmpfilenm
+echo >>$tmpfilenm
+echo " -- the Apache CloudStack project <dev@cloudstack.apache.org>  `date -j '+%a, %d %b %Y %T %z'`" >>$tmpfilenm
+echo >>$tmpfilenm
+
+cat debian/changelog >>$tmpfilenm
+mv $tmpfilenm debian/changelog
+
 git clean -f
 
 #create a RC branch
