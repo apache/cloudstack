@@ -16,6 +16,7 @@
 # under the License.
 
 source 'https://rubygems.org'
-gem 'veewee', :git => 'https://github.com/jedi4ever/veewee.git'
+# gem 'veewee', :git => 'https://github.com/jedi4ever/veewee.git'
+gem 'veewee', '~> 0.4.5.1'
 gem 'em-winrm'
 gem 'sys-proctable'
