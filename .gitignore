@@ -97,3 +97,5 @@ tools/appliance/box/
 .checkstyle
 .pmd
 .pmdruleset.xml
+systemvm/.pydevproject
+test/.pydevproject
