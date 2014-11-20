@@ -33,6 +33,8 @@ public interface DataCenterIpAddressDao extends GenericDao<DataCenterIpAddressVO
 
     public void releaseIpAddress(long nicId, String reservationId);
 
+    public void releaseIpAddress(long nicId);
+
     boolean mark(long dcId, long podId, String ip);
 
     List<DataCenterIpAddressVO> listByPodIdDcIdIpAddress(long podId, long dcId, String ipAddress);
