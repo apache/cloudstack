@@ -779,33 +779,35 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
         }
 
         //Schedule Network stats update task
+        //Network stats aggregation should align with aggregation range
+        //For daily aggregation, update stats at the end of the day
+        //For hourly aggregation, update stats at the end of the hour
         final TimeZone usageTimezone = TimeZone.getTimeZone(_usageTimeZone);
         final Calendar cal = Calendar.getInstance(usageTimezone);
         cal.setTime(new Date());
-        long endDate = 0;
+        //aggDate is the time in millis when the aggregation should happen
+        long aggDate = 0;
         final int HOURLY_TIME = 60;
         final int DAILY_TIME = 60 * 24;
         if (_usageAggregationRange == DAILY_TIME) {
-            cal.roll(Calendar.DAY_OF_YEAR, false);
             cal.set(Calendar.HOUR_OF_DAY, 0);
             cal.set(Calendar.MINUTE, 0);
             cal.set(Calendar.SECOND, 0);
             cal.set(Calendar.MILLISECOND, 0);
             cal.roll(Calendar.DAY_OF_YEAR, true);
             cal.add(Calendar.MILLISECOND, -1);
-            endDate = cal.getTime().getTime();
+            aggDate = cal.getTime().getTime();
             _dailyOrHourly = true;
         } else if (_usageAggregationRange == HOURLY_TIME) {
-            cal.roll(Calendar.HOUR_OF_DAY, false);
             cal.set(Calendar.MINUTE, 0);
             cal.set(Calendar.SECOND, 0);
             cal.set(Calendar.MILLISECOND, 0);
             cal.roll(Calendar.HOUR_OF_DAY, true);
             cal.add(Calendar.MILLISECOND, -1);
-            endDate = cal.getTime().getTime();
+            aggDate = cal.getTime().getTime();
             _dailyOrHourly = true;
         } else {
-            endDate = cal.getTime().getTime();
+            aggDate = cal.getTime().getTime();
             _dailyOrHourly = false;
         }
 
@@ -814,7 +816,14 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
             _usageAggregationRange = UsageUtils.USAGE_AGGREGATION_RANGE_MIN;
         }
 
-        _networkStatsUpdateExecutor.scheduleAtFixedRate(new NetworkStatsUpdateTask(), (endDate - System.currentTimeMillis()), (_usageAggregationRange * 60 * 1000),
+        // We cannot schedule a job at specific time. Provide initial delay instead, from current time, so that the job runs at desired time
+        long initialDelay = aggDate - System.currentTimeMillis();
+
+        if( initialDelay < 0){
+            s_logger.warn("Initial delay for network usage stats update task is incorrect. Stats update task will run immediately");
+        }
+
+        _networkStatsUpdateExecutor.scheduleAtFixedRate(new NetworkStatsUpdateTask(), initialDelay, (_usageAggregationRange * 60 * 1000),
                 TimeUnit.MILLISECONDS);
 
         if (_routerCheckInterval > 0) {
