@@ -29,13 +29,13 @@ logging.basicConfig(filename='/var/log/cloud.log', level=logging.DEBUG, format='
 
 # first commandline argument should be the file to process
 if (len(sys.argv) != 2):
-    print "Invalid usage"
+    print "[ERROR]: Invalid usage"
     sys.exit(1)
 
 # FIXME we should get this location from a configuration class
 filePath = "/var/cache/cloud/%s" % sys.argv[1]
 if not (os.path.isfile(filePath) and os.access(filePath, os.R_OK)):
-    print "You are telling me to process %s, but i can't access it" % filePath
+    print "[ERROR]: You are telling me to process %s, but i can't access it" % filePath
     sys.exit(1)
 
 # If the command line json file is unprocessed process it
