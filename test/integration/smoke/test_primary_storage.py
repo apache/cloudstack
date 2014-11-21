@@ -190,7 +190,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
 
 
             storage = StoragePool.create(self.apiclient,
-                                         self.services["iscsi"],
+                                         self.services["configurableData"]["iscsi"],
                                          clusterid=cluster.id,
                                          zoneid=self.zone.id,
                                          podid=self.pod.id

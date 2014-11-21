@@ -1376,21 +1376,3 @@ def isNetworkDeleted(apiclient, networkid, timeout=600):
         time.sleep(60)
     #end while
     return networkDeleted
-
-def GetNetscalerInfoFromConfig(config):
-    """ Read netscaler data from config file and
-        return it
-
-    Input: Config
-    Output: [netscalerInfoDict, isExceptionOccured]
-    """
-    try:
-        netscalerInfo = config.__dict__[
-                "netscalerDevice"].__dict__
-        return [netscalerInfo, None]
-    except KeyError:
-        exceptionMessage = "Please make sure you have included netscalerDevice\
-                    dict in your config file"
-        return [None, exceptionMessage]
-    except Exception as e:
-        return [None, e]

@@ -49,8 +49,7 @@ from marvin.lib.common import (get_domain,
                                get_template,
                                verifyNetworkState,
                                wait_for_cleanup,
-                               add_netscaler,
-                               GetNetscalerInfoFromConfig
+                               add_netscaler
                                )
 
 from marvin.lib.utils import (validateList,
@@ -1775,19 +1774,14 @@ class TestExternalLoadBalancer(cloudstackTestCase):
         cls.testdata["virtual_machine"]["zoneid"] = cls.zone.id
         cls.testdata["virtual_machine"]["template"] = template.id
         cls._cleanup = []
-
-        response = GetNetscalerInfoFromConfig(
-            cls.config
-        )
-        assert response[0] is not None, response[1]
-        cls.testdata["netscaler"] = response[0]
-        cls.testdata["netscaler"]["lbdevicededicated"] = False
+        cls.testdata["configurableData"]\
+        ["netscaler"]["lbdevicededicated"] = False
 
         try:
             cls.netscaler = add_netscaler(
                 cls.api_client,
                 cls.zone.id,
-                cls.testdata["netscaler"])
+                cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
         except Exception as e:
             raise unittest.SkipTest("Failed to add netscaler device: %s" % e)

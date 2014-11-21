@@ -20,7 +20,6 @@
 #Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
-#from marvin.cloudstackAPI import *
 from marvin.lib.utils import (cleanup_resources,
                               random_gen)
 from marvin.lib.base import (VirtualMachine,
@@ -159,8 +158,8 @@ class TestAddNetScaler(_NetScalerAddBase):
         #    Balancing feature.
         # 2. Netscaler should be configured successfully.
         self.debug("Adding netscaler device: %s" %
-                                    self.services["netscaler_VPX"]["ipaddress"])
-        netscaler_config = dict(self.services["netscaler_VPX"])
+                                    self.services["configurableData"]["netscaler"]["ipaddress"])
+        netscaler_config = dict(self.services["configurableData"]["netscaler"])
         netscaler_config.update({'lbdevicededicated': "False"})
         netscaler = NetScaler.add(
                                   self.apiclient,
@@ -236,7 +235,7 @@ class TestInvalidParametersNetscaler(_NetScalerAddBase):
         # 2. Netscaler API should throw error
 
         self.debug("Passing invalid credential for NetScaler")
-        netscaler_config = dict(self.services["netscaler_VPX"])
+        netscaler_config = dict(self.services["configurableData"]["netscaler"])
         netscaler_config.update({'username': random_gen(), 'password': random_gen()})
         self.debug("Adding netscaler device: %s" %
                                     netscaler_config["ipaddress"])
@@ -264,7 +263,7 @@ class TestInvalidParametersNetscaler(_NetScalerAddBase):
         # 2. Netscaler API should throw error
 
         self.debug("Passing invalid public interface for NetScaler")
-        netscaler_config = dict(self.services["netscaler_VPX"])
+        netscaler_config = dict(self.services["configurableData"]["netscaler"])
         netscaler_config.update({'publicinterface': random_gen()})
         self.debug("Adding netscaler device: %s" %
                                     netscaler_config["ipaddress"])
@@ -288,7 +287,7 @@ class TestInvalidParametersNetscaler(_NetScalerAddBase):
         # 1. Add Netscaler device into a Zone by providing valid log in
         #    credentials , public interface and invalid private interface
         # 2. Netscaler API should throw error
-        netscaler_config = dict(self.services["netscaler_VPX"])
+        netscaler_config = dict(self.services["configurableData"]["netscaler"])
         netscaler_config.update({'privateinterface': random_gen()})
         self.debug("Adding netscaler device: %s" %
                                     netscaler_config["ipaddress"])
@@ -329,17 +328,6 @@ class _NetScalerDeployVMBase(_NetScalerBase):
             self.debug("Cleaning up the resources")
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = Configurations.list(
-                                    self.apiclient,
-                                    name='network.gc.interval'
-                                    )
-            wait = Configurations.list(
-                                    self.apiclient,
-                                    name='network.gc.wait'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            self.debug("Cleanup complete!")
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -360,7 +348,7 @@ class TestNetScalerDedicated(_NetScalerDeployVMBase):
                             cls.services["ostype"]
                             )
 
-        netscaler_config = dict(cls.services["netscaler_VPX"])
+        netscaler_config = dict(cls.services["configurableData"]["netscaler"])
         netscaler_config.update({'lbdevicededicated': "True"})
         cls._addNetScaler(netscaler_config)
 
@@ -517,7 +505,7 @@ class TestNetScalerShared(_NetScalerDeployVMBase):
                             cls.services["ostype"]
                             )
 
-        netscaler_config = dict(cls.services["netscaler_VPX"])
+        netscaler_config = dict(cls.services["configurableData"]["netscaler"])
         netscaler_config.update({'lbdevicededicated': "False"})
         cls._addNetScaler(netscaler_config)
 
@@ -713,7 +701,7 @@ class TestNetScalerCustomCapacity(_NetScalerCapacity):
                             cls.services["ostype"]
                             )
 
-        netscaler_config = dict(cls.services["netscaler_VPX"])
+        netscaler_config = dict(cls.services["configurableData"]["netscaler"])
         netscaler_config.update({'lbdevicecapacity': 3, 'lbdevicededicated': "False"})
         cls._addNetScaler(netscaler_config)
 
@@ -932,7 +920,7 @@ class TestNetScalerNoCapacity(_NetScalerCapacity):
                             cls.services["ostype"]
                             )
 
-        netscaler_config = dict(cls.services["netscaler_VPX"])
+        netscaler_config = dict(cls.services["configurableData"]["netscaler"])
         netscaler_config.update({'lbdevicecapacity': 2, 'lbdevicededicated': "False"})
         cls._addNetScaler(netscaler_config)
 
@@ -1129,7 +1117,7 @@ class TestGuestNetworkWithNetScaler(_NetScalerDeployVMBase):
                             cls.services["ostype"]
                             )
 
-        netscaler_config = dict(cls.services["netscaler_VPX"])
+        netscaler_config = dict(cls.services["configurableData"]["netscaler"])
         netscaler_config.update({'lbdevicededicated': "False"})
         cls._addNetScaler(netscaler_config)
 
@@ -1249,13 +1237,13 @@ class TestGuestNetworkWithNetScaler(_NetScalerDeployVMBase):
                                     )
         nw = network_list[0]
         self.debug("SSH into netscaler: %s" %
-                                    self.services["netscaler_VPX"]["ipaddress"])
+                                    self.services["configurableData"]["netscaler"]["ipaddress"])
         try:
             ssh_client = SshClient(
-                                    self.services["netscaler_VPX"]["ipaddress"],
-                                    self.services["netscaler_VPX"]["port"],
-                                    self.services["netscaler_VPX"]["username"],
-                                    self.services["netscaler_VPX"]["password"],
+                                    self.services["configurableData"]["netscaler"]["ipaddress"],
+                                    self.services["configurableData"]["netscaler"]["port"],
+                                    self.services["configurableData"]["netscaler"]["username"],
+                                    self.services["configurableData"]["netscaler"]["password"],
                                     )
             cmd = "show vlan %s" % (nw.vlan)
             self.debug("command: %s" % cmd)
@@ -1271,7 +1259,7 @@ class TestGuestNetworkWithNetScaler(_NetScalerDeployVMBase):
                     )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % \
-                      (self.services["netscaler_VPX"]["ipaddress"], e))
+                      (self.services["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
     @attr(tags = ["advancedns","test"])
@@ -1392,7 +1380,7 @@ class TestGuestNetworkWithNetScaler(_NetScalerDeployVMBase):
                             "VM state should be running after deployment"
                         )
         self.debug("SSH into netscaler: %s" %
-                                    self.services["netscaler_VPX"]["ipaddress"])
+                                    self.services["configurableData"]["netscaler"]["ipaddress"])
         try:
             # Find Network vlan used
             network_list = Network.list(
@@ -1402,10 +1390,10 @@ class TestGuestNetworkWithNetScaler(_NetScalerDeployVMBase):
                                     )
             nw = network_list[0]
             ssh_client = SshClient(
-                                    self.services["netscaler_VPX"]["ipaddress"],
-                                    self.services["netscaler_VPX"]["port"],
-                                    self.services["netscaler_VPX"]["username"],
-                                    self.services["netscaler_VPX"]["password"],
+                                    self.services["configurableData"]["netscaler"]["ipaddress"],
+                                    self.services["configurableData"]["netscaler"]["port"],
+                                    self.services["configurableData"]["netscaler"]["username"],
+                                    self.services["configurableData"]["netscaler"]["password"],
                                     )
             cmd = "show vlan %s" % (nw.vlan)
             self.debug("command: %s" % cmd)
@@ -1441,7 +1429,7 @@ class TestGuestNetworkWithNetScaler(_NetScalerDeployVMBase):
                     )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % \
-                      (self.services["netscaler_VPX"]["ipaddress"], e))
+                      (self.services["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
     @attr(tags = ["advancedns","test"])
@@ -1561,13 +1549,13 @@ class TestGuestNetworkWithNetScaler(_NetScalerDeployVMBase):
         time.sleep(int(interval[0].value) + int(wait[0].value))
 
         self.debug("SSH into netscaler: %s" %
-                                    self.services["netscaler_VPX"]["ipaddress"])
+                                    self.services["configurableData"]["netscaler"]["ipaddress"])
         try:
             ssh_client = SshClient(
-                                    self.services["netscaler_VPX"]["ipaddress"],
-                                    self.services["netscaler_VPX"]["port"],
-                                    self.services["netscaler_VPX"]["username"],
-                                    self.services["netscaler_VPX"]["password"],
+                                    self.services["configurableData"]["netscaler"]["ipaddress"],
+                                    self.services["configurableData"]["netscaler"]["port"],
+                                    self.services["configurableData"]["netscaler"]["username"],
+                                    self.services["configurableData"]["netscaler"]["password"],
                                     )
             cmd = "show vlan %s" % (nw.vlan)
             self.debug("command: %s" % cmd)
@@ -1598,7 +1586,7 @@ class TestGuestNetworkWithNetScaler(_NetScalerDeployVMBase):
                     )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % \
-                      (self.services["netscaler_VPX"]["ipaddress"], e))
+                      (self.services["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
 
@@ -1621,7 +1609,7 @@ class TestGuestNetworkShutDown(_NetScalerBase):
                             cls.services["ostype"]
                             )
         try:
-           netscaler_config = dict(cls.services["netscaler_VPX"])
+           netscaler_config = dict(cls.services["configurableData"]["netscaler"])
            netscaler_config.update({'lbdevicededicated': "False"})
            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, netscaler_config)
            cls._cleanup.append(cls.netscaler)
@@ -1738,13 +1726,13 @@ class TestGuestNetworkShutDown(_NetScalerBase):
         time.sleep((int(interval[0].value) + int(wait[0].value)) * 2)
 
         self.debug("SSH into netscaler: %s" %
-                                    self.services["netscaler_VPX"]["ipaddress"])
+                                    self.services["configurableData"]["netscaler"]["ipaddress"])
         try:
             ssh_client = SshClient(
-                                    self.services["netscaler_VPX"]["ipaddress"],
-                                    self.services["netscaler_VPX"]["port"],
-                                    self.services["netscaler_VPX"]["username"],
-                                    self.services["netscaler_VPX"]["password"],
+                                    self.services["configurableData"]["netscaler"]["ipaddress"],
+                                    self.services["configurableData"]["netscaler"]["port"],
+                                    self.services["configurableData"]["netscaler"]["username"],
+                                    self.services["configurableData"]["netscaler"]["password"],
                                     )
             cmd = "show vlan %s" % (nw.vlan)
             self.debug("command: %s" % cmd)
@@ -1775,7 +1763,7 @@ class TestGuestNetworkShutDown(_NetScalerBase):
                     )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % \
-                      (self.services["netscaler_VPX"]["ipaddress"], e))
+                      (self.services["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
     @attr(tags = ["advancedns","test"])
@@ -1816,7 +1804,7 @@ class TestGuestNetworkShutDown(_NetScalerBase):
                         )
 
         self.debug("SSH into netscaler: %s" %
-                                    self.services["netscaler_VPX"]["ipaddress"])
+                                    self.services["configurableData"]["netscaler"]["ipaddress"])
         try:
             # Find Network vlan used
             network_list = Network.list(
@@ -1826,10 +1814,10 @@ class TestGuestNetworkShutDown(_NetScalerBase):
                                     )
             nw = network_list[0]
             ssh_client = SshClient(
-                                    self.services["netscaler_VPX"]["ipaddress"],
-                                    self.services["netscaler_VPX"]["port"],
-                                    self.services["netscaler_VPX"]["username"],
-                                    self.services["netscaler_VPX"]["password"],
+                                    self.services["configurableData"]["netscaler"]["ipaddress"],
+                                    self.services["configurableData"]["netscaler"]["port"],
+                                    self.services["configurableData"]["netscaler"]["username"],
+                                    self.services["configurableData"]["netscaler"]["password"],
                                     )
             cmd = "show vlan %s" % (nw.vlan)
             self.debug("command: %s" % cmd)
@@ -1860,7 +1848,7 @@ class TestGuestNetworkShutDown(_NetScalerBase):
                     )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % \
-                      (self.services["netscaler_VPX"]["ipaddress"], e))
+                      (self.services["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
     @attr(tags = ["advancedns","test"])
@@ -1878,7 +1866,7 @@ class TestGuestNetworkShutDown(_NetScalerBase):
         self.network.restart(self.apiclient, cleanup=False)
 
         self.debug("SSH into netscaler: %s" %
-                                    self.services["netscaler_VPX"]["ipaddress"])
+                                    self.services["configurableData"]["netscaler"]["ipaddress"])
         try:
             # Find Network vlan used
             network_list = Network.list(
@@ -1888,10 +1876,10 @@ class TestGuestNetworkShutDown(_NetScalerBase):
                                     )
             nw = network_list[0]
             ssh_client = SshClient(
-                                    self.services["netscaler_VPX"]["ipaddress"],
-                                    self.services["netscaler_VPX"]["port"],
-                                    self.services["netscaler_VPX"]["username"],
-                                    self.services["netscaler_VPX"]["password"],
+                                    self.services["configurableData"]["netscaler"]["ipaddress"],
+                                    self.services["configurableData"]["netscaler"]["port"],
+                                    self.services["configurableData"]["netscaler"]["username"],
+                                    self.services["configurableData"]["netscaler"]["password"],
                                     )
             cmd = "show vlan %s" % (nw.vlan)
             self.debug("command: %s" % cmd)
@@ -1922,7 +1910,7 @@ class TestGuestNetworkShutDown(_NetScalerBase):
                     )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % \
-                      (self.services["netscaler_VPX"]["ipaddress"], e))
+                      (self.services["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
     @attr(tags = ["advancedns","test"])
@@ -1940,7 +1928,7 @@ class TestGuestNetworkShutDown(_NetScalerBase):
         self.network.restart(self.apiclient, cleanup=True)
 
         self.debug("SSH into netscaler: %s" %
-                                    self.services["netscaler_VPX"]["ipaddress"])
+                                    self.services["configurableData"]["netscaler"]["ipaddress"])
         try:
             # Find Network vlan used
             network_list = Network.list(
@@ -1950,10 +1938,10 @@ class TestGuestNetworkShutDown(_NetScalerBase):
                                     )
             nw = network_list[0]
             ssh_client = SshClient(
-                                    self.services["netscaler_VPX"]["ipaddress"],
-                                    self.services["netscaler_VPX"]["port"],
-                                    self.services["netscaler_VPX"]["username"],
-                                    self.services["netscaler_VPX"]["password"],
+                                    self.services["configurableData"]["netscaler"]["ipaddress"],
+                                    self.services["configurableData"]["netscaler"]["port"],
+                                    self.services["configurableData"]["netscaler"]["username"],
+                                    self.services["configurableData"]["netscaler"]["password"],
                                     )
             cmd = "show vlan %s" % (nw.vlan)
             self.debug("command: %s" % cmd)
@@ -1984,7 +1972,7 @@ class TestGuestNetworkShutDown(_NetScalerBase):
                     )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % \
-                      (self.services["netscaler_VPX"]["ipaddress"], e))
+                      (self.services["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
 
@@ -2006,7 +1994,7 @@ class TestServiceProvider(_NetScalerDeployVMBase):
                             cls.services["ostype"]
                             )
 
-        netscaler_config = dict(cls.services["netscaler_VPX"])
+        netscaler_config = dict(cls.services["configurableData"]["netscaler"])
         netscaler_config.update({'lbdevicededicated': "False"})
         cls._addNetScaler(netscaler_config)
 
@@ -2258,7 +2246,7 @@ class TestDeleteNetscaler(_NetScalerDeployVMBase):
                             cls.services["ostype"]
                             )
 
-        netscaler_config = dict(cls.services["netscaler_VPX"])
+        netscaler_config = dict(cls.services["configurableData"]["netscaler"])
         netscaler_config.update({'lbdevicededicated': "False"})
         cls._addNetScaler(netscaler_config)
 
