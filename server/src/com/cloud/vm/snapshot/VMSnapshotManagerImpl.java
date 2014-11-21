@@ -29,7 +29,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
@@ -62,6 +61,7 @@ import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
@@ -413,6 +413,17 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         if (userVm == null) {
             throw new InvalidParameterValueException("Create vm to snapshot failed due to vm: " + vmId + " is not found");
         }
+
+        List<VolumeVO> volumeVos = _volumeDao.findByInstanceAndType(vmId, Type.ROOT);
+        if(volumeVos == null ||volumeVos.isEmpty()) {
+            throw new CloudRuntimeException("Create vm to snapshot failed due to no root disk found");
+        }
+
+        VolumeVO rootVolume = volumeVos.get(0);
+        if(!rootVolume.getState().equals(State.Running)) {
+            throw new CloudRuntimeException("Create vm to snapshot failed due to vm: " + vmId + " has root disk in " + rootVolume.getState() + " state");
+        }
+
         VMSnapshotVO vmSnapshot = _vmSnapshotDao.findById(vmSnapshotId);
         if (vmSnapshot == null) {
             throw new CloudRuntimeException("VM snapshot id: " + vmSnapshotId + " can not be found");
