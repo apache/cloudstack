@@ -93,7 +93,7 @@
                         },
                                                 
                         addLdapAccount: {
-                            label: 'label.add.LDAP.account',
+                            label: 'label.add.ldap.account',
                             isHeader: true,
                             preFilter: function(args) {
                                 //if (isAdmin() && true) { //for testing only
@@ -105,7 +105,7 @@
                             },
                             messages: {
                                 notification: function(args) {
-                                    return 'label.add.LDAP.account';
+                                    return 'label.add.ldap.account';
                                 }
                             },
                             notification: {
