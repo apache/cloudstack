@@ -310,6 +310,7 @@ public class Xen extends OvmObject {
                 if (vif != null)
                     _vmVifs.add(vif);
             }
+            vmParams.put("vifs", _vmVifs);
             return true;
         }
 
