@@ -19,6 +19,7 @@ package org.apache.cloudstack.network.contrail.management;
 
 import java.util.List;
 import java.util.Map;
+import java.net.InetAddress;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -231,7 +232,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public UserAccount authenticateUser(String arg0, String arg1, Long arg2, String arg3, Map<String, Object[]> arg4) {
+    public UserAccount authenticateUser(String arg0, String arg1, Long arg2, InetAddress arg3, Map<String, Object[]> arg4) {
         // TODO Auto-generated method stub
         return null;
     }

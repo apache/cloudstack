@@ -19,13 +19,14 @@ package org.apache.cloudstack.api;
 import com.cloud.exception.CloudAuthenticationException;
 import javax.servlet.http.HttpSession;
 import java.util.Map;
+import java.net.InetAddress;
 
 public interface ApiServerService {
     public boolean verifyRequest(Map<String, Object[]> requestParameters, Long userId) throws ServerApiException;
 
     public Long fetchDomainId(String domainUUID);
 
-    public ResponseObject loginUser(HttpSession session, String username, String password, Long domainId, String domainPath, String loginIpAddress,
+    public ResponseObject loginUser(HttpSession session, String username, String password, Long domainId, String domainPath, InetAddress loginIpAddress,
                                     Map<String, Object[]> requestParameters) throws CloudAuthenticationException;
 
     public void logoutUser(long userId);

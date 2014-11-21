@@ -17,6 +17,7 @@
 package com.cloud.user;
 
 import java.net.URLEncoder;
+import java.net.InetAddress;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1972,7 +1973,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public UserAccount authenticateUser(String username, String password, Long domainId, String loginIpAddress, Map<String, Object[]> requestParameters) {
+    public UserAccount authenticateUser(String username, String password, Long domainId, InetAddress loginIpAddress, Map<String, Object[]> requestParameters) {
         UserAccount user = null;
         if (password != null) {
             user = getUserAccount(username, password, domainId, requestParameters);
@@ -2080,13 +2081,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
             }
-            if (NetUtils.isValidIp(loginIpAddress)) {
-                ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN, "user has logged in from IP Address " +
+
+            ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN, "user has logged in from IP Address " +
                     loginIpAddress);
-            } else {
-                ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN,
-                        "user has logged in. The IP Address cannot be determined");
-            }
+
             return user;
         } else {
             if (s_logger.isDebugEnabled()) {

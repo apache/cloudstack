@@ -18,6 +18,7 @@ package com.cloud.user;
 
 import java.util.List;
 import java.util.Map;
+import java.net.InetAddress;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -250,7 +251,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public UserAccount authenticateUser(String username, String password, Long domainId, String loginIpAddress, Map<String, Object[]> requestParameters) {
+    public UserAccount authenticateUser(String username, String password, Long domainId, InetAddress loginIpAddress, Map<String, Object[]> requestParameters) {
         return null;
     }
 

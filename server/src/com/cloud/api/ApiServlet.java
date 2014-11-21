@@ -18,6 +18,7 @@ package com.cloud.api;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -182,7 +183,8 @@ public class ApiServlet extends HttpServlet {
                     }
 
                     try {
-                        responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, resp);
+                        InetAddress remoteAddr = InetAddress.getByName(remoteAddress);
+                        responseString = apiAuthenticator.authenticate(command, params, session, remoteAddr, responseType, auditTrailSb, resp);
                     } catch (ServerApiException e) {
                         httpResponseCode = e.getErrorCode().getHttpCode();
                         responseString = e.getMessage();

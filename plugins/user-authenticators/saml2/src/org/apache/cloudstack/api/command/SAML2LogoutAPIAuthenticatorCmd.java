@@ -50,6 +50,7 @@ import javax.xml.stream.FactoryConfigurationError;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.net.InetAddress;
 
 @APICommand(name = "samlSlo", description = "SAML Global Log Out API", responseObject = LogoutCmdResponse.class, entityType = {})
 public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
@@ -83,7 +84,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
     }
 
     @Override
-    public String authenticate(String command, Map<String, Object[]> params, HttpSession session, String remoteAddress, String responseType, StringBuilder auditTrailSb, final HttpServletResponse resp) throws ServerApiException {
+    public String authenticate(String command, Map<String, Object[]> params, HttpSession session, InetAddress remoteAddress, String responseType, StringBuilder auditTrailSb, final HttpServletResponse resp) throws ServerApiException {
         auditTrailSb.append("=== SAML SLO Logging out ===");
         LogoutCmdResponse response = new LogoutCmdResponse();
         response.setDescription("success");
