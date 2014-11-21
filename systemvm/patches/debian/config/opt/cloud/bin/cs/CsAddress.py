@@ -298,8 +298,8 @@ class CsIP:
             self.fw.append(["nat", "",
                             "-A POSTROUTING -o eth2 -j SNAT --to-source %s" % self.address['public_ip']])
             self.fw.append(["mangle", "",
-                           "-A PREROUTING -i %s -m state --state NEW " % self.dev + 
-                           "-j CONNMARK --set-xmark 0x%s/0xffffffff"] % self.dnum])
+                            "-A PREROUTING -i %s -m state --state NEW " % self.dev +
+                            "-j CONNMARK --set-xmark 0x%s/0xffffffff" % self.dnum])
 
         self.fw.append(["filter", "", "-A INPUT -d 224.0.0.18/32 -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -d 225.0.0.50/32 -j ACCEPT"])
@@ -321,8 +321,8 @@ class CsIP:
             self.fw.append(["filter", "", "-A FORWARD -i eth0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT"])
             self.fw.append(["filter", "", "-A FORWARD -i eth0 -o eth2 -j FW_OUTBOUND"])
             self.fw.append(["mangle", "",
-                           "-A PREROUTING -i %s -m state --state NEW " % self.dev + 
-                           "-j CONNMARK --set-xmark 0x%s/0xffffffff"] % self.dnum])
+                            "-A PREROUTING -i %s -m state --state NEW " % self.dev +
+                            "-j CONNMARK --set-xmark 0x%s/0xffffffff" % self.dnum])
 
         if self.get_type() in ["control"]:
             self.fw.append(["filter", "", "-A FW_OUTBOUND -m state --state RELATED,ESTABLISHED -j ACCEPT"])
