@@ -57,13 +57,14 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
-
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public final class S3Utils {
@@ -338,9 +339,19 @@ public final class S3Utils {
 
     private static List<S3ObjectSummary> listDirectory(final String bucketName, final String directory, final AmazonS3 client) {
 
-        final List<S3ObjectSummary> objects = client.listObjects(bucketName, directory + SEPARATOR).getObjectSummaries();
+   	 List<S3ObjectSummary> objects = new ArrayList<S3ObjectSummary>();
+   	 ListObjectsRequest listObjectsRequest = new ListObjectsRequest().withBucketName(bucketName).withPrefix(directory + SEPARATOR);
+   	 ObjectListing objectListing;
 
-        if (objects == null) {
+   	 do {
+   	 	objectListing = client.listObjects(listObjectsRequest);
+   	 	
+   	 	if (objectListing != null )
+   	 		objects.addAll(objectListing.getObjectSummaries());
+   	 	listObjectsRequest.setMarker(objectListing.getNextMarker());
+   	 } while (objectListing.isTruncated());
+        
+        if (objects.isEmpty()) {
             return emptyList();
         }
 
