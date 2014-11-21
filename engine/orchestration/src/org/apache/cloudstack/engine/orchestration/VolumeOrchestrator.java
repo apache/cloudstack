@@ -711,7 +711,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
             Long offeringId = null;
 
-            offeringId = offering.getId();
+            if (offering.getType() == DiskOffering.Type.Disk) {
+                offeringId = offering.getId();
+            }
 
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offeringId, vol.getTemplateId(), size,
                     Volume.class.getName(), vol.getUuid(), vol.isDisplayVolume());
