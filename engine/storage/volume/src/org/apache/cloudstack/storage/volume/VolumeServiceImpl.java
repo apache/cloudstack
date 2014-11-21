@@ -1020,7 +1020,7 @@ public class VolumeServiceImpl implements VolumeService {
             }
             srcVolume.processEvent(Event.OperationSuccessed);
             destVolume.processEvent(Event.MigrationCopySucceeded, result.getAnswer());
-            _volumeDao.updateUuid(srcVolume.getId(), destVolume.getId());
+            volDao.updateUuid(srcVolume.getId(), destVolume.getId());
             try {
                 destroyVolume(srcVolume.getId());
                 srcVolume = volFactory.getVolume(srcVolume.getId());
@@ -1225,10 +1225,16 @@ public class VolumeServiceImpl implements VolumeService {
 
     protected Void registerVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateVolumeContext<VolumeApiResult> context) {
         CreateCmdResult result = callback.getResult();
+        VolumeObject vo = (VolumeObject)context.volume;
         try {
-            VolumeObject vo = (VolumeObject)context.volume;
             if (result.isFailed()) {
                 vo.processEvent(Event.OperationFailed);
+                // delete the volume entry from volumes table in case of failure
+                VolumeVO vol = volDao.findById(vo.getId());
+                if (vol != null) {
+                    volDao.remove(vo.getId());
+                }
+
             } else {
                 vo.processEvent(Event.OperationSuccessed, result.getAnswer());
 
@@ -1267,6 +1273,11 @@ public class VolumeServiceImpl implements VolumeService {
 
         } catch (Exception e) {
             s_logger.error("register volume failed: ", e);
+            // delete the volume entry from volumes table in case of failure
+            VolumeVO vol = volDao.findById(vo.getId());
+            if (vol != null) {
+                volDao.remove(vo.getId());
+            }
             VolumeApiResult res = new VolumeApiResult(null);
             context.future.complete(res);
             return null;
@@ -1302,7 +1313,7 @@ public class VolumeServiceImpl implements VolumeService {
             EndPoint ep = RemoteHostEndPoint.getHypervisorHostEndPoint(destHost);
 
             if (ep != null) {
-                VolumeVO volume = _volumeDao.findById(volumeId);
+                VolumeVO volume = volDao.findById(volumeId);
                 PrimaryDataStore primaryDataStore = this.dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
                 ResizeVolumeCommand resizeCmd = new ResizeVolumeCommand(volume.getPath(), new StorageFilerTO(primaryDataStore), volume.getSize(), newSize, true, instanceName);
 
@@ -1374,7 +1385,7 @@ public class VolumeServiceImpl implements VolumeService {
                     List<VolumeDataStoreVO> dbVolumes = _volumeStoreDao.listUploadedVolumesByStoreId(storeId);
                     List<VolumeDataStoreVO> toBeDownloaded = new ArrayList<VolumeDataStoreVO>(dbVolumes);
                     for (VolumeDataStoreVO volumeStore : dbVolumes) {
-                        VolumeVO volume = _volumeDao.findById(volumeStore.getVolumeId());
+                        VolumeVO volume = volDao.findById(volumeStore.getVolumeId());
                         if (volume == null) {
                             s_logger.warn("Volume_store_ref shows that volume " + volumeStore.getVolumeId() + " is on image store " + storeId +
                                     ", but the volume is not found in volumes table, potentially some bugs in deleteVolume, so we just treat this volume to be deleted and mark it as destroyed");
@@ -1419,7 +1430,7 @@ public class VolumeServiceImpl implements VolumeService {
                                 if (volume.getSize() == 0) {
                                     // Set volume size in volumes table
                                     volume.setSize(volInfo.getSize());
-                                    _volumeDao.update(volumeStore.getVolumeId(), volume);
+                                    volDao.update(volumeStore.getVolumeId(), volume);
                                 }
 
                                 if (volInfo.getSize() > 0) {
