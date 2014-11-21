@@ -2924,8 +2924,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     s_logger.debug("Nic is plugged successfully for vm " + vm + " in network " + network + ". Vm  is a part of network now");
                     long isDefault = (nic.isDefaultNic()) ? 1 : 0;
                     // insert nic's Id into DB as resource_name
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmVO.getAccountId(), vmVO.getDataCenterId(), vmVO.getId(),
-                            Long.toString(nic.getId()), network.getNetworkOfferingId(), null, isDefault, VirtualMachine.class.getName(), vmVO.getUuid(), vm.isDisplay());
+                    if(VirtualMachine.Type.User.equals(vmVO.getType())) {
+                        //Log usage event for user Vms only
+                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vmVO.getAccountId(), vmVO.getDataCenterId(), vmVO.getId(),
+                                Long.toString(nic.getId()), network.getNetworkOfferingId(), null, isDefault, VirtualMachine.class.getName(), vmVO.getUuid(), vm.isDisplay());
+                    }
                     return nic;
                 } else {
                     s_logger.warn("Failed to plug nic to the vm " + vm + " in network " + network);
