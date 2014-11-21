@@ -36,116 +36,9 @@ from marvin.lib.base import (Account,
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
-                               GetNetscalerInfoFromConfig,
                                add_netscaler)
 from marvin.sshClient import SshClient
 import time
-
-
-class Services:
-
-    """Test netscaler services
-    """
-
-    def __init__(self):
-        self.services = {
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                # Random characters are appended for unique
-                # username
-                "password": "password",
-            },
-            "service_offering": {
-                "name": "Tiny Instance",
-                "displaytext": "Tiny Instance",
-                "cpunumber": 1,
-                "cpuspeed": 100,    # in MHz
-                                    "memory": 128,       # In MBs
-            },
-            "virtual_machine": {
-                "displayname": "TestVM",
-                "username": "root",
-                "password": "password",
-                "ssh_port": 22,
-                "hypervisor": 'XenServer',
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": 'TCP',
-            },
-            "network_offering_dedicated": {
-                "name": 'Netscaler',
-                "displaytext": 'Netscaler',
-                "guestiptype": 'Isolated',
-                "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
-                "traffictype": 'GUEST',
-                "availability": 'Optional',
-                "specifyVlan": False,
-                "specifyIpRanges": False,
-                "serviceProviderList": {
-                    "Dhcp": 'VirtualRouter',
-                    "Dns": 'VirtualRouter',
-                    "SourceNat": 'VirtualRouter',
-                    "PortForwarding": 'VirtualRouter',
-                    "Vpn": 'VirtualRouter',
-                    "Firewall": 'VirtualRouter',
-                    "Lb": 'Netscaler',
-                    "UserData": 'VirtualRouter',
-                    "StaticNat": 'VirtualRouter',
-                },
-                "serviceCapabilityList": {
-                    "SourceNat": {
-                        "SupportedSourceNatTypes": "peraccount"
-                    },
-                    "lb": {
-                        "SupportedLbIsolation": "dedicated"
-                    },
-                },
-            },
-            "network_offering": {
-                "name": 'Netscaler',
-                "displaytext": 'Netscaler',
-                "guestiptype": 'Isolated',
-                "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
-                "traffictype": 'GUEST',
-                "availability": 'Optional',
-                "serviceProviderList": {
-                    "Dhcp": 'VirtualRouter',
-                    "Dns": 'VirtualRouter',
-                    "SourceNat": 'VirtualRouter',
-                    "PortForwarding": 'VirtualRouter',
-                    "Vpn": 'VirtualRouter',
-                    "Firewall": 'VirtualRouter',
-                    "Lb": 'Netscaler',
-                    "UserData": 'VirtualRouter',
-                    "StaticNat": 'VirtualRouter',
-                },
-            },
-            "network": {
-                "name": "Netscaler",
-                "displaytext": "Netscaler",
-            },
-            "lbrule": {
-                "name": "SSH",
-                "alg": "roundrobin",
-                # Algorithm used for load balancing
-                "privateport": 22,
-                "publicport": 22,
-                "openfirewall": False,
-            },
-            "natrule": {
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": "TCP"
-            },
-            "ostype": 'CentOS 5.3 (64-bit)',
-            # Cent OS 5.3 (64 bit)
-            "sleep": 60,
-            "timeout": 10,
-            "mode": 'advanced'
-        }
 
 
 class TestLbSourceNat(cloudstackTestCase):
@@ -156,38 +49,36 @@ class TestLbSourceNat(cloudstackTestCase):
         cls.testClient = super(TestLbSourceNat, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        # Fill testdata from the external config file
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
+
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.testdata["ostype"]
         )
 
-        response = GetNetscalerInfoFromConfig(
-            cls.config
-        )
-        assert response[0] is not None, response[1]
-        cls.services["netscaler"] = response[0]
-        cls.services["netscaler"]["lbdevicededicated"] = False
+        cls.testdata["lbrule"]["publicport"] = 22
+        cls.testdata["configurableData"]["netscaler"]["lbdevicededicated"] = False
 
         try:
-            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
+            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.network_offering = NetworkOffering.create(
                 cls.api_client,
-                cls.services["network_offering"],
+                cls.testdata["nw_off_isolated_netscaler"],
                 conservemode=True
             )
             # Enable Network offering
             cls.network_offering.update(cls.api_client, state='Enabled')
-            cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-            cls.services["virtual_machine"]["template"] = cls.template.id
+            cls.testdata["small"]["zoneid"] = cls.zone.id
+            cls.testdata["small"]["template"] = cls.template.id
             cls.service_offering = ServiceOffering.create(
                 cls.api_client,
-                cls.services["service_offering"]
+                cls.testdata["service_offering"]
             )
         except Exception as e:
             cls.tearDownClass()
@@ -208,7 +99,7 @@ class TestLbSourceNat(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.account = Account.create(
             self.apiclient,
-            self.services["account"],
+            self.testdata["account"],
             admin=True,
             domainid=self.domain.id
         )
@@ -220,17 +111,6 @@ class TestLbSourceNat(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             # Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = Configurations.list(
-                self.apiclient,
-                name='network.gc.interval'
-            )
-            wait = Configurations.list(
-                self.apiclient,
-                name='network.gc.wait'
-            )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            self.debug("Cleanup complete!")
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -252,7 +132,7 @@ class TestLbSourceNat(cloudstackTestCase):
                    self.network_offering.id)
         self.network = Network.create(
             self.apiclient,
-            self.services["network"],
+            self.testdata["network"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             networkofferingid=self.network_offering.id,
@@ -265,7 +145,7 @@ class TestLbSourceNat(cloudstackTestCase):
         # Spawn an instance in that network
         virtual_machine_1 = VirtualMachine.create(
             self.apiclient,
-            self.services["virtual_machine"],
+            self.testdata["small"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -301,7 +181,7 @@ class TestLbSourceNat(cloudstackTestCase):
         # Spawn an instance in that network
         virtual_machine_2 = VirtualMachine.create(
             self.apiclient,
-            self.services["virtual_machine"],
+            self.testdata["small"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -357,7 +237,7 @@ class TestLbSourceNat(cloudstackTestCase):
         with self.assertRaises(Exception):
             LoadBalancerRule.create(
                 self.apiclient,
-                self.services["lbrule"],
+                self.testdata["lbrule"],
                 ipaddressid=src_nat.id,
                 accountid=self.account.name
             )
@@ -372,39 +252,36 @@ class TestLbOnIpWithPf(cloudstackTestCase):
         cls.testClient = super(TestLbOnIpWithPf, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        # Fill testdata from the external config file
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.testdata["ostype"]
         )
 
-        response = GetNetscalerInfoFromConfig(
-            cls.config
-        )
-        assert response[0] is not None, response[1]
-        cls.services["netscaler"] = response[0]
-        cls.services["netscaler"]["lbdevicededicated"] = False
+        cls.testdata["lbrule"]["publicport"] = 22
+        cls.testdata["configurableData"]["netscaler"]["lbdevicededicated"] = False
 
         try:
-            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
+            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.network_offering = NetworkOffering.create(
                 cls.api_client,
-                cls.services["network_offering"],
+                cls.testdata["nw_off_isolated_netscaler"],
                 conservemode=True
             )
             # Enable Network offering
             cls.network_offering.update(cls.api_client, state='Enabled')
-            cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-            cls.services["virtual_machine"]["template"] = cls.template.id
+            cls.testdata["small"]["zoneid"] = cls.zone.id
+            cls.testdata["small"]["template"] = cls.template.id
 
             cls.service_offering = ServiceOffering.create(
                 cls.api_client,
-                cls.services["service_offering"]
+                cls.testdata["service_offering"]
             )
         except Exception as e:
             cls.tearDownClass()
@@ -425,7 +302,7 @@ class TestLbOnIpWithPf(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.account = Account.create(
             self.apiclient,
-            self.services["account"],
+            self.testdata["account"],
             admin=True,
             domainid=self.domain.id
         )
@@ -437,17 +314,6 @@ class TestLbOnIpWithPf(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             # Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = Configurations.list(
-                self.apiclient,
-                name='network.gc.interval'
-            )
-            wait = Configurations.list(
-                self.apiclient,
-                name='network.gc.wait'
-            )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            self.debug("Cleanup complete!")
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -469,7 +335,7 @@ class TestLbOnIpWithPf(cloudstackTestCase):
                    self.network_offering.id)
         self.network = Network.create(
             self.apiclient,
-            self.services["network"],
+            self.testdata["network"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             networkofferingid=self.network_offering.id,
@@ -482,7 +348,7 @@ class TestLbOnIpWithPf(cloudstackTestCase):
         # Spawn an instance in that network
         virtual_machine_1 = VirtualMachine.create(
             self.apiclient,
-            self.services["virtual_machine"],
+            self.testdata["small"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -518,7 +384,7 @@ class TestLbOnIpWithPf(cloudstackTestCase):
         # Spawn an instance in that network
         virtual_machine_2 = VirtualMachine.create(
             self.apiclient,
-            self.services["virtual_machine"],
+            self.testdata["small"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -565,7 +431,7 @@ class TestLbOnIpWithPf(cloudstackTestCase):
         NATRule.create(
             self.apiclient,
             virtual_machine_1,
-            self.services["natrule"],
+            self.testdata["natrule"],
             ipaddressid=ip_with_nat_rule.ipaddress.id
         )
 
@@ -576,7 +442,7 @@ class TestLbOnIpWithPf(cloudstackTestCase):
         with self.assertRaises(Exception):
             LoadBalancerRule.create(
                 self.apiclient,
-                self.services["lbrule"],
+                self.testdata["lbrule"],
                 ipaddressid=ip_with_nat_rule.ipaddress.id,
                 accountid=self.account.name
             )
@@ -591,39 +457,39 @@ class TestPfOnIpWithLb(cloudstackTestCase):
         cls.testClient = super(TestPfOnIpWithLb, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        # Fill testdata from the external config file
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.testdata["ostype"]
         )
 
-        response = GetNetscalerInfoFromConfig(
-            cls.config
-        )
-        assert response[0] is not None, response[1]
-        cls.services["netscaler"] = response[0]
-        cls.services["netscaler"]["lbdevicededicated"] = False
+        cls.testdata["lbrule"]["publicport"] = 22
+        cls.testdata["configurableData"]["netscaler"]["lbdevicededicated"] = False
 
         try:
-            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
+            cls.netscaler = add_netscaler(
+                    cls.api_client,
+                    cls.zone.id,
+                    cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.network_offering = NetworkOffering.create(
                 cls.api_client,
-                cls.services["network_offering"],
+                cls.testdata["nw_off_isolated_netscaler"],
                 conservemode=True
             )
             # Enable Network offering
             cls.network_offering.update(cls.api_client, state='Enabled')
-            cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-            cls.services["virtual_machine"]["template"] = cls.template.id
+            cls.testdata["small"]["zoneid"] = cls.zone.id
+            cls.testdata["small"]["template"] = cls.template.id
 
             cls.service_offering = ServiceOffering.create(
                 cls.api_client,
-                cls.services["service_offering"]
+                cls.testdata["service_offering"]
             )
         except Exception as e:
             cls.tearDownClass()
@@ -644,7 +510,7 @@ class TestPfOnIpWithLb(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.account = Account.create(
             self.apiclient,
-            self.services["account"],
+            self.testdata["account"],
             admin=True,
             domainid=self.domain.id
         )
@@ -656,17 +522,6 @@ class TestPfOnIpWithLb(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             # Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = Configurations.list(
-                self.apiclient,
-                name='network.gc.interval'
-            )
-            wait = Configurations.list(
-                self.apiclient,
-                name='network.gc.wait'
-            )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            self.debug("Cleanup complete!")
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -689,7 +544,7 @@ class TestPfOnIpWithLb(cloudstackTestCase):
                    self.network_offering.id)
         self.network = Network.create(
             self.apiclient,
-            self.services["network"],
+            self.testdata["network"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             networkofferingid=self.network_offering.id,
@@ -702,7 +557,7 @@ class TestPfOnIpWithLb(cloudstackTestCase):
         # Spawn an instance in that network
         virtual_machine_1 = VirtualMachine.create(
             self.apiclient,
-            self.services["virtual_machine"],
+            self.testdata["small"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -738,7 +593,7 @@ class TestPfOnIpWithLb(cloudstackTestCase):
         # Spawn an instance in that network
         virtual_machine_2 = VirtualMachine.create(
             self.apiclient,
-            self.services["virtual_machine"],
+            self.testdata["small"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -785,7 +640,7 @@ class TestPfOnIpWithLb(cloudstackTestCase):
 
         LoadBalancerRule.create(
             self.apiclient,
-            self.services["lbrule"],
+            self.testdata["lbrule"],
             ipaddressid=ip_with_lb_rule.ipaddress.id,
             accountid=self.account.name,
             networkid=self.network.id
@@ -798,7 +653,7 @@ class TestPfOnIpWithLb(cloudstackTestCase):
             NATRule.create(
                 self.apiclient,
                 virtual_machine_1,
-                self.services["natrule"],
+                self.testdata["natrule"],
                 ipaddressid=ip_with_lb_rule.ipaddress.id
             )
         return
@@ -812,39 +667,39 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
         cls.testClient = super(TestLbOnNonSourceNat, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        # Fill testdata from the external config file
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.testdata["ostype"]
         )
 
-        response = GetNetscalerInfoFromConfig(
-            cls.config
-        )
-        assert response[0] is not None, response[1]
-        cls.services["netscaler"] = response[0]
-        cls.services["netscaler"]["lbdevicededicated"] = False
+        cls.testdata["lbrule"]["publicport"] = 22
+        cls.testdata["configurableData"]["netscaler"]["lbdevicededicated"] = False
 
         try:
-            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
+            cls.netscaler = add_netscaler(
+                    cls.api_client,
+                    cls.zone.id,
+                    cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.network_offering = NetworkOffering.create(
                 cls.api_client,
-                cls.services["network_offering"],
+                cls.testdata["nw_off_isolated_netscaler"],
                 conservemode=False
             )
             # Enable Network offering
             cls.network_offering.update(cls.api_client, state='Enabled')
-            cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-            cls.services["virtual_machine"]["template"] = cls.template.id
+            cls.testdata["small"]["zoneid"] = cls.zone.id
+            cls.testdata["small"]["template"] = cls.template.id
 
             cls.service_offering = ServiceOffering.create(
                 cls.api_client,
-                cls.services["service_offering"]
+                cls.testdata["service_offering"]
             )
         except Exception as e:
             cls.tearDownClass()
@@ -865,7 +720,7 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.account = Account.create(
             self.apiclient,
-            self.services["account"],
+            self.testdata["account"],
             admin=True,
             domainid=self.domain.id
         )
@@ -877,17 +732,6 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             # Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = Configurations.list(
-                self.apiclient,
-                name='network.gc.interval'
-            )
-            wait = Configurations.list(
-                self.apiclient,
-                name='network.gc.wait'
-            )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            self.debug("Cleanup complete!")
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -909,7 +753,7 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
                    self.network_offering.id)
         self.network = Network.create(
             self.apiclient,
-            self.services["network"],
+            self.testdata["network"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             networkofferingid=self.network_offering.id,
@@ -922,7 +766,7 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
         # Spawn an instance in that network
         virtual_machine_1 = VirtualMachine.create(
             self.apiclient,
-            self.services["virtual_machine"],
+            self.testdata["small"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -958,7 +802,7 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
         # Spawn an instance in that network
         virtual_machine_2 = VirtualMachine.create(
             self.apiclient,
-            self.services["virtual_machine"],
+            self.testdata["small"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -1005,7 +849,7 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
 
         lb_rule = LoadBalancerRule.create(
             self.apiclient,
-            self.services["lbrule"],
+            self.testdata["lbrule"],
             ipaddressid=ip_with_lb_rule.ipaddress.id,
             accountid=self.account.name,
             networkid=self.network.id
@@ -1035,39 +879,39 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
         cls.testClient = super(TestAddMultipleVmsLb, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        # Fill testdata from the external config file
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.testdata["ostype"]
         )
 
-        response = GetNetscalerInfoFromConfig(
-            cls.config
-        )
-        assert response[0] is not None, response[1]
-        cls.services["netscaler"] = response[0]
-        cls.services["netscaler"]["lbdevicededicated"] = False
+        cls.testdata["lbrule"]["publicport"] = 22
+        cls.testdata["configurableData"]["netscaler"]["lbdevicededicated"] = False
 
         try:
-            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
+            cls.netscaler = add_netscaler(
+                    cls.api_client,
+                    cls.zone.id,
+                    cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.network_offering = NetworkOffering.create(
                 cls.api_client,
-                cls.services["network_offering"],
+                cls.testdata["nw_off_isolated_netscaler"],
                 conservemode=True
             )
             # Enable Network offering
             cls.network_offering.update(cls.api_client, state='Enabled')
-            cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-            cls.services["virtual_machine"]["template"] = cls.template.id
+            cls.testdata["small"]["zoneid"] = cls.zone.id
+            cls.testdata["small"]["template"] = cls.template.id
 
             cls.service_offering = ServiceOffering.create(
                 cls.api_client,
-                cls.services["service_offering"]
+                cls.testdata["service_offering"]
             )
         except Exception as e:
             cls.tearDownClass()
@@ -1088,7 +932,7 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.account = Account.create(
             self.apiclient,
-            self.services["account"],
+            self.testdata["account"],
             admin=True,
             domainid=self.domain.id
         )
@@ -1100,17 +944,6 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             # Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = Configurations.list(
-                self.apiclient,
-                name='network.gc.interval'
-            )
-            wait = Configurations.list(
-                self.apiclient,
-                name='network.gc.wait'
-            )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            self.debug("Cleanup complete!")
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1137,7 +970,7 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
                    self.network_offering.id)
         self.network = Network.create(
             self.apiclient,
-            self.services["network"],
+            self.testdata["network"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             networkofferingid=self.network_offering.id,
@@ -1150,7 +983,7 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
         # Spawn an instance in that network
         virtual_machine_1 = VirtualMachine.create(
             self.apiclient,
-            self.services["virtual_machine"],
+            self.testdata["small"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -1186,7 +1019,7 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
         # Spawn an instance in that network
         virtual_machine_2 = VirtualMachine.create(
             self.apiclient,
-            self.services["virtual_machine"],
+            self.testdata["small"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -1233,7 +1066,7 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
 
         lb_rule = LoadBalancerRule.create(
             self.apiclient,
-            self.services["lbrule"],
+            self.testdata["lbrule"],
             ipaddressid=ip_with_lb_rule.ipaddress.id,
             accountid=self.account.name,
             networkid=self.network.id
@@ -1256,13 +1089,13 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
         lb_rule.assign(self.apiclient, [virtual_machine_1, virtual_machine_2])
 
         self.debug("SSH into netscaler: %s" %
-                   self.services["netscaler"]["ipaddress"])
+                   self.testdata["configurableData"]["netscaler"]["ipaddress"])
         try:
             ssh_client = SshClient(
-                self.services["netscaler"]["ipaddress"],
+                self.testdata["configurableData"]["netscaler"]["ipaddress"],
                 22,
-                self.services["netscaler"]["username"],
-                self.services["netscaler"]["password"],
+                self.testdata["configurableData"]["netscaler"]["username"],
+                self.testdata["configurableData"]["netscaler"]["password"],
             )
             self.debug("command: show server")
             res = ssh_client.execute("show server")
@@ -1309,7 +1142,7 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
             )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
-                      (self.services["netscaler"]["ipaddress"], e))
+                      (self.testdata["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
 
@@ -1321,39 +1154,39 @@ class TestMultipleLbRules(cloudstackTestCase):
         cls.testClient = super(TestMultipleLbRules, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        # Fill testdata from the external config file
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.testdata["ostype"]
         )
 
-        response = GetNetscalerInfoFromConfig(
-            cls.config
-        )
-        assert response[0] is not None, response[1]
-        cls.services["netscaler"] = response[0]
-        cls.services["netscaler"]["lbdevicededicated"] = False
+        cls.testdata["lbrule"]["publicport"] = 22
+        cls.testdata["configurableData"]["netscaler"]["lbdevicededicated"] = False
 
         try:
-            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
+            cls.netscaler = add_netscaler(
+                    cls.api_client,
+                    cls.zone.id,
+                    cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.network_offering = NetworkOffering.create(
                 cls.api_client,
-                cls.services["network_offering"],
+                cls.testdata["nw_off_isolated_netscaler"],
                 conservemode=True
             )
             # Enable Network offering
             cls.network_offering.update(cls.api_client, state='Enabled')
-            cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-            cls.services["virtual_machine"]["template"] = cls.template.id
+            cls.testdata["small"]["zoneid"] = cls.zone.id
+            cls.testdata["small"]["template"] = cls.template.id
 
             cls.service_offering = ServiceOffering.create(
                 cls.api_client,
-                cls.services["service_offering"]
+                cls.testdata["service_offering"]
             )
         except Exception as e:
             cls.tearDownClass()
@@ -1375,7 +1208,7 @@ class TestMultipleLbRules(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.account = Account.create(
             self.apiclient,
-            self.services["account"],
+            self.testdata["account"],
             admin=True,
             domainid=self.domain.id
         )
@@ -1387,17 +1220,6 @@ class TestMultipleLbRules(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             # Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = Configurations.list(
-                self.apiclient,
-                name='network.gc.interval'
-            )
-            wait = Configurations.list(
-                self.apiclient,
-                name='network.gc.wait'
-            )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            self.debug("Cleanup complete!")
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1420,7 +1242,7 @@ class TestMultipleLbRules(cloudstackTestCase):
                    self.network_offering.id)
         self.network = Network.create(
             self.apiclient,
-            self.services["network"],
+            self.testdata["network"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             networkofferingid=self.network_offering.id,
@@ -1433,7 +1255,7 @@ class TestMultipleLbRules(cloudstackTestCase):
         # Spawn an instance in that network
         virtual_machine_1 = VirtualMachine.create(
             self.apiclient,
-            self.services["virtual_machine"],
+            self.testdata["small"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -1469,7 +1291,7 @@ class TestMultipleLbRules(cloudstackTestCase):
         # Spawn an instance in that network
         virtual_machine_2 = VirtualMachine.create(
             self.apiclient,
-            self.services["virtual_machine"],
+            self.testdata["small"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -1518,10 +1340,10 @@ class TestMultipleLbRules(cloudstackTestCase):
             "Creating LB rule for IP address: %s with round robin algo" %
             public_ip_1.ipaddress.ipaddress)
 
-        self.services["lbrule"]["alg"] = 'roundrobin'
+        self.testdata["lbrule"]["alg"] = 'roundrobin'
         lb_rule = LoadBalancerRule.create(
             self.apiclient,
-            self.services["lbrule"],
+            self.testdata["lbrule"],
             ipaddressid=public_ip_1.ipaddress.id,
             accountid=self.account.name,
             networkid=self.network.id
@@ -1564,10 +1386,10 @@ class TestMultipleLbRules(cloudstackTestCase):
             "Creating LB rule for IP address: %s with round robin algo" %
             public_ip_2.ipaddress.ipaddress)
 
-        self.services["lbrule"]["alg"] = 'roundrobin'
+        self.testdata["lbrule"]["alg"] = 'roundrobin'
         lb_rule = LoadBalancerRule.create(
             self.apiclient,
-            self.services["lbrule"],
+            self.testdata["lbrule"],
             ipaddressid=public_ip_2.ipaddress.id,
             accountid=self.account.name,
             networkid=self.network.id
@@ -1648,39 +1470,36 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
             cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        # Fill testdata from the external config file
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.testdata["ostype"]
         )
 
-        response = GetNetscalerInfoFromConfig(
-            cls.config
-        )
-        assert response[0] is not None, response[1]
-        cls.services["netscaler"] = response[0]
-        cls.services["netscaler"]["lbdevicededicated"] = False
+        cls.testdata["lbrule"]["publicport"] = 22
+        cls.testdata["configurableData"]["netscaler"]["lbdevicededicated"] = False
 
         try:
-            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
+            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.network_offering = NetworkOffering.create(
                 cls.api_client,
-                cls.services["network_offering"],
+                cls.testdata["nw_off_isolated_netscaler"],
                 conservemode=True
             )
             # Enable Network offering
             cls.network_offering.update(cls.api_client, state='Enabled')
-            cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-            cls.services["virtual_machine"]["template"] = cls.template.id
+            cls.testdata["small"]["zoneid"] = cls.zone.id
+            cls.testdata["small"]["template"] = cls.template.id
 
             cls.service_offering = ServiceOffering.create(
                 cls.api_client,
-                cls.services["service_offering"]
+                cls.testdata["service_offering"]
             )
         except Exception as e:
             cls.tearDownClass()
@@ -1701,7 +1520,7 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.account = Account.create(
             self.apiclient,
-            self.services["account"],
+            self.testdata["account"],
             admin=True,
             domainid=self.domain.id
         )
@@ -1713,17 +1532,6 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             # Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = Configurations.list(
-                self.apiclient,
-                name='network.gc.interval'
-            )
-            wait = Configurations.list(
-                self.apiclient,
-                name='network.gc.wait'
-            )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            self.debug("Cleanup complete!")
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1747,7 +1555,7 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
                    self.network_offering.id)
         self.network = Network.create(
             self.apiclient,
-            self.services["network"],
+            self.testdata["network"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             networkofferingid=self.network_offering.id,
@@ -1760,7 +1568,7 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
         # Spawn an instance in that network
         virtual_machine_1 = VirtualMachine.create(
             self.apiclient,
-            self.services["virtual_machine"],
+            self.testdata["small"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -1796,7 +1604,7 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
         # Spawn an instance in that network
         virtual_machine_2 = VirtualMachine.create(
             self.apiclient,
-            self.services["virtual_machine"],
+            self.testdata["small"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -1845,10 +1653,10 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
             "Creating LB rule for IP address: %s with round robin algo" %
             public_ip.ipaddress.ipaddress)
 
-        self.services["lbrule"]["alg"] = 'roundrobin'
+        self.testdata["lbrule"]["alg"] = 'roundrobin'
         lb_rule_1 = LoadBalancerRule.create(
             self.apiclient,
-            self.services["lbrule"],
+            self.testdata["lbrule"],
             ipaddressid=public_ip.ipaddress.id,
             accountid=self.account.name,
             networkid=self.network.id
@@ -1882,7 +1690,7 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
         with self.assertRaises(Exception):
             LoadBalancerRule.create(
                 self.apiclient,
-                self.services["lbrule"],
+                self.testdata["lbrule"],
                 ipaddressid=public_ip.ipaddress.id,
                 accountid=self.account.name,
                 networkid=self.network.id
@@ -1892,12 +1700,12 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
             public_ip.ipaddress.ipaddress,
             str(2222)))
 
-        self.services["lbrule"]["alg"] = 'roundrobin'
-        self.services["lbrule"]["publicport"] = 2222
-        self.services["lbrule"]["name"] = 'SSH2'
+        self.testdata["lbrule"]["alg"] = 'roundrobin'
+        self.testdata["lbrule"]["publicport"] = 2222
+        self.testdata["lbrule"]["name"] = 'SSH2'
         lb_rule_2 = LoadBalancerRule.create(
             self.apiclient,
-            self.services["lbrule"],
+            self.testdata["lbrule"],
             ipaddressid=public_ip.ipaddress.id,
             accountid=self.account.name,
             networkid=self.network.id
@@ -1949,7 +1757,7 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
             ssh = virtual_machine_1.get_ssh_client(
                 ipaddress=public_ip.ipaddress.ipaddress,
                 reconnect=True,
-                port=self.services["lbrule"]["publicport"]
+                port=self.testdata["lbrule"]["publicport"]
             )
             self.debug("Command: hostname")
             result = ssh.execute("hostname")
@@ -1978,43 +1786,40 @@ class TestLoadBalancingRule(cloudstackTestCase):
         cls.testClient = super(TestLoadBalancingRule, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        # Fill testdata from the external config file
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.testdata["ostype"]
         )
 
-        response = GetNetscalerInfoFromConfig(
-            cls.config
-        )
-        assert response[0] is not None, response[1]
-        cls.services["netscaler"] = response[0]
-        cls.services["netscaler"]["lbdevicededicated"] = False
+        cls.testdata["lbrule"]["publicport"] = 22
+        cls.testdata["configurableData"]["netscaler"]["lbdevicededicated"] = False
 
         try:
-            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
+            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.network_offering = NetworkOffering.create(
                 cls.api_client,
-                cls.services["network_offering"],
+                cls.testdata["nw_off_isolated_netscaler"],
                 conservemode=True
             )
             # Enable Network offering
             cls.network_offering.update(cls.api_client, state='Enabled')
-            cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-            cls.services["virtual_machine"]["template"] = cls.template.id
+            cls.testdata["small"]["zoneid"] = cls.zone.id
+            cls.testdata["small"]["template"] = cls.template.id
 
             cls.service_offering = ServiceOffering.create(
                 cls.api_client,
-                cls.services["service_offering"]
+                cls.testdata["service_offering"]
             )
             cls.account = Account.create(
                 cls.api_client,
-                cls.services["account"],
+                cls.testdata["account"],
                 admin=True,
                 domainid=cls.domain.id
             )
@@ -2022,7 +1827,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
             # Creating network using the network offering created
             cls.network = Network.create(
                 cls.api_client,
-                cls.services["network"],
+                cls.testdata["network"],
                 accountid=cls.account.name,
                 domainid=cls.account.domainid,
                 networkofferingid=cls.network_offering.id,
@@ -2032,7 +1837,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
             # Spawn an instance in that network
             cls.virtual_machine = VirtualMachine.create(
                 cls.api_client,
-                cls.services["virtual_machine"],
+                cls.testdata["small"],
                 accountid=cls.account.name,
                 domainid=cls.account.domainid,
                 serviceofferingid=cls.service_offering.id,
@@ -2047,7 +1852,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
             )
             cls.lb_rule = LoadBalancerRule.create(
                 cls.api_client,
-                cls.services["lbrule"],
+                cls.testdata["lbrule"],
                 ipaddressid=cls.public_ip.ipaddress.id,
                 accountid=cls.account.name,
                 networkid=cls.network.id
@@ -2077,7 +1882,6 @@ class TestLoadBalancingRule(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             # Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            self.debug("Cleanup complete!")
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -2156,10 +1960,10 @@ class TestLoadBalancingRule(cloudstackTestCase):
         self.debug("SSH into Netscaler to verify other resources are deleted")
         try:
             ssh_client = SshClient(
-                self.services["netscaler"]["ipaddress"],
-                self.services["netscaler"]["port"],
-                self.services["netscaler"]["username"],
-                self.services["netscaler"]["password"],
+                self.testdata["configurableData"]["netscaler"]["ipaddress"],
+                self.testdata["configurableData"]["netscaler"]["port"],
+                self.testdata["configurableData"]["netscaler"]["username"],
+                self.testdata["configurableData"]["netscaler"]["password"],
             )
             cmd = "show lb vserver Cloud-VirtualServer-%s-%s" % (
                 self.public_ip.ipaddress.ipaddress,
@@ -2188,7 +1992,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
             )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
-                      (self.services["netscaler"]["ipaddress"], e))
+                      (self.testdata["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
 
@@ -2200,42 +2004,39 @@ class TestDeleteCreateLBRule(cloudstackTestCase):
         cls.testClient = super(TestDeleteCreateLBRule, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        # Fill testdata from the external config file
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.testdata["ostype"]
         )
 
-        response = GetNetscalerInfoFromConfig(
-            cls.config
-        )
-        assert response[0] is not None, response[1]
-        cls.services["netscaler"] = response[0]
-        cls.services["netscaler"]["lbdevicededicated"] = False
+        cls.testdata["lbrule"]["publicport"] = 22
+        cls.testdata["configurableData"]["netscaler"]["lbdevicededicated"] = False
 
         try:
-            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
+            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.network_offering = NetworkOffering.create(
                 cls.api_client,
-                cls.services["network_offering"],
+                cls.testdata["nw_off_isolated_netscaler"],
                 conservemode=True
             )
             # Enable Network offering
             cls.network_offering.update(cls.api_client, state='Enabled')
-            cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-            cls.services["virtual_machine"]["template"] = cls.template.id
+            cls.testdata["small"]["zoneid"] = cls.zone.id
+            cls.testdata["small"]["template"] = cls.template.id
             cls.service_offering = ServiceOffering.create(
                 cls.api_client,
-                cls.services["service_offering"]
+                cls.testdata["service_offering"]
             )
             cls.account = Account.create(
                 cls.api_client,
-                cls.services["account"],
+                cls.testdata["account"],
                 admin=True,
                 domainid=cls.domain.id
             )
@@ -2243,7 +2044,7 @@ class TestDeleteCreateLBRule(cloudstackTestCase):
             # Creating network using the network offering created
             cls.network = Network.create(
                 cls.api_client,
-                cls.services["network"],
+                cls.testdata["network"],
                 accountid=cls.account.name,
                 domainid=cls.account.domainid,
                 networkofferingid=cls.network_offering.id,
@@ -2253,7 +2054,7 @@ class TestDeleteCreateLBRule(cloudstackTestCase):
             # Spawn an instance in that network
             cls.virtual_machine = VirtualMachine.create(
                 cls.api_client,
-                cls.services["virtual_machine"],
+                cls.testdata["small"],
                 accountid=cls.account.name,
                 domainid=cls.account.domainid,
                 serviceofferingid=cls.service_offering.id,
@@ -2285,7 +2086,7 @@ class TestDeleteCreateLBRule(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.lb_rule = LoadBalancerRule.create(
             self.apiclient,
-            self.services["lbrule"],
+            self.testdata["lbrule"],
             ipaddressid=self.public_ip.ipaddress.id,
             accountid=self.account.name,
             networkid=self.network.id
@@ -2298,7 +2099,6 @@ class TestDeleteCreateLBRule(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             # Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            self.debug("Cleanup complete!")
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -2317,10 +2117,10 @@ class TestDeleteCreateLBRule(cloudstackTestCase):
         self.debug("LB rule deleted")
 
         self.debug("Create a new LB rule with different public port")
-        self.services["lbrule"]["publicport"] = 23
+        self.testdata["lbrule"]["publicport"] = 23
         LoadBalancerRule.create(
             self.apiclient,
-            self.services["lbrule"],
+            self.testdata["lbrule"],
             ipaddressid=self.public_ip.ipaddress.id,
             accountid=self.account.name,
             networkid=self.network.id
@@ -2335,43 +2135,40 @@ class TestVmWithLb(cloudstackTestCase):
         cls.testClient = super(TestVmWithLb, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        # Fill testdata from the external config file
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.testdata["ostype"]
         )
 
-        response = GetNetscalerInfoFromConfig(
-            cls.config
-        )
-        assert response[0] is not None, response[1]
-        cls.services["netscaler"] = response[0]
-        cls.services["netscaler"]["lbdevicededicated"] = False
+        cls.testdata["lbrule"]["publicport"] = 22
+        cls.testdata["configurableData"]["netscaler"]["lbdevicededicated"] = False
 
         try:
-            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services["netscaler"])
+            cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.testdata["configurableData"]["netscaler"])
             cls._cleanup.append(cls.netscaler)
             cls.network_offering = NetworkOffering.create(
                 cls.api_client,
-                cls.services["network_offering"],
+                cls.testdata["nw_off_isolated_netscaler"],
                 conservemode=True
             )
             # Enable Network offering
             cls.network_offering.update(cls.api_client, state='Enabled')
-            cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-            cls.services["virtual_machine"]["template"] = cls.template.id
+            cls.testdata["small"]["zoneid"] = cls.zone.id
+            cls.testdata["small"]["template"] = cls.template.id
 
             cls.service_offering = ServiceOffering.create(
                 cls.api_client,
-                cls.services["service_offering"]
+                cls.testdata["service_offering"]
             )
             cls.account = Account.create(
                 cls.api_client,
-                cls.services["account"],
+                cls.testdata["account"],
                 admin=True,
                 domainid=cls.domain.id
             )
@@ -2379,7 +2176,7 @@ class TestVmWithLb(cloudstackTestCase):
             # Creating network using the network offering created
             cls.network = Network.create(
                 cls.api_client,
-                cls.services["network"],
+                cls.testdata["network"],
                 accountid=cls.account.name,
                 domainid=cls.account.domainid,
                 networkofferingid=cls.network_offering.id,
@@ -2389,7 +2186,7 @@ class TestVmWithLb(cloudstackTestCase):
             # Spawn an instance in that network
             cls.vm_1 = VirtualMachine.create(
                 cls.api_client,
-                cls.services["virtual_machine"],
+                cls.testdata["small"],
                 accountid=cls.account.name,
                 domainid=cls.account.domainid,
                 serviceofferingid=cls.service_offering.id,
@@ -2397,7 +2194,7 @@ class TestVmWithLb(cloudstackTestCase):
             )
             cls.vm_2 = VirtualMachine.create(
                 cls.api_client,
-                cls.services["virtual_machine"],
+                cls.testdata["small"],
                 accountid=cls.account.name,
                 domainid=cls.account.domainid,
                 serviceofferingid=cls.service_offering.id,
@@ -2412,7 +2209,7 @@ class TestVmWithLb(cloudstackTestCase):
             )
             cls.lb_rule_1 = LoadBalancerRule.create(
                 cls.api_client,
-                cls.services["lbrule"],
+                cls.testdata["lbrule"],
                 ipaddressid=cls.public_ip_1.ipaddress.id,
                 accountid=cls.account.name,
                 networkid=cls.network.id
@@ -2426,7 +2223,7 @@ class TestVmWithLb(cloudstackTestCase):
             )
             cls.lb_rule_2 = LoadBalancerRule.create(
                 cls.api_client,
-                cls.services["lbrule"],
+                cls.testdata["lbrule"],
                 ipaddressid=cls.public_ip_2.ipaddress.id,
                 accountid=cls.account.name,
                 networkid=cls.network.id
@@ -2456,7 +2253,6 @@ class TestVmWithLb(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             # Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            self.debug("Cleanup complete!")
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -2471,7 +2267,7 @@ class TestVmWithLb(cloudstackTestCase):
         # 3. All the LB rules should be removed from that public Ip
         # 4. In netscaler, make sure that all LB rules associated with that
         #    public Ip should get removed.
-        # 5. All servers and services service to that public Ip get deleted
+        # 5. All servers and testdata service to that public Ip get deleted
 
         self.debug("Deleting public IP: %s from network: %s" % (
             self.public_ip_2.ipaddress.ipaddress,
@@ -2494,10 +2290,10 @@ class TestVmWithLb(cloudstackTestCase):
         self.debug("SSH into Netscaler to verify other resources are deleted")
         try:
             ssh_client = SshClient(
-                self.services["netscaler"]["ipaddress"],
-                self.services["netscaler"]["port"],
-                self.services["netscaler"]["username"],
-                self.services["netscaler"]["password"],
+                self.testdata["configurableData"]["netscaler"]["ipaddress"],
+                self.testdata["configurableData"]["netscaler"]["port"],
+                self.testdata["configurableData"]["netscaler"]["username"],
+                self.testdata["configurableData"]["netscaler"]["password"],
             )
             cmd = "show lb vserver Cloud-VirtualServer-%s-%s" % (
                 self.public_ip_2.ipaddress.ipaddress,
@@ -2526,7 +2322,7 @@ class TestVmWithLb(cloudstackTestCase):
             )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
-                      (self.services["netscaler"]["ipaddress"], e))
+                      (self.testdata["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
     @attr(tags=["advancedns"])
@@ -2579,10 +2375,10 @@ class TestVmWithLb(cloudstackTestCase):
         self.debug("SSH into Netscaler to rules still persist")
         try:
             ssh_client = SshClient(
-                self.services["netscaler"]["ipaddress"],
-                self.services["netscaler"]["port"],
-                self.services["netscaler"]["username"],
-                self.services["netscaler"]["password"],
+                self.testdata["configurableData"]["netscaler"]["ipaddress"],
+                self.testdata["configurableData"]["netscaler"]["port"],
+                self.testdata["configurableData"]["netscaler"]["username"],
+                self.testdata["configurableData"]["netscaler"]["password"],
             )
 
             cmd = "show server"
@@ -2598,7 +2394,7 @@ class TestVmWithLb(cloudstackTestCase):
             )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
-                      (self.services["netscaler"]["ipaddress"], e))
+                      (self.testdata["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
     @attr(tags=["advancedns"])
@@ -2651,10 +2447,10 @@ class TestVmWithLb(cloudstackTestCase):
         self.debug("SSH into Netscaler to rules still persist")
         try:
             ssh_client = SshClient(
-                self.services["netscaler"]["ipaddress"],
-                self.services["netscaler"]["port"],
-                self.services["netscaler"]["username"],
-                self.services["netscaler"]["password"],
+                self.testdata["configurableData"]["netscaler"]["ipaddress"],
+                self.testdata["configurableData"]["netscaler"]["port"],
+                self.testdata["configurableData"]["netscaler"]["username"],
+                self.testdata["configurableData"]["netscaler"]["password"],
             )
 
             cmd = "show server"
@@ -2670,7 +2466,7 @@ class TestVmWithLb(cloudstackTestCase):
             )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
-                      (self.services["netscaler"]["ipaddress"], e))
+                      (self.testdata["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
     @attr(tags=["advancedns", "multihost"])
@@ -2763,10 +2559,10 @@ class TestVmWithLb(cloudstackTestCase):
         self.debug("SSH into Netscaler to rules still persist")
         try:
             ssh_client = SshClient(
-                self.services["netscaler"]["ipaddress"],
-                self.services["netscaler"]["port"],
-                self.services["netscaler"]["username"],
-                self.services["netscaler"]["password"],
+                self.testdata["configurableData"]["netscaler"]["ipaddress"],
+                self.testdata["configurableData"]["netscaler"]["port"],
+                self.testdata["configurableData"]["netscaler"]["username"],
+                self.testdata["configurableData"]["netscaler"]["password"],
             )
 
             cmd = "show server"
@@ -2782,7 +2578,7 @@ class TestVmWithLb(cloudstackTestCase):
             )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
-                      (self.services["netscaler"]["ipaddress"], e))
+                      (self.testdata["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
     @attr(tags=["advancedns"])
@@ -2850,10 +2646,10 @@ class TestVmWithLb(cloudstackTestCase):
         self.debug("SSH into Netscaler to rules still persist")
         try:
             ssh_client = SshClient(
-                self.services["netscaler"]["ipaddress"],
-                self.services["netscaler"]["port"],
-                self.services["netscaler"]["username"],
-                self.services["netscaler"]["password"],
+                self.testdata["configurableData"]["netscaler"]["ipaddress"],
+                self.testdata["configurableData"]["netscaler"]["port"],
+                self.testdata["configurableData"]["netscaler"]["username"],
+                self.testdata["configurableData"]["netscaler"]["password"],
             )
 
             cmd = "show server"
@@ -2869,7 +2665,7 @@ class TestVmWithLb(cloudstackTestCase):
             )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
-                      (self.services["netscaler"]["ipaddress"], e))
+                      (self.testdata["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
     @attr(tags=["advancedns"])
@@ -2881,7 +2677,7 @@ class TestVmWithLb(cloudstackTestCase):
         # 2. Destroy one of the user VM
         # 3. Until the time the Vm is in "Destroyed" state, the servies
         #    relating to this Vm will be marked as "Down".
-        # 4. Once the Vm gets expunged, then the servers and services
+        # 4. Once the Vm gets expunged, then the servers and testdata
         #    associated with this VM should get deleted and the LB rules
         #    should not be pointing to this Vm anymore.
 
@@ -2932,10 +2728,10 @@ class TestVmWithLb(cloudstackTestCase):
         self.debug("SSH into Netscaler to rules still persist")
         try:
             ssh_client = SshClient(
-                self.services["netscaler"]["ipaddress"],
-                self.services["netscaler"]["port"],
-                self.services["netscaler"]["username"],
-                self.services["netscaler"]["password"],
+                self.testdata["configurableData"]["netscaler"]["ipaddress"],
+                self.testdata["configurableData"]["netscaler"]["port"],
+                self.testdata["configurableData"]["netscaler"]["username"],
+                self.testdata["configurableData"]["netscaler"]["password"],
             )
 
             cmd = "show server"
@@ -2951,7 +2747,7 @@ class TestVmWithLb(cloudstackTestCase):
             )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
-                      (self.services["netscaler"]["ipaddress"], e))
+                      (self.testdata["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
     @attr(tags=["advancedns"])
@@ -2964,7 +2760,7 @@ class TestVmWithLb(cloudstackTestCase):
         # 3. All the LB rules should be removed from that public Ip
         # 4. In netscaler, make sure that all LB rules associated with that
         #    public Ip should get removed.
-        # 5. All servers and services service to that public Ip get deleted
+        # 5. All servers and testdata service to that public Ip get deleted
 
         self.debug("Deleting public IP: %s from network: %s" % (
             self.public_ip_1.ipaddress.ipaddress,
@@ -2987,10 +2783,10 @@ class TestVmWithLb(cloudstackTestCase):
         self.debug("SSH into Netscaler to verify other resources are deleted")
         try:
             ssh_client = SshClient(
-                self.services["netscaler"]["ipaddress"],
-                self.services["netscaler"]["port"],
-                self.services["netscaler"]["username"],
-                self.services["netscaler"]["password"],
+                self.testdata["configurableData"]["netscaler"]["ipaddress"],
+                self.testdata["configurableData"]["netscaler"]["port"],
+                self.testdata["configurableData"]["netscaler"]["username"],
+                self.testdata["configurableData"]["netscaler"]["password"],
             )
             cmd = "show lb vserver Cloud-VirtualServer-%s-%s" % (
                 self.public_ip_1.ipaddress.ipaddress,
@@ -3019,5 +2815,5 @@ class TestVmWithLb(cloudstackTestCase):
             )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
-                      (self.services["netscaler"]["ipaddress"], e))
+                      (self.testdata["configurableData"]["netscaler"]["ipaddress"], e))
         return
