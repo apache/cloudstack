@@ -202,6 +202,7 @@ class CsIP:
 
     def __init__(self, dev, config):
         self.dev = dev
+        self.dnum = dev[3]
         self.iplist = {}
         self.address = {}
         self.list()
@@ -274,13 +275,14 @@ class CsIP:
         self.fw.append(["mangle", "front", "-A PREROUTING " +
                         "-m state --state RELATED,ESTABLISHED " +
                         "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"])
+
         if self.get_type() in ["public"]:
             self.fw.append(["mangle", "front",
                             "-A PREROUTING " +
-                            "-d %s -j VPN_%s" % (self.address['cidr'], self.address['public_ip'])])
+                            "-d %s -j VPN_%s" % (self.address['network'], self.address['public_ip'])])
             self.fw.append(["mangle", "front",
                             "-A PREROUTING " +
-                            "-d %s -j FIREWALL_%s" % (self.address['cidr'], self.address['public_ip'])])
+                            "-d %s -j FIREWALL_%s" % (self.address['network'], self.address['public_ip'])])
             self.fw.append(["mangle", "front",
                             "-A FIREWALL_%s " % self.address['public_ip'] +
                             "-m state --state RELATED,ESTABLISHED -j ACCEPT"])
@@ -295,6 +297,9 @@ class CsIP:
                             "-p udp -m udp --dport 68 -j CHECKSUM --checksum-fill"])
             self.fw.append(["nat", "",
                             "-A POSTROUTING -o eth2 -j SNAT --to-source %s" % self.address['public_ip']])
+            self.fw.append(["mangle", "",
+                           "-A PREROUTING -i %s -m state --state NEW " % self.dev + 
+                           "-j CONNMARK --set-xmark 0x%s/0xffffffff"] % self.dnum])
 
         self.fw.append(["filter", "", "-A INPUT -d 224.0.0.18/32 -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -d 225.0.0.50/32 -j ACCEPT"])
@@ -315,6 +320,9 @@ class CsIP:
             self.fw.append(["filter", "", "-A FORWARD -i eth2 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT"])
             self.fw.append(["filter", "", "-A FORWARD -i eth0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT"])
             self.fw.append(["filter", "", "-A FORWARD -i eth0 -o eth2 -j FW_OUTBOUND"])
+            self.fw.append(["mangle", "",
+                           "-A PREROUTING -i %s -m state --state NEW " % self.dev + 
+                           "-j CONNMARK --set-xmark 0x%s/0xffffffff"] % self.dnum])
 
         if self.get_type() in ["control"]:
             self.fw.append(["filter", "", "-A FW_OUTBOUND -m state --state RELATED,ESTABLISHED -j ACCEPT"])
