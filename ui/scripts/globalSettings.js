@@ -237,10 +237,10 @@
             },    
             baremetalRct: {
                 type: 'select',
-                title: 'Baremetal Rack Configuration',
+                title: 'label.baremetal.rack.configuration',
                 listView: {
                     id: 'baremetalRct',
-                    label: 'Baremetal Rack Configuration',
+                    label: 'label.baremetal.rack.configuration',
                     fields: {   
                     	id: {
                     		label: 'label.id'
@@ -263,14 +263,14 @@
                     },
                     actions: {
                         add: {
-                            label: 'Add Baremetal Rack Configuration',
+                            label: 'label.add.baremetal.rack.configuration',
                             messages: {                                
                                 notification: function(args) {
-                                    return 'Add Baremetal Rack Configuration';
+                                    return 'label.add.baremetal.rack.configuration';
                                 }
                             },
                             createForm: {
-                                title: 'Add Baremetal Rack Configuration',
+                                title: 'label.add.baremetal.rack.configuration',
                                 fields: {
                                     url: {
                                         label: 'label.url',
@@ -309,13 +309,13 @@
                     	name: "details",
                     	actions: {
                     		remove: {
-                                label: 'Delete Baremetal Rack Configuration',
+                                label: 'label.delete.baremetal.rack.configuration',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Please confirm that you want to delete Baremetal Rack Configuration.';
+                                        return 'message.confirm.delete.baremetal.rack.configuration';
                                     },
                                     notification: function(args) {
-                                        return 'Delete Baremetal Rack Configuration';
+                                        return 'label.delete.baremetal.rack.configuration';
                                     }
                                 },
                                 action: function(args) {                                	

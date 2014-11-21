@@ -17,10 +17,10 @@
 (function($, cloudStack) {
     var assignVMAction = function() {
         return {
-            label: 'Assign VMs',
+            label: 'label.assign.vms',
             messages: {
                 notification: function(args) {
-                    return 'Assign VMs';
+                    return 'label.assign.vms';
                 }
             },
             needsRefresh: true,

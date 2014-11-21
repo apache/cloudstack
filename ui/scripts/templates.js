@@ -906,7 +906,7 @@
                                         }
                                     },
                                     isextractable: {
-                                        label: 'label.extractable',
+                                        label: 'label.extractable.lower',
                                         isBoolean: true,
                                         isEditable: function() {
                                             if (isAdmin())
@@ -1304,7 +1304,7 @@
                                                     }
                                                 },
                                                 isextractable: {
-                                                    label: 'extractable',
+                                                    label: 'label.extractable.lower',
                                                     isBoolean: true,
                                                     isEditable: function() {
                                                         if (isAdmin())
@@ -1321,7 +1321,7 @@
                                                     converter: cloudStack.converters.toBooleanText
                                                 },
                                                 isdynamicallyscalable: {
-                                                    label: 'Dynamically Scalable',
+                                                    label: 'label.dynamically.scalable',
                                                     isBoolean: true,
                                                     isEditable: true,
                                                     converter: cloudStack.converters.toBooleanText
@@ -1943,7 +1943,7 @@
                                         }
                                     },
                                     isextractable: {
-                                        label: 'label.extractable',
+                                        label: 'label.extractable.lower',
                                         isBoolean: true,
                                         isEditable: function() {
                                             if (isAdmin())
@@ -2208,7 +2208,7 @@
                                                 }
                                             }, {
                                                 id: {
-                                                    label: 'ID'
+                                                    label: 'label.id'
                                                 },
                                                 zonename: {
                                                     label: 'label.zone.name'
@@ -2241,7 +2241,7 @@
                                                     }
                                                 },
                                                 isextractable: {
-                                                    label: 'extractable',
+                                                    label: 'label.extractable.lower',
                                                     isBoolean: true,
                                                     isEditable: function() {
                                                         if (isAdmin())

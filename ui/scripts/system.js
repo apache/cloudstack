@@ -30,7 +30,7 @@
         var routerType = _l('label.menu.system');
         
         if (router.projectid) routerType = _l('label.project');
-        if (router.vpcid) routerType = 'VPC';
+        if (router.vpcid) routerType = _l('label.vpc');
         
         return $.extend(router, {
             routerType: routerType
@@ -1281,7 +1281,7 @@
                                         isEditable: true
                                     },
                                     tags: {
-                                        label: 'Tags',
+                                        label: 'label.tags',
                                         isEditable: true
                                     },
                                     broadcastdomainrange: {
@@ -7432,7 +7432,7 @@
                         isMaximized: true,
                         type: 'detailView',
                         id: 'globoDnsProvider',
-                        label: 'GloboDNS',
+                        label: 'label.globo.dns',
                         tabs: {
                             details: {
                                 title: 'label.details',
@@ -7463,26 +7463,26 @@
                         },
                         actions: {
                             add: {
-                                label: 'GloboDNS Configuration',
+                                label: 'label.globo.dns.configuration',
                                 createForm: {
-                                    title: 'GloboDNS Configuration',
+                                    title: 'label.globo.dns.configuration',
                                     preFilter: function(args) {},
                                     fields: {
                                         username: {
-                                            label: 'Username',
+                                            label: 'label.username',
                                             validation: {
                                                 required: true
                                             }
                                         },
                                         password: {
-                                            label: 'Password',
+                                            label: 'label.password',
                                             isPassword: true,
                                             validation: {
                                                 required: true
                                             }
                                         },
                                         url: {
-                                            label: 'URL',
+                                            label: 'label.url',
                                             validation: {
                                                 required: true
                                             }
@@ -7529,7 +7529,7 @@
                                 },
                                 messages: {
                                     notification: function(args) {
-                                        return 'Add GloboDNS';
+                                        return 'label.add.globo.dns';
                                     }
                                 },
                                 notification: {
@@ -12947,7 +12947,7 @@
 
                             messages: {
                                 notification: function(args) {
-                                    return 'Added new Nuage Vsp Controller';
+                                    return 'message.added.new.nuage.vsp.controller';
                                 }
                             },
                             notification: {
@@ -15483,8 +15483,8 @@
 
                                                     args.response.success({
                                                         data: tags,
-                                                        hintText: "Type in part of a host tag",
-                                                        noResultsText: "No host tags found"
+                                                        hintText: _l('hint.type.part.host.tag'),
+                                                        noResultsText: _l('hint.no.host.tags')
                                                     });
                                                 },
                                                 error: function(XMLHttpResponse) {
@@ -16078,8 +16078,8 @@
 
                                                     args.response.success({
                                                         data: tags,
-                                                        hintText: "Type in part of a host tag",
-                                                        noResultsText: "No host tags found"
+                                                        hintText: _l('hint.type.part.host.tag'),
+                                                        noResultsText: _l('hint.no.host.tags')
                                                     });
                                                 },
                                                 error: function(XMLHttpResponse) {
@@ -17115,7 +17115,7 @@
                                         }
                                     },
                                     url: {
-                                        label: 'URL',
+                                        label: 'label.url',
                                         docID: 'helpUrl',
                                         validation: {
                                             required: false
@@ -17259,8 +17259,8 @@
 
                                                     args.response.success({
                                                         data: tags,
-                                                        hintText: "Type in part of a storage tag",
-                                                        noResultsText: "No storage tags found"
+                                                        hintText: _l('hint.type.part.storage.tag'),
+                                                        noResultsText: _l('hint.no.storage.tags')
                                                     });
                                                 },
                                                 error: function(XMLHttpResponse) {
@@ -17624,8 +17624,8 @@
 
                                                     args.response.success({
                                                         data: tags,
-                                                        hintText: "Type in part of a storage tag",
-                                                        noResultsText: "No storage tags found"
+                                                        hintText: _l('hint.type.part.storage.tag'),
+                                                        noResultsText: _l('hint.no.storage.tags')
                                                     });
                                                 },
                                                 error: function(XMLHttpResponse) {

@@ -327,8 +327,8 @@
 
                                                     args.response.success({
                                                         data: tags,
-                                                        hintText: "Type in part of a storage tag",
-                                                        noResultsText: "No storage tags found"
+                                                        hintText: _l('hint.type.part.storage.tag'),
+                                                        noResultsText: _l('hint.no.storage.tags')
                                                     });
                                                 },
                                                 error: function(XMLHttpResponse) {
@@ -363,8 +363,8 @@
 
                                                     args.response.success({
                                                         data: tags,
-                                                        hintText: "Type in part of a host tag",
-                                                        noResultsText: "No host tags found"
+                                                        hintText: _l('hint.type.part.host.tag'),
+                                                        noResultsText: _l('hint.no.host.tags')
                                                     });
                                                 },
                                                 error: function(XMLHttpResponse) {
@@ -1852,8 +1852,8 @@
 
                                                     args.response.success({
                                                         data: tags,
-                                                        hintText: "Type in part of a storage tag",
-                                                        noResultsText: "No storage tags found"
+                                                        hintText: _l('hint.type.part.storage.tag'),
+                                                        noResultsText: _l('hint.no.storage.tags')
                                                     });
                                                 },
                                                 error: function(XMLHttpResponse) {
@@ -3792,7 +3792,7 @@
 
                             messages: {
                                 notification: function(args) {
-                                    return 'Added VPC offering';
+                                    return 'message.added.vpc.offering';
                                 }
                             }
                         }

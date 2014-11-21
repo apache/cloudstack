@@ -143,10 +143,10 @@
                         });
                     },
                     detailView: {
-                        name: 'Region details',
+                        name: 'label.region.details',
                         viewAll: [{
                             path: 'regions.GSLB',
-                            label: 'GSLB'
+                            label: 'label.gslb'
                         }, {
                             path: 'network.vpc',
                             label: 'label.regionlevelvpc'
