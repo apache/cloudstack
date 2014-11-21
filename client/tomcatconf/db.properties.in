@@ -65,13 +65,6 @@ db.usage.maxIdle=30
 db.usage.maxWait=10000
 db.usage.url.params=
 
-# awsapi database settings
-db.awsapi.username=@DBUSER@
-db.awsapi.password=@DBPW@
-db.awsapi.host=@DBHOST@
-db.awsapi.port=3306
-db.awsapi.name=cloudbridge
-
 # Simulator database settings
 db.simulator.username=@DBUSER@
 db.simulator.password=@DBPW@
