@@ -423,7 +423,7 @@ class CsForwardingRules(CsDataBag):
         if ports_parts[0] == ports_parts[1]:
             return str(ports_parts[0])
         else:
-            return "%s%s%s" % (port_parts, delimiter, port_parts[1])
+            return "%s%s%s" % (ports_parts[0], delimiter, ports_parts[1])
 
     def processForwardRule(self, rule):
         # FIXME this seems to be different for regular VRs?
