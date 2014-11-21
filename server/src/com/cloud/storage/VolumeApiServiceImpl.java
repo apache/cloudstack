@@ -298,6 +298,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         UriUtils.validateUrl(format, url);
 
+        // check URL existence
+        UriUtils.checkUrlExistence(url);
 
         // Check that the resource limit for secondary storage won't be exceeded
         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));

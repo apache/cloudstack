@@ -38,15 +38,18 @@ import javax.net.ssl.HttpsURLConnection;
 
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
+
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.log4j.Logger;
 
@@ -273,9 +276,25 @@ public class UriUtils {
                 checkFormat(format, uripath);
             }
             return new Pair<String, Integer>(host, port);
-
         } catch (URISyntaxException use) {
             throw new IllegalArgumentException("Invalid URL: " + url);
+        }
+    }
+
+    // use http HEAD method to validate url
+    public static void checkUrlExistence(String url) {
+        if (url.toLowerCase().startsWith("http") || url.toLowerCase().startsWith("https")) {
+            HttpClient httpClient = new HttpClient(new MultiThreadedHttpConnectionManager());
+            HeadMethod httphead = new HeadMethod(url);
+            try {
+                if (httpClient.executeMethod(httphead) != HttpStatus.SC_OK) {
+                    throw new IllegalArgumentException("Invalid URL: " + url);
+                }
+            } catch (HttpException hte) {
+                throw new IllegalArgumentException("Cannot reach URL: " + url);
+            } catch (IOException ioe) {
+                throw new IllegalArgumentException("Cannot reach URL: " + url);
+            }
         }
     }
 
