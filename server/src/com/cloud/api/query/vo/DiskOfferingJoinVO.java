@@ -27,7 +27,7 @@ import com.cloud.storage.Storage;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-import com.cloud.storage.DiskOfferingVO.Type;
+import com.cloud.offering.DiskOffering.Type;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
