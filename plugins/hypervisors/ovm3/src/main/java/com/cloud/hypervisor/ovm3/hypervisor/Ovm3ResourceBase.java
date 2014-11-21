@@ -1157,18 +1157,25 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         return true;
     }
 
+    /* start using deviceid perhaps... */
     protected Boolean createVif(Xen.Vm vm, NicTO nic) {
         try {
             if (getNetwork(nic) != null) {
+                LOGGER.debug("Adding vif " + nic.getDeviceId() + " "
+                        + getNetwork(nic) + " to " + vm.getVmName());
                 vm.addVif(nic.getDeviceId(), getNetwork(nic), nic.getMac());
+            } else {
+                LOGGER.debug("Unable to add vif " + nic.getDeviceId()
+                        + " no network for " + vm.getVmName());
+                return false;
             }
+            vm.setupVifs();
         } catch (Exception e) {
             String msg = "Unable to add vif " + nic.getType() + " for "
                     + vm.getVmName() + " " + e.getMessage();
             LOGGER.debug(msg);
             return false;
         }
-        vm.setupVifs();
         return true;
     }
 
@@ -2835,7 +2842,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             return new PlugNicAnswer(cmd, false,
                     "Unable to execute PlugNicCommand due to " + e.toString());
         }
-        return new PlugNicAnswer(cmd, true, "");
+        return new PlugNicAnswer(cmd, true, "success");
     }
 
     /* TODO: implement */
