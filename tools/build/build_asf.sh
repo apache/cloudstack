@@ -129,7 +129,7 @@ export commitsh=`git show HEAD | head -n 1 | cut -d ' ' -f 2`
 echo "committed as $commitsh"
 
 echo 'archiving'
-git archive --format=tar --prefix=apache-cloudstack-$version-src/ $branch > $outputdir/apache-cloudstack-$version-src.tar
+git archive --format=tar --prefix=apache-cloudstack-$version-src/ $branch-$RELEASE_BRANCH > $outputdir/apache-cloudstack-$version-src.tar
 bzip2 $outputdir/apache-cloudstack-$version-src.tar
 
 cd $outputdir
