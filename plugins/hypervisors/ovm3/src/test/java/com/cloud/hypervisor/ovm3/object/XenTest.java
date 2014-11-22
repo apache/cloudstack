@@ -1322,7 +1322,6 @@ public class XenTest {
         results.basicIntTest(domU.getVifIdByMac("02:00:50:9a:00:01"), 0);
         results.basicIntTest(domU.getVifIdByMac("02:00:50:9a:00:02"), 1);
         results.basicIntTest(domU.getVifIdByMac("02:00:50:9a:00:03"), -1);
-        System.out.println(domU.getVmVifs());
         con.setResult(results.getNil());
         xEn.getVmConfig(REPOID, VMID);
 
