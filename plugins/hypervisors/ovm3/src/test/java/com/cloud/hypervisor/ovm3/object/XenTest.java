@@ -1194,6 +1194,7 @@ public class XenTest {
                     + "<name>vif</name>"
                     + "<value><array><data>"
                     + "<value><string>mac=02:00:50:9a:00:01,bridge=xenbr0.160</string></value>"
+                    + "<value><string>mac=02:00:50:9a:00:02,bridge=xenbr0.240</string></value>"
                     + "</data></array></value>" + "</member>" + "<member>"
                     + "<name>extra</name>" + "<value><string></string></value>"
                     + "</member>" + "<member>" + "<name>OVM_simple_name</name>"
@@ -1317,7 +1318,11 @@ public class XenTest {
         Xen.Vm domU = xEn.getVmConfig(REPOID, VMID);
         /* getVncPort doesn't work with live config due to a bug in the agent */
         // results.basicIntTest(domU.getVncPort(), 5900);
-
+        results.basicStringTest(domU.getVmName(), VMNAME);
+        results.basicIntTest(domU.getVifIdByMac("02:00:50:9a:00:01"), 0);
+        results.basicIntTest(domU.getVifIdByMac("02:00:50:9a:00:02"), 1);
+        results.basicIntTest(domU.getVifIdByMac("02:00:50:9a:00:03"), -1);
+        System.out.println(domU.getVmVifs());
         con.setResult(results.getNil());
         xEn.getVmConfig(REPOID, VMID);
 
@@ -1377,21 +1382,25 @@ public class XenTest {
         domU2.addDataDisk(VMROOTDISK);
         domU2.getPrimaryPoolUuid();
     }
+
     @Test
     public void testRemoveMissingVif() throws Ovm3ResourceException {
         Xen.Vm domU = xEn.getVmConfig();
         domU.removeVif("xenbr0.240", "02:00:50:9a:00:02");
     }
+
     @Test
     public void testVmDomainType() throws Ovm3ResourceException {
         Xen.Vm domU = xEn.getVmConfig();
         domU.getVmDomainType();
     }
+
     @Test(expected = Ovm3ResourceException.class)
     public void testMissingVncPort() throws Ovm3ResourceException {
         Xen.Vm domU = xEn.getVmConfig();
         domU.getVncPort();
     }
+
     @Test
     public void testVmCpusExceedsMaxVCPUs() throws Ovm3ResourceException {
         Xen.Vm domU = xEn.getVmConfig();
