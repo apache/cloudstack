@@ -1629,12 +1629,7 @@ public class ApiDBUtils {
     }
 
     public static ResourceTagJoinVO findResourceTagViewById(Long tagId) {
-        List<ResourceTagJoinVO> tags = s_tagJoinDao.searchByIds(tagId);
-        if (tags != null && tags.size() > 0) {
-            return tags.get(0);
-        } else {
-            return null;
-        }
+        return s_tagJoinDao.searchById(tagId);
     }
 
     public static EventResponse newEventResponse(EventJoinVO ve) {
