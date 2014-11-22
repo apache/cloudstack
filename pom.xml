@@ -540,7 +540,7 @@
             <includeTestSourceDirectory>true</includeTestSourceDirectory>
             <sourceDirectory>${project.basedir}</sourceDirectory>
             <includes>**\/*.java</includes>
-            <excludes>**\/deps\/,**\/test\/,**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat,**\/awsapi\/,**\/apidoc\/</excludes>
+            <excludes>**\/deps\/,**\/test\/,**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat</excludes>
           </configuration>
         </plugin>
         <plugin>
@@ -728,7 +728,6 @@
               <exclude>**/*.zip</exclude>
               <exclude>**/target/**</exclude>
               <exclude>**/.vagrant</exclude>
-              <exclude>awsapi/overlays/**</exclude>
               <exclude>build/build.number</exclude>
               <exclude>services/console-proxy/server/js/jquery.js</exclude>
               <exclude>debian/compat</exclude>
@@ -981,12 +980,6 @@
     </plugins>
   </reporting>
   <profiles>
-    <profile>
-      <id>awsapi</id>
-      <modules>
-        <module>awsapi</module>
-      </modules>
-    </profile>
     <profile>
       <id>systemvm</id>
       <activation>

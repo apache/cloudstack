@@ -77,7 +77,6 @@ public class TransactionLegacy implements Closeable {
 
     public static final short CLOUD_DB = 0;
     public static final short USAGE_DB = 1;
-    public static final short AWSAPI_DB = 2;
     public static final short SIMULATOR_DB = 3;
 
     public static final short CONNECTED_DB = -1;
@@ -219,19 +218,6 @@ public class TransactionLegacy implements Closeable {
     public static Connection getStandaloneUsageConnection() {
         try {
             Connection conn = s_usageDS.getConnection();
-            if (s_connLogger.isTraceEnabled()) {
-                s_connLogger.trace("Retrieving a standalone connection for usage: dbconn" + System.identityHashCode(conn));
-            }
-            return conn;
-        } catch (SQLException e) {
-            s_logger.warn("Unexpected exception: ", e);
-            return null;
-        }
-    }
-
-    public static Connection getStandaloneAwsapiConnection() {
-        try {
-            Connection conn = s_awsapiDS.getConnection();
             if (s_connLogger.isTraceEnabled()) {
                 s_connLogger.trace("Retrieving a standalone connection for usage: dbconn" + System.identityHashCode(conn));
             }
@@ -571,15 +557,6 @@ public class TransactionLegacy implements Closeable {
                     throw new CloudRuntimeException("Database is not initialized, process is dying?");
                 }
                 break;
-            case AWSAPI_DB:
-                if (s_awsapiDS != null) {
-                    _conn = s_awsapiDS.getConnection();
-                } else {
-                    s_logger.warn("A static-initialized variable becomes null, process is dying?");
-                    throw new CloudRuntimeException("Database is not initialized, process is dying?");
-                }
-                break;
-
             case SIMULATOR_DB:
                 if (s_simulatorDS != null) {
                     _conn = s_simulatorDS.getConnection();
@@ -1014,7 +991,6 @@ public class TransactionLegacy implements Closeable {
 
     private static DataSource s_ds;
     private static DataSource s_usageDS;
-    private static DataSource s_awsapiDS;
     private static DataSource s_simulatorDS;
     private static boolean s_dbHAEnabled;
 
@@ -1135,20 +1111,6 @@ public class TransactionLegacy implements Closeable {
 
             // Data Source for usage server
             s_usageDS = new PoolingDataSource(usagePoolableConnectionFactory.getPool());
-
-            // Configure awsapi db
-            final String awsapiDbName = dbProps.getProperty("db.awsapi.name");
-            final GenericObjectPool awsapiConnectionPool =
-                    new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, usageMaxWait, usageMaxIdle);
-            final ConnectionFactory awsapiConnectionFactory =
-                    new DriverManagerConnectionFactory("jdbc:mysql://" + cloudHost + (s_dbHAEnabled ? "," + cloudSlaves : "") + ":" + cloudPort + "/" + awsapiDbName +
-                            "?autoReconnect=" + cloudAutoReconnect + (s_dbHAEnabled ? "&" + cloudDbHAParams : "") +
-                            (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : ""), cloudUsername, cloudPassword);
-            final PoolableConnectionFactory awsapiPoolableConnectionFactory =
-                    new PoolableConnectionFactory(awsapiConnectionFactory, awsapiConnectionPool, new StackKeyedObjectPoolFactory(), null, false, false);
-
-            // Data Source for awsapi
-            s_awsapiDS = new PoolingDataSource(awsapiPoolableConnectionFactory.getPool());
 
             try {
                 // Configure the simulator db

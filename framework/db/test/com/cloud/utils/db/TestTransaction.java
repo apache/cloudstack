@@ -131,14 +131,11 @@ public class TestTransaction {
     @Test
     public void testOtherdatabaseRollback() throws Exception {
         after();
-        setup(TransactionLegacy.AWSAPI_DB);
 
         try {
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
-                    assertEquals(TransactionLegacy.AWSAPI_DB, TransactionLegacy.currentTxn().getDatabaseId().shortValue());
-
                     throw new RuntimeException("Panic!");
                 }
             });
