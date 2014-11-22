@@ -240,6 +240,8 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @Param(description = "the list of resource tags associated with vm", responseObject = ResourceTagResponse.class)
     private Set<ResourceTagResponse> tags;
 
+    transient Set<Long> tagIds;
+
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "Vm details in key/value pairs.", since = "4.2.1")
     private Map details;
@@ -272,6 +274,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
         nics = new LinkedHashSet<NicResponse>();
         tags = new LinkedHashSet<ResourceTagResponse>();
+        tagIds = new LinkedHashSet<Long>();
         affinityGroupList = new LinkedHashSet<AffinityGroupResponse>();
     }
 
@@ -721,6 +724,10 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public void setInstanceName(String instanceName) {
         this.instanceName = instanceName;
+    }
+
+    public boolean containTag(Long tagId) {
+        return tagIds.contains(tagId);
     }
 
     public void setTags(Set<ResourceTagResponse> tags) {

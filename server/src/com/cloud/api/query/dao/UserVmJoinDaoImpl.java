@@ -262,7 +262,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
 
         // update tag information
         long tag_id = userVm.getTagId();
-        if (tag_id > 0) {
+        if (tag_id > 0 && !userVmResponse.containTag(tag_id)) {
             ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
             if (vtag != null) {
                 userVmResponse.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
@@ -350,7 +350,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         }
 
         long tag_id = uvo.getTagId();
-        if (tag_id > 0) {
+        if (tag_id > 0 && !userVmData.containTag(tag_id)) {
             ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
             if (vtag != null) {
                 userVmData.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
