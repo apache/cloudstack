@@ -19,10 +19,12 @@ package com.cloud.api;
 import org.apache.cloudstack.api.auth.APIAuthenticationManager;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
+
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.junit.After;
 import org.junit.Assert;
@@ -36,6 +38,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -81,6 +84,7 @@ public class ApiServletTest {
 
     ApiServlet servlet;
 
+    @SuppressWarnings("unchecked")
     @Before
     public void setup() throws SecurityException, NoSuchFieldException,
             IllegalArgumentException, IllegalAccessException, IOException {
@@ -192,6 +196,7 @@ public class ApiServletTest {
                 Mockito.any(StringBuilder.class));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void processRequestInContextLogout() {
         Mockito.when(request.getMethod()).thenReturn("GET");
@@ -234,4 +239,35 @@ public class ApiServletTest {
         Mockito.verify(authenticator).authenticate(Mockito.anyString(), Mockito.anyMap(), Mockito.isA(HttpSession.class),
                 Mockito.anyString(), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletResponse.class));
     }
+
+    @Test
+    public void getClientAddressWithXForwardedFor() {
+        Mockito.when(request.getHeader(Mockito.eq("X-Forwarded-For"))).thenReturn("192.168.1.1");
+        Assert.assertEquals("192.168.1.1", ApiServlet.getClientAddress(request));
+    }
+
+    @Test
+    public void getClientAddressWithHttpXForwardedFor() {
+        Mockito.when(request.getHeader(Mockito.eq("HTTP_X_FORWARDED_FOR"))).thenReturn("192.168.1.1");
+        Assert.assertEquals("192.168.1.1", ApiServlet.getClientAddress(request));
+    }
+
+    @Test
+    public void getClientAddressWithXRemoteAddr() {
+        Mockito.when(request.getHeader(Mockito.eq("Remote_Addr"))).thenReturn("192.168.1.1");
+        Assert.assertEquals("192.168.1.1", ApiServlet.getClientAddress(request));
+    }
+
+    @Test
+    public void getClientAddressWithHttpClientIp() {
+        Mockito.when(request.getHeader(Mockito.eq("HTTP_CLIENT_IP"))).thenReturn("192.168.1.1");
+        Assert.assertEquals("192.168.1.1", ApiServlet.getClientAddress(request));
+    }
+
+    @Test
+    public void getClientAddressDefault() {
+        Mockito.when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        Assert.assertEquals("127.0.0.1", ApiServlet.getClientAddress(request));
+    }
+
 }

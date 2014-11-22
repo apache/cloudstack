@@ -309,7 +309,7 @@ public class ApiServlet extends HttpServlet {
     }
 
     //This method will try to get login IP of user even if servlet is behind reverseProxy or loadBalancer
-    private String getClientAddress(HttpServletRequest request) {
+    static String getClientAddress(HttpServletRequest request) {
         String ip = null;
         ip = request.getHeader("X-Forwarded-For");
         ip = getCorrectIPAddress(ip);
@@ -339,7 +339,7 @@ public class ApiServlet extends HttpServlet {
         return ip;
     }
 
-    private String getCorrectIPAddress(String ip) {
+    private static String getCorrectIPAddress(String ip) {
         if(ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             return null;
         }
