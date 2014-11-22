@@ -18,7 +18,10 @@ package com.cloud.api;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -54,6 +57,9 @@ import com.cloud.utils.net.NetUtils;
 public class ApiServlet extends HttpServlet {
     public static final Logger s_logger = Logger.getLogger(ApiServlet.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
+    private final static List<String> s_clientAddressHeaders = Collections
+            .unmodifiableList(Arrays.asList("X-Forwarded-For",
+                    "HTTP_CLIENT_IP", "HTTP_X_FORWARDED_FOR", "Remote_Addr"));
 
     @Inject
     ApiServerService _apiServer;
@@ -309,34 +315,15 @@ public class ApiServlet extends HttpServlet {
     }
 
     //This method will try to get login IP of user even if servlet is behind reverseProxy or loadBalancer
-    static String getClientAddress(HttpServletRequest request) {
-        String ip = null;
-        ip = request.getHeader("X-Forwarded-For");
-        ip = getCorrectIPAddress(ip);
-        if (ip != null) {
-            return ip;
+    static String getClientAddress(final HttpServletRequest request) {
+        for(final String header : s_clientAddressHeaders) {
+            final String ip = getCorrectIPAddress(request.getHeader(header));
+            if (ip != null) {
+                return ip;
+            }
         }
 
-        ip = request.getHeader("HTTP_CLIENT_IP");
-        ip = getCorrectIPAddress(ip);
-        if (ip != null) {
-            return ip;
-        }
-
-        ip = request.getHeader("HTTP_X_FORWARDED_FOR");
-        ip = getCorrectIPAddress(ip);
-        if (ip != null) {
-            return ip;
-        }
-
-        ip = request.getHeader("Remote_Addr");
-        ip = getCorrectIPAddress(ip);
-        if (ip != null) {
-            return ip;
-        }
-
-        ip = request.getRemoteAddr();
-        return ip;
+        return request.getRemoteAddr();
     }
 
     private static String getCorrectIPAddress(String ip) {
