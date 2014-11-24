@@ -75,7 +75,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         accountResponse.setBytesReceived(account.getBytesReceived());
         accountResponse.setBytesSent(account.getBytesSent());
 
-        boolean fullView = (view == ResponseView.Full);
+        boolean fullView = (view == ResponseView.Full && _acctMgr.isRootAdmin(account.getId()));
         setResourceLimits(account, fullView, accountResponse);
 
         //get resource limits for projects
