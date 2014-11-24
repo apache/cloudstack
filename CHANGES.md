@@ -4,6 +4,47 @@ Apache CloudStack CHANGES
 Full release notes for each release are located in the project's documentation website:  
 http://docs.cloudstack.apache.org
 
+Version 4.3.2
+-------------
+
+This is a bug fix release. The following issues were fixed:
+
+    CLOUDSTACK-6738: Add configs in developer prefill to avoid restart mgmt server
+    CLOUDSTACK-7517: loading ftp modules in VR
+    CLOUDSTACK-7633: fix "Provides" in most LSB headers
+    CLOUDSTACK-7658: Upgrading debian packages as part of system vm template build
+    CLOUDSTACK-7674 throw an exception when encountered
+    CLOUDSTACK-7679: bump up the RabbitMQ AMQP java client version from 2.8.7 to 3.3.5
+    CLOUDSTACK-2625, CLOUDSTACK-3401: Usage records are ordered by start_date which is not unique. While listing large datasets or when page size is small this will result in duplicates
+    CLOUDSTACK-7855: NIC3 should set MTU and not NIC1 for storage network nic
+    CLOUDSTACK-7871: allow VM and template details update using update APIs
+    CLOUDSTACK-6438, CLOUDSTACK-6442: XAPI plugins must be copied to XS master first
+    CLOUDSTACK-6805: UI > create account > fix a bug that account creation failed when password contains # character.
+    CLOUDSTACK-6892: use lowercase noredist, as package.sh lowercases build type
+    CLOUDSTACK-6371: Set snapshot size in copycommand answer during snapshot backup
+    CLOUDSTACK-6432: Blocking DHCP server to service DNS outside network
+    CLOUDSTACK-6761: Fixed removing proxy arp rule on deleting static nat or PF rule on ip
+    CLOUDSTACK-7250: [vCenter 5.5] SourceNAT,StaticNAT and Portfowrding is not working with Vmware DVS in vCenter 5.5
+    CLOUDSTACK-6652: CLONE - [Automation] Vmware-  System's StartCommand failed with "NumberFormatException" while using VMware DVS
+    CLOUDSTACK-5785: VM display name cell not updated upon detaching volume from VM
+    CLOUDSTACK-6011: When detach is called on a deleted volume, avoid the NPE and throw an appropriate exception instead
+    CLOUDSTACK-7752: Fixed deployment planner stuck in infinite loop. If we create VM with shared service offering and attach disk with local disk offering, and one of storage pool is full
+    CLOUDSTACK-7937: CloudStack accepts unauthenticated LDAP binds
+    CLOUDSTACK-7822: Fixed SSL Cert Tests and relaxed chain validation
+    CLOUDSTACK-7952: Remove private key from SslCertResponse (listSslCerts)
+    CLOUDSTACK-3383: Fetch CPU utilization more reliable.
+    CLOUDSTACK-7415. Host remains in Alert after vCenter restart.
+    CLOUDSTACK-6261: remove the forceful timeout setting when login to NetScaler.
+    CLOUDSTACK-7954: ListTags API is ignoring the resourceID and displaying
+    CLOUDSTACK-6647: appending instance name with custom supplied info that contains - character can break vmsync.
+    CLOUDSTACK-6463: password is not set for VMs created from password enabled template
+    CLOUDSTACK-5992: default values of configuraiton parameters in configuration table are set NULL on fresh setup Some configuration parameters have Component names different from fresh
+    CLOUDSTACK-6859:Management Server PermGen run out of memory after some time due to class leak
+    CLOUDSTACK-6970: Protect event interpretion from causing NPE exception
+    CLOUDSTACK-6466: cpu and ram is not getting updated correctly in usage_vm_instance table for usage type 2
+    CLOUDSTACK-6669: Support volume resize in usage server
+    CLOUDSTACK-6669: Fix support resize in usage server
+
 Version 4.3.1
 -------------
 
