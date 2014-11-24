@@ -790,8 +790,6 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             SolidFireUtil.SolidFireVolume sfVolume = deleteSolidFireVolume(volumeInfo, sfConnection);
 
-            _volumeDao.deleteVolumesByInstance(volumeInfo.getId());
-
             //  if (!sfAccountHasVolume(sfAccountId, sfConnection)) {
             //      // delete the account from the SolidFire SAN
             //      deleteSolidFireAccount(sfAccountId, sfConnection);
