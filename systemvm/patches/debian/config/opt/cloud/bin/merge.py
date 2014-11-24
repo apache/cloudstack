@@ -25,6 +25,7 @@ import cs_guestnetwork
 import cs_cmdline
 import cs_vmp
 import cs_network_acl
+import cs_firewallrules
 import cs_vmdata
 import cs_dhcp
 import cs_forwardingrules
@@ -102,6 +103,8 @@ class updateDataBag:
             dbag = self.processVMpassword(self.db.getDataBag())
         elif self.qFile.type == 'networkacl':
             dbag = self.process_network_acl(self.db.getDataBag())
+        elif self.qFile.type == 'firewallrules':
+            dbag = self.process_firewallrules(self.db.getDataBag())
         elif self.qFile.type == 'vmdata':
             dbag = self.processVmData(self.db.getDataBag())
         elif self.qFile.type == 'dhcpentry':
@@ -140,6 +143,9 @@ class updateDataBag:
 
     def process_network_acl(self, dbag):
         return cs_network_acl.merge(dbag, self.qFile.data)
+
+    def process_firewallrules(self, dbag):
+        return cs_firewallrules.merge(dbag, self.qFile.data)
 
     def processVMpassword(self, dbag):
         return cs_vmp.merge(dbag, self.qFile.data)
