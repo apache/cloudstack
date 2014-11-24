@@ -65,6 +65,80 @@ class CsAcl(CsDataBag):
         Deal with Network acls
     """
 
+    class AclIP():
+        """ For type Virtual Router """
+
+        def __init__(self, obj, fw):
+            self.fw = fw
+            self.direction = 'egress'
+            if obj['traffic_type'] == 'Ingress':
+                self.direction = 'ingress'
+            self.device = ''
+            self.ip = obj['src_ip']
+            self.rule = obj
+            self.rule['type'] = obj['protocol']
+            # src_port_range
+            if 'src_port_range' in obj:
+                self.rule['first_port'] = obj['src_port_range'][0]
+                self.rule['last_port'] = obj['src_port_range'][1]
+            self.rule['allowed'] = True
+            self.rule['cidr'] = obj['source_cidr_list']
+            self.rule['action'] = "ACCEPT"
+
+        def create(self):
+            for cidr in self.rule['cidr']:
+                self.add_rule()
+            if self.ip != '':
+                # Always append default drop
+                self.fw.append(["mangle", "", "-A FIREWALL_%s -j DROP" % self.ip])
+
+        def add_rule(self, cidr):
+            icmp_type = ''
+            rule = self.rule
+            icmp_type = "any"
+            if "icmp_type" in self.rule.keys() and self.rule['icmp_type'] != -1:
+                icmp_type = self.rule['icmp_type']
+            if "icmp_code" in self.rule.keys() and rule['icmp_code'] != -1:
+                icmp_type = "%s/%s" % (self.rule['icmp_type'], self.rule['icmp_code'])
+            rnge = ''
+            if "first_port" in self.rule.keys() and \
+               self.rule['first_port'] == self.rule['last_port']:
+                   rnge = self.rule['first_port']
+            if "first_port" in self.rule.keys() and \
+               self.rule['first_port'] != self.rule['last_port']:
+                   rnge = "%s:%s" % (rule['first_port'], rule['last_port'])
+            if self.direction == 'ingress':
+                if rule['protocol'] == "icmp":
+                    self.fw.append(["mangle", "front",
+                                    " -A FIREWALL_%s" % self.ip +
+                                    " -s %s " % cidr +
+                                    " -p %s " % rule['protocol'] +
+                                    " -m %s " % rule['protocol'] +
+                                    " --icmp-type %s -j %s" % (icmp_type, self.rule['action'])])
+                else:
+                    self.fw.append(["mangle", "front",
+                                    " -A FIREWALL_%s" % self.ip +
+                                    " -s %s " % cidr +
+                                    " -p %s " % rule['protocol'] +
+                                    " -m %s " % rule['protocol'] +
+                                    " --dport %s -j RETURN" % rnge])
+            if self.direction == 'egress':
+                if rule['protocol'] == "icmp":
+                    self.fw.append(["filter", "front",
+                                    " -A FIREWALL_EGRESS_RULES" +
+                                    " -s %s " % cidr +
+                                    " -p %s " % rule['protocol'] +
+                                    " -m %s " % rule['protocol'] +
+                                    " --icmp-type %s -j %s" % (icmp_type, self.rule['action'])])
+                else:
+                    fwr = " -A FIREWALL_EGRESS_RULES" + \
+                          " -s %s " % cidr
+                    if rule['protocol'] != "all":
+                        fwr += "-p %s " % rule['protocol'] + \
+                               " -m %s " % rule['protocol'] + \
+                               " --dport %s" % rnge 
+                    self.fw.append(["filter", "front", "%s -j %s" % (fwr, rule['action'])])
+
     class AclDevice():
         """ A little class for each list of acls per device """
 
@@ -93,13 +167,20 @@ class CsAcl(CsDataBag):
         class AclRule():
 
             def __init__(self, direction, acl, rule, config):
+                if config_is_vpc():
+                    self.init_vpc(self, direction, acl, rule, config)
+                else:
+                    self.init_vr(self, direction, acl, rule, config)
+
+
+            def init_vpc(self, direction, acl, rule, config):
                 self.table = ""
                 self.device = acl.device
                 self.fw = acl.fw
                 self.chain = config.get_ingress_chain(self.device, acl.ip)
                 self.dest = "-s %s" % rule['cidr']
                 if direction == "egress":
-                    self.table = config.get_efress_table()
+                    self.table = config.get_egress_table()
                     self.chain = config.get_egress_chain(self.device, ip)
                     self.dest = "-d %s" % rule['cidr']
                 self.type = ""
@@ -137,7 +218,10 @@ class CsAcl(CsDataBag):
         for item in self.dbag:
             if item == "id":
                 continue
-            dev_obj = self.AclDevice(self.dbag[item], self.fw).create()
+            if self.config.is_vpc():
+                dev_obj = self.AclDevice(self.dbag[item], self.fw).create()
+            else:
+                self.AclIP(self.dbag[item], self.fw).create()
 
 
 class CsVmMetadata(CsDataBag):
@@ -467,6 +551,9 @@ def main(argv):
     metadata.process()
 
     acls = CsAcl('networkacl', config)
+    acls.process()
+
+    acls = CsAcl('firewallrules', config)
     acls.process()
 
     fwd = CsForwardingRules("forwardingrules", config)
