@@ -102,25 +102,9 @@ public class AsyncCallbackDispatcher<T, R> implements AsyncCompletionCallback {
         } catch (Throwable e) {
             s_logger.error("Unexpected exception", e);
         }
-	    });
-	    en.setCallbackFilter(new CallbackFilter() {
-	        @Override
-	        public int accept(Method method) {
-	            if (method.getParameterTypes().length == 0 && method.getName().equals("finalize")) {
-	                return 1;
-	            }
-	            return 0;
-	        }}
-	       );
 
-	    try {
-	        return (T)en.create();
-	    } catch(Throwable e) {
-	        s_logger.error("Unexpected exception", e);
-	    }
-
-	    return null;
-	}
+        return null;
+    }
 
 	public AsyncCallbackDispatcher<T, R> setCallback(Object useless) {
 		return this;

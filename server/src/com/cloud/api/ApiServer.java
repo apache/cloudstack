@@ -1065,7 +1065,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     conn.bind(socket, _params);
 
                     // Execute a new worker task to handle the request
-                    _executor.execute(new WorkerTask(_httpService, conn, _workerCount++));
+                    s_executor.execute(new WorkerTask(_httpService, conn, _workerCount++));
                 } catch (InterruptedIOException ex) {
                     break;
                 } catch (IOException e) {
