@@ -103,10 +103,10 @@ class CsAcl(CsDataBag):
             rnge = ''
             if "first_port" in self.rule.keys() and \
                self.rule['first_port'] == self.rule['last_port']:
-                   rnge = self.rule['first_port']
+                    rnge = self.rule['first_port']
             if "first_port" in self.rule.keys() and \
                self.rule['first_port'] != self.rule['last_port']:
-                   rnge = "%s:%s" % (rule['first_port'], rule['last_port'])
+                    rnge = "%s:%s" % (rule['first_port'], rule['last_port'])
             if self.direction == 'ingress':
                 if rule['protocol'] == "icmp":
                     self.fw.append(["mangle", "front",
@@ -136,7 +136,7 @@ class CsAcl(CsDataBag):
                     if rule['protocol'] != "all":
                         fwr += "-p %s " % rule['protocol'] + \
                                " -m %s " % rule['protocol'] + \
-                               " --dport %s" % rnge 
+                               " --dport %s" % rnge
                     self.fw.append(["filter", "front", "%s -j %s" % (fwr, rule['action'])])
 
     class AclDevice():
@@ -171,7 +171,6 @@ class CsAcl(CsDataBag):
                     self.init_vpc(self, direction, acl, rule, config)
                 else:
                     self.init_vr(self, direction, acl, rule, config)
-
 
             def init_vpc(self, direction, acl, rule, config):
                 self.table = ""
