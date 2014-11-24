@@ -18,14 +18,15 @@
 from pprint import pprint
 import copy
 
+
 def merge(dbag, data):
-        dbagc = copy.deepcopy(dbag)
+    dbagc = copy.deepcopy(dbag)
     if "rules" not in data:
                 return dbagc
     for rule in data['rules']:
-                id = str(rule['id'])
+        id = str(rule['id'])
         if rule['revoked']:
-                        del(dbagc[id])
+            del(dbagc[id])
         if id not in dbagc.keys():
-                        dbagc[id] = rule
+            dbagc[id] = rule
     return dbagc
