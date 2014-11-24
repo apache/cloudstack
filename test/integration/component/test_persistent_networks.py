@@ -2784,14 +2784,14 @@ class TestVPCNetworkOperations(cloudstackTestCase):
                 "vlan must not be null for persistent network: %s" %
                 persistent_network_2.id)
 
-            # Force delete domain
-            child_domain.delete(self.apiclient, cleanup=True)
-
         except Exception as e:
             self.cleanup.append(account_1)
             self.cleanup.append(account_2)
             self.cleanup.append(child_domain)
             self.fail(e)
+
+        # Force delete domain
+        child_domain.delete(self.apiclient, cleanup=True)
 
         self.debug("Waiting for account.cleanup.interval" +
                    " to cleanup any remaining resouces")
