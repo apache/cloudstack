@@ -1221,7 +1221,7 @@ class TestDeleteVlanRange(cloudstackTestCase):
                                    self.testdata["isolated_network"],
                                    self.account1.name,
                                    self.account1.domainid,
-                                   networkofferingid=self.isolated_network_offering.id)
+                                   networkofferingid=self.isolated_persistent_network_offering.id)
 
         networks = Network.list(self.apiclient, id=isolated_network.id)
         self.assertEqual(validateList(networks)[0], PASS, "networks list validation failed")
