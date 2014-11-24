@@ -183,8 +183,7 @@ public class ApiServlet extends HttpServlet {
                     }
 
                     try {
-                        InetAddress remoteAddr = InetAddress.getByName(remoteAddress);
-                        responseString = apiAuthenticator.authenticate(command, params, session, remoteAddr, responseType, auditTrailSb, resp);
+                        responseString = apiAuthenticator.authenticate(command, params, session, InetAddress.getByName(remoteAddress), responseType, auditTrailSb, resp);
                     } catch (ServerApiException e) {
                         httpResponseCode = e.getErrorCode().getHttpCode();
                         responseString = e.getMessage();
