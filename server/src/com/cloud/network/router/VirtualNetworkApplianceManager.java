@@ -62,7 +62,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     static final ConfigKey<String> RouterTemplateLxc = new ConfigKey<String>(String.class, RouterTemplateLxcCK, "Advanced", "SystemVM Template (LXC)",
         "Name of the default router template on LXC.", true, ConfigKey.Scope.Zone, null);
 
-    public static final int DEFAULT_ROUTER_VM_RAMSIZE = 128;            // 128M
+    public static final int DEFAULT_ROUTER_VM_RAMSIZE = 256;            // 256M
     public static final int DEFAULT_ROUTER_CPU_MHZ = 500;            	// 500 MHz
     public static final boolean USE_POD_VLAN = false;
     /**
