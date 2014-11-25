@@ -980,7 +980,7 @@ public class ApiDBUtils {
             // quite clear what to do if both storage types are used. If the image
             // format is RAW, it narrows the hypervisor choice down to OVM and KVM / RBD or KVM / CLVM
             // This would be better implemented at a cluster level.
-            List<StoragePoolVO> pools = s_storagePoolDao.listByDataCenterId(dcId);
+            List<StoragePoolVO> pools = _storagePoolDao.listByDataCenterId(dcId);
             ListIterator<StoragePoolVO> itr = pools.listIterator();
             while(itr.hasNext()) {
                 StoragePoolVO pool = itr.next();

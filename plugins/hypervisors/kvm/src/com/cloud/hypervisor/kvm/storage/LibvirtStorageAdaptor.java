@@ -545,8 +545,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 pool.setLocalPath("");
             }
 
-            if (pool.getType() == StoragePoolType.RBD
-             || pool.getType() == StoragePoolType.Gluster) {
+            if (pool.getType() == StoragePoolType.RBD) {
                 pool.setSourceHost(spd.getSourceHost());
                 pool.setSourcePort(spd.getSourcePort());
                 pool.setSourceDir(spd.getSourceDir());

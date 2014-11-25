@@ -66,8 +66,25 @@ This is a bug fix release. The following issues were fixed:
     CLOUDSTACK-7319: dd with direct io is less impacting on Dom0 kernel resources
     CLOUDSTACK-7302: UI: Remove Hover Interaction from breadcrumbs at top page
     CLOUDSTACK-7293: UI: Fixed localization issues on the login page
-    CLOUDSTACK-7191:On restartNetwork destroy the VR immediatley, instead of cleanup the rules then destroy
+    CLOUDSTACK-7191: On restartNetwork destroy the VR immediatley, instead of cleanup the rules then destroy
     CLOUDSTACK-7144: No GSLB provider is available during assigning load balancing rule
+    CLOUDSTACK-7129: Non-admin user can use deleteNetwork with shared networks
+    CLOUDSTACK-6996: Adding cluster to legacy zone failed
+    CLOUDSTACK-6989: Add 3 strikes rule for RvR freezing detection
+    CLOUDSTACK-6908: Enable IPv6 in sysctl when only necessary
+    CLOUDSTACK-6869: SSH Public key content is overridden by template's meta data when you create a instance
+    CLOUDSTACK-6783: Return a proper LibvirtStoragePool object after creating the pool
+    CLOUDSTACK-6714: monitor script echo service command is added with quotes
+    CLOUDSTACK-6578: Fixed issue in delete remote access vpn command
+    CLOUDSTACK-6577: Disable service monitoring in RVR
+    CLOUDSTACK-6516: In 4.3, SSL was turned off by default.
+    CLOUDSTACK-6467: Add pre/post-state transition status to messages published on
+    CLOUDSTACK-5907, CLOUDSTACK-6396: KVM/RBD & KVM/CLVM volumes mistakenly shown as OVM, disables snapshotting
+    CLOUDSTACK-6376: Return empty list when network tier has no ACL list associated.
+    CLOUDSTACK-6374: Remove entries from lb vm map when lb rule apply fails
+    CLOUDSTACK-6365: support virtual host and ssl in rabbitMQ event bus
+    CLOUDSTACK-6328: run.sh check if an existing java process is running, before spawining new ones
+    CLOUDSTACK-6322 - Don't allow service instance creation with empty or null service-instance "name".
 
 Version 4.3.1
 -------------
