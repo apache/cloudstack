@@ -55,7 +55,7 @@ public class Ntp extends OvmObject {
     }
 
     public Boolean getDetails() throws Ovm3ResourceException {
-        return this.getNtp();
+        return getNtp();
     }
 
     /*
@@ -68,28 +68,22 @@ public class Ntp extends OvmObject {
         for (Object o : v) {
             if (o instanceof java.lang.Boolean) {
                 if (c == 0) {
-                    this.isServer = (Boolean) o;
+                    isServer = (Boolean) o;
                 }
                 if (c == 1) {
-                    this.isRunning = (Boolean) o;
+                    isRunning = (Boolean) o;
                 }
                 c += 1;
             } else if (o instanceof java.lang.Object) {
                 Object[] s = (Object[]) o;
                 for (Object m : s) {
-                    this.addServer((String) m);
+                    addServer((String) m);
                 }
             }
         }
         return true;
     }
 
-    /*
-     * set_ntp, <class 'agent.api.host.linux.Linux'> argument: self - default:
-     * None argument: ntpHosts - default: None argument: local_time_source -
-     * default: None argument: allow_query - default: None // right, can't be
-     * set eh
-     */
     public Boolean setNtp(List<String> ntpHosts, Boolean running)
             throws Ovm3ResourceException {
         if (ntpHosts.isEmpty()) {
@@ -101,28 +95,20 @@ public class Ntp extends OvmObject {
     /* also cleans the vector */
     public Boolean setNtp(String server, Boolean running)
             throws Ovm3ResourceException {
-        this.ntpHosts = new ArrayList<String>();
-        this.ntpHosts.add(server);
-        return setNtp(this.ntpHosts, running);
+        ntpHosts = new ArrayList<String>();
+        ntpHosts.add(server);
+        return setNtp(ntpHosts, running);
     }
 
     public Boolean setNtp(Boolean running) throws Ovm3ResourceException {
-        return setNtp(this.ntpHosts, running);
+        return setNtp(ntpHosts, running);
     }
 
-    /*
-     * disable_ntp, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None
-     */
     public Boolean disableNtp() throws Ovm3ResourceException {
         return nullIsTrueCallWrapper("disable_ntp");
 
     }
 
-    /*
-     * enable_ntp, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None
-     */
     public Boolean enableNtp() throws Ovm3ResourceException {
         return nullIsTrueCallWrapper("enable_ntp");
     }

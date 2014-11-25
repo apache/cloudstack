@@ -94,109 +94,109 @@ public class Linux extends OvmObject {
     }
 
     public String getAgentVersion() throws Ovm3ResourceException {
-        return this.get("Agent_Version");
+        return get("Agent_Version");
     }
 
     public String getHostKernelRelease() throws Ovm3ResourceException {
-        return this.get("Host_Kernel_Release");
+        return get("Host_Kernel_Release");
     }
 
     public String getHostOs() throws Ovm3ResourceException {
-        return this.get("OS_Name");
+        return get("OS_Name");
     }
 
     public String getHostOsVersion() throws Ovm3ResourceException {
-        return this.get("OS_Major_Version") + "."
-                + this.get("OS_Minor_Version");
+        return get("OS_Major_Version") + "."
+                + get("OS_Minor_Version");
     }
 
     public String getHypervisorName() throws Ovm3ResourceException {
-        return this.get("Hypervisor_Name");
+        return get("Hypervisor_Name");
     }
 
     public String getHypervisorVersion() throws Ovm3ResourceException {
-        return this.getHypervisorMajor() + "."
-                + this.getHypervisorMinor() + "." + this.getHypervisorExtra();
+        return getHypervisorMajor() + "."
+                + getHypervisorMinor() + "." + getHypervisorExtra();
     }
 
     public String getCapabilities() throws Ovm3ResourceException {
-        return this.get("Capabilities");
+        return get("Capabilities");
     }
 
     public String getHypervisorMajor() throws Ovm3ResourceException {
-        return this.get("Major");
+        return get("Major");
     }
 
     public String getHypervisorMinor() throws Ovm3ResourceException{
-        return this.get("Minor");
+        return get("Minor");
     }
 
     public String getHypervisorExtra() throws Ovm3ResourceException {
-        return this.get("Extra").replace(".", "");
+        return get("Extra").replace(".", "");
     }
 
     public String getManagerUuid() throws Ovm3ResourceException {
-        return this.get("Manager_Unique_Id");
+        return get("Manager_Unique_Id");
     }
 
     public String getMembershipState() throws Ovm3ResourceException {
-        return this.get("Membership_State");
+        return get("Membership_State");
     }
 
     public String getServerRoles() throws Ovm3ResourceException{
-        return this.get("Server_Roles");
+        return get("Server_Roles");
     }
 
     public boolean getIsMaster() throws Ovm3ResourceException {
-        return Boolean.parseBoolean(this.get("Is_Current_Master"));
+        return Boolean.parseBoolean(get("Is_Current_Master"));
     }
 
     public String getOvmVersion() throws Ovm3ResourceException {
-        return this.get("OVM_Version");
+        return get("OVM_Version");
     }
 
     public String getHostName() throws Ovm3ResourceException {
-        return this.get("Hostname");
+        return get("Hostname");
     }
 
     public Integer getCpuKhz() throws Ovm3ResourceException {
-        return Integer.valueOf(this.get("CPUKHz"));
+        return Integer.valueOf(get("CPUKHz"));
     }
 
     public Integer getCpuSockets() throws Ovm3ResourceException {
-        return Integer.valueOf(this.get("SocketsPerNode"));
+        return Integer.valueOf(get("SocketsPerNode"));
     }
 
     public Integer getCpuThreads() throws Ovm3ResourceException {
-        return Integer.valueOf(this.get("ThreadsPerCore"));
+        return Integer.valueOf(get("ThreadsPerCore"));
     }
 
     public Integer getCpuCores() throws Ovm3ResourceException {
-        return Integer.valueOf(this.get("CoresPerSocket"));
+        return Integer.valueOf(get("CoresPerSocket"));
     }
 
     public Integer getTotalThreads() throws Ovm3ResourceException {
-        return this.getCpuSockets() * this.getCpuCores() * this.getCpuThreads();
+        return getCpuSockets() * getCpuCores() * getCpuThreads();
     }
 
     public Double getMemory() throws Ovm3ResourceException {
-        return Double.valueOf(this.get("TotalPages")) * 4096;
+        return Double.valueOf(get("TotalPages")) * 4096;
     }
 
     public Double getFreeMemory() throws Ovm3ResourceException {
-        return Double.valueOf(this.get("FreePages")) * 4096;
+        return Double.valueOf(get("FreePages")) * 4096;
     }
 
     public String getUuid() throws Ovm3ResourceException {
-        return this.get("Unique_Id");
+        return get("Unique_Id");
     }
 
     private void initMaps() throws Ovm3ResourceException {
-        if (this.initMaps == 1) {
-            this.discoverHardware();
-            this.discoverServer();
-            this.initMaps = 0;
-         }
+        if (initMaps == 1) {
+            discoverHardware();
+            discoverServer();
+            initMaps = 0;
+        }
     }
 
     public String get(String element) throws Ovm3ResourceException {
@@ -224,11 +224,6 @@ public class Linux extends OvmObject {
     }
 
     /*
-     * unexport_fs, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None argument: export_uuid - default: None
-     */
-
-    /*
      * get_last_boot_time, <class 'agent.api.host.linux.Linux'> argument: self -
      * default: None
      */
@@ -237,103 +232,19 @@ public class Linux extends OvmObject {
         if (result == null) {
             return null;
         }
-        this.lastBootTime = result.get("last_boot_time").intValue();
-        this.localTime = result.get("local_time").intValue();
+        lastBootTime = result.get("last_boot_time").intValue();
+        localTime = result.get("local_time").intValue();
         return lastBootTime;
     }
-
-    /*
-     * delete_yum_repo, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None argument: repo_id - default: None
-     */
-
-    /*
-     * notify_manager, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None argument: notification - default: None argument: data -
-     * default: None
-     */
-
-    /*
-     * update_core_api_bindings, <class 'agent.api.host.linux.Linux'> argument:
-     * self - default: None argument: url - default: None argument: option -
-     * default: None
-     */
-
-    /*
-     * set_datetime, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None argument: year - default: None argument: month - default:
-     * None argument: day - default: None argument: hour - default: None
-     * argument: min - default: None argument: sec - default: None
-     */
-    public Boolean setDateTime(int year, int month, int day, int hour, int min,
-            int sec) throws Ovm3ResourceException {
-        return nullIsTrueCallWrapper("set_datetime", year, month, day, hour, min, sec);
-    }
-
-    /*
-     * list_package, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None argument: name - default: None
-     */
-
-    /*
-     * discover_physical_luns, <class 'agent.api.host.linux.Linux'> argument:
-     * self - default: None argument: args - default: None
-     */
-    public String discoverPhysicalLuns() throws Ovm3ResourceException {
-        return (String) callWrapper("discover_physical_luns", "");
-    }
-
-    /*
-     * ovs_download_file, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None argument: url - default: None argument: filename - default:
-     * None argument: option - default: None argument: obj - default: None
-     * argument: obj_current - default: None argument: obj_total - default: None
-     * argument: update_period - default: None
-     */
-
-    /*
-     * install_package, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None argument: pkg_data - default: None argument: option -
-     * default: None
-     */
 
     /*
      * get_support_files, <class 'agent.api.host.linux.Linux'> argument: self -
      * default: None
      */
 
-    /*
-     * export_fs, <class 'agent.api.host.linux.Linux'> argument: self - default:
-     * None argument: export_uuid - default: None argument: export_type -
-     * default: None argument: client - default: None argument: path - default:
-     * None argument: options - default: None
-     */
-
-    /*
-     * ovs_async_proc_status, <class 'agent.api.host.linux.Linux'> argument:
-     * self - default: None argument: pid - default: None
-     */
-
-    /*
-     * set_timezone, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None argument: timezone - default: None argument: utc - default:
-     * None
-     */
-    public Boolean setTimeZone(String tz, Boolean utc) throws Ovm3ResourceException {
-        Object x = callWrapper("set_timezone", tz, utc);
-        if (x == null) {
-            return true;
-        }
-        return false;
-    }
-
-    /*
-     * copy_file, <class 'agent.api.host.linux.Linux'> argument: self - default:
-     * None argument: src - default: None argument: dst - default: None
-     * argument: sparse - default: None argument: update_period - default: None
-     */
     public Boolean copyFile(String src, String dst) throws Ovm3ResourceException {
-        Object x = callWrapper("copy_file", src, dst, false);
+        /* sparse is set to true by default ? */
+        Object x = callWrapper("copy_file", src, dst, true);
         if (x == null) {
             return true;
         }
@@ -350,19 +261,19 @@ public class Linux extends OvmObject {
 
     public Map<String, FileSystem> getFileSystemMap(String type) throws Ovm3ResourceException {
         if (fsMap == null) {
-            this.discoverMountedFs(type);
+            discoverMountedFs(type);
         }
         return fsMap;
     }
     public FileSystem getFileSystem(String mountpoint, String type) throws Ovm3ResourceException {
-        this.getFileSystemMap(type);
+        getFileSystemMap(type);
         if (getFileSystemMap(type).containsKey(mountpoint)) {
             return getFileSystemMap(type).get(mountpoint);
         }
         return null;
     }
     public FileSystem getFileSystemByUuid(String uuid, String type) throws Ovm3ResourceException {
-        this.getFileSystemMap(type);
+        getFileSystemMap(type);
         for (final Map.Entry<String, FileSystem> fs : fsMap.entrySet()) {
             if (fs.getValue().getUuid().matches(uuid)) {
                 return fs.getValue();
@@ -404,14 +315,6 @@ public class Linux extends OvmObject {
         public String setUuid(String uuid) {
             return (String) fileSys.put("Uuid", uuid);
         }
-
-        /* public String getName() {
-            return (String) fileSys.get("Name");
-        }
-
-        public String setName(String name) {
-            return (String) fileSys.put("Name", name);
-        } */
 
         public String getDevice() {
             return (String) fileSys.get("Device");
@@ -458,10 +361,10 @@ public class Linux extends OvmObject {
     /* should actually be called "getMountedsFsDevice" or something */
     /* takes nfs,ext3 etc as parameter it reads from /proc/mounts */
     public Map<String, FileSystem> discoverMountedFs(String type) throws Ovm3ResourceException {
-        this.fsMap = new HashMap<String, FileSystem>();
+        fsMap = new HashMap<String, FileSystem>();
         Object x = callWrapper("discover_mounted_file_systems", type);
         if (x == null) {
-            return this.fsMap;
+            return fsMap;
         }
         Document xmlDocument = prepParse((String) x);
         String bpath = "//Discover_Mounted_File_Systems_Result/Filesystem";
@@ -480,24 +383,9 @@ public class Linux extends OvmObject {
             fsMap.put(mnt, f);
         }
         setFileSystemMap(fsMap);
-        return this.fsMap;
+        return fsMap;
     }
 
-    /*
-     * ovs_async_proc, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None argument: func - default: None
-     */
-
-    /*
-     * get_log, <class 'agent.api.host.linux.Linux'> argument: self - default:
-     * None argument: loglist - default: None
-     */
-
-    /*
-     * update_agent_password, <class 'agent.api.host.linux.Linux'> argument:
-     * self - default: None argument: username - default: None argument:
-     * password - default: None
-     */
     /* TODO: in 3.3.x this changed to user, pass, oldpass */
     public Boolean updateAgentPassword(String user, String pass) throws Ovm3ResourceException {
         Object x = callWrapper("update_agent_password", user, pass);
@@ -507,15 +395,6 @@ public class Linux extends OvmObject {
         return false;
     }
 
-    /*
-     * yum_update, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None argument: option - default: None
-     */
-
-    /*
-     * discover_hardware, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None
-     */
     public Boolean discoverHardware() throws Ovm3ResourceException {
         Object result = callWrapper("discover_hardware");
         if (result == null) {
@@ -533,69 +412,21 @@ public class Linux extends OvmObject {
         return true;
     }
 
-    /*
-     * uninstall_package, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None argument: pkg_list - default: None argument: option -
-     * default: None
-     */
-
-    /*
-     * get_datetime, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None
-     */
     public Integer getDateTime() throws Ovm3ResourceException {
-        this.getLastBootTime();
-        return this.localTime;
+        getLastBootTime();
+        return localTime;
     }
 
-    /*
-     * configure_yum, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None argument: section - default: None argument: params -
-     * default: None
-     */
-
-    /*
-     * get_yum_config, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None
-     */
-    /* TODO: need to parse this */
-    public Boolean getYumConfig() throws Ovm3ResourceException {
-        Object x = callWrapper("get_yum_config");
-        if (x == null) {
-            return false;
-        }
-        return true;
-    }
-
-    /*
-     * ovs_async_proc_stop, <class 'agent.api.host.linux.Linux'> argument: self
-     * - default: None argument: pid - default: None
-     */
-
-    /*
-     * set_statistic_interval, <class 'agent.api.host.linux.Linux'> argument:
-     * interval - default: None
-     */
+    /* TODO: work out the statistics that is used here, returns a dict to a url */
     public Boolean setStatisticsInterval(int val) throws Ovm3ResourceException {
         return nullIsTrueCallWrapper("set_statistics_interval", val);
     }
 
-    /*
-     * yum_list_package, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None argument: pkgnarrow - default: None argument: patterns -
-     * default: None argument: showdups - default: None argument: ignore_case -
-     * default: None
-     */
-
-    /*
-     * get_timezone, <class 'agent.api.host.linux.Linux'> argument: self -
-     * default: None
-     */
     public Boolean getTimeZone() throws Ovm3ResourceException  {
         Object[] result = (Object[]) callWrapper("get_timezone");
         if (result != null) {
-            this.setTimeZ(result[0].toString());
-            this.setTimeUTC(result[1].toString());
+            setTimeZ(result[0].toString());
+            setTimeUTC(result[1].toString());
             return true;
         }
         return false;

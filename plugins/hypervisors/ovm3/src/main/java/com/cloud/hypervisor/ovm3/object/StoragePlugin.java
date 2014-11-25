@@ -26,14 +26,14 @@ import org.w3c.dom.Document;
  */
 public class StoragePlugin extends OvmObject {
     private static final String EMPTY_STRING = "";
-    private String pluginPath = "//Discover_Storage_Plugins_Result/storage_plugin_info_list/storage_plugin_info";
-    private String nfsPlugin = "oracle.generic.NFSPlugin.GenericNFSPlugin";
+    private final String pluginPath = "//Discover_Storage_Plugins_Result/storage_plugin_info_list/storage_plugin_info";
+    private final String nfsPlugin = "oracle.generic.NFSPlugin.GenericNFSPlugin";
     private String getPluginType = nfsPlugin;
     private List<String> supportedPlugins = new ArrayList<String>();
-    private Map<String, Object> supportedPluginsProperties = new HashMap<String, Object>();
-    private String unknown = EMPTY_STRING; /* empty */
-    private Boolean active = true;
-    private List<String> someList = new ArrayList<String>(); /* empty */
+    private final Map<String, Object> supportedPluginsProperties = new HashMap<String, Object>();
+    private final String unknown = EMPTY_STRING; /* empty */
+    private final Boolean active = true;
+    private final List<String> someList = new ArrayList<String>(); /* empty */
     FileProperties fileProperties = new FileProperties();
     StorageDetails storageDetails = new StorageDetails();
     StorageServer storageServer = new StorageServer();
@@ -41,7 +41,7 @@ public class StoragePlugin extends OvmObject {
     public StoragePlugin(Connection c) {
         setClient(c);
     }
-    /* TODO: subclass storagedetails? */
+
     /* uuid has dashes here!, and ss_uuid is the relation to the storage source uuid */
     public class StorageDetails {
         private Map<String, Object> storageDetails = new HashMap<String, Object>() {
@@ -65,74 +65,74 @@ public class StoragePlugin extends OvmObject {
             storageDetails = details;
         }
         public void setSize(String val) {
-            this.storageDetails.put("size", val);
+            storageDetails.put("size", val);
         }
         public String getSize() {
-            return (String) this.storageDetails.get("size");
+            return (String) storageDetails.get("size");
         }
         public void setFreeSize(String val) {
-            this.storageDetails.put("free_sz", val);
+            storageDetails.put("free_sz", val);
         }
         public String getFreeSize() {
-            return (String) this.storageDetails.get("free_sz");
+            return (String) storageDetails.get("free_sz");
         }
         public void setState(Integer val) {
-            this.storageDetails.put("state", val);
+            storageDetails.put("state", val);
         }
         public Integer getState() {
-            return (Integer) this.storageDetails.get("state");
+            return (Integer) storageDetails.get("state");
         }
         public void setStatus(String val) {
-            this.storageDetails.put("status", val);
+            storageDetails.put("status", val);
         }
         public String getStatus() {
-            return (String) this.storageDetails.get("status");
+            return (String) storageDetails.get("status");
         }
         /* format depends on storagesource type ? */
         public void setAccessPath(String val) {
-            this.storageDetails.put("access_path", val);
+            storageDetails.put("access_path", val);
         }
         public String getAccessPath() {
-            return (String) this.storageDetails.get("access_path");
+            return (String) storageDetails.get("access_path");
         }
         public void setName(String val) {
-            this.storageDetails.put("name", val);
+            storageDetails.put("name", val);
         }
         public String getName() {
-            return (String) this.storageDetails.get("name");
+            return (String) storageDetails.get("name");
         }
         public void setUuid(String val) throws Ovm3ResourceException {
             if (!val.contains("-")) {
                 throw new Ovm3ResourceException("Storage Details UUID should contain dashes: " + val);
             }
-            this.storageDetails.put("uuid", val);
+            storageDetails.put("uuid", val);
         }
         public String getUuid() {
-            return (String) this.storageDetails.get("uuid");
+            return (String) storageDetails.get("uuid");
         }
         public void setDetailsRelationalUuid(String val) throws Ovm3ResourceException {
             if (val.contains("-")) {
                 throw new Ovm3ResourceException("Storage Details UUID that relates to Storage Source should notcontain dashes: " + val);
             }
-            this.storageDetails.put("ss_uuid", val);
+            storageDetails.put("ss_uuid", val);
         }
         public String getDetailsRelationalUuid() {
-            return (String) this.storageDetails.get("ss_uuid");
+            return (String) storageDetails.get("ss_uuid");
         }
         public void setAccessGroupNames(List<String> l) {
-            this.storageDetails.put("access_grp_names", l);
+            storageDetails.put("access_grp_names", l);
         }
         public List<String> getAccessGroupNames() {
-            return (List<String>) this.storageDetails.get("access_grp_names");
+            return (List<String>) storageDetails.get("access_grp_names");
         }
         public void setMountOptions(List<String> l) {
-            this.storageDetails.put("mount_options", l);
+            storageDetails.put("mount_options", l);
         }
         public List<String> getMountOptions() {
-            return (List<String>) this.storageDetails.get("mount_options");
+            return (List<String>) storageDetails.get("mount_options");
         }
     }
-    /* TODO: subclass Storage Source */
+
     /* mind you uuid has NO dashes here */
     public class StorageServer {
         private Map<String, Object> storageSource = new HashMap<String, Object>() {
@@ -160,95 +160,94 @@ public class StoragePlugin extends OvmObject {
             storageSource = details;
         }
         public void setAccessGroups(List<String> l) {
-            this.storageSource.put("access_grps", l);
+            storageSource.put("access_grps", l);
         }
         public List<String> getAccessGroups() {
-            return (List<String>) this.storageSource.get("access_grps");
+            return (List<String>) storageSource.get("access_grps");
         }
         public void setStatus(String val) {
-            this.storageSource.put("status", val);
+            storageSource.put("status", val);
         }
         public String getStatus() {
-            return (String) this.storageSource.get("status");
+            return (String) storageSource.get("status");
         }
         public void setAdminUser(String val) {
-            this.storageSource.put("admin_user", val);
+            storageSource.put("admin_user", val);
         }
         public String getAdminUser() {
-            return (String) this.storageSource.get("admin_user");
+            return (String) storageSource.get("admin_user");
         }
         public void setAdminHost(String val) {
-            this.storageSource.put("admin_host", val);
+            storageSource.put("admin_host", val);
         }
         public String getAdminHost() {
-            return (String) this.storageSource.get("admin_host");
+            return (String) storageSource.get("admin_host");
         }
         public void setUuid(String val) throws Ovm3ResourceException {
             if (val.contains("-")) {
                 throw new Ovm3ResourceException("Storage Source UUID should not contain dashes: " + val);
             }
-            this.storageSource.put("uuid", val);
+            storageSource.put("uuid", val);
         }
         public String getUuid() {
-            return (String) this.storageSource.get("uuid");
+            return (String) storageSource.get("uuid");
         }
         public String getTotalSize() {
-            return (String) this.storageSource.get("total_sz");
+            return (String) storageSource.get("total_sz");
         }
         public void setTotalSize(Integer val) {
-            this.storageSource.put("total_sz", val);
+            storageSource.put("total_sz", val);
         }
         public void setAdminPassword(String val) {
-            this.storageSource.put("admin_password", val);
+            storageSource.put("admin_password", val);
         }
         public String getAdminPassword() {
-            return (String) this.storageSource.get("admin_password");
+            return (String) storageSource.get("admin_password");
         }
         public void setDescription(String val) {
-            this.storageSource.put("storage_desc", val);
+            storageSource.put("storage_desc", val);
         }
         public String getDescription() {
-            return (String) this.storageSource.get("storage_desc");
+            return (String) storageSource.get("storage_desc");
         }
         public String getFreeSize() {
-            return (String) this.storageSource.get("free_sz");
+            return (String) storageSource.get("free_sz");
         }
         public void setFreeSize(Integer val) {
-            this.storageSource.put("free_sz", val);
+            storageSource.put("free_sz", val);
         }
         public void setAccessHost(String val) {
-            this.storageSource.put("access_host", val);
+            storageSource.put("access_host", val);
         }
         public String getAccessHost() {
-            return (String) this.storageSource.get("access_host");
+            return (String) storageSource.get("access_host");
         }
         public void setStorageType(String val) {
-            this.storageSource.put("storage_type", val);
+            storageSource.put("storage_type", val);
         }
         public String getStorageType() {
-            return (String) this.storageSource.get("storage_type");
+            return (String) storageSource.get("storage_type");
         }
         public void setAllocationSize(Integer val) {
-            this.storageSource.put("alloc_sz", val);
+            storageSource.put("alloc_sz", val);
         }
         public Integer getAllocationSize() {
-            return (Integer) this.storageSource.get("alloc_sz");
+            return (Integer) storageSource.get("alloc_sz");
         }
         public void setUsedSize(Integer val) {
-            this.storageSource.put("used_sz", val);
+            storageSource.put("used_sz", val);
         }
         public Integer getUsedSize() {
-            return (Integer) this.storageSource.get("used_sz");
+            return (Integer) storageSource.get("used_sz");
         }
         public void setName(String val) {
-            this.storageSource.put("name", val);
+            storageSource.put("name", val);
         }
         public String getName() {
-            return (String) this.storageSource.get("name");
+            return (String) storageSource.get("name");
         }
     }
 
-    /* TODO: subclass FileProperties */
     public class FileProperties {
         private Map<String, Object> fileProperties = new HashMap<String, Object>() {
             {
@@ -266,44 +265,44 @@ public class StoragePlugin extends OvmObject {
             fileProperties = props;
         }
         public String getName() {
-            return (String) this.fileProperties.get("file_path");
+            return (String) fileProperties.get("file_path");
         }
         public String setName(String f) {
-            return (String) this.fileProperties.put("file_path", f);
+            return (String) fileProperties.put("file_path", f);
         }
         public String setType(String t) {
-            return (String) this.fileProperties.put("fr_type", t);
+            return (String) fileProperties.put("fr_type", t);
         }
         public String getType() {
-            return (String) this.fileProperties.get("fr_type");
+            return (String) fileProperties.get("fr_type");
         }
         public void setSize(Long t) {
-            this.fileProperties.put("file_sz", t);
+            fileProperties.put("file_sz", t);
         }
         public Long getSize() {
-            return (Long) Long.getLong((String) this.fileProperties.get("file_sz"));
+            return Long.getLong((String) fileProperties.get("file_sz"));
         }
         public String setOnDiskSize(String t) {
-            return (String) this.fileProperties.put("ondisk_sz", t);
+            return (String) fileProperties.put("ondisk_sz", t);
         }
         public String getOnDiskSize() {
-            return (String) this.fileProperties.get("ondisk_sz");
+            return (String) fileProperties.get("ondisk_sz");
         }
         public String setUuid(String t) {
-            return (String) this.fileProperties.put("fs_uuid", t);
+            return (String) fileProperties.put("fs_uuid", t);
         }
         public String getUuid() {
-            return (String) this.fileProperties.get("fs_uuid");
+            return (String) fileProperties.get("fs_uuid");
         }
     }
 
     public String getPluginType() {
-        return this.getPluginType;
+        return getPluginType;
     }
     private Boolean setPluginType(String val) throws Ovm3ResourceException {
         for(String plugin : discoverStoragePlugins()) {
             if (plugin.matches("(?i:.*"+val+".*)")) {
-                this.getPluginType = plugin;
+                getPluginType = plugin;
                 return true;
             }
         }
@@ -350,7 +349,7 @@ public class StoragePlugin extends OvmObject {
     public FileProperties storagePluginCreate(String poolUuid, String host,
             String file, Long size) throws Ovm3ResourceException{
         /* this is correct ordering stuff and correct naming!!! */
-        String uuid = this.deDash(poolUuid);
+        String uuid = deDash(poolUuid);
         StorageServer ss = new StorageServer();
         StorageDetails sd = new StorageDetails();
         FileProperties fp = new FileProperties();
@@ -361,7 +360,7 @@ public class StoragePlugin extends OvmObject {
         sd.setDetailsRelationalUuid(uuid);
         sd.setState(2);
         fp.setProperties((HashMap<String, Object>) callWrapper("storage_plugin_create",
-                this.getPluginType, ss.getDetails(),
+                getPluginType, ss.getDetails(),
                 sd.getDetails(), file, "File", size));
         return fp;
     }
@@ -394,7 +393,7 @@ public class StoragePlugin extends OvmObject {
         ss.setAccessHost(host);
         ss.setStorageType("FileSys");
         ss.setDetails((Map<String, Object>) callWrapper("storage_plugin_listFileSystems",
-                this.getPluginType, ss.getDetails()));
+                getPluginType, ss.getDetails()));
         return true;
     }
 
@@ -428,7 +427,7 @@ public class StoragePlugin extends OvmObject {
      */
     public final StorageDetails storagePluginMountNFS(String nfsHost, String nfsRemotePath,
             String mntUuid, String mountPoint) throws Ovm3ResourceException {
-        String propUuid = this.deDash(mntUuid);
+        String propUuid = deDash(mntUuid);
         StorageServer ss = new StorageServer();
         StorageDetails sd = new StorageDetails();
         ss.setUuid(propUuid);
@@ -441,9 +440,9 @@ public class StoragePlugin extends OvmObject {
             mountPoint += File.separator + mntUuid;
         }
         sd.setDetails((HashMap<String, Object>) callWrapper(
-                "storage_plugin_mount", this.getPluginType, ss.getDetails(),
-                sd.getDetails(), mountPoint, this.unknown, this.active,
-                this.someList));
+                "storage_plugin_mount", getPluginType, ss.getDetails(),
+                sd.getDetails(), mountPoint, unknown, active,
+                someList));
         /* this magically means it's already mounted....
          * double check */
         if (sd.getDetails() == null) {
@@ -467,16 +466,16 @@ public class StoragePlugin extends OvmObject {
         StorageServer ss = new StorageServer();
         StorageDetails sd = new StorageDetails();
         sd.setUuid(mntUuid);
-        sd.setDetailsRelationalUuid(this.deDash(mntUuid));
-        ss.setUuid(this.deDash(mntUuid));
+        sd.setDetailsRelationalUuid(deDash(mntUuid));
+        ss.setUuid(deDash(mntUuid));
         ss.setAccessHost(nfsHost);
         sd.setAccessPath(nfsHost + ":" + remotePath);
         sd.setState(1);
         ss.setStorageType("FileSys");
         String mountPoint = localPath + File.separator + mntUuid;
         /* */
-        callWrapper("storage_plugin_unmount", this.getPluginType,
-            ss.getDetails(), sd.getDetails(), mountPoint, this.active);
+        callWrapper("storage_plugin_unmount", getPluginType,
+                ss.getDetails(), sd.getDetails(), mountPoint, active);
         return true;
     }
 
@@ -588,7 +587,7 @@ public class StoragePlugin extends OvmObject {
      * argument: impl_name - default: None
      */
     public Boolean storagePluginDestroy(String poolUuid, String file) throws Ovm3ResourceException {
-        String uuid = this.deDash(poolUuid);
+        String uuid = deDash(poolUuid);
         StorageServer ss = new StorageServer();
         StorageDetails sd = new StorageDetails();
         FileProperties fp = new FileProperties();
@@ -600,7 +599,7 @@ public class StoragePlugin extends OvmObject {
         fp.setUuid(poolUuid);
         fp.setName(file);
         return nullIsTrueCallWrapper(
-                "storage_plugin_destroy", this.getPluginType, ss.getDetails(),
+                "storage_plugin_destroy", getPluginType, ss.getDetails(),
                 sd.getDetails(), fp.getProperties());
     }
 
@@ -653,7 +652,7 @@ public class StoragePlugin extends OvmObject {
     public FileProperties storagePluginGetFileInfo(String poolUuid, String host,
             String file) throws Ovm3ResourceException {
         /* file path is the full path */
-        String uuid = this.deDash(poolUuid);
+        String uuid = deDash(poolUuid);
         StorageServer ss = new StorageServer();
         StorageDetails sd = new StorageDetails();
         FileProperties fp = new FileProperties();
@@ -665,7 +664,7 @@ public class StoragePlugin extends OvmObject {
         fp.setName(file);
         fp.setProperties((HashMap<String, Object>) callWrapper(
                 "storage_plugin_getFileInfo",
-                this.getPluginType,
+                getPluginType,
                 ss.getDetails(),
                 sd.getDetails(),
                 fp.getProperties()));
@@ -687,7 +686,7 @@ public class StoragePlugin extends OvmObject {
         /* clean the props */
         StorageServer ss = new StorageServer();
         StorageDetails sd = new StorageDetails();
-        FileProperties fp = new FileProperties();
+        new FileProperties();
         ss.setUuid(propUuid);
         sd.setDetailsRelationalUuid(propUuid);
         sd.setUuid(mntUuid);
@@ -699,7 +698,7 @@ public class StoragePlugin extends OvmObject {
         }
         ss.setStorageType("FileSys");
         sd.setDetails((HashMap<String, Object>) callWrapper(
-                "storage_plugin_getFileSystemInfo", this.getPluginType,
+                "storage_plugin_getFileSystemInfo", getPluginType,
                 ss.getDetails(), sd.getDetails()));
         // System.out.println(sd.getDetails());
         return sd;

@@ -47,12 +47,11 @@ public class OvmObject {
     public OvmObject() {
     }
 
-    public OvmObject(Connection c) {
-        setClient(c);
-    }
-
+    /*
+     * public OvmObject(Connection c) { setClient(c); }
+     */
     public Connection getClient() {
-      return client;
+        return client;
     }
 
     public synchronized void setClient(Connection c) {
@@ -222,7 +221,7 @@ public class OvmObject {
     }
 
     public Document prepParse(String input)
-             throws Ovm3ResourceException {
+            throws Ovm3ResourceException {
         DocumentBuilderFactory builderfactory = DocumentBuilderFactory
                 .newInstance();
         builderfactory.setNamespaceAware(true);
@@ -236,7 +235,7 @@ public class OvmObject {
         Document xmlDocument;
         try {
             xmlDocument = builder.parse(new InputSource(new StringReader(
-                    (String) input)));
+                    input)));
         } catch (SAXException | IOException e) {
             LOGGER.info(e.getClass() + ": ", e);
             throw new Ovm3ResourceException("Unable to parse XML: ", e);

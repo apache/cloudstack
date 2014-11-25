@@ -23,8 +23,7 @@ import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 
 public class Network extends OvmObject {
-    private static final Logger LOGGER = Logger
-            .getLogger(Network.class);
+    private static final Logger LOGGER = Logger.getLogger(Network.class);
     private Map<String, Interface> interfaceList = null;
     private Object postDiscovery = null;
     private List<String> netInterfaces = new ArrayList<String>();
@@ -33,14 +32,16 @@ public class Network extends OvmObject {
         setClient(c);
     }
 
-    public Map<String, Interface> getInterfaceList() throws Ovm3ResourceException {
+    public Map<String, Interface> getInterfaceList()
+            throws Ovm3ResourceException {
         discoverNetwork();
         return interfaceList;
     }
 
-    /* public void setBridgeList(Map<String, Interface> list) {
-        interfaceList = list;
-    } */
+    /*
+     * public void setBridgeList(Map<String, Interface> list) { interfaceList =
+     * list; }
+     */
 
     public static class Interface {
         private final Map<String, String> iFace = new HashMap<String, String>() {
@@ -54,6 +55,7 @@ public class Network extends OvmObject {
                 put("Vlan", null);
             }
         };
+
         public Interface() {
         }
 
@@ -97,21 +99,14 @@ public class Network extends OvmObject {
             return iFace.put("Physical", ph);
         }
 
-        /* public String setAddress(String addr) {
-            return iFace.put("Address", addr);
-        }
-
-        public String setBroadcast(String bcast) {
-            return iFace.put("Broadcast", bcast);
-        }
-        */
         public String setMac(String mac) {
             return iFace.put("MAC", mac);
         }
     }
 
-    private Network.Interface getNetIface(String key, String val) throws Ovm3ResourceException {
-        Map<String, Network.Interface> ifaces = (HashMap<String, Interface>) this.getInterfaceList();
+    private Network.Interface getNetIface(String key, String val)
+            throws Ovm3ResourceException {
+        Map<String, Network.Interface> ifaces = getInterfaceList();
         for (final Entry<String, Interface> iface : ifaces.entrySet()) {
             String match = "default";
             if ("Address".equals(key)) {
@@ -125,25 +120,31 @@ public class Network extends OvmObject {
             }
         }
         LOGGER.debug("Unable to find " + key + " Interface by value: " + val);
-        this.setSuccess(false);
+        setSuccess(false);
         return null;
     }
 
-    public Network.Interface getInterfaceByIp(String ip) throws Ovm3ResourceException {
+    public Network.Interface getInterfaceByIp(String ip)
+            throws Ovm3ResourceException {
         return getNetIface("Address", ip);
     }
 
-    public Network.Interface getInterfaceByName(String name) throws Ovm3ResourceException {
+    public Network.Interface getInterfaceByName(String name)
+            throws Ovm3ResourceException {
         return getNetIface("Name", name);
     }
 
     /* check if it is a BRIDGE */
-    public String getPhysicalByBridgeName(String name) throws Ovm3ResourceException {
+    public String getPhysicalByBridgeName(String name)
+            throws Ovm3ResourceException {
         return getInterfaceByName(name).getPhysical();
     }
 
-    public Network.Interface getBridgeByName(String name) throws Ovm3ResourceException  {
-        if (getNetIface("Name", name) != null && getNetIface("Name", name).getIfType().contentEquals("Bridge")) {
+    public Network.Interface getBridgeByName(String name)
+            throws Ovm3ResourceException {
+        if (getNetIface("Name", name) != null
+                && getNetIface("Name", name).getIfType()
+                .contentEquals("Bridge")) {
             return getNetIface("Name", name);
         }
         LOGGER.debug("Unable to find bridge by name: " + name);
@@ -151,8 +152,11 @@ public class Network extends OvmObject {
         return null;
     }
 
-    public Network.Interface getBridgeByIp(String ip) throws Ovm3ResourceException {
-        if (getNetIface("Address", ip) != null && getNetIface("Address", ip).getIfType().contentEquals("Bridge")) {
+    public Network.Interface getBridgeByIp(String ip)
+            throws Ovm3ResourceException {
+        if (getNetIface("Address", ip) != null
+                && getNetIface("Address", ip).getIfType().contentEquals(
+                        "Bridge")) {
             return getNetIface("Address", ip);
         }
         LOGGER.debug("Unable to find bridge by ip: " + ip);
@@ -161,167 +165,34 @@ public class Network extends OvmObject {
     }
 
     /*
-     * ovs_bond_mode, <class 'agent.api.network.linux_network.LinuxNetwork'>
-     * Change Bond mode.
-     *
-     * @param bond One of the logical channel bonds (bond0, bond1 ...etc)
-     *
-     * @mode Current supported bonding modes (1 = active-backup, 4 = 802.3ad 6 =
-     * balance-alb).
-     *
-     * @return If successful, returns bond's names and its new mode Raises an
-     * exception on failure Restriction: -bond must be one of the logical
-     * channel bonds (bond0, bond1 ...etc)
-     */
-    public Boolean ovsBondMode(String bond, String mode) throws Ovm3ResourceException {
-        return nullIsTrueCallWrapper("ovs_bond_mode", bond, mode);
-    }
-
-    /*
-     * ovs_change_mtu, <class 'agent.api.network.linux_network.LinuxNetwork'>
-     * Changes MTU on a physical,vlan,bond,and bridge interface. Changing a bond
-     * MTU will also change the MTU of its slaves. Changing the MTU of an
-     * interface that is part of a bridge, will cause the bridge MTU and all of
-     * the interfaces change. When a Guest VIF attach to a bridge,the VIF MTU
-     * will be set to the bridge MTU
-     *
-     * @param interface Physical,bond,vlan, and a bridge
-     *
-     * @param MTU Values are 1500 to 64000
-     *
-     * @return If successful, returns the interface, and the new MTU Raises an
-     * exception on failure
-     *
-     * Restriction: -Can not change the MTU of a bridge without interfaces.
-     * -VLAN MTU must less or equal to the MTU of the underlying physical
-     * interface.
-     */
-    /*
-    public Boolean ovsChangeMtu(String net, int mtu) throws Ovm3ResourceException {
-        Object x = callWrapper("ovs_change_mtu", net, mtu);
-        if (x == null) {
-            return true;
-        }
-        return false;
-    }
-    */
-    /*
-     * ovs_async_bridge, <class 'agent.api.network.linux_network.LinuxNetwork'>
-     * argument: self - default: None argument: action - default: None argument:
-     * br_name - default: None argument: net_dev - default: None
-     */
-    /*
-    public Boolean ovsAsyncBridge(String action, String bridge, String netdev) throws Ovm3ResourceException {
-        return nullIsTrueCallWrapper("ovs_async_bridge", action, bridge, netdev);
-    }
-    */
-    /*
-     * ovs_bond_op, <class 'agent.api.network.linux_network.LinuxNetwork'>
-     * argument: self - default: None argument: action - default: None argument:
-     * bond - default: None argument: backup - default: None
-     */
-    public Boolean ovsBondOp(String action, String bond, String backup) throws Ovm3ResourceException {
-        return nullIsTrueCallWrapper("ovs_bond_op", action, bond, backup);
-    }
-
-    /*
      * configure_virtual_ip, <class
      * 'agent.api.network.linux_network.LinuxNetwork'> argument: self - default:
      * None argument: virtual_ip - default: None argument: base_ip - default:
      * None
      */
-    public Boolean configureVip(String vip, String baseip) throws Ovm3ResourceException {
+    public Boolean configureVip(String vip, String baseip)
+            throws Ovm3ResourceException {
         return nullIsTrueCallWrapper("configure_virtual_ip", vip, baseip);
     }
 
-    /*
-     * ovs_ip_config, <class 'agent.api.network.linux_network.LinuxNetwork'>
-     * Assigns/flushes IP, netmask address to a physical,VLAN, and bond
-     * interfaces.
-     *
-     * @param interface The interface on which to assign
-     *
-     * @param optype (static|dynamic|flush) static: Assigns the given IP, and
-     * netmask to the interface, and saves the config file to
-     * /etc/sysconfig/network-scripts. dynamic: Flushes current address, and
-     * creats and save the config file to /etc/sysconfig/network-scripts,
-     * (BOOTPROTO=dhcp) flush: flushes the interface address,routes, removes the
-     * current config file from /etc/sysconfig/network-scripts. Creats a new one
-     * with BOOTPROTO=static
-     *
-     * @args Required for the static option, otherwise it is ignored IP address:
-     * IPv4 address in decimal notation (101.230.112) netmask: Standard netmask
-     * in a decimal notation,NOT CIDR. example(255.255.255.0)
-     *
-     * @return If successful, returns the interface, and addresses added/flushed
-     * Raises an exception on failure
-     *
-     * Restriction: -Interface must be physical, VLAN, or a Bond -Interface must
-     * not be a bridge port, or slave to a bond -Addresses must be valid in a
-     * decimal notation
-     */
-    public Boolean ovsIpConfig(String net, String optype, String ip, String netmask) throws Ovm3ResourceException {
+
+    public Boolean ovsIpConfig(String net, String optype, String ip,
+            String netmask) throws Ovm3ResourceException {
         return nullIsTrueCallWrapper("ovs_ip_config", net, optype, ip, netmask);
     }
 
     /*
-     * ovs_if_meta, <class 'agent.api.network.linux_network.LinuxNetwork'> This
-     * function creates meta data file meta-interface, and write the string
-     * (METADATA=data) to it. This string is used by the manager to identify
-     * networks that interfaces belong to. Dom0 does not make used of this
-     * string, it just saves it and returns it during running, saved network
-     * discovery.
-     *
-     * - If an interface already has a meta data string, then it gets replace by
-     * the new one - An empty meta data string, indicates to remove the existing
-     * string (remove the meta-interface) file
-     *
-     * @param interface physical,VLAN, bond ...etc interfaces
-     *
-     * @param data meta data to save
-     *
-     * @return If successful, returns the interface, and meta data Raises an
-     * exception on failure
-     *
      * Restriction: - data string that starts with leading spaces will be
      * rejected ovs_if_meta('bond0',
      * 'ethernet:c0a80100{192.168.1.0}:MANAGEMENT,CLUSTER_HEARTBEAT,LIVE_MIGRATE,VIRTUAL_MACHINE,STORAGE')
      */
-    public Boolean ovsIfMeta(String net, String data) throws Ovm3ResourceException {
-        return nullIsTrueCallWrapper("ovs_if_meta", net, data);
-    }
 
-    /*
-     * ovs_bond_config, <class 'agent.api.network.linux_network.LinuxNetwork'>
-     * argument: self - default: None argument: action - default: None argument:
-     * bond - default: None
-     */
-    public Boolean ovsBondConfig(String action, String bond) throws Ovm3ResourceException {
-        return nullIsTrueCallWrapper("ovs_bond_config", action, bond);
-    }
-
-    /*
-     * discover_network, <class 'agent.api.network.linux_network.LinuxNetwork'>
-     * Discover information about the current network configuration. This
-     * includes the state of physical NICs, bonds, and bridges. Also return
-     * information stored for this server that is needed to configure the
-     * network when the OVM Manager is not available.
-     *
-     * Discovery of the current network configuration is handled by invoking a
-     * python extension that calls legacy C code from the VI agent.
-     *
-     * @param None
-     *
-     * @return Returns the discovery data as an XML document. Raises an
-     * exception on failure.
-     */
-    /* put more in when required, for now ok */
     public Boolean discoverNetwork() throws Ovm3ResourceException {
         postDiscovery = callWrapper("discover_network");
         if (postDiscovery == null) {
             return false;
         }
-        this.interfaceList = new HashMap<String, Interface>();
+        interfaceList = new HashMap<String, Interface>();
         Document xmlDocument = prepParse((String) postDiscovery);
         String path = "//Discover_Network_Result/Network/Active";
         String bpath = path + "/Bridges/Device";
@@ -334,7 +205,7 @@ public class Network extends OvmObject {
             /* vifs are here too */
             String phyInt = (String) this.xmlToMap(
                     bpath + "[@Name='" + b + "']/Interfaces", xmlDocument).get(
-                    "PhyInterface");
+                            "PhyInterface");
             Interface iface = new Interface();
             iface.setInterface(br);
             iface.setName(b);
@@ -363,25 +234,12 @@ public class Network extends OvmObject {
         return true;
     }
 
-    /*
-     * ovs_local_config, <class 'agent.api.network.linux_network.LinuxNetwork'>
-     * Configure a Local Bridge ((NIC-less bridge)
-     *
-     * @param action (start | stop) start: Creates local bridge without a
-     * physical interface, and saves bridge config file in
-     * /etc/sysconfig/network-scripts stop: Deletes local bridge, removes bridge
-     * config file from /etc/sysconfig/network-scripts
-     *
-     * @param br_name The bridge name to add
-     *
-     * @return If successful, returns the name of the bridge Raises an exception
-     * on failure
-     */
     public Boolean startOvsLocalConfig(String br) throws Ovm3ResourceException {
         String s = (String) ovsLocalConfig("start", br);
         if (s.startsWith("start")) {
             return true;
-        };
+        }
+        ;
         return false;
     }
 
@@ -389,43 +247,28 @@ public class Network extends OvmObject {
         String s = (String) ovsLocalConfig("stop", br);
         if (s.startsWith("stop")) {
             return true;
-        };
+        }
+        ;
         return false;
     }
 
-    private Object ovsLocalConfig(String action, String br) throws Ovm3ResourceException {
+    private Object ovsLocalConfig(String action, String br)
+            throws Ovm3ResourceException {
         return callWrapper("ovs_local_config", action, br);
     }
 
-    /*
-     * ovs_vlan_config, <class 'agent.api.network.linux_network.LinuxNetwork'>
-     * Creates a VLAN interface on a physical, or a bond interface.
-     *
-     * @param action (add|remove) add: Creates a VLAN on an interface,saves the
-     * VLAN config file in /etc/sysconfig/network-scripts remove: Removes a VLAN
-     * from an interfacei,removes its config file from
-     * /etc/sysconfig/network-scripts
-     *
-     * @param interface The interface on which to create a VLAN
-     *
-     * @param vlanid VLAN ID (2-4095)
-     *
-     * @return If successful, returns the interface, and VLAN created Raises an
-     * exception on failure
-     *
-     * Restriction: -Interface must be physical, or bond -Interface must not be
-     * member of a bridge, or slave to a bond -VLAN ID must not exist on the
-     * same interface
-     */
-    public Boolean startOvsVlanConfig(String dev, int vlan) throws Ovm3ResourceException {
+    public Boolean startOvsVlanConfig(String dev, int vlan)
+            throws Ovm3ResourceException {
         return ovsVlanConfig("add", dev, vlan);
     }
 
-    public Boolean stopOvsVlanConfig(String dev, int vlan) throws Ovm3ResourceException {
+    public Boolean stopOvsVlanConfig(String dev, int vlan)
+            throws Ovm3ResourceException {
         return ovsVlanConfig("remove", dev, vlan);
     }
 
-    public Boolean ovsVlanConfig(String action, String net, int vlan) throws Ovm3ResourceException {
+    private Boolean ovsVlanConfig(String action, String net, int vlan)
+            throws Ovm3ResourceException {
         Object x = callWrapper("ovs_vlan_config", action, net, vlan);
         if (x == null) {
             return true;
@@ -433,82 +276,55 @@ public class Network extends OvmObject {
         return false;
     }
 
-    /*
-     * ovs_br_config, <class 'agent.api.network.linux_network.LinuxNetwork'>
-     * Configure a Standard Bridge.
-
-     * @param action (start | stop) start: Creates the bridge, Copies the IP and
-     * MAC addresses from netdev to bridge, enslaves net_dev to bridge, and
-     * saves bridge config files in /etc/sysconfig/network-scripts stop: Removes
-     * net_dev from the bridge,transfers addresses, routes from bridge to
-     * net_dev, deletes the bridge, and revomes bridge config files from
-     * /etc/sysconfig/network-scripts
-     *
-     * @param br_name The bridge name to add
-     *
-     * @param net_dev The physical interface to add to the bridge
-     *
-     * @return If successful, returns the names of the bridge and it's physical
-     * interface. Raises an exception on failure Restriction: -net_dev must be
-     * physical, or bond -net_dev must not be member of a bridge, or slave to a
-     * bond
-     */
-    public Boolean startOvsBrConfig(String br, String dev) throws Ovm3ResourceException {
+    public Boolean startOvsBrConfig(String br, String dev)
+            throws Ovm3ResourceException {
         String s = (String) ovsBrConfig("start", br, dev);
         if (s.startsWith("start")) {
             return true;
-        };
+        }
+        ;
         return false;
     }
 
-    public Boolean stopOvsBrConfig(String br, String dev) throws Ovm3ResourceException {
+    public Boolean stopOvsBrConfig(String br, String dev)
+            throws Ovm3ResourceException {
         String s = (String) ovsBrConfig("stop", br, dev);
         if (s.startsWith("stop")) {
             return true;
-        };
+        }
+        ;
         return false;
     }
 
-    public Object ovsBrConfig(String action, String br, String net) throws Ovm3ResourceException {
-       Object x = callWrapper("ovs_br_config", action, br, net);
-       return x;
+    public Object ovsBrConfig(String action, String br, String net)
+            throws Ovm3ResourceException {
+        Object x = callWrapper("ovs_br_config", action, br, net);
+        return x;
     }
 
-    /*
-     * ovs_vlan_bridge, <class 'agent.api.network.linux_network.LinuxNetwork'>
-     *
-     * @param action (start | stop) start: Creates the bridge, creats VLAN on
-     * net_dev,enslaves the VLAN to the bridge, and saves VLAN bridge config
-     * files in /etc/sysconfig/network-scripts stop: Removes the VLAN from the
-     * bridge, removes the VLAN, deletes the bridge, and removes VLAN bridge
-     * config files from /etc/sysconfig/network-scripts
-     *
-     * @param br_name The bridge name to add
-     *
-     * @param net_dev The physical interface on which to create a VLAN.
-     *
-     * @param vlan_id VLAN ID (1-4095). VLAN ID of 1 is the untagged VLAN.
-     *
-     * @return If successful, returns the names of the bridge and it's VLAN
-     * interface Raises an exception on failure
-     */
-    public Boolean stopOvsVlanBridge(String br, String net, int vlan) throws Ovm3ResourceException {
+    /* 1 is untagged, goes till 4095 */
+    public Boolean stopOvsVlanBridge(String br, String net, int vlan)
+            throws Ovm3ResourceException {
         String s = (String) ovsVlanBridge("stop", br, net, vlan);
         if (s.startsWith("stop")) {
             return true;
-        };
+        }
+        ;
         return false;
     }
 
-    public Boolean startOvsVlanBridge(String br, String net, int vlan) throws Ovm3ResourceException {
+    public Boolean startOvsVlanBridge(String br, String net, int vlan)
+            throws Ovm3ResourceException {
         String s = (String) ovsVlanBridge("start", br, net, vlan);
         if (s.startsWith("start")) {
             return true;
-        };
+        }
+        ;
         return false;
     }
 
-    private Object ovsVlanBridge(String action, String br, String net, int vlan) throws Ovm3ResourceException {
+    private Object ovsVlanBridge(String action, String br, String net, int vlan)
+            throws Ovm3ResourceException {
         Object x = callWrapper("ovs_vlan_bridge", action, br, net, vlan);
         return x;
     }
@@ -518,16 +334,4 @@ public class Network extends OvmObject {
      * 'agent.api.network.linux_network.LinuxNetwork'> argument: self - default:
      * None argument: virtual_ip - default: None
      */
-    public Boolean deconfigureVip(String vip) throws Ovm3ResourceException {
-        return nullIsTrueCallWrapper("deconfigure_virtual_ip", vip);
-    }
-
-    /*
-     * ovs_async_bond, <class 'agent.api.network.linux_network.LinuxNetwork'>
-     * argument: self - default: None argument: action - default: None argument:
-     * bond - default: None
-     */
-    public Boolean ovsAsyncBond(String action, String bond) throws Ovm3ResourceException {
-        return nullIsTrueCallWrapper("ovs_async_bond", action, bond);
-    }
 }

@@ -1,7 +1,5 @@
 package com.cloud.hypervisor.ovm3.object;
 
-import org.junit.Test;
-
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,11 +11,13 @@ import org.apache.xmlrpc.common.XmlRpcStreamConfig;
 import org.apache.xmlrpc.common.XmlRpcStreamRequestConfig;
 import org.apache.xmlrpc.parser.XmlRpcResponseParser;
 import org.apache.xmlrpc.util.SAXParsers;
+import org.junit.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 
 /* This is a stub for XML parsing into result sets, it also contains test for Connection */
 public class ConnectionTest extends Connection {
+    XmlTestResultTest results = new XmlTestResultTest();
     String result;
 
     @Override
@@ -43,10 +43,10 @@ public class ConnectionTest extends Connection {
     }
 
     public void setResult(String res) {
-        this.result = res;
+        result = res;
     }
     public String getResult() {
-        return  this.result;
+        return  result;
     }
 
     @Test
@@ -57,15 +57,18 @@ public class ConnectionTest extends Connection {
         Integer port = 8899;
         List<?> emptyParams = new ArrayList<Object>();
         Connection con = new Connection(host, port, user, pass);
-        System.out.println(con.getIp());
+        results.basicStringTest(con.getIp(), host);
+        results.basicStringTest(con.getUserName(), user);
+        results.basicStringTest(con.getPassword(), pass);
+        results.basicIntTest(con.getPort(), port);
         try {
             con.callTimeoutInSec("ping", emptyParams, 1);
-//            con.call("ping", emptyParams, 1, false);
+            //            con.call("ping", emptyParams, 1, false);
         } catch (XmlRpcException e) {
             // TODO Auto-generated catch block
             System.out.println();
         }
-        Connection con2 = new Connection(host, user, pass);
+        new Connection(host, user, pass);
     }
 }
 

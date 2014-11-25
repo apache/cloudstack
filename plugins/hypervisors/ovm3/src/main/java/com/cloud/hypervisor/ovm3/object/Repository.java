@@ -25,12 +25,12 @@ import org.w3c.dom.Document;
 public class Repository extends OvmObject {
     private Object postDiscovery = null;
     private Object postDbDiscovery = null;
-    private static final Logger LOGGER = Logger
-            .getLogger(Repository.class);
-    public Map<String, RepoDbDetails> repoDbs = new HashMap<String, RepoDbDetails>();
+    private static final Logger LOGGER = Logger.getLogger(Repository.class);
+    private Map<String, RepoDbDetails> repoDbs = new HashMap<String, RepoDbDetails>();
     private Map<String, RepoDetails> repos = new HashMap<String, RepoDetails>();
     private List<String> repoDbList = new ArrayList<String>();
     private List<String> repoList = new ArrayList<String>();
+
     public Repository(Connection c) {
         setClient(c);
     }
@@ -41,15 +41,18 @@ public class Repository extends OvmObject {
         }
         return null;
     }
+
     public List<String> getRepoDbList() throws Ovm3ResourceException {
         return repoDbList;
     }
+
     public RepoDetails getRepo(String id) throws Ovm3ResourceException {
         if (repos.containsKey(id)) {
             return repos.get(id);
         }
         return null;
     }
+
     public List<String> getRepoList() throws Ovm3ResourceException {
         return repoList;
     }
@@ -67,40 +70,52 @@ public class Repository extends OvmObject {
                 put("Status", null);
             }
         };
+
         public RepoDbDetails() {
         }
+
         public void setRepoDbDetails(Map<String, String> det) {
             dbEntry.putAll(det);
         }
+
         public void setUuid(String id) {
             dbEntry.put("Uuid", id);
         }
+
         public String getStatus() {
             return dbEntry.get("Status");
         }
+
         public String getManagerUuid() {
             return dbEntry.get("Manager_uuid");
         }
+
         public String getAlias() {
             return dbEntry.get("Alias");
         }
+
         public String getVersion() {
             return dbEntry.get("Version");
         }
+
         public String getFilesystemType() {
             return dbEntry.get("Filesystem_type");
         }
+
         public String getMountPoint() {
             return dbEntry.get("Mount_point");
         }
+
         public String getFsLocation() {
             return dbEntry.get("Fs_location");
         }
+
         public String getUuid() {
             return dbEntry.get("Uuid");
         }
 
     }
+
     public static class RepoDetails {
         private List<String> Templates = new ArrayList<String>();
         private List<String> VirtualMachines = new ArrayList<String>();
@@ -114,53 +129,69 @@ public class Repository extends OvmObject {
                 put("Manager_UUID", null);
             }
         };
+
         public RepoDetails() {
         }
+
         public String getManagerUuid() {
             return dbEntry.get("Manager_UUID");
         }
+
         public String getAlias() {
             return dbEntry.get("Repository_Alias");
         }
+
         public String getVersion() {
             return dbEntry.get("Version");
         }
+
         public String getUuid() {
             return dbEntry.get("Repository_UUID");
         }
+
         public void setRepoDetails(Map<String, String> det) {
             dbEntry.putAll(det);
         }
-        public void setRepoTemplates(List <String> temp) {
+
+        public void setRepoTemplates(List<String> temp) {
             Templates.addAll(temp);
         }
-        public List <String> getRepoTemplates() {
+
+        public List<String> getRepoTemplates() {
             return Templates;
         }
+
         public void setRepoVirtualMachines(List<String> vms) {
             VirtualMachines.addAll(vms);
         }
+
         public List<String> getRepoVirtualMachines() {
             return VirtualMachines;
         }
+
         public void setRepoVirtualDisks(List<String> disks) {
             VirtualDisks.addAll(disks);
         }
+
         public List<String> getRepoVirtualDisks() {
             return VirtualDisks;
         }
+
         public void setRepoISOs(List<String> isos) {
             ISOs.addAll(isos);
         }
+
         public List<String> getRepoISOs() {
             return ISOs;
         }
     }
+
     /*
      * delete_repository, <class 'agent.api.repository.Repository'> argument:
      * repo_uuid - default: None argument: erase - default: None
      */
-    public Boolean deleteRepo(String id, Boolean erase) throws Ovm3ResourceException {
+    public Boolean deleteRepo(String id, Boolean erase)
+            throws Ovm3ResourceException {
         Object res = callWrapper("delete_repository", id, erase);
         if (res == null) {
             return true;
@@ -176,13 +207,14 @@ public class Repository extends OvmObject {
     /* should add timeout ? */
     public Boolean importVirtualDisk(String url, String vdiskid, String repoid,
             String option) throws Ovm3ResourceException {
-        return nullIsTrueCallWrapper("import_virtual_disk", url, vdiskid, repoid,
-                option);
+        return nullIsTrueCallWrapper("import_virtual_disk", url, vdiskid,
+                repoid, option);
     }
 
     public Boolean importVirtualDisk(String url, String vdiskid, String repoid)
             throws Ovm3ResourceException {
-        return nullIsTrueCallWrapper("import_virtual_disk", url, vdiskid, repoid);
+        return nullIsTrueCallWrapper("import_virtual_disk", url, vdiskid,
+                repoid);
     }
 
     /*
@@ -204,11 +236,16 @@ public class Repository extends OvmObject {
         repoList.addAll(xmlToList(path + "/@Name", xmlDocument));
         for (String name : repoList) {
             RepoDetails repo = new RepoDetails();
-            repo.setRepoTemplates(xmlToList(path + "[@Name='" + id + "']/Templates/Template/File", xmlDocument));
-            repo.setRepoVirtualMachines(xmlToList(path + "[@Name='" + id + "']/VirtualMachines/VirtualMachine/@Name", xmlDocument));
-            repo.setRepoVirtualDisks(xmlToList(path + "[@Name='" + name + "']/VirtualDisks/Disk", xmlDocument));
-            repo.setRepoISOs(xmlToList(path + "[@Name='" + name + "']/ISOs/ISO", xmlDocument));
-            Map<String, String> details = xmlToMap(path + "[@Name='" + name + "']", xmlDocument);
+            repo.setRepoTemplates(xmlToList(path + "[@Name='" + id
+                    + "']/Templates/Template/File", xmlDocument));
+            repo.setRepoVirtualMachines(xmlToList(path + "[@Name='" + id
+                    + "']/VirtualMachines/VirtualMachine/@Name", xmlDocument));
+            repo.setRepoVirtualDisks(xmlToList(path + "[@Name='" + name
+                    + "']/VirtualDisks/Disk", xmlDocument));
+            repo.setRepoISOs(xmlToList(
+                    path + "[@Name='" + name + "']/ISOs/ISO", xmlDocument));
+            Map<String, String> details = xmlToMap(path + "[@Name='" + name
+                    + "']", xmlDocument);
             repo.setRepoDetails(details);
             repos.put(name, repo);
         }
@@ -219,11 +256,13 @@ public class Repository extends OvmObject {
      * add_repository, <class 'agent.api.repository.Repository'> argument:
      * fs_location - default: None argument: mount_point - default: None
      */
-    public Boolean addRepo(String remote, String local) throws Ovm3ResourceException {
+    public Boolean addRepo(String remote, String local)
+            throws Ovm3ResourceException {
         return nullIsTrueCallWrapper("add_repository", remote, local);
     }
 
-    /** is the same as discoverRepoDb in principle (takes an id or mountpoint)
+    /**
+     * is the same as discoverRepoDb in principle (takes an id or mountpoint)
      * get_repository_meta_data, <class 'agent.api.repository.Repository'>
      * argument: repo_mount_point - default: None
      */
@@ -252,8 +291,8 @@ public class Repository extends OvmObject {
      */
     public Boolean createRepo(String remote, String local, String repoid,
             String repoalias) throws Ovm3ResourceException {
-        return nullIsTrueCallWrapper("create_repository", remote, local, repoid,
-                repoalias);
+        return nullIsTrueCallWrapper("create_repository", remote, local,
+                repoid, repoalias);
     }
 
     /*
@@ -277,7 +316,8 @@ public class Repository extends OvmObject {
         repoDbList.addAll(xmlToList(path + "/@Uuid", xmlDocument));
         for (String id : repoDbList) {
             RepoDbDetails repoDb = new RepoDbDetails();
-            Map<String, String> rep = xmlToMap(path + "[@Uuid='" + id + "']", xmlDocument);
+            Map<String, String> rep = xmlToMap(path + "[@Uuid='" + id + "']",
+                    xmlDocument);
             repoDb.setRepoDbDetails(rep);
             repoDb.setUuid(id);
             repoDbs.put(id, repoDb);
@@ -285,27 +325,4 @@ public class Repository extends OvmObject {
         return true;
     }
 
-    /*
-     * edit_repository_db, <class 'agent.api.repository.Repository'> argument:
-     * repo_uuid - default: None argument: db_changes - default: None
-     */
-    public Boolean editRepoDb(String repoId, Map<String, String> changes)
-            throws Ovm3ResourceException {
-        return nullIsTrueCallWrapper("edit_repository_db", repoId, changes);
-    }
-
-    /*
-     * import_ISO, <class 'agent.api.repository.Repository'> argument: url -
-     * default: None argument: iso_id - default: None argument: repo_uuid -
-     * default: None argument: option - default: None ?> it throws an error when
-     * you add this...
-     */
-    /*
-     * is async, need to find a way to do something with that.... add timeout
-     * too
-     */
-    public Boolean importIso(String url, String isoId, String repoId,
-            String option) throws Ovm3ResourceException {
-        return nullIsTrueCallWrapper("import_ISO", url, isoId, repoId);
-    }
 }

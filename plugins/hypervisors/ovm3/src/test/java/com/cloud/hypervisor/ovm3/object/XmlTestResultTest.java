@@ -110,4 +110,8 @@ public class XmlTestResultTest {
         }
         return false;
     }
+
+    public void basicDoubleTest(Double result, Double desired) {
+        assertEquals(desired, result);
+    }
 }

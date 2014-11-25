@@ -19,37 +19,11 @@ public class Remote extends OvmObject {
         setClient(c);
     }
 
-    /*
-     * sys_shutdown, <class
-     * 'agent.api.remote.linux_remote.LinuxRemoteManagement'> argument: self -
-     * default: None
-     */
     public Boolean sysShutdown() throws Ovm3ResourceException {
         return nullIsTrueCallWrapper("sys_shutdown");
     }
 
-    /*
-     * remote_power_off, <class
-     * 'agent.api.remote.linux_remote.LinuxRemoteManagement'> argument: self -
-     * default: None argument: controller_type - default: None ?> figure this
-     * one out in the source argument: tgt_host - default: None argument:
-     * bmc_username - default: None argument: bmc_password - default: None
-     */
-
-    /*
-     * sys_reboot, <class 'agent.api.remote.linux_remote.LinuxRemoteManagement'>
-     * argument: self - default: None
-     */
     public Boolean sysReboot() throws Ovm3ResourceException {
         return nullIsTrueCallWrapper("sys_reboot");
     }
-
-    /*
-     * remote_power_on, <class
-     * 'agent.api.remote.linux_remote.LinuxRemoteManagement'> argument: self -
-     * default: None argument: controller_type - default: None ?> same here
-     * argument: tgt - default: None argument: arg1 - default: None argument:
-     * arg2 - default: None
-     */
-
 }

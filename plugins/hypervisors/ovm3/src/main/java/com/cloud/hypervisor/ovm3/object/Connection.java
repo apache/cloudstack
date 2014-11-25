@@ -28,7 +28,7 @@ import org.apache.xmlrpc.client.XmlRpcClientRequestImpl;
 public class Connection extends XmlRpcClient {
     private static final Logger LOGGER = Logger.getLogger(Connection.class);
     private final XmlRpcClientConfigImpl xmlClientConfig = new XmlRpcClientConfigImpl();
-    public XmlRpcClient xmlClient;
+    private XmlRpcClient xmlClient;
     private String hostUser = null;
     private String hostPass = null;
     private String hostIp;
@@ -100,20 +100,22 @@ public class Connection extends XmlRpcClient {
         return callTimeoutInSec(method, params, this.timeoutS, debug);
     }
 
-    public Object callTimeoutInSec(String method, List<?> params,
-            int timeout, boolean debug) throws XmlRpcException {
+    public Object callTimeoutInSec(String method, List<?> params, int timeout,
+            boolean debug) throws XmlRpcException {
         TimingOutCallback callback = new TimingOutCallback(timeout * 1000);
         if (debug) {
             /*
-             * some parameters including hostUser password should not be printed in
-             * log
+             * some parameters including hostUser password should not be printed
+             * in log
              */
-            LOGGER.debug("Call Ovm3 agent " + hostIp +": " + method + " with " + params);
+            LOGGER.debug("Call Ovm3 agent " + hostIp + ": " + method + " with "
+                    + params);
         }
         long startTime = System.currentTimeMillis();
         try {
             /* returns actual xml */
-            XmlRpcClientRequestImpl req = new XmlRpcClientRequestImpl(xmlClient.getClientConfig(), method, params);
+            XmlRpcClientRequestImpl req = new XmlRpcClientRequestImpl(
+                    xmlClient.getClientConfig(), method, params);
             xmlClient.executeAsync(req, callback);
             return callback.waitForResponse();
         } catch (TimingOutCallback.TimeoutException e) {
@@ -137,7 +139,8 @@ public class Connection extends XmlRpcClient {
         }
     }
 
-    public Object callTimeoutInSec(String method, List<?> params, int timeout)  throws XmlRpcException {
+    public Object callTimeoutInSec(String method, List<?> params, int timeout)
+            throws XmlRpcException {
         return callTimeoutInSec(method, params, timeout, true);
     }
 

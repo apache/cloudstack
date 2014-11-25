@@ -71,17 +71,8 @@ public class Xen extends OvmObject {
         };
 
         /* 'vif': [ 'mac=00:21:f6:00:00:00,bridge=c0a80100'] */
-        public ArrayList<String> _vmVifs = new ArrayList<String>();
-        public Map<String, String> vmVifs = new HashMap<String, String>() {
-            {
-                put(new String("id"), "");
-                put(new String("dev"), "");
-                put(new String("mac"), "");
-                put(new String("rate"), "");
-            }
-        };
+        private ArrayList<String> _vmVifs = new ArrayList<String>();
         private String[] _xvmVifs = new String[6];
-        // private List<String> vmVifsPrep = new ArrayList<String>();
         private String vmSimpleName = "";
         private String vmName = "";
         private String vmUuid = "";
@@ -119,7 +110,6 @@ public class Xen extends OvmObject {
 
         private Map<String, Object> vmParams = new HashMap<String, Object>() {
             {
-                // put("vif", vmVifsPrep);
                 put("vif", _vmVifs);
                 put("OVM_simple_name", vmSimpleName);
                 put("disk", vmDisks);
@@ -182,11 +172,6 @@ public class Xen extends OvmObject {
             return (String) vmParams.get("extra");
         }
 
-        public boolean setVmBootArgs(final String args) {
-            vmParams.put("bootargs", args);
-            return true;
-        }
-
         public String getVmBootArgs() {
             return (String) vmParams.get("bootloader_args");
         }
@@ -237,11 +222,6 @@ public class Xen extends OvmObject {
                 }
             }
             return domType;
-        }
-
-        public Boolean setVmState(String state) {
-            vmParams.put("state", state);
-            return true;
         }
 
         public String getVmState() {
@@ -317,8 +297,9 @@ public class Xen extends OvmObject {
 
         public boolean setupVifs() {
             for (String vif : _xvmVifs) {
-                if (vif != null)
+                if (vif != null) {
                     _vmVifs.add(vif);
+                }
             }
             vmParams.put("vif", _vmVifs);
             return true;
@@ -346,18 +327,16 @@ public class Xen extends OvmObject {
 
         public Boolean addDataDisk(String image) {
             /*
-             * w! means we're able to share the disk is that wise, should be an
-             * option in CS ?
+             * w! means we're able to share the disk nice for clustered FS?
              */
             return addDisk(image, "w!");
         }
 
         public Boolean addIso(String image) {
-            /* should we check for .iso ? */
             return addDisk(image, "r!");
         }
 
-        public Boolean addDisk(String image, String mode) {
+        private Boolean addDisk(String image, String mode) {
             String devName = null;
             /* better accounting then diskCount += 1 */
             diskCount = diskZero + vmDisks.size();
@@ -378,7 +357,6 @@ public class Xen extends OvmObject {
 
         /* should be on device id too, or else we get random attaches... */
         private Boolean addDiskToDisks(String image, String devName, String mode) {
-            /* TODO: needs to become "checkDisk" */
             for (String disk : vmDisks) {
                 if (disk.contains(image)) {
                     return true;
@@ -406,7 +384,7 @@ public class Xen extends OvmObject {
             return poolId;
         }
 
-        public String getVmDiskPoolId(int disk) throws Ovm3ResourceException {
+        private String getVmDiskPoolId(int disk) throws Ovm3ResourceException {
             int fi = 3;
             String diskPath = "";
             try {
@@ -429,6 +407,7 @@ public class Xen extends OvmObject {
             return vmDisk.get(dest);
         }
 
+        /* TODO: Implement disk removal, usi removal works though.. */
         public Boolean removeDisk(String file, String device) {
             /* get index and remove */
             return true;
@@ -515,7 +494,7 @@ public class Xen extends OvmObject {
             return true;
         }
 
-        public Object get(String key) {
+        private Object get(String key) {
             return vmParams.get(key);
         }
 
@@ -680,7 +659,7 @@ public class Xen extends OvmObject {
      * default: None argument: repo_id - default: None argument: vm_id -
      * default: None argument: params - default: None
      */
-    public Boolean configureVm(String repoId, String vmId,
+    private Boolean configureVm(String repoId, String vmId,
             Map<String, Object> params) throws Ovm3ResourceException {
         return nullIsTrueCallWrapper("configure_vm", repoId, vmId, params);
     }

@@ -22,10 +22,9 @@ import java.util.Map;
 class Ovm3Helper {
     /* /usr/lib64/python2.4/site-packages/agent/lib/assembly */
     private static final Map<String, String> OVMHELPERMAP = new HashMap<String, String>();
-    public static final String HVM = "hvm";
-    public static final String PV = "xen_pvm";
-    public static final String DOMSOL = "ldoms_pvm";
-    public static final String DEFAULT = "default";
+    private static final String HVM = "hvm";
+    private static final String PV = "xen_pvm";
+    private static final String DOMSOL = "ldoms_pvm";
     static {
         OVMHELPERMAP.put("Oracle Enterprise Linux 6.0 (32-bit)", PV);
         OVMHELPERMAP.put("Oracle Enterprise Linux 6.0 (64-bit)", PV);

@@ -36,31 +36,31 @@ public class PoolOCFS2 extends OvmObject {
     }
 
     public String getPoolFsNFSBaseId() {
-        return this.poolFsNFSBaseId;
+        return poolFsNFSBaseId;
     }
 
     public String getPoolFsId() {
-        return this.poolFsId;
+        return poolFsId;
     }
 
     public String getPoolFsUuid() {
-        return this.poolFsId;
+        return poolFsId;
     }
 
     public String getPoolFsTarget() {
-        return this.poolFsTarget;
+        return poolFsTarget;
     }
     public String getPoolFsManagerUuid() {
-        return this.poolFsManagerUuid;
+        return poolFsManagerUuid;
     }
     public String getPoolFsVersion() {
-        return this.poolFsVersion;
+        return poolFsVersion;
     }
     public String getPoolPoolFsId() {
-        return this.poolPoolFsId;
+        return poolPoolFsId;
     }
     public String getPoolFsType() {
-        return this.poolFsType;
+        return poolFsType;
     }
     public Boolean hasPoolFs(String id) throws Ovm3ResourceException {
         if (poolFsId == null) {
@@ -81,12 +81,6 @@ public class PoolOCFS2 extends OvmObject {
         return true;
     }
 
-    /*
-     * destroy_pool_filesystem, <class 'agent.api.poolfs.ocfs2.PoolOCFS2'>
-     * argument: self - default: None argument: poolfs_type - default: None
-     * argument: poolfs_target - default: None argument: poolfs_uuid - default:
-     * None argument: poolfs_nfsbase_uuid - default: None
-     */
     public Boolean destroyPoolFs(String type, String target, String uuid,
             String nfsbaseuuid) throws Ovm3ResourceException {
         // should throw exception if no poolIps set
@@ -100,59 +94,20 @@ public class PoolOCFS2 extends OvmObject {
                 poolFsTarget, poolFsId, poolFsNFSBaseId);
     }
 
-    /*
-     * create_pool_filesystem, <class 'agent.api.poolfs.ocfs2.PoolOCFS2'>
-     * argument: self - default: None argument: poolfs_type - default: None
-     * argument: poolfs_target - default: None argument: cluster_name - default:
-     * None argument: poolfs_uuid - default: None argument: poolfs_nfsbase_uuid
-     * - default: None argument: manager_uuid - default: None argument:
-     * pool_uuid - default: None argument: block_size - default: None argument:
-     * cluster_size - default: None argument: journal_size - default: None
-     */
-    /*
-     * create_pool_filesystem('nfs', 'cs-mgmt:/volumes/cs-data/secondary',
-     * 'ba9aaf00ae5e2d73', '0004fb0000050000e70fbddeb802208f',
-     * 'b8ca41cb-3469-4f74-a086-dddffe37dc2d',
-     * '0004fb00000100000af70d20dcce7d65', '0004fb0000020000ba9aaf00ae5e2d73')
-     */
     public Boolean createPoolFs(String type, String target, String clustername,
             String fsid, String nfsbaseid, String managerid) throws Ovm3ResourceException {
-        if (!this.hasAPoolFs()) {
+        if (!hasAPoolFs()) {
             return nullIsTrueCallWrapper("create_pool_filesystem", type, target,
                     clustername, fsid, nfsbaseid, managerid, fsid);
-        } else if (this.hasPoolFs(fsid)) {
+        } else if (hasPoolFs(fsid)) {
             LOGGER.debug("PoolFs already exists on this host: " + fsid);
             return true;
         } else {
             throw new Ovm3ResourceException("Unable to add pool filesystem to host, "+
-                    "pool filesystem with other id found: " + this.poolFsId);
+                    "pool filesystem with other id found: " + poolFsId);
         }
     }
-    /* iSCSI/FC ?
-    public Boolean createPoolFs(String type, String target, String clustername,
-            String fsid, String nfsbaseid, String managerid, String id,
-            int blocksize, int clustersize, int journalsize) throws Ovm3ResourceException {
-        if (!this.hasAPoolFs()) {
-            Object x = callWrapper("create_pool_filesystem", type, target,
-                    clustername, fsid, nfsbaseid, managerid, id, blocksize,
-                    clustersize, journalsize);
-            if (x == null) {
-                return true;
-            }
-            return false;
-        } else if (this.hasPoolFs(fsid)) {
-            LOGGER.debug("PoolFs already exists: " + fsid);
-            return true;
-        } else {
-            throw new Ovm3ResourceException("Unable to add pool filesystem to host, "+
-                    "pool filesystem with other id found: " + this.poolFsId);
-        }
-    }
-    */
-    /*
-     * discover_pool_filesystem, <class 'agent.api.poolfs.ocfs2.PoolOCFS2'>
-     * argument: self - default: None
-     */
+
     /* Assume a single pool can be used for a host... */
     public Boolean discoverPoolFs() throws Ovm3ResourceException{
         // should throw exception if no poolIps set
@@ -173,11 +128,6 @@ public class PoolOCFS2 extends OvmObject {
         return true;
     }
 
-    /*
-     * ocfs2_get_meta_data, <class 'agent.api.poolfs.ocfs2.PoolOCFS2'> argument:
-     * self - default: None argument: device - default: None argument: filename
-     * - default: None
-     */
     public Boolean ocfs2GetMetaData(String device, String filename) throws Ovm3ResourceException {
         Object x = callWrapper("ocfs2_get_meta_data", device, filename);
         if (x == null) {

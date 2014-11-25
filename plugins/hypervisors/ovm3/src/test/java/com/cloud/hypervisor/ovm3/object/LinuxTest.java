@@ -7,7 +7,7 @@ public class LinuxTest {
     Linux lin = new Linux(con);
     XmlTestResultTest results = new XmlTestResultTest();
 
-    private String DISCOVERSERVER = "&lt;?xml version=\"1.0\" ?&gt;"
+    private final String DISCOVERSERVER = "&lt;?xml version=\"1.0\" ?&gt;"
             + "&lt;Discover_Server_Result&gt;"
             + "&lt;Server&gt;"
             + "&lt;Unique_Id&gt;1d:d5:e8:91:d9:d0:ed:bd:81:c2:a6:9a:b3:d1:b7:ea&lt;/Unique_Id&gt;"
@@ -87,7 +87,7 @@ public class LinuxTest {
             + "&lt;YUM_PACKAGE_MANAGEMENT&gt;True&lt;/YUM_PACKAGE_MANAGEMENT&gt;"
             + "&lt;/Capabilities&gt;" + "&lt;/Server&gt;"
             + "&lt;/Discover_Server_Result&gt;";
-    private String DISCOVERHW = "&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;"
+    private final String DISCOVERHW = "&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;"
             + "&lt;Discover_Hardware_Result&gt;"
             + "&lt;NodeInformation&gt;"
             + "&lt;VMM&gt;"
@@ -474,15 +474,15 @@ public class LinuxTest {
             + "&lt;/DMTF&gt;"
             + "&lt;/NodeInformation&gt;"
             + "&lt;/Discover_Hardware_Result&gt;";
-    private String FSTYPE = "nfs";
-    private String REMOTEHOST = "cs-mgmt";
-    private String REMOTEDIR = "/volumes/cs-data/primary/ovm";
-    private String REMOTE = REMOTEHOST + ":" + REMOTEDIR;
-    private String REPOID = "f12842eb-f5ed-3fe7-8da1-eb0e17f5ede8";
-    private String DDREPOID = lin.deDash(REPOID);
-    private String REPOMNT = "/OVS/Repositories/" + DDREPOID;
-    private String VMMNT = "/nfsmnt/" + REPOID;
-    private String DISCOVERFS = "&lt;?xml version=\"1.0\" ?&gt;"
+    private final String FSTYPE = "nfs";
+    private final String REMOTEHOST = "cs-mgmt";
+    private final String REMOTEDIR = "/volumes/cs-data/primary/ovm";
+    private final String REMOTE = REMOTEHOST + ":" + REMOTEDIR;
+    private final String REPOID = "f12842eb-f5ed-3fe7-8da1-eb0e17f5ede8";
+    private final String DDREPOID = lin.deDash(REPOID);
+    private final String REPOMNT = "/OVS/Repositories/" + DDREPOID;
+    private final String VMMNT = "/nfsmnt/" + REPOID;
+    private final String DISCOVERFS = "&lt;?xml version=\"1.0\" ?&gt;"
             + "&lt;Discover_Mounted_File_Systems_Result&gt;"
             + "&lt;Filesystem Type=\""
             + FSTYPE
@@ -504,51 +504,54 @@ public class LinuxTest {
             + "&lt;Mount_Options&gt;rw,relatime,vers=3,rsize=524288,wsize=524288,namlen=255,hard,proto=tcp,port=65535,timeo=600,retrans=2,sec=sys,local_lock=none,addr=192.168.1.61&lt;/Mount_Options&gt;"
             + "&lt;/Mount&gt;" + "&lt;/Filesystem&gt;"
             + "&lt;/Discover_Mounted_File_Systems_Result&gt;";
-    private String LASTBOOT = "<struct>" + "<member>"
+    private final String LASTBOOT = "<struct>" + "<member>"
             + "<name>last_boot_time</name>"
             + "<value><i8>1413834408</i8></value>" + "</member>" + "<member>"
             + "<name>local_time</name>" + "<value><i8>1414082517</i8></value>"
             + "</member>" + "</struct>";
-    private String TIMEZONE = "<array><data>"
+    private final String TIMEZONE = "<array><data>"
             + "<value><string>Europe/Amsterdam</string></value>"
             + "<value><boolean>1</boolean></value>" + "</data></array>";
 
     @Test
     public void testDiscoverServer() throws Ovm3ResourceException {
-        con.setResult(results.simpleResponseWrapWrapper(this.DISCOVERSERVER));
-        System.out.println(lin.getMembershipState());
+        con.setResult(results.simpleResponseWrapWrapper(DISCOVERSERVER));
+        results.basicStringTest(lin.getMembershipState(), "Pooled");
         lin.discoverServer();
-        System.out.println(lin.getCapabilities());
-        System.out.println(lin.getYumConfig());
-        System.out.println(lin.getOvmVersion());
-        System.out.println(lin.getHypervisorVersion());
-        System.out.println(lin.get("MAX_CONCURRENT_MIGRATION_IN"));
+        results.basicStringTest(lin.getCapabilities(),
+                "xen-3.0-x86_64 xen-3.0-x86_32p");
+        results.basicStringTest(lin.getOvmVersion(), "3.2.1-517");
+        results.basicStringTest(lin.getHypervisorVersion(), "4.1.3OVM");
+        results.basicStringTest(lin.get("MAX_CONCURRENT_MIGRATION_IN"), "1");
     }
 
     @Test
     public void testGetTimeZone() throws Ovm3ResourceException {
-        con.setResult(results.simpleResponseWrapWrapper(this.TIMEZONE));
-        System.out.println(lin.getTimeZone());
+        con.setResult(results.simpleResponseWrapWrapper(TIMEZONE));
+        results.basicBooleanTest(lin.getTimeZone());
     }
 
     @Test
     public void testLastBootTime() throws Ovm3ResourceException {
-        con.setResult(results.simpleResponseWrapWrapper(this.LASTBOOT));
-        System.out.println(lin.getLastBootTime());
+        con.setResult(results.simpleResponseWrapWrapper(LASTBOOT));
+        results.basicIntTest(lin.getLastBootTime(), 1413834408);
     }
 
     @Test
     public void testDiscoverHardware() throws Ovm3ResourceException {
-        con.setResult(results.simpleResponseWrapWrapper(this.DISCOVERHW));
+        con.setResult(results.simpleResponseWrapWrapper(DISCOVERHW));
         lin.discoverHardware();
-        System.out.println(lin.getMemory());
-        System.out.println(lin.getFreeMemory());
-        System.out.println(lin.get("UUID"));
+        results.basicDoubleTest(lin.getMemory(),
+                Double.valueOf("1048476") * 4096);
+        results.basicDoubleTest(lin.getFreeMemory(),
+                Double.valueOf("863459") * 4096);
+        results.basicStringTest(lin.get("UUID"),
+                "1d:d5:e8:91:d9:d0:ed:bd:81:c2:a6:9a:b3:d1:b7:ea");
     }
 
     @Test
     public void testDiscoverMountedFileSystems() throws Ovm3ResourceException {
-        con.setResult(results.simpleResponseWrapWrapper(this.DISCOVERFS));
+        con.setResult(results.simpleResponseWrapWrapper(DISCOVERFS));
         lin.discoverMountedFs(FSTYPE);
         results.basicBooleanTest(
                 results.basicListHasString(lin.getFileSystemList(), REPOMNT),
