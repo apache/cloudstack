@@ -96,7 +96,7 @@ start() {
 
     wait_for_network
 
-    if start_daemon -p $PIDFILE $DAEMON -cp "$CLASSPATH" -Djna.nosys=true -pidfile "$PIDFILE" -errfile SYSLOG $CLASS
+    if start_daemon -p $PIDFILE $DAEMON -Xms256m -Xmx2048m -cp "$CLASSPATH" -Djna.nosys=true -pidfile "$PIDFILE" -errfile SYSLOG $CLASS
         RETVAL=$?
     then
         rc=0
