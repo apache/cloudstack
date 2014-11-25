@@ -71,7 +71,6 @@ public class Xen extends OvmObject {
         };
 
         /* 'vif': [ 'mac=00:21:f6:00:00:00,bridge=c0a80100'] */
-        String[] _xvmVifs = new String[6];
         public ArrayList<String> _vmVifs = new ArrayList<String>();
         public Map<String, String> vmVifs = new HashMap<String, String>() {
             {
@@ -81,7 +80,7 @@ public class Xen extends OvmObject {
                 put(new String("rate"), "");
             }
         };
-        // private String[] vmVifs = new String[6];
+        private String[] _xvmVifs = new String[6];
         // private List<String> vmVifsPrep = new ArrayList<String>();
         private String vmSimpleName = "";
         private String vmName = "";

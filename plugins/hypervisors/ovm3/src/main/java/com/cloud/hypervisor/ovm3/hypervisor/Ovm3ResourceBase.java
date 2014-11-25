@@ -1176,7 +1176,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             throws Ovm3ResourceException {
         try {
             if (getNetwork(nic) != null) {
-                LOGGER.debug("Adding vif " + nic.getDeviceId() + " " + "-"
+                LOGGER.debug("Adding vif " + nic.getDeviceId() + " " + " "
                         + nic.getMac() + " " + getNetwork(nic) + " to "
                         + vm.getVmName());
                 vm.addVif(nic.getDeviceId(), getNetwork(nic), nic.getMac());
@@ -1185,7 +1185,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                         + " no network for " + vm.getVmName());
                 return false;
             }
-            vm.setupVifs();
         } catch (Exception e) {
             String msg = "Unable to add vif " + nic.getType() + " for "
                     + vm.getVmName() + " " + e.getMessage();
@@ -1350,6 +1349,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             }
             /* TODO: OVS should go here! */
             createVifs(vm, vmSpec);
+            vm.setupVifs();
 
             /* vm migration requires a 0.0.0.0 bind */
             vm.setVnc("0.0.0.0", vmSpec.getVncPassword());
@@ -2879,6 +2879,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             }
             // setup the NIC in the VM config.
             createVif(vm, nic);
+            vm.setupVifs();
 
             // execute the change
             xen.configureVm(ovmObject.deDash(vm.getPrimaryPoolUuid()),
