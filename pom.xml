@@ -19,7 +19,7 @@
 
   <groupId>org.apache.cloudstack</groupId>
   <artifactId>cloudstack</artifactId>
-  <version>4.4.2-SNAPSHOT</version>
+  <version>4.4.2</version>
   <packaging>pom</packaging>
   <name>Apache CloudStack</name>
   <description>Apache CloudStack is an IaaS (“Infrastracture as a Service”) cloud orchestration platform.</description>
@@ -60,7 +60,7 @@
     <cs.ehcache.version>2.6.6</cs.ehcache.version>
     <cs.gson.version>1.7.2</cs.gson.version>
     <cs.guava.version>14.0-rc1</cs.guava.version>
-    <cs.xapi.version>6.2.0-1-SNAPSHOT</cs.xapi.version>
+    <cs.xapi.version>6.2.0-1</cs.xapi.version>
     <cs.httpclient.version>3.1</cs.httpclient.version>
     <cs.httpcore.version>4.2.1</cs.httpcore.version>
     <cs.mysql.version>5.1.21</cs.mysql.version>
