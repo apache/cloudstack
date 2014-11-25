@@ -169,7 +169,7 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         step4: check whether the data disk created in step3 is created on
         local storage with tag 'loc'
         """
-        if self.zone.localstorageenabled:
+        if not self.zone.localstorageenabled:
             self.skipTest('Local storage is not enable for this '
                           'zone. skipping')
 
