@@ -109,7 +109,8 @@ echo "$appliance exported for VMWare: dist/$appliance-$build_date-$branch-vmware
 # Export for HyperV
 vboxmanage clonehd $hdd_uuid $appliance-$build_date-$branch-hyperv.vhd --format VHD
 # HyperV doesn't support import a zipped image from S3
-#bzip2 $appliance-$build_date-$branch-hyperv.vhd
+# but we create a zipped version to save space on the build system
+zip "$appliance-$build_date-$branch-hyperv.vhd.zip" $appliance-$build_date-$branch-hyperv.vhd
 echo "$appliance exported for HyperV: dist/$appliance-$build_date-$branch-hyperv.vhd"
 
 mv *-hyperv.vhd *.bz2 *.ova dist/
