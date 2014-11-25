@@ -482,8 +482,6 @@ public class ApiDispatcher {
                 field.set(cmdObj, listParam);
                 break;
             case UUID:
-                if (paramObj.toString().isEmpty())
-                    break;
                 Long internalId = translateUuidToInternalId(paramObj.toString(), annotation);
                 field.set(cmdObj, internalId);
                 break;
