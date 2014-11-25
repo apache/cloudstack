@@ -1155,12 +1155,14 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
     }
 
     /* simple construct to create vifs for Vm */
-    protected Boolean createVifs(Xen.Vm vm, VirtualMachineTO spec) {
+    protected Boolean createVifs(Xen.Vm vm, VirtualMachineTO spec)
+            throws Ovm3ResourceException {
         NicTO[] nics = spec.getNics();
         return createVifs(vm, nics);
     }
 
-    protected Boolean createVifs(Xen.Vm vm, NicTO[] nics) {
+    protected Boolean createVifs(Xen.Vm vm, NicTO[] nics)
+            throws Ovm3ResourceException {
         for (NicTO nic : nics) {
             if (!createVif(vm, nic)) {
                 return false;
@@ -1169,12 +1171,14 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         return true;
     }
 
-    /* start using deviceid perhaps... */
-    protected Boolean createVif(Xen.Vm vm, NicTO nic) {
+    /* should at bitrates and latency... */
+    protected Boolean createVif(Xen.Vm vm, NicTO nic)
+            throws Ovm3ResourceException {
         try {
             if (getNetwork(nic) != null) {
-                LOGGER.debug("Adding vif " + nic.getDeviceId() + " "
-                        + getNetwork(nic) + " to " + vm.getVmName());
+                LOGGER.debug("Adding vif " + nic.getDeviceId() + " " + "-"
+                        + nic.getMac() + " " + getNetwork(nic) + " to "
+                        + vm.getVmName());
                 vm.addVif(nic.getDeviceId(), getNetwork(nic), nic.getMac());
             } else {
                 LOGGER.debug("Unable to add vif " + nic.getDeviceId()
@@ -1186,7 +1190,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             String msg = "Unable to add vif " + nic.getType() + " for "
                     + vm.getVmName() + " " + e.getMessage();
             LOGGER.debug(msg);
-            return false;
+            throw new Ovm3ResourceException(msg);
         }
         return true;
     }

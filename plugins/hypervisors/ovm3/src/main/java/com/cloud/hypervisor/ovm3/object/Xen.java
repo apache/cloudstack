@@ -306,21 +306,13 @@ public class Xen extends OvmObject {
             return -1;
         }
 
-        public boolean addVif() {
-            ArrayList<String> vif = new ArrayList<String>();
-            for (final String entry : _vmVifs.get(0).split(",")) {
-                final String[] parts = entry.split("=");
-                assert (parts.length == 2) : "Invalid entry: " + entry;
-                vif.add(parts[0] + "=" + parts[1]);
-            }
-            _vmVifs.add(StringUtils.join(vif, ","));
-            return true;
-        }
-
         public Boolean addVif(Integer id, String bridge, String mac) {
+            if (getVifIdByMac(mac) > 0) {
+                LOGGER.debug("Already nic with mac present: " + mac);
+                return false;
+            }
             String vif = "mac=" + mac + ",bridge=" + bridge;
             _xvmVifs[id] = vif;
-            // _vmVifs.add("mac=" + mac + ",bridge=" + bridge);
             return true;
         }
 
