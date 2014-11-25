@@ -36,6 +36,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.lang.reflect.Field;
 import java.security.cert.X509Certificate;
+import java.net.InetAddress;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SAML2LogoutAPIAuthenticatorCmdTest {
@@ -81,7 +82,7 @@ public class SAML2LogoutAPIAuthenticatorCmdTest {
         Mockito.when(session.getAttribute(Mockito.anyString())).thenReturn(null);
         Mockito.when(configDao.getValue(Mockito.anyString())).thenReturn("someString");
 
-        cmd.authenticate("command", null, session, "random", HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), resp);
+        cmd.authenticate("command", null, session, InetAddress.getByName("127.0.0.1"), HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), resp);
         Mockito.verify(resp, Mockito.times(1)).sendRedirect(Mockito.anyString());
         Mockito.verify(session, Mockito.atLeastOnce()).getAttribute(Mockito.anyString());
     }

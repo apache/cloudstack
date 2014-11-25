@@ -41,6 +41,8 @@ import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class GetServiceProviderMetaDataCmdTest {
@@ -58,7 +60,7 @@ public class GetServiceProviderMetaDataCmdTest {
     HttpServletResponse resp;
 
     @Test
-    public void testAuthenticate() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException, CertificateParsingException, CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
+    public void testAuthenticate() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException, CertificateParsingException, CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException, UnknownHostException {
         GetServiceProviderMetaDataCmd cmd = new GetServiceProviderMetaDataCmd();
 
         Field apiServerField = GetServiceProviderMetaDataCmd.class.getDeclaredField("_apiServer");
@@ -77,7 +79,7 @@ public class GetServiceProviderMetaDataCmdTest {
         Mockito.when(samlAuthManager.getIdpSingleLogOutUrl()).thenReturn(url);
         Mockito.when(samlAuthManager.getSpSingleLogOutUrl()).thenReturn(url);
 
-        String result = cmd.authenticate("command", null, session, "random", HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), resp);
+        String result = cmd.authenticate("command", null, session, InetAddress.getByName("127.0.0.1"), HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), resp);
         Assert.assertTrue(result.contains("md:EntityDescriptor"));
 
         Mockito.verify(samlAuthManager, Mockito.atLeast(1)).getServiceProviderId();

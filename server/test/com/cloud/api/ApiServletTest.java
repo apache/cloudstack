@@ -45,6 +45,8 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.net.URLEncoder;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -87,7 +89,7 @@ public class ApiServletTest {
     @SuppressWarnings("unchecked")
     @Before
     public void setup() throws SecurityException, NoSuchFieldException,
-            IllegalArgumentException, IllegalAccessException, IOException {
+            IllegalArgumentException, IllegalAccessException, IOException, UnknownHostException {
         servlet = new ApiServlet();
         responseWriter = new StringWriter();
         Mockito.when(response.getWriter()).thenReturn(
@@ -103,7 +105,7 @@ public class ApiServletTest {
 
         Mockito.when(authManager.getAPIAuthenticator(Mockito.anyString())).thenReturn(authenticator);
         Mockito.when(authenticator.authenticate(Mockito.anyString(), Mockito.anyMap(), Mockito.isA(HttpSession.class),
-                Mockito.anyString(), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletResponse.class))).thenReturn("{\"loginresponse\":{}");
+                Mockito.same(InetAddress.getByName("127.0.0.1")), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletResponse.class))).thenReturn("{\"loginresponse\":{}");
 
         Field authManagerField = ApiServlet.class.getDeclaredField("_authManager");
         authManagerField.setAccessible(true);
@@ -198,7 +200,7 @@ public class ApiServletTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void processRequestInContextLogout() {
+    public void processRequestInContextLogout() throws UnknownHostException {
         Mockito.when(request.getMethod()).thenReturn("GET");
         Mockito.when(request.getSession(Mockito.anyBoolean())).thenReturn(
                 session);
@@ -215,13 +217,13 @@ public class ApiServletTest {
 
         Mockito.verify(authManager).getAPIAuthenticator("logout");
         Mockito.verify(authenticator).authenticate(Mockito.anyString(), Mockito.anyMap(), Mockito.isA(HttpSession.class),
-                Mockito.anyString(), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletResponse.class));
+                Mockito.eq(InetAddress.getByName("127.0.0.1")), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletResponse.class));
         Mockito.verify(session).invalidate();
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void processRequestInContextLogin() {
+    public void processRequestInContextLogin() throws UnknownHostException {
         Mockito.when(request.getMethod()).thenReturn("GET");
         Mockito.when(request.getSession(Mockito.anyBoolean())).thenReturn(
                 session);
@@ -237,7 +239,7 @@ public class ApiServletTest {
 
         Mockito.verify(authManager).getAPIAuthenticator("login");
         Mockito.verify(authenticator).authenticate(Mockito.anyString(), Mockito.anyMap(), Mockito.isA(HttpSession.class),
-                Mockito.anyString(), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletResponse.class));
+                Mockito.eq(InetAddress.getByName("127.0.0.1")), Mockito.anyString(), Mockito.isA(StringBuilder.class), Mockito.isA(HttpServletResponse.class));
     }
 
     @Test

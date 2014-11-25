@@ -22,6 +22,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Map;
+import java.net.InetAddress;
 
 /*
 * APIAuthenticator is an interface that defines method that
@@ -35,7 +36,7 @@ import java.util.Map;
 * */
 public interface APIAuthenticator {
     public String authenticate(String command, Map<String, Object[]> params,
-                               HttpSession session, String remoteAddress, String responseType,
+                               HttpSession session, InetAddress remoteAddress, String responseType,
                                StringBuilder auditTrailSb, final HttpServletResponse resp) throws ServerApiException;
 
     public APIAuthenticationType getAPIType();

@@ -22,7 +22,6 @@ package com.cloud.utils.net;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
@@ -43,6 +42,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.net.util.SubnetUtils;
+import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.log4j.Logger;
 
 import com.googlecode.ipv6.IPv6Address;
@@ -520,35 +520,9 @@ public class NetUtils {
     }
 
     public static boolean isValidIp(final String ip) {
-        final String[] ipAsList = ip.split("\\.");
+        InetAddressValidator validator = InetAddressValidator.getInstance();
 
-        // The IP address must have four octets
-        if (Array.getLength(ipAsList) != 4) {
-            return false;
-        }
-
-        for (int i = 0; i < 4; i++) {
-            // Each octet must be an integer
-            final String octetString = ipAsList[i];
-            int octet;
-            try {
-                octet = Integer.parseInt(octetString);
-            } catch (final Exception e) {
-                return false;
-            }
-            // Each octet must be between 0 and 255, inclusive
-            if (octet < 0 || octet > 255) {
-                return false;
-            }
-
-            // Each octetString must have between 1 and 3 characters
-            if (octetString.length() < 1 || octetString.length() > 3) {
-                return false;
-            }
-        }
-
-        // IP is good, return true
-        return true;
+        return validator.isValidInet4Address(ip);
     }
 
     public static boolean isValidCIDR(final String cidr) {

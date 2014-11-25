@@ -37,6 +37,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Map;
+import java.net.InetAddress;
 
 @APICommand(name = "login", description = "Logs a user into the CloudStack. A successful login attempt will generate a JSESSIONID cookie value that can be passed in subsequent Query command calls until the \"logout\" command has been issued or the session has expired.", requestHasSensitiveInfo = true, responseObject = LoginCmdResponse.class, entityType = {})
 public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
@@ -103,7 +104,7 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
     }
 
     @Override
-    public String authenticate(String command, Map<String, Object[]> params, HttpSession session, String remoteAddress, String responseType, StringBuilder auditTrailSb, final HttpServletResponse resp) throws ServerApiException {
+    public String authenticate(String command, Map<String, Object[]> params, HttpSession session, InetAddress remoteAddress, String responseType, StringBuilder auditTrailSb, final HttpServletResponse resp) throws ServerApiException {
 
         // FIXME: ported from ApiServlet, refactor and cleanup
         final String[] username = (String[])params.get(ApiConstants.USERNAME);
