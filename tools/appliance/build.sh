@@ -112,5 +112,5 @@ vboxmanage clonehd $hdd_uuid $appliance-$branch-$build_date-hyperv.vhd --format 
 zip $appliance-$branch-$build_date-hyperv.vhd.zip $appliance-$branch-$build_date-hyperv.vhd
 echo "$appliance exported for HyperV: dist/$appliance-$branch-$build_date-hyperv.vhd"
 
-mv *-hyperv.vhd *-hyperv.vhd.zip *.bz2 *.ova dist/
+mv *-hyperv.vhd *.zip *.bz2 *.ova dist/
 
