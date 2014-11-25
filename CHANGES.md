@@ -44,6 +44,30 @@ This is a bug fix release. The following issues were fixed:
     CLOUDSTACK-6466: cpu and ram is not getting updated correctly in usage_vm_instance table for usage type 2
     CLOUDSTACK-6669: Support volume resize in usage server
     CLOUDSTACK-6669: Fix support resize in usage server
+    CLOUDSTACK-6743: Use edge-triggering in MessageDetector to handle bogus wakeup gracefully. Level triggering plus bogus wakeup can cause a tight loop to spin
+    CLOUDSTACK-6075: Increase the ram size for router service offering
+    CLOUDSTACK-7966: remove snapshot_store_ref entry, in which role is Primary, during storage GC
+    CLOUDSTACK-7917: Validating Load Balancer Rule when updating LB + unit test
+    CLOUDSTACK-7915: Remove hard-coded values for Load Balancer algorithms in UI
+    CLOUDSTACK-7951: Limit amount of memory used by cloudstack-agent jsvc
+    CLOUDSTACK-7886: cloudstackoperations like deployvm,deleteNW are failing if CS fail to contact rabbit mq server. This is happening in case of Async API calls.
+    CLOUDSTACK-7884: Cloudstack MS is not responding (happening randomly) after some restart.
+    CLOUDSTACK-7877: The NET.IPRELEASE events are not added to usage_event on IP range deletion from Physical Networks.
+    CLOUDSTACK-7872: network getting shutdown inspite of running VM's in the network
+    CLOUDSTACK-7869: Add simulator support for findHostsForMigration API
+    CLOUDSTACK-7849: Sorting projects alphabetically in drop down menu
+    CLOUDSTACK-7837: [UI] Make the Source CIDR column wide enough to fit the CIDR value without ellipsizing
+    CLOUDSTACK-7766: Field Validations Missing for Ingress and Egress Rules
+    CLOUDSTACK-7700: Volume Snapshot Async Job returns Success for a failed operation
+    CLOUDSTACK-7679: Bump rabbitmq client library to latest 3.4.1
+    CLOUDSTACK-7589: VM not Starting and always stuck in Stopped state after management server restarts.
+    CLOUDSTACK-7581: Empty 'ID' parameters allowed in API calls
+    CLOUDSTACK-7463: UI: Domain Admin UI shows 'Add LDAP Users' button (should not be shown)
+    CLOUDSTACK-7319: dd with direct io is less impacting on Dom0 kernel resources
+    CLOUDSTACK-7302: UI: Remove Hover Interaction from breadcrumbs at top page
+    CLOUDSTACK-7293: UI: Fixed localization issues on the login page
+    CLOUDSTACK-7191:On restartNetwork destroy the VR immediatley, instead of cleanup the rules then destroy
+    CLOUDSTACK-7144: No GSLB provider is available during assigning load balancing rule
 
 Version 4.3.1
 -------------
