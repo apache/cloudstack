@@ -138,6 +138,7 @@ Requires: java => 1.7.0
 Requires: jsvc
 Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
+Requires: mysql-connector-java
 Group: System Environment/Libraries
 %description usage
 The CloudStack usage calculation service
@@ -318,7 +319,11 @@ install -D usage/target/cloud-usage-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir
 install -D usage/target/transformed/db.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage/db.properties
 install -D usage/target/transformed/log4j-cloud_usage.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage/log4j-cloud.xml
 cp usage/target/dependencies/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/lib/
-install -D packaging/centos7/cloud-usage.rc ${RPM_BUILD_ROOT}/%{_sysconfdir}/init.d/%{name}-usage
+install -D packaging/centos7/cloud-usage.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-usage.service
+install -D packaging/centos7/cloud-usage.sysconfig ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig/%{name}-usage
+install -D packaging/centos7/cloud-usage-sysd ${RPM_BUILD_ROOT}/usr/sbin/%{name}-usage-sysd
+mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/run
+touch ${RPM_BUILD_ROOT}%{_localstatedir}/run/%{name}-usage.pid
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/usage/
 
 # CLI
@@ -441,6 +446,10 @@ if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
     mv %{_sysconfdir}/cloud.rpmsave/agent/agent.properties %{_sysconfdir}/cloud.rpmsave/agent/agent.properties.rpmsave
 fi
 
+%pre usage
+id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
+     -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
+
 %preun usage
 /sbin/service cloudstack-usage stop || true
 if [ "$1" == "0" ] ; then
@@ -555,12 +564,15 @@ fi
 %{_defaultdocdir}/%{name}-common-%{version}/NOTICE
 
 %files usage
-%attr(0755,root,root) %{_sysconfdir}/init.d/%{name}-usage
+%attr(0644,root,root) %{_sysconfdir}/sysconfig/%{name}-usage
+%attr(0755,root,root) /usr/sbin/%{name}-usage-sysd
+%attr(0644,root,root) %{_unitdir}/%{name}-usage.service
 %attr(0644,root,root) %{_datadir}/%{name}-usage/*.jar
 %attr(0644,root,root) %{_datadir}/%{name}-usage/lib/*.jar
 %dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/usage
 %attr(0644,root,root) %{_sysconfdir}/%{name}/usage/db.properties
 %attr(0644,root,root) %{_sysconfdir}/%{name}/usage/log4j-cloud.xml
+%attr(0644,cloud,cloud) %{_localstatedir}/run/%{name}-usage.pid
 %{_defaultdocdir}/%{name}-usage-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-usage-%{version}/NOTICE
 
