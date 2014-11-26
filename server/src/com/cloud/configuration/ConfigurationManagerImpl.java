@@ -367,6 +367,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("xenserver.heartbeat.interval");
         configValuesForValidation.add("xenserver.heartbeat.timeout");
         configValuesForValidation.add("incorrect.login.attempts.allowed");
+        configValuesForValidation.add("vm.password.length");
     }
 
     private void weightBasedParametersForValidation() {
@@ -779,6 +780,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 int val = Integer.parseInt(value);
                 if (val <= 0) {
                     throw new InvalidParameterValueException("Please enter a positive value for the configuration parameter:" + name);
+                }
+                //TODO - better validation for all password pamameters
+                if ("vm.password.length".equalsIgnoreCase(name) && val < 6) {
+                    throw new InvalidParameterValueException("Please enter a value greater than 6 for the configuration parameter:" + name);
                 }
             } catch (NumberFormatException e) {
                 s_logger.error("There was an error trying to parse the integer value for:" + name);
