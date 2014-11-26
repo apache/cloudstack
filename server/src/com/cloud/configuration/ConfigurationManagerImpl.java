@@ -327,7 +327,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private int _maxVolumeSizeInGb = Integer.parseInt(Config.MaxVolumeSize.getDefaultValue());
     private long _defaultPageSize = Long.parseLong(Config.DefaultPageSize.getDefaultValue());
-    private static final String DOMAIN_NAME_PATTERN = "^((?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{2,6}$";
+    private static final String DOMAIN_NAME_PATTERN = "^((?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{1,63}$";
     protected Set<String> configValuesForValidation;
     private Set<String> weightBasedParametersForValidation;
     private Set<String> overprovisioningFactorsForValidation;
@@ -844,7 +844,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (value.startsWith("*")) {
                     domainName = value.substring(2); //skip the "*."
                 }
-                if (!domainName.matches(DOMAIN_NAME_PATTERN)) {
+                //max length for FQDN is 253 + 2, code adds xxx-xxx-xxx-xxx to domain name when creating URL
+                if (domainName.length() >= 238 || !domainName.matches(DOMAIN_NAME_PATTERN)) {
                     return "Please enter a valid string for domain name, prefixed with '*.' if applicable";
                 }
             } else if (range.equals("routes")) {
