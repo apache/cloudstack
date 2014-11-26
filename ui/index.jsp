@@ -440,6 +440,7 @@
                                                 <option value="us">Standard (US) keyboard</option>
                                                 <option value="uk">UK keyboard</option>
                                                 <option value="jp">Japanese keyboard</option>
+                                                <option value="sc">Simplified Chinese keyboard</option>
                                             </select>
                                         </div>
                                     </div>
