@@ -1459,9 +1459,6 @@
 
                     scaleUp: {
                         label: 'label.change.service.offering',
-                        preFilter: function() {
-                            return false;
-                        },
                         createForm: {
                             title: 'label.change.service.offering',
                             desc: function(args) {
