@@ -142,7 +142,7 @@ public class SimulatorStorageProcessor implements StorageProcessor {
         int index = snapshot.getPath().lastIndexOf("/");
 
         String snapshotName = snapshot.getPath().substring(index + 1);
-        String snapshotRelPath = null;
+        String snapshotRelPath = "snapshots";
         SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
         newSnapshot.setPath(snapshotRelPath + File.separator + snapshotName);
         return new CopyCmdAnswer(newSnapshot);
@@ -209,7 +209,6 @@ public class SimulatorStorageProcessor implements StorageProcessor {
         SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
         String snapshotPath = snapshot.getPath();
         int index = snapshotPath.lastIndexOf("/");
-        snapshotPath = snapshotPath.substring(0, index);
         String snapshotName = snapshotPath.substring(index + 1);
         VolumeObjectTO newVol = new VolumeObjectTO();
         newVol.setPath(snapshotName);
