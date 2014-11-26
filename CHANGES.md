@@ -84,7 +84,24 @@ This is a bug fix release. The following issues were fixed:
     CLOUDSTACK-6374: Remove entries from lb vm map when lb rule apply fails
     CLOUDSTACK-6365: support virtual host and ssl in rabbitMQ event bus
     CLOUDSTACK-6328: run.sh check if an existing java process is running, before spawining new ones
-    CLOUDSTACK-6322 - Don't allow service instance creation with empty or null service-instance "name".
+    CLOUDSTACK-6322: Don't allow service instance creation with empty or null service-instance "name".
+    CLOUDSTACK-6269: [Simulator] Exception "Unable to send command"
+    CLOUDSTACK-6236: Negative ref_cnt of template(snapshot/volume)_store_ref results in out-of-range error in Mysql
+    CLOUDSTACK-6210: LDAP:listLdapUsers api throws exception when we click on "Add LDAP Account"
+    CLOUDSTACK-6192: Return failure on StartCommand and PrepareForMigrationCommand when connectPhysicalDisk fails
+    CLOUDSTACK-6172: Volume is not retaining same uuid when migrating from one storage to another.
+    CLOUDSTACK-6020: ipv4 address can be a larger number then Interger.MAX_VALUE
+    CLOUDSTACK-5962: Value of Global parameter "custom.diskoffering.size.min" is not reflected in UI during new instance creation.
+    CLOUDSTACK-5870: API support for retrieving user data
+    CLOUDSTACK-5865: Unable to use login API if domainId parameter is id and not uuid
+    CLOUDSTACK-5839: return canEnableIndividualService in listNetworkServiceProvidersResponse
+    CLOUDSTACK-5821: systemvmiso is locked by systevmvm in hyperv
+    CLOUDSTACK-5762: VM wizard, custom compute offering: Fix error label
+    CLOUDSTACK-5719: UI > Network > Add Guest Network > when Physical Network dropdown is changed, refresh Network Offering dropdown
+    CLOUDSTACK-5576: UI > IP Address > EnableVPN, DisableVPN: change label.
+    CLOUDSTACK-5501: Allow one vpn customer gateway with multiple connections
+    CLOUDSTACK-5446: delete all the leftover snapshots on primary storage in case of snapshot errors
+
 
 Version 4.3.1
 -------------
