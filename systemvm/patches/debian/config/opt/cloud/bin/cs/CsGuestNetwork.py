@@ -19,13 +19,14 @@ import CsHelper
 
 
 class CsGuestNetwork:
-    def __init__(self, device):
+    def __init__(self, device, config):
         self.data = {}
         self.guest = True
         db = DataBag()
         db.setKey("guestnetwork")
         db.load()
         dbag = db.getDataBag()
+        self.config = config
         if device in dbag.keys() and len(dbag[device]) != 0:
             self.data = dbag[device][0]
         else:
@@ -37,7 +38,7 @@ class CsGuestNetwork:
     def get_domain(self):
         domain = "cloudnine.internal"
         if not self.guest:
-            return CsHelper.get_domain()
+            return self.config.get_domain()
 
         if 'domain_name' in self.data:
             return self.data['domain_name']

@@ -18,6 +18,7 @@ import CsHelper
 import logging
 from netaddr import *
 from CsGuestNetwork import CsGuestNetwork
+from cs.CsDatabag import CsDataBag
 
 NO_PRELOAD = False
 LEASES = "/var/lib/misc/dnsmasq.leases"
@@ -27,16 +28,16 @@ DNSMASQ_CONF = "/etc/dnsmasq.conf"
 CLOUD_CONF = "/etc/dnsmasq.d/cloud.conf"
 
 
-class CsDhcp(object):
+class CsDhcp(CsDataBag):
     """ Manage dhcp entries """
 
-    def __init__(self, dbag, cl):
-        dnsmasq = CsDnsMasq()
-        for item in dbag:
+    def process(self):
+        dnsmasq = CsDnsMasq(self.config)
+        for item in self.dbag:
             if item == "id":
                 continue
-            dnsmasq.add(dbag[item])
-        dnsmasqb4 = CsDnsMasq(NO_PRELOAD)
+            dnsmasq.add(self.dbag[item])
+        dnsmasqb4 = CsDnsMasq(self.config, NO_PRELOAD)
         dnsmasqb4.parse_hosts()
         dnsmasqb4.parse_dnsmasq()
         if not dnsmasq.compare_hosts(dnsmasqb4):
@@ -55,10 +56,11 @@ class CsDhcp(object):
 
 class CsDnsMasq(object):
 
-    def __init__(self, preload=True):
+    def __init__(self, config, preload=True):
         self.list = []
         self.hosts = []
         self.leases = []
+        self.config = config
         self.updated = False
         self.devinfo = CsHelper.get_device_info()
         self.devs = []
@@ -108,7 +110,7 @@ class CsDnsMasq(object):
             self.updated = self.updated | CsHelper.addifmissing(CLOUD_CONF, line)
             # Next add the domain
             # if this is a guest network get it there otherwise use the value in resolv.conf
-            gn = CsGuestNetwork(device)
+            gn = CsGuestNetwork(device, self.cl)
             line = "dhcp-option=tag:interface-%s,15,%s" % (device, gn.get_domain())
             self.updated = self.updated | CsHelper.addifmissing(CLOUD_CONF, line)
         if self.updated:
