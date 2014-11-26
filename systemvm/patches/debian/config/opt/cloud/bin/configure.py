@@ -37,6 +37,7 @@ from cs.CsRedundant import *
 from cs.CsFile import CsFile
 from cs.CsAddress import CsAddress
 from cs.CsApp import CsApache, CsPasswdSvc, CsDnsmasq
+from cs.CsMonitor import CsMonitor
 
 
 class CsPassword(CsDataBag):
@@ -87,10 +88,7 @@ class CsAcl(CsDataBag):
 
         def create(self):
             for cidr in self.rule['cidr']:
-                self.add_rule()
-            if self.ip != '':
-                # Always append default drop
-                self.fw.append(["mangle", "", "-A FIREWALL_%s -j DROP" % self.ip])
+                self.add_rule(cidr)
 
         def add_rule(self, cidr):
             icmp_type = ''
@@ -567,8 +565,12 @@ def main(argv):
     nf = CsNetfilters()
     nf.compare(config.get_fw())
 
-    dh = CsDataBag("dhcpentry")
-    dhcp = CsDhcp(dh.get_bag(), config.get_cmdline())
+    dhcp = CsDhcp("dhcpentry", config)
+    dhcp.process()
+
+    mon = CsMonitor("monitorservice", config)
+    mon.process()
+
 
 if __name__ == "__main__":
     main(sys.argv)

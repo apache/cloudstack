@@ -68,6 +68,12 @@ class CsCmdLine(CsDataBag):
         else:
             return "unknown"
 
+    def get_domain(self):
+        if "domain" in self.dbag['config']:
+            return self.dbag['config']['domain']
+        else:
+            return "cloudnine.internal"
+
     def get_vpccidr(self):
         if "vpccidr" in self.dbag['config']:
             return self.dbag['config']['vpccidr']

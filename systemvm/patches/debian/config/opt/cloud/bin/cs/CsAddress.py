@@ -300,6 +300,7 @@ class CsIP:
             self.fw.append(["mangle", "",
                             "-A PREROUTING -i %s -m state --state NEW " % self.dev +
                             "-j CONNMARK --set-xmark 0x%s/0xffffffff" % self.dnum])
+            self.fw.append(["mangle", "", "-A FIREWALL_%s -j DROP" % self.address['public_ip']])
 
         self.fw.append(["filter", "", "-A INPUT -d 224.0.0.18/32 -j ACCEPT"])
         self.fw.append(["filter", "", "-A INPUT -d 225.0.0.50/32 -j ACCEPT"])

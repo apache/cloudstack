@@ -63,7 +63,10 @@ public abstract class AbstractConfigItemFacade {
     private static Hashtable<Class<? extends NetworkElementCommand>, AbstractConfigItemFacade> flyweight = new Hashtable<Class<? extends NetworkElementCommand>, AbstractConfigItemFacade>();
 
     static {
-        gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+        gson = new GsonBuilder()
+            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+            .disableHtmlEscaping()
+            .create();
 
         flyweight.put(SetPortForwardingRulesVpcCommand.class, new SetPortForwardingRulesVpcConfigItem());
         flyweight.put(SetPortForwardingRulesCommand.class, new SetPortForwardingRulesConfigItem());

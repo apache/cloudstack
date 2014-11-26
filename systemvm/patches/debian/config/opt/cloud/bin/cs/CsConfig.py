@@ -51,6 +51,9 @@ class CsConfig(object):
     def is_vpc(self):
         return self.cl.get_type() == "vpcrouter"
 
+    def get_domain(self):
+        return self.cl.get_domain()
+
     def get_format(self):
         return self.__LOG_FORMAT
 

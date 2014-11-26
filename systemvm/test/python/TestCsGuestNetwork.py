@@ -9,7 +9,7 @@ class TestCsGuestNetwork(unittest.TestCase):
         merge.DataBag.DPATH = "."
 
     def test_init(self):
-        csguestnetwork = CsGuestNetwork({})
+        csguestnetwork = CsGuestNetwork({}, {})
         self.assertTrue(csguestnetwork is not None)
 
 if __name__ == '__main__':
