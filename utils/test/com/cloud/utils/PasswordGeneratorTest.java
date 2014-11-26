@@ -25,10 +25,11 @@ import org.junit.Test;
 public class PasswordGeneratorTest {
     @Test
     public void generateRandomPassword() {
-        // actual length is requested length + 3
+        // actual length is requested length, minimum length is 3
         Assert.assertTrue(PasswordGenerator.generateRandomPassword(0).length() == 3);
-        Assert.assertTrue(PasswordGenerator.generateRandomPassword(1).length() == 4);
-        String password = PasswordGenerator.generateRandomPassword(0);
+        Assert.assertTrue(PasswordGenerator.generateRandomPassword(1).length() == 3);
+        Assert.assertTrue(PasswordGenerator.generateRandomPassword(5).length() == 5);
+        String password = PasswordGenerator.generateRandomPassword(8);
         // TODO: this might give more help to bruteforcing than desired
         // the actual behavior is that the first character is a random lowercase
         // char

@@ -35,18 +35,28 @@ public class PasswordGenerator {
     static private char[] alphaNumeric = new char[] {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y',
         'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '2', '3', '4', '5', '6', '7', '8', '9'};
 
+    static private int minLength = 3;
+
     public static String generateRandomPassword(int num) {
         Random r = new SecureRandom();
         StringBuilder password = new StringBuilder();
 
-        // Generate random 3-character string with a lowercase character,
-        // uppercase character, and a digit
-        password.append(generateLowercaseChar(r)).append(generateUppercaseChar(r)).append(generateDigit(r));
+        //Guard for num < minLength
+        if (num < minLength) {
+            //Add alphanumeric chars at random
+            for (int i = 0; i < minLength; i++) {
+                password.append(generateAlphaNumeric(r));
+            }
+        } else {
+            // Generate random 3-character string with a lowercase character,
+            // uppercase character, and a digit
+            password.append(generateLowercaseChar(r)).append(generateUppercaseChar(r)).append(generateDigit(r));
 
-        // Generate a random n-character string with only lowercase
-        // characters
-        for (int i = 0; i < num; i++) {
-            password.append(generateLowercaseChar(r));
+            // Generate a random n-character string with only lowercase
+            // characters
+            for (int i = 0; i < num - 3; i++) {
+                password.append(generateLowercaseChar(r));
+            }
         }
 
         return password.toString();
