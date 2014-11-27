@@ -68,8 +68,93 @@ public class Upgrade442to450 implements DbUpgrade {
         updateSystemVmTemplates(conn);
         dropInvalidKeyFromStoragePoolTable(conn);
         dropDuplicatedForeignKeyFromAsyncJobTable(conn);
+        upgradeMemoryOfVirtualRoutervmOffering(conn);
+        upgradeMemoryOfInternalLoadBalancervmOffering(conn);
     }
 
+    private void upgradeMemoryOfVirtualRoutervmOffering(Connection conn) {
+        PreparedStatement updatePstmt = null;
+        PreparedStatement selectPstmt = null;
+        ResultSet selectResultSet = null;
+        int newRamSize = 256; //256MB
+        long serviceOfferingId = 0;
+
+        /**
+         * Pick first row in service_offering table which has system vm type as domainrouter. User added offerings would start from 2nd row onwards.
+         * We should not update/modify any user-defined offering.
+         */
+
+        try {
+            selectPstmt = conn.prepareStatement("SELECT id FROM `cloud`.`service_offering` WHERE vm_type='domainrouter'");
+            updatePstmt = conn.prepareStatement("UPDATE `cloud`.`service_offering` SET ram_size=? WHERE id=?");
+            selectResultSet = selectPstmt.executeQuery();
+            if(selectResultSet.next()) {
+                serviceOfferingId = selectResultSet.getLong("id");
+            }
+
+            updatePstmt.setInt(1, newRamSize);
+            updatePstmt.setLong(2, serviceOfferingId);
+            updatePstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to upgrade ram_size of service offering for domain router. ", e);
+        } finally {
+            try {
+                if (selectPstmt != null) {
+                    selectPstmt.close();
+                }
+                if (selectResultSet != null) {
+                    selectResultSet.close();
+                }
+                if (updatePstmt != null) {
+                    updatePstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Done upgrading RAM for service offering of domain router to " + newRamSize);
+    }
+
+    private void upgradeMemoryOfInternalLoadBalancervmOffering(Connection conn) {
+        PreparedStatement updatePstmt = null;
+        PreparedStatement selectPstmt = null;
+        ResultSet selectResultSet = null;
+        int newRamSize = 256; //256MB
+        long serviceOfferingId = 0;
+
+        /**
+         * Pick first row in service_offering table which has system vm type as internalloadbalancervm. User added offerings would start from 2nd row onwards.
+         * We should not update/modify any user-defined offering.
+         */
+
+        try {
+            selectPstmt = conn.prepareStatement("SELECT id FROM `cloud`.`service_offering` WHERE vm_type='internalloadbalancervm'");
+            updatePstmt = conn.prepareStatement("UPDATE `cloud`.`service_offering` SET ram_size=? WHERE id=?");
+            selectResultSet = selectPstmt.executeQuery();
+            if(selectResultSet.next()) {
+                serviceOfferingId = selectResultSet.getLong("id");
+            }
+
+            updatePstmt.setInt(1, newRamSize);
+            updatePstmt.setLong(2, serviceOfferingId);
+            updatePstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to upgrade ram_size of service offering for internal loadbalancer vm. ", e);
+        } finally {
+            try {
+                if (selectPstmt != null) {
+                    selectPstmt.close();
+                }
+                if (selectResultSet != null) {
+                    selectResultSet.close();
+                }
+                if (updatePstmt != null) {
+                    updatePstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Done upgrading RAM for service offering of internal loadbalancer vm to " + newRamSize);
+    }
 
     @Override
     public File[] getCleanupScripts() {
