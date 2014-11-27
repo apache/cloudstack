@@ -71,6 +71,12 @@ class CsFile:
         token = string.split('=')[0] + '='
         self.search(token, string)
 
+    def append(self, string, where=-1):
+        if where == -1:
+            self.new_config.append("%s\n" % string)
+        else:
+            self.new_config.insert(where, "%s\n" % string)
+
     def add(self, string, where=-1):
         for index, line in enumerate(self.new_config):
             if line.strip() == string:
