@@ -38,6 +38,7 @@ from cs.CsFile import CsFile
 from cs.CsAddress import CsAddress
 from cs.CsApp import CsApache, CsPasswdSvc, CsDnsmasq
 from cs.CsMonitor import CsMonitor
+from cs.CsLoadBalancer import CsLoadBalancer
 
 
 class CsPassword(CsDataBag):
@@ -567,6 +568,9 @@ def main(argv):
 
     dhcp = CsDhcp("dhcpentry", config)
     dhcp.process()
+
+    lb = CsLoadBalancer("loadbalancer", config)
+    lb.process()
 
     mon = CsMonitor("monitorservice", config)
     mon.process()
