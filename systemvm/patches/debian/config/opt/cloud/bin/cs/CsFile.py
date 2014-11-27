@@ -46,6 +46,10 @@ class CsFile:
         else:
             return False
 
+    def empty(self):
+        self.config = []
+        self.new_config = []
+
     def commit(self):
         if not self.is_changed():
             return
@@ -104,3 +108,6 @@ class CsFile:
                     self.new_config[index] = replace + "\n"
         if not found:
             self.new_config.append(replace + "\n")
+
+    def compare(self, o):
+        return (isinstance(o, self.__class__) and set(self.config) == set(o.new_config))
