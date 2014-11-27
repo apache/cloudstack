@@ -15,13 +15,17 @@
 # specific language governing permissions and limitations
 # under the License.
 
-%define _pythonparamiko %{nil}
-%define _javaversion java => 1.7.0
-%define _tomcatversion tomcat => 7.0
-%define _vlanconfigtool iproute
-%define _tomcatpathname tomcat
-%define _managementstartscriptpath %{_sbindir}
-%define _managementservice install -D packaging/centos63/%{_os}/cloud-management.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-management.service
-%define _managementserviceattribute %attr(0755,root,root) %{_unitdir}/%{name}-management.service
-%define _iptablesservice Requires: iptables-services
-%define _serverxmlname server7
+SHORTNAME="cloudstack-usage"
+PIDFILE=/var/run/"$SHORTNAME".pid
+LOCKFILE=/var/lock/subsys/"$SHORTNAME"
+LOGDIR=/var/log/cloudstack/usage
+LOGFILE=${LOGDIR}/usage.log
+PROGNAME="CloudStack Usage Monitor"
+CLASS="com.cloud.usage.UsageServer"
+USER=cloud
+
+UCP=`ls /usr/share/cloudstack-usage/cloud-usage-*.jar`":"`ls /usr/share/cloudstack-usage/lib/*.jar | tr '\n' ':'`
+JCP="/usr/share/java/commons-daemon.jar":"/usr/share/java/mysql-connector-java.jar"
+
+CLASSPATH="$UCP:$JCP:/etc/cloudstack/usage"
+

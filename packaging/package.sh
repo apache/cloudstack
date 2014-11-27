@@ -23,8 +23,7 @@ function usage() {
     echo "The commonly used Arguments are:"
     echo "-p|--pack oss|OSS             To package with only redistributable libraries (default)"
     echo "-p|--pack noredist|NOREDIST   To package with non-redistributable libraries"
-    echo "-o default|DEFAULT            To build in default Operating System mode"
-    echo "-o rhel7|RHEL7                To build for rhel7"
+    echo "-d centos7|centos63           To build a package for a distribution"
     echo "-s simulator|SIMULATOR        To build for Simulator"
     echo ""
     echo "Examples: ./package.sh -p|--pack oss|OSS"
@@ -33,24 +32,24 @@ function usage() {
     exit 1
 }
 
+# packaging
+#   $1 redist flag
+#   $2 simulator flag
+#   $3 distribution name
 function packaging() {
     CWD=`pwd`
-    RPMDIR=$CWD/../../dist/rpmbuild
+    RPMDIR=$CWD/../dist/rpmbuild
     PACK_PROJECT=cloudstack
-    if [ -n "$1" ] ;then
-        DOS="-D_os $1"
-        echo "$DOS"
+    if [ -n "$1" ] ; then
+        DEFOSSNOSS="-D_ossnoss $1"
     fi
     if [ -n "$2" ] ; then
-        DEFOSSNOSS="-D_ossnoss $2"
-        echo "$DEFOSSNOSS"
-    fi
-    if [ -n "$3" ] ; then
-        DEFSIM="-D_sim $3"
-        echo "$DEFSIM"
+        DEFSIM="-D_sim $2"
     fi
 
-    VERSION=`(cd ../../; mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version) | grep --color=none '^[0-9]\.'`
+    DISTRO=$3
+
+    VERSION=`(cd ../; mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version) | grep --color=none '^[0-9]\.'`
     if echo $VERSION | grep -q SNAPSHOT ; then
         REALVER=`echo $VERSION | cut -d '-' -f 1`
         DEFVER="-D_ver $REALVER"
@@ -71,15 +70,13 @@ function packaging() {
     mkdir -p $RPMDIR/SOURCES/$PACK_PROJECT-$VERSION
 
     echo ". preparing source tarball"
-    (cd ../../; tar -c --exclude .git --exclude dist  .  | tar -C $RPMDIR/SOURCES/$PACK_PROJECT-$VERSION -x )
+    (cd ../; tar -c --exclude .git --exclude dist  .  | tar -C $RPMDIR/SOURCES/$PACK_PROJECT-$VERSION -x )
     (cd $RPMDIR/SOURCES/; tar -czf $PACK_PROJECT-$VERSION.tgz $PACK_PROJECT-$VERSION)
 
     echo ". executing rpmbuild"
-    cp cloud.spec $RPMDIR/SPECS
-    cp -rf default $RPMDIR/SPECS
-    cp -rf rhel7 $RPMDIR/SPECS
+    cp $DISTRO/cloud.spec $RPMDIR/SPECS
 
-    (cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" "${DEFVER}" "${DEFREL}" ${DEFPRE+"${DEFPRE}"} ${DEFOSSNOSS+"$DEFOSSNOSS"} ${DEFSIM+"$DEFSIM"} "${DOS}" -bb SPECS/cloud.spec)
+    (cd $RPMDIR; rpmbuild --define "_topdir $RPMDIR" "${DEFVER}" "${DEFREL}" ${DEFPRE+"${DEFPRE}"} ${DEFOSSNOSS+"$DEFOSSNOSS"} ${DEFSIM+"$DEFSIM"} -bb SPECS/cloud.spec)
 
     if [ $? -ne 0 ]; then
         echo "RPM Build Failed "
@@ -91,11 +88,13 @@ function packaging() {
 
 }
 
-if [ $# -lt 1 ] ; then
-    packaging "default"
-elif [ $# -gt 0 ] ; then
-    SHORTOPTS="hp:o:"
-    LONGOPTS="help,pack:,operating-system:,simulator:"
+
+TARGETDISTRO=""
+sim=""
+packageval=""
+
+    SHORTOPTS="hp:d:"
+    LONGOPTS="help,pack:,simulator:distribution"
     ARGS=$(getopt -s bash -u -a --options $SHORTOPTS  --longoptions $LONGOPTS --name $0 -- "$@")
     eval set -- "$ARGS"
     echo "$ARGS"
@@ -119,19 +118,6 @@ elif [ $# -gt 0 ] ; then
             fi
             shift
             ;;
-        -o | --operating-system)
-            os=$2
-            echo "$os"
-            if [ "$os" == "default" -o "$os" == "DEFAULT" ] ; then
-                os = "default"
-            elif [ "$os" == "rhel7" -o "$os" == "RHEL7" ] ; then
-                os="rhel7"
-            else
-                echo "Error: Incorrect value provided in package.sh script for -o, Please see help ./package.sh --help|-h for more details."
-		exit 1
-            fi
-            shift
-            ;;
         -s | --simulator)
             sim=$2
             echo "$sim"
@@ -145,6 +131,10 @@ elif [ $# -gt 0 ] ; then
             fi
             shift
             ;;
+        -d | --distribution)
+            TARGETDISTRO=$2
+            shift
+            ;;
         -)
             echo "Unrecognized option..."
             usage
@@ -156,13 +146,11 @@ elif [ $# -gt 0 ] ; then
         esac
     done
 
-    if [ -z "${os+xxx}" ]; then
-        echo "Setting os to default"
-        os="default"
+    if [ -z "$TARGETDISTRO" ]
+    then
+        echo "Missing target distribution"
+        usage
+        exit 1
     fi
-    echo "Passed OS = $os, packageval = $packageval and Simulator build = $sim"
-    packaging $os $packageval $sim
-else
-    echo "Incorrect choice.  Nothing to do." >&2
-    echo "Please, execute ./package.sh --help for more help"
-fi
+
+    packaging "$packageval" "$sim" "$TARGETDISTRO"
