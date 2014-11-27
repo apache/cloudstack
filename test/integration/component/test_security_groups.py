@@ -502,7 +502,8 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
                                     accountid=self.account.name,
                                     domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
-                                    securitygroupids=[security_group.id]
+                                    securitygroupids=[security_group.id],
+                                    mode=self.services['mode']
                                 )
         self.debug("Deploying VM in account: %s" % self.account.name)
         # Should be able to SSH VM
@@ -643,7 +644,8 @@ class TestRevokeIngressRule(cloudstackTestCase):
                                     accountid=self.account.name,
                                     domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
-                                    securitygroupids=[security_group.id]
+                                    securitygroupids=[security_group.id],
+                                    mode=self.services['mode']
                                 )
         self.debug("Deploying VM in account: %s" % self.account.name)
 
@@ -729,7 +731,8 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
                                     cls.services["virtual_machine"],
                                     accountid=cls.account.name,
                                     domainid=cls.account.domainid,
-                                    serviceofferingid=cls.service_offering.id
+                                    serviceofferingid=cls.service_offering.id,
+                                    mode=cls.services['mode']
                                 )
         cls._cleanup = [
                         cls.account,
@@ -955,7 +958,8 @@ class TestdeployVMWithUserData(cloudstackTestCase):
                                     accountid=self.account.name,
                                     domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
-                                    securitygroupids=[security_group.id]
+                                    securitygroupids=[security_group.id],
+                                    mode=self.services['mode']
                                 )
         self.debug("Deploying VM in account: %s" % self.account.name)
         # Should be able to SSH VM
@@ -1348,7 +1352,8 @@ class TestIngressRule(cloudstackTestCase):
                                     accountid=self.account.name,
                                     domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
-                                    securitygroupids=[security_group.id]
+                                    securitygroupids=[security_group.id],
+                                    mode=self.services['mode']
                                 )
         self.debug("Deploying VM in account: %s" % self.account.name)
 
@@ -1466,7 +1471,8 @@ class TestIngressRule(cloudstackTestCase):
                                     accountid=self.account.name,
                                     domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
-                                    securitygroupids=[security_group.id]
+                                    securitygroupids=[security_group.id],
+                                    mode=self.services['mode']
                                 )
         self.debug("Deploying VM in account: %s" % self.account.name)
 
@@ -1619,7 +1625,8 @@ class TestIngressRule(cloudstackTestCase):
                                     accountid=self.account.name,
                                     domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
-                                    securitygroupids=[security_group.id]
+                                    securitygroupids=[security_group.id],
+                                    mode=self.services['mode']
                                 )
         self.debug("Deploying VM in account: %s" % self.account.name)
 
