@@ -26,6 +26,7 @@ import cs_cmdline
 import cs_vmp
 import cs_network_acl
 import cs_firewallrules
+import cs_loadbalancer
 import cs_monitorservice
 import cs_vmdata
 import cs_dhcp
@@ -106,6 +107,8 @@ class updateDataBag:
             dbag = self.process_network_acl(self.db.getDataBag())
         elif self.qFile.type == 'firewallrules':
             dbag = self.process_firewallrules(self.db.getDataBag())
+        elif self.qFile.type == 'loadbalancer':
+            dbag = self.process_loadbalancer(self.db.getDataBag())
         elif self.qFile.type == 'monitorservice':
             dbag = self.process_monitorservice(self.db.getDataBag())
         elif self.qFile.type == 'vmdata':
@@ -149,6 +152,9 @@ class updateDataBag:
 
     def process_firewallrules(self, dbag):
         return cs_firewallrules.merge(dbag, self.qFile.data)
+
+    def process_loadbalancer(self, dbag):
+        return cs_loadbalancer.merge(dbag, self.qFile.data)
 
     def process_monitorservice(self, dbag):
         return cs_monitorservice.merge(dbag, self.qFile.data)
