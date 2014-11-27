@@ -110,7 +110,7 @@ class CsDnsMasq(object):
             self.updated = self.updated | CsHelper.addifmissing(CLOUD_CONF, line)
             # Next add the domain
             # if this is a guest network get it there otherwise use the value in resolv.conf
-            gn = CsGuestNetwork(device, self.cl)
+            gn = CsGuestNetwork(device, self.config)
             line = "dhcp-option=tag:interface-%s,15,%s" % (device, gn.get_domain())
             self.updated = self.updated | CsHelper.addifmissing(CLOUD_CONF, line)
         if self.updated:
