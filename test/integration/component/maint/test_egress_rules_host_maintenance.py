@@ -234,7 +234,8 @@ class TestEgressAfterHostMaintenance(cloudstackTestCase):
                                     accountid=self.account.name,
                                     domainid=self.account.domainid,
                                     serviceofferingid=self.service_offering.id,
-                                    securitygroupids=[security_group.id]
+                                    securitygroupids=[security_group.id],
+                                    mode=self.services["mode"]
                                 )
         self.debug("Deploying VM in account: %s" % self.account.name)
 
