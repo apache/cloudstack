@@ -1931,10 +1931,13 @@ public class VirtualMachineMO extends BaseMO {
 
         DatastoreFile dsSrcFile = new DatastoreFile(vmdkDatastorePath);
         String srcBaseName = dsSrcFile.getFileBaseName();
+        String trimmedSrcBaseName = trimSnapshotDeltaPostfix(srcBaseName);
 
-        srcBaseName = trimSnapshotDeltaPostfix(srcBaseName);
-
-        s_logger.info("Look for disk device info from volume : " + vmdkDatastorePath + " with trimmed base name: " + srcBaseName);
+        if (matchExactly) {
+            s_logger.info("Look for disk device info from volume : " + vmdkDatastorePath + " with base name: " + srcBaseName);
+        } else {
+            s_logger.info("Look for disk device info from volume : " + vmdkDatastorePath + " with trimmed base name: " + trimmedSrcBaseName);
+        }
 
         if (devices != null && devices.size() > 0) {
             for (VirtualDevice device : devices) {
@@ -1957,7 +1960,7 @@ public class VirtualMachineMO extends BaseMO {
                                     return new Pair<VirtualDisk, String>((VirtualDisk)device, deviceNumbering);
                                 }
                             } else {
-                                if (backingBaseName.contains(srcBaseName)) {
+                                if (backingBaseName.contains(trimmedSrcBaseName)) {
                                     String deviceNumbering = getDeviceBusName(devices, device);
 
                                     s_logger.info("Disk backing : " + diskBackingInfo.getFileName() + " matches ==> " + deviceNumbering);
