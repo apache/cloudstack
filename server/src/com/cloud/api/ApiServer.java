@@ -66,6 +66,7 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.auth.APIAuthenticationManager;
 import org.apache.cloudstack.api.command.admin.account.ListAccountsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
@@ -204,6 +205,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private ConfigurationDao _configDao;
     @Inject
     private EntityManager _entityMgr;
+    @Inject
+    APIAuthenticationManager _authManager;
 
     List<PluggableService> _pluggableServices;
     List<APIChecker> _apiAccessCheckers;
@@ -483,6 +486,10 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 }
                 throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "Invalid request, no command sent");
             } else {
+                // Don't allow Login/Logout APIs to go past this point
+                if (_authManager.getAPIAuthenticator(command[0]) != null) {
+                    return null;
+                }
                 final Map<String, String> paramMap = new HashMap<String, String>();
                 final Set keys = params.keySet();
                 final Iterator keysIter = keys.iterator();
@@ -520,12 +527,10 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     else
                         buildAuditTrail(auditTrailSb, command[0], response);
                 } else {
-                    if (!command[0].equalsIgnoreCase("login") && !command[0].equalsIgnoreCase("logout")) {
-                        final String errorString = "Unknown API command: " + command[0];
-                        s_logger.warn(errorString);
-                        auditTrailSb.append(" " + errorString);
-                        throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, errorString);
-                    }
+                    final String errorString = "Unknown API command: " + command[0];
+                    s_logger.warn(errorString);
+                    auditTrailSb.append(" " + errorString);
+                    throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, errorString);
                 }
             }
         } catch (final InvalidParameterValueException ex) {
