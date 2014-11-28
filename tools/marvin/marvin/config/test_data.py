@@ -323,6 +323,7 @@ test_data = {
             "name": "webvms",
             "type": "host anti-affinity",
         },
+        "userdata": "This is sample data"
     },
     "virtual_machine2": {
         "name": "testvm2",
@@ -799,6 +800,13 @@ test_data = {
         "startport": "22",
         "endport": "22",
         "cidrlist": "0.0.0.0/0"
+    },
+    "ingress_rule_ICMP": {
+        "name": 'ICMP',
+        "protocol": 'ICMP',
+        "startport": -1,
+        "endport": -1,
+        "cidrlist": '0.0.0.0/0',
     },
     "vpncustomergateway": {
             "ipsecpsk": "secreatKey",
@@ -1435,5 +1443,10 @@ test_data = {
             "url": "",
             "name": "Primary iSCSI"
         },
+        "host": {
+                 "publicport": 22,
+                 "username": "root",
+                 "password": "password",
+        }
     }
 }
