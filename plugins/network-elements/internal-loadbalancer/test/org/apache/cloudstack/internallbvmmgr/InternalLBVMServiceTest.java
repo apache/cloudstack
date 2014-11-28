@@ -101,11 +101,11 @@ public class InternalLBVMServiceTest extends TestCase {
         CallContext.register(_accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
 
         DomainRouterVO validVm =
-            new DomainRouterVO(validVmId, off.getId(), 1, "alena", 1, HypervisorType.XenServer, 1, 1, 1, false, 0, false, null, false, false,
+            new DomainRouterVO(validVmId, off.getId(), 1, "alena", 1, HypervisorType.XenServer, 1, 1, 1, 1, false, 0, false, null, false, false,
                 VirtualMachine.Type.InternalLoadBalancerVm, null);
         validVm.setRole(Role.INTERNAL_LB_VM);
         DomainRouterVO nonInternalLbVm =
-            new DomainRouterVO(validVmId, off.getId(), 1, "alena", 1, HypervisorType.XenServer, 1, 1, 1, false, 0, false, null, false, false,
+            new DomainRouterVO(validVmId, off.getId(), 1, "alena", 1, HypervisorType.XenServer, 1, 1, 1, 1, false, 0, false, null, false, false,
                 VirtualMachine.Type.DomainRouter, null);
         nonInternalLbVm.setRole(Role.VIRTUAL_ROUTER);
 

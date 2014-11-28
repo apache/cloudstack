@@ -109,9 +109,15 @@ public class ServiceManagerImpl implements ServiceManager {
         networks.put((NetworkVO)left, new ArrayList<NicProfile>());
         networks.put((NetworkVO)right, new ArrayList<NicProfile>());
         String instanceName = VirtualMachineName.getVmName(id, owner.getId(), "SRV");
+
+        long userId = CallContext.current().getCallingUserId();
+        if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
+            userId =  _userDao.listByAccount(owner.getAccountId()).get(0).getId();
+        }
+
         ServiceVirtualMachine svm =
             new ServiceVirtualMachine(id, instanceName, name, template.getId(), serviceOffering.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                zone.getId(), owner.getDomainId(), owner.getAccountId(), false);
+                zone.getId(), owner.getDomainId(), owner.getAccountId(), userId, false);
 
         // database synchronization code must be able to distinguish service instance VMs.
         Map<String, String> kvmap = new HashMap<String, String>();

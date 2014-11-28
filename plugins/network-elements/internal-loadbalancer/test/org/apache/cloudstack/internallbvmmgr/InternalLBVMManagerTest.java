@@ -126,7 +126,7 @@ public class InternalLBVMManagerTest extends TestCase {
         ComponentContext.initComponentsLifeCycle();
 
         vm =
-            new DomainRouterVO(1L, off.getId(), 1, "alena", 1, HypervisorType.XenServer, 1, 1, 1, false, 0, false, null, false, false,
+            new DomainRouterVO(1L, off.getId(), 1, "alena", 1, HypervisorType.XenServer, 1, 1, 1, 1, false, 0, false, null, false, false,
                 VirtualMachine.Type.InternalLoadBalancerVm, null);
         vm.setRole(Role.INTERNAL_LB_VM);
         vm = setId(vm, 1);
