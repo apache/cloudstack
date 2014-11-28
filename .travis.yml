@@ -16,27 +16,38 @@
 # under the License.
 
 language: java
+
+jdk:
+  - oraclejdk7
+
 cache:
   directories:
-  - $HOME/.cache
-jdk:
-- oraclejdk7
-notifications:
-  email: false
+    - $HOME/.cache
+
+sudo: false
+
 env:
-- TESTS="test_affinity_groups test_deploy_vms_with_varied_deploymentplanners test_disk_offerings test_global_settings test_guest_vlan_range test_iso"
-- TESTS="test_portable_publicip test_primary_storage test_privategw_acl test_public_ip_range test_pvlan test_regions test_reset_vm_on_reboot test_resource_detail test_routers"
-- TESTS="test_secondary_storage test_service_offerings test_ssvm test_templates"
-- TESTS="test_multipleips_per_nic test_network test_non_contigiousvlan test_over_provisioning"
-- TESTS="test_volumes test_vpc_vpn misc/test_deploy_vm test_vm_life_cycle"
+  - TESTS="test_affinity_groups test_deploy_vms_with_varied_deploymentplanners test_disk_offerings test_global_settings test_guest_vlan_range test_iso"
+  - TESTS="test_portable_publicip test_primary_storage test_privategw_acl test_public_ip_range test_pvlan test_regions test_reset_vm_on_reboot test_resource_detail test_routers"
+  - TESTS="test_secondary_storage test_service_offerings test_ssvm test_templates"
+  - TESTS="test_multipleips_per_nic test_network test_non_contigiousvlan test_over_provisioning"
+  - TESTS="test_volumes test_vpc_vpn misc/test_deploy_vm test_vm_life_cycle"
+
 before_install: travis_wait 30 ./tools/travis/before_install.sh
+
 install: ./tools/travis/install.sh
+
 before_script: travis_wait 30 ./tools/travis/before_script.sh
+
 script:
-- mkdir -p integration-test-results/misc
-- travis_wait 30 sleep 30
-- for suite in $TESTS; do travis_wait 30 nosetests --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advanced.cfg test/integration/smoke/$suite.py -s -a tags=advanced,required_hardware=false --zone=Sandbox-simulator --hypervisor=simulator ; done
-- python ./tools/travis/xunit-reader.py integration-test-results/
+  - mkdir -p integration-test-results/misc
+  - travis_wait 30 sleep 30
+  - for suite in $TESTS; do travis_wait 30 nosetests --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advanced.cfg test/integration/smoke/$suite.py -s -a tags=advanced,required_hardware=false --zone=Sandbox-simulator --hypervisor=simulator ; done
+  - python ./tools/travis/xunit-reader.py integration-test-results/
+
 after_success: ./tools/travis/after_success.sh
 after_failure: ./tools/travis/after_failure.sh
 after_script: ./tools/travis/after_script.sh
+
+notifications:
+  email: false
