@@ -2969,7 +2969,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         checkIfHostNameUniqueInNtwkDomain(hostName, networkList);
 
-        UserVmVO vm = commitUserVm(zone, template, hostName, displayName, owner, diskOfferingId, diskSize, userData, caller, isDisplayVm, keyboard, accountId, offering,
+        long userId = CallContext.current().getCallingUserId();
+        if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
+            userId =  _userDao.listByAccount(owner.getAccountId()).get(0).getId();
+        }
+
+        UserVmVO vm = commitUserVm(zone, template, hostName, displayName, owner, diskOfferingId, diskSize, userData, caller, isDisplayVm, keyboard, accountId, userId, offering,
                 isIso, sshPublicKey, networkNicMap, id, instanceName, uuidName, hypervisorType, customParameters);
 
         // Assign instance to the group
@@ -3027,14 +3032,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private UserVmVO commitUserVm(final DataCenter zone, final VirtualMachineTemplate template, final String hostName, final String displayName, final Account owner,
-            final Long diskOfferingId, final Long diskSize, final String userData, final Account caller, final Boolean isDisplayVm, final String keyboard,
-            final long accountId, final ServiceOfferingVO offering, final boolean isIso, final String sshPublicKey, final LinkedHashMap<String, NicProfile> networkNicMap,
-            final long id, final String instanceName, final String uuidName, final HypervisorType hypervisorType, final Map<String, String> customParameters) throws InsufficientCapacityException {
+                                  final Long diskOfferingId, final Long diskSize, final String userData, final Account caller, final Boolean isDisplayVm, final String keyboard,
+                                  final long accountId, final long userId, final ServiceOfferingVO offering, final boolean isIso, final String sshPublicKey, final LinkedHashMap<String, NicProfile> networkNicMap,
+                                  final long id, final String instanceName, final String uuidName, final HypervisorType hypervisorType, final Map<String, String> customParameters) throws InsufficientCapacityException {
         return Transaction.execute(new TransactionCallbackWithException<UserVmVO, InsufficientCapacityException>() {
             @Override
             public UserVmVO doInTransaction(TransactionStatus status) throws InsufficientCapacityException {
                 UserVmVO vm = new UserVmVO(id, instanceName, displayName, template.getId(), hypervisorType, template.getGuestOSId(), offering.getOfferHA(), offering
-                        .getLimitCpuUse(), owner.getDomainId(), owner.getId(), offering.getId(), userData, hostName, diskOfferingId);
+                        .getLimitCpuUse(), owner.getDomainId(), owner.getId(), userId, offering.getId(), userData, hostName, diskOfferingId);
                 vm.setUuid(uuidName);
                 vm.setDynamicallyScalable(template.isDynamicallyScalable());
 

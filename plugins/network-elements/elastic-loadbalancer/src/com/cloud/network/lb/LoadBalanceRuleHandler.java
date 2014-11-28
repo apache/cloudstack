@@ -27,6 +27,7 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
+import com.cloud.user.dao.UserDao;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -140,6 +141,8 @@ public class LoadBalanceRuleHandler {
     private PhysicalNetworkServiceProviderDao _physicalProviderDao;
     @Inject
     private VirtualRouterProviderDao _vrProviderDao;
+    @Inject
+    private UserDao _userDao;
 
     static final private String ELB_VM_NAME_PREFIX = "l";
 
@@ -272,8 +275,13 @@ public class LoadBalanceRuleHandler {
                     throw new CloudRuntimeException("Cannot find virtual router provider " + typeString + " as service provider " + provider.getId());
                 }
 
+                long userId = CallContext.current().getCallingUserId();
+                if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
+                    userId =  _userDao.listByAccount(owner.getAccountId()).get(0).getId();
+                }
+
                 elbVm = new DomainRouterVO(id, _elasticLbVmOffering.getId(), vrProvider.getId(), VirtualMachineName.getSystemVmName(id, _instance, ELB_VM_NAME_PREFIX),
-                        template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), false, 0, false, RedundantState.UNKNOWN,
+                        template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), userId, false, 0, false, RedundantState.UNKNOWN,
                         _elasticLbVmOffering.getOfferHA(), false, VirtualMachine.Type.ElasticLoadBalancerVm, null);
                 elbVm.setRole(Role.LB);
                 elbVm = _routerDao.persist(elbVm);

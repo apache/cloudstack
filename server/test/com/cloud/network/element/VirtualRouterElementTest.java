@@ -285,6 +285,7 @@ public class VirtualRouterElementTest {
                 /* guestOSId */ 0L,
                 /* domainId */ 0L,
                 /* accountId */ 1L,
+                /* userId */ 1L,
                 /* isRedundantRouter */ false,
                 /* priority */ 0,
                 /* isPriorityBumpUp */ false,

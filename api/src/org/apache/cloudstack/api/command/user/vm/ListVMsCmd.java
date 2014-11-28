@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -129,6 +130,9 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
+    @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, required = false, description = "the user ID that created the VM and is under the account that owns the VM")
+    private Long userId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -143,6 +147,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
 
     public List<Long> getIds() {
         return ids;
+    }
+
+    public Long getUserId() {
+        return userId;
     }
 
     public String getName() {

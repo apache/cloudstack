@@ -122,7 +122,7 @@ public class VolumeApiServiceImplTest {
             when(_svc._volsDao.findById(1L)).thenReturn(volumeOfRunningVm);
 
             UserVmVO runningVm = new UserVmVO(1L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false,
-                    false, 1L, 1L, 1L, null, "vm", null);
+                    false, 1L, 1L, 1, 1L, null, "vm", null);
             runningVm.setState(State.Running);
             runningVm.setDataCenterId(1L);
             when(_svc._userVmDao.findById(1L)).thenReturn(runningVm);
@@ -134,7 +134,7 @@ public class VolumeApiServiceImplTest {
             when(_svc._volsDao.findById(2L)).thenReturn(volumeOfStoppedVm);
 
             UserVmVO stoppedVm = new UserVmVO(2L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false,
-                    false, 1L, 1L, 1L, null, "vm", null);
+                    false, 1L, 1L, 1, 1L, null, "vm", null);
             stoppedVm.setState(State.Stopped);
             stoppedVm.setDataCenterId(1L);
             when(_svc._userVmDao.findById(2L)).thenReturn(stoppedVm);
@@ -142,7 +142,7 @@ public class VolumeApiServiceImplTest {
 
             // volume of hyperV vm id=3
             UserVmVO hyperVVm = new UserVmVO(3L, "vm", "vm", 1, HypervisorType.Hyperv, 1L, false,
-                    false, 1L, 1L, 1L, null, "vm", null);
+                    false, 1L, 1L, 1, 1L, null, "vm", null);
             hyperVVm.setState(State.Stopped);
             hyperVVm.setDataCenterId(1L);
             when(_svc._userVmDao.findById(3L)).thenReturn(hyperVVm);
@@ -199,7 +199,7 @@ public class VolumeApiServiceImplTest {
 
             // vm having root volume
             UserVmVO vmHavingRootVolume = new UserVmVO(4L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false,
-                    false, 1L, 1L, 1L, null, "vm", null);
+                    false, 1L, 1L, 1, 1L, null, "vm", null);
             vmHavingRootVolume.setState(State.Stopped);
             vmHavingRootVolume.setDataCenterId(1L);
             when(_svc._userVmDao.findById(4L)).thenReturn(vmHavingRootVolume);
