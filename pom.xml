@@ -81,7 +81,7 @@
     <cs.powermock.version>1.5.3</cs.powermock.version>
     <cs.aws.sdk.version>1.3.22</cs.aws.sdk.version>
     <cs.lang.version>2.6</cs.lang.version>
-    <cs.commons-io.version>1.4</cs.commons-io.version>
+    <cs.commons-io.version>2.4</cs.commons-io.version>
     <cs.reflections.version>0.9.8</cs.reflections.version>
     <cs.java-ipv6.version>0.10</cs.java-ipv6.version>
     <cs.replace.properties>build/replace.properties</cs.replace.properties>

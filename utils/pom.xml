@@ -114,6 +114,7 @@
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
         <scope>provided</scope>
+        <version>${cs.commons-io.version}</version>
     </dependency>
     <dependency>
       <groupId>org.reflections</groupId>
