@@ -310,6 +310,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                     setupCmd = new SecStorageSetupCommand(ssStore.getTO(), secUrl, certs);
                 }
 
+                //template/volume file upload key
+                String postUploadKey = _configDao.getValue(Config.SSVMPSK.key());
+                setupCmd.setPostUploadKey(postUploadKey);
+
                 Answer answer = _agentMgr.easySend(ssHostId, setupCmd);
                 if (answer != null && answer.getResult()) {
                     SecStorageSetupAnswer an = (SecStorageSetupAnswer)answer;

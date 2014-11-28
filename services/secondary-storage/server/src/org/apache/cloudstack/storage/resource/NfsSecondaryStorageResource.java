@@ -47,6 +47,7 @@ import java.util.UUID;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -1264,6 +1265,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (!_inSystemVM) {
             return new Answer(cmd, true, null);
         }
+        Answer answer = null;
         DataStoreTO dStore = cmd.getDataStore();
         if (dStore instanceof NfsTO) {
             String secUrl = cmd.getSecUrl();
@@ -1277,17 +1279,28 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 configCerts(cmd.getCerts());
 
                 nfsIps.add(nfsHostIp);
-                return new SecStorageSetupAnswer(dir);
+                answer = new SecStorageSetupAnswer(dir);
             } catch (Exception e) {
                 String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
                 s_logger.error(msg);
-                return new Answer(cmd, false, msg);
+                answer = new Answer(cmd, false, msg);
 
             }
         } else {
             // TODO: what do we need to setup for S3/Swift, maybe need to mount
             // to some cache storage
-            return new Answer(cmd, true, null);
+            answer = new Answer(cmd, true, null);
+        }
+
+        savePostUploadPSK(cmd.getPostUploadKey());
+        return answer;
+    }
+
+    private void savePostUploadPSK(String psk) {
+        try {
+            FileUtils.writeStringToFile(new File("/etc/cloudstack/agent/ms-psk"),psk, "utf-8");
+        } catch (IOException ex) {
+            s_logger.debug("Failed to copy PSK to the file.", ex);
         }
     }
 
