@@ -57,7 +57,7 @@ public class APIAuthenticationManagerImpl extends ManagerBase implements APIAuth
             APICommand command = authenticator.getAnnotation(APICommand.class);
             if (command != null && !command.name().isEmpty()
                     && APIAuthenticator.class.isAssignableFrom(authenticator)) {
-                s_authenticators.put(command.name(), authenticator);
+                s_authenticators.put(command.name().toLowerCase(), authenticator);
             }
         }
         return true;
@@ -81,6 +81,7 @@ public class APIAuthenticationManagerImpl extends ManagerBase implements APIAuth
 
     @Override
     public APIAuthenticator getAPIAuthenticator(String name) {
+        name = name.toLowerCase();
         APIAuthenticator apiAuthenticator = null;
         if (s_authenticators != null && s_authenticators.containsKey(name)) {
             try {
