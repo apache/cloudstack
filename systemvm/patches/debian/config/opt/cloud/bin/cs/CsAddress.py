@@ -43,6 +43,16 @@ class CsAddress(CsDataBag):
                 ret.append(CsInterface(ip))
         return ret
 
+    def get_guest_ip(self):
+        """
+        Return the ip of the first guest interface
+        For use with routers not vpcrouters
+        """
+        for ip in self.get_ips():
+            if ip.is_guest():
+                return ip.get_ip()
+        return None
+
     def needs_vrrp(self, o):
         """
         Returns if the ip needs to be managed by keepalived or not
@@ -143,6 +153,11 @@ class CsInterface:
 
     def is_control(self):
         if "nw_type" in self.address and self.address['nw_type'] in ['control']:
+            return True
+        return False
+
+    def is_guest(self):
+        if "nw_type" in self.address and self.address['nw_type'] in ['guest']:
             return True
         return False
 
