@@ -34,6 +34,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -42,7 +43,6 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.alert.AlertManager;
-import com.cloud.server.StatsCollector;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.UsageEventDetailsVO;
@@ -246,9 +246,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             s_logger.debug("Current Time: " + currentDate.toString());
 
             _aggregationDuration = Integer.parseInt(aggregationRange);
-            if (_aggregationDuration < StatsCollector.USAGE_AGGREGATION_RANGE_MIN) {
-                s_logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + StatsCollector.USAGE_AGGREGATION_RANGE_MIN);
-                _aggregationDuration = StatsCollector.USAGE_AGGREGATION_RANGE_MIN;
+            if (_aggregationDuration < UsageUtils.USAGE_AGGREGATION_RANGE_MIN) {
+                s_logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + UsageUtils.USAGE_AGGREGATION_RANGE_MIN);
+                _aggregationDuration = UsageUtils.USAGE_AGGREGATION_RANGE_MIN;
             }
             _hostname = InetAddress.getLocalHost().getHostName() + "/" + InetAddress.getLocalHost().getHostAddress();
         } catch (NumberFormatException ex) {
