@@ -41,10 +41,10 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
-import com.cloud.server.StatsCollector;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
@@ -223,9 +223,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             s_logger.debug("Current Time: "+currentDate.toString());
 
             m_aggregationDuration = Integer.parseInt(aggregationRange);
-            if (m_aggregationDuration < StatsCollector.USAGE_AGGREGATION_RANGE_MIN) {
-                s_logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + StatsCollector.USAGE_AGGREGATION_RANGE_MIN);
-                m_aggregationDuration = StatsCollector.USAGE_AGGREGATION_RANGE_MIN;
+            if (m_aggregationDuration < UsageUtils.USAGE_AGGREGATION_RANGE_MIN) {
+                s_logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + UsageUtils.USAGE_AGGREGATION_RANGE_MIN);
+                m_aggregationDuration = UsageUtils.USAGE_AGGREGATION_RANGE_MIN;
             }
             m_hostname = InetAddress.getLocalHost().getHostName() + "/" + InetAddress.getLocalHost().getHostAddress();
         } catch (NumberFormatException ex) {
