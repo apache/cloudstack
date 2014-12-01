@@ -76,9 +76,9 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     private Long vpcId;
 
     public DomainRouterVO(long id, long serviceOfferingId, long elementId, String name, long templateId, HypervisorType hypervisorType, long guestOSId, long domainId,
-            long accountId, boolean isRedundantRouter, int priority, boolean isPriorityBumpUp, RedundantState redundantState, boolean haEnabled, boolean stopPending,
-            Long vpcId) {
-        super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
+                          long accountId, long userId, boolean isRedundantRouter, int priority, boolean isPriorityBumpUp, RedundantState redundantState, boolean haEnabled, boolean stopPending,
+                          Long vpcId) {
+        super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, userId, haEnabled);
         this.elementId = elementId;
         this.isRedundantRouter = isRedundantRouter;
         this.priority = priority;
@@ -89,9 +89,9 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     }
 
     public DomainRouterVO(long id, long serviceOfferingId, long elementId, String name, long templateId, HypervisorType hypervisorType, long guestOSId, long domainId,
-            long accountId, boolean isRedundantRouter, int priority, boolean isPriorityBumpUp, RedundantState redundantState, boolean haEnabled, boolean stopPending,
-            VirtualMachine.Type vmType, Long vpcId) {
-        super(id, serviceOfferingId, name, name, vmType, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
+                          long accountId, long userId, boolean isRedundantRouter, int priority, boolean isPriorityBumpUp, RedundantState redundantState, boolean haEnabled, boolean stopPending,
+                          Type vmType, Long vpcId) {
+        super(id, serviceOfferingId, name, name, vmType, templateId, hypervisorType, guestOSId, domainId, accountId, userId, haEnabled);
         this.elementId = elementId;
         this.isRedundantRouter = isRedundantRouter;
         this.priority = priority;

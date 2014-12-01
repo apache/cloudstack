@@ -772,6 +772,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         boolean listAll = cmd.listAll();
         Long id = cmd.getId();
+        Long userId = cmd.getUserId();
         Map<String, String> tags = cmd.getTags();
         Boolean display = cmd.getDisplay();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
@@ -860,6 +861,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
         if (groupId != null && (Long)groupId != -1) {
             sb.and("instanceGroupId", sb.entity().getInstanceGroupId(), SearchCriteria.Op.EQ);
+        }
+
+        if (userId != null) {
+            sb.and("userId", sb.entity().getUserId(), SearchCriteria.Op.EQ);
         }
 
         if (networkId != null) {
