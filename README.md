@@ -37,6 +37,20 @@ For more information on Apache CloudStack, please visit the [website](http://clo
 * Download a released [version](http://cloudstack.apache.org/downloads.html)
 * Build from source with the instructions in the [INSTALL.md](INSTALL.md) file.
 
+## Getting Source Repository
+
+Apache CloudStack project uses Git. The official Git repository is at:
+
+    https://git-wip-us.apache.org/repos/asf/cloudstack.git
+
+And a mirror is hosted on Github:
+
+    https://github.com/apache/cloudstack
+
+The Github mirror is strictly read only and provides convenience to users and
+developers to explore the code and for the community to accept contributions
+via Github pull requests.
+
 ## Links
 
 * [Documentation](http://docs.cloudstack.apache.org)
