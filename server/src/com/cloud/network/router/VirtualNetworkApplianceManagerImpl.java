@@ -46,7 +46,6 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.alert.AlertService;
-import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
@@ -61,7 +60,6 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -4312,10 +4310,22 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     @Override
     public boolean postStateTransitionEvent(State oldState, VirtualMachine.Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
-        if (oldState == State.Stopped && event == VirtualMachine.Event.FollowAgentPowerOnReport && newState == State.Running) {
+        if (event == VirtualMachine.Event.FollowAgentPowerOnReport && newState == State.Running) {
             if (vo.getType() == VirtualMachine.Type.DomainRouter) {
-                s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band. we need to reboot to refresh network rules");
-                _executor.schedule(new RebootTask(vo.getId()), 1000, TimeUnit.MICROSECONDS);
+                if (opaque != null && opaque instanceof Pair<?, ?>) {
+                    Pair<?, ?> pair = (Pair<?, ?>)opaque;
+                    Object first = pair.first();
+                    Object second = pair.second();
+                    if (first != null && second != null && first instanceof Long && second instanceof Long) {
+                        Long hostId = (Long)first;
+                        Long powerHostId = (Long)second;
+                        // If VM host known to CS is different from 'PowerOn' report host, then it is out-of-band movement
+                        if (hostId.longValue() != powerHostId.longValue()) {
+                            s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band. we need to reboot to refresh network rules");
+                            _executor.schedule(new RebootTask(vo.getId()), 1000, TimeUnit.MICROSECONDS);
+                        }
+                    }
+                }
             }
         }
         return true;

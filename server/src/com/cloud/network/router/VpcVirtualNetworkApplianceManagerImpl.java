@@ -1521,4 +1521,11 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
         return true;
     }
+
+    @Override
+    public boolean postStateTransitionEvent(State oldState, VirtualMachine.Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
+        // Without this VirtualNetworkApplianceManagerImpl.postStateTransitionEvent() gets called twice as part of listeners -
+        // once from VpcVirtualNetworkApplianceManagerImpl and once from VirtualNetworkApplianceManagerImpl itself
+        return true;
+    }
 }
