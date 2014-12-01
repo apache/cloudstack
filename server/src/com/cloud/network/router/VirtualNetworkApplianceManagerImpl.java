@@ -4402,10 +4402,22 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     @Override
     public boolean postStateTransitionEvent(State oldState, VirtualMachine.Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
-        if (oldState == State.Stopped && event == VirtualMachine.Event.FollowAgentPowerOnReport && newState == State.Running) {
+        if (event == VirtualMachine.Event.FollowAgentPowerOnReport && newState == State.Running) {
             if (vo.getType() == VirtualMachine.Type.DomainRouter) {
-                s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band. we need to reboot to refresh network rules");
-                _executor.schedule(new RebootTask(vo.getId()), 1000, TimeUnit.MICROSECONDS);
+                if (opaque != null && opaque instanceof Pair<?, ?>) {
+                    Pair<?, ?> pair = (Pair<?, ?>)opaque;
+                    Object first = pair.first();
+                    Object second = pair.second();
+                    if (first != null && second != null && first instanceof Long && second instanceof Long) {
+                        Long hostId = (Long)first;
+                        Long powerHostId = (Long)second;
+                        // If VM host known to CS is different from 'PowerOn' report host, then it is out-of-band movement
+                        if (hostId.longValue() != powerHostId.longValue()) {
+                            s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band. we need to reboot to refresh network rules");
+                            _executor.schedule(new RebootTask(vo.getId()), 1000, TimeUnit.MICROSECONDS);
+                        }
+                    }
+                }
             }
         }
         return true;
