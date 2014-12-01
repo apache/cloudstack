@@ -1018,8 +1018,6 @@ public class VirtualMachineMO extends BaseMO {
         }
 
         int deviceNumber = getNextDeviceNumber(controllerKey);
-        if (controllerKey != ideControllerKey && VmwareHelper.isReservedScsiDeviceNumber(deviceNumber))
-            deviceNumber++;
 
         newDisk.setControllerKey(controllerKey);
         newDisk.setKey(-deviceNumber);
@@ -1858,8 +1856,6 @@ public class VirtualMachineMO extends BaseMO {
     public int getNextScsiDiskDeviceNumber() throws Exception {
         int scsiControllerKey = getScsiDeviceControllerKey();
         int deviceNumber = getNextDeviceNumber(scsiControllerKey);
-        if (VmwareHelper.isReservedScsiDeviceNumber(deviceNumber))
-            deviceNumber++;
 
         return deviceNumber;
     }
@@ -2319,6 +2315,7 @@ public class VirtualMachineMO extends BaseMO {
 
         List<Integer> existingUnitNumbers = new ArrayList<Integer>();
         int deviceNumber = 0;
+        int ideControllerKey = getIDEDeviceControllerKey();
         if (devices != null && devices.size() > 0) {
             for (VirtualDevice device : devices) {
                 if (device.getControllerKey() != null && device.getControllerKey().intValue() == controllerKey) {
@@ -2327,8 +2324,10 @@ public class VirtualMachineMO extends BaseMO {
             }
         }
         while (true) {
+            // Next device number should be the lowest device number on the key that is not in use and is not reserved.
             if (!existingUnitNumbers.contains(Integer.valueOf(deviceNumber))) {
-                break;
+                if (controllerKey != ideControllerKey && !VmwareHelper.isReservedScsiDeviceNumber(deviceNumber))
+                    break;
             }
             ++deviceNumber;
         }
