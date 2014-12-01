@@ -110,6 +110,8 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.network.vpn.Site2SiteVpnManager;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectInvitationVO;
@@ -2615,5 +2617,37 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public UserAccount getUserAccountById(Long userId) {
         return _userAccountDao.findById(userId);
+    }
+
+    @Override
+    public void checkAccess(Account account, ServiceOffering so)
+            throws PermissionDeniedException {
+        for (SecurityChecker checker : _securityCheckers) {
+            if (checker.checkAccess(account, so)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Access granted to " + account + " to " + so + " by " + checker.getName());
+                }
+                return;
+            }
+        }
+
+        assert false : "How can all of the security checkers pass on checking this caller?";
+        throw new PermissionDeniedException("There's no way to confirm " + account + " has access to " + so);
+    }
+
+    @Override
+    public void checkAccess(Account account, DiskOffering dof)
+            throws PermissionDeniedException {
+        for (SecurityChecker checker : _securityCheckers) {
+            if (checker.checkAccess(account, dof)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Access granted to " + account + " to " + dof + " by " + checker.getName());
+                }
+                return;
+            }
+        }
+
+        assert false : "How can all of the security checkers pass on checking this caller?";
+        throw new PermissionDeniedException("There's no way to confirm " + account + " has access to " + dof);
     }
 }

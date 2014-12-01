@@ -2422,6 +2422,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Object keyword = cmd.getKeyword();
         Long domainId = cmd.getDomainId();
         Boolean isRootAdmin = _accountMgr.isRootAdmin(account.getAccountId());
+        Boolean isRecursive = cmd.isRecursive();
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the disk offering
         // associated with this domain
@@ -2444,32 +2445,32 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         // and everything above till root
         if ((_accountMgr.isNormalUser(account.getId()) || _accountMgr.isDomainAdmin(account.getId()))
                 || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            // find all domain Id up to root domain for this account
-            domainIds = new ArrayList<Long>();
-            DomainVO domainRecord = _domainDao.findById(account.getDomainId());
-            if (domainRecord == null) {
-                s_logger.error("Could not find the domainId for account:" + account.getAccountName());
-                throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
-            }
-            domainIds.add(domainRecord.getId());
-            while (domainRecord.getParent() != null) {
-                domainRecord = _domainDao.findById(domainRecord.getParent());
+            if (isRecursive) { // domain + all sub-domains
+                if (account.getType() == Account.ACCOUNT_TYPE_NORMAL)
+                    throw new InvalidParameterValueException("Only ROOT admins and Domain admins can list disk offerings with isrecursive=true");
+                DomainVO domainRecord = _domainDao.findById(account.getDomainId());
+                sc.addAnd("domainPath", SearchCriteria.Op.LIKE, domainRecord.getPath() + "%");
+            } else { // domain + all ancestors
+                // find all domain Id up to root domain for this account
+                domainIds = new ArrayList<Long>();
+                DomainVO domainRecord = _domainDao.findById(account.getDomainId());
+                if ( domainRecord == null ){
+                    s_logger.error("Could not find the domainId for account:" + account.getAccountName());
+                    throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
+                }
                 domainIds.add(domainRecord.getId());
+                while (domainRecord.getParent() != null ){
+                    domainRecord = _domainDao.findById(domainRecord.getParent());
+                    domainIds.add(domainRecord.getId());
+                }
+
+                SearchCriteria<DiskOfferingJoinVO> spc = _diskOfferingJoinDao.createSearchCriteria();
+
+                spc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
+                spc.addOr("domainId", SearchCriteria.Op.NULL); // include public offering as where
+                sc.addAnd("domainId", SearchCriteria.Op.SC, spc);
+                sc.addAnd("systemUse", SearchCriteria.Op.EQ, false); // non-root users should not see system offering at all
             }
-
-            SearchCriteria<DiskOfferingJoinVO> spc = _diskOfferingJoinDao.createSearchCriteria();
-
-            spc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
-            spc.addOr("domainId", SearchCriteria.Op.NULL); // include public
-            // offering as where
-            sc.addAnd("domainId", SearchCriteria.Op.SC, spc);
-            sc.addAnd("displayOffering", SearchCriteria.Op.EQ, 1);
-            sc.addAnd("systemUse", SearchCriteria.Op.EQ, false); // non-root
-            // users should
-            // not see
-            // system
-            // offering at
-            // all
 
         }
 
@@ -2563,6 +2564,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Boolean isSystem = cmd.getIsSystem();
         String vmTypeStr = cmd.getSystemVmType();
         ServiceOfferingVO currentVmOffering = null;
+        Boolean isRecursive = cmd.isRecursive();
 
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
         if (!_accountMgr.isRootAdmin(caller.getId()) && isSystem) {
@@ -2611,35 +2613,40 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             if (isSystem) {
                 throw new InvalidParameterValueException("Only root admins can access system's offering");
             }
-            // find all domain Id up to root domain for this account
-            List<Long> domainIds = new ArrayList<Long>();
-            DomainVO domainRecord;
-            if (vmId != null) {
-                 UserVmVO vmInstance = _userVmDao.findById(vmId);
-                 domainRecord = _domainDao.findById(vmInstance.getDomainId());
-                if (domainRecord == null) {
-                     s_logger.error("Could not find the domainId for vmId:" + vmId);
-                     throw new CloudAuthenticationException("Could not find the domainId for vmId:" + vmId);
-                 }
-            } else {
-                 domainRecord = _domainDao.findById(caller.getDomainId());
-                if (domainRecord == null) {
-                s_logger.error("Could not find the domainId for account:" + caller.getAccountName());
-                     throw new CloudAuthenticationException("Could not find the domainId for account:" + caller.getAccountName());
-                 }
-            }
-            domainIds.add(domainRecord.getId());
-            while (domainRecord.getParent() != null) {
-                domainRecord = _domainDao.findById(domainRecord.getParent());
+            if (isRecursive) { // domain + all sub-domains
+                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL)
+                    throw new InvalidParameterValueException("Only ROOT admins and Domain admins can list service offerings with isrecursive=true");
+                DomainVO domainRecord = _domainDao.findById(caller.getDomainId());
+                sc.addAnd("domainPath", SearchCriteria.Op.LIKE, domainRecord.getPath() + "%");
+            } else { // domain + all ancestors
+                // find all domain Id up to root domain for this account
+                List<Long> domainIds = new ArrayList<Long>();
+                DomainVO domainRecord;
+                if (vmId != null) {
+                    UserVmVO vmInstance = _userVmDao.findById(vmId);
+                    domainRecord = _domainDao.findById(vmInstance.getDomainId());
+                    if ( domainRecord == null ){
+                        s_logger.error("Could not find the domainId for vmId:" + vmId);
+                        throw new CloudAuthenticationException("Could not find the domainId for vmId:" + vmId);
+                    }
+                } else {
+                    domainRecord = _domainDao.findById(caller.getDomainId());
+                    if ( domainRecord == null ){
+                        s_logger.error("Could not find the domainId for account:" + caller.getAccountName());
+                        throw new CloudAuthenticationException("Could not find the domainId for account:" + caller.getAccountName());
+                    }
+                }
                 domainIds.add(domainRecord.getId());
-            }
-            SearchCriteria<ServiceOfferingJoinVO> spc = _srvOfferingJoinDao.createSearchCriteria();
+                while (domainRecord.getParent() != null ){
+                    domainRecord = _domainDao.findById(domainRecord.getParent());
+                    domainIds.add(domainRecord.getId());
+                }
 
-            spc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
-            spc.addOr("domainId", SearchCriteria.Op.NULL); // include public
-            // offering as where
-            sc.addAnd("domainId", SearchCriteria.Op.SC, spc);
-
+                SearchCriteria<ServiceOfferingJoinVO> spc = _srvOfferingJoinDao.createSearchCriteria();
+                spc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
+                spc.addOr("domainId", SearchCriteria.Op.NULL); // include public offering as well
+                sc.addAnd("domainId", SearchCriteria.Op.SC, spc);
+             }
         } else {
             // for root users
             if (caller.getDomainId() != 1 && isSystem) { // NON ROOT admin

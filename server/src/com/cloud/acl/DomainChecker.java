@@ -170,7 +170,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 
     @Override
     public boolean checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException {
-        if (account == null || dof.getDomainId() == null) {//public offering
+        if (account == null || dof == null || dof.getDomainId() == null) {//public offering
             return true;
         } else {
             //admin has all permissions

@@ -20,16 +20,15 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.BaseListDomainResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
 @APICommand(name = "listServiceOfferings", description = "Lists all available service offerings.", responseObject = ServiceOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListServiceOfferingsCmd extends BaseListCmd {
+public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
 
     private static final String s_name = "listserviceofferingsresponse";
@@ -50,13 +49,7 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
                description = "the ID of the virtual machine. Pass this in if you want to see the available service offering that a virtual machine can be changed to.")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID,
-               type = CommandType.UUID,
-               entityType = DomainResponse.class,
-               description = "the ID of the domain associated with the service offering")
-    private Long domainId;
-
-    @Parameter(name = ApiConstants.IS_SYSTEM_OFFERING, type = CommandType.BOOLEAN, description = "is this a system vm offering")
+    @Parameter(name=ApiConstants.IS_SYSTEM_OFFERING, type=CommandType.BOOLEAN, description="is this a system vm offering")
     private Boolean isSystem;
 
     @Parameter(name = ApiConstants.SYSTEM_VM_TYPE,
@@ -78,10 +71,6 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
 
     public Long getVirtualMachineId() {
         return virtualMachineId;
-    }
-
-    public Long getDomainId() {
-        return domainId;
     }
 
     public Boolean getIsSystem() {

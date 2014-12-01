@@ -948,6 +948,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Check that the specified service offering ID is valid
         _itMgr.checkIfCanUpgrade(vmInstance, newServiceOffering);
 
+        // Check if the new service offering can be applied to vm instance
+        ServiceOffering newSvcOffering = _offeringDao.findById(svcOffId);
+        Account owner = _accountMgr.getActiveAccountById(vmInstance.getAccountId());
+        _accountMgr.checkAccess(owner, newSvcOffering);
+
         _itMgr.upgradeVmDb(vmId, svcOffId);
         if (newServiceOffering.isDynamic()) {
             //save the custom values to the database.
@@ -2373,6 +2378,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Verify that caller can perform actions in behalf of vm owner
         _accountMgr.checkAccess(caller, null, true, owner);
 
+        // Verify that owner can use the service offering
+        _accountMgr.checkAccess(owner, serviceOffering);
+        _accountMgr.checkAccess(owner, _diskOfferingDao.findById(diskOfferingId));
+
         // Get default guest network in Basic zone
         Network defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
 
@@ -2427,6 +2436,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Verify that caller can perform actions in behalf of vm owner
         _accountMgr.checkAccess(caller, null, true, owner);
+
+        // Verify that owner can use the service offering
+        _accountMgr.checkAccess(owner, serviceOffering);
+        _accountMgr.checkAccess(owner, _diskOfferingDao.findById(diskOfferingId));
 
         // If no network is specified, find system security group enabled network
         if (networkIdList == null || networkIdList.isEmpty()) {
@@ -2531,6 +2544,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Verify that caller can perform actions in behalf of vm owner
         _accountMgr.checkAccess(caller, null, true, owner);
+
+        // Verify that owner can use the service offering
+        _accountMgr.checkAccess(owner, serviceOffering);
+        _accountMgr.checkAccess(owner, _diskOfferingDao.findById(diskOfferingId));
 
         List<HypervisorType> vpcSupportedHTypes = _vpcMgr.getSupportedVpcHypervisors();
         if (networkIdList == null || networkIdList.isEmpty()) {

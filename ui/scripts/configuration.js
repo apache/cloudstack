@@ -26,6 +26,14 @@
         title: 'label.menu.service.offerings',
         id: 'configuration',
         sectionSelect: {
+            preFilter: function(args) {
+               if(isAdmin())
+                   return ["serviceOfferings", "systemServiceOfferings", "diskOfferings", "networkOfferings"];
+               else if(isDomainAdmin())
+                   return ["serviceOfferings", "diskOfferings"];
+               else
+                   return null;
+            },
             label: 'label.select.offering'
         },
         sections: {
@@ -62,6 +70,17 @@
 
                             createForm: {
                                 title: 'label.add.compute.offering',
+                                preFilter: function(args) {
+                                    if (isAdmin()) {
+                                    } else {
+                                        args.$form.find('.form-item[rel=isPublic]').hide();
+                                        args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                        args.$form.find('.form-item[rel=deploymentPlanner]').hide();
+                                        args.$form.find('.form-item[rel=plannerMode]').hide();
+                                        args.$form.find('.form-item[rel=storageTags]').hide();
+                                        args.$form.find('.form-item[rel=hostTags]').hide();
+                                    }
+                                },
                                 fields: {
                                     name: {
                                         label: 'label.name',
@@ -385,7 +404,7 @@
                                         label: 'label.public',
                                         isBoolean: true,
                                         isReverse: true,
-                                        isChecked: true,
+                                        isChecked: false,
                                         docID: 'helpComputeOfferingPublic'
                                     },
 
@@ -399,6 +418,7 @@
                                     deploymentPlanner: {
                                         label: 'label.deployment.planner',
                                         select: function(args) {
+                                          if (isAdmin()) {
                                             $.ajax({
                                                 url: createURL('listDeploymentPlanners'),
                                                 dataType: 'json',
@@ -428,6 +448,7 @@
                                                     });
                                                 }
                                             });
+                                          }
                                         }
                                     },
 
@@ -761,7 +782,7 @@
                         });
 
                         $.ajax({
-                            url: createURL('listServiceOfferings'),
+                            url: createURL('listServiceOfferings&isrecursive=true'),
                             data: data,
                             success: function(json) {
                                 var items = json.listserviceofferingsresponse.serviceoffering;
@@ -975,7 +996,7 @@
                                         id: args.context.serviceOfferings[0].id
                                     };
                                     $.ajax({
-                                        url: createURL('listServiceOfferings'),
+                                        url: createURL('listServiceOfferings&isrecursive=true'),
                                         data: data,
                                         async: true,
                                         success: function(json) {
@@ -1038,6 +1059,13 @@
 
                             createForm: {
                                 title: 'label.add.system.service.offering',
+                                preFilter: function(args) {
+                                    if (isAdmin()) {
+                                    } else {
+                                        args.$form.find('.form-item[rel=isPublic]').hide();
+                                        args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                    }
+                                },
                                 fields: {
                                     name: {
                                         label: 'label.name',
@@ -1203,7 +1231,7 @@
                                         label: 'label.public',
                                         isBoolean: true,
                                         isReverse: true,
-                                        isChecked: true,
+                                        isChecked: false,
                                         docID: 'helpSystemOfferingPublic'
                                     },
                                     domainId: {
@@ -1332,7 +1360,7 @@
                         });
 
                         $.ajax({
-                            url: createURL('listServiceOfferings'),
+                            url: createURL('listServiceOfferings&isrecursive=true'),
                             data: data,
                             success: function(json) {
                                 var items = json.listserviceofferingsresponse.serviceoffering;
@@ -1515,7 +1543,7 @@
                                         id: args.context.systemServiceOfferings[0].id
                                     };
                                     $.ajax({
-                                        url: createURL('listServiceOfferings'),
+                                        url: createURL('listServiceOfferings&isrecursive=true'),
                                         data: data,
                                         success: function(json) {
                                             var item = json.listserviceofferingsresponse.serviceoffering[0];
@@ -1567,7 +1595,7 @@
                         listViewDataProvider(args, data);
 
                         $.ajax({
-                            url: createURL('listDiskOfferings'),
+                            url: createURL('listDiskOfferings&isrecursive=true'),
                             data: data,
                             success: function(json) {
                                 var items = json.listdiskofferingsresponse.diskoffering;
@@ -1596,6 +1624,14 @@
 
                             createForm: {
                                 title: 'label.add.disk.offering',
+                                preFilter: function(args) {
+                                    if (isAdmin()) {
+                                    } else {
+                                        args.$form.find('.form-item[rel=isPublic]').hide();
+                                        args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                        args.$form.find('.form-item[rel=tags]').hide();
+                                    }
+                                },
                                 fields: {
                                     name: {
                                         label: 'label.name',
@@ -1868,7 +1904,7 @@
                                         label: 'label.public',
                                         isBoolean: true,
                                         isReverse: true,
-                                        isChecked: true,
+                                        isChecked: false,
                                         docID: 'helpDiskOfferingPublic'
                                     },
                                     domainId: {
@@ -2165,7 +2201,7 @@
                                         id: args.context.diskOfferings[0].id
                                     };
                                     $.ajax({
-                                        url: createURL('listDiskOfferings'),
+                                        url: createURL('listDiskOfferings&isrecursive=true'),
                                         data: data,
                                         success: function(json) {
                                             var item = json.listdiskofferingsresponse.diskoffering[0];

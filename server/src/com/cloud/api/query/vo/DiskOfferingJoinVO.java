@@ -111,10 +111,10 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     private String domainUuid;
 
     @Column(name = "domain_name")
-    private final String domainName = null;
+    private String domainName = null;
 
     @Column(name = "domain_path")
-    private final String domainPath = null;
+    private String domainPath = null;
 
     @Column(name = "display_offering")
     boolean displayOffering;

@@ -190,6 +190,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
@@ -286,6 +287,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     FirewallRulesDao _firewallDao;
     @Inject
     VpcManager _vpcMgr;
+    @Inject
+    UserDao _userDao;
     @Inject
     PortableIpRangeDao _portableIpRangeDao;
     @Inject
@@ -2103,9 +2106,30 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Integer networkRate, String deploymentPlanner, Map<String, String> details, Boolean isCustomizedIops, Long minIops, Long maxIops,
             Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate, Integer hypervisorSnapshotReserve) {
 
+        // Check if user exists in the system
+        User user = _userDao.findById(userId);
+        if (user == null || user.getRemoved() != null) {
+            throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+        }
+        Account account = _accountDao.findById(user.getAccountId());
+        if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            if (domainId == null) {
+                throw new InvalidParameterValueException("Unable to create public service offering by id " + userId + " because it is domain-admin");
+            }
+            if (tags != null || hostTag != null) {
+                throw new InvalidParameterValueException("Unable to create service offering with storage tags or host tags by id " + userId + " because it is domain-admin");
+            }
+            if (! _domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                throw new InvalidParameterValueException("Unable to create service offering by another domain admin with id " + userId);
+            }
+        } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            throw new InvalidParameterValueException("Unable to create service offering by id " + userId + " because it is not root-admin or domain-admin");
+        }
+
         ProvisioningType typedProvisioningType = ProvisioningType.getProvisioningType(provisioningType);
 
         tags = StringUtils.cleanupTags(tags);
+
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA,
                 limitResourceUse, volatileVm, displayText, typedProvisioningType, localStorageRequired, false, tags, isSystem, vmType,
                 domainId, hostTag, deploymentPlanner);
@@ -2220,6 +2244,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("unable to find service offering " + id);
         }
 
+        User user = _userDao.findById(userId);
+        if (user == null || user.getRemoved() != null) {
+            throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+        }
+        Account account = _accountDao.findById(user.getAccountId());
+        if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            if (offeringHandle.getDomainId() == null) {
+                throw new InvalidParameterValueException("Unable to update public service offering by id " + userId + " because it is domain-admin");
+            }
+            if (! _domainDao.isChildDomain(account.getDomainId(), offeringHandle.getDomainId() )) {
+                throw new InvalidParameterValueException("Unable to update service offering by another domain admin with id " + userId);
+            }
+        } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            throw new InvalidParameterValueException("Unable to update service offering by id " + userId + " because it is not root-admin or domain-admin");
+        }
+
         boolean updateNeeded = (name != null || displayText != null || sortKey != null);
         if (!updateNeeded) {
             return _serviceOfferingDao.findById(id);
@@ -2272,7 +2312,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
-    protected DiskOfferingVO createDiskOffering(Long domainId, String name, String description, String provisioningType,
+    protected DiskOfferingVO createDiskOffering(Long userId, Long domainId, String name, String description, String provisioningType,
             Long numGibibytes, String tags, boolean isCustomized, boolean localStorageRequired,
             boolean isDisplayOfferingEnabled, Boolean isCustomizedIops, Long minIops, Long maxIops,
             Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate,
@@ -2323,6 +2363,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else {
             minIops = null;
             maxIops = null;
+        }
+
+        // Check if user exists in the system
+        User user = _userDao.findById(userId);
+        if (user == null || user.getRemoved() != null) {
+            throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+        }
+        Account account = _accountDao.findById(user.getAccountId());
+        if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            if (domainId == null) {
+                throw new InvalidParameterValueException("Unable to create public disk offering by id " + userId + " because it is domain-admin");
+            }
+            if (tags != null) {
+                throw new InvalidParameterValueException("Unable to create disk offering with storage tags by id " + userId + " because it is domain-admin");
+            }
+            if (! _domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                throw new InvalidParameterValueException("Unable to create disk offering by another domain admin with id " + userId);
+            }
+        } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            throw new InvalidParameterValueException("Unable to create disk offering by id " + userId + " because it is not root-admin or domain-admin");
         }
 
         tags = StringUtils.cleanupTags(tags);
@@ -2401,7 +2461,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long iopsWriteRate = cmd.getIopsWriteRate();
         Integer hypervisorSnapshotReserve = cmd.getHypervisorSnapshotReserve();
 
-        return createDiskOffering(domainId, name, description, provisioningType, numGibibytes, tags, isCustomized,
+        Long userId = CallContext.current().getCallingUserId();
+        return createDiskOffering(userId, domainId, name, description, provisioningType, numGibibytes, tags, isCustomized,
                 localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops,
                 maxIops, bytesReadRate, bytesWriteRate, iopsReadRate, iopsWriteRate, hypervisorSnapshotReserve);
     }
@@ -2420,6 +2481,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (diskOfferingHandle == null) {
             throw new InvalidParameterValueException("Unable to find disk offering by id " + diskOfferingId);
+        }
+
+        Long userId = CallContext.current().getCallingUserId();
+        if (userId == null) {
+            userId = Long.valueOf(User.UID_SYSTEM);
+        }
+        User user = _userDao.findById(userId);
+        if (user == null || user.getRemoved() != null) {
+            throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+        }
+        Account account = _accountDao.findById(user.getAccountId());
+        if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            if (diskOfferingHandle.getDomainId() == null) {
+                throw new InvalidParameterValueException("Unable to update public disk offering by id " + userId + " because it is domain-admin");
+            }
+            if (! _domainDao.isChildDomain(account.getDomainId(), diskOfferingHandle.getDomainId() )) {
+                throw new InvalidParameterValueException("Unable to update disk offering by another domain admin with id " + userId);
+            }
+        } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            throw new InvalidParameterValueException("Unable to update disk offering by id " + userId + " because it is not root-admin or domain-admin");
         }
 
         boolean updateNeeded = (name != null || displayText != null || sortKey != null || displayDiskOffering != null);
@@ -2489,6 +2570,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Unable to find disk offering by id " + diskOfferingId);
         }
 
+        Long userId = CallContext.current().getCallingUserId();
+        if (userId == null) {
+            userId = Long.valueOf(User.UID_SYSTEM);
+        }
+        User user = _userDao.findById(userId);
+        if (user == null || user.getRemoved() != null) {
+            throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+        }
+        Account account = _accountDao.findById(user.getAccountId());
+        if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            if (offering.getDomainId() == null) {
+                throw new InvalidParameterValueException("Unable to delete public disk offering by id " + userId + " because it is domain-admin");
+            }
+            if (! _domainDao.isChildDomain(account.getDomainId(), offering.getDomainId() )) {
+                throw new InvalidParameterValueException("Unable to delete disk offering by another domain admin with id " + userId);
+            }
+        } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            throw new InvalidParameterValueException("Unable to delete disk offering by id " + userId + " because it is not root-admin or domain-admin");
+        }
+
         offering.setState(DiskOffering.State.Inactive);
         if (_diskOfferingDao.update(offering.getId(), offering)) {
             CallContext.current().setEventDetails("Disk offering id=" + diskOfferingId);
@@ -2517,6 +2618,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (offering.getDefaultUse()) {
             throw new InvalidParameterValueException("Default service offerings cannot be deleted");
+        }
+
+        User user = _userDao.findById(userId);
+        if (user == null || user.getRemoved() != null) {
+            throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+        }
+        Account account = _accountDao.findById(user.getAccountId());
+        if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            if (offering.getDomainId() == null) {
+                throw new InvalidParameterValueException("Unable to delete public service offering by id " + userId + " because it is domain-admin");
+            }
+            if (! _domainDao.isChildDomain(account.getDomainId(), offering.getDomainId() )) {
+                throw new InvalidParameterValueException("Unable to delete service offering by another domain admin with id " + userId);
+            }
+        } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            throw new InvalidParameterValueException("Unable to delete service offering by id " + userId + " because it is not root-admin or domain-admin");
         }
 
         offering.setState(DiskOffering.State.Inactive);

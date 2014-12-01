@@ -131,15 +131,15 @@ updateGuestOsMapping=1
 removeGuestOsMapping=1
 
 #### service offering commands
-createServiceOffering=1
-deleteServiceOffering=1
-updateServiceOffering=1
+createServiceOffering=7
+deleteServiceOffering=7
+updateServiceOffering=7
 listServiceOfferings=15
 
 #### disk offering commands
-createDiskOffering=1
-updateDiskOffering=1
-deleteDiskOffering=1
+createDiskOffering=7
+updateDiskOffering=7
+deleteDiskOffering=7
 listDiskOfferings=15
 
 #### vlan commands

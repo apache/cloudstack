@@ -42,6 +42,8 @@ import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -400,5 +402,15 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public void checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
     }
 }
