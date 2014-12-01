@@ -360,9 +360,6 @@ class TestEgressFWRules(cloudstackTestCase):
             except Exception as e:
                 self.fail("Warning: Exception during virtual machines cleanup : %s" % e)
 
-            # Wait for VMs to expunge
-            wait_for_cleanup(self.api_client, ["expunge.delay", "expunge.interval"])
-
             if len(self.cleanup_vms) > 0:
                 retriesCount = 10
                 while True:
