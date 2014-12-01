@@ -35,7 +35,6 @@ from cs.CsNetfilter import CsNetfilters
 from cs.CsDhcp import CsDhcp
 from cs.CsRedundant import *
 from cs.CsFile import CsFile
-from cs.CsAddress import CsAddress
 from cs.CsApp import CsApache, CsPasswdSvc, CsDnsmasq
 from cs.CsMonitor import CsMonitor
 from cs.CsLoadBalancer import CsLoadBalancer
@@ -536,11 +535,12 @@ def main(argv):
                         level=config.get_level(),
                         format=config.get_format())
     config.set_cl()
+    config.set_address()
     cl = config.get_cmdline()
 
-    address = CsAddress("ips", config)
-    address.compare()
-    address.process()
+    # IP configuration
+    config.address().compare()
+    config.address().process()
 
     password = CsPassword("vmpassword", config)
     password.process()
@@ -560,7 +560,7 @@ def main(argv):
     vpns = CsSite2SiteVpn("site2sitevpn", config)
     vpns.process()
 
-    red = CsRedundant(config, address)
+    red = CsRedundant(config)
     red.set()
 
     nf = CsNetfilters()

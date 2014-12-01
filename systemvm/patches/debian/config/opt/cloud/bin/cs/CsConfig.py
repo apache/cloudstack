@@ -17,6 +17,7 @@
 # under the License.
 
 from CsDatabag import CsCmdLine
+from CsAddress import CsAddress
 import logging
 
 
@@ -30,11 +31,18 @@ class CsConfig(object):
 
     def __init__(self, load=False):
         if load:
-            self.cl = self_set_cl()
+            self_set_cl()
+            self_set_address()
         self.fw = []
 
     def set_cl(self):
         self.cl = CsCmdLine("cmdline")
+
+    def address(self):
+        return self.ips
+
+    def set_address(self):
+        self.ips = CsAddress("ips", self)
 
     def get_cmdline(self):
         return self.cl
@@ -50,6 +58,9 @@ class CsConfig(object):
 
     def is_vpc(self):
         return self.cl.get_type() == "vpcrouter"
+
+    def is_router(self):
+        return self.cl.get_type() == "router"
 
     def get_domain(self):
         return self.cl.get_domain()

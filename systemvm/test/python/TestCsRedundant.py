@@ -12,8 +12,9 @@ class TestCsRedundant(unittest.TestCase):
     def test_init(self):
         csconfig = CsConfig()
         csconfig.set_cl()
+        csconfig.set_address()
 
-        csredundant = CsRedundant(csconfig, "address")
+        csredundant = CsRedundant(csconfig)
         self.assertTrue(csredundant is not None)
 
 if __name__ == '__main__':
