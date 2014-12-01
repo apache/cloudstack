@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -223,7 +224,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private String _usageTimeZone = "GMT";
     private final long mgmtSrvrId = MacAddress.getMacAddress().toLong();
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
-    public static final int USAGE_AGGREGATION_RANGE_MIN = 1;
     private boolean _dailyOrHourly = false;
 
     //private final GlobalLock m_capacityCheckLock = GlobalLock.getInternLock("capacity.check");
@@ -344,9 +344,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             endDate = cal.getTime().getTime();
             _dailyOrHourly = false;
         }
-        if (_usageAggregationRange < USAGE_AGGREGATION_RANGE_MIN) {
-            s_logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + USAGE_AGGREGATION_RANGE_MIN);
-            _usageAggregationRange = USAGE_AGGREGATION_RANGE_MIN;
+        if (_usageAggregationRange < UsageUtils.USAGE_AGGREGATION_RANGE_MIN) {
+            s_logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + UsageUtils.USAGE_AGGREGATION_RANGE_MIN);
+            _usageAggregationRange = UsageUtils.USAGE_AGGREGATION_RANGE_MIN;
         }
         _diskStatsUpdateExecutor.scheduleAtFixedRate(new VmDiskStatsUpdaterTask(), (endDate - System.currentTimeMillis()), (_usageAggregationRange * 60 * 1000),
                 TimeUnit.MILLISECONDS);
