@@ -27,7 +27,7 @@
         regionSelector: {
             dataProvider: function(args) {
                 $.ajax({
-                    url: createURL('listRegions&listAll=true'),
+                    url: createURL('listRegions'),
                     success: function(json) {
                         var regions = json.listregionsresponse.region;
 
@@ -130,7 +130,7 @@
                     },
                     dataProvider: function(args) {
                         $.ajax({
-                            url: createURL('listRegions&listAll=true'),
+                            url: createURL('listRegions'),
                             success: function(json) {
                                 var items = json.listregionsresponse.region;
                                 args.response.success({
@@ -246,7 +246,7 @@
                                 }],
                                 dataProvider: function(args) {
                                     $.ajax({
-                                        url: createURL('listRegions&listAll=true'),
+                                        url: createURL('listRegions'),
                                         data: {
                                             id: args.context.regions[0].id
                                         },

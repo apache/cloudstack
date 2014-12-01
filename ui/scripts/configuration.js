@@ -2248,9 +2248,7 @@
                                     // Check whether there are any advanced zones
                                     $.ajax({
                                         url: createURL('listZones'),
-                                        data: {
-                                            listAll: true
-                                        },
+                                        data: {},
                                         async: false,
                                         success: function(json) {
                                             var zones = json.listzonesresponse.zone;
@@ -3509,9 +3507,7 @@
                                     // Check whether there are any advanced zones
                                     $.ajax({
                                         url: createURL('listZones'),
-                                        data: {
-                                            listAll: true
-                                        },
+                                        data: {},
                                         async: false,
                                         success: function(json) {
                                             var zones = json.listzonesresponse.zone;
