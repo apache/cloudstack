@@ -70,7 +70,10 @@ class CsDnsMasq(object):
             self.add_host("::1",     "localhost ip6-localhost ip6-loopback")
             self.add_host("ff02::1", "ip6-allnodes")
             self.add_host("ff02::2", "ip6-allrouters")
-            self.add_host("127.0.0.1", CsHelper.get_hostname())
+            if config.is_vpc():
+                self.add_host("127.0.0.1", CsHelper.get_hostname())
+            if config.is_router():
+                self.add_host(self.config.address().get_guest_ip(), "%s data-server" % CsHelper.get_hostname())
 
     def delete_leases(self, clist):
         try:

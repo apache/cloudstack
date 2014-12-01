@@ -53,9 +53,9 @@ class CsRedundant(object):
     CONNTRACKD_LOCK = "/var/lock/conntrack.lock"
     CONNTRACKD_CONFIG = "/etc/conntrackd/conntrackd.conf"
 
-    def __init__(self, config, address):
+    def __init__(self, config):
         self.cl = config.get_cmdline()
-        self.address = address
+        self.address = config.address()
 
     def set(self):
         logging.debug("Router redundancy status is %s", self.cl.is_redundant())
