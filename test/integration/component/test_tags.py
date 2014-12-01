@@ -212,6 +212,12 @@ class TestResourceTags(cloudstackTestCase):
                             cls.services["account"],
                             admin=True,
                             )
+        
+        cls.user_api_client = cls.testClient.getUserApiClient(
+                UserName=cls.account.name,
+                DomainName=cls.account.domain
+            )
+        
         # Create service offerings, disk offerings etc
         cls.service_offering = ServiceOffering.create(
                                     cls.api_client,
@@ -943,14 +949,14 @@ class TestResourceTags(cloudstackTestCase):
         try:
             self.debug("Stopping the virtual machine: %s" % self.vm_1.name)
             #Stop virtual machine
-            self.vm_1.stop(self.apiclient)
+            self.vm_1.stop(self.user_api_client)
         except Exception as e:
             self.fail("Failed to stop VM: %s" % e)
 
         timeout = self.services["timeout"]
         while True:
             list_volume = Volume.list(
-                                   self.apiclient,
+                                   self.user_api_client,
                                    virtualmachineid=self.vm_1.id,
                                    type='ROOT',
                                    listall=True
@@ -969,18 +975,18 @@ class TestResourceTags(cloudstackTestCase):
                                                             self.vm_1.name)
         #Create template from volume
         template = Template.create(
-                                    self.apiclient,
+                                    self.user_api_client,
                                     self.services["template"],
                                     self.volume.id
                                 )
         self.cleanup.append(template)
         self.debug("Created the template(%s). Now restarting the userVm: %s" %
                                             (template.name, self.vm_1.name))
-        self.vm_1.start(self.apiclient)
+        self.vm_1.start(self.user_api_client)
 
         self.debug("Creating a tag for the template")
         tag = Tag.create(
-                         self.apiclient,
+                         self.user_api_client,
                          resourceIds=template.id,
                          resourceType='Template',
                          tags={'OS': 'CentOS'}
@@ -988,11 +994,9 @@ class TestResourceTags(cloudstackTestCase):
         self.debug("Tag created: %s" % tag.__dict__)
 
         tags = Tag.list(
-                        self.apiclient,
+                        self.user_api_client,
                         listall=True,
                         resourceType='Template',
-                        account=self.account.name,
-                        domainid=self.account.domainid,
                         key='OS',
                         value='CentOS'
                         )
@@ -1008,7 +1012,7 @@ class TestResourceTags(cloudstackTestCase):
                          )
 
         Template.list(
-                  self.apiclient,
+                  self.user_api_client,
                   templatefilter=\
                   self.services["template"]["templatefilter"],
                   listall=True,
@@ -1019,7 +1023,7 @@ class TestResourceTags(cloudstackTestCase):
         self.debug("Deleting the created tag..")
         try:
             tag.delete(
-                       self.apiclient,
+                       self.user_api_client,
                        resourceIds=template.id,
                        resourceType='Template',
                        tags={'OS': 'CentOS'}
@@ -1029,11 +1033,9 @@ class TestResourceTags(cloudstackTestCase):
 
         self.debug("Verifying if tag is actually deleted!")
         tags = Tag.list(
-                        self.apiclient,
+                        self.user_api_client,
                         listall=True,
                         resourceType='Template',
-                        account=self.account.name,
-                        domainid=self.account.domainid,
                         key='OS',
                         value='CentOS'
                         )
