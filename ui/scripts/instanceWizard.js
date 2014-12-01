@@ -947,7 +947,13 @@
             		keyboard : keyboard
             	});
             }            
-            
+
+            if (g_hostid != null) {
+                $.extend(deployVmData, {
+                    hostid : g_hostid
+                });
+            }
+ 
             $(window).trigger('cloudStack.deployVirtualMachine', {
                 deployVmData: deployVmData,
                 formData: args.data

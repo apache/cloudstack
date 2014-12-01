@@ -21,6 +21,7 @@ var g_username = null;
 var g_userid = null;
 var g_account = null;
 var g_domainid = null;
+var g_hostid = null;
 var g_loginCmdText = null;
 var g_enableLogging = false;
 var g_timezoneoffset = null;
