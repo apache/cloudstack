@@ -643,6 +643,10 @@
 
                     detailView: {
                         name: 'Template details',
+                        viewAll: {
+                            label: 'label.instances',
+                            path: 'instances'
+                        },
                         actions: {
                             edit: {
                                 label: 'label.edit',
@@ -1777,6 +1781,10 @@
 
                     detailView: {
                         name: 'label.details',
+                        viewAll: {
+                            label: 'label.instances',
+                            path: 'instances'
+                        },
                         actions: {
                             edit: {
                                 label: 'label.edit',

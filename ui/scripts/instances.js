@@ -347,6 +347,18 @@
                     });
                 }
 
+                if ("templates" in args.context) {
+                    $.extend(data, {
+                        templateid: args.context.templates[0].id
+                    });
+                }
+
+                if ("isos" in args.context) {
+                    $.extend(data, {
+                        isoid: args.context.isos[0].id
+                    });
+                }
+
                 $.ajax({
                     url: createURL('listVirtualMachines'),
                     data: data,
