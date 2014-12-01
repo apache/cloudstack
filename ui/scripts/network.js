@@ -398,8 +398,7 @@
                     }),
                     data: {
                         supportedServices: 'SecurityGroup',
-                        listAll: true,
-                        details: 'min'
+                        listAll: true
                     },
                     async: false,
                     success: function(json) {
@@ -5327,9 +5326,7 @@
                                             required: true
                                         },
                                         select: function(args) {
-                                            var data = {
-                                                listAll: true
-                                            };
+                                            var data = {};
                                             $.ajax({
                                                 url: createURL('listZones'),
                                                 data: data,
@@ -5387,14 +5384,10 @@
                                         },
 
                                         select: function(args) {
-                                            var data = {
-                                                listAll: true
-                                            };
+                                            var data = {};
                                             $.ajax({
                                                 url: createURL('listVPCOfferings'),
-                                                data: {
-                                                    listAll: true
-                                                },
+                                                data: {},
                                                 success: function(json) {
                                                       var offerings  = json.listvpcofferingsresponse.vpcoffering ? json.listvpcofferingsresponse.vpcoffering : [];
                                                       var filteredofferings = $.grep(offerings, function(offering) {

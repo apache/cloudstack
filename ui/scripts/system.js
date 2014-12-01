@@ -221,7 +221,6 @@
                         $.ajax({
                             url: createURL('listZones'),
                             data: {
-                            	listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
@@ -238,7 +237,6 @@
                         $.ajax({
                             url: createURL('listPods'),
                             data: {
-                            	listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
@@ -254,7 +252,6 @@
                         $.ajax({
                             url: createURL('listClusters'),
                             data: {
-                            	listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
@@ -278,7 +275,6 @@
                     hostCount: function (data) {
                         var data2 = {
                             type: 'routing',
-                            listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -295,7 +291,6 @@
                     
                     primaryStorageCount: function (data) {
                         var data2 = {
-                        	listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -312,8 +307,6 @@
                     
                     secondaryStorageCount: function (data) {
                         var data2 = {
-                            type: 'SecondaryStorage',
-                            listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -332,7 +325,6 @@
                         $.ajax({
                             url: createURL('listSystemVms'),
                             data: {
-                            	listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
@@ -1058,7 +1050,7 @@
                                         },
                                         dataProvider: function (args) {
                                             $.ajax({
-                                                url: createURL("listStorageNetworkIpRange&zoneid=" + args.context.zones[0].id + "&networkId=" + selectedPublicNetworkObj.id),
+                                                url: createURL("listStorageNetworkIpRange&zoneid=" + args.context.zones[0].id),
                                                 dataType: "json",
                                                 success: function (json) {
                                                     var items = json.liststoragenetworkiprangeresponse.storagenetworkiprange;
@@ -9076,7 +9068,6 @@
                                                 $.ajax({
                                                     url: createURL('listHosts'),
                                                     data: {
-                                                        listAll: true,
                                                         details: 'min'
                                                     },
                                                     success: function (json) {
@@ -13113,9 +13104,7 @@
                                         select: function (args) {
                                             var data = args.context.zones ? {
                                                 id: args.context.zones[0].id
-                                            }: {
-                                                listAll: true
-                                            };
+                                            }: {};
                                             
                                             $.ajax({
                                                 url: createURL('listZones'),
@@ -13902,9 +13891,7 @@
                                         select: function (args) {
                                             var data = args.context.zones ? {
                                                 id: args.context.zones[0].id
-                                            }: {
-                                                listAll: true
-                                            };
+                                            }: {};
                                             
                                             $.ajax({
                                                 url: createURL('listZones'),
@@ -15130,9 +15117,7 @@
                                         select: function (args) {
                                             var data = args.context.zones ? {
                                                 id: args.context.zones[0].id
-                                            }: {
-                                                listAll: true
-                                            };
+                                            }: {};
                                             
                                             $.ajax({
                                                 url: createURL('listZones'),
@@ -16461,9 +16446,7 @@
                                         select: function (args) {
                                             var data = args.context.zones ? {
                                                 id: args.context.zones[0].id
-                                            }: {
-                                                listAll: true
-                                            };
+                                            }: {};
                                             
                                             $.ajax({
                                                 url: createURL('listZones'),
@@ -17053,7 +17036,7 @@
                                         select: function (args) {
                                             var data = args.context.providers ?
                                                 { id: args.context.providers[0].id } :
-                                                { listAll: true };
+                                                {};
 
                                             $.ajax({
                                                 url: createURL('listStorageProviders'),
@@ -18580,9 +18563,7 @@
                                                 select: function (args) {
                                                     $.ajax({
                                                         url: createURL('listZones'),
-                                                        data: {
-                                                            listAll: true
-                                                        },
+                                                        data: {},
                                                         success: function (json) {
                                                             var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone:[];
                                                             
@@ -18704,9 +18685,7 @@
                                                 select: function (args) {
                                                     $.ajax({
                                                         url: createURL('listZones'),
-                                                        data: {
-                                                            listAll: true
-                                                        },
+                                                        data: {},
                                                         success: function (json) {
                                                             var zones = json.listzonesresponse.zone;
                                                             
@@ -19146,9 +19125,7 @@
                                                 select: function (args) {
                                                     $.ajax({
                                                         url: createURL('listZones'),
-                                                        data: {
-                                                            listAll: true
-                                                        },
+                                                        data: {},
                                                         success: function (json) {
                                                             var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone:[];
                                                             

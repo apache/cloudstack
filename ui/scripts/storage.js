@@ -388,9 +388,7 @@
                             select: function(args) {
                                 $.ajax({
                                     url: createURL('listZones'),
-                                    data: {
-                                        listAll: true
-                                    },
+                                    data: {},
                                     success: function(json) {
                                         var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone : [];
 
