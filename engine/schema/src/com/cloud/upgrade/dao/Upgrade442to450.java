@@ -115,9 +115,6 @@ public class Upgrade442to450 implements DbUpgrade {
     }
 
     private void upgradeMemoryOfInternalLoadBalancervmOffering(Connection conn) {
-        PreparedStatement updatePstmt = null;
-        PreparedStatement selectPstmt = null;
-        ResultSet selectResultSet = null;
         int newRamSize = 256; //256MB
         long serviceOfferingId = 0;
 
@@ -126,10 +123,9 @@ public class Upgrade442to450 implements DbUpgrade {
          * We should not update/modify any user-defined offering.
          */
 
-        try {
-            selectPstmt = conn.prepareStatement("SELECT id FROM `cloud`.`service_offering` WHERE vm_type='internalloadbalancervm'");
-            updatePstmt = conn.prepareStatement("UPDATE `cloud`.`service_offering` SET ram_size=? WHERE id=?");
-            selectResultSet = selectPstmt.executeQuery();
+        try (PreparedStatement selectPstmt = conn.prepareStatement("SELECT id FROM `cloud`.`service_offering` WHERE vm_type='internalloadbalancervm'");
+             PreparedStatement updatePstmt = conn.prepareStatement("UPDATE `cloud`.`service_offering` SET ram_size=? WHERE id=?");
+             ResultSet selectResultSet = selectPstmt.executeQuery()){
             if(selectResultSet.next()) {
                 serviceOfferingId = selectResultSet.getLong("id");
             }
@@ -139,19 +135,6 @@ public class Upgrade442to450 implements DbUpgrade {
             updatePstmt.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to upgrade ram_size of service offering for internal loadbalancer vm. ", e);
-        } finally {
-            try {
-                if (selectPstmt != null) {
-                    selectPstmt.close();
-                }
-                if (selectResultSet != null) {
-                    selectResultSet.close();
-                }
-                if (updatePstmt != null) {
-                    updatePstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
         s_logger.debug("Done upgrading RAM for service offering of internal loadbalancer vm to " + newRamSize);
     }
@@ -187,6 +170,8 @@ public class Upgrade442to450 implements DbUpgrade {
                         case Hyperv:    hypervisorsListInUse.add(Hypervisor.HypervisorType.Hyperv);
                             break;
                         case LXC:       hypervisorsListInUse.add(Hypervisor.HypervisorType.LXC);
+                            break;
+                        default:  // no action on cases Any, BareMetal, None, Ovm, Parralels, Simulator and VirtualBox:
                             break;
                     }
                 }
@@ -258,6 +243,8 @@ public class Upgrade442to450 implements DbUpgrade {
                         pstmt.executeUpdate();
                         pstmt.close();
                     } else {
+                        rs.close();
+                        pstmt.close();
                         if (hypervisorsListInUse.contains(hypervisorAndTemplateName.getKey())){
                             throw new CloudRuntimeException("4.5.0 " + hypervisorAndTemplateName.getKey() + " SystemVm template not found. Cannot upgrade system Vms");
                         } else {
@@ -286,6 +273,7 @@ public class Upgrade442to450 implements DbUpgrade {
                     pstmt.close();
                 }
             } catch (SQLException e) {
+                s_logger.debug("exception while cleaning resources during sytemvm upgrade.", e);
             }
         }
     }
