@@ -1280,7 +1280,7 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["basic"])
+    @attr(tags = ["invalid"])
     def test_18_add_nic_basic_zone(self):
         """Add network to vm in basic zone"""
 
