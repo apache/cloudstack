@@ -1350,6 +1350,16 @@
                                                         return;
 
                                                     var $form = $(this).closest('form');
+                                                                                                        
+                                                    var $shrinkok = $form.find('.form-item[rel=shrinkok]');                                                    
+                                                    //unit of args.context.volumes[0].size is "byte"
+                                                    //unit of selectedDiskOfferingObj.disksize is "gigabyte" ("GB"), so transfer it into "byte" by multiply (1024 * 1024 * 1024)
+                                                    if (args.context.volumes[0].size > selectedDiskOfferingObj.disksize * (1024 * 1024 * 1024)) { //if original disk size  > new disk size
+                                                        $shrinkok.css('display', 'inline-block');
+                                                    } else {
+                                                        $shrinkok.hide();
+                                                    }
+                                                                                                       
                                                     var $newsize = $form.find('.form-item[rel=newsize]');
                                                     if (selectedDiskOfferingObj.iscustomized == true) {
                                                         $newsize.css('display', 'inline-block');
@@ -1402,7 +1412,11 @@
                                 },
                                 action: function(args) {
                                     var array1 = [];
-                                    array1.push("&shrinkok=" + (args.data.shrinkok == "on"));
+                                                                        
+                                    if(args.$form.find('.form-item[rel=shrinkok]').css("display") != "none") {                                    	
+                                        array1.push("&shrinkok=" + (args.data.shrinkok == "on"));                                        
+                                    }                                    
+                                    
                                     var newDiskOffering = args.data.newdiskoffering;
                                     var newSize;
                                     if (selectedDiskOfferingObj.iscustomized == true) {
