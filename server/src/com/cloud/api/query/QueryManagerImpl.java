@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.admin.account.ListAccountsCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostTagsCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
@@ -73,6 +74,7 @@ import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -110,6 +112,7 @@ import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.dao.DiskOfferingJoinDao;
+import com.cloud.api.query.dao.DomainJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.HostTagDao;
@@ -132,6 +135,7 @@ import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.api.query.vo.DiskOfferingJoinVO;
+import com.cloud.api.query.vo.DomainJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -230,6 +234,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Inject
     private DomainDao _domainDao;
+
+    @Inject
+    private DomainJoinDao _domainJoinDao;
 
     @Inject
     private UserAccountJoinDao _userAccountJoinDao;
@@ -1827,6 +1834,79 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
         List<VolumeJoinVO> vrs = _volumeJoinDao.searchByIds(vrIds);
         return new Pair<List<VolumeJoinVO>, Integer>(vrs, count);
+    }
+
+    @Override
+    public ListResponse<DomainResponse> searchForDomains(ListDomainsCmd cmd) {
+        Pair<List<DomainJoinVO>, Integer> result = searchForDomainsInternal(cmd);
+        ListResponse<DomainResponse> response = new ListResponse<DomainResponse>();
+        List<DomainResponse> domainResponses = ViewResponseHelper.createDomainResponse(result.first().toArray(
+                new DomainJoinVO[result.first().size()]));
+        response.setResponses(domainResponses, result.second());
+        return response;
+    }
+
+    private Pair<List<DomainJoinVO>, Integer> searchForDomainsInternal(ListDomainsCmd cmd) {
+        Account caller = CallContext.current().getCallingAccount();
+        Long domainId = cmd.getId();
+        boolean listAll = cmd.listAll();
+        boolean isRecursive = false;
+
+        if (domainId != null) {
+            Domain domain = _domainDao.findById(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
+            }
+            _accountMgr.checkAccess(caller, domain);
+        } else {
+            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                domainId = caller.getDomainId();
+            }
+            if (listAll) {
+                isRecursive = true;
+            }
+        }
+
+        Filter searchFilter = new Filter(DomainJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        String domainName = cmd.getDomainName();
+        Integer level = cmd.getLevel();
+        Object keyword = cmd.getKeyword();
+
+        SearchBuilder<DomainJoinVO> sb = _domainJoinDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("level", sb.entity().getLevel(), SearchCriteria.Op.EQ);
+        sb.and("path", sb.entity().getPath(), SearchCriteria.Op.LIKE);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<DomainJoinVO> sc = sb.create();
+
+        if (keyword != null) {
+            SearchCriteria<DomainJoinVO> ssc = _domainJoinDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (domainName != null) {
+            sc.setParameters("name", domainName);
+        }
+
+        if (level != null) {
+            sc.setParameters("level", level);
+        }
+
+        if (domainId != null) {
+            if (isRecursive) {
+                sc.setParameters("path", _domainDao.findById(domainId).getPath() + "%");
+            } else {
+                sc.setParameters("id", domainId);
+            }
+        }
+
+        // return only Active domains to the API
+        sc.setParameters("state", Domain.State.Active);
+
+        return _domainJoinDao.searchAndCount(sc, searchFilter);
     }
 
     @Override

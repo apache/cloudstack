@@ -37,6 +37,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
@@ -73,6 +74,7 @@ import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.dao.DiskOfferingJoinDao;
+import com.cloud.api.query.dao.DomainJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.HostTagDao;
@@ -95,6 +97,7 @@ import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.api.query.vo.DiskOfferingJoinVO;
+import com.cloud.api.query.vo.DomainJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -120,6 +123,7 @@ import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationService;
+import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterDetailsDao;
@@ -327,6 +331,7 @@ public class ApiDBUtils {
     static DiskOfferingJoinDao s_diskOfferingJoinDao;
     static DataCenterJoinDao s_dcJoinDao;
     static DomainDao s_domainDao;
+    static DomainJoinDao s_domainJoinDao;
     static DomainRouterDao s_domainRouterDao;
     static DomainRouterJoinDao s_domainRouterJoinDao;
     static GuestOSDao s_guestOSDao;
@@ -455,6 +460,8 @@ public class ApiDBUtils {
     private DiskOfferingJoinDao diskOfferingJoinDao;
     @Inject
     private DomainDao domainDao;
+    @Inject
+    private DomainJoinDao domainJoinDao;
     @Inject
     private DomainRouterDao domainRouterDao;
     @Inject
@@ -666,6 +673,7 @@ public class ApiDBUtils {
         s_diskOfferingDao = diskOfferingDao;
         s_diskOfferingJoinDao = diskOfferingJoinDao;
         s_domainDao = domainDao;
+        s_domainJoinDao = domainJoinDao;
         s_domainRouterDao = domainRouterDao;
         s_domainRouterJoinDao = domainRouterJoinDao;
         s_guestOSDao = guestOSDao;
@@ -802,6 +810,30 @@ public class ApiDBUtils {
     // ///////////////////////////////////////////////////////////
     // Manager methods //
     // ///////////////////////////////////////////////////////////
+
+    public static long findCorrectResourceLimitForDomain(ResourceType type, long domainId) {
+        DomainVO domain = s_domainDao.findById(domainId);
+
+        if (domain == null) {
+            return -1;
+        }
+
+        return s_resourceLimitMgr.findCorrectResourceLimitForDomain(domain, type);
+    }
+
+    public static long findCorrectResourceLimitForDomain(Long limit, boolean isRootDomain, ResourceType type, long domainId) {
+        long max = Resource.RESOURCE_UNLIMITED; // if resource limit is not found, then we treat it as unlimited
+
+        // No limits for Root domain
+        if (isRootDomain) {
+            return max;
+        }
+        if (limit != null) {
+            return limit.longValue();
+        } else {
+            return findCorrectResourceLimitForDomain(type, domainId);
+        }
+    }
 
     public static long findCorrectResourceLimit(ResourceType type, long accountId) {
         AccountVO account = s_accountDao.findById(accountId);
@@ -1774,6 +1806,9 @@ public class ApiDBUtils {
         return s_imageStoreJoinDao.newImageStoreView(vr);
     }
 
+    public static DomainResponse newDomainResponse(DomainJoinVO ve) {
+        return s_domainJoinDao.newDomainResponse(ve);
+    }
 
     public static AccountResponse newAccountResponse(ResponseView view, AccountJoinVO ve) {
         return s_accountJoinDao.newAccountResponse(view, ve);

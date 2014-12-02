@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
@@ -58,6 +59,7 @@ import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.api.query.vo.DiskOfferingJoinVO;
+import com.cloud.api.query.vo.DomainJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
@@ -346,6 +348,13 @@ public class ViewResponseHelper {
         return new ArrayList<StoragePoolResponse>(vrDataList.values());
     }
 
+    public static List<DomainResponse> createDomainResponse(DomainJoinVO... domains) {
+        List<DomainResponse> respList = new ArrayList<DomainResponse>();
+        for (DomainJoinVO vt : domains){
+            respList.add(ApiDBUtils.newDomainResponse(vt));
+        }
+        return respList;
+    }
 
     public static List<AccountResponse> createAccountResponse(ResponseView view, AccountJoinVO... accounts) {
         List<AccountResponse> respList = new ArrayList<AccountResponse>();

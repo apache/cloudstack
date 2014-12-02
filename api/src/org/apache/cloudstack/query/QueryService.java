@@ -19,6 +19,7 @@ package org.apache.cloudstack.query;
 import java.util.List;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostTagsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
@@ -48,6 +49,7 @@ import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -107,6 +109,8 @@ public interface QueryService {
     public ListResponse<ImageStoreResponse> searchForImageStores(ListImageStoresCmd cmd);
 
     public ListResponse<ImageStoreResponse> searchForSecondaryStagingStores(ListSecondaryStagingStoresCmd cmd);
+
+    public ListResponse<DomainResponse> searchForDomains(ListDomainsCmd cmd);
 
     public ListResponse<AccountResponse> searchForAccounts(ListAccountsCmd cmd);
 
