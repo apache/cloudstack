@@ -1367,7 +1367,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 hostService.invalidateServiceContext(null);
             }
 
-            String msg = "AttachVolumeCommand failed due to " + VmwareHelper.getExceptionMessage(e);
+            String msg = "";
+            if (isAttach)
+                msg += "Failed to attach volume: " + e.getMessage();
+            else
+                msg += "Failed to detach volume: " + e.getMessage();
             s_logger.error(msg, e);
             return new AttachAnswer(msg);
         }
