@@ -613,6 +613,7 @@ public class ApiConstants {
     public static final String REGION_LEVEL_VPC = "regionlevelvpc";
     public static final String STRECHED_L2_SUBNET = "strechedl2subnet";
     public static final String NETWORK_SPANNED_ZONES = "zonesnetworkspans";
+    public static final String METADATA = "metadata";
 
     public enum HostDetails {
         all, capacity, events, stats, min;
