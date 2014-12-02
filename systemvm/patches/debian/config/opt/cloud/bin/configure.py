@@ -18,6 +18,7 @@
 # under the License.
 import sys
 import os
+import base64
 
 from merge import DataBag
 from pprint import pprint
