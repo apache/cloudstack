@@ -216,7 +216,7 @@ class TestVMPasswordEnabled(cloudstackTestCase):
 
         cls.services["template"]["ostype"] = cls.services["ostype"]
         cls.services["template"]["ispublic"] = True
-        # Create templates for Edit, Delete & update permissions testcases
+        #Create templates for Edit, Delete & update permissions testcases
         cls.pw_enabled_template = Template.create(
             cls.api_client,
             cls.services["template"],
