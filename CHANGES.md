@@ -101,7 +101,16 @@ This is a bug fix release. The following issues were fixed:
     CLOUDSTACK-5576: UI > IP Address > EnableVPN, DisableVPN: change label.
     CLOUDSTACK-5501: Allow one vpn customer gateway with multiple connections
     CLOUDSTACK-5446: delete all the leftover snapshots on primary storage in case of snapshot errors
-
+    CLOUDSTACK-2823: Loop through cmdline when patching routers
+    CLOUDSTACK-7412: Can't create proper template from VM on S3 secondary storage environment
+    CLOUDSTACK-7903: Decreased minimal usage aggregation range value
+    CLOUDSTACK-5834: got VBD statistics from RRD
+    CLOUDSTACK-7595: Remove unnecessary multiply factor for job expiry
+    CLOUDSTACK-7360 [vmware] Add host to existing cluster fails if the cluster is using Nexus 1000v as backend for atleast one traffic type
+    CLOUDSTACK-5812: pass podId information when request for secondary ip address in Basic zone guest network
+    CLOUDSTACK-5997: Template state changes side affects
+    CLOUDSTACK-5685: reboot VR if a out-of-band power-on event is detected
+    CLOUDSTACK-7994: Network rules are not configured in VR after out-of-band movement due to host crash
 
 Version 4.3.1
 -------------
