@@ -70,7 +70,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     static final ConfigKey<Integer> RouterAlertsCheckInterval = new ConfigKey<Integer>(Integer.class, RouterAlertsCheckIntervalCK, "Advanced", "1800",
             "Interval (in seconds) to check for alerts in Virtual Router.", false, ConfigKey.Scope.Global, null);
 
-    public static final int DEFAULT_ROUTER_VM_RAMSIZE = 128;            // 128M
+    public static final int DEFAULT_ROUTER_VM_RAMSIZE = 256;             // 256M
     public static final int DEFAULT_ROUTER_CPU_MHZ = 500;                // 500 MHz
     public static final boolean USE_POD_VLAN = false;
 
