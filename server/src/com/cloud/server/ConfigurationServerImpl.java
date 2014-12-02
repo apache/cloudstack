@@ -638,13 +638,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                 "SSL Keystore for the management servers");
                 _configDao.persist(configVO);
                 s_logger.info("Stored SSL keystore to database.");
-            } else if (null != keystoreFile && keystoreFile.exists()) { // and dbExisted
-                // Check if they are the same one, otherwise override with local keystore
-                String base64Keystore = getBase64Keystore(keystorePath);
-                if (base64Keystore.compareTo(dbString) != 0) {
-                    _configDao.update("ssl.keystore", "Hidden", base64Keystore);
-                    s_logger.info("Updated database keystore with local one.");
-                }
             } else { // !keystoreFile.exists() and dbExisted
                 // Export keystore to local file
                 byte[] storeBytes = Base64.decodeBase64(dbString);
@@ -654,6 +647,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     fo.write(storeBytes);
                     fo.close();
                     Script script = new Script(true, "cp", 5000, null);
+                    script.add("-f");
                     script.add(tmpKeystorePath);
 
                     //There is a chance, although small, that the keystorePath is null. In that case, do not add it to the script.
