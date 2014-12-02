@@ -221,8 +221,6 @@ class TestVMPasswordEnabled(cloudstackTestCase):
             cls.api_client,
             cls.services["template"],
             cls.volume.id,
-            account=cls.account.name,
-            domainid=cls.account.domainid
         )
         # Delete the VM - No longer needed
         cls.virtual_machine.delete(cls.api_client, expunge=True)
