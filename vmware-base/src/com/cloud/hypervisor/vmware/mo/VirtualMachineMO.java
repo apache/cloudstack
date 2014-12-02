@@ -1164,6 +1164,14 @@ public class VirtualMachineMO extends BaseMO {
             throw new Exception("No such disk device: " + vmdkDatastorePath);
         }
 
+        // IDE virtual disk cannot be detached if VM is running
+        if (deviceInfo.second() != null && deviceInfo.second().contains("ide")) {
+            if (getPowerState() == VirtualMachinePowerState.POWERED_ON) {
+                throw new Exception("Removing a virtual disk over IDE controller is not supported while VM is running in VMware hypervisor. " +
+                        "Please re-try when VM is not running.");
+            }
+        }
+
         List<Pair<String, ManagedObjectReference>> chain = getDiskDatastorePathChain(deviceInfo.first(), true);
 
         VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
