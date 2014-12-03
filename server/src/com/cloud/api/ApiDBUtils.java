@@ -1806,8 +1806,8 @@ public class ApiDBUtils {
         return s_imageStoreJoinDao.newImageStoreView(vr);
     }
 
-    public static DomainResponse newDomainResponse(DomainJoinVO ve) {
-        return s_domainJoinDao.newDomainResponse(ve);
+    public static DomainResponse newDomainResponse(ResponseView view, DomainJoinVO ve) {
+        return s_domainJoinDao.newDomainResponse(view, ve);
     }
 
     public static AccountResponse newAccountResponse(ResponseView view, AccountJoinVO ve) {

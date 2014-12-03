@@ -20,6 +20,7 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
 import org.apache.log4j.Logger;
@@ -50,7 +51,7 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
     }
 
     @Override
-    public DomainResponse newDomainResponse(DomainJoinVO domain) {
+    public DomainResponse newDomainResponse(ResponseView view, DomainJoinVO domain) {
         DomainResponse domainResponse = new DomainResponse();
         domainResponse.setDomainName(domain.getName());
         domainResponse.setId(domain.getUuid());
@@ -73,14 +74,14 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         domainResponse.setState(domain.getState().toString());
         domainResponse.setNetworkDomain(domain.getNetworkDomain());
 
-        boolean isRootDomain = (domain.getId() == Domain.ROOT_DOMAIN);
-        setResourceLimits(domain, isRootDomain, domainResponse);
+        boolean fullView = (view == ResponseView.Full && domain.getId() == Domain.ROOT_DOMAIN);
+        setResourceLimits(domain, fullView, domainResponse);
 
         //get resource limits for projects
-        long projectLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getProjectLimit(), isRootDomain, ResourceType.project, domain.getId());
-        String projectLimitDisplay = (isRootDomain || projectLimit == -1) ? "Unlimited" : String.valueOf(projectLimit);
+        long projectLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getProjectLimit(), fullView, ResourceType.project, domain.getId());
+        String projectLimitDisplay = (fullView || projectLimit == -1) ? "Unlimited" : String.valueOf(projectLimit);
         long projectTotal = (domain.getProjectTotal() == null) ? 0 : domain.getProjectTotal();
-        String projectAvail = (isRootDomain || projectLimit == -1) ? "Unlimited" : String.valueOf(projectLimit - projectTotal);
+        String projectAvail = (fullView || projectLimit == -1) ? "Unlimited" : String.valueOf(projectLimit - projectTotal);
         domainResponse.setProjectLimit(projectLimitDisplay);
         domainResponse.setProjectTotal(projectTotal);
         domainResponse.setProjectAvailable(projectAvail);
@@ -91,98 +92,98 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
     }
 
     @Override
-    public void setResourceLimits(DomainJoinVO domain, boolean isRootDomain, ResourceLimitAndCountResponse response) {
+    public void setResourceLimits(DomainJoinVO domain, boolean fullView, ResourceLimitAndCountResponse response) {
         // Get resource limits and counts
-        long vmLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getVmLimit(), isRootDomain, ResourceType.user_vm, domain.getId());
-        String vmLimitDisplay = (isRootDomain || vmLimit == -1) ? "Unlimited" : String.valueOf(vmLimit);
+        long vmLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getVmLimit(), fullView, ResourceType.user_vm, domain.getId());
+        String vmLimitDisplay = (fullView || vmLimit == -1) ? "Unlimited" : String.valueOf(vmLimit);
         long vmTotal = (domain.getVmTotal() == null) ? 0 : domain.getVmTotal();
-        String vmAvail = (isRootDomain || vmLimit == -1) ? "Unlimited" : String.valueOf(vmLimit - vmTotal);
+        String vmAvail = (fullView || vmLimit == -1) ? "Unlimited" : String.valueOf(vmLimit - vmTotal);
         response.setVmLimit(vmLimitDisplay);
         response.setVmTotal(vmTotal);
         response.setVmAvailable(vmAvail);
 
-        long ipLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getIpLimit(), isRootDomain, ResourceType.public_ip, domain.getId());
-        String ipLimitDisplay = (isRootDomain || ipLimit == -1) ? "Unlimited" : String.valueOf(ipLimit);
+        long ipLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getIpLimit(), fullView, ResourceType.public_ip, domain.getId());
+        String ipLimitDisplay = (fullView || ipLimit == -1) ? "Unlimited" : String.valueOf(ipLimit);
         long ipTotal = (domain.getIpTotal() == null) ? 0 : domain.getIpTotal();
-        String ipAvail = ((isRootDomain || ipLimit == -1)) ? "Unlimited" : String.valueOf(ipLimit - ipTotal);
+        String ipAvail = ((fullView || ipLimit == -1)) ? "Unlimited" : String.valueOf(ipLimit - ipTotal);
         response.setIpLimit(ipLimitDisplay);
         response.setIpTotal(ipTotal);
         response.setIpAvailable(ipAvail);
 
-        long volumeLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getVolumeLimit(), isRootDomain, ResourceType.volume, domain.getId());
-        String volumeLimitDisplay = (isRootDomain || volumeLimit == -1) ? "Unlimited" : String.valueOf(volumeLimit);
+        long volumeLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getVolumeLimit(), fullView, ResourceType.volume, domain.getId());
+        String volumeLimitDisplay = (fullView || volumeLimit == -1) ? "Unlimited" : String.valueOf(volumeLimit);
         long volumeTotal = (domain.getVolumeTotal() == 0) ? 0 : domain.getVolumeTotal();
-        String volumeAvail = (isRootDomain || volumeLimit == -1) ? "Unlimited" : String.valueOf(volumeLimit - volumeTotal);
+        String volumeAvail = (fullView || volumeLimit == -1) ? "Unlimited" : String.valueOf(volumeLimit - volumeTotal);
         response.setVolumeLimit(volumeLimitDisplay);
         response.setVolumeTotal(volumeTotal);
         response.setVolumeAvailable(volumeAvail);
 
-        long snapshotLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getSnapshotLimit(), isRootDomain, ResourceType.snapshot, domain.getId());
-        String snapshotLimitDisplay = (isRootDomain || snapshotLimit == -1) ? "Unlimited" : String.valueOf(snapshotLimit);
+        long snapshotLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getSnapshotLimit(), fullView, ResourceType.snapshot, domain.getId());
+        String snapshotLimitDisplay = (fullView || snapshotLimit == -1) ? "Unlimited" : String.valueOf(snapshotLimit);
         long snapshotTotal = (domain.getSnapshotTotal() == null) ? 0 : domain.getSnapshotTotal();
-        String snapshotAvail = (isRootDomain || snapshotLimit == -1) ? "Unlimited" : String.valueOf(snapshotLimit - snapshotTotal);
+        String snapshotAvail = (fullView || snapshotLimit == -1) ? "Unlimited" : String.valueOf(snapshotLimit - snapshotTotal);
         response.setSnapshotLimit(snapshotLimitDisplay);
         response.setSnapshotTotal(snapshotTotal);
         response.setSnapshotAvailable(snapshotAvail);
 
-        Long templateLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getTemplateLimit(), isRootDomain, ResourceType.template, domain.getId());
-        String templateLimitDisplay = (isRootDomain || templateLimit == -1) ? "Unlimited" : String.valueOf(templateLimit);
+        Long templateLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getTemplateLimit(), fullView, ResourceType.template, domain.getId());
+        String templateLimitDisplay = (fullView || templateLimit == -1) ? "Unlimited" : String.valueOf(templateLimit);
         Long templateTotal = (domain.getTemplateTotal() == null) ? 0 : domain.getTemplateTotal();
-        String templateAvail = (isRootDomain || templateLimit == -1) ? "Unlimited" : String.valueOf(templateLimit - templateTotal);
+        String templateAvail = (fullView || templateLimit == -1) ? "Unlimited" : String.valueOf(templateLimit - templateTotal);
         response.setTemplateLimit(templateLimitDisplay);
         response.setTemplateTotal(templateTotal);
         response.setTemplateAvailable(templateAvail);
 
         //get resource limits for networks
-        long networkLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getNetworkLimit(), isRootDomain, ResourceType.network, domain.getId());
-        String networkLimitDisplay = (isRootDomain || networkLimit == -1) ? "Unlimited" : String.valueOf(networkLimit);
+        long networkLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getNetworkLimit(), fullView, ResourceType.network, domain.getId());
+        String networkLimitDisplay = (fullView || networkLimit == -1) ? "Unlimited" : String.valueOf(networkLimit);
         long networkTotal = (domain.getNetworkTotal() == null) ? 0 : domain.getNetworkTotal();
-        String networkAvail = (isRootDomain || networkLimit == -1) ? "Unlimited" : String.valueOf(networkLimit - networkTotal);
+        String networkAvail = (fullView || networkLimit == -1) ? "Unlimited" : String.valueOf(networkLimit - networkTotal);
         response.setNetworkLimit(networkLimitDisplay);
         response.setNetworkTotal(networkTotal);
         response.setNetworkAvailable(networkAvail);
 
         //get resource limits for vpcs
-        long vpcLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getVpcLimit(), isRootDomain, ResourceType.vpc, domain.getId());
-        String vpcLimitDisplay = (isRootDomain || vpcLimit == -1) ? "Unlimited" : String.valueOf(vpcLimit);
+        long vpcLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getVpcLimit(), fullView, ResourceType.vpc, domain.getId());
+        String vpcLimitDisplay = (fullView || vpcLimit == -1) ? "Unlimited" : String.valueOf(vpcLimit);
         long vpcTotal = (domain.getVpcTotal() == null) ? 0 : domain.getVpcTotal();
-        String vpcAvail = (isRootDomain || vpcLimit == -1) ? "Unlimited" : String.valueOf(vpcLimit - vpcTotal);
+        String vpcAvail = (fullView || vpcLimit == -1) ? "Unlimited" : String.valueOf(vpcLimit - vpcTotal);
         response.setVpcLimit(vpcLimitDisplay);
         response.setVpcTotal(vpcTotal);
         response.setVpcAvailable(vpcAvail);
 
         //get resource limits for cpu cores
-        long cpuLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getCpuLimit(), isRootDomain, ResourceType.cpu, domain.getId());
-        String cpuLimitDisplay = (isRootDomain || cpuLimit == -1) ? "Unlimited" : String.valueOf(cpuLimit);
+        long cpuLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getCpuLimit(), fullView, ResourceType.cpu, domain.getId());
+        String cpuLimitDisplay = (fullView || cpuLimit == -1) ? "Unlimited" : String.valueOf(cpuLimit);
         long cpuTotal = (domain.getCpuTotal() == null) ? 0 : domain.getCpuTotal();
-        String cpuAvail = (isRootDomain || cpuLimit == -1) ? "Unlimited" : String.valueOf(cpuLimit - cpuTotal);
+        String cpuAvail = (fullView || cpuLimit == -1) ? "Unlimited" : String.valueOf(cpuLimit - cpuTotal);
         response.setCpuLimit(cpuLimitDisplay);
         response.setCpuTotal(cpuTotal);
         response.setCpuAvailable(cpuAvail);
 
         //get resource limits for memory
-        long memoryLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getMemoryLimit(), isRootDomain, ResourceType.memory, domain.getId());
-        String memoryLimitDisplay = (isRootDomain || memoryLimit == -1) ? "Unlimited" : String.valueOf(memoryLimit);
+        long memoryLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getMemoryLimit(), fullView, ResourceType.memory, domain.getId());
+        String memoryLimitDisplay = (fullView || memoryLimit == -1) ? "Unlimited" : String.valueOf(memoryLimit);
         long memoryTotal = (domain.getMemoryTotal() == null) ? 0 : domain.getMemoryTotal();
-        String memoryAvail = (isRootDomain || memoryLimit == -1) ? "Unlimited" : String.valueOf(memoryLimit - memoryTotal);
+        String memoryAvail = (fullView || memoryLimit == -1) ? "Unlimited" : String.valueOf(memoryLimit - memoryTotal);
         response.setMemoryLimit(memoryLimitDisplay);
         response.setMemoryTotal(memoryTotal);
         response.setMemoryAvailable(memoryAvail);
 
       //get resource limits for primary storage space and convert it from Bytes to GiB
-        long primaryStorageLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getPrimaryStorageLimit(), isRootDomain, ResourceType.primary_storage, domain.getId());
-        String primaryStorageLimitDisplay = (isRootDomain || primaryStorageLimit == -1) ? "Unlimited" : String.valueOf(primaryStorageLimit / ResourceType.bytesToGiB);
+        long primaryStorageLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getPrimaryStorageLimit(), fullView, ResourceType.primary_storage, domain.getId());
+        String primaryStorageLimitDisplay = (fullView || primaryStorageLimit == -1) ? "Unlimited" : String.valueOf(primaryStorageLimit / ResourceType.bytesToGiB);
         long primaryStorageTotal = (domain.getPrimaryStorageTotal() == null) ? 0 : (domain.getPrimaryStorageTotal() / ResourceType.bytesToGiB);
-        String primaryStorageAvail = (isRootDomain || primaryStorageLimit == -1) ? "Unlimited" : String.valueOf((primaryStorageLimit / ResourceType.bytesToGiB) - primaryStorageTotal);
+        String primaryStorageAvail = (fullView || primaryStorageLimit == -1) ? "Unlimited" : String.valueOf((primaryStorageLimit / ResourceType.bytesToGiB) - primaryStorageTotal);
         response.setPrimaryStorageLimit(primaryStorageLimitDisplay);
         response.setPrimaryStorageTotal(primaryStorageTotal);
         response.setPrimaryStorageAvailable(primaryStorageAvail);
 
         //get resource limits for secondary storage space and convert it from Bytes to GiB
-        long secondaryStorageLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getSecondaryStorageLimit(), isRootDomain, ResourceType.secondary_storage, domain.getId());
-        String secondaryStorageLimitDisplay = (isRootDomain || secondaryStorageLimit == -1) ? "Unlimited" : String.valueOf(secondaryStorageLimit / ResourceType.bytesToGiB);
+        long secondaryStorageLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getSecondaryStorageLimit(), fullView, ResourceType.secondary_storage, domain.getId());
+        String secondaryStorageLimitDisplay = (fullView || secondaryStorageLimit == -1) ? "Unlimited" : String.valueOf(secondaryStorageLimit / ResourceType.bytesToGiB);
         long secondaryStorageTotal = (domain.getSecondaryStorageTotal() == null) ? 0 : (domain.getSecondaryStorageTotal() / ResourceType.bytesToGiB);
-        String secondaryStorageAvail = (isRootDomain || secondaryStorageLimit == -1) ? "Unlimited" : String.valueOf((secondaryStorageLimit / ResourceType.bytesToGiB) - secondaryStorageTotal);
+        String secondaryStorageAvail = (fullView || secondaryStorageLimit == -1) ? "Unlimited" : String.valueOf((secondaryStorageLimit / ResourceType.bytesToGiB) - secondaryStorageTotal);
         response.setSecondaryStorageLimit(secondaryStorageLimitDisplay);
         response.setSecondaryStorageTotal(secondaryStorageTotal);
         response.setSecondaryStorageAvailable(secondaryStorageAvail);

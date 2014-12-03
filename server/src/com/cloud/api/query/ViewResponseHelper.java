@@ -348,10 +348,10 @@ public class ViewResponseHelper {
         return new ArrayList<StoragePoolResponse>(vrDataList.values());
     }
 
-    public static List<DomainResponse> createDomainResponse(DomainJoinVO... domains) {
+    public static List<DomainResponse> createDomainResponse(ResponseView view, DomainJoinVO... domains) {
         List<DomainResponse> respList = new ArrayList<DomainResponse>();
         for (DomainJoinVO vt : domains){
-            respList.add(ApiDBUtils.newDomainResponse(vt));
+            respList.add(ApiDBUtils.newDomainResponse(view, vt));
         }
         return respList;
     }

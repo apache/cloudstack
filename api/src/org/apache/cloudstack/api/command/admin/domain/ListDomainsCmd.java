@@ -22,10 +22,13 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
-@APICommand(name = "listDomains", description = "Lists domains and provides detailed information for listed domains", responseObject = DomainResponse.class,
+import com.cloud.domain.Domain;
+
+@APICommand(name = "listDomains", description = "Lists domains and provides detailed information for listed domains", responseObject = DomainResponse.class, responseView = ResponseView.Restricted, entityType = {Domain.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListDomainsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDomainsCmd.class.getName());
@@ -80,7 +83,7 @@ public class ListDomainsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         ListResponse<DomainResponse> response = _queryService.searchForDomains(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
