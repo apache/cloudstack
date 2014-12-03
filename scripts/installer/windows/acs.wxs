@@ -260,10 +260,10 @@
       Execute="deferred" Return="check" />
     <CustomAction Id="DbHostWithPort" Execute="immediate" Property="DB_HOSTNAME" Value="[DB_HOSTNAME]:[DB_PORT]" />
     <CustomAction Id="DeployDB" Directory='CSMANAGEMENT'
-      ExeCommand='[PYTHON_HOME]\python "[INSTALLDIR]\scripts\cloud-setup-databases" [DB_USERNAME]:[DB_PASSWORD]@[DB_HOSTNAME] --deploy-as=root:[DB_ROOT_PASSWORD] -c "[CSMANAGEMENT]\lib" -f "[CSMANAGEMENT]\setup" -j "[CSMANAGEMENT]\webapps\client\WEB-INF\lib\jasypt-1.9.0.jar" -n "[CSMANAGEMENT]\lib\key" -b "[MYSQL]\bin"'
+      ExeCommand='[PYTHON_HOME]\python "[INSTALLDIR]\scripts\cloud-setup-databases" [DB_USERNAME]:[DB_PASSWORD]@[DB_HOSTNAME] --deploy-as=root:[DB_ROOT_PASSWORD] -c "[CSMANAGEMENT]\lib" -f "[CSMANAGEMENT]\setup" -j "[CSMANAGEMENT]\webapps\client\WEB-INF\lib\jasypt-1.9.2.jar" -n "[CSMANAGEMENT]\lib\key" -b "[MYSQL]\bin"'
       Execute="deferred" Return="check" Impersonate="no"/>
     <CustomAction Id="SetupDatabases" Directory='CSMANAGEMENT'
-      ExeCommand='[PYTHON_HOME]\python "[INSTALLDIR]\scripts\cloud-setup-databases" [DB_USERNAME]:[DB_PASSWORD]@[DB_HOSTNAME] -c "[CSMANAGEMENT]\lib" -f "[CSMANAGEMENT]\setup" -j "[CSMANAGEMENT]\webapps\client\WEB-INF\lib\jasypt-1.9.0.jar" -n "[CSMANAGEMENT]\lib\key" -b "[MYSQL]\bin"'
+      ExeCommand='[PYTHON_HOME]\python "[INSTALLDIR]\scripts\cloud-setup-databases" [DB_USERNAME]:[DB_PASSWORD]@[DB_HOSTNAME] -c "[CSMANAGEMENT]\lib" -f "[CSMANAGEMENT]\setup" -j "[CSMANAGEMENT]\webapps\client\WEB-INF\lib\jasypt-1.9.2.jar" -n "[CSMANAGEMENT]\lib\key" -b "[MYSQL]\bin"'
       Execute="deferred" Return="check" Impersonate="no"/>
 
     <InstallExecuteSequence>
