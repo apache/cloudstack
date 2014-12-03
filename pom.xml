@@ -63,6 +63,7 @@
     <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
     <cs.httpclient.version>4.3.6</cs.httpclient.version>
     <cs.httpcore.version>4.3.3</cs.httpcore.version>
+    <cs.commons-httpclient.version>3.1</cs.commons-httpclient.version>
     <cs.mysql.version>5.1.34</cs.mysql.version>
     <cs.xstream.version>1.4.7</cs.xstream.version>
     <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
@@ -329,7 +330,7 @@
       <dependency>
         <groupId>org.apache.httpcomponents</groupId>
         <artifactId>httpclient</artifactId>
-        <version>${cs.httpcore.version}</version>
+        <version>${cs.httpclient.version}</version>
       </dependency>
       <dependency>
         <groupId>com.thoughtworks.xstream</groupId>
