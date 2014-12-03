@@ -30,7 +30,7 @@
         var routerType = _l('label.menu.system');
         
         if (router.projectid) routerType = _l('label.project');
-        if (router.vpcid) routerType = 'VPC';
+        if (router.vpcid) routerType = _l('label.vpc');
         
         return $.extend(router, {
             routerType: routerType
@@ -128,34 +128,34 @@
         });
         
         if (trafficType.xenservernetworklabel == null || trafficType.xenservernetworklabel == 0)
-        trafficType.xenservernetworklabel = dictionary[ 'label.network.label.display.for.blank.value'];
+        trafficType.xenservernetworklabel = _l( 'label.network.label.display.for.blank.value');
         if (trafficType.kvmnetworklabel == null || trafficType.kvmnetworklabel == 0)
-        trafficType.kvmnetworklabel = dictionary[ 'label.network.label.display.for.blank.value'];
+        trafficType.kvmnetworklabel = _l( 'label.network.label.display.for.blank.value');
         if (trafficType.vmwarenetworklabel == null || trafficType.vmwarenetworklabel == 0)
-        trafficType.vmwarenetworklabel = dictionary[ 'label.network.label.display.for.blank.value'];
+        trafficType.vmwarenetworklabel = _l( 'label.network.label.display.for.blank.value');
         if (trafficType.ovmnetworklabel == null || trafficType.ovmnetworklabel == 0)
-        trafficType.ovmnetworklabel = dictionary[ 'label.network.label.display.for.blank.value'];
+        trafficType.ovmnetworklabel = _l( 'label.network.label.display.for.blank.value');
         if (trafficType.lxcnetworklabel == null || trafficType.lxcnetworklabel == 0)
-        trafficType.lxcnetworklabel = dictionary[ 'label.network.label.display.for.blank.value'];
+        trafficType.lxcnetworklabel = _l( 'label.network.label.display.for.blank.value');
         if (trafficType.hypervnetworklabel == null || trafficType.hypervnetworklabel == 0)
-        trafficType.hypervnetworklabel = dictionary[ 'label.network.label.display.for.blank.value'];
+        trafficType.hypervnetworklabel = _l( 'label.network.label.display.for.blank.value');
         
         return trafficType;
     };
     
     var updateTrafficLabels = function (trafficType, labels, complete) {
         var array1 =[];
-        if (labels.xenservernetworklabel != dictionary[ 'label.network.label.display.for.blank.value'])
+        if (labels.xenservernetworklabel != _l( 'label.network.label.display.for.blank.value'))
         array1.push("&xenservernetworklabel=" + labels.xenservernetworklabel);
-        if (labels.kvmnetworklabel != dictionary[ 'label.network.label.display.for.blank.value'])
+        if (labels.kvmnetworklabel != _l( 'label.network.label.display.for.blank.value'))
         array1.push("&kvmnetworklabel=" + labels.kvmnetworklabel);
-        if (labels.vmwarenetworklabel != dictionary[ 'label.network.label.display.for.blank.value'])
+        if (labels.vmwarenetworklabel != _l( 'label.network.label.display.for.blank.value'))
         array1.push("&vmwarenetworklabel=" + labels.vmwarenetworklabel);
-        if (labels.ovmnetworklabel != dictionary[ 'label.network.label.display.for.blank.value'])
+        if (labels.ovmnetworklabel != _l( 'label.network.label.display.for.blank.value'))
         array1.push("&ovmnetworklabel=" + labels.ovmnetworklabel);
-        if (labels.lxcnetworklabel != dictionary[ 'label.network.label.display.for.blank.value'])
+        if (labels.lxcnetworklabel != _l( 'label.network.label.display.for.blank.value'))
         array1.push("&lxcnetworklabel=" + labels.lxcnetworklabel);
-        if (labels.hypervnetworklabel != dictionary[ 'label.network.label.display.for.blank.value'])
+        if (labels.hypervnetworklabel != _l( 'label.network.label.display.for.blank.value'))
         array1.push("&hypervnetworklabel=" + labels.hypervnetworklabel);
         
         $.ajax({
@@ -221,7 +221,6 @@
                         $.ajax({
                             url: createURL('listZones'),
                             data: {
-                            	listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
@@ -238,7 +237,6 @@
                         $.ajax({
                             url: createURL('listPods'),
                             data: {
-                            	listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
@@ -254,7 +252,6 @@
                         $.ajax({
                             url: createURL('listClusters'),
                             data: {
-                            	listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
@@ -278,7 +275,6 @@
                     hostCount: function (data) {
                         var data2 = {
                             type: 'routing',
-                            listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -295,7 +291,6 @@
                     
                     primaryStorageCount: function (data) {
                         var data2 = {
-                        	listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -312,8 +307,6 @@
                     
                     secondaryStorageCount: function (data) {
                         var data2 = {
-                            type: 'SecondaryStorage',
-                            listAll: true,
                             page: 1,
                             pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                         };
@@ -332,7 +325,6 @@
                         $.ajax({
                             url: createURL('listSystemVms'),
                             data: {
-                            	listAll: true,
                                 page: 1,
                                 pagesize: 1 //specifying pagesize as 1 because we don't need any embedded objects to be returned here. The only thing we need from API response is "count" property.
                             },
@@ -1058,7 +1050,7 @@
                                         },
                                         dataProvider: function (args) {
                                             $.ajax({
-                                                url: createURL("listStorageNetworkIpRange&zoneid=" + args.context.zones[0].id + "&networkId=" + selectedPublicNetworkObj.id),
+                                                url: createURL("listStorageNetworkIpRange&zoneid=" + args.context.zones[0].id),
                                                 dataType: "json",
                                                 success: function (json) {
                                                     var items = json.liststoragenetworkiprangeresponse.storagenetworkiprange;
@@ -1281,7 +1273,7 @@
                                         isEditable: true
                                     },
                                     tags: {
-                                        label: 'Tags',
+                                        label: 'label.tags',
                                         isEditable: true
                                     },
                                     broadcastdomainrange: {
@@ -1530,7 +1522,7 @@
                                             label: 'label.ipv4.cidr'
                                         },
                                         ip6cidr: {
-                                            label: 'label.ipv6.cidr'
+                                            label: 'label.ipv6.CIDR'
                                         }
                                         //scope: { label: 'label.scope' }
                                     },
@@ -1631,7 +1623,7 @@
                                                         if (args.context.networks[0].type == "Isolated") {
                                                             //Isolated network
                                                             cloudStack.dialog.confirm({
-                                                                message: 'Do you want to keep the current guest network CIDR unchanged?',
+                                                                message: 'message.confirm.current.guest.CIDR.unchanged',
                                                                 action: function () {
                                                                     //"Yes"	button is clicked
                                                                     array1.push("&changecidr=false");
@@ -1954,11 +1946,12 @@
                                                         success: function (json) {
                                                             selectedGuestNetworkObj = json.listnetworksresponse.network[0];
                                                             addExtraPropertiesToGuestNetworkObject(selectedGuestNetworkObj);
-                                                                                                                        
-                                                            if (isModuleIncluded("dr")) {
-                                                                cloudStack.dr.sharedFunctions.addExtraProperties(selectedGuestNetworkObj, "Network");  
-                                                            }
-                                                            
+                                                                                                                       
+                                                            $(window).trigger('cloudStack.module.sharedFunctions.addExtraProperties', {
+                                                            	obj: selectedGuestNetworkObj,
+                                                            	objType: "Network"
+                                                            });
+                                                                                                                       
                                                             args.response.success({
                                                                 actionFilter: cloudStack.actionFilter.guestNetwork,
                                                                 data: selectedGuestNetworkObj
@@ -2854,7 +2847,7 @@
                     
                     InternalLbVm: {
                         id: 'InternalLbVm',
-                        label: 'InternalLbVm',
+                        label: 'label.internallbvm',
                         isMaximized: true,
                         type: 'detailView',
                         fields: {
@@ -4998,7 +4991,7 @@
                                             docID: 'helpSRXPrivateInterface'
                                         },
                                         usageinterface: {
-                                            label: 'Usage interface',
+                                            label: 'label.usage.interface',
                                             docID: 'helpSRXUsageInterface'
                                         },
                                         numretries: {
@@ -7424,7 +7417,211 @@
                                 }
                             }
                         }
-                    }                    
+                    },
+
+                    // GloboDns provider detail view
+                    GloboDns: {
+                        isMaximized: true,
+                        type: 'detailView',
+                        id: 'globoDnsProvider',
+                        label: 'label.globo.dns',
+                        tabs: {
+                            details: {
+                                title: 'label.details',
+                                fields: [{
+                                    name: {
+                                        label: 'label.name'
+                                    }
+                                }, {
+                                    state: {
+                                        label: 'label.state'
+                                    }
+                                }],
+                                dataProvider: function(args) {
+                                    refreshNspData("GloboDns");
+                                    var providerObj;
+                                    $(nspHardcodingArray).each(function() {
+                                        if (this.id == "GloboDns") {
+                                            providerObj = this;
+                                            return false; //break each loop
+                                        }
+                                    });
+                                    args.response.success({
+                                        data: providerObj,
+                                        actionFilter: networkProviderActionFilter('GloboDns')
+                                    });
+                                }
+                            },
+                        },
+                        actions: {
+                            add: {
+                                label: 'label.globo.dns.configuration',
+                                createForm: {
+                                    title: 'label.globo.dns.configuration',
+                                    preFilter: function(args) {},
+                                    fields: {
+                                        username: {
+                                            label: 'label.username',
+                                            validation: {
+                                                required: true
+                                            }
+                                        },
+                                        password: {
+                                            label: 'label.password',
+                                            isPassword: true,
+                                            validation: {
+                                                required: true
+                                            }
+                                        },
+                                        url: {
+                                            label: 'label.url',
+                                            validation: {
+                                                required: true
+                                            }
+                                        }
+                                    }
+                                },
+                                action: function(args) {
+                                    if (nspMap["GloboDns"] == null) {
+                                        $.ajax({
+                                            url: createURL("addNetworkServiceProvider&name=GloboDns&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                                            dataType: "json",
+                                            async: true,
+                                            success: function(json) {
+                                                var jobId = json.addnetworkserviceproviderresponse.jobid;
+                                                var addGloboDnsProviderIntervalID = setInterval(function() {
+                                                    $.ajax({
+                                                        url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                        dataType: "json",
+                                                        success: function(json) {
+                                                            var result = json.queryasyncjobresultresponse;
+                                                            if (result.jobstatus == 0) {
+                                                                return; //Job has not completed
+                                                            } else {
+                                                                clearInterval(addGloboDnsProviderIntervalID);
+                                                                if (result.jobstatus == 1) {
+                                                                    nspMap["GloboDns"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                                                    addGloboDnsHost(args, selectedPhysicalNetworkObj, "addGloboDnsHost", "addglobodnshostresponse");
+                                                                } else if (result.jobstatus == 2) {
+                                                                    alert("addNetworkServiceProvider&name=GloboDns failed. Error: " + _s(result.jobresult.errortext));
+                                                                }
+                                                            }
+                                                        },
+                                                        error: function(XMLHttpResponse) {
+                                                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                            alert("addNetworkServiceProvider&name=GloboDns failed. Error: " + errorMsg);
+                                                        }
+                                                    });
+                                                }, g_queryAsyncJobResultInterval);
+                                            }
+                                        });
+                                    } else {
+                                        addGloboDnsHost(args, selectedPhysicalNetworkObj, "addGloboDnsHost", "addglobodnshostresponse");
+                                    }
+                                },
+                                messages: {
+                                    notification: function(args) {
+                                        return 'label.add.globo.dns';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            enable: {
+                                label: 'label.enable.provider',
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap["GloboDns"].id + "&state=Enabled"),
+                                        dataType: "json",
+                                        success: function(json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function(json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.confirm.enable.provider';
+                                    },
+                                    notification: function() {
+                                        return 'label.enable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            disable: {
+                                label: 'label.disable.provider',
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap["GloboDns"].id + "&state=Disabled"),
+                                        dataType: "json",
+                                        success: function(json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function(json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.confirm.disable.provider';
+                                    },
+                                    notification: function() {
+                                        return 'label.disable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            destroy: {
+                                label: 'label.shutdown.provider',
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("deleteNetworkServiceProvider&id=" + nspMap["GloboDns"].id),
+                                        dataType: "json",
+                                        success: function(json) {
+                                            var jid = json.deletenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+
+                                            $(window).trigger('cloudStack.fullRefresh');
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.confirm.shutdown.provider';
+                                    },
+                                    notification: function(args) {
+                                        return 'label.shutdown.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }
+                        }
+                    }
                 }
             }
         },
@@ -7984,6 +8181,12 @@
                                                 },
                                                 success: function (json) {
                                                     selectedZoneObj = json.listzonesresponse.zone[0];
+                                                                                                                                                            
+                                                    $(window).trigger('cloudStack.module.sharedFunctions.addExtraProperties', {
+                                                    	obj: selectedZoneObj,
+                                                    	objType: "Zone"
+                                                    });
+                                                                                                        
                                                     $.ajax({
                                                         url: createURL('listDedicatedZones'),
                                                         data: {
@@ -8038,11 +8241,7 @@
                                                         }
                                                         //override default error handling: cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse)});
                                                     });
-                                                    
-                                                    if (isModuleIncluded("dr")) {
-                                                        cloudStack.dr.sharedFunctions.addExtraProperties(selectedZoneObj, "Zone");
-                                                    }
-                                                    
+                                                   
                                                     args.response.success({
                                                         actionFilter: zoneActionfilter,
                                                         data: selectedZoneObj
@@ -8869,7 +9068,6 @@
                                                 $.ajax({
                                                     url: createURL('listHosts'),
                                                     data: {
-                                                        listAll: true,
                                                         details: 'min'
                                                     },
                                                     success: function (json) {
@@ -9040,7 +9238,7 @@
                                 	var array1 = [];
                                 	
                                 	// ***** non XenServer (begin) *****
-                                	var hypervisors = ["Hyperv", "KVM", "VMware", "BareMetal"];
+                                	var hypervisors = ["Hyperv", "KVM", "VMware", "BareMetal", "LXC"];
                                 	
                                         	var supportSocketHypervisors = {
                                         		"Hyperv": 1, 
@@ -9111,10 +9309,14 @@
                                 	var totalHostCount = 0;                                                	
                                 	var currentPage = 1;
                                 	var returnedHostCount = 0;
+                                	                                	
+                                	var returnedHostCountForXenServer650 = 0;  //'XenServer 6.5.0'                               	
+                                	var returnedHostCpusocketsSumForXenServer650 = 0;    
+                                	
+                                	var returnedHostCountForXenServer620 = 0;  //'XenServer 6.2.0'                               	
+                                	var returnedHostCpusocketsSumForXenServer620 = 0;   
                                 	
                                 	var returnedHostCountForXenServer61x = 0;  //'XenServer 6.1.x and before'
-                                	var returnedHostCountForXenServer620 = 0;  //'XenServer 6.2.0'                               	
-                                	var returnedHostCpusocketsSumForXenServer620 = 0;    
                                 	
                                 	var callListHostsWithPage = function() {                                                		
                                 		$.ajax({
@@ -9135,9 +9337,13 @@
                                     			returnedHostCount += json.listhostsresponse.host.length;
                                     			                                                    			
                                     			var items = json.listhostsresponse.host;
-                                    			for (var i = 0; i < items.length; i++) {
-                                    				//"hypervisorversion" == "6.2.0"
-                                    				if (items[i].hypervisorversion == "6.2.0") {
+                                    			for (var i = 0; i < items.length; i++) {                                    				
+                                    				if (items[i].hypervisorversion == "6.5.0") {
+                                    					returnedHostCountForXenServer650 ++;
+                                    					if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
+                                        					returnedHostCpusocketsSumForXenServer650 += items[i].cpusockets;
+                                        				} 
+                                    				} else if (items[i].hypervisorversion == "6.2.0") {
                                     					returnedHostCountForXenServer620 ++;
                                     					if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
                                         					returnedHostCpusocketsSumForXenServer620 += items[i].cpusockets;
@@ -9158,9 +9364,9 @@
                                 	callListHostsWithPage();                                	                                                  	
                                 	
                                 	array1.push({
-                                        hypervisor: 'XenServer 6.1.x and before',
-                                        hosts: returnedHostCountForXenServer61x,
-                                        sockets: 'N/A'                                                   
+                                        hypervisor: 'XenServer 6.5.0',
+                                        hosts: returnedHostCountForXenServer650,
+                                        sockets: returnedHostCpusocketsSumForXenServer650                                                    
                                     });
                                 	
                                 	array1.push({
@@ -9168,6 +9374,13 @@
                                         hosts: returnedHostCountForXenServer620,
                                         sockets: returnedHostCpusocketsSumForXenServer620                                                    
                                     });
+                                	
+                                	array1.push({
+                                        hypervisor: 'XenServer 6.1.x and before',
+                                        hosts: returnedHostCountForXenServer61x,
+                                        sockets: 'N/A'                                                   
+                                    });                                	
+                                	
                                 	// ***** XenServer (end) *****
                                 	
                                 	
@@ -9187,7 +9400,21 @@
         subsections: {
             virtualRouters: {
                 sectionSelect: {
-                    label: 'label.select-view'
+                    label: 'label.select-view',
+                    preFilter: function(args) {                    	
+                    	//Only clicking ViewAll Link("view all Virtual Routers") in "Virtual Routers group by XXXXXXX" detailView will have "routerGroupByXXXXXXX" included in args.context
+                        if ("routerGroupByZone" in args.context) {
+                        	return ["routerGroupByZone"]; // read-only (i.e. text "group by Zone") 
+                        } else if ( "routerGroupByPod" in args.context) {
+                        	return ["routerGroupByPod"]; // read-only (i.e. text "group by Pod") 
+                        } else if ("routerGroupByCluster" in args.context) {
+                        	return ["routerGroupByCluster"]; // read-only (i.e. text "group by Cluster") 
+                        } else if ("routerGroupByAccount" in args.context) {
+                        	return ["routerGroupByAccount"]; // read-only (i.e. text "group by Account") 
+                        } else {
+                        	return ["routerNoGroup", "routerGroupByZone", "routerGroupByPod", "routerGroupByCluster", "routerGroupByAccount"]; //editable dropdown 
+                        }
+                    }
                 },
                 sections: {
                     routerNoGroup: {
@@ -9241,6 +9468,27 @@
                                     // forvpc: false
                                 };
                                 
+                                if (args.context != undefined) {
+	                                if ("routerGroupByZone" in args.context) {
+	                                    $.extend(data2, {
+	                                        zoneid: args.context.routerGroupByZone[0].id
+	                                    })
+	                                } else if ("routerGroupByPod" in args.context) {
+	                                    $.extend(data2, {
+	                                        podid: args.context.routerGroupByPod[0].id
+	                                    })
+	                                } else if ("routerGroupByCluster" in args.context) {
+	                                    $.extend(data2, {
+	                                        clusterid: args.context.routerGroupByCluster[0].id
+	                                    })
+	                                } else if ("routerGroupByAccount" in args.context) {
+	                                    $.extend(data2, {
+	                                    	 account: args.context.routerGroupByAccount[0].name,
+	                                         domainid: args.context.routerGroupByAccount[0].domainid
+	                                    })
+	                                }
+                                }                               
+                                
                                 var routers =[];
                                 $.ajax({
                                     url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
@@ -9259,7 +9507,18 @@
                                  * Therefore, we only call the second listRouters API(with projectid=-1) in non-project view.
                                  */   
                                 if (cloudStack.context && cloudStack.context.projects == null) { //non-project view
-                                        $.ajax({
+                                    /* 
+                                     * account parameter(account+domainid) and project parameter(projectid) are not allowed to be passed together to listXXXXXXX API. 
+                                     * So, remove account parameter(account+domainid) from data2
+                                     */                                    	
+                                	if ("account" in data2) {
+                                		delete data2.account;
+                                	}
+                                	if ("domainid" in data2) {
+                                		delete data2.domainid;
+                                	}                                	
+                                	
+                                	$.ajax({
                                             url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                                             data: data2,
 	                                    async: false,
@@ -9545,7 +9804,7 @@
                                         }
                                     },
                                     
-                                    scaleUp: {
+                                    scaleUp: { //*** Infrastructure > Virtual Routers > change service offering ***
                                         label: 'label.change.service.offering',
                                         createForm: {
                                             title: 'label.change.service.offering',
@@ -9566,7 +9825,8 @@
                                                             url: createURL('listServiceOfferings'),
                                                             data: {
                                                                 issystem: true,
-                                                                systemvmtype: 'domainrouter'
+                                                                systemvmtype: 'domainrouter',
+                                                                virtualmachineid: args.context.routers[0].id
                                                             },
                                                             success: function (json) {
                                                                 var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
@@ -9874,7 +10134,11 @@
                                 });
                             },
                             detailView: {
-                                name: 'label.virtual.routers.group.zone',
+                                name: 'label.virtual.routers.group.zone',                                
+                                viewAll: {
+                                    path: '_zone.virtualRouters',
+                                    label: 'label.virtual.appliances'
+                                },                                
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
                                         label: 'label.upgrade.router.newer.template',
@@ -9925,9 +10189,9 @@
                                                 label: 'label.upgrade.required',
                                                 converter: function (args) {
                                                     if (args > 0) {
-                                                        return 'Yes';
+                                                        return 'label.yes';
                                                     } else {
-                                                        return 'No';
+                                                        return 'label.no';
                                                     }
                                                 }
                                             },                                            
@@ -10001,7 +10265,11 @@
                                 });
                             },
                             detailView: {
-                                name: 'label.virtual.routers.group.pod',
+                                name: 'label.virtual.routers.group.pod',                                
+                                viewAll: {
+                                    path: '_zone.virtualRouters',
+                                    label: 'label.virtual.appliances'
+                                },                               
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
                                         label: 'label.upgrade.router.newer.template',
@@ -10131,7 +10399,11 @@
                                 });
                             },
                             detailView: {
-                                name: 'label.virtual.routers.group.cluster',
+                                name: 'label.virtual.routers.group.cluster',                               
+                                viewAll: {
+                                    path: '_zone.virtualRouters',
+                                    label: 'label.virtual.appliances'
+                                },                               
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
                                         label: 'label.upgrade.router.newer.template',
@@ -10328,7 +10600,11 @@
                                 });
                             },
                             detailView: {
-                                name: 'label.virtual.routers.group.account',
+                                name: 'label.virtual.routers.group.account',                                
+                                viewAll: {
+                                    path: '_zone.virtualRouters',
+                                    label: 'label.virtual.appliances'
+                                },                               
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
                                         label: 'label.upgrade.router.newer.template',
@@ -10507,7 +10783,7 @@
                         },
                         
                         agentstate: {
-                            label: 'Agent State',
+                            label: 'label.agent.state',
                             indicator: {
                                 'Up': 'on',
                                 'Down': 'off'
@@ -10770,7 +11046,7 @@
                                 }
                             },
                             
-                            scaleUp: {
+                            scaleUp: { //*** Infrastructure > System VMs (consoleProxy or SSVM) > change service offering ***
                                 label: 'label.change.service.offering',
                                 createForm: {
                                     title: 'label.change.service.offering',
@@ -10787,14 +11063,23 @@
                                         serviceOfferingId: {
                                             label: 'label.compute.offering',
                                             select: function (args) {
-                                                var apiCmd = "listServiceOfferings&issystem=true";
-                                                if (args.context.systemVMs[0].systemvmtype == "secondarystoragevm")
-                                                apiCmd += "&systemvmtype=secondarystoragevm"; else if (args.context.systemVMs[0].systemvmtype == "consoleproxy")
-                                                apiCmd += "&systemvmtype=consoleproxy";
+                                            	var data1 = {
+                                                    issystem: 'true',
+                                                    virtualmachineid: args.context.systemVMs[0].id
+                                                };                                                
+                                                if (args.context.systemVMs[0].systemvmtype == "secondarystoragevm") {
+                                                	$.extend(data1, {
+                                                		systemvmtype: 'secondarystoragevm'
+                                                	});
+                                                }
+                                                else if (args.context.systemVMs[0].systemvmtype == "consoleproxy") {
+                                                	$.extend(data1, {
+                                                		systemvmtype: 'consoleproxy'
+                                                	});                                                	
+                                                }
                                                 $.ajax({
-                                                    url: createURL(apiCmd),
-                                                    dataType: "json",
-                                                    async: true,
+                                                    url: createURL('listServiceOfferings'),
+                                                    data: data1,
                                                     success: function (json) {
                                                         var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
                                                         var items =[];
@@ -11170,7 +11455,7 @@
                                         converter: cloudStack.converters.toBooleanText
                                     },
                                     gslbprovider: {
-                                        label: 'GSLB service',
+                                        label: 'label.gslb.service',
                                         converter: cloudStack.converters.toBooleanText
                                     },
                                     gslbproviderpublicip: {
@@ -12653,7 +12938,7 @@
 
                             messages: {
                                 notification: function(args) {
-                                    return 'Added new Nuage Vsp Controller';
+                                    return 'message.added.new.nuage.vsp.controller';
                                 }
                             },
                             notification: {
@@ -12811,7 +13096,7 @@
                                 title: 'label.add.pod',
                                 fields: {
                                     zoneid: {
-                                        label: 'Zone',
+                                        label: 'label.zone',
                                         docID: 'helpPodZone',
                                         validation: {
                                             required: true
@@ -12819,9 +13104,7 @@
                                         select: function (args) {
                                             var data = args.context.zones ? {
                                                 id: args.context.zones[0].id
-                                            }: {
-                                                listAll: true
-                                            };
+                                            }: {};
                                             
                                             $.ajax({
                                                 url: createURL('listZones'),
@@ -13340,12 +13623,12 @@
                                                         var podItem = json.listdedicatedpodsresponse.dedicatedpod[0];
                                                         if (podItem.domainid != null) {
                                                             $.extend(item, podItem, {
-                                                                isdedicated: 'label.yes'
+                                                                isdedicated: _l('label.yes')
                                                             });
                                                         }
                                                     } else
                                                     $.extend(item, {
-                                                        isdedicated: 'label.no'
+                                                        isdedicated: _l('label.no')
                                                     });
                                                     
                                                     args.response.success({
@@ -13613,9 +13896,7 @@
                                         select: function (args) {
                                             var data = args.context.zones ? {
                                                 id: args.context.zones[0].id
-                                            }: {
-                                                listAll: true
-                                            };
+                                            }: {};
                                             
                                             $.ajax({
                                                 url: createURL('listZones'),
@@ -14007,19 +14288,20 @@
                                     array1.push("&password=" + todb(args.data.vCenterPassword));
                                     
                                     //vSwitch Public Type
-                                    if (args.data.vSwitchPublicType != "")
-                                    array1.push("&publicvswitchtype=" + args.data.vSwitchPublicType);
-                                    
-                                    if (args.data.vSwitchPublicName != "")
-                                    array1.push("&publicvswitchname=" + args.data.vSwitchPublicName);
-                                    
+                                    if (args.$form.find('.form-item[rel=vSwitchPublicType]').css('display') != 'none' && args.data.vSwitchPublicType != "") {
+                                        array1.push("&publicvswitchtype=" + args.data.vSwitchPublicType);
+                                    }
+                                    if (args.$form.find('.form-item[rel=vSwitchPublicName]').css('display') != 'none' && args.data.vSwitchPublicName != "") {
+                                        array1.push("&publicvswitchname=" + args.data.vSwitchPublicName);
+                                    }
                                     
                                     //vSwitch Guest Type
-                                    if (args.data.vSwitchGuestType != "")
-                                    array1.push("&guestvswitchtype=" + args.data.vSwitchGuestType);
-                                    
-                                    if (args.data.vSwitchGuestName != "")
-                                    array1.push("&guestvswitchname=" + args.data.vSwitchGuestName);
+                                    if (args.$form.find('.form-item[rel=vSwitchGuestType]').css('display') != 'none' && args.data.vSwitchGuestType != "") {
+                                        array1.push("&guestvswitchtype=" + args.data.vSwitchGuestType);
+                                    }
+                                    if (args.$form.find('.form-item[rel=vSwitchGuestName]').css('display') != 'none' && args.data.vSwitchGuestName != "") {
+                                        array1.push("&guestvswitchname=" + args.data.vSwitchGuestName);
+                                    }
                                     
                                     //Nexus VSM fields
                                     if (args.$form.find('.form-item[rel=vsmipaddress]').css('display') != 'none' && args.data.vsmipaddress != null && args.data.vsmipaddress.length > 0) {
@@ -14118,7 +14400,8 @@
                                             }
                                         }
                                         args.response.success({
-                                            data: item
+                                            data: item,
+                                            actionFilter: clusterActionfilter
                                         });
                                     },
                                     error: function (XMLHttpResponse) {
@@ -14126,17 +14409,6 @@
                                         args.response.error(errorMsg);
                                     }
                                 });
-                            },
-                            
-                            notification: {
-                                poll: function (args) {
-                                    args.complete({
-                                        actionFilter: clusterActionfilter,
-                                        data: {
-                                            state: 'Enabled'
-                                        }
-                                    });
-                                }
                             }
                         }
                     },
@@ -14518,12 +14790,12 @@
                                                         var clusterItem = json.listdedicatedclustersresponse.dedicatedcluster[0];
                                                         if (clusterItem.domainid != null) {
                                                             $.extend(item, clusterItem, {
-                                                                isdedicated: 'label.yes'
+                                                                isdedicated: _l('label.yes')
                                                             });
                                                         }
                                                     } else
                                                     $.extend(item, {
-                                                        isdedicated: 'label.no'
+                                                        isdedicated: _l('label.no')
                                                     })
                                                 },
                                                 error: function (json) {
@@ -14870,16 +15142,14 @@
                                 fields: {
                                     zoneid: {
                                         docID: 'helpHostZone',
-                                        label: 'Zone',
+                                        label: 'label.zone',
                                         validation: {
                                             required: true
                                         },
                                         select: function (args) {
                                             var data = args.context.zones ? {
                                                 id: args.context.zones[0].id
-                                            }: {
-                                                listAll: true
-                                            };
+                                            }: {};
                                             
                                             $.ajax({
                                                 url: createURL('listZones'),
@@ -15227,9 +15497,41 @@
                                     //always appear (begin)
                                     hosttags: {
                                         label: 'label.host.tags',
+                                        isTokenInput: true,
                                         docID: 'helpHostTags',
                                         validation: {
                                             required: false
+                                        },
+                                        dataProvider: function(args) {
+                                            $.ajax({
+                                                url: createURL("listHostTags"),
+                                                dataType: "json",
+                                                success: function(json) {
+                                                    var item = json.listhosttagsresponse.hosttag;
+                                                    var tags = [];
+
+                                                    if (item != null)
+                                                    {
+                                                        tags = $.map(item, function(tag) {
+                                                            return {
+                                                                       id: tag.name,
+                                                                       name: tag.name
+                                                                   };
+                                                        });
+                                                    }
+
+                                                    args.response.success({
+                                                        data: tags,
+                                                        hintText: _l('hint.type.part.host.tag'),
+                                                        noResultsText: _l('hint.no.host.tags')
+                                                    });
+                                                },
+                                                error: function(XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+
+                                                    args.response.error(errorMsg);
+                                                }
+                                            });
                                         }
                                     }
                                     //always appear (end)
@@ -15625,7 +15927,7 @@
                             },
                             
                             enable: {
-                                label: 'Enable Host',
+                                label: 'label.enable.host',
                                 action: function (args) {
                                 	var data = {
                                      	id: args.context.hosts[0].id,
@@ -15645,10 +15947,10 @@
                                 },
                                 messages: {
                                     confirm: function (args) {
-                                        return 'Please confirm that you want to enable the host';
+                                        return 'message.confirm.enable.host';
                                     },
                                     notification: function (args) {
-                                        return 'Enable Host';
+                                        return 'label.enable.host';
                                     }
                                 },
                                 notification: {
@@ -15659,7 +15961,7 @@
                             },
 
                             disable: {
-                                label: 'Disable Host',
+                                label: 'label.disable.host',
                                 action: function (args) {
                                 	var data = {
                                      	id: args.context.hosts[0].id,
@@ -15679,10 +15981,10 @@
                                 },
                                 messages: {
                                     confirm: function (args) {
-                                        return 'Please confirm that you want to disable the host';
+                                        return 'message.confirm.disable.host';
                                     },
                                     notification: function (args) {
-                                        return 'Disable Host';
+                                        return 'label.disable.host';
                                     }
                                 },
                                 notification: {
@@ -15699,14 +16001,14 @@
                                         return 'label.action.remove.host';
                                     }
                                 },
-                                preFilter: function(args) { //bug to fix: preFilter is not picked up from here                              
-                                	if (!isAdmin()) {
-                                        args.$form.find('.form-item[rel=isForced]').hide();
-                                    }
-                                },
                                 createForm: {
                                     title: 'label.action.remove.host',
                                     desc: 'message.action.remove.host',
+                                    preFilter: function(args) { //bug to fix: preFilter is not picked up from here
+                                        if (!isAdmin()) {
+                                            args.$form.find('.form-item[rel=isForced]').hide();
+                                        }
+                                    },
                                     fields: {
                                         isForced: {
                                             label: 'force.remove',
@@ -15800,7 +16102,39 @@
                                     },
                                     hosttags: {
                                         label: 'label.host.tags',
-                                        isEditable: true
+                                        isEditable: true,
+                                        isTokenInput: true,
+                                        dataProvider: function(args) {
+                                            $.ajax({
+                                                url: createURL("listHostTags"),
+                                                dataType: "json",
+                                                success: function(json) {
+                                                    var item = json.listhosttagsresponse.hosttag;
+                                                    var tags = [];
+
+                                                    if (item != null)
+                                                    {
+                                                        tags = $.map(item, function(tag) {
+                                                            return {
+                                                                       id: tag.name,
+                                                                       name: tag.name
+                                                                   };
+                                                        });
+                                                    }
+
+                                                    args.response.success({
+                                                        data: tags,
+                                                        hintText: _l('hint.type.part.host.tag'),
+                                                        noResultsText: _l('hint.no.host.tags')
+                                                    });
+                                                },
+                                                error: function(XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+
+                                                    args.response.error(errorMsg);
+                                                }
+                                            });
+                                        }
                                     },
                                     hahost: {
                                         label: 'label.ha.enabled',
@@ -15877,12 +16211,12 @@
                                                         var hostItem = json.listdedicatedhostsresponse.dedicatedhost[0];
                                                         if (hostItem.domainid != null) {
                                                             $.extend(item, hostItem, {
-                                                                isdedicated: 'label.yes'
+                                                                isdedicated: _l('label.yes')
                                                             });
                                                         }
                                                     } else
                                                     $.extend(item, {
-                                                        isdedicated: 'label.no'
+                                                        isdedicated: _l('label.no')
                                                     })
                                                 },
                                                 error: function (json) {
@@ -16173,9 +16507,7 @@
                                         select: function (args) {
                                             var data = args.context.zones ? {
                                                 id: args.context.zones[0].id
-                                            }: {
-                                                listAll: true
-                                            };
+                                            }: {};
                                             
                                             $.ajax({
                                                 url: createURL('listZones'),
@@ -16423,6 +16755,10 @@
                                                 items.push({
                                                     id: "SharedMountPoint",
                                                     description: "SharedMountPoint"
+                                                });
+                                                items.push({
+                                                    id: "rbd",
+                                                    description: "RBD"
                                                 });
                                                 args.response.success({
                                                     data: items
@@ -16771,14 +17107,13 @@
                                     },
                                     provider: {
                                         label: 'label.provider',
-                                        docID: 'helpPrimaryStorageZone',
                                         validation: {
                                             required: true
                                         },
                                         select: function (args) {
                                             var data = args.context.providers ?
                                                 { id: args.context.providers[0].id } :
-                                                { listAll: true };
+                                                {};
 
                                             $.ajax({
                                                 url: createURL('listStorageProviders'),
@@ -16840,7 +17175,7 @@
                                         }
                                     },
                                     url: {
-                                        label: 'URL',
+                                        label: 'label.url',
                                         docID: 'helpUrl',
                                         validation: {
                                             required: false
@@ -16960,8 +17295,40 @@
                                     storageTags: {
                                         label: 'label.storage.tags',
                                         docID: 'helpPrimaryStorageTags',
+                                        isTokenInput: true,
                                         validation: {
                                             required: false
+                                        },
+                                        dataProvider: function(args) {
+                                            $.ajax({
+                                                url: createURL("listStorageTags"),
+                                                dataType: "json",
+                                                success: function(json) {
+                                                    var item = json.liststoragetagsresponse.storagetag;
+                                                    var tags = [];
+
+                                                    if (item != null)
+                                                    {
+                                                        tags = $.map(item, function(tag) {
+                                                            return {
+                                                                       id: tag.name,
+                                                                       name: tag.name
+                                                                   };
+                                                        });
+                                                    }
+
+                                                    args.response.success({
+                                                        data: tags,
+                                                        hintText: _l('hint.type.part.storage.tag'),
+                                                        noResultsText: _l('hint.no.storage.tags')
+                                                    });
+                                                },
+                                                error: function(XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+
+                                                    args.response.error(errorMsg);
+                                                }
+                                            });
                                         }
                                     }
                                     //always appear (end)
@@ -17088,6 +17455,11 @@
                                     array1.push("&tags=" + todb(args.data.storageTags));
                                 }
 
+                                if ("custom" in args.response) {                                
+                                    args.response.custom(array1);  
+                                    return;                                              
+                                }                                
+                                
                                 $.ajax({
                                     url: createURL("createStoragePool" + array1.join("")),
                                     dataType: "json",
@@ -17122,6 +17494,10 @@
                     
                     detailView: {
                         name: "Primary storage details",
+                        viewAll: {
+                            label: 'label.volumes',
+                            path: 'storage.volumes'
+                        },
                         isMaximized: true,
                         actions: {
                             edit: {
@@ -17286,7 +17662,39 @@
                                     },
                                     tags: {
                                         label: 'label.storage.tags',
-                                        isEditable: true
+                                        isTokenInput : true,
+                                        isEditable: true,
+                                        dataProvider: function(args) {
+                                            $.ajax({
+                                                url: createURL("listStorageTags"),
+                                                dataType: "json",
+                                                success: function(json) {
+                                                    var item = json.liststoragetagsresponse.storagetag;
+                                                    var tags = [];
+
+                                                    if (item != null)
+                                                    {
+                                                        tags = $.map(item, function(tag) {
+                                                            return {
+                                                                       id: tag.name,
+                                                                       name: tag.name
+                                                                   };
+                                                        });
+                                                    }
+
+                                                    args.response.success({
+                                                        data: tags,
+                                                        hintText: _l('hint.type.part.storage.tag'),
+                                                        noResultsText: _l('hint.no.storage.tags')
+                                                    });
+                                                },
+                                                error: function(XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+
+                                                    args.response.error(errorMsg);
+                                                }
+                                            });
+                                        }
                                     },
                                     zonename: {
                                         label: 'label.zone'
@@ -18232,9 +18640,7 @@
                                                 select: function (args) {
                                                     $.ajax({
                                                         url: createURL('listZones'),
-                                                        data: {
-                                                            listAll: true
-                                                        },
+                                                        data: {},
                                                         success: function (json) {
                                                             var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone:[];
                                                             
@@ -18356,9 +18762,7 @@
                                                 select: function (args) {
                                                     $.ajax({
                                                         url: createURL('listZones'),
-                                                        data: {
-                                                            listAll: true
-                                                        },
+                                                        data: {},
                                                         success: function (json) {
                                                             var zones = json.listzonesresponse.zone;
                                                             
@@ -18798,9 +19202,7 @@
                                                 select: function (args) {
                                                     $.ajax({
                                                         url: createURL('listZones'),
-                                                        data: {
-                                                            listAll: true
-                                                        },
+                                                        data: {},
                                                         success: function (json) {
                                                             var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone:[];
                                                             
@@ -19010,6 +19412,12 @@
                         },
                         endipv6: {
                             label: 'label.ipv6.end.ip'
+                        },
+                        gateway: {
+                        	label: 'label.gateway'
+                        },
+                        netmask: {
+                        	label: 'label.netmask'
                         }
                     },
                     
@@ -19749,7 +20157,30 @@
                 });
             }
         });
-    }    
+    }
+
+    function addGloboDnsHost(args, physicalNetworkObj, apiCmd, apiCmdRes) {
+        var array1 = [];
+        array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
+        array1.push("&username=" + todb(args.data.username));
+        array1.push("&password=" + todb(args.data.password));
+        array1.push("&url=" + todb(args.data.url));
+
+        $.ajax({
+            url: createURL(apiCmd + array1.join("")),
+            dataType: "json",
+            type: "POST",
+            success: function(json) {
+                var jid = json[apiCmdRes].jobid;
+                args.response.success({
+                    _custom: {
+                        jobId: jid,
+                    }
+                });
+            }
+        });
+    }
+
 
     var afterCreateZonePhysicalNetworkTrafficTypes = function (args, newZoneObj, newPhysicalnetwork) {
                 $.ajax({
@@ -20042,7 +20473,7 @@
     };
     
     //action filters (begin)
-    var zoneActionfilter = function (args) {
+    var zoneActionfilter = cloudStack.actionFilter.zoneActionfilter = function (args) {
         var jsonObj = args.context.item;
         var allowedActions =[ 'enableSwift'];
         
@@ -20233,15 +20664,11 @@
         
         if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
-            
-            //when systemVm is running, scaleUp is not supported for KVM and XenServer.
-            //however, listRouters API doesn't return hypervisor property....
-            /*
-            if (jsonObj.hypervisor != 'KVM' && jsonObj.hypervisor != 'XenServer') {
-            allowedActions.push("scaleUp");
-            }
-             */
-            allowedActions.push("scaleUp");
+                        
+            //when router is Running, only XenServer, VMware support scaleUp(change service offering)
+            if (jsonObj.hypervisor == 'XenServer' || jsonObj.hypervisor == "VMware") {
+                allowedActions.push("scaleUp");
+            }                         
             
             allowedActions.push("restart");
             
@@ -20250,8 +20677,10 @@
             allowedActions.push("migrate");
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");
+            
+            //when router is Stopped, all hypervisors support scaleUp(change service offering)
             allowedActions.push("scaleUp");
-            //when vm is stopped, scaleUp is supported for all hypervisors
+                        
             allowedActions.push("remove");
         }
         return allowedActions;
@@ -20282,22 +20711,20 @@
             allowedActions.push("restart");
             allowedActions.push("remove");
             
-            //when systemVm is running, scaleUp is not supported for KVM and XenServer.
-            //however, listSystemVms API doesn't return hypervisor property....
-            /*
-            if (jsonObj.hypervisor != 'KVM' && jsonObj.hypervisor != 'XenServer') {
-            allowedActions.push("scaleUp");
+            //when systemvm is Running, only XenServer, VMware support scaleUp(change service offering)
+            if (jsonObj.hypervisor == 'XenServer' ||jsonObj.hypervisor == "VMware") {
+                allowedActions.push("scaleUp");
             }
-             */
-            allowedActions.push("scaleUp");
             
             allowedActions.push("viewConsole");
             if (isAdmin())
             allowedActions.push("migrate");
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");
+            
+            //when systemvm is Stopped, all hypervisors support scaleUp(change service offering)
             allowedActions.push("scaleUp");
-            //when vm is stopped, scaleUp is supported for all hypervisors
+            
             allowedActions.push("remove");
         } else if (jsonObj.state == 'Error') {
             allowedActions.push("remove");
@@ -20435,6 +20862,9 @@
                             case "NuageVsp":
                             nspMap["nuageVsp"] = items[i];
                             break;
+                            case "GloboDns":
+                                nspMap["GloboDns"] = items[i];
+                                break;
                         }
                     }
                 }
@@ -20475,12 +20905,7 @@
             id: 'BaremetalPxeProvider',
             name: 'Baremetal PXE',
             state: nspMap.BaremetalPxeProvider ? nspMap.BaremetalPxeProvider.state: 'Disabled'
-        },
-        {
-            id: 'Ovs',
-            name: 'Ovs',
-            state: nspMap.Ovs ? nspMap.Ovs.state: 'Disabled'
-        },
+        },       
         {
             id: 'Opendaylight',
             name: 'OpenDaylight (Experimental)',
@@ -20538,16 +20963,21 @@
                 name: 'Palo Alto',
                 state: nspMap.pa ? nspMap.pa.state: 'Disabled'
             });
-        }
-        
-        if ($.grep(nspHardcodingArray, function(e) { return e.id == 'Ovs'; }).length == 0 ) {
-        nspHardcodingArray.push({
+            nspHardcodingArray.push({
+                id: 'GloboDns',
+                name: 'GloboDNS',
+                state: nspMap.GloboDns ? nspMap.GloboDns.state : 'Disabled'
+            });
+            
+            //CLOUDSTACK-6840: OVS refers to SDN provider. However, we are not supporting SDN in this release.
+            /*
+            nspHardcodingArray.push({
                 id: 'Ovs',
                 name: 'Ovs',
-            state: nspMap.Ovs ? nspMap.Ovs.state : 'Disabled'
-        });        
-        }
-
+                state: nspMap.Ovs ? nspMap.Ovs.state: 'Disabled'	            
+	        });  	        
+	        */     
+        }       
     };
     
     cloudStack.actionFilter.physicalNetwork = function (args) {

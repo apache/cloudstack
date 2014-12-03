@@ -20,6 +20,8 @@ package com.cloud.network.vpc;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.utils.Pair;
+
 public interface VpcProvisioningService {
 
     public VpcOffering getVpcOffering(long vpcOfferingId);
@@ -29,7 +31,7 @@ public interface VpcProvisioningService {
                                          Map serviceCapabilitystList,
                                          Long serviceOfferingId);
 
-    List<? extends VpcOffering> listVpcOfferings(Long id, String name, String displayText, List<String> supportedServicesStr, Boolean isDefault, String keyword,
+    Pair<List<? extends VpcOffering>,Integer> listVpcOfferings(Long id, String name, String displayText, List<String> supportedServicesStr, Boolean isDefault, String keyword,
         String state, Long startIndex, Long pageSizeVal);
 
     /**

@@ -16,13 +16,21 @@
 # under the License.
 
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+#from marvin.cloudstackAPI import *
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (Account,
+                             VirtualMachine,
+                             SnapshotPolicy,
+                             ServiceOffering)
+from marvin.lib.common import (get_zone,
+                               get_template,
+                               get_domain,
+                               list_volumes,
+                               list_snapshots,
+                               list_snapshot_policy)
 from marvin.lib.utils import is_snapshot_on_nfs
-import os
+import time
 
 
 class Services:
@@ -199,7 +207,7 @@ class TestSnapshotLimit(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advanced", "advancedns", "provisioning"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_04_snapshot_limit(self):
         """Test snapshot limit in snapshot policies
         """
@@ -262,7 +270,7 @@ class TestSnapshotLimit(cloudstackTestCase):
         # Sleep for (maxsnaps+1) hours to verify
         # only maxsnaps snapshots are retained
         time.sleep(
-            (self.services["recurring_snapshot"]["maxsnaps"]) * 3600
+            (int(self.services["recurring_snapshot"]["maxsnaps"]) + 1) * 3600
             )
 
         # Verify the snapshot was created or not

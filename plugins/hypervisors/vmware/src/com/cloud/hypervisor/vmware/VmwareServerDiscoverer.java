@@ -68,6 +68,7 @@ import org.apache.log4j.Logger;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.util.HashMap;
@@ -150,10 +151,14 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                 _clusterDetailsDao.persist(clusterId, clusterDetails);
             }
             String updatedInventoryPath = validateCluster(url, vmwareDc);
-            if (!url.getPath().equals(updatedInventoryPath)) {
-                // If url from API doesn't specify DC then update url in database with DC associated with this zone.
-                clusterDetails.put("url", url.getScheme() + "://" + url.getHost() + updatedInventoryPath);
-                _clusterDetailsDao.persist(clusterId, clusterDetails);
+            try {
+                if (!URLDecoder.decode(url.getPath(), "UTF-8").equals(updatedInventoryPath)) {
+                    // If url from API doesn't specify DC then update url in database with DC associated with this zone.
+                    clusterDetails.put("url", url.getScheme() + "://" + url.getHost() + updatedInventoryPath);
+                    _clusterDetailsDao.persist(clusterId, clusterDetails);
+                }
+            } catch(UnsupportedEncodingException e) {
+                throw new DiscoveredWithErrorException("Unable to decode URL path, URL path : " + url.getPath(), e);
             }
         } else {
             // For legacy zones insist on the old model of asking for credentials for each cluster being added.
@@ -294,15 +299,19 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
             if (guestTrafficLabel != null) {
                 s_logger.info("Detected guest network label : " + guestTrafficLabel);
             }
-            vsmIp = _urlParams.get("vsmipaddress");
-            String vsmUser = _urlParams.get("vsmusername");
-            String vsmPassword = _urlParams.get("vsmpassword");
-            String clusterName = cluster.getName();
-            try {
-                vsmInfo = _nexusElement.validateAndAddVsm(vsmIp, vsmUser, vsmPassword, clusterId, clusterName);
-            } catch (ResourceInUseException ex) {
-                DiscoveryException discEx = new DiscoveryException(ex.getLocalizedMessage() + ". The resource is " + ex.getResourceName());
-                throw discEx;
+            // Before proceeding with validation of Nexus 1000v VSM check if an instance of Nexus 1000v VSM is already associated with this cluster.
+            boolean clusterHasVsm = _vmwareMgr.hasNexusVSM(clusterId);
+            if (!clusterHasVsm) {
+                vsmIp = _urlParams.get("vsmipaddress");
+                String vsmUser = _urlParams.get("vsmusername");
+                String vsmPassword = _urlParams.get("vsmpassword");
+                String clusterName = cluster.getName();
+                try {
+                    vsmInfo = _nexusElement.validateAndAddVsm(vsmIp, vsmUser, vsmPassword, clusterId, clusterName);
+                } catch (ResourceInUseException ex) {
+                    DiscoveryException discEx = new DiscoveryException(ex.getLocalizedMessage() + ". The resource is " + ex.getResourceName());
+                    throw discEx;
+                }
             }
             vsmCredentials = _vmwareMgr.getNexusVSMCredentialsByClusterId(clusterId);
         }
@@ -455,12 +464,17 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         String vmwareDcNameFromDb;
         String vmwareDcNameFromApi;
         String vCenterHost;
-        String updatedInventoryPath = url.getPath();
+        String updatedInventoryPath;
         String clusterName = null;
+        String inventoryPath;
 
         vmwareDcNameFromApi = vmwareDcNameFromDb = vmwareDc.getVmwareDatacenterName();
         vCenterHost = vmwareDc.getVcenterHost();
-        String inventoryPath = url.getPath();
+        try {
+            inventoryPath = updatedInventoryPath = URLDecoder.decode(url.getPath(), "UTF-8");
+        } catch(UnsupportedEncodingException e) {
+            throw new DiscoveredWithErrorException("Unable to decode URL path, URL path : " + url.getPath(), e);
+        }
 
         assert (inventoryPath != null);
 

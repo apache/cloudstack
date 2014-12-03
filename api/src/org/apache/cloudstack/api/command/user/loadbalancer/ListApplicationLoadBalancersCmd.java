@@ -40,7 +40,7 @@ import com.cloud.utils.Pair;
 public class ListApplicationLoadBalancersCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListApplicationLoadBalancersCmd.class.getName());
 
-    private static final String s_name = "listloadbalancerssresponse";
+    private static final String s_name = "listloadbalancersresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////

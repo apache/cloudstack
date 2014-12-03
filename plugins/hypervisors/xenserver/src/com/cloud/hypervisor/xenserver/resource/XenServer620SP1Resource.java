@@ -84,6 +84,9 @@ public class XenServer620SP1Resource extends XenServer620Resource {
         try {
             HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = getGPUGroupDetails(conn);
             cmd.setGpuGroupDetails(groupDetails);
+            if (groupDetails != null && !groupDetails.isEmpty()) {
+                cmd.setHostTags("GPU");
+            }
         } catch (Exception e) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Error while getting GPU device info from host " + cmd.getName(), e);
@@ -164,46 +167,4 @@ public class XenServer620SP1Resource extends XenServer620Resource {
         cmd.getVirtualMachine().getGpuDevice().setGroupDetails(getGPUGroupDetails(conn));
     }
 
-    @Override
-    protected String getGuestOsType(String stdType, String platformEmulator, boolean bootFromCD) {
-        if (platformEmulator == null) {
-            if (!bootFromCD) {
-                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 6.2.0 guestOS type, start it as HVM guest");
-                platformEmulator = "Other install media";
-            } else {
-                String msg = "XenServer 6.2.0 DOES NOT support Guest OS type " + stdType;
-                s_logger.warn(msg);
-            }
-        }
-        return platformEmulator;
-    }
-
-    @Override
-    public long getStaticMax(String os, boolean b, long dynamicMinRam, long dynamicMaxRam){
-        long recommendedValue = CitrixHelper.getXenServer620SP1StaticMax(os, b);
-        if(recommendedValue == 0){
-            s_logger.warn("No recommended value found for dynamic max, setting static max and dynamic max equal");
-            return dynamicMaxRam;
-        }
-        long staticMax = Math.min(recommendedValue, 4l * dynamicMinRam);  // XS constraint for stability
-        if (dynamicMaxRam > staticMax){ // XS contraint that dynamic max <= static max
-            s_logger.warn("dynamixMax " + dynamicMaxRam + " cant be greater than static max " + staticMax + ", can lead to stability issues. Setting static max as much as dynamic max ");
-            return dynamicMaxRam;
-        }
-        return staticMax;
-    }
-
-    @Override
-    public long getStaticMin(String os, boolean b, long dynamicMinRam, long dynamicMaxRam){
-        long recommendedValue = CitrixHelper.getXenServer620SP1StaticMin(os, b);
-        if(recommendedValue == 0){
-            s_logger.warn("No recommended value found for dynamic min");
-            return dynamicMinRam;
-        }
-
-        if(dynamicMinRam < recommendedValue){   // XS contraint that dynamic min > static min
-            s_logger.warn("Vm is set to dynamixMin " + dynamicMinRam + " less than the recommended static min " + recommendedValue + ", could lead to stability issues");
-        }
-        return dynamicMinRam;
-    }
 }

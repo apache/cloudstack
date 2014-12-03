@@ -19,7 +19,11 @@
 package com.cloud.baremetal.networkservice;
 
 import com.cloud.baremetal.database.BaremetalPxeVO;
+import com.cloud.baremetal.manager.BaremetalVlanManager;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Pod;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -66,6 +70,10 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
     VMInstanceDao _vmDao;
     @Inject
     NicDao _nicDao;
+    @Inject
+    BaremetalVlanManager vlanMgr;
+    @Inject
+    DataCenterDao zoneDao;
 
     static {
         Capability cap = new Capability(BaremetalPxeManager.BAREMETAL_PXE_CAPABILITY);
@@ -99,6 +107,10 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
         ResourceUnavailableException, InsufficientCapacityException {
+        if (dest.getDataCenter().getNetworkType() == DataCenter.NetworkType.Advanced){
+            return true;
+        }
+
         if (offering.isSystemOnly() || !canHandle(dest, offering.getTrafficType(), network.getGuestType())) {
             s_logger.debug("BaremetalPxeElement can not handle network offering: " + offering.getName());
             return false;
@@ -123,18 +135,38 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
             _nicDao.update(nicVo.getId(), nicVo);
 
             /*This vm is just being created */
-            if (!_pxeMgr.prepare(vm, nic, dest, context)) {
+            if (!_pxeMgr.prepare(vm, nic, network, dest, context)) {
                 throw new CloudRuntimeException("Cannot prepare pxe server");
             }
         }
 
-        return false;
+        if (dest.getDataCenter().getNetworkType() == DataCenter.NetworkType.Advanced){
+            prepareVlan(network, dest);
+        }
+
+        return true;
+    }
+
+    private void prepareVlan(Network network, DeployDestination dest) {
+        vlanMgr.prepareVlan(network, dest);
     }
 
     @Override
     public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
         ResourceUnavailableException {
+        if (vm.getType() != Type.User || vm.getHypervisorType() != HypervisorType.BareMetal) {
+            return false;
+        }
+
+        DataCenterVO dc = zoneDao.findById(vm.getVirtualMachine().getDataCenterId());
+        if (dc.getNetworkType() == DataCenter.NetworkType.Advanced) {
+            releaseVlan(network, vm);
+        }
         return true;
+    }
+
+    private void releaseVlan(Network network, VirtualMachineProfile vm) {
+        vlanMgr.releaseVlan(network, vm);
     }
 
     @Override

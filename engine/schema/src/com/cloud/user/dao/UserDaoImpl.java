@@ -19,11 +19,9 @@ package com.cloud.user.dao;
 import java.util.List;
 
 import javax.ejb.Local;
-import javax.inject.Inject;
 
 import org.springframework.stereotype.Component;
 
-import com.cloud.user.Account;
 import com.cloud.user.UserVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -41,9 +39,6 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
     protected SearchBuilder<UserVO> AccountIdSearch;
     protected SearchBuilder<UserVO> SecretKeySearch;
     protected SearchBuilder<UserVO> RegistrationTokenSearch;
-
-    @Inject
-    AccountDao _accountDao;
 
     protected UserDaoImpl() {
         UsernameSearch = createSearchBuilder();
@@ -131,14 +126,6 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
         SearchCriteria<UserVO> sc = UsernameSearch.create();
         sc.setParameters("username", username);
         return listBy(sc);
-    }
-
-    @Override
-    @DB
-    public UserVO persist(UserVO user) {
-        Account account = _accountDao.findById(user.getAccountId());
-        user.setDomainId(account.getDomainId());
-        return super.persist(user);
     }
 
 }

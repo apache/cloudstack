@@ -17,6 +17,9 @@
 //
 package com.cloud.baremetal.database;
 
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -30,7 +33,7 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "baremetal_rct")
-public class BaremetalRctVO {
+public class BaremetalRctVO implements InternalIdentity, Identity  {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

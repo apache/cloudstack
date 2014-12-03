@@ -119,11 +119,7 @@ public class XcpOssResource extends CitrixResourceBase {
         } else if (stdType.equalsIgnoreCase("CentOS 5.6 (64-bit)")) {
             return "CentOS 5 (64-bit)";
         } else {
-            if (platformEmulator == null || platformEmulator.isEmpty()) {
-                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XCP's guestOS type, start it as HVM guest");
-                platformEmulator = "Other install media";
-            }
-            return platformEmulator;
+            return super.getGuestOsType(stdType, platformEmulator, bootFromCD);
         }
     }
 

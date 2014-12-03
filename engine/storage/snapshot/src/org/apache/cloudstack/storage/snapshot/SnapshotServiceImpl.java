@@ -307,6 +307,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                 srcSnapshot.processEvent(Event.OperationSuccessed);
 
                 srcSnapshot.processEvent(Snapshot.Event.OperationFailed);
+                _snapshotDao.remove(srcSnapshot.getId());
             } catch (NoTransitionException e) {
                 s_logger.debug("Failed to update state: " + e.toString());
             }
@@ -316,10 +317,10 @@ public class SnapshotServiceImpl implements SnapshotService {
         }
 
         try {
-            CopyCmdAnswer answer = (CopyCmdAnswer)result.getAnswer();
-            destSnapshot.processEvent(Event.OperationSuccessed, result.getAnswer());
+            CopyCmdAnswer copyCmdAnswer = (CopyCmdAnswer)result.getAnswer();
+            destSnapshot.processEvent(Event.OperationSuccessed, copyCmdAnswer);
             srcSnapshot.processEvent(Snapshot.Event.OperationSucceeded);
-            snapResult = new SnapshotResult(_snapshotFactory.getSnapshot(destSnapshot.getId(), destSnapshot.getDataStore()), answer);
+            snapResult = new SnapshotResult(_snapshotFactory.getSnapshot(destSnapshot.getId(), destSnapshot.getDataStore()), copyCmdAnswer);
             future.complete(snapResult);
         } catch (Exception e) {
             s_logger.debug("Failed to update snapshot state", e);
@@ -443,6 +444,28 @@ public class SnapshotServiceImpl implements SnapshotService {
                 }
             }
         }
+    }
+
+    @Override
+    public void cleanupVolumeDuringSnapshotFailure(Long volumeId, Long snapshotId) {
+        SnapshotVO snaphsot = _snapshotDao.findById(snapshotId);
+
+        if (snaphsot != null) {
+            if (snaphsot.getState() != Snapshot.State.BackedUp) {
+                List<SnapshotDataStoreVO> snapshotDataStoreVOs = _snapshotStoreDao.findBySnapshotId(snapshotId);
+                for (SnapshotDataStoreVO snapshotDataStoreVO : snapshotDataStoreVOs) {
+                    s_logger.debug("Remove snapshot " + snapshotId + ", status " + snapshotDataStoreVO.getState() +
+                            " on snapshot_store_ref table with id: " + snapshotDataStoreVO.getId());
+
+                    _snapshotStoreDao.remove(snapshotDataStoreVO.getId());
+                }
+
+                s_logger.debug("Remove snapshot " + snapshotId + " status " + snaphsot.getState() + " from snapshot table");
+                _snapshotDao.remove(snapshotId);
+            }
+        }
+
+
     }
 
     // push one individual snapshots currently on cache store to region store if it is not there already

@@ -397,7 +397,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
                                     (e, ip_addr))
         return hostnames
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns"],required_hardware="true")
     @attr(speed="slow")
     def test_01_create_sticky_policy_default_values(self):
         """Test Configure stickiness policies with default values"""
@@ -431,7 +431,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
             self.delete_Stickiness_policy(policy, lb_rule)
         return
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns"],required_hardware="true")
     @attr(speed="slow")
     def test_02_create_sticky_policy_custom_values(self):
         """Test Configure stickiness policies with custom values"""
@@ -519,7 +519,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns"],required_hardware="true")
     @attr(speed="slow")
     def test_04_delete_lb_rule(self):
         """Test LB rule before/after stickiness policy creation"""
@@ -582,7 +582,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
                     LoadBalancerRule.list(self.apiclient, id=lb_rule.id)
         return
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns"],required_hardware="true")
     @attr(speed="slow")
     def test_05_error_alerts_after_create(self):
         """Test error/alerts after creating stickiness policy"""
@@ -639,7 +639,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
                     "Create/update/delete should not produce any alert/error")
         return
 
-    @attr(tags=["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns"],required_hardware="true")
     @attr(speed="slow")
     def test_06_release_ip(self):
         """Test release public IP with stickiness policy"""
@@ -695,7 +695,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
                                                      listall=True)
         return
 
-    @attr(tags=["advanced", "advancedns", "provisioning"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_07_delete_account(self):
         """Test Delete account  and check the router and its rules"""
 
@@ -736,7 +736,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
                                        listall=True)
         return
 
-    @attr(tags=["advanced", "advancedns", "provisioning"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_08_create_policy_router_stopped(self):
         """Test verify create stickiness policy when router is stopped state"""
 
@@ -769,7 +769,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
         self.validate_Stickiness_Policy(lb_rule, "LbCookie", self.public_ip.ipaddress.ipaddress)
         return
 
-    @attr(tags=["advanced", "advancedns", "provisioning"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_09_create_policy_router_destroy(self):
         """Test check the stickiness policy rules after destroying router"""
 
@@ -800,7 +800,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "provisioning"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_10_create_policy_enable_disable_vpn(self):
         """Test enable/disable the VPN after applying sticky policy rules"""
 
@@ -831,7 +831,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
         self.validate_Stickiness_Policy(lb_rule, "LbCookie", self.public_ip.ipaddress.ipaddress)
         return
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_11_invalid_params(self):
         """Test verfify functionality syncronous and asyncronous validations"""
 

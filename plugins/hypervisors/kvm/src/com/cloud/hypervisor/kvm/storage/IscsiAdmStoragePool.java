@@ -115,8 +115,8 @@ public class IscsiAdmStoragePool implements KVMStoragePool {
     }
 
     @Override
-    public boolean deletePhysicalDisk(String volumeUuid) {
-        return this._storageAdaptor.deletePhysicalDisk(volumeUuid, this);
+    public boolean deletePhysicalDisk(String volumeUuid, Storage.ImageFormat format) {
+        return this._storageAdaptor.deletePhysicalDisk(volumeUuid, this, format);
     }
 
     // does not apply for iScsiAdmStoragePool

@@ -117,75 +117,47 @@ public class Upgrade410to420 implements DbUpgrade {
     }
 
     private void createFullCloneFlag(Connection conn) {
-        ResultSet rs = null;
-        PreparedStatement delete = null;
-        PreparedStatement query = null;
-        PreparedStatement update = null;
+        String update_sql;
         int numRows = 0;
-        try {
-            delete = conn.prepareStatement("delete from `cloud`.`configuration` where name='vmware.create.full.clone';");
+        try (PreparedStatement delete = conn.prepareStatement("delete from `cloud`.`configuration` where name='vmware.create.full.clone';");)
+        {
             delete.executeUpdate();
-            query = conn.prepareStatement("select count(*) from `cloud`.`data_center`");
-            rs = query.executeQuery();
-            if (rs.next()) {
-                numRows = rs.getInt(1);
+            try(PreparedStatement query = conn.prepareStatement("select count(*) from `cloud`.`data_center`");)
+            {
+                try(ResultSet rs = query.executeQuery();) {
+                    if (rs.next()) {
+                        numRows = rs.getInt(1);
+                    }
+                    if (numRows > 0) {
+                        update_sql = "insert into `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'UserVmManager', 'vmware.create.full.clone' , 'false', 'If set to true, creates VMs as full clones on ESX hypervisor');";
+                    } else {
+                        update_sql = "insert into `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'UserVmManager', 'vmware.create.full.clone' , 'true', 'If set to true, creates VMs as full clones on ESX hypervisor');";
+                    }
+                    try(PreparedStatement update_pstmt =  conn.prepareStatement(update_sql);) {
+                        update_pstmt.executeUpdate();
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("Failed to set global flag vmware.create.full.clone: ", e);
+                    }
+                }catch (SQLException e) {
+                    throw new CloudRuntimeException("Failed to set global flag vmware.create.full.clone: ", e);
+                }
+            }catch (SQLException e) {
+                 throw new CloudRuntimeException("Failed to set global flag vmware.create.full.clone: ", e);
             }
-            if (numRows > 0) {
-                update =
-                    conn.prepareStatement("insert into `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'UserVmManager', 'vmware.create.full.clone' , 'false', 'If set to true, creates VMs as full clones on ESX hypervisor');");
-            } else {
-                update =
-                    conn.prepareStatement("insert into `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'UserVmManager', 'vmware.create.full.clone' , 'true', 'If set to true, creates VMs as full clones on ESX hypervisor');");
-            }
-            update.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to set global flag vmware.create.full.clone: ", e);
-        } finally {
-            if (update != null) {
-                try {
-                    update.close();
-                } catch (SQLException e) {
-
-                }
-            }
-            if (query != null) {
-                try {
-                    query.close();
-                } catch (SQLException e) {
-
-                }
-            }
-            if (delete != null) {
-                try {
-                    delete.close();
-                } catch (SQLException e) {
-
-                }
-            }
         }
     }
 
     private void migrateVolumeOnSecondaryStorage(Connection conn) {
-        PreparedStatement sql = null;
-        try {
-            sql = conn.prepareStatement("update `cloud`.`volumes` set state='Uploaded' where state='UploadOp'");
+        try (PreparedStatement sql = conn.prepareStatement("update `cloud`.`volumes` set state='Uploaded' where state='UploadOp'");){
             sql.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to upgrade volume state: ", e);
-        } finally {
-            if (sql != null) {
-                try {
-                    sql.close();
-                } catch (SQLException e) {
-
-                }
-            }
         }
     }
 
     private void persistVswitchConfiguration(Connection conn) {
-        PreparedStatement clustersQuery = null;
-        ResultSet clusters = null;
         Long clusterId;
         String clusterHypervisorType;
         final String NEXUS_GLOBAL_CONFIG_PARAM_NAME = "vmware.use.nexus.vswitch";
@@ -200,36 +172,39 @@ public class Upgrade410to420 implements DbUpgrade {
         String guestVswitchType = VMWARE_STANDARD_VSWITCH;
         Map<Long, List<Pair<String, String>>> detailsMap = new HashMap<Long, List<Pair<String, String>>>();
         List<Pair<String, String>> detailsList;
-
-        try {
-            clustersQuery = conn.prepareStatement("select id, hypervisor_type from `cloud`.`cluster` where removed is NULL");
-            clusters = clustersQuery.executeQuery();
-            while (clusters.next()) {
-                clusterHypervisorType = clusters.getString("hypervisor_type");
-                clusterId = clusters.getLong("id");
-                if (clusterHypervisorType.equalsIgnoreCase("VMware")) {
-                    if (!readGlobalConfigParam) {
-                        paramValStr = getConfigurationParameter(conn, VSWITCH_GLOBAL_CONFIG_PARAM_CATEGORY, NEXUS_GLOBAL_CONFIG_PARAM_NAME);
-                        if (paramValStr.equalsIgnoreCase("true")) {
-                            nexusEnabled = true;
+        try (PreparedStatement clustersQuery = conn.prepareStatement("select id, hypervisor_type from `cloud`.`cluster` where removed is NULL");){
+            try(ResultSet clusters = clustersQuery.executeQuery();) {
+                while (clusters.next()) {
+                    clusterHypervisorType = clusters.getString("hypervisor_type");
+                    clusterId = clusters.getLong("id");
+                    if (clusterHypervisorType.equalsIgnoreCase("VMware")) {
+                        if (!readGlobalConfigParam) {
+                            paramValStr = getConfigurationParameter(conn, VSWITCH_GLOBAL_CONFIG_PARAM_CATEGORY, NEXUS_GLOBAL_CONFIG_PARAM_NAME);
+                            if (paramValStr.equalsIgnoreCase("true")) {
+                                nexusEnabled = true;
+                            }
                         }
-                    }
-                    if (nexusEnabled) {
-                        publicVswitchType = NEXUS_1000V_DVSWITCH;
-                        guestVswitchType = NEXUS_1000V_DVSWITCH;
-                    }
-                    detailsList = new ArrayList<Pair<String, String>>();
-                    detailsList.add(new Pair<String, String>(ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC, guestVswitchType));
-                    detailsList.add(new Pair<String, String>(ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC, publicVswitchType));
-                    detailsMap.put(clusterId, detailsList);
+                        if (nexusEnabled) {
+                            publicVswitchType = NEXUS_1000V_DVSWITCH;
+                            guestVswitchType = NEXUS_1000V_DVSWITCH;
+                        }
+                        detailsList = new ArrayList<Pair<String, String>>();
+                        detailsList.add(new Pair<String, String>(ApiConstants.VSWITCH_TYPE_GUEST_TRAFFIC, guestVswitchType));
+                        detailsList.add(new Pair<String, String>(ApiConstants.VSWITCH_TYPE_PUBLIC_TRAFFIC, publicVswitchType));
+                        detailsMap.put(clusterId, detailsList);
 
-                    updateClusterDetails(conn, detailsMap);
-                    s_logger.debug("Persist vSwitch Configuration: Successfully persisted vswitch configuration for cluster " + clusterId);
-                } else {
-                    s_logger.debug("Persist vSwitch Configuration: Ignoring cluster " + clusterId + " with hypervisor type " + clusterHypervisorType);
-                    continue;
-                }
-            } // End cluster iteration
+                        updateClusterDetails(conn, detailsMap);
+                        s_logger.debug("Persist vSwitch Configuration: Successfully persisted vswitch configuration for cluster " + clusterId);
+                    } else {
+                        s_logger.debug("Persist vSwitch Configuration: Ignoring cluster " + clusterId + " with hypervisor type " + clusterHypervisorType);
+                        continue;
+                    }
+                } // End cluster iteration
+            }catch (SQLException e) {
+                String msg = "Unable to persist vswitch configuration of VMware clusters." + e.getMessage();
+                s_logger.error(msg);
+                throw new CloudRuntimeException(msg, e);
+            }
 
             if (nexusEnabled) {
                 // If Nexus global parameter is true, then set DVS configuration parameter to true. TODOS: Document that this mandates that MS need to be restarted.
@@ -239,21 +214,10 @@ public class Upgrade410to420 implements DbUpgrade {
             String msg = "Unable to persist vswitch configuration of VMware clusters." + e.getMessage();
             s_logger.error(msg);
             throw new CloudRuntimeException(msg, e);
-        } finally {
-            try {
-                if (clusters != null) {
-                    clusters.close();
-                }
-                if (clustersQuery != null) {
-                    clustersQuery.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
     private void updateClusterDetails(Connection conn, Map<Long, List<Pair<String, String>>> detailsMap) {
-        PreparedStatement clusterDetailsInsert = null;
         // Insert cluster details into cloud.cluster_details table for existing VMware clusters
         // Input parameter detailMap is a map of clusterId and list of key value pairs for that cluster
         Long clusterId;
@@ -265,204 +229,148 @@ public class Upgrade410to420 implements DbUpgrade {
             while (clusterIt.hasNext()) {
                 clusterId = clusterIt.next();
                 keyValues = detailsMap.get(clusterId);
-                for (Pair<String, String> keyValuePair : keyValues) {
-                    clusterDetailsInsert = conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value) VALUES (?, ?, ?)");
-                    key = keyValuePair.first();
-                    val = keyValuePair.second();
-                    clusterDetailsInsert.setLong(1, clusterId);
-                    clusterDetailsInsert.setString(2, key);
-                    clusterDetailsInsert.setString(3, val);
-                    clusterDetailsInsert.executeUpdate();
+                try( PreparedStatement clusterDetailsInsert = conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value) VALUES (?, ?, ?)");) {
+                    for (Pair<String, String> keyValuePair : keyValues) {
+                        key = keyValuePair.first();
+                        val = keyValuePair.second();
+                        clusterDetailsInsert.setLong(1, clusterId);
+                        clusterDetailsInsert.setString(2, key);
+                        clusterDetailsInsert.setString(3, val);
+                        clusterDetailsInsert.executeUpdate();
+                    }
+                    s_logger.debug("Inserted vswitch configuration details into cloud.cluster_details for cluster with id " + clusterId + ".");
+                }catch (SQLException e) {
+                    throw new CloudRuntimeException("Unable insert cluster details into cloud.cluster_details table.", e);
                 }
-                s_logger.debug("Inserted vswitch configuration details into cloud.cluster_details for cluster with id " + clusterId + ".");
             }
-        } catch (SQLException e) {
+        } catch (RuntimeException e) {
             throw new CloudRuntimeException("Unable insert cluster details into cloud.cluster_details table.", e);
-        } finally {
-            try {
-                if (clusterDetailsInsert != null) {
-                    clusterDetailsInsert.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
     private String getConfigurationParameter(Connection conn, String category, String paramName) {
-        ResultSet rs = null;
-        PreparedStatement pstmt = null;
-        try {
-            pstmt =
-                conn.prepareStatement("select value from `cloud`.`configuration` where category='" + category + "' and value is not NULL and name = '" + paramName + "';");
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                return rs.getString("value");
+        try (PreparedStatement pstmt =
+                     conn.prepareStatement("select value from `cloud`.`configuration` where category='" + category + "' and value is not NULL and name = '" + paramName + "';");)
+        {
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    return rs.getString("value");
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Unable read global configuration parameter " + paramName + ". ", e);
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable read global configuration parameter " + paramName + ". ", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
         return "false";
     }
 
     private void setConfigurationParameter(Connection conn, String category, String paramName, String paramVal) {
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = '" + paramVal + "' WHERE name = '" + paramName + "';");
+        try (PreparedStatement pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = '" + paramVal + "' WHERE name = '" + paramName + "';");)
+        {
             s_logger.debug("Updating global configuration parameter " + paramName + " with value " + paramVal + ". Update SQL statement is " + pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to set global configuration parameter " + paramName + " to " + paramVal + ". ", e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
     private void movePrivateZoneToDedicatedResource(Connection conn) {
-
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        PreparedStatement pstmtUpdate = null;
-        PreparedStatement pstmt3 = null;
-        ResultSet rs3 = null;
-
-        try {
-
-            pstmt3 = conn.prepareStatement("SELECT distinct(`domain_id`) FROM `cloud`.`data_center` WHERE `domain_id` IS NOT NULL AND removed IS NULL");
-            rs3 = pstmt3.executeQuery();
-
-            while (rs3.next()) {
-                long domainId = rs3.getLong(1);
-                long affinityGroupId = 0;
-
-                // create or find an affinity group for this domain of type
-                // 'ExplicitDedication'
-                PreparedStatement pstmt2 = null;
-                ResultSet rs2 = null;
-                pstmt2 =
-                    conn.prepareStatement("SELECT affinity_group.id FROM `cloud`.`affinity_group` INNER JOIN `cloud`.`affinity_group_domain_map` ON affinity_group.id=affinity_group_domain_map.affinity_group_id WHERE affinity_group.type = 'ExplicitDedication' AND affinity_group.acl_type = 'Domain'  AND  (affinity_group_domain_map.domain_id = ?)");
-                pstmt2.setLong(1, domainId);
-                rs2 = pstmt2.executeQuery();
-                if (rs2.next()) {
-                    // group exists, use it
-                    affinityGroupId = rs2.getLong(1);
-                } else {
-                    // create new group
-                    rs2.close();
-                    pstmt2.close();
-
-                    pstmt2 = conn.prepareStatement("SELECT name FROM `cloud`.`domain` where id = ?");
-                    pstmt2.setLong(1, domainId);
-                    rs2 = pstmt2.executeQuery();
-                    String domainName = "";
-                    if (rs2.next()) {
-                        domainName = rs2.getString(1);
+        String domainName = "";
+        try (PreparedStatement sel_dc_dom_id = conn.prepareStatement("SELECT distinct(`domain_id`) FROM `cloud`.`data_center` WHERE `domain_id` IS NOT NULL AND removed IS NULL");) {
+            try (ResultSet rs3 = sel_dc_dom_id.executeQuery();) {
+                while (rs3.next()) {
+                    long domainId = rs3.getLong(1);
+                    long affinityGroupId = 0;
+                    // create or find an affinity group for this domain of type
+                    // 'ExplicitDedication'
+                    try (PreparedStatement sel_aff_grp_pstmt =
+                                 conn.prepareStatement("SELECT affinity_group.id FROM `cloud`.`affinity_group` INNER JOIN `cloud`.`affinity_group_domain_map` ON affinity_group.id=affinity_group_domain_map.affinity_group_id WHERE affinity_group.type = 'ExplicitDedication' AND affinity_group.acl_type = 'Domain'  AND  (affinity_group_domain_map.domain_id = ?)");) {
+                        sel_aff_grp_pstmt.setLong(1, domainId);
+                        try (ResultSet rs2 = sel_aff_grp_pstmt.executeQuery();) {
+                            if (rs2.next()) {
+                                // group exists, use it
+                                affinityGroupId = rs2.getLong(1);
+                            } else {
+                                // create new group
+                                try (PreparedStatement sel_dom_id_pstmt = conn.prepareStatement("SELECT name FROM `cloud`.`domain` where id = ?");) {
+                                    sel_dom_id_pstmt.setLong(1, domainId);
+                                    try (ResultSet sel_dom_id_res = sel_dom_id_pstmt.executeQuery();) {
+                                        if (sel_dom_id_res.next()) {
+                                            domainName = sel_dom_id_res.getString(1);
+                                        }
+                                    }
+                                } catch (SQLException e) {
+                                    throw new CloudRuntimeException("Exception while Moving private zone information to dedicated resources", e);
+                                }
+                                // create new domain level group for this domain
+                                String type = "ExplicitDedication";
+                                String uuid = UUID.randomUUID().toString();
+                                String groupName = "DedicatedGrp-domain-" + domainName;
+                                s_logger.debug("Adding AffinityGroup of type " + type + " for domain id " + domainId);
+                                String sql =
+                                        "INSERT INTO `cloud`.`affinity_group` (`name`, `type`, `uuid`, `description`, `domain_id`, `account_id`, `acl_type`) VALUES (?, ?, ?, ?, 1, 1, 'Domain')";
+                                try (PreparedStatement insert_pstmt = conn.prepareStatement(sql);) {
+                                    insert_pstmt.setString(1, groupName);
+                                    insert_pstmt.setString(2, type);
+                                    insert_pstmt.setString(3, uuid);
+                                    insert_pstmt.setString(4, "dedicated resources group");
+                                    insert_pstmt.executeUpdate();
+                                    try (PreparedStatement sel_aff_pstmt = conn.prepareStatement("SELECT affinity_group.id FROM `cloud`.`affinity_group` where uuid = ?");) {
+                                        sel_aff_pstmt.setString(1, uuid);
+                                        try (ResultSet sel_aff_res = sel_aff_pstmt.executeQuery();) {
+                                            if (sel_aff_res.next()) {
+                                                affinityGroupId = sel_aff_res.getLong(1);
+                                            }
+                                        } catch (SQLException e) {
+                                            throw new CloudRuntimeException("Exception while Moving private zone information to dedicated resources", e);
+                                        }
+                                    } catch (SQLException e) {
+                                        throw new CloudRuntimeException("Exception while Moving private zone information to dedicated resources", e);
+                                    }
+                                } catch (SQLException e) {
+                                    throw new CloudRuntimeException("Exception while Moving private zone information to dedicated resources", e);
+                                }
+                                // add the domain map
+                                String sqlMap = "INSERT INTO `cloud`.`affinity_group_domain_map` (`domain_id`, `affinity_group_id`) VALUES (?, ?)";
+                                try (PreparedStatement pstmtUpdate = conn.prepareStatement(sqlMap);) {
+                                    pstmtUpdate.setLong(1, domainId);
+                                    pstmtUpdate.setLong(2, affinityGroupId);
+                                    pstmtUpdate.executeUpdate();
+                                } catch (SQLException e) {
+                                    throw new CloudRuntimeException("Exception while Moving private zone information to dedicated resources", e);
+                                }
+                            }
+                        } catch (SQLException e) {
+                            throw new CloudRuntimeException("Exception while Moving private zone information to dedicated resources", e);
+                        }
+                    } catch (SQLException e) {
+                        throw new CloudRuntimeException("Exception while Moving private zone information to dedicated resources", e);
                     }
-                    rs2.close();
-                    pstmt2.close();
-                    // create new domain level group for this domain
-                    String type = "ExplicitDedication";
-                    String uuid = UUID.randomUUID().toString();
-                    String groupName = "DedicatedGrp-domain-" + domainName;
-                    s_logger.debug("Adding AffinityGroup of type " + type + " for domain id " + domainId);
-
-                    String sql =
-                        "INSERT INTO `cloud`.`affinity_group` (`name`, `type`, `uuid`, `description`, `domain_id`, `account_id`, `acl_type`) VALUES (?, ?, ?, ?, 1, 1, 'Domain')";
-                    pstmtUpdate = conn.prepareStatement(sql);
-                    pstmtUpdate.setString(1, groupName);
-                    pstmtUpdate.setString(2, type);
-                    pstmtUpdate.setString(3, uuid);
-                    pstmtUpdate.setString(4, "dedicated resources group");
-                    pstmtUpdate.executeUpdate();
-                    pstmtUpdate.close();
-
-                    pstmt2 = conn.prepareStatement("SELECT affinity_group.id FROM `cloud`.`affinity_group` where uuid = ?");
-                    pstmt2.setString(1, uuid);
-                    rs2 = pstmt2.executeQuery();
-                    if (rs2.next()) {
-                        affinityGroupId = rs2.getLong(1);
+                    try (PreparedStatement sel_pstmt = conn.prepareStatement("SELECT `id` FROM `cloud`.`data_center` WHERE `domain_id` = ? AND removed IS NULL");) {
+                        sel_pstmt.setLong(1, domainId);
+                        try (ResultSet sel_pstmt_rs = sel_pstmt.executeQuery();) {
+                            while (sel_pstmt_rs.next()) {
+                                long zoneId = sel_pstmt_rs.getLong(1);
+                                dedicateZone(conn, zoneId, domainId, affinityGroupId);
+                            }
+                        } catch (SQLException e) {
+                            throw new CloudRuntimeException("Exception while Moving private zone information to dedicated resources", e);
+                        }
+                    } catch (SQLException e) {
+                        throw new CloudRuntimeException("Exception while Moving private zone information to dedicated resources", e);
                     }
-
-                    // add the domain map
-                    String sqlMap = "INSERT INTO `cloud`.`affinity_group_domain_map` (`domain_id`, `affinity_group_id`) VALUES (?, ?)";
-                    pstmtUpdate = conn.prepareStatement(sqlMap);
-                    pstmtUpdate.setLong(1, domainId);
-                    pstmtUpdate.setLong(2, affinityGroupId);
-                    pstmtUpdate.executeUpdate();
-                    pstmtUpdate.close();
-
                 }
-
-                rs2.close();
-                pstmt2.close();
-
-                pstmt = conn.prepareStatement("SELECT `id` FROM `cloud`.`data_center` WHERE `domain_id` = ? AND removed IS NULL");
-                pstmt.setLong(1, domainId);
-                rs = pstmt.executeQuery();
-
-                while (rs.next()) {
-                    long zoneId = rs.getLong(1);
-                    dedicateZone(conn, zoneId, domainId, affinityGroupId);
-                }
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Exception while Moving private zone information to dedicated resources", e);
             }
-
-        } catch (SQLException e) {
+        }catch (SQLException e) {
             throw new CloudRuntimeException("Exception while Moving private zone information to dedicated resources", e);
-        } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (rs != null) {
-                try {
-                    rs.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (pstmt != null) {
-                try {
-                    pstmt.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (rs3 != null) {
-                try {
-                    rs3.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (pstmt3 != null) {
-                try {
-                    pstmt3.close();
-                } catch (SQLException e) {
-                }
-            }
-
         }
     }
-
     private void dedicateZone(Connection conn, long zoneId, long domainId, long affinityGroupId) {
-        PreparedStatement pstmtUpdate2 = null;
-        try {
+        try( PreparedStatement pstmtUpdate2 = conn.prepareStatement("INSERT INTO `cloud`.`dedicated_resources` (`uuid`,`data_center_id`, `domain_id`, `affinity_group_id`) VALUES (?, ?, ?, ?)");) {
             // create the dedicated resources entry
-            String sql = "INSERT INTO `cloud`.`dedicated_resources` (`uuid`,`data_center_id`, `domain_id`, `affinity_group_id`) VALUES (?, ?, ?, ?)";
-            pstmtUpdate2 = conn.prepareStatement(sql);
             pstmtUpdate2.setString(1, UUID.randomUUID().toString());
             pstmtUpdate2.setLong(2, zoneId);
             pstmtUpdate2.setLong(3, domainId);
@@ -471,13 +379,6 @@ public class Upgrade410to420 implements DbUpgrade {
             pstmtUpdate2.close();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while saving zone to dedicated resources", e);
-        } finally {
-            if (pstmtUpdate2 != null) {
-                try {
-                    pstmtUpdate2.close();
-                } catch (SQLException e) {
-                }
-            }
         }
     }
 
@@ -494,39 +395,43 @@ public class Upgrade410to420 implements DbUpgrade {
         keys.add("fk_external_pxe_devices_physical_network_id");
         DbUpgradeUtils.dropKeysIfExist(conn, "baremetal_pxe_devices", keys, true);
 
-        PreparedStatement pstmt = null;
-        try {
-            pstmt =
-                conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE");
-            pstmt.executeUpdate();
-            pstmt.close();
-            pstmt =
-                conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE");
-            pstmt.executeUpdate();
-            pstmt.close();
-            pstmt.close();
-            pstmt =
-                conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE");
-            pstmt.executeUpdate();
-            pstmt.close();
+        try (PreparedStatement alter_pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE");)
+        {
+            alter_pstmt.executeUpdate();
+            try(PreparedStatement  alter_pstmt_id =
+                        conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE");
+            ) {
+                alter_pstmt_id.executeUpdate();
+                try(PreparedStatement alter_pstmt_phy_net =
+                        conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE");)
+                {
+                    alter_pstmt_phy_net.executeUpdate();
+                }catch (SQLException e) {
+                    throw new CloudRuntimeException("Unable to add foreign keys to baremetal_dhcp_devices table", e);
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to add foreign keys to baremetal_dhcp_devices table", e);
+            }
             s_logger.debug("Added foreign keys for table baremetal_dhcp_devices");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to add foreign keys to baremetal_dhcp_devices table", e);
         }
-
-        try {
-            pstmt =
-                conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_pxe_devices` ADD CONSTRAINT `fk_external_pxe_devices_nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE");
-            pstmt.executeUpdate();
-            pstmt.close();
-            pstmt =
-                conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_pxe_devices` ADD CONSTRAINT `fk_external_pxe_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE");
-            pstmt.executeUpdate();
-            pstmt.close();
-            pstmt =
-                conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_pxe_devices` ADD CONSTRAINT `fk_external_pxe_devices_physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE");
-            pstmt.executeUpdate();
-            pstmt.close();
+        try (PreparedStatement alter_pxe_pstmt =
+                     conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_pxe_devices` ADD CONSTRAINT `fk_external_pxe_devices_nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE");)
+        {
+            alter_pxe_pstmt.executeUpdate();
+            try(PreparedStatement alter_pxe_id_pstmt =
+                    conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_pxe_devices` ADD CONSTRAINT `fk_external_pxe_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE");) {
+                alter_pxe_id_pstmt.executeUpdate();
+                try(PreparedStatement alter_pxe_phy_net_pstmt =
+                        conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_pxe_devices` ADD CONSTRAINT `fk_external_pxe_devices_physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE");) {
+                    alter_pxe_phy_net_pstmt.executeUpdate();
+                }catch (SQLException e) {
+                    throw new CloudRuntimeException("Unable to add foreign keys to baremetal_pxe_devices table", e);
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to add foreign keys to baremetal_pxe_devices table", e);
+            }
             s_logger.debug("Added foreign keys for table baremetal_pxe_devices");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to add foreign keys to baremetal_pxe_devices table", e);
@@ -534,169 +439,121 @@ public class Upgrade410to420 implements DbUpgrade {
     }
 
     private void addIndexForAlert(Connection conn) {
-
         //First drop if it exists. (Due to patches shipped to customers some will have the index and some wont.)
         List<String> indexList = new ArrayList<String>();
         s_logger.debug("Dropping index i_alert__last_sent if it exists");
         indexList.add("last_sent"); // in 4.1, we created this index that is not in convention.
         indexList.add("i_alert__last_sent");
         DbUpgradeUtils.dropKeysIfExist(conn, "alert", indexList, false);
-
         //Now add index.
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`alert` ADD INDEX `i_alert__last_sent`(`last_sent`)");
+        try(PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`alert` ADD INDEX `i_alert__last_sent`(`last_sent`)");)
+        {
             pstmt.executeUpdate();
             s_logger.debug("Added index i_alert__last_sent for table alert");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to add index i_alert__last_sent to alert table for the column last_sent", e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
-
     }
 
     private void dropUploadTable(Connection conn) {
-
-        PreparedStatement pstmt0 = null;
-        PreparedStatement pstmt1 = null;
-        PreparedStatement pstmt2 = null;
-        PreparedStatement pstmt3 = null;
-
-        ResultSet rs0 = null;
-        ResultSet rs2 = null;
-
-        try {
+        try(PreparedStatement  pstmt0 = conn.prepareStatement("SELECT url, created, type_id, host_id from upload where type=?");) {
             // Read upload table - Templates
             s_logger.debug("Populating template_store_ref table");
-            pstmt0 = conn.prepareStatement("SELECT url, created, type_id, host_id from upload where type=?");
             pstmt0.setString(1, "TEMPLATE");
-            rs0 = pstmt0.executeQuery();
-            pstmt1 = conn.prepareStatement("UPDATE template_store_ref SET download_url=?, download_url_created=? where template_id=? and store_id=?");
+            try(ResultSet rs0 = pstmt0.executeQuery();)
+            {
+                try(PreparedStatement pstmt1 = conn.prepareStatement("UPDATE template_store_ref SET download_url=?, download_url_created=? where template_id=? and store_id=?");) {
+                    //Update template_store_ref
+                    while (rs0.next()) {
+                        pstmt1.setString(1, rs0.getString("url"));
+                        pstmt1.setDate(2, rs0.getDate("created"));
+                        pstmt1.setLong(3, rs0.getLong("type_id"));
+                        pstmt1.setLong(4, rs0.getLong("host_id"));
+                        pstmt1.executeUpdate();
+                    }
+                    // Read upload table - Volumes
+                    s_logger.debug("Populating volume store ref table");
+                    try(PreparedStatement pstmt2 = conn.prepareStatement("SELECT url, created, type_id, host_id, install_path from upload where type=?");) {
+                        pstmt2.setString(1, "VOLUME");
+                            try(ResultSet rs2 = pstmt2.executeQuery();) {
 
-            //Update template_store_ref
-            while (rs0.next()) {
-                pstmt1.setString(1, rs0.getString("url"));
-                pstmt1.setDate(2, rs0.getDate("created"));
-                pstmt1.setLong(3, rs0.getLong("type_id"));
-                pstmt1.setLong(4, rs0.getLong("host_id"));
-                pstmt1.executeUpdate();
-            }
-
-            // Read upload table - Volumes
-            s_logger.debug("Populating volume store ref table");
-            pstmt2 = conn.prepareStatement("SELECT url, created, type_id, host_id, install_path from upload where type=?");
-            pstmt2.setString(1, "VOLUME");
-            rs2 = pstmt2.executeQuery();
-
-            pstmt3 =
-                conn.prepareStatement("INSERT IGNORE INTO volume_store_ref (volume_id, store_id, zone_id, created, state, download_url, download_url_created, install_path) VALUES (?,?,?,?,?,?,?,?)");
-            //insert into template_store_ref
-            while (rs2.next()) {
-                pstmt3.setLong(1, rs2.getLong("type_id"));
-                pstmt3.setLong(2, rs2.getLong("host_id"));
-                pstmt3.setLong(3, 1l);// ???
-                pstmt3.setDate(4, rs2.getDate("created"));
-                pstmt3.setString(5, "Ready");
-                pstmt3.setString(6, rs2.getString("url"));
-                pstmt3.setDate(7, rs2.getDate("created"));
-                pstmt3.setString(8, rs2.getString("install_path"));
-                pstmt3.executeUpdate();
+                                try(PreparedStatement pstmt3 =
+                                        conn.prepareStatement("INSERT IGNORE INTO volume_store_ref (volume_id, store_id, zone_id, created, state, download_url, download_url_created, install_path) VALUES (?,?,?,?,?,?,?,?)");) {
+                                    //insert into template_store_ref
+                                    while (rs2.next()) {
+                                        pstmt3.setLong(1, rs2.getLong("type_id"));
+                                        pstmt3.setLong(2, rs2.getLong("host_id"));
+                                        pstmt3.setLong(3, 1l);// ???
+                                        pstmt3.setDate(4, rs2.getDate("created"));
+                                        pstmt3.setString(5, "Ready");
+                                        pstmt3.setString(6, rs2.getString("url"));
+                                        pstmt3.setDate(7, rs2.getDate("created"));
+                                        pstmt3.setString(8, rs2.getString("install_path"));
+                                        pstmt3.executeUpdate();
+                                    }
+                                }catch (SQLException e) {
+                                    throw new CloudRuntimeException("Unable add date into template/volume store ref from upload table.", e);
+                                }
+                            }catch (SQLException e) {
+                                throw new CloudRuntimeException("Unable add date into template/volume store ref from upload table.", e);
+                            }
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("Unable add date into template/volume store ref from upload table.", e);
+                    }
+                }catch (SQLException e) {
+                    throw new CloudRuntimeException("Unable add date into template/volume store ref from upload table.", e);
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Unable add date into template/volume store ref from upload table.", e);
             }
 
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable add date into template/volume store ref from upload table.", e);
-        } finally {
-            try {
-                if (pstmt0 != null) {
-                    pstmt0.close();
-                }
-                if (pstmt1 != null) {
-                    pstmt1.close();
-                }
-                if (pstmt2 != null) {
-                    pstmt2.close();
-                }
-                if (pstmt3 != null) {
-                    pstmt3.close();
-                }
-            } catch (SQLException e) {
-            }
         }
-
     }
 
     //KVM snapshot flag: only turn on if Customers is using snapshot;
     private void setKVMSnapshotFlag(Connection conn) {
         s_logger.debug("Verify and set the KVM snapshot flag if snapshot was used. ");
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
+        try(PreparedStatement pstmt = conn.prepareStatement("select count(*) from `cloud`.`snapshots` where hypervisor_type = 'KVM'");)
+        {
             int numRows = 0;
-            pstmt = conn.prepareStatement("select count(*) from `cloud`.`snapshots` where hypervisor_type = 'KVM'");
-            rs = pstmt.executeQuery();
-            if (rs.next()) {
-                numRows = rs.getInt(1);
-            }
-            rs.close();
-            pstmt.close();
-            if (numRows > 0) {
-                //Add the configuration flag
-                pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = 'kvm.snapshot.enabled'");
-                pstmt.setString(1, "true");
-                pstmt.executeUpdate();
+            try(ResultSet rs = pstmt.executeQuery();) {
+                if (rs.next()) {
+                    numRows = rs.getInt(1);
+                }
+                if (numRows > 0) {
+                    //Add the configuration flag
+                    try(PreparedStatement update_pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = 'kvm.snapshot.enabled'");) {
+                        update_pstmt.setString(1, "true");
+                        update_pstmt.executeUpdate();
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("Failed to read the snapshot table for KVM upgrade. ", e);
+                    }
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Failed to read the snapshot table for KVM upgrade. ", e);
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to read the snapshot table for KVM upgrade. ", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
         s_logger.debug("Done set KVM snapshot flag. ");
     }
 
     private void updatePrimaryStore(Connection conn) {
-        PreparedStatement sql = null;
-        PreparedStatement sql2 = null;
-        try {
-            sql = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type = 'Filesystem' or pool_type = 'LVM'");
+        try(PreparedStatement sql = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type = 'Filesystem' or pool_type = 'LVM'");) {
             sql.setString(1, DataStoreProvider.DEFAULT_PRIMARY);
             sql.setString(2, "HOST");
             sql.executeUpdate();
-
-            sql2 = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type != 'Filesystem' and pool_type != 'LVM'");
-            sql2.setString(1, DataStoreProvider.DEFAULT_PRIMARY);
-            sql2.setString(2, "CLUSTER");
-            sql2.executeUpdate();
+            try(PreparedStatement sql2 = conn.prepareStatement("update storage_pool set storage_provider_name = ? , scope = ? where pool_type != 'Filesystem' and pool_type != 'LVM'");) {
+                sql2.setString(1, DataStoreProvider.DEFAULT_PRIMARY);
+                sql2.setString(2, "CLUSTER");
+                sql2.executeUpdate();
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Failed to upgrade vm template data store uuid: " + e.toString());
+            }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to upgrade vm template data store uuid: " + e.toString());
-        } finally {
-            if (sql != null) {
-                try {
-                    sql.close();
-                } catch (SQLException e) {
-                }
-            }
-
-            if (sql2 != null) {
-                try {
-                    sql2.close();
-                } catch (SQLException e) {
-                }
-            }
         }
     }
 
@@ -789,7 +646,7 @@ public class Upgrade410to420 implements DbUpgrade {
         String newGuestLabel = oldParamValue;
         try {
             // No need to iterate because the global param setting applies to all physical networks irrespective of traffic type
-            if (rs.next()) {
+            if ((rs != null) && (rs.next())) {
                 oldGuestLabel = rs.getString("vmware_network_label");
                 // guestLabel is in format [[<VSWITCHNAME>],VLANID]
                 separatorIndex = oldGuestLabel.indexOf(",");
@@ -799,65 +656,57 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         } catch (SQLException e) {
             s_logger.error(new CloudRuntimeException("Failed to read vmware_network_label : " + e));
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException e) {
-            }
         }
         return newGuestLabel;
     }
 
     private void upgradeVmwareLabels(Connection conn) {
-        PreparedStatement pstmt = null;
-        ResultSet rsParams = null;
-        ResultSet rsLabel = null;
         String newLabel;
         String trafficType = null;
         String trafficTypeVswitchParam;
         String trafficTypeVswitchParamValue;
 
-        try {
+        try (PreparedStatement pstmt =
+                     conn.prepareStatement("select name,value from `cloud`.`configuration` where category='Hidden' and value is not NULL and name REGEXP 'vmware*.vswitch';");)
+        {
             // update the existing vmware traffic labels
-            pstmt =
-                conn.prepareStatement("select name,value from `cloud`.`configuration` where category='Hidden' and value is not NULL and name REGEXP 'vmware*.vswitch';");
-            rsParams = pstmt.executeQuery();
-            while (rsParams.next()) {
-                trafficTypeVswitchParam = rsParams.getString("name");
-                trafficTypeVswitchParamValue = rsParams.getString("value");
-                // When upgraded from 4.0 to 4.1 update physical network traffic label with trafficTypeVswitchParam
-                if (trafficTypeVswitchParam.equals("vmware.private.vswitch")) {
-                    trafficType = "Management"; //TODO(sateesh): Ignore storage traffic, as required physical network already implemented, anything else tobe done?
-                } else if (trafficTypeVswitchParam.equals("vmware.public.vswitch")) {
-                    trafficType = "Public";
-                } else if (trafficTypeVswitchParam.equals("vmware.guest.vswitch")) {
-                    trafficType = "Guest";
+            try(ResultSet rsParams = pstmt.executeQuery();) {
+                while (rsParams.next()) {
+                    trafficTypeVswitchParam = rsParams.getString("name");
+                    trafficTypeVswitchParamValue = rsParams.getString("value");
+                    // When upgraded from 4.0 to 4.1 update physical network traffic label with trafficTypeVswitchParam
+                    if (trafficTypeVswitchParam.equals("vmware.private.vswitch")) {
+                        trafficType = "Management"; //TODO(sateesh): Ignore storage traffic, as required physical network already implemented, anything else tobe done?
+                    } else if (trafficTypeVswitchParam.equals("vmware.public.vswitch")) {
+                        trafficType = "Public";
+                    } else if (trafficTypeVswitchParam.equals("vmware.guest.vswitch")) {
+                        trafficType = "Guest";
+                    }
+                    try(PreparedStatement sel_pstmt =
+                            conn.prepareStatement("select physical_network_id, traffic_type, vmware_network_label from physical_network_traffic_types where vmware_network_label is not NULL and traffic_type='" +
+                                    trafficType + "';");) {
+                        try(ResultSet rsLabel = sel_pstmt.executeQuery();) {
+                            newLabel = getNewLabel(rsLabel, trafficTypeVswitchParamValue);
+                            try(PreparedStatement update_pstmt =
+                                    conn.prepareStatement("update physical_network_traffic_types set vmware_network_label = " + newLabel + " where traffic_type = '" + trafficType +
+                                            "' and vmware_network_label is not NULL;");) {
+                                s_logger.debug("Updating vmware label for " + trafficType + " traffic. Update SQL statement is " + pstmt);
+                                update_pstmt.executeUpdate();
+                            }catch (SQLException e) {
+                                throw new CloudRuntimeException("Unable to set vmware traffic labels ", e);
+                            }
+                        }catch (SQLException e) {
+                            throw new CloudRuntimeException("Unable to set vmware traffic labels ", e);
+                        }
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("Unable to set vmware traffic labels ", e);
+                    }
                 }
-                pstmt =
-                    conn.prepareStatement("select physical_network_id, traffic_type, vmware_network_label from physical_network_traffic_types where vmware_network_label is not NULL and traffic_type='" +
-                        trafficType + "';");
-                rsLabel = pstmt.executeQuery();
-                newLabel = getNewLabel(rsLabel, trafficTypeVswitchParamValue);
-                pstmt =
-                    conn.prepareStatement("update physical_network_traffic_types set vmware_network_label = " + newLabel + " where traffic_type = '" + trafficType +
-                        "' and vmware_network_label is not NULL;");
-                s_logger.debug("Updating vmware label for " + trafficType + " traffic. Update SQL statement is " + pstmt);
-                pstmt.executeUpdate();
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to set vmware traffic labels ", e);
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to set vmware traffic labels ", e);
-        } finally {
-            try {
-                if (rsParams != null) {
-                    rsParams.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
@@ -865,14 +714,10 @@ public class Upgrade410to420 implements DbUpgrade {
         List<Long> listOfLegacyZones = new ArrayList<Long>();
         List<Long> listOfNonLegacyZones = new ArrayList<Long>();
         Map<String, ArrayList<Long>> dcToZoneMap = new HashMap<String, ArrayList<Long>>();
-        PreparedStatement pstmt = null;
-        PreparedStatement clustersQuery = null;
-        PreparedStatement clusterDetailsQuery = null;
-        ResultSet rs = null;
         ResultSet clusters = null;
-        ResultSet clusterDetails = null;
         Long zoneId;
         Long clusterId;
+        ArrayList<String> dcList = null;
         String clusterHypervisorType;
         boolean legacyZone;
         boolean ignoreZone;
@@ -884,121 +729,107 @@ public class Upgrade410to420 implements DbUpgrade {
         String vc = "";
         String dcName = "";
 
-        try {
-            pstmt = conn.prepareStatement("select id from `cloud`.`data_center` where removed is NULL");
-            rs = pstmt.executeQuery();
-
-            while (rs.next()) {
-                zoneId = rs.getLong("id");
-                clustersQuery = conn.prepareStatement("select id, hypervisor_type from `cloud`.`cluster` where removed is NULL AND data_center_id=?");
-                clustersQuery.setLong(1, zoneId);
-                legacyZone = false;
-                ignoreZone = true;
-                ArrayList<String> dcList = new ArrayList<String>();
-                count = 0L;
-                // Legacy zone term is meant only for VMware
-                // Legacy zone is a zone with atleast 2 clusters & with multiple DCs or VCs
-                clusters = clustersQuery.executeQuery();
-                if (!clusters.next()) {
-                    continue; // Ignore the zone without any clusters
-                } else {
-                    dcOfPreviousCluster = null;
-                    dcOfCurrentCluster = null;
-                    do {
-                        clusterHypervisorType = clusters.getString("hypervisor_type");
-                        clusterId = clusters.getLong("id");
-                        if (clusterHypervisorType.equalsIgnoreCase("VMware")) {
-                            ignoreZone = false;
-                            clusterDetailsQuery = conn.prepareStatement("select value from `cloud`.`cluster_details` where name='url' and cluster_id=?");
-                            clusterDetailsQuery.setLong(1, clusterId);
-                            clusterDetails = clusterDetailsQuery.executeQuery();
-                            clusterDetails.next();
-                            url = clusterDetails.getString("value");
-                            tokens = url.split("/"); // url format - http://vcenter/dc/cluster
-                            vc = tokens[2];
-                            dcName = tokens[3];
-                            dcOfPreviousCluster = dcOfCurrentCluster;
-                            dcOfCurrentCluster = dcName + "@" + vc;
-                            if (!dcList.contains(dcOfCurrentCluster)) {
-                                dcList.add(dcOfCurrentCluster);
-                            }
-                            if (count > 0) {
-                                if (!dcOfPreviousCluster.equalsIgnoreCase(dcOfCurrentCluster)) {
-                                    legacyZone = true;
-                                    s_logger.debug("Marking the zone " + zoneId + " as legacy zone.");
+        try(PreparedStatement pstmt = conn.prepareStatement("select id from `cloud`.`data_center` where removed is NULL");) {
+            try (ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    zoneId = rs.getLong("id");
+                    try(PreparedStatement clustersQuery = conn.prepareStatement("select id, hypervisor_type from `cloud`.`cluster` where removed is NULL AND data_center_id=?");) {
+                        clustersQuery.setLong(1, zoneId);
+                        legacyZone = false;
+                        ignoreZone = true;
+                        dcList = new ArrayList<String>();
+                        count = 0L;
+                        // Legacy zone term is meant only for VMware
+                        // Legacy zone is a zone with atleast 2 clusters & with multiple DCs or VCs
+                        clusters = clustersQuery.executeQuery();
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("persistLegacyZones:Exception:"+e.getMessage(), e);
+                    }
+                    if (!clusters.next()) {
+                        continue; // Ignore the zone without any clusters
+                    } else {
+                        dcOfPreviousCluster = null;
+                        dcOfCurrentCluster = null;
+                        do {
+                            clusterHypervisorType = clusters.getString("hypervisor_type");
+                            clusterId = clusters.getLong("id");
+                            if (clusterHypervisorType.equalsIgnoreCase("VMware")) {
+                                ignoreZone = false;
+                                try (PreparedStatement clusterDetailsQuery = conn.prepareStatement("select value from `cloud`.`cluster_details` where name='url' and cluster_id=?");) {
+                                    clusterDetailsQuery.setLong(1, clusterId);
+                                    try (ResultSet clusterDetails = clusterDetailsQuery.executeQuery();) {
+                                        clusterDetails.next();
+                                        url = clusterDetails.getString("value");
+                                        tokens = url.split("/"); // url format - http://vcenter/dc/cluster
+                                        vc = tokens[2];
+                                        dcName = tokens[3];
+                                        dcOfPreviousCluster = dcOfCurrentCluster;
+                                        dcOfCurrentCluster = dcName + "@" + vc;
+                                        if (!dcList.contains(dcOfCurrentCluster)) {
+                                            dcList.add(dcOfCurrentCluster);
+                                        }
+                                        if (count > 0) {
+                                            if (!dcOfPreviousCluster.equalsIgnoreCase(dcOfCurrentCluster)) {
+                                                legacyZone = true;
+                                                s_logger.debug("Marking the zone " + zoneId + " as legacy zone.");
+                                            }
+                                        }
+                                    } catch (SQLException e) {
+                                        throw new CloudRuntimeException("Unable add zones to cloud.legacyzones table.", e);
+                                    }
+                                } catch (SQLException e) {
+                                    throw new CloudRuntimeException("Unable add zones to cloud.legacyzones table.", e);
                                 }
+                            } else {
+                                s_logger.debug("Ignoring zone " + zoneId + " with hypervisor type " + clusterHypervisorType);
+                                break;
                             }
-                        } else {
-                            s_logger.debug("Ignoring zone " + zoneId + " with hypervisor type " + clusterHypervisorType);
-                            break;
+                            count++;
+                        } while (clusters.next());
+                        if (ignoreZone) {
+                            continue; // Ignore the zone with hypervisors other than VMware
                         }
-                        count++;
-                    } while (clusters.next());
-                    if (ignoreZone) {
-                        continue; // Ignore the zone with hypervisors other than VMware
+                    }
+                    if (legacyZone) {
+                        listOfLegacyZones.add(zoneId);
+                    } else {
+                        listOfNonLegacyZones.add(zoneId);
+                    }
+                    for (String dc : dcList) {
+                        ArrayList<Long> dcZones = new ArrayList<Long>();
+                        if (dcToZoneMap.get(dc) != null) {
+                            dcZones = dcToZoneMap.get(dc);
+                        }
+                        dcZones.add(zoneId);
+                        dcToZoneMap.put(dc, dcZones);
                     }
                 }
-                if (legacyZone) {
-                    listOfLegacyZones.add(zoneId);
-                } else {
-                    listOfNonLegacyZones.add(zoneId);
-                }
-                for (String dc : dcList) {
-                    ArrayList<Long> dcZones = new ArrayList<Long>();
-                    if (dcToZoneMap.get(dc) != null) {
-                        dcZones = dcToZoneMap.get(dc);
-                    }
-                    dcZones.add(zoneId);
-                    dcToZoneMap.put(dc, dcZones);
-                }
-            }
-            // If a VMware datacenter in a vCenter maps to more than 1 CloudStack zone, mark all the zones it is mapped to as legacy
-            for (Map.Entry<String, ArrayList<Long>> entry : dcToZoneMap.entrySet()) {
-                if (entry.getValue().size() > 1) {
-                    for (Long newLegacyZone : entry.getValue()) {
-                        if (listOfNonLegacyZones.contains(newLegacyZone)) {
-                            listOfNonLegacyZones.remove(newLegacyZone);
-                            listOfLegacyZones.add(newLegacyZone);
+                // If a VMware datacenter in a vCenter maps to more than 1 CloudStack zone, mark all the zones it is mapped to as legacy
+                for (Map.Entry<String, ArrayList<Long>> entry : dcToZoneMap.entrySet()) {
+                    if (entry.getValue().size() > 1) {
+                        for (Long newLegacyZone : entry.getValue()) {
+                            if (listOfNonLegacyZones.contains(newLegacyZone)) {
+                                listOfNonLegacyZones.remove(newLegacyZone);
+                                listOfLegacyZones.add(newLegacyZone);
+                            }
                         }
                     }
                 }
-            }
-            updateLegacyZones(conn, listOfLegacyZones);
-            updateNonLegacyZones(conn, listOfNonLegacyZones);
-        } catch (SQLException e) {
-            String msg = "Unable to discover legacy zones." + e.getMessage();
-            s_logger.error(msg);
-            throw new CloudRuntimeException(msg, e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-                if (clusters != null) {
-                    clusters.close();
-                }
-                if (clusterDetails != null) {
-                    clusterDetails.close();
-                }
-                if (clustersQuery != null) {
-                    clustersQuery.close();
-                }
-                if (clusterDetailsQuery != null) {
-                    clusterDetailsQuery.close();
-                }
+                updateLegacyZones(conn, listOfLegacyZones);
+                updateNonLegacyZones(conn, listOfNonLegacyZones);
             } catch (SQLException e) {
+                s_logger.error("Unable to discover legacy zones." + e.getMessage(),e);
+                throw new CloudRuntimeException("Unable to discover legacy zones." + e.getMessage(), e);
             }
+        }catch (SQLException e) {
+            s_logger.error("Unable to discover legacy zones." + e.getMessage(),e);
+            throw new CloudRuntimeException("Unable to discover legacy zones." + e.getMessage(), e);
         }
     }
 
     private void updateLegacyZones(Connection conn, List<Long> zones) {
-        PreparedStatement legacyZonesQuery = null;
         //Insert legacy zones into table for legacy zones.
-        try {
-            legacyZonesQuery = conn.prepareStatement("INSERT INTO `cloud`.`legacy_zones` (zone_id) VALUES (?)");
+        try (PreparedStatement legacyZonesQuery = conn.prepareStatement("INSERT INTO `cloud`.`legacy_zones` (zone_id) VALUES (?)");){
             for (Long zoneId : zones) {
                 legacyZonesQuery.setLong(1, zoneId);
                 legacyZonesQuery.executeUpdate();
@@ -1006,13 +837,6 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable add zones to cloud.legacyzones table.", e);
-        } finally {
-            try {
-                if (legacyZonesQuery != null) {
-                    legacyZonesQuery.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
@@ -1109,157 +933,141 @@ public class Upgrade410to420 implements DbUpgrade {
     }
 
     private void createPlaceHolderNics(Connection conn) {
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            pstmt =
-                conn.prepareStatement("SELECT network_id, gateway, ip4_address FROM `cloud`.`nics` WHERE reserver_name IN ('DirectNetworkGuru','DirectPodBasedNetworkGuru') and vm_type='DomainRouter' AND removed IS null");
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                Long networkId = rs.getLong(1);
-                String gateway = rs.getString(2);
-                String ip = rs.getString(3);
-                String uuid = UUID.randomUUID().toString();
-                //Insert placeholder nic for each Domain router nic in Shared network
-                pstmt =
-                    conn.prepareStatement("INSERT INTO `cloud`.`nics` (uuid, ip4_address, gateway, network_id, state, strategy, vm_type, default_nic, created) VALUES (?, ?, ?, ?, 'Reserved', 'PlaceHolder', 'DomainRouter', 0, now())");
-                pstmt.setString(1, uuid);
-                pstmt.setString(2, ip);
-                pstmt.setString(3, gateway);
-                pstmt.setLong(4, networkId);
-                pstmt.executeUpdate();
-                s_logger.debug("Created placeholder nic for the ipAddress " + ip + " and network " + networkId);
-
+        try (PreparedStatement pstmt =
+                     conn.prepareStatement("SELECT network_id, gateway, ip4_address FROM `cloud`.`nics` WHERE reserver_name IN ('DirectNetworkGuru','DirectPodBasedNetworkGuru') and vm_type='DomainRouter' AND removed IS null");)
+        {
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    Long networkId = rs.getLong(1);
+                    String gateway = rs.getString(2);
+                    String ip = rs.getString(3);
+                    String uuid = UUID.randomUUID().toString();
+                    //Insert placeholder nic for each Domain router nic in Shared network
+                    try(PreparedStatement insert_pstmt =
+                            conn.prepareStatement("INSERT INTO `cloud`.`nics` (uuid, ip4_address, gateway, network_id, state, strategy, vm_type, default_nic, created) VALUES (?, ?, ?, ?, 'Reserved', 'PlaceHolder', 'DomainRouter', 0, now())");) {
+                        insert_pstmt.setString(1, uuid);
+                        insert_pstmt.setString(2, ip);
+                        insert_pstmt.setString(3, gateway);
+                        insert_pstmt.setLong(4, networkId);
+                        insert_pstmt.executeUpdate();
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("Unable to create placeholder nics", e);
+                    }
+                    s_logger.debug("Created placeholder nic for the ipAddress " + ip + " and network " + networkId);
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to create placeholder nics", e);
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create placeholder nics", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
     private void updateRemoteAccessVpn(Connection conn) {
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            pstmt = conn.prepareStatement("SELECT vpn_server_addr_id FROM `cloud`.`remote_access_vpn`");
-            rs = pstmt.executeQuery();
-            long id = 1;
-            while (rs.next()) {
-                String uuid = UUID.randomUUID().toString();
-                Long ipId = rs.getLong(1);
-                pstmt = conn.prepareStatement("UPDATE `cloud`.`remote_access_vpn` set uuid=?, id=? where vpn_server_addr_id=?");
-                pstmt.setString(1, uuid);
-                pstmt.setLong(2, id);
-                pstmt.setLong(3, ipId);
-                pstmt.executeUpdate();
-                id++;
+        try(PreparedStatement pstmt = conn.prepareStatement("SELECT vpn_server_addr_id FROM `cloud`.`remote_access_vpn`");) {
+            try(ResultSet rs = pstmt.executeQuery();) {
+                long id = 1;
+                while (rs.next()) {
+                    String uuid = UUID.randomUUID().toString();
+                    Long ipId = rs.getLong(1);
+                    try(PreparedStatement update_pstmt = conn.prepareStatement("UPDATE `cloud`.`remote_access_vpn` set uuid=?, id=? where vpn_server_addr_id=?");) {
+                        update_pstmt.setString(1, uuid);
+                        update_pstmt.setLong(2, id);
+                        update_pstmt.setLong(3, ipId);
+                        update_pstmt.executeUpdate();
+                        id++;
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("Unable to update id/uuid of remote_access_vpn table", e);
+                    }
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to update id/uuid of remote_access_vpn table", e);
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update id/uuid of remote_access_vpn table", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
     private void addEgressFwRulesForSRXGuestNw(Connection conn) {
-        PreparedStatement pstmt = null;
         ResultSet rs = null;
-        ResultSet rsId = null;
-        ResultSet rsNw = null;
-        try {
-            pstmt = conn.prepareStatement("select network_id FROM `cloud`.`ntwk_service_map` where service='Firewall' and provider='JuniperSRX' ");
+        try(PreparedStatement pstmt = conn.prepareStatement("select network_id FROM `cloud`.`ntwk_service_map` where service='Firewall' and provider='JuniperSRX' ");) {
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long netId = rs.getLong(1);
                 //checking for Isolated OR Virtual
-                pstmt =
-                    conn.prepareStatement("select account_id, domain_id FROM `cloud`.`networks` where (guest_type='Isolated' OR guest_type='Virtual') and traffic_type='Guest' and vpc_id is NULL and (state='implemented' OR state='Shutdown') and id=? ");
-                pstmt.setLong(1, netId);
-                s_logger.debug("Getting account_id, domain_id from networks table: " + pstmt);
-                rsNw = pstmt.executeQuery();
+                try(PreparedStatement sel_net_pstmt =
+                        conn.prepareStatement("select account_id, domain_id FROM `cloud`.`networks` where (guest_type='Isolated' OR guest_type='Virtual') and traffic_type='Guest' and vpc_id is NULL and (state='implemented' OR state='Shutdown') and id=? ");) {
+                    sel_net_pstmt.setLong(1, netId);
+                    s_logger.debug("Getting account_id, domain_id from networks table: ");
+                    try(ResultSet rsNw = pstmt.executeQuery();)
+                    {
+                        if (rsNw.next()) {
+                            long accountId = rsNw.getLong(1);
+                            long domainId = rsNw.getLong(2);
 
-                if (rsNw.next()) {
-                    long accountId = rsNw.getLong(1);
-                    long domainId = rsNw.getLong(2);
-
-                    //Add new rule for the existing networks
-                    s_logger.debug("Adding default egress firewall rule for network " + netId);
-                    pstmt =
-                        conn.prepareStatement("INSERT INTO firewall_rules (uuid, state, protocol, purpose, account_id, domain_id, network_id, xid, created,  traffic_type) VALUES (?, 'Active', 'all', 'Firewall', ?, ?, ?, ?, now(), 'Egress')");
-                    pstmt.setString(1, UUID.randomUUID().toString());
-                    pstmt.setLong(2, accountId);
-                    pstmt.setLong(3, domainId);
-                    pstmt.setLong(4, netId);
-                    pstmt.setString(5, UUID.randomUUID().toString());
-                    s_logger.debug("Inserting default egress firewall rule " + pstmt);
-                    pstmt.executeUpdate();
-
-                    pstmt = conn.prepareStatement("select id from firewall_rules where protocol='all' and network_id=?");
-                    pstmt.setLong(1, netId);
-                    rsId = pstmt.executeQuery();
-
-                    long firewallRuleId;
-                    if (rsId.next()) {
-                        firewallRuleId = rsId.getLong(1);
-                        pstmt = conn.prepareStatement("insert into firewall_rules_cidrs (firewall_rule_id,source_cidr) values (?, '0.0.0.0/0')");
-                        pstmt.setLong(1, firewallRuleId);
-                        s_logger.debug("Inserting rule for cidr 0.0.0.0/0 for the new Firewall rule id=" + firewallRuleId + " with statement " + pstmt);
-                        pstmt.executeUpdate();
+                            //Add new rule for the existing networks
+                            s_logger.debug("Adding default egress firewall rule for network " + netId);
+                            try (PreparedStatement insert_pstmt =
+                                         conn.prepareStatement("INSERT INTO firewall_rules (uuid, state, protocol, purpose, account_id, domain_id, network_id, xid, created,  traffic_type) VALUES (?, 'Active', 'all', 'Firewall', ?, ?, ?, ?, now(), 'Egress')");) {
+                                insert_pstmt.setString(1, UUID.randomUUID().toString());
+                                insert_pstmt.setLong(2, accountId);
+                                insert_pstmt.setLong(3, domainId);
+                                insert_pstmt.setLong(4, netId);
+                                insert_pstmt.setString(5, UUID.randomUUID().toString());
+                                s_logger.debug("Inserting default egress firewall rule " + insert_pstmt);
+                                insert_pstmt.executeUpdate();
+                            } catch (SQLException e) {
+                                throw new CloudRuntimeException("Unable to set egress firewall rules ", e);
+                            }
+                            try (PreparedStatement sel_firewall_pstmt = conn.prepareStatement("select id from firewall_rules where protocol='all' and network_id=?");) {
+                                sel_firewall_pstmt.setLong(1, netId);
+                                try (ResultSet rsId = sel_firewall_pstmt.executeQuery();) {
+                                    long firewallRuleId;
+                                    if (rsId.next()) {
+                                        firewallRuleId = rsId.getLong(1);
+                                        try (PreparedStatement insert_pstmt = conn.prepareStatement("insert into firewall_rules_cidrs (firewall_rule_id,source_cidr) values (?, '0.0.0.0/0')");) {
+                                            insert_pstmt.setLong(1, firewallRuleId);
+                                            s_logger.debug("Inserting rule for cidr 0.0.0.0/0 for the new Firewall rule id=" + firewallRuleId + " with statement " + insert_pstmt);
+                                            insert_pstmt.executeUpdate();
+                                        } catch (SQLException e) {
+                                            throw new CloudRuntimeException("Unable to set egress firewall rules ", e);
+                                        }
+                                    }
+                                } catch (SQLException e) {
+                                    throw new CloudRuntimeException("Unable to set egress firewall rules ", e);
+                                }
+                            } catch (SQLException e) {
+                                throw new CloudRuntimeException("Unable to set egress firewall rules ", e);
+                            }
+                        }
                     }
                 }
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to set egress firewall rules ", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
     private void upgradeEIPNetworkOfferings(Connection conn) {
-
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            pstmt = conn.prepareStatement("select id, elastic_ip_service from `cloud`.`network_offerings` where traffic_type='Guest'");
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                long id = rs.getLong(1);
-                // check if elastic IP service is enabled for network offering
-                if (rs.getLong(2) != 0) {
-                    //update network offering with eip_associate_public_ip set to true
-                    pstmt = conn.prepareStatement("UPDATE `cloud`.`network_offerings` set eip_associate_public_ip=? where id=?");
-                    pstmt.setBoolean(1, true);
-                    pstmt.setLong(2, id);
-                    pstmt.executeUpdate();
+        try (PreparedStatement pstmt = conn.prepareStatement("select id, elastic_ip_service from `cloud`.`network_offerings` where traffic_type='Guest'");)
+        {
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    long id = rs.getLong(1);
+                    // check if elastic IP service is enabled for network offering
+                    if (rs.getLong(2) != 0) {
+                        //update network offering with eip_associate_public_ip set to true
+                        try(PreparedStatement update_pstmt = conn.prepareStatement("UPDATE `cloud`.`network_offerings` set eip_associate_public_ip=? where id=?");) {
+                            update_pstmt.setBoolean(1, true);
+                            update_pstmt.setLong(2, id);
+                            update_pstmt.executeUpdate();
+                        }catch (SQLException e) {
+                            throw new CloudRuntimeException("Unable to set elastic_ip_service for network offerings with EIP service enabled.", e);
+                        }
+                    }
                 }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to set elastic_ip_service for network offerings with EIP service enabled.", e);
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to set elastic_ip_service for network offerings with EIP service enabled.", e);
@@ -1292,7 +1100,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 Long vpcId = rs.getLong(2);
                 String tierUuid = rs.getString(3);
                 pstmt =
-                    conn.prepareStatement("SELECT id, uuid, start_port, end_port, state, protocol, icmp_code, icmp_type, created, traffic_type FROM `cloud`.`firewall_rules` where network_id = ? and purpose = 'NetworkACL'");
+                        conn.prepareStatement("SELECT id, uuid, start_port, end_port, state, protocol, icmp_code, icmp_type, created, traffic_type FROM `cloud`.`firewall_rules` where network_id = ? and purpose = 'NetworkACL'");
                 pstmt.setLong(1, networkId);
                 rsAcls = pstmt.executeQuery();
                 boolean hasAcls = false;
@@ -1336,7 +1144,7 @@ public class Upgrade410to420 implements DbUpgrade {
                     //Move acl to network_acl_item table
                     s_logger.debug("Moving firewall rule: " + aclItemUuid);
                     pstmt =
-                        conn.prepareStatement("INSERT INTO `cloud`.`network_acl_item` (uuid, acl_id, start_port, end_port, state, protocol, icmp_code, icmp_type, created, traffic_type, cidr, number, action) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )");
+                            conn.prepareStatement("INSERT INTO `cloud`.`network_acl_item` (uuid, acl_id, start_port, end_port, state, protocol, icmp_code, icmp_type, created, traffic_type, cidr, number, action) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )");
                     //uuid
                     pstmt.setString(1, aclItemUuid);
                     //aclId
@@ -1431,182 +1239,155 @@ public class Upgrade410to420 implements DbUpgrade {
     }
 
     private void updateGlobalDeploymentPlanner(Connection conn) {
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
+        try (PreparedStatement pstmt = conn.prepareStatement("select value from `cloud`.`configuration` where name = 'vm.allocation.algorithm'");){
+            try(ResultSet rs = pstmt.executeQuery();)
+            {
+                while (rs.next()) {
+                    String globalValue = rs.getString(1);
+                    String plannerName = "FirstFitPlanner";
 
-        try {
-            pstmt = conn.prepareStatement("select value from `cloud`.`configuration` where name = 'vm.allocation.algorithm'");
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                String globalValue = rs.getString(1);
-                String plannerName = "FirstFitPlanner";
-
-                if (globalValue != null) {
-                    if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.random.toString())) {
-                        plannerName = "FirstFitPlanner";
-                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.firstfit.toString())) {
-                        plannerName = "FirstFitPlanner";
-                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_firstfit.toString())) {
-                        plannerName = "UserConcentratedPodPlanner";
-                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_random.toString())) {
-                        plannerName = "UserConcentratedPodPlanner";
-                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userdispersing.toString())) {
-                        plannerName = "UserDispersingPlanner";
+                    if (globalValue != null) {
+                        if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.random.toString())) {
+                            plannerName = "FirstFitPlanner";
+                        } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.firstfit.toString())) {
+                            plannerName = "FirstFitPlanner";
+                        } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_firstfit.toString())) {
+                            plannerName = "UserConcentratedPodPlanner";
+                        } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_random.toString())) {
+                            plannerName = "UserConcentratedPodPlanner";
+                        } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userdispersing.toString())) {
+                            plannerName = "UserDispersingPlanner";
+                        }
+                    }
+                    // update vm.deployment.planner global config
+                    try (PreparedStatement update_pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` set value=? where name = 'vm.deployment.planner'");) {
+                        update_pstmt.setString(1, plannerName);
+                        update_pstmt.executeUpdate();
+                    } catch (SQLException e) {
+                        throw new CloudRuntimeException("Unable to set vm.deployment.planner global config", e);
                     }
                 }
-                // update vm.deployment.planner global config
-                pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` set value=? where name = 'vm.deployment.planner'");
-                pstmt.setString(1, plannerName);
-                pstmt.executeUpdate();
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to set vm.deployment.planner global config", e);
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to set vm.deployment.planner global config", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
     private void upgradeDefaultVpcOffering(Connection conn) {
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            pstmt =
-                conn.prepareStatement("select distinct map.vpc_offering_id from `cloud`.`vpc_offering_service_map` map, `cloud`.`vpc_offerings` off where off.id=map.vpc_offering_id AND service='Lb'");
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                long id = rs.getLong(1);
-                //Add internal LB vm as a supported provider for the load balancer service
-                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`vpc_offering_service_map` (vpc_offering_id, service, provider) VALUES (?,?,?)");
-                pstmt.setLong(1, id);
-                pstmt.setString(2, "Lb");
-                pstmt.setString(3, "InternalLbVm");
-                pstmt.executeUpdate();
+        try(PreparedStatement pstmt =
+                conn.prepareStatement("select distinct map.vpc_offering_id from `cloud`.`vpc_offering_service_map` map, `cloud`.`vpc_offerings` off where off.id=map.vpc_offering_id AND service='Lb'");)
+        {
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    long id = rs.getLong(1);
+                    //Add internal LB vm as a supported provider for the load balancer service
+                    try(PreparedStatement   insert_pstmt = conn.prepareStatement("INSERT INTO `cloud`.`vpc_offering_service_map` (vpc_offering_id, service, provider) VALUES (?,?,?)");) {
+                        insert_pstmt.setLong(1, id);
+                        insert_pstmt.setString(2, "Lb");
+                        insert_pstmt.setString(3, "InternalLbVm");
+                        insert_pstmt.executeUpdate();
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("Unable update the default VPC offering with the internal lb service", e);
+                    }
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Unable update the default VPC offering with the internal lb service", e);
             }
-
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable update the default VPC offering with the internal lb service", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
     private void upgradePhysicalNtwksWithInternalLbProvider(Connection conn) {
-
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`physical_network` where removed is null");
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                long pNtwkId = rs.getLong(1);
-                String uuid = UUID.randomUUID().toString();
-                //Add internal LB VM to the list of physical network service providers
-                pstmt =
-                    conn.prepareStatement("INSERT INTO `cloud`.`physical_network_service_providers` "
-                        + "(uuid, physical_network_id, provider_name, state, load_balance_service_provided, destination_physical_network_id)"
-                        + " VALUES (?, ?, 'InternalLbVm', 'Enabled', 1, 0)");
-                pstmt.setString(1, uuid);
-                pstmt.setLong(2, pNtwkId);
-                pstmt.executeUpdate();
-
-                //Add internal lb vm to the list of physical network elements
-                PreparedStatement pstmt1 =
-                    conn.prepareStatement("SELECT id FROM `cloud`.`physical_network_service_providers`" + " WHERE physical_network_id=? AND provider_name='InternalLbVm'");
-                pstmt1.setLong(1, pNtwkId);
-                ResultSet rs1 = pstmt1.executeQuery();
-                while (rs1.next()) {
-                    long providerId = rs1.getLong(1);
-                    uuid = UUID.randomUUID().toString();
-                    pstmt1 = conn.prepareStatement("INSERT INTO `cloud`.`virtual_router_providers` (nsp_id, uuid, type, enabled) VALUES (?, ?, 'InternalLbVm', 1)");
-                    pstmt1.setLong(1, providerId);
-                    pstmt1.setString(2, uuid);
-                    pstmt1.executeUpdate();
+        try (PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`physical_network` where removed is null");){
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    long pNtwkId = rs.getLong(1);
+                    String uuid = UUID.randomUUID().toString();
+                    //Add internal LB VM to the list of physical network service providers
+                    try(PreparedStatement insert_pstmt = conn.prepareStatement("INSERT INTO `cloud`.`physical_network_service_providers` "
+                                    + "(uuid, physical_network_id, provider_name, state, load_balance_service_provided, destination_physical_network_id)"
+                                    + " VALUES (?, ?, 'InternalLbVm', 'Enabled', 1, 0)");) {
+                        insert_pstmt.setString(1, uuid);
+                        insert_pstmt.setLong(2, pNtwkId);
+                        insert_pstmt.executeUpdate();
+                        //Add internal lb vm to the list of physical network elements
+                        try (PreparedStatement pstmt1 =
+                                     conn.prepareStatement("SELECT id FROM `cloud`.`physical_network_service_providers`" + " WHERE physical_network_id=? AND provider_name='InternalLbVm'");) {
+                            pstmt1.setLong(1, pNtwkId);
+                            try (ResultSet rs1 = pstmt1.executeQuery();) {
+                                while (rs1.next()) {
+                                    long providerId = rs1.getLong(1);
+                                    uuid = UUID.randomUUID().toString();
+                                    try(PreparedStatement insert_cloud_pstmt = conn.prepareStatement("INSERT INTO `cloud`.`virtual_router_providers` (nsp_id, uuid, type, enabled) VALUES (?, ?, 'InternalLbVm', 1)");) {
+                                        insert_cloud_pstmt.setLong(1, providerId);
+                                        insert_cloud_pstmt.setString(2, uuid);
+                                        insert_cloud_pstmt.executeUpdate();
+                                    }catch (SQLException e) {
+                                        throw new CloudRuntimeException("Unable to update existing physical networks with internal lb provider", e);
+                                    }
+                                }
+                            } catch (SQLException e) {
+                                throw new CloudRuntimeException("Unable to update existing physical networks with internal lb provider", e);
+                            }
+                        } catch (SQLException e) {
+                            throw new CloudRuntimeException("Unable to update existing physical networks with internal lb provider", e);
+                        }
+                    }
                 }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to update existing physical networks with internal lb provider", e);
             }
-
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update existing physical networks with internal lb provider", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
     private void addHostDetailsIndex(Connection conn) {
         s_logger.debug("Checking if host_details index exists, if not we will add it");
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            pstmt = conn.prepareStatement("SHOW INDEX FROM `cloud`.`host_details` where KEY_NAME = 'fk_host_details__host_id'");
-            rs = pstmt.executeQuery();
-            if (rs.next()) {
-                s_logger.debug("Index already exists on host_details - not adding new one");
-            } else {
-                // add the index
-                PreparedStatement pstmtUpdate = conn.prepareStatement("ALTER IGNORE TABLE `cloud`.`host_details` ADD INDEX `fk_host_details__host_id` (`host_id`)");
-                pstmtUpdate.executeUpdate();
-                s_logger.debug("Index did not exist on host_details -  added new one");
-                pstmtUpdate.close();
+        try(PreparedStatement pstmt = conn.prepareStatement("SHOW INDEX FROM `cloud`.`host_details` where KEY_NAME = 'fk_host_details__host_id'");)
+        {
+            try(ResultSet rs = pstmt.executeQuery();) {
+                if (rs.next()) {
+                    s_logger.debug("Index already exists on host_details - not adding new one");
+                } else {
+                    // add the index
+                    try(PreparedStatement pstmtUpdate = conn.prepareStatement("ALTER IGNORE TABLE `cloud`.`host_details` ADD INDEX `fk_host_details__host_id` (`host_id`)");) {
+                        pstmtUpdate.executeUpdate();
+                        s_logger.debug("Index did not exist on host_details -  added new one");
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("Failed to check/update the host_details index ", e);
+                    }
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Failed to check/update the host_details index ", e);
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to check/update the host_details index ", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
     private void updateNetworksForPrivateGateways(Connection conn) {
-
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
+        try(PreparedStatement pstmt = conn.prepareStatement("SELECT network_id, vpc_id FROM `cloud`.`vpc_gateways` WHERE type='Private' AND removed IS null");)
+        {
             //1) get all non removed gateways
-            pstmt = conn.prepareStatement("SELECT network_id, vpc_id FROM `cloud`.`vpc_gateways` WHERE type='Private' AND removed IS null");
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                Long networkId = rs.getLong(1);
-                Long vpcId = rs.getLong(2);
-                //2) Update networks with vpc_id if its set to NULL
-                pstmt = conn.prepareStatement("UPDATE `cloud`.`networks` set vpc_id=? where id=? and vpc_id is NULL and removed is NULL");
-                pstmt.setLong(1, vpcId);
-                pstmt.setLong(2, networkId);
-                pstmt.executeUpdate();
-
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    Long networkId = rs.getLong(1);
+                    Long vpcId = rs.getLong(2);
+                    //2) Update networks with vpc_id if its set to NULL
+                    try (PreparedStatement update_pstmt = conn.prepareStatement("UPDATE `cloud`.`networks` set vpc_id=? where id=? and vpc_id is NULL and removed is NULL");) {
+                        update_pstmt.setLong(1, vpcId);
+                        update_pstmt.setLong(2, networkId);
+                        update_pstmt.executeUpdate();
+                    } catch (SQLException e) {
+                        throw new CloudRuntimeException("Failed to update private networks with VPC id.", e);
+                    }
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Failed to update private networks with VPC id.", e);
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to update private networks with VPC id.", e);
@@ -1614,73 +1395,57 @@ public class Upgrade410to420 implements DbUpgrade {
     }
 
     private void removeFirewallServiceFromSharedNetworkOfferingWithSGService(Connection conn) {
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            pstmt = conn.prepareStatement("select id from `cloud`.`network_offerings` where unique_name='DefaultSharedNetworkOfferingWithSGService'");
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                long id = rs.getLong(1);
-                // remove Firewall service for SG shared network offering
-                pstmt = conn.prepareStatement("DELETE from `cloud`.`ntwk_offering_service_map` where network_offering_id=? and service='Firewall'");
-                pstmt.setLong(1, id);
-                pstmt.executeUpdate();
+        try(PreparedStatement pstmt = conn.prepareStatement("select id from `cloud`.`network_offerings` where unique_name='DefaultSharedNetworkOfferingWithSGService'");)
+        {
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    long id = rs.getLong(1);
+                    // remove Firewall service for SG shared network offering
+                    try(PreparedStatement del_pstmt = conn.prepareStatement("DELETE from `cloud`.`ntwk_offering_service_map` where network_offering_id=? and service='Firewall'");) {
+                        del_pstmt.setLong(1, id);
+                        del_pstmt.executeUpdate();
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("Unable to remove Firewall service for SG shared network offering.", e);
+                    }
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to remove Firewall service for SG shared network offering.", e);
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to remove Firewall service for SG shared network offering.", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
     private void fix22xKVMSnapshots(Connection conn) {
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
         s_logger.debug("Updating KVM snapshots");
-        try {
-            pstmt =
-                conn.prepareStatement("select id, backup_snap_id from `cloud`.`snapshots` where hypervisor_type='KVM' and removed is null and backup_snap_id is not null");
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                long id = rs.getLong(1);
-                String backUpPath = rs.getString(2);
-                // Update Backup Path. Remove anything before /snapshots/
-                // e.g 22x Path /mnt/0f14da63-7033-3ca5-bdbe-fa62f4e2f38a/snapshots/1/2/6/i-2-6-VM_ROOT-6_20121219072022
-                // Above path should change to /snapshots/1/2/6/i-2-6-VM_ROOT-6_20121219072022
-                int index = backUpPath.indexOf("snapshots" + File.separator);
-                if (index > 1) {
-                    String correctedPath = backUpPath.substring(index);
-                    s_logger.debug("Updating Snapshot with id: " + id + " original backup path: " + backUpPath + " updated backup path: " + correctedPath);
-                    pstmt = conn.prepareStatement("UPDATE `cloud`.`snapshots` set backup_snap_id=? where id = ?");
-                    pstmt.setString(1, correctedPath);
-                    pstmt.setLong(2, id);
-                    pstmt.executeUpdate();
+        try (PreparedStatement pstmt = conn.prepareStatement("select id, backup_snap_id from `cloud`.`snapshots` where hypervisor_type='KVM' and removed is null and backup_snap_id is not null");)
+        {
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    long id = rs.getLong(1);
+                    String backUpPath = rs.getString(2);
+                    // Update Backup Path. Remove anything before /snapshots/
+                    // e.g 22x Path /mnt/0f14da63-7033-3ca5-bdbe-fa62f4e2f38a/snapshots/1/2/6/i-2-6-VM_ROOT-6_20121219072022
+                    // Above path should change to /snapshots/1/2/6/i-2-6-VM_ROOT-6_20121219072022
+                    int index = backUpPath.indexOf("snapshots" + File.separator);
+                    if (index > 1) {
+                        String correctedPath = backUpPath.substring(index);
+                        s_logger.debug("Updating Snapshot with id: " + id + " original backup path: " + backUpPath + " updated backup path: " + correctedPath);
+                        try(PreparedStatement update_pstmt = conn.prepareStatement("UPDATE `cloud`.`snapshots` set backup_snap_id=? where id = ?");) {
+                            update_pstmt.setString(1, correctedPath);
+                            update_pstmt.setLong(2, id);
+                            update_pstmt.executeUpdate();
+                        }catch (SQLException e) {
+                            throw new CloudRuntimeException("Unable to update backup id for KVM snapshots", e);
+                        }
+                    }
                 }
+                s_logger.debug("Done updating KVM snapshots");
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to update backup id for KVM snapshots", e);
             }
-            s_logger.debug("Done updating KVM snapshots");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update backup id for KVM snapshots", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
@@ -1707,8 +1472,8 @@ public class Upgrade410to420 implements DbUpgrade {
                 while (pNetworksResults.next()) {
                     long physicalNetworkId = pNetworksResults.getLong(1);
                     PreparedStatement fetchF5NspStmt =
-                        conn.prepareStatement("SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId +
-                            " and provider_name = 'F5BigIp'");
+                            conn.prepareStatement("SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId +
+                                    " and provider_name = 'F5BigIp'");
                     ResultSet rsF5NSP = fetchF5NspStmt.executeQuery();
                     boolean hasF5Nsp = rsF5NSP.next();
                     fetchF5NspStmt.close();
@@ -1730,8 +1495,8 @@ public class Upgrade410to420 implements DbUpgrade {
                     }
 
                     PreparedStatement fetchSRXNspStmt =
-                        conn.prepareStatement("SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId +
-                            " and provider_name = 'JuniperSRX'");
+                            conn.prepareStatement("SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId +
+                                    " and provider_name = 'JuniperSRX'");
                     ResultSet rsSRXNSP = fetchSRXNspStmt.executeQuery();
                     boolean hasSrxNsp = rsSRXNSP.next();
                     fetchSRXNspStmt.close();
@@ -1779,13 +1544,11 @@ public class Upgrade410to420 implements DbUpgrade {
     }
 
     private void addF5LoadBalancer(Connection conn, long hostId, long physicalNetworkId) {
-        PreparedStatement pstmtUpdate = null;
-        try {
-            s_logger.debug("Adding F5 Big IP load balancer with host id " + hostId + " in to physical network" + physicalNetworkId);
-            String insertF5 =
+        String insertF5 =
                 "INSERT INTO `cloud`.`external_load_balancer_devices` (physical_network_id, host_id, provider_name, "
-                    + "device_name, capacity, is_dedicated, device_state, allocation_state, is_managed, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            pstmtUpdate = conn.prepareStatement(insertF5);
+                        + "device_name, capacity, is_dedicated, device_state, allocation_state, is_managed, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try(PreparedStatement pstmtUpdate =  conn.prepareStatement(insertF5);) {
+            s_logger.debug("Adding F5 Big IP load balancer with host id " + hostId + " in to physical network" + physicalNetworkId);
             pstmtUpdate.setLong(1, physicalNetworkId);
             pstmtUpdate.setLong(2, hostId);
             pstmtUpdate.setString(3, "F5BigIp");
@@ -1799,24 +1562,15 @@ public class Upgrade410to420 implements DbUpgrade {
             pstmtUpdate.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding F5 load balancer device", e);
-        } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
         }
     }
 
     private void addSrxFirewall(Connection conn, long hostId, long physicalNetworkId) {
-        PreparedStatement pstmtUpdate = null;
-        try {
-            s_logger.debug("Adding SRX firewall device with host id " + hostId + " in to physical network" + physicalNetworkId);
-            String insertSrx =
+        String insertSrx =
                 "INSERT INTO `cloud`.`external_firewall_devices` (physical_network_id, host_id, provider_name, "
-                    + "device_name, capacity, is_dedicated, device_state, allocation_state, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            pstmtUpdate = conn.prepareStatement(insertSrx);
+                        + "device_name, capacity, is_dedicated, device_state, allocation_state, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try(PreparedStatement pstmtUpdate = conn.prepareStatement(insertSrx);) {
+            s_logger.debug("Adding SRX firewall device with host id " + hostId + " in to physical network" + physicalNetworkId);
             pstmtUpdate.setLong(1, physicalNetworkId);
             pstmtUpdate.setLong(2, hostId);
             pstmtUpdate.setString(3, "JuniperSRX");
@@ -1829,28 +1583,18 @@ public class Upgrade410to420 implements DbUpgrade {
             pstmtUpdate.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding SRX firewall device ", e);
-        } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
         }
     }
 
     private void addF5ServiceProvider(Connection conn, long physicalNetworkId, long zoneId) {
-        PreparedStatement pstmtUpdate = null;
-        try {
+        String insertPNSP =
+                "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
+                        + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
+                        + "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`,"
+                        + "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,0,0,0,1,0,0,0,0)";
+        try(PreparedStatement pstmtUpdate = conn.prepareStatement(insertPNSP);) {
             // add physical network service provider - F5BigIp
             s_logger.debug("Adding PhysicalNetworkServiceProvider F5BigIp" + " in to physical network" + physicalNetworkId);
-            String insertPNSP =
-                "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
-                    + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
-                    + "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`,"
-                    + "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,0,0,0,1,0,0,0,0)";
-
-            pstmtUpdate = conn.prepareStatement(insertPNSP);
             pstmtUpdate.setString(1, UUID.randomUUID().toString());
             pstmtUpdate.setLong(2, physicalNetworkId);
             pstmtUpdate.setString(3, "F5BigIp");
@@ -1858,28 +1602,18 @@ public class Upgrade410to420 implements DbUpgrade {
             pstmtUpdate.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding PhysicalNetworkServiceProvider F5BigIp", e);
-        } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
         }
     }
 
     private void addSrxServiceProvider(Connection conn, long physicalNetworkId, long zoneId) {
-        PreparedStatement pstmtUpdate = null;
-        try {
+        String insertPNSP =
+                "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
+                        + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
+                        + "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`,"
+                        + "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,1,1,1,0,1,1,0,0)";
+        try( PreparedStatement pstmtUpdate = conn.prepareStatement(insertPNSP);) {
             // add physical network service provider - JuniperSRX
             s_logger.debug("Adding PhysicalNetworkServiceProvider JuniperSRX");
-            String insertPNSP =
-                "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
-                    + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
-                    + "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`,"
-                    + "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,1,1,1,0,1,1,0,0)";
-
-            pstmtUpdate = conn.prepareStatement(insertPNSP);
             pstmtUpdate.setString(1, UUID.randomUUID().toString());
             pstmtUpdate.setLong(2, physicalNetworkId);
             pstmtUpdate.setString(3, "JuniperSRX");
@@ -1887,13 +1621,6 @@ public class Upgrade410to420 implements DbUpgrade {
             pstmtUpdate.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding PhysicalNetworkServiceProvider JuniperSRX", e);
-        } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
         }
     }
 
@@ -1907,22 +1634,23 @@ public class Upgrade410to420 implements DbUpgrade {
     private void fixZoneUsingExternalDevices(Connection conn) {
         //Get zones to upgrade
         List<Long> zoneIds = new ArrayList<Long>();
-        PreparedStatement pstmt = null;
-        PreparedStatement pstmtUpdate = null;
         ResultSet rs = null;
         long networkOfferingId, networkId;
         long f5DeviceId, f5HostId;
         long srxDevivceId, srxHostId;
 
-        try {
-            pstmt =
-                conn.prepareStatement("select id from `cloud`.`data_center` where lb_provider='F5BigIp' or firewall_provider='JuniperSRX' or gateway_provider='JuniperSRX'");
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                zoneIds.add(rs.getLong(1));
+        try(PreparedStatement sel_id_pstmt =
+                conn.prepareStatement("select id from `cloud`.`data_center` where lb_provider='F5BigIp' or firewall_provider='JuniperSRX' or gateway_provider='JuniperSRX'");)
+        {
+            try(ResultSet sel_id_rs = sel_id_pstmt.executeQuery();) {
+                while (sel_id_rs.next()) {
+                    zoneIds.add(sel_id_rs.getLong(1));
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("fixZoneUsingExternalDevices:Exception:"+e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to create network to LB & firewall device mapping for networks  that use them", e);
+            throw new CloudRuntimeException("fixZoneUsingExternalDevices:Exception:"+e.getMessage(), e);
         }
 
         if (zoneIds.size() == 0) {
@@ -1930,122 +1658,159 @@ public class Upgrade410to420 implements DbUpgrade {
         }
 
         // find the default network offering created for external devices during upgrade from 2.2.14
-        try {
-            pstmt = conn.prepareStatement("select id from `cloud`.`network_offerings` where unique_name='Isolated with external providers' ");
-            rs = pstmt.executeQuery();
-            if (rs.first()) {
-                networkOfferingId = rs.getLong(1);
-            } else {
-                throw new CloudRuntimeException("Cannot upgrade as there is no 'Isolated with external providers' network offering crearted .");
+        try(PreparedStatement sel_id_off_pstmt = conn.prepareStatement("select id from `cloud`.`network_offerings` where unique_name='Isolated with external providers' ");)
+        {
+            try(ResultSet sel_id_off_rs = sel_id_off_pstmt.executeQuery();) {
+                if (sel_id_off_rs.first()) {
+                    networkOfferingId = sel_id_off_rs.getLong(1);
+                } else {
+                    throw new CloudRuntimeException("fixZoneUsingExternalDevices:Exception");
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("fixZoneUsingExternalDevices:Exception:"+e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to create network to LB & firewalla device mapping for networks  that use them", e);
+            throw new CloudRuntimeException("fixZoneUsingExternalDevices:Exception:"+e.getMessage(), e);
         }
-
         for (Long zoneId : zoneIds) {
             try {
                 // find the F5 device id  in the zone
-                pstmt = conn.prepareStatement("SELECT id FROM host WHERE data_center_id=? AND type = 'ExternalLoadBalancer' AND removed IS NULL");
-                pstmt.setLong(1, zoneId);
-                rs = pstmt.executeQuery();
-                if (rs.first()) {
-                    f5HostId = rs.getLong(1);
-                } else {
-                    throw new CloudRuntimeException("Cannot upgrade as there is no F5 load balancer device found in data center " + zoneId);
+                try(PreparedStatement sel_id_host_pstmt = conn.prepareStatement("SELECT id FROM host WHERE data_center_id=? AND type = 'ExternalLoadBalancer' AND removed IS NULL");) {
+                    sel_id_host_pstmt.setLong(1, zoneId);
+                    try(ResultSet sel_id_host_pstmt_rs = sel_id_host_pstmt.executeQuery();) {
+                        if (sel_id_host_pstmt_rs.first()) {
+                            f5HostId = sel_id_host_pstmt_rs.getLong(1);
+                        } else {
+                            throw new CloudRuntimeException("Cannot upgrade as there is no F5 load balancer device found in data center " + zoneId);
+                        }
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("fixZoneUsingExternalDevices:Exception:"+e.getMessage(), e);
+                    }
+                }catch (SQLException e) {
+                    throw new CloudRuntimeException("fixZoneUsingExternalDevices:Exception:"+e.getMessage(), e);
                 }
-                pstmt = conn.prepareStatement("SELECT id FROM external_load_balancer_devices WHERE  host_id=?");
-                pstmt.setLong(1, f5HostId);
-                rs = pstmt.executeQuery();
-                if (rs.first()) {
-                    f5DeviceId = rs.getLong(1);
-                } else {
-                    throw new CloudRuntimeException("Cannot upgrade as there is no F5 load balancer device with host ID " + f5HostId +
-                        " found in external_load_balancer_device");
+                try(PreparedStatement sel_id_ext_pstmt = conn.prepareStatement("SELECT id FROM external_load_balancer_devices WHERE  host_id=?");) {
+                    sel_id_ext_pstmt.setLong(1, f5HostId);
+                    try(ResultSet sel_id_ext_rs = sel_id_ext_pstmt.executeQuery();) {
+                        if (sel_id_ext_rs.first()) {
+                            f5DeviceId = sel_id_ext_rs.getLong(1);
+                        } else {
+                            throw new CloudRuntimeException("Cannot upgrade as there is no F5 load balancer device with host ID " + f5HostId +
+                                    " found in external_load_balancer_device");
+                        }
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("fixZoneUsingExternalDevices:Exception:"+e.getMessage(), e);
+                    }
+                }catch (SQLException e) {
+                    throw new CloudRuntimeException("fixZoneUsingExternalDevices:Exception:"+e.getMessage(), e);
                 }
 
                 // find the SRX device id  in the zone
-                pstmt = conn.prepareStatement("SELECT id FROM host WHERE data_center_id=? AND type = 'ExternalFirewall' AND removed IS NULL");
-                pstmt.setLong(1, zoneId);
-                rs = pstmt.executeQuery();
-                if (rs.first()) {
-                    srxHostId = rs.getLong(1);
-                } else {
-                    throw new CloudRuntimeException("Cannot upgrade as there is no SRX firewall device found in data center " + zoneId);
+                try(PreparedStatement sel_id_hostdc_pstmt = conn.prepareStatement("SELECT id FROM host WHERE data_center_id=? AND type = 'ExternalFirewall' AND removed IS NULL");) {
+                    sel_id_hostdc_pstmt.setLong(1, zoneId);
+                    try(ResultSet sel_id_hostdc_pstmt_rs = sel_id_hostdc_pstmt.executeQuery();) {
+                        if (sel_id_hostdc_pstmt_rs.first()) {
+                            srxHostId = sel_id_hostdc_pstmt_rs.getLong(1);
+                        } else {
+                            throw new CloudRuntimeException("Cannot upgrade as there is no SRX firewall device found in data center " + zoneId);
+                        }
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("fixZoneUsingExternalDevices:Exception:"+e.getMessage(), e);
+                    }
+                }catch (SQLException e) {
+                    throw new CloudRuntimeException("fixZoneUsingExternalDevices:Exception:"+e.getMessage(), e);
                 }
-                pstmt = conn.prepareStatement("SELECT id FROM external_firewall_devices WHERE  host_id=?");
-                pstmt.setLong(1, srxHostId);
-                rs = pstmt.executeQuery();
-                if (rs.first()) {
-                    srxDevivceId = rs.getLong(1);
-                } else {
-                    throw new CloudRuntimeException("Cannot upgrade as there is no SRX firewall device found with host ID " + srxHostId +
-                        " found in external_firewall_devices");
+
+                try(PreparedStatement sel_id_ext_frwl_pstmt = conn.prepareStatement("SELECT id FROM external_firewall_devices WHERE  host_id=?");) {
+                    sel_id_ext_frwl_pstmt.setLong(1, srxHostId);
+                    try(ResultSet sel_id_ext_frwl_pstmt_rs = sel_id_ext_frwl_pstmt.executeQuery();) {
+                        if (sel_id_ext_frwl_pstmt_rs.first()) {
+                            srxDevivceId = sel_id_ext_frwl_pstmt_rs.getLong(1);
+                        } else {
+                            throw new CloudRuntimeException("Cannot upgrade as there is no SRX firewall device found with host ID " + srxHostId +
+                                    " found in external_firewall_devices");
+                        }
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("fixZoneUsingExternalDevices:Exception:"+e.getMessage(), e);
+                    }
+                }catch (SQLException e) {
+                    throw new CloudRuntimeException("fixZoneUsingExternalDevices:Exception:"+e.getMessage(), e);
                 }
 
                 // check if network any uses F5 or SRX devices  in the zone
-                pstmt =
-                    conn.prepareStatement("select id from `cloud`.`networks` where guest_type='Virtual' and data_center_id=? and network_offering_id=? and removed IS NULL");
-                pstmt.setLong(1, zoneId);
-                pstmt.setLong(2, networkOfferingId);
-                rs = pstmt.executeQuery();
-                while (rs.next()) {
-                    // get the network Id
-                    networkId = rs.getLong(1);
+                try(PreparedStatement sel_id_cloud_pstmt =
+                        conn.prepareStatement("select id from `cloud`.`networks` where guest_type='Virtual' and data_center_id=? and network_offering_id=? and removed IS NULL");) {
+                    sel_id_cloud_pstmt.setLong(1, zoneId);
+                    sel_id_cloud_pstmt.setLong(2, networkOfferingId);
+                    try(ResultSet sel_id_cloud_pstmt_rs = sel_id_cloud_pstmt.executeQuery();) {
+                        while (sel_id_cloud_pstmt_rs.next()) {
+                            // get the network Id
+                            networkId = sel_id_cloud_pstmt_rs.getLong(1);
 
-                    // add mapping for the network in network_external_lb_device_map
-                    String insertLbMapping =
-                        "INSERT INTO `cloud`.`network_external_lb_device_map` (uuid, network_id, external_load_balancer_device_id, created) VALUES ( ?, ?, ?, now())";
-                    pstmtUpdate = conn.prepareStatement(insertLbMapping);
-                    pstmtUpdate.setString(1, UUID.randomUUID().toString());
-                    pstmtUpdate.setLong(2, networkId);
-                    pstmtUpdate.setLong(3, f5DeviceId);
-                    pstmtUpdate.executeUpdate();
-                    s_logger.debug("Successfully added entry in network_external_lb_device_map for network " + networkId + " and F5 device ID " + f5DeviceId);
+                            // add mapping for the network in network_external_lb_device_map
+                            String insertLbMapping =
+                                    "INSERT INTO `cloud`.`network_external_lb_device_map` (uuid, network_id, external_load_balancer_device_id, created) VALUES ( ?, ?, ?, now())";
+                            try (PreparedStatement insert_lb_stmt = conn.prepareStatement(insertLbMapping);) {
+                                insert_lb_stmt.setString(1, UUID.randomUUID().toString());
+                                insert_lb_stmt.setLong(2, networkId);
+                                insert_lb_stmt.setLong(3, f5DeviceId);
+                                insert_lb_stmt.executeUpdate();
+                            } catch (SQLException e) {
+                                throw new CloudRuntimeException("Unable create a mapping for the networks in network_external_lb_device_map and network_external_firewall_device_map", e);
+                            }
+                            s_logger.debug("Successfully added entry in network_external_lb_device_map for network " + networkId + " and F5 device ID " + f5DeviceId);
 
-                    // add mapping for the network in network_external_firewall_device_map
-                    String insertFwMapping =
-                        "INSERT INTO `cloud`.`network_external_firewall_device_map` (uuid, network_id, external_firewall_device_id, created) VALUES ( ?, ?, ?, now())";
-                    pstmtUpdate = conn.prepareStatement(insertFwMapping);
-                    pstmtUpdate.setString(1, UUID.randomUUID().toString());
-                    pstmtUpdate.setLong(2, networkId);
-                    pstmtUpdate.setLong(3, srxDevivceId);
-                    pstmtUpdate.executeUpdate();
-                    s_logger.debug("Successfully added entry in network_external_firewall_device_map for network " + networkId + " and SRX device ID " + srxDevivceId);
+                            // add mapping for the network in network_external_firewall_device_map
+                            String insertFwMapping =
+                                    "INSERT INTO `cloud`.`network_external_firewall_device_map` (uuid, network_id, external_firewall_device_id, created) VALUES ( ?, ?, ?, now())";
+                            try (PreparedStatement insert_ext_firewall_stmt = conn.prepareStatement(insertFwMapping);) {
+                                insert_ext_firewall_stmt.setString(1, UUID.randomUUID().toString());
+                                insert_ext_firewall_stmt.setLong(2, networkId);
+                                insert_ext_firewall_stmt.setLong(3, srxDevivceId);
+                                insert_ext_firewall_stmt.executeUpdate();
+                            } catch (SQLException e) {
+                                throw new CloudRuntimeException("Unable create a mapping for the networks in network_external_lb_device_map and network_external_firewall_device_map", e);
+                            }
+                            s_logger.debug("Successfully added entry in network_external_firewall_device_map for network " + networkId + " and SRX device ID " + srxDevivceId);
+                        }
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("Unable create a mapping for the networks in network_external_lb_device_map and network_external_firewall_device_map", e);
+                    }
+                }catch (SQLException e) {
+                    throw new CloudRuntimeException("Unable create a mapping for the networks in network_external_lb_device_map and network_external_firewall_device_map", e);
                 }
-
                 // update host details for F5 and SRX devices
                 s_logger.debug("Updating the host details for F5 and SRX devices");
-                pstmt = conn.prepareStatement("SELECT host_id, name FROM `cloud`.`host_details` WHERE  host_id=? OR host_id=?");
-                pstmt.setLong(1, f5HostId);
-                pstmt.setLong(2, srxHostId);
-                rs = pstmt.executeQuery();
-                while (rs.next()) {
-                    long hostId = rs.getLong(1);
-                    String camlCaseName = rs.getString(2);
-                    if (!(camlCaseName.equalsIgnoreCase("numRetries") || camlCaseName.equalsIgnoreCase("publicZone") || camlCaseName.equalsIgnoreCase("privateZone") ||
-                        camlCaseName.equalsIgnoreCase("publicInterface") || camlCaseName.equalsIgnoreCase("privateInterface") || camlCaseName.equalsIgnoreCase("usageInterface"))) {
-                        continue;
+                try(PreparedStatement sel_pstmt = conn.prepareStatement("SELECT host_id, name FROM `cloud`.`host_details` WHERE  host_id=? OR host_id=?");) {
+                    sel_pstmt.setLong(1, f5HostId);
+                    sel_pstmt.setLong(2, srxHostId);
+                    try(ResultSet sel_rs = sel_pstmt.executeQuery();) {
+                        while (sel_rs.next()) {
+                            long hostId = sel_rs.getLong(1);
+                            String camlCaseName = sel_rs.getString(2);
+                            if (!(camlCaseName.equalsIgnoreCase("numRetries") || camlCaseName.equalsIgnoreCase("publicZone") || camlCaseName.equalsIgnoreCase("privateZone") ||
+                                    camlCaseName.equalsIgnoreCase("publicInterface") || camlCaseName.equalsIgnoreCase("privateInterface") || camlCaseName.equalsIgnoreCase("usageInterface"))) {
+                                continue;
+                            }
+                            String lowerCaseName = camlCaseName.toLowerCase();
+                            try (PreparedStatement update_pstmt = conn.prepareStatement("update `cloud`.`host_details` set name=? where host_id=? AND name=?");) {
+                                update_pstmt.setString(1, lowerCaseName);
+                                update_pstmt.setLong(2, hostId);
+                                update_pstmt.setString(3, camlCaseName);
+                                update_pstmt.executeUpdate();
+                            } catch (SQLException e) {
+                                throw new CloudRuntimeException("Unable create a mapping for the networks in network_external_lb_device_map and network_external_firewall_device_map", e);
+                            }
+                        }
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("Unable create a mapping for the networks in network_external_lb_device_map and network_external_firewall_device_map", e);
                     }
-                    String lowerCaseName = camlCaseName.toLowerCase();
-                    pstmt = conn.prepareStatement("update `cloud`.`host_details` set name=? where host_id=? AND name=?");
-                    pstmt.setString(1, lowerCaseName);
-                    pstmt.setLong(2, hostId);
-                    pstmt.setString(3, camlCaseName);
-                    pstmt.executeUpdate();
+                }catch (SQLException e) {
+                    throw new CloudRuntimeException("Unable create a mapping for the networks in network_external_lb_device_map and network_external_firewall_device_map", e);
                 }
                 s_logger.debug("Successfully updated host details for F5 and SRX devices");
-            } catch (SQLException e) {
+            } catch (RuntimeException e) {
                 throw new CloudRuntimeException("Unable create a mapping for the networks in network_external_lb_device_map and network_external_firewall_device_map", e);
-            } finally {
-                try {
-                    if (rs != null) {
-                        rs.close();
-                    }
-                    if (pstmt != null) {
-                        pstmt.close();
-                    }
-                } catch (SQLException e) {
-                }
             }
             s_logger.info("Successfully upgraded network using F5 and SRX devices to have a entry in the network_external_lb_device_map and network_external_firewall_device_map");
         }
@@ -2099,9 +1864,9 @@ public class Upgrade410to420 implements DbUpgrade {
 
             // migrate NFS secondary storage, for nfs, keep previous host_id as the store_id
             storeInsert =
-                conn.prepareStatement("INSERT INTO `cloud`.`image_store` (id, uuid, name, image_provider_name, protocol, url, data_center_id, scope, role, parent, total_size, created) values(?, ?, ?, 'NFS', 'nfs', ?, ?, 'ZONE', ?, ?, ?, ?)");
+                    conn.prepareStatement("INSERT INTO `cloud`.`image_store` (id, uuid, name, image_provider_name, protocol, url, data_center_id, scope, role, parent, total_size, created) values(?, ?, ?, 'NFS', 'nfs', ?, ?, 'ZONE', ?, ?, ?, ?)");
             nfsQuery =
-                conn.prepareStatement("select id, uuid, url, data_center_id, parent, total_size, created from `cloud`.`host` where type = 'SecondaryStorage' and removed is null");
+                    conn.prepareStatement("select id, uuid, url, data_center_id, parent, total_size, created from `cloud`.`host` where type = 'SecondaryStorage' and removed is null");
             rs = nfsQuery.executeQuery();
 
             while (rs.next()) {
@@ -2168,98 +1933,70 @@ public class Upgrade410to420 implements DbUpgrade {
 
     // migrate volume_host_ref to volume_store_ref
     private void migrateVolumeHostRef(Connection conn) {
-        PreparedStatement volStoreInsert = null;
-        PreparedStatement volStoreUpdate = null;
-
         s_logger.debug("Updating volume_store_ref table from volume_host_ref table");
-        try {
-            volStoreInsert =
-                conn.prepareStatement("INSERT INTO `cloud`.`volume_store_ref` (store_id,  volume_id, zone_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, checksum, error_str, local_path, install_path, url, destroyed, update_count, ref_cnt, state) select host_id, volume_id, zone_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, checksum, error_str, local_path, install_path, url, destroyed, 0, 0, 'Allocated' from `cloud`.`volume_host_ref`");
+        try(PreparedStatement volStoreInsert =
+                    conn.prepareStatement("INSERT INTO `cloud`.`volume_store_ref` (store_id,  volume_id, zone_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, checksum, error_str, local_path, install_path, url, destroyed, update_count, ref_cnt, state) select host_id, volume_id, zone_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, checksum, error_str, local_path, install_path, url, destroyed, 0, 0, 'Allocated' from `cloud`.`volume_host_ref`");)
+        {
             int rowCount = volStoreInsert.executeUpdate();
             s_logger.debug("Insert modified " + rowCount + " rows");
-
-            volStoreUpdate = conn.prepareStatement("update `cloud`.`volume_store_ref` set state = 'Ready' where download_state = 'DOWNLOADED'");
-            rowCount = volStoreUpdate.executeUpdate();
-            s_logger.debug("Update modified " + rowCount + " rows");
-        } catch (SQLException e) {
-            String msg = "Unable to migrate volume_host_ref." + e.getMessage();
-            s_logger.error(msg);
-            throw new CloudRuntimeException(msg, e);
-        } finally {
-            try {
-                if (volStoreInsert != null) {
-                    volStoreInsert.close();
-                }
-                if (volStoreUpdate != null) {
-                    volStoreUpdate.close();
-                }
-            } catch (SQLException e) {
+            try(PreparedStatement volStoreUpdate = conn.prepareStatement("update `cloud`.`volume_store_ref` set state = 'Ready' where download_state = 'DOWNLOADED'");) {
+                rowCount = volStoreUpdate.executeUpdate();
+                s_logger.debug("Update modified " + rowCount + " rows");
+            }catch (SQLException e) {
+                s_logger.error("Unable to migrate volume_host_ref." + e.getMessage(),e);
+                throw new CloudRuntimeException("Unable to migrate volume_host_ref." + e.getMessage(),e);
             }
+        } catch (SQLException e) {
+            s_logger.error("Unable to migrate volume_host_ref." + e.getMessage(),e);
+            throw new CloudRuntimeException("Unable to migrate volume_host_ref." + e.getMessage(),e);
         }
         s_logger.debug("Completed updating volume_store_ref table from volume_host_ref table");
     }
 
     // migrate template_host_ref to template_store_ref
     private void migrateTemplateHostRef(Connection conn) {
-        PreparedStatement tmplStoreInsert = null;
-        PreparedStatement tmplStoreUpdate = null;
-
         s_logger.debug("Updating template_store_ref table from template_host_ref table");
-        try {
-            tmplStoreInsert =
-                conn.prepareStatement("INSERT INTO `cloud`.`template_store_ref` (store_id,  template_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, error_str, local_path, install_path, url, destroyed, is_copy, update_count, ref_cnt, store_role, state) select host_id, template_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, error_str, local_path, install_path, url, destroyed, is_copy, 0, 0, 'Image', 'Allocated' from `cloud`.`template_host_ref`");
+        try (PreparedStatement tmplStoreInsert =
+                     conn.prepareStatement("INSERT INTO `cloud`.`template_store_ref` (store_id,  template_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, error_str, local_path, install_path, url, destroyed, is_copy, update_count, ref_cnt, store_role, state) select host_id, template_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, error_str, local_path, install_path, url, destroyed, is_copy, 0, 0, 'Image', 'Allocated' from `cloud`.`template_host_ref`");)
+        {
             int rowCount = tmplStoreInsert.executeUpdate();
             s_logger.debug("Insert modified " + rowCount + " rows");
 
-            tmplStoreUpdate = conn.prepareStatement("update `cloud`.`template_store_ref` set state = 'Ready' where download_state = 'DOWNLOADED'");
-            rowCount = tmplStoreUpdate.executeUpdate();
+            try(PreparedStatement tmplStoreUpdate = conn.prepareStatement("update `cloud`.`template_store_ref` set state = 'Ready' where download_state = 'DOWNLOADED'");) {
+                rowCount = tmplStoreUpdate.executeUpdate();
+            }catch (SQLException e) {
+                s_logger.error("Unable to migrate template_host_ref." + e.getMessage(),e);
+                throw new CloudRuntimeException("Unable to migrate template_host_ref." + e.getMessage(), e);
+            }
             s_logger.debug("Update modified " + rowCount + " rows");
         } catch (SQLException e) {
-            String msg = "Unable to migrate template_host_ref." + e.getMessage();
-            s_logger.error(msg);
-            throw new CloudRuntimeException(msg, e);
-        } finally {
-            try {
-                if (tmplStoreInsert != null) {
-                    tmplStoreInsert.close();
-                }
-                if (tmplStoreUpdate != null) {
-                    tmplStoreUpdate.close();
-                }
-            } catch (SQLException e) {
-            }
+            s_logger.error("Unable to migrate template_host_ref." + e.getMessage(),e);
+            throw new CloudRuntimeException("Unable to migrate template_host_ref." + e.getMessage(), e);
         }
         s_logger.debug("Completed updating template_store_ref table from template_host_ref table");
     }
 
     // migrate some entry contents of snapshots to snapshot_store_ref
     private void migrateSnapshotStoreRef(Connection conn) {
-        PreparedStatement snapshotStoreInsert = null;
-
         s_logger.debug("Updating snapshot_store_ref table from snapshots table");
-        try {
+        try(PreparedStatement snapshotStoreInsert =
+                    conn.prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) select sechost_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', backup_snap_id), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type <> 'KVM' and sechost_id is not null and removed is null");
+        ) {
             //Update all snapshots except KVM snapshots
-            snapshotStoreInsert =
-                conn.prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) select sechost_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', backup_snap_id), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type <> 'KVM' and sechost_id is not null and removed is null");
             int rowCount = snapshotStoreInsert.executeUpdate();
             s_logger.debug("Inserted " + rowCount + " snapshots into snapshot_store_ref");
-
             //backsnap_id for KVM snapshots is complate path. CONCAT is not required
-            snapshotStoreInsert =
-                conn.prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) select sechost_id, id, created, size, prev_snap_id, backup_snap_id, volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type = 'KVM' and sechost_id is not null and removed is null");
-            rowCount = snapshotStoreInsert.executeUpdate();
-            s_logger.debug("Inserted " + rowCount + " KVM snapshots into snapshot_store_ref");
-        } catch (SQLException e) {
-            String msg = "Unable to migrate snapshot_store_ref." + e.getMessage();
-            s_logger.error(msg);
-            throw new CloudRuntimeException(msg, e);
-        } finally {
-            try {
-                if (snapshotStoreInsert != null) {
-                    snapshotStoreInsert.close();
-                }
-            } catch (SQLException e) {
+            try(PreparedStatement snapshotStoreInsert_2 =
+                    conn.prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) select sechost_id, id, created, size, prev_snap_id, backup_snap_id, volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type = 'KVM' and sechost_id is not null and removed is null");) {
+                rowCount = snapshotStoreInsert_2.executeUpdate();
+                s_logger.debug("Inserted " + rowCount + " KVM snapshots into snapshot_store_ref");
+            }catch (SQLException e) {
+                s_logger.error("Unable to migrate snapshot_store_ref." + e.getMessage(),e);
+                throw new CloudRuntimeException("Unable to migrate snapshot_store_ref." + e.getMessage(),e);
             }
+        } catch (SQLException e) {
+            s_logger.error("Unable to migrate snapshot_store_ref." + e.getMessage(),e);
+            throw new CloudRuntimeException("Unable to migrate snapshot_store_ref." + e.getMessage(),e);
         }
         s_logger.debug("Completed updating snapshot_store_ref table from snapshots table");
     }
@@ -2282,9 +2019,9 @@ public class Upgrade410to420 implements DbUpgrade {
 
             // migrate S3 to image_store
             storeInsert = conn.prepareStatement("INSERT INTO `cloud`.`image_store` (uuid, name, image_provider_name, protocol, scope, role, created) " +
-                "values(?, ?, 'S3', ?, 'REGION', 'Image', ?)");
+                    "values(?, ?, 'S3', ?, 'REGION', 'Image', ?)");
             s3Query = conn.prepareStatement("select id, uuid, access_key, secret_key, end_point, bucket, https, connection_timeout, " +
-                "max_error_retry, socket_timeout, created from `cloud`.`s3`");
+                    "max_error_retry, socket_timeout, created from `cloud`.`s3`");
             rs = s3Query.executeQuery();
 
             while (rs.next()) {
@@ -2382,116 +2119,99 @@ public class Upgrade410to420 implements DbUpgrade {
 
     // migrate template_s3_ref to template_store_ref
     private void migrateTemplateS3Ref(Connection conn, Map<Long, Long> s3StoreMap) {
-        PreparedStatement tmplStoreInsert = null;
-        PreparedStatement s3Query = null;
-        ResultSet rs = null;
-
         s_logger.debug("Updating template_store_ref table from template_s3_ref table");
-        try {
-            tmplStoreInsert =
-                conn.prepareStatement("INSERT INTO `cloud`.`template_store_ref` (store_id,  template_id, created, download_pct, size, physical_size, download_state, local_path, install_path, update_count, ref_cnt, store_role, state) values(?, ?, ?, 100, ?, ?, 'DOWNLOADED', '?', '?', 0, 0, 'Image', 'Ready')");
-            s3Query =
-                conn.prepareStatement("select template_s3_ref.s3_id, template_s3_ref.template_id, template_s3_ref.created, template_s3_ref.size, template_s3_ref.physical_size, vm_template.account_id from `cloud`.`template_s3_ref`, `cloud`.`vm_template` where vm_template.id = template_s3_ref.template_id");
-            rs = s3Query.executeQuery();
-
-            while (rs.next()) {
-                Long s3_id = rs.getLong("s3_id");
-                Long s3_tmpl_id = rs.getLong("template_id");
-                Date s3_created = rs.getDate("created");
-                Long s3_size = rs.getObject("size") != null ? rs.getLong("size") : null;
-                Long s3_psize = rs.getObject("physical_size") != null ? rs.getLong("physical_size") : null;
-                Long account_id = rs.getLong("account_id");
-
-                tmplStoreInsert.setLong(1, s3StoreMap.get(s3_id));
-                tmplStoreInsert.setLong(2, s3_tmpl_id);
-                tmplStoreInsert.setDate(3, s3_created);
-                if (s3_size != null) {
-                    tmplStoreInsert.setLong(4, s3_size);
-                } else {
-                    tmplStoreInsert.setNull(4, Types.BIGINT);
+        try(PreparedStatement tmplStoreInsert =
+                    conn.prepareStatement("INSERT INTO `cloud`.`template_store_ref` (store_id,  template_id, created, download_pct, size, physical_size, download_state, local_path, install_path, update_count, ref_cnt, store_role, state) values(?, ?, ?, 100, ?, ?, 'DOWNLOADED', '?', '?', 0, 0, 'Image', 'Ready')");
+        ) {
+            try(PreparedStatement s3Query =
+                    conn.prepareStatement("select template_s3_ref.s3_id, template_s3_ref.template_id, template_s3_ref.created, template_s3_ref.size, template_s3_ref.physical_size, vm_template.account_id from `cloud`.`template_s3_ref`, `cloud`.`vm_template` where vm_template.id = template_s3_ref.template_id");) {
+                try(ResultSet rs = s3Query.executeQuery();) {
+                    while (rs.next()) {
+                        Long s3_id = rs.getLong("s3_id");
+                        Long s3_tmpl_id = rs.getLong("template_id");
+                        Date s3_created = rs.getDate("created");
+                        Long s3_size = rs.getObject("size") != null ? rs.getLong("size") : null;
+                        Long s3_psize = rs.getObject("physical_size") != null ? rs.getLong("physical_size") : null;
+                        Long account_id = rs.getLong("account_id");
+                        tmplStoreInsert.setLong(1, s3StoreMap.get(s3_id));
+                        tmplStoreInsert.setLong(2, s3_tmpl_id);
+                        tmplStoreInsert.setDate(3, s3_created);
+                        if (s3_size != null) {
+                            tmplStoreInsert.setLong(4, s3_size);
+                        } else {
+                            tmplStoreInsert.setNull(4, Types.BIGINT);
+                        }
+                        if (s3_psize != null) {
+                            tmplStoreInsert.setLong(5, s3_psize);
+                        } else {
+                            tmplStoreInsert.setNull(5, Types.BIGINT);
+                        }
+                        String path = "template/tmpl/" + account_id + "/" + s3_tmpl_id;
+                        tmplStoreInsert.setString(6, path);
+                        tmplStoreInsert.setString(7, path);
+                        tmplStoreInsert.executeUpdate();
+                    }
+                }catch (SQLException e) {
+                    s_logger.error("Unable to migrate template_s3_ref." + e.getMessage(),e);
+                    throw new CloudRuntimeException("Unable to migrate template_s3_ref." + e.getMessage(),e);
                 }
-                if (s3_psize != null) {
-                    tmplStoreInsert.setLong(5, s3_psize);
-                } else {
-                    tmplStoreInsert.setNull(5, Types.BIGINT);
-                }
-                String path = "template/tmpl/" + account_id + "/" + s3_tmpl_id;
-                tmplStoreInsert.setString(6, path);
-                tmplStoreInsert.setString(7, path);
-                tmplStoreInsert.executeUpdate();
+            }catch (SQLException e) {
+                s_logger.error("Unable to migrate template_s3_ref." + e.getMessage(),e);
+                throw new CloudRuntimeException("Unable to migrate template_s3_ref." + e.getMessage(),e);
             }
         } catch (SQLException e) {
-            String msg = "Unable to migrate template_s3_ref." + e.getMessage();
-            s_logger.error(msg);
-            throw new CloudRuntimeException(msg, e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (tmplStoreInsert != null) {
-                    tmplStoreInsert.close();
-                }
-                if (s3Query != null) {
-                    s3Query.close();
-                }
-            } catch (SQLException e) {
-            }
+            s_logger.error("Unable to migrate template_s3_ref." + e.getMessage(),e);
+            throw new CloudRuntimeException("Unable to migrate template_s3_ref." + e.getMessage(),e);
         }
         s_logger.debug("Completed migrating template_s3_ref table.");
     }
 
     // migrate some entry contents of snapshots to snapshot_store_ref
     private void migrateSnapshotS3Ref(Connection conn, Map<Long, Long> s3StoreMap) {
-        PreparedStatement snapshotStoreInsert = null;
-        PreparedStatement s3Query = null;
-        ResultSet rs = null;
-
         s_logger.debug("Updating snapshot_store_ref table from snapshots table for s3");
-        try {
-            snapshotStoreInsert =
-                conn.prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) values(?, ?, ?, ?, ?, ?, ?, 0, 0, 'Image', 'Ready')");
-            s3Query =
-                conn.prepareStatement("select s3_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', backup_snap_id), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type <> 'KVM' and s3_id is not null and removed is null");
-            rs = s3Query.executeQuery();
+        try(PreparedStatement snapshotStoreInsert =
+                    conn.prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) values(?, ?, ?, ?, ?, ?, ?, 0, 0, 'Image', 'Ready')");
+        ) {
+            try(PreparedStatement s3Query =
+                    conn.prepareStatement("select s3_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', backup_snap_id), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type <> 'KVM' and s3_id is not null and removed is null");) {
+                try(ResultSet rs = s3Query.executeQuery();) {
+                    while (rs.next()) {
+                        Long s3_id = rs.getLong("s3_id");
+                        Long snapshot_id = rs.getLong("id");
+                        Date s3_created = rs.getDate("created");
+                        Long s3_size = rs.getObject("size") != null ? rs.getLong("size") : null;
+                        Long s3_prev_id = rs.getObject("prev_snap_id") != null ? rs.getLong("prev_snap_id") : null;
+                        String install_path = rs.getString(6);
+                        Long s3_vol_id = rs.getLong("volume_id");
 
-            while (rs.next()) {
-                Long s3_id = rs.getLong("s3_id");
-                Long snapshot_id = rs.getLong("id");
-                Date s3_created = rs.getDate("created");
-                Long s3_size = rs.getObject("size") != null ? rs.getLong("size") : null;
-                Long s3_prev_id = rs.getObject("prev_snap_id") != null ? rs.getLong("prev_snap_id") : null;
-                String install_path = rs.getString(6);
-                Long s3_vol_id = rs.getLong("volume_id");
-
-                snapshotStoreInsert.setLong(1, s3StoreMap.get(s3_id));
-                snapshotStoreInsert.setLong(2, snapshot_id);
-                snapshotStoreInsert.setDate(3, s3_created);
-                if (s3_size != null) {
-                    snapshotStoreInsert.setLong(4, s3_size);
-                } else {
-                    snapshotStoreInsert.setNull(4, Types.BIGINT);
+                        snapshotStoreInsert.setLong(1, s3StoreMap.get(s3_id));
+                        snapshotStoreInsert.setLong(2, snapshot_id);
+                        snapshotStoreInsert.setDate(3, s3_created);
+                        if (s3_size != null) {
+                            snapshotStoreInsert.setLong(4, s3_size);
+                        } else {
+                            snapshotStoreInsert.setNull(4, Types.BIGINT);
+                        }
+                        if (s3_prev_id != null) {
+                            snapshotStoreInsert.setLong(5, s3_prev_id);
+                        } else {
+                            snapshotStoreInsert.setNull(5, Types.BIGINT);
+                        }
+                        snapshotStoreInsert.setString(6, install_path);
+                        snapshotStoreInsert.setLong(7, s3_vol_id);
+                        snapshotStoreInsert.executeUpdate();
+                    }
+                }catch (SQLException e) {
+                    s_logger.error("migrateSnapshotS3Ref:Exception:"+e.getMessage(),e);
+                    throw new CloudRuntimeException("migrateSnapshotS3Ref:Exception:"+e.getMessage(),e);
                 }
-                if (s3_prev_id != null) {
-                    snapshotStoreInsert.setLong(5, s3_prev_id);
-                } else {
-                    snapshotStoreInsert.setNull(5, Types.BIGINT);
-                }
-                snapshotStoreInsert.setString(6, install_path);
-                snapshotStoreInsert.setLong(7, s3_vol_id);
-                snapshotStoreInsert.executeUpdate();
+            }catch (SQLException e) {
+                s_logger.error("migrateSnapshotS3Ref:Exception:"+e.getMessage(),e);
+                throw new CloudRuntimeException("migrateSnapshotS3Ref:Exception:"+e.getMessage(),e);
             }
         } catch (SQLException e) {
-            String msg = "Unable to migrate s3 backedup snapshots to snapshot_store_ref." + e.getMessage();
-            s_logger.error(msg);
-            throw new CloudRuntimeException(msg, e);
-        } finally {
-            try {
-                if (snapshotStoreInsert != null) {
-                    snapshotStoreInsert.close();
-                }
-            } catch (SQLException e) {
-            }
+            s_logger.error("Unable to migrate s3 backedup snapshots to snapshot_store_ref." + e.getMessage());
+            throw new CloudRuntimeException("Unable to migrate s3 backedup snapshots to snapshot_store_ref." + e.getMessage(), e);
         }
         s_logger.debug("Completed updating snapshot_store_ref table from s3 snapshots entries");
     }
@@ -2514,7 +2234,7 @@ public class Upgrade410to420 implements DbUpgrade {
 
             // migrate SWIFT secondary storage
             storeInsert =
-                conn.prepareStatement("INSERT INTO `cloud`.`image_store` (uuid, name, image_provider_name, protocol, url, scope, role, created) values(?, ?, 'Swift', 'http', ?, 'REGION', 'Image', ?)");
+                    conn.prepareStatement("INSERT INTO `cloud`.`image_store` (uuid, name, image_provider_name, protocol, url, scope, role, created) values(?, ?, 'Swift', 'http', ?, 'REGION', 'Image', ?)");
             swiftQuery = conn.prepareStatement("select id, uuid, url, account, username, swift.key, created from `cloud`.`swift`");
             rs = swiftQuery.executeQuery();
 
@@ -2600,11 +2320,10 @@ public class Upgrade410to420 implements DbUpgrade {
         PreparedStatement tmplStoreInsert = null;
         PreparedStatement s3Query = null;
         ResultSet rs = null;
-
         s_logger.debug("Updating template_store_ref table from template_swift_ref table");
         try {
             tmplStoreInsert =
-                conn.prepareStatement("INSERT INTO `cloud`.`template_store_ref` (store_id,  template_id, created, download_pct, size, physical_size, download_state, local_path, install_path, update_count, ref_cnt, store_role, state) values(?, ?, ?, 100, ?, ?, 'DOWNLOADED', '?', '?', 0, 0, 'Image', 'Ready')");
+                    conn.prepareStatement("INSERT INTO `cloud`.`template_store_ref` (store_id,  template_id, created, download_pct, size, physical_size, download_state, local_path, install_path, update_count, ref_cnt, store_role, state) values(?, ?, ?, 100, ?, ?, 'DOWNLOADED', '?', '?', 0, 0, 'Image', 'Ready')");
             s3Query = conn.prepareStatement("select swift_id, template_id, created, path, size, physical_size from `cloud`.`template_swift_ref`");
             rs = s3Query.executeQuery();
 
@@ -2656,47 +2375,42 @@ public class Upgrade410to420 implements DbUpgrade {
 
     // migrate some entry contents of snapshots to snapshot_store_ref
     private void migrateSnapshotSwiftRef(Connection conn, Map<Long, Long> swiftStoreMap) {
-        PreparedStatement snapshotStoreInsert = null;
-        PreparedStatement s3Query = null;
-        ResultSet rs = null;
-
         s_logger.debug("Updating snapshot_store_ref table from snapshots table for swift");
-        try {
-            snapshotStoreInsert =
+        try (PreparedStatement snapshotStoreInsert =
                 conn.prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) values(?, ?, ?, ?, ?, ?, ?, 0, 0, 'Image', 'Ready')");
-            s3Query =
-                conn.prepareStatement("select swift_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', backup_snap_id), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type <> 'KVM' and swift_id is not null and removed is null");
-            rs = s3Query.executeQuery();
+        ){
+            try(PreparedStatement s3Query =
+                    conn.prepareStatement("select swift_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', backup_snap_id), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type <> 'KVM' and swift_id is not null and removed is null");) {
+                try(ResultSet rs = s3Query.executeQuery();) {
+                   while (rs.next()) {
+                        Long swift_id = rs.getLong("swift_id");
+                        Long snapshot_id = rs.getLong("id");
+                        Date created = rs.getDate("created");
+                        Long size = rs.getLong("size");
+                        Long prev_id = rs.getLong("prev_snap_id");
+                        String install_path = rs.getString(6);
+                        Long vol_id = rs.getLong("volume_id");
 
-            while (rs.next()) {
-                Long swift_id = rs.getLong("swift_id");
-                Long snapshot_id = rs.getLong("id");
-                Date created = rs.getDate("created");
-                Long size = rs.getLong("size");
-                Long prev_id = rs.getLong("prev_snap_id");
-                String install_path = rs.getString(6);
-                Long vol_id = rs.getLong("volume_id");
-
-                snapshotStoreInsert.setLong(1, swiftStoreMap.get(swift_id));
-                snapshotStoreInsert.setLong(2, snapshot_id);
-                snapshotStoreInsert.setDate(3, created);
-                snapshotStoreInsert.setLong(4, size);
-                snapshotStoreInsert.setLong(5, prev_id);
-                snapshotStoreInsert.setString(6, install_path);
-                snapshotStoreInsert.setLong(7, vol_id);
-                snapshotStoreInsert.executeUpdate();
+                        snapshotStoreInsert.setLong(1, swiftStoreMap.get(swift_id));
+                        snapshotStoreInsert.setLong(2, snapshot_id);
+                        snapshotStoreInsert.setDate(3, created);
+                        snapshotStoreInsert.setLong(4, size);
+                        snapshotStoreInsert.setLong(5, prev_id);
+                        snapshotStoreInsert.setString(6, install_path);
+                        snapshotStoreInsert.setLong(7, vol_id);
+                        snapshotStoreInsert.executeUpdate();
+                    }
+                }catch (SQLException e) {
+                    s_logger.error("migrateSnapshotSwiftRef:Exception:"+e.getMessage(),e);
+                    throw new CloudRuntimeException("migrateSnapshotSwiftRef:Exception:"+e.getMessage(),e);
+                }
+            }catch (SQLException e) {
+                s_logger.error("migrateSnapshotSwiftRef:Exception:"+e.getMessage(),e);
+                throw new CloudRuntimeException("migrateSnapshotSwiftRef:Exception:"+e.getMessage(),e);
             }
         } catch (SQLException e) {
-            String msg = "Unable to migrate swift backedup snapshots to snapshot_store_ref." + e.getMessage();
-            s_logger.error(msg);
-            throw new CloudRuntimeException(msg, e);
-        } finally {
-            try {
-                if (snapshotStoreInsert != null) {
-                    snapshotStoreInsert.close();
-                }
-            } catch (SQLException e) {
-            }
+            s_logger.error("migrateSnapshotSwiftRef:Exception:"+e.getMessage(),e);
+            throw new CloudRuntimeException("migrateSnapshotSwiftRef:Exception:"+e.getMessage(),e);
         }
         s_logger.debug("Completed updating snapshot_store_ref table from swift snapshots entries");
     }
@@ -2707,23 +2421,13 @@ public class Upgrade410to420 implements DbUpgrade {
         s_logger.debug("Dropping foreign key fk_nicira_nvp_nic_map__nic from the table nicira_nvp_nic_map if it exists");
         keys.add("fk_nicira_nvp_nic_map__nic");
         DbUpgradeUtils.dropKeysIfExist(conn, "nicira_nvp_nic_map", keys, true);
-
         //Now add foreign key.
-        PreparedStatement pstmt = null;
-        try {
-            pstmt =
-                conn.prepareStatement("ALTER TABLE `cloud`.`nicira_nvp_nic_map` ADD CONSTRAINT `fk_nicira_nvp_nic_map__nic` FOREIGN KEY (`nic`) REFERENCES `nics` (`uuid`) ON DELETE CASCADE");
+        try(PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`nicira_nvp_nic_map` ADD CONSTRAINT `fk_nicira_nvp_nic_map__nic` FOREIGN KEY (`nic`) REFERENCES `nics` (`uuid`) ON DELETE CASCADE");)
+        {
             pstmt.executeUpdate();
             s_logger.debug("Added foreign key fk_nicira_nvp_nic_map__nic to the table nicira_nvp_nic_map");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to add foreign key fk_nicira_nvp_nic_map__nic to the table nicira_nvp_nic_map", e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
@@ -2733,146 +2437,151 @@ public class Upgrade410to420 implements DbUpgrade {
         s_logger.debug("Dropping foreign key fk_router_network_ref__router_id from the table router_network_ref if it exists");
         keys.add("fk_router_network_ref__router_id");
         DbUpgradeUtils.dropKeysIfExist(conn, "router_network_ref", keys, true);
-
         //Now add foreign key.
-        PreparedStatement pstmt = null;
-        try {
-            pstmt =
-                conn.prepareStatement("ALTER TABLE `cloud`.`router_network_ref` ADD CONSTRAINT `fk_router_network_ref__router_id` FOREIGN KEY (`router_id`) REFERENCES `domain_router` (`id`) ON DELETE CASCADE");
+        try (PreparedStatement pstmt =
+                     conn.prepareStatement("ALTER TABLE `cloud`.`router_network_ref` ADD CONSTRAINT `fk_router_network_ref__router_id` FOREIGN KEY (`router_id`) REFERENCES `domain_router` (`id`) ON DELETE CASCADE");)
+        {
             pstmt.executeUpdate();
             s_logger.debug("Added foreign key fk_router_network_ref__router_id to the table router_network_ref");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to add foreign key fk_router_network_ref__router_id to the table router_network_ref", e);
-        } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
     private void encryptSite2SitePSK(Connection conn) {
         s_logger.debug("Encrypting Site2Site Customer Gateway pre-shared key");
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            pstmt = conn.prepareStatement("select id, ipsec_psk from `cloud`.`s2s_customer_gateway`");
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                long id = rs.getLong(1);
-                String value = rs.getString(2);
-                if (value == null) {
-                    continue;
+        try (PreparedStatement select_pstmt = conn.prepareStatement("select id, ipsec_psk from `cloud`.`s2s_customer_gateway`");){
+            try(ResultSet rs = select_pstmt.executeQuery();)
+            {
+                while (rs.next()) {
+                    long id = rs.getLong(1);
+                    String value = rs.getString(2);
+                    if (value == null) {
+                        continue;
+                    }
+                    String encryptedValue = DBEncryptionUtil.encrypt(value);
+                    try(PreparedStatement update_pstmt = conn.prepareStatement("update `cloud`.`s2s_customer_gateway` set ipsec_psk=? where id=?");) {
+                        update_pstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
+                        update_pstmt.setLong(2, id);
+                        update_pstmt.executeUpdate();
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("encryptSite2SitePSK:Exception:"+e.getMessage(), e);
+                    }
                 }
-                String encryptedValue = DBEncryptionUtil.encrypt(value);
-                pstmt = conn.prepareStatement("update `cloud`.`s2s_customer_gateway` set ipsec_psk=? where id=?");
-                pstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
-                pstmt.setLong(2, id);
-                pstmt.executeUpdate();
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("encryptSite2SitePSK:Exception:"+e.getMessage(), e);
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to encrypt Site2Site Customer Gateway pre-shared key ", e);
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable to encrypt Site2Site Customer Gateway pre-shared key ", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
         s_logger.debug("Done encrypting Site2Site Customer Gateway pre-shared key");
     }
 
     protected void updateConcurrentConnectionsInNetworkOfferings(Connection conn) {
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        ResultSet rs1 = null;
-        ResultSet rs2 = null;
         try {
-            try {
-                pstmt =
-                    conn.prepareStatement("SELECT *  FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'cloud' AND TABLE_NAME = 'network_offerings' AND COLUMN_NAME = 'concurrent_connections'");
-                rs = pstmt.executeQuery();
-                if (!rs.next()) {
-                    pstmt =
-                        conn.prepareStatement("ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `concurrent_connections` int(10) unsigned COMMENT 'Load Balancer(haproxy) maximum number of concurrent connections(global max)'");
-                    pstmt.executeUpdate();
-                }
-            } catch (SQLException e) {
-                throw new CloudRuntimeException("migration of concurrent connections from network_detais failed");
-            }
-
-            pstmt = conn.prepareStatement("select network_id, value from `cloud`.`network_details` where name='maxconnections'");
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                long networkId = rs.getLong(1);
-                int maxconnections = Integer.parseInt(rs.getString(2));
-                pstmt = conn.prepareStatement("select network_offering_id from `cloud`.`networks` where id= ?");
-                pstmt.setLong(1, networkId);
-                rs1 = pstmt.executeQuery();
-                if (rs1.next()) {
-                    long network_offering_id = rs1.getLong(1);
-                    pstmt = conn.prepareStatement("select concurrent_connections from `cloud`.`network_offerings` where id= ?");
-                    pstmt.setLong(1, network_offering_id);
-                    rs2 = pstmt.executeQuery();
-                    if ((!rs2.next()) || (rs2.getInt(1) < maxconnections)) {
-                        pstmt = conn.prepareStatement("update network_offerings set concurrent_connections=? where id=?");
-                        pstmt.setInt(1, maxconnections);
-                        pstmt.setLong(2, network_offering_id);
-                        pstmt.executeUpdate();
+            try (PreparedStatement sel_pstmt =
+                    conn.prepareStatement("SELECT *  FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'cloud' AND TABLE_NAME = 'network_offerings' AND COLUMN_NAME = 'concurrent_connections'");)
+            {
+                try(ResultSet rs = sel_pstmt.executeQuery();) {
+                    if (!rs.next()) {
+                        try(PreparedStatement alter_pstmt =
+                                conn.prepareStatement("ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `concurrent_connections` int(10) unsigned COMMENT 'Load Balancer(haproxy) maximum number of concurrent connections(global max)'");) {
+                            alter_pstmt.executeUpdate();
+                        }catch (SQLException e) {
+                            throw new CloudRuntimeException("migration of concurrent connections from network_details failed");
+                        }
                     }
-                }
-            }
-        } catch (SQLException e) {
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (rs1 != null) {
-                    rs1.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
+                }catch (SQLException e) {
+                    throw new CloudRuntimeException("migration of concurrent connections from network_details failed");
                 }
             } catch (SQLException e) {
+                throw new CloudRuntimeException("migration of concurrent connections from network_details failed");
             }
+            try(PreparedStatement sel_net_pstmt = conn.prepareStatement("select network_id, value from `cloud`.`network_details` where name='maxconnections'");)
+            {
+                try(ResultSet rs = sel_net_pstmt.executeQuery();) {
+                    while (rs.next()) {
+                        long networkId = rs.getLong(1);
+                        int maxconnections = Integer.parseInt(rs.getString(2));
+                        try(PreparedStatement sel_net_off_pstmt = conn.prepareStatement("select network_offering_id from `cloud`.`networks` where id= ?");) {
+                            sel_net_off_pstmt.setLong(1, networkId);
+                            try(ResultSet rs1 = sel_net_off_pstmt.executeQuery();) {
+                                if (rs1.next()) {
+                                    long network_offering_id = rs1.getLong(1);
+                                    try(PreparedStatement pstmt = conn.prepareStatement("select concurrent_connections from `cloud`.`network_offerings` where id= ?");)
+                                    {
+                                        pstmt.setLong(1, network_offering_id);
+                                        try(ResultSet rs2 = pstmt.executeQuery();) {
+                                            if ((!rs2.next()) || (rs2.getInt(1) < maxconnections)) {
+                                                try(PreparedStatement update_net_pstmt = conn.prepareStatement("update network_offerings set concurrent_connections=? where id=?");)
+                                                {
+                                                    update_net_pstmt.setInt(1, maxconnections);
+                                                    update_net_pstmt.setLong(2, network_offering_id);
+                                                    update_net_pstmt.executeUpdate();
+                                                }catch (SQLException e) {
+                                                    throw new CloudRuntimeException("migration of concurrent connections from network_details failed");
+                                                }
+                                            }
+                                        }catch (SQLException e) {
+                                            throw new CloudRuntimeException("migration of concurrent connections from network_details failed");
+                                        }
+                                    }catch (SQLException e) {
+                                        throw new CloudRuntimeException("migration of concurrent connections from network_details failed");
+                                    }
+                                }
+                            }catch (SQLException e) {
+                                throw new CloudRuntimeException("migration of concurrent connections from network_details failed");
+                            }
+                        }catch (SQLException e) {
+                            throw new CloudRuntimeException("migration of concurrent connections from network_details failed");
+                        }
+                    }
+                }catch (SQLException e) {
+                    throw new CloudRuntimeException("migration of concurrent connections from network_details failed");
+                }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("migration of concurrent connections from network_details failed");
+            }
+        } catch (RuntimeException e) {
+            throw new CloudRuntimeException("migration of concurrent connections from network_details failed",e);
         }
     }
 
     private void migrateDatafromIsoIdInVolumesTable(Connection conn) {
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            pstmt = conn.prepareStatement("SELECT iso_id1 From `cloud`.`volumes`");
-            rs = pstmt.executeQuery();
-            if (rs.next()) {
-                pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`volumes` DROP COLUMN `iso_id`");
-                pstmt.executeUpdate();
-                pstmt =
-                    conn.prepareStatement("ALTER TABLE `cloud`.`volumes` CHANGE COLUMN `iso_id1` `iso_id` bigint(20) unsigned COMMENT 'The id of the iso from which the volume was created'");
-                pstmt.executeUpdate();
+      try(PreparedStatement pstmt = conn.prepareStatement("SELECT iso_id1 From `cloud`.`volumes`");)
+        {
+            try(ResultSet rs = pstmt.executeQuery();) {
+                if (rs.next()) {
+                    try(PreparedStatement alter_pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`volumes` DROP COLUMN `iso_id`");) {
+                        alter_pstmt.executeUpdate();
+                        try(PreparedStatement alter_iso_pstmt =
+                                conn.prepareStatement("ALTER TABLE `cloud`.`volumes` CHANGE COLUMN `iso_id1` `iso_id` bigint(20) unsigned COMMENT 'The id of the iso from which the volume was created'");) {
+                            alter_iso_pstmt.executeUpdate();
+                        }catch (SQLException e) {
+                            s_logger.error("migrateDatafromIsoIdInVolumesTable:Exception:"+e.getMessage(),e);
+                            //implies iso_id1 is not present, so do nothing.
+                        }
+                    }catch (SQLException e) {
+                        s_logger.error("migrateDatafromIsoIdInVolumesTable:Exception:"+e.getMessage(),e);
+                        //implies iso_id1 is not present, so do nothing.
+                    }
+                }
+            }catch (SQLException e) {
+                s_logger.error("migrateDatafromIsoIdInVolumesTable:Exception:"+e.getMessage(),e);
+                //implies iso_id1 is not present, so do nothing.
             }
         } catch (SQLException e) {
+          s_logger.error("migrateDatafromIsoIdInVolumesTable:Exception:"+e.getMessage(),e);
             //implies iso_id1 is not present, so do nothing.
         }
     }
 
     protected void setRAWformatForRBDVolumes(Connection conn) {
-        PreparedStatement pstmt = null;
-        try {
+        try(PreparedStatement pstmt = conn.prepareStatement("UPDATE volumes SET format = 'RAW' WHERE pool_id IN(SELECT id FROM storage_pool WHERE pool_type = 'RBD')");)
+        {
             s_logger.debug("Setting format to RAW for all volumes on RBD primary storage pools");
-            pstmt = conn.prepareStatement("UPDATE volumes SET format = 'RAW' WHERE pool_id IN(SELECT id FROM storage_pool WHERE pool_type = 'RBD')");
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to update volume format to RAW for volumes on RBD pools due to exception ", e);
@@ -2881,151 +2590,173 @@ public class Upgrade410to420 implements DbUpgrade {
 
     private void upgradeVpcServiceMap(Connection conn) {
         s_logger.debug("Upgrading VPC service Map");
-        PreparedStatement listVpc = null;
-        PreparedStatement listServiceProviders = null;
-        PreparedStatement insertProviders = null;
-        ResultSet rs = null;
-        ResultSet rs1 = null;
-        try {
+        try(PreparedStatement listVpc = conn.prepareStatement("SELECT id, vpc_offering_id FROM `cloud`.`vpc` where removed is NULL");)
+        {
             //Get all vpc Ids along with vpc offering Id
-            listVpc = conn.prepareStatement("SELECT id, vpc_offering_id FROM `cloud`.`vpc` where removed is NULL");
-            rs = listVpc.executeQuery();
-            while (rs.next()) {
-                long vpc_id = rs.getLong(1);
-                long offering_id = rs.getLong(2);
-                //list all services and providers in offering
-                listServiceProviders = conn.prepareStatement("SELECT service, provider FROM `cloud`.`vpc_offering_service_map` where vpc_offering_id = ?");
-                listServiceProviders.setLong(1, offering_id);
-                rs1 = listServiceProviders.executeQuery();
-                //Insert entries in vpc_service_map
-                while (rs1.next()) {
-                    String service = rs1.getString(1);
-                    String provider = rs1.getString(2);
-                    insertProviders =
-                        conn.prepareStatement("INSERT INTO `cloud`.`vpc_service_map` (`vpc_id`, `service`, `provider`, `created`) VALUES (?, ?, ?, now());");
-                    insertProviders.setLong(1, vpc_id);
-                    insertProviders.setString(2, service);
-                    insertProviders.setString(3, provider);
-                    insertProviders.executeUpdate();
+            try(ResultSet rs = listVpc.executeQuery();) {
+                while (rs.next()) {
+                    long vpc_id = rs.getLong(1);
+                    long offering_id = rs.getLong(2);
+                    //list all services and providers in offering
+                    try(PreparedStatement listServiceProviders = conn.prepareStatement("SELECT service, provider FROM `cloud`.`vpc_offering_service_map` where vpc_offering_id = ?");) {
+                        listServiceProviders.setLong(1, offering_id);
+                        try(ResultSet rs1 = listServiceProviders.executeQuery();) {
+                            //Insert entries in vpc_service_map
+                            while (rs1.next()) {
+                                String service = rs1.getString(1);
+                                String provider = rs1.getString(2);
+                                try (PreparedStatement insertProviders =
+                                             conn.prepareStatement("INSERT INTO `cloud`.`vpc_service_map` (`vpc_id`, `service`, `provider`, `created`) VALUES (?, ?, ?, now());");) {
+                                    insertProviders.setLong(1, vpc_id);
+                                    insertProviders.setString(2, service);
+                                    insertProviders.setString(3, provider);
+                                    insertProviders.executeUpdate();
+                                } catch (SQLException e) {
+                                    throw new CloudRuntimeException("Error during VPC service map upgrade", e);
+                                }
+                            }
+                        }catch (SQLException e) {
+                            throw new CloudRuntimeException("Error during VPC service map upgrade", e);
+                        }
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("Error during VPC service map upgrade", e);
+                    }
+                    s_logger.debug("Upgraded service map for VPC: " + vpc_id);
                 }
-                s_logger.debug("Upgraded service map for VPC: " + vpc_id);
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Error during VPC service map upgrade", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (rs1 != null) {
-                    rs1.close();
-                }
-                if (listVpc != null) {
-                    listVpc.close();
-                }
-                if (listServiceProviders != null) {
-                    listServiceProviders.close();
-                }
-                if (insertProviders != null) {
-                    insertProviders.close();
-                }
-            } catch (SQLException e) {
-            }
         }
     }
 
     private void upgradeResourceCount(Connection conn) {
         s_logger.debug("upgradeResourceCount start");
-        PreparedStatement pstmt1 = null;
-        PreparedStatement pstmt2 = null;
-        PreparedStatement pstmt3 = null;
-        PreparedStatement pstmt4 = null;
-        PreparedStatement pstmt5 = null;
-        ResultSet rs = null;
         ResultSet rsAccount = null;
-        ResultSet rsCount = null;
-        try {
-            pstmt1 = conn.prepareStatement("select id, domain_id FROM `cloud`.`account` where removed is NULL ");
-            rsAccount = pstmt1.executeQuery();
+        try( PreparedStatement sel_dom_pstmt = conn.prepareStatement("select id, domain_id FROM `cloud`.`account` where removed is NULL ");)
+        {
+            rsAccount = sel_dom_pstmt.executeQuery();
             while (rsAccount.next()) {
                 long account_id = rsAccount.getLong(1);
                 long domain_id = rsAccount.getLong(2);
                 // 1. update cpu,memory for all accounts
-                pstmt2 =
-                    conn.prepareStatement("SELECT SUM(service_offering.cpu), SUM(service_offering.ram_size)" + " FROM `cloud`.`vm_instance`, `cloud`.`service_offering`"
-                        + " WHERE vm_instance.service_offering_id = service_offering.id AND vm_instance.account_id = ?" + " AND vm_instance.removed is NULL"
-                        + " AND vm_instance.vm_type='User' AND state not in ('Destroyed', 'Error', 'Expunging')");
-                pstmt2.setLong(1, account_id);
-                rsCount = pstmt2.executeQuery();
-                if (rsCount.next()) {
-                    upgradeResourceCountforAccount(conn, account_id, domain_id, "cpu", rsCount.getLong(1));
-                    upgradeResourceCountforAccount(conn, account_id, domain_id, "memory", rsCount.getLong(2));
-                } else {
-                    upgradeResourceCountforAccount(conn, account_id, domain_id, "cpu", 0L);
-                    upgradeResourceCountforAccount(conn, account_id, domain_id, "memory", 0L);
+                try(PreparedStatement sel_sum_pstmt =
+                        conn.prepareStatement("SELECT SUM(service_offering.cpu), SUM(service_offering.ram_size)" + " FROM `cloud`.`vm_instance`, `cloud`.`service_offering`"
+                                + " WHERE vm_instance.service_offering_id = service_offering.id AND vm_instance.account_id = ?" + " AND vm_instance.removed is NULL"
+                                + " AND vm_instance.vm_type='User' AND state not in ('Destroyed', 'Error', 'Expunging')");) {
+                    sel_sum_pstmt.setLong(1, account_id);
+                    try(ResultSet sel_sum_pstmt_res = sel_sum_pstmt.executeQuery();) {
+                        if (sel_sum_pstmt_res.next()) {
+                            upgradeResourceCountforAccount(conn, account_id, domain_id, "cpu", sel_sum_pstmt_res.getLong(1));
+                            upgradeResourceCountforAccount(conn, account_id, domain_id, "memory", sel_sum_pstmt_res.getLong(2));
+                        } else {
+                            upgradeResourceCountforAccount(conn, account_id, domain_id, "cpu", 0L);
+                            upgradeResourceCountforAccount(conn, account_id, domain_id, "memory", 0L);
+                        }
+                        // 2. update primary_storage for all accounts
+                        try(PreparedStatement sel_cloud_vol_pstmt =
+                                conn.prepareStatement("SELECT sum(size) FROM `cloud`.`volumes` WHERE account_id= ?"
+                                        + " AND (path is not NULL OR state in ('Allocated')) AND removed is NULL"
+                                        + " AND instance_id IN (SELECT id FROM `cloud`.`vm_instance` WHERE vm_type='User')");) {
+                            sel_cloud_vol_pstmt.setLong(1, account_id);
+                            try(ResultSet sel_cloud_vol_count = sel_cloud_vol_pstmt.executeQuery();) {
+                                if (sel_cloud_vol_count.next()) {
+                                    upgradeResourceCountforAccount(conn, account_id, domain_id, "primary_storage", sel_cloud_vol_count.getLong(1));
+                                } else {
+                                    upgradeResourceCountforAccount(conn, account_id, domain_id, "primary_storage", 0L);
+                                }
+                            }catch (SQLException e) {
+                                throw new CloudRuntimeException("upgradeResourceCount:Exception:"+e.getMessage(),e);
+                            }
+                        }catch (SQLException e) {
+                            throw new CloudRuntimeException("upgradeResourceCount:Exception:"+e.getMessage(),e);
+                        }
+                        // 3. update secondary_storage for all accounts
+                        long totalVolumesSize = 0;
+                        long totalSnapshotsSize = 0;
+                        long totalTemplatesSize = 0;
+                        try(PreparedStatement sel_cloud_vol_alloc_pstmt =
+                                conn.prepareStatement("SELECT sum(size) FROM `cloud`.`volumes` WHERE account_id= ?"
+                                        + " AND path is NULL AND state not in ('Allocated') AND removed is NULL");) {
+                            sel_cloud_vol_alloc_pstmt.setLong(1, account_id);
+                            try(ResultSet sel_cloud_vol_res = sel_cloud_vol_alloc_pstmt.executeQuery();) {
+                                if (sel_cloud_vol_res.next()) {
+                                    totalVolumesSize = sel_cloud_vol_res.getLong(1);
+                                }
+                                try(PreparedStatement sel_cloud_snapshot_pstmt = conn.prepareStatement("SELECT sum(size) FROM `cloud`.`snapshots` WHERE account_id= ? AND removed is NULL");)
+                                {
+                                    sel_cloud_snapshot_pstmt.setLong(1, account_id);
+                                    try(ResultSet sel_cloud_snapshot_res = sel_cloud_snapshot_pstmt.executeQuery();) {
+                                        if (sel_cloud_snapshot_res.next()) {
+                                            totalSnapshotsSize = sel_cloud_snapshot_res.getLong(1);
+                                        }
+                                        try (PreparedStatement sel_templ_store_pstmt =
+                                                     conn.prepareStatement("SELECT sum(template_store_ref.size) FROM `cloud`.`template_store_ref`,`cloud`.`vm_template` WHERE account_id = ?"
+                                                             + " AND template_store_ref.template_id = vm_template.id AND download_state = 'DOWNLOADED' AND destroyed = false AND removed is NULL");) {
+                                            sel_templ_store_pstmt.setLong(1, account_id);
+                                            try (ResultSet templ_store_count = sel_templ_store_pstmt.executeQuery();) {
+                                                if (templ_store_count.next()) {
+                                                    totalTemplatesSize = templ_store_count.getLong(1);
+                                                }
+                                            } catch (SQLException e) {
+                                                throw new CloudRuntimeException("upgradeResourceCount:Exception:" + e.getMessage(), e);
+                                            }
+                                        } catch (SQLException e) {
+                                            throw new CloudRuntimeException("upgradeResourceCount:Exception:" + e.getMessage(), e);
+                                        }
+                                        upgradeResourceCountforAccount(conn, account_id, domain_id, "secondary_storage", totalVolumesSize + totalSnapshotsSize + totalTemplatesSize);
+                                    }catch (SQLException e) {
+                                        throw new CloudRuntimeException("upgradeResourceCount:Exception:" + e.getMessage(), e);
+                                    }
+                                }catch (SQLException e) {
+                                    throw new CloudRuntimeException("upgradeResourceCount:Exception:" + e.getMessage(), e);
+                                }
+                            }catch (SQLException e) {
+                                throw new CloudRuntimeException("upgradeResourceCount:Exception:" + e.getMessage(), e);
+                            }
+                        }catch (SQLException e) {
+                            throw new CloudRuntimeException("upgradeResourceCount:Exception:"+e.getMessage(),e);
+                        }
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("upgradeResourceCount:Exception:"+e.getMessage(),e);
+                    }
+                }catch (SQLException e) {
+                    throw new CloudRuntimeException("upgradeResourceCount:Exception:"+e.getMessage(),e);
                 }
-                // 2. update primary_storage for all accounts
-                pstmt3 =
-                    conn.prepareStatement("SELECT sum(size) FROM `cloud`.`volumes` WHERE account_id= ?"
-                        + " AND (path is not NULL OR state in ('Allocated')) AND removed is NULL"
-                        + " AND instance_id IN (SELECT id FROM `cloud`.`vm_instance` WHERE vm_type='User')");
-                pstmt3.setLong(1, account_id);
-                rsCount = pstmt3.executeQuery();
-                if (rsCount.next()) {
-                    upgradeResourceCountforAccount(conn, account_id, domain_id, "primary_storage", rsCount.getLong(1));
-                } else {
-                    upgradeResourceCountforAccount(conn, account_id, domain_id, "primary_storage", 0L);
-                }
-                // 3. update secondary_storage for all accounts
-                long totalVolumesSize = 0;
-                long totalSnapshotsSize = 0;
-                long totalTemplatesSize = 0;
-                pstmt4 =
-                    conn.prepareStatement("SELECT sum(size) FROM `cloud`.`volumes` WHERE account_id= ?"
-                        + " AND path is NULL AND state not in ('Allocated') AND removed is NULL");
-                pstmt4.setLong(1, account_id);
-                rsCount = pstmt4.executeQuery();
-                if (rsCount.next()) {
-                    totalVolumesSize = rsCount.getLong(1);
-                }
-                pstmt4 = conn.prepareStatement("SELECT sum(size) FROM `cloud`.`snapshots` WHERE account_id= ? AND removed is NULL");
-                pstmt4.setLong(1, account_id);
-                rsCount = pstmt4.executeQuery();
-                if (rsCount.next()) {
-                    totalSnapshotsSize = rsCount.getLong(1);
-                }
-                pstmt4 =
-                    conn.prepareStatement("SELECT sum(template_store_ref.size) FROM `cloud`.`template_store_ref`,`cloud`.`vm_template` WHERE account_id = ?"
-                        + " AND template_store_ref.template_id = vm_template.id AND download_state = 'DOWNLOADED' AND destroyed = false AND removed is NULL");
-                pstmt4.setLong(1, account_id);
-                rsCount = pstmt4.executeQuery();
-                if (rsCount.next()) {
-                    totalTemplatesSize = rsCount.getLong(1);
-                }
-                upgradeResourceCountforAccount(conn, account_id, domain_id, "secondary_storage", totalVolumesSize + totalSnapshotsSize + totalTemplatesSize);
             }
             // 4. upgrade cpu,memory,primary_storage,secondary_storage for domains
             String resource_types[] = {"cpu", "memory", "primary_storage", "secondary_storage"};
-            pstmt5 = conn.prepareStatement("select id FROM `cloud`.`domain`");
-            rsAccount = pstmt5.executeQuery();
-            while (rsAccount.next()) {
-                long domain_id = rsAccount.getLong(1);
-                for (int count = 0; count < resource_types.length; count++) {
-                    String resource_type = resource_types[count];
-                    upgradeResourceCountforDomain(conn, domain_id, resource_type, 0L); // reset value to 0 before statistics
+            try(PreparedStatement sel_id_pstmt = conn.prepareStatement("select id FROM `cloud`.`domain`");) {
+                try(ResultSet sel_id_res = sel_id_pstmt.executeQuery();) {
+                    while (sel_id_res.next()) {
+                        long domain_id = sel_id_res.getLong(1);
+                        for (int count = 0; count < resource_types.length; count++) {
+                            String resource_type = resource_types[count];
+                            upgradeResourceCountforDomain(conn, domain_id, resource_type, 0L); // reset value to 0 before statistics
+                        }
+                    }
+                }catch (SQLException e) {
+                    throw new CloudRuntimeException("Unable to upgrade resource count (cpu,memory,primary_storage,secondary_storage) ", e);
                 }
+            }catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to upgrade resource count (cpu,memory,primary_storage,secondary_storage) ", e);
             }
             for (int count = 0; count < resource_types.length; count++) {
                 String resource_type = resource_types[count];
-                pstmt5 =
-                    conn.prepareStatement("select account.domain_id,sum(resource_count.count) from `cloud`.`account` left join `cloud`.`resource_count` on account.id=resource_count.account_id "
-                        + "where resource_count.type=? group by account.domain_id;");
-                pstmt5.setString(1, resource_type);
-                rsCount = pstmt5.executeQuery();
-                while (rsCount.next()) {
-                    long domain_id = rsCount.getLong(1);
-                    long resource_count = rsCount.getLong(2);
-                    upgradeResourceCountforDomain(conn, domain_id, resource_type, resource_count);
+                try(PreparedStatement sel_dom_id_pstmt =
+                        conn.prepareStatement("select account.domain_id,sum(resource_count.count) from `cloud`.`account` left join `cloud`.`resource_count` on account.id=resource_count.account_id "
+                                + "where resource_count.type=? group by account.domain_id;");) {
+                    sel_dom_id_pstmt.setString(1, resource_type);
+                    try(ResultSet sel_dom_res = sel_dom_id_pstmt.executeQuery();) {
+                        while (sel_dom_res.next()) {
+                            long domain_id = sel_dom_res.getLong(1);
+                            long resource_count = sel_dom_res.getLong(2);
+                            upgradeResourceCountforDomain(conn, domain_id, resource_type, resource_count);
+                        }
+                    }catch (SQLException e) {
+                        throw new CloudRuntimeException("Unable to upgrade resource count (cpu,memory,primary_storage,secondary_storage) ", e);
+                    }
+                }catch (SQLException e) {
+                    throw new CloudRuntimeException("Unable to upgrade resource count (cpu,memory,primary_storage,secondary_storage) ", e);
                 }
             }
             s_logger.debug("upgradeResourceCount finish");
@@ -3033,29 +2764,8 @@ public class Upgrade410to420 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to upgrade resource count (cpu,memory,primary_storage,secondary_storage) ", e);
         } finally {
             try {
-                if (rs != null) {
-                    rs.close();
-                }
                 if (rsAccount != null) {
                     rsAccount.close();
-                }
-                if (rsCount != null) {
-                    rsCount.close();
-                }
-                if (pstmt1 != null) {
-                    pstmt1.close();
-                }
-                if (pstmt2 != null) {
-                    pstmt2.close();
-                }
-                if (pstmt3 != null) {
-                    pstmt3.close();
-                }
-                if (pstmt4 != null) {
-                    pstmt4.close();
-                }
-                if (pstmt5 != null) {
-                    pstmt5.close();
                 }
             } catch (SQLException e) {
             }
@@ -3064,27 +2774,28 @@ public class Upgrade410to420 implements DbUpgrade {
 
     private static void upgradeResourceCountforAccount(Connection conn, Long accountId, Long domainId, String type, Long resourceCount) throws SQLException {
         //update or insert into resource_count table.
-        PreparedStatement pstmt = null;
-        pstmt =
-            conn.prepareStatement("INSERT INTO `cloud`.`resource_count` (account_id, type, count) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), count=?");
-        pstmt.setLong(1, accountId);
-        pstmt.setString(2, type);
-        pstmt.setLong(3, resourceCount);
-        pstmt.setLong(4, resourceCount);
-        pstmt.executeUpdate();
-        pstmt.close();
+        try(PreparedStatement pstmt =
+                conn.prepareStatement("INSERT INTO `cloud`.`resource_count` (account_id, type, count) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), count=?");) {
+            pstmt.setLong(1, accountId);
+            pstmt.setString(2, type);
+            pstmt.setLong(3, resourceCount);
+            pstmt.setLong(4, resourceCount);
+            pstmt.executeUpdate();
+        }catch (SQLException e) {
+            throw new CloudRuntimeException("upgradeResourceCountforAccount:Exception:"+e.getMessage(),e);
+        }
     }
 
     private static void upgradeResourceCountforDomain(Connection conn, Long domainId, String type, Long resourceCount) throws SQLException {
         //update or insert into resource_count table.
-        PreparedStatement pstmt = null;
-        pstmt =
-            conn.prepareStatement("INSERT INTO `cloud`.`resource_count` (domain_id, type, count) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), count=?");
-        pstmt.setLong(1, domainId);
-        pstmt.setString(2, type);
-        pstmt.setLong(3, resourceCount);
-        pstmt.setLong(4, resourceCount);
-        pstmt.executeUpdate();
-        pstmt.close();
+        try(PreparedStatement pstmt = conn.prepareStatement("INSERT INTO `cloud`.`resource_count` (domain_id, type, count) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), count=?");) {
+            pstmt.setLong(1, domainId);
+            pstmt.setString(2, type);
+            pstmt.setLong(3, resourceCount);
+            pstmt.setLong(4, resourceCount);
+            pstmt.executeUpdate();
+        }catch (SQLException e) {
+            throw new CloudRuntimeException("upgradeResourceCountforDomain:Exception:"+e.getMessage(),e);
+        }
     }
 }

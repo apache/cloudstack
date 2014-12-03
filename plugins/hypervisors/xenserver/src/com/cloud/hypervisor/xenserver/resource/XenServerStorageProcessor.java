@@ -44,6 +44,8 @@ import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectAnswer;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.datastore.protocol.DataStoreProtocol;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
@@ -62,8 +64,10 @@ import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase.SRType;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.resource.StorageProcessor;
 import com.cloud.utils.S3Utils;
@@ -82,7 +86,6 @@ import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
-import com.xensource.xenapi.VMGuestMetrics;
 
 public class XenServerStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
@@ -91,6 +94,69 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
     public XenServerStorageProcessor(CitrixResourceBase resource) {
         hypervisorResource = resource;
+    }
+
+    // if the source SR needs to be attached to, do so
+    // take a snapshot of the source VDI (on the source SR)
+    // create an iSCSI SR based on the new back-end volume
+    // copy the snapshot to the new SR
+    // delete the snapshot
+    // detach the new SR
+    // if we needed to perform an attach to the source SR, detach from it
+    @Override
+    public SnapshotAndCopyAnswer snapshotAndCopy(SnapshotAndCopyCommand cmd) {
+        Connection conn = hypervisorResource.getConnection();
+
+        try {
+            SR sourceSr = null;
+
+            Map<String, String> sourceDetails = cmd.getSourceDetails();
+
+            if (sourceDetails != null && sourceDetails.keySet().size() > 0) {
+                String iScsiName = sourceDetails.get(DiskTO.IQN);
+                String storageHost = sourceDetails.get(DiskTO.STORAGE_HOST);
+                String chapInitiatorUsername = sourceDetails.get(DiskTO.CHAP_INITIATOR_USERNAME);
+                String chapInitiatorSecret = sourceDetails.get(DiskTO.CHAP_INITIATOR_SECRET);
+
+                sourceSr = hypervisorResource.getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, false);
+            }
+
+            VDI vdiToSnapshot = VDI.getByUuid(conn, cmd.getUuidOfSourceVdi());
+
+            VDI vdiSnapshot = vdiToSnapshot.snapshot(conn, new HashMap<String, String>());
+
+            Map<String, String> destDetails = cmd.getDestDetails();
+
+            String iScsiName = destDetails.get(DiskTO.IQN);
+            String storageHost = destDetails.get(DiskTO.STORAGE_HOST);
+            String chapInitiatorUsername = destDetails.get(DiskTO.CHAP_INITIATOR_USERNAME);
+            String chapInitiatorSecret = destDetails.get(DiskTO.CHAP_INITIATOR_SECRET);
+
+            SR newSr = hypervisorResource.getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, false);
+
+            VDI vdiCopy = vdiSnapshot.copy(conn, newSr);
+
+            String vdiUuid = vdiCopy.getUuid(conn);
+
+            vdiSnapshot.destroy(conn);
+
+            if (sourceSr != null) {
+                hypervisorResource.removeSR(conn, sourceSr);
+            }
+
+            hypervisorResource.removeSR(conn, newSr);
+
+            SnapshotAndCopyAnswer snapshotAndCopyAnswer = new SnapshotAndCopyAnswer();
+
+            snapshotAndCopyAnswer.setPath(vdiUuid);
+
+            return snapshotAndCopyAnswer;
+        }
+        catch (Exception ex) {
+            s_logger.warn("Failed to take and copy snapshot: " + ex.toString(), ex);
+
+            return new SnapshotAndCopyAnswer(ex.getMessage());
+        }
     }
 
     @Override
@@ -162,7 +228,6 @@ public class XenServerStorageProcessor implements StorageProcessor {
     public AttachAnswer attachVolume(AttachCommand cmd) {
         DiskTO disk = cmd.getDisk();
         DataTO data = disk.getData();
-
         try {
             String vmName = cmd.getVmName();
             String vdiNameLabel = vmName + "-DATA";
@@ -204,22 +269,6 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 vdi = hypervisorResource.mount(conn, null, null, data.getPath());
             }
 
-            /* For HVM guest, if no pv driver installed, no attach/detach */
-            boolean isHVM = vm.getPVBootloader(conn).equalsIgnoreCase("");
-
-            VMGuestMetrics vgm = vm.getGuestMetrics(conn);
-            boolean pvDrvInstalled = false;
-
-            if (!this.hypervisorResource.isRefNull(vgm) && vgm.getPVDriversUpToDate(conn)) {
-                pvDrvInstalled = true;
-            }
-
-            if (isHVM && !pvDrvInstalled) {
-                s_logger.warn(": You attempted an operation on a VM which requires PV drivers to be installed but the drivers were not detected");
-
-                return new AttachAnswer("You attempted an operation that requires PV drivers to be installed on the VM. Please install them by inserting xen-pv-drv.iso.");
-            }
-
             // Figure out the disk number to attach the VM to
             String diskNumber = null;
             Long deviceId = disk.getDiskSeq();
@@ -255,20 +304,20 @@ public class XenServerStorageProcessor implements StorageProcessor {
             VBD vbd = VBD.create(conn, vbdr);
 
             // Attach the VBD to the VM
-            vbd.plug(conn);
-
+            try {
+                vbd.plug(conn);
+            } catch (Exception e) {
+                vbd.destroy(conn);
+                throw e;
+            }
             // Update the VDI's label to include the VM name
             vdi.setNameLabel(conn, vdiNameLabel);
 
             DiskTO newDisk = new DiskTO(disk.getData(), Long.parseLong(diskNumber), vdi.getUuid(conn), disk.getType());
 
             return new AttachAnswer(newDisk);
-        } catch (XenAPIException e) {
-            String msg = "Failed to attach volume" + " for uuid: " + data.getPath() + "  due to " + e.toString();
-            s_logger.warn(msg, e);
-            return new AttachAnswer(msg);
         } catch (Exception e) {
-            String msg = "Failed to attach volume" + " for uuid: " + data.getPath() + "  due to " + e.getMessage();
+            String msg = "Failed to attach volume" + " for uuid: " + data.getPath() + "  due to "  + e.toString();
             s_logger.warn(msg, e);
             return new AttachAnswer(msg);
         }
@@ -367,21 +416,6 @@ public class XenServerStorageProcessor implements StorageProcessor {
             }
 
             if (!vmNotRunning) {
-                /* For HVM guest, if no pv driver installed, no attach/detach */
-                boolean isHVM = vm.getPVBootloader(conn).equalsIgnoreCase("");
-
-                VMGuestMetrics vgm = vm.getGuestMetrics(conn);
-                boolean pvDrvInstalled = false;
-
-                if (!this.hypervisorResource.isRefNull(vgm) && vgm.getPVDriversUpToDate(conn)) {
-                    pvDrvInstalled = true;
-                }
-
-                if (isHVM && !pvDrvInstalled) {
-                    s_logger.warn(": You attempted an operation on a VM which requires PV drivers to be installed but the drivers were not detected");
-                    return new DettachAnswer("You attempted an operation that requires PV drivers to be installed on the VM. Please install them by inserting xen-pv-drv.iso.");
-                }
-
                 VDI vdi = this.hypervisorResource.mount(conn, null, null, data.getPath());
 
                 // Look up all VBDs for this VDI
@@ -1425,7 +1459,126 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer createTemplateFromSnapshot(CopyCommand cmd) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        Connection conn = hypervisorResource.getConnection();
+
+        SnapshotObjectTO snapshotObjTO = (SnapshotObjectTO)cmd.getSrcTO();
+        TemplateObjectTO templateObjTO = (TemplateObjectTO)cmd.getDestTO();
+
+        if (!(snapshotObjTO.getDataStore() instanceof PrimaryDataStoreTO) || !(templateObjTO.getDataStore() instanceof NfsTO)) {
+            return null;
+        }
+
+        String userSpecifiedTemplateName = templateObjTO.getName();
+
+        NfsTO destStore = null;
+        URI destUri = null;
+
+        try {
+            destStore = (NfsTO)templateObjTO.getDataStore();
+
+            destUri = new URI(destStore.getUrl());
+        } catch (Exception ex) {
+            s_logger.debug("Invalid URI", ex);
+
+            return new CopyCmdAnswer("Invalid URI: " + ex.toString());
+        }
+
+        SR srcSr = null;
+        SR destSr = null;
+
+        String destDir = templateObjTO.getPath();
+        VDI destVdi = null;
+
+        boolean result = false;
+
+        try {
+            Map<String, String> srcDetails = cmd.getOptions();
+
+            String iScsiName = srcDetails.get(DiskTO.IQN);
+            String storageHost = srcDetails.get(DiskTO.STORAGE_HOST);
+            String chapInitiatorUsername = srcDetails.get(DiskTO.CHAP_INITIATOR_USERNAME);
+            String chapInitiatorSecret = srcDetails.get(DiskTO.CHAP_INITIATOR_SECRET);
+
+            srcSr = hypervisorResource.getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, true);
+
+            String destNfsPath = destUri.getHost() + ":" + destUri.getPath();
+
+            if (!hypervisorResource.createSecondaryStorageFolder(conn, destNfsPath, destDir)) {
+                String details = " Failed to create folder " + destDir + " in secondary storage";
+
+                s_logger.warn(details);
+
+                return new CopyCmdAnswer(details);
+            }
+
+            URI templateUri = new URI(destStore.getUrl() + "/" + destDir);
+
+            destSr = hypervisorResource.createNfsSRbyURI(conn, templateUri, false);
+
+            // there should only be one VDI in this SR
+            VDI srcVdi = srcSr.getVDIs(conn).iterator().next();
+
+            destVdi = srcVdi.copy(conn, destSr);
+
+            // scan makes XenServer pick up VDI physicalSize
+            destSr.scan(conn);
+
+            if (userSpecifiedTemplateName != null) {
+                destVdi.setNameLabel(conn, userSpecifiedTemplateName);
+            }
+
+            String templateUuid = destVdi.getUuid(conn);
+            String templateFilename = templateUuid + ".vhd";
+            long virtualSize = destVdi.getVirtualSize(conn);
+            long physicalSize = destVdi.getPhysicalUtilisation(conn);
+
+            // create the template.properties file
+            String templatePath = destNfsPath + "/" + destDir;
+
+            templatePath = templatePath.replaceAll("//", "/");
+
+            result = hypervisorResource.postCreatePrivateTemplate(conn, templatePath, templateFilename, templateUuid, userSpecifiedTemplateName, null,
+                    physicalSize, virtualSize, templateObjTO.getId());
+
+            if (!result) {
+                throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir: " + templateUri);
+            }
+
+            TemplateObjectTO newTemplate = new TemplateObjectTO();
+
+            newTemplate.setPath(destDir + "/" + templateFilename);
+            newTemplate.setFormat(Storage.ImageFormat.VHD);
+            newTemplate.setHypervisorType(HypervisorType.XenServer);
+            newTemplate.setSize(virtualSize);
+            newTemplate.setPhysicalSize(physicalSize);
+            newTemplate.setName(templateUuid);
+
+            result = true;
+
+            return new CopyCmdAnswer(newTemplate);
+        } catch (Exception ex) {
+            s_logger.error("Failed to create a template from a snapshot", ex);
+
+            return new CopyCmdAnswer("Failed to create a template from a snapshot: " + ex.toString());
+        } finally {
+            if (!result) {
+                if (destVdi != null) {
+                    try {
+                        destVdi.destroy(conn);
+                    } catch (Exception e) {
+                        s_logger.debug("Cleaned up leftover VDI on destination storage due to failure: ", e);
+                    }
+                }
+            }
+
+            if (srcSr != null) {
+                hypervisorResource.removeSR(conn, srcSr);
+            }
+
+            if (destSr != null) {
+                hypervisorResource.removeSR(conn, destSr);
+            }
+        }
     }
 
     @Override

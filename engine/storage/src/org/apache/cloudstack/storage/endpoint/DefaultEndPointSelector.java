@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.storage.endpoint;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -115,33 +117,21 @@ public class DefaultEndPointSelector implements EndPointSelector {
         // TODO: order by rand() is slow if there are lot of hosts
         sbuilder.append(" ORDER by rand() limit 1");
         String sql = sbuilder.toString();
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
         HostVO host = null;
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-
-        try {
-            pstmt = txn.prepareStatement(sql);
+        try(PreparedStatement pstmt = txn.prepareStatement(sql);) {
             pstmt.setLong(1, poolId);
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                long id = rs.getLong(1);
-                host = hostDao.findById(id);
+            try(ResultSet rs = pstmt.executeQuery();) {
+                while (rs.next()) {
+                    long id = rs.getLong(1);
+                    host = hostDao.findById(id);
+                }
+            }catch (SQLException e) {
+                s_logger.warn("can't find endpoint", e);
             }
         } catch (SQLException e) {
             s_logger.warn("can't find endpoint", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
         }
-
         if (host == null) {
             return null;
         }
@@ -274,6 +264,33 @@ public class DefaultEndPointSelector implements EndPointSelector {
     }
 
     @Override
+    public EndPoint select(DataStore store, String downloadUrl){
+
+        HostVO host = null;
+        try {
+            URI uri = new URI(downloadUrl);
+            String scheme = uri.getScheme();
+            String publicIp = uri.getHost();
+            // If its https then public ip will be of the form xxx-xxx-xxx-xxx.mydomain.com
+            if(scheme.equalsIgnoreCase("https")){
+                publicIp = publicIp.split("\\.")[0]; // We want xxx-xxx-xxx-xxx
+                publicIp = publicIp.replace("-","."); // We not want the IP -  xxx.xxx.xxx.xxx
+            }
+            host = hostDao.findByPublicIp(publicIp);
+            if(host != null){
+                return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
+            }
+
+        } catch (URISyntaxException e) {
+            s_logger.debug("Received URISyntaxException for url" +downloadUrl);
+        }
+
+        // If ssvm doesnt exist then find any ssvm in the zone.
+        s_logger.debug("Coudn't find ssvm for url" +downloadUrl);
+        return findEndpointForImageStorage(store);
+    }
+
+    @Override
     public EndPoint select(DataStore store) {
         if (store.getRole() == DataStoreRole.Primary) {
             return findEndpointForPrimaryStorage(store);
@@ -312,6 +329,17 @@ public class DefaultEndPointSelector implements EndPointSelector {
                 if ((vm != null) && (vm.getState() == VirtualMachine.State.Running)) {
                     Long hostId = vm.getHostId();
                     return getEndPointFromHostId(hostId);
+                }
+            }
+        } else if (action == StorageAction.DELETEVOLUME) {
+            VolumeInfo volume = (VolumeInfo)object;
+            if (volume.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
+                VirtualMachine vm = volume.getAttachedVM();
+                if (vm != null) {
+                    Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+                    if (hostId != null) {
+                        return getEndPointFromHostId(hostId);
+                    }
                 }
             }
         }

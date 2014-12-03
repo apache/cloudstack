@@ -43,14 +43,19 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
     @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "Lists resource limits by ID.")
     private Long id;
 
-    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.INTEGER, description = "Type of resource to update. Values are 0, 1, 2, 3, and 4."
-        + "0 - Instance. Number of instances a user can create. " + "1 - IP. Number of public IP addresses an account can own. "
-        + "2 - Volume. Number of disk volumes an account can own." + "3 - Snapshot. Number of snapshots an account can own."
-        + "4 - Template. Number of templates an account can register/create." + "5 - Project. Number of projects an account can own."
-        + "6 - Network. Number of networks an account can own." + "7 - VPC. Number of VPC an account can own."
-        + "8 - CPU. Number of CPU an account can allocate for his resources." + "9 - Memory. Amount of RAM an account can allocate for his resources."
-        + "10 - Primary Storage. Amount of Primary storage an account can allocate for his resoruces."
-        + "11 - Secondary Storage. Amount of Secondary storage an account can allocate for his resources.")
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.INTEGER, description = "Type of resource. Values are 0, 1, 2, 3, 4, 6, 7, 8, 9, 10 and 11. "
+        + "0 - Instance. Number of instances a user can create. "
+        + "1 - IP. Number of public IP addresses an account can own. "
+        + "2 - Volume. Number of disk volumes an account can own. "
+        + "3 - Snapshot. Number of snapshots an account can own. "
+        + "4 - Template. Number of templates an account can register/create. "
+        + "5 - Project. Number of projects an account can own. "
+        + "6 - Network. Number of networks an account can own. "
+        + "7 - VPC. Number of VPC an account can own. "
+        + "8 - CPU. Number of CPU an account can allocate for his resources. "
+        + "9 - Memory. Amount of RAM an account can allocate for his resources. "
+        + "10 - PrimaryStorage. Total primary storage space (in GiB) a user can use. "
+        + "11 - SecondaryStorage. Total secondary storage space (in GiB) a user can use. ")
     private Integer resourceType;
 
     /////////////////////////////////////////////////////

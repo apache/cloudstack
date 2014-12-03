@@ -208,7 +208,7 @@ class TestVMPasswordEnabled(cloudstackTestCase):
             domainid=cls.account.domainid
         )
         # Delete the VM - No longer needed
-        cls.virtual_machine.delete(cls.api_client)
+        cls.virtual_machine.delete(cls.api_client, expunge=True)
         cls.services["small"]["template"] = cls.pw_enabled_template.id
 
         cls.vm = VirtualMachine.create(
@@ -241,7 +241,7 @@ class TestVMPasswordEnabled(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_11_get_vm_password(self):
         """Test get VM password for password enabled template"""
 

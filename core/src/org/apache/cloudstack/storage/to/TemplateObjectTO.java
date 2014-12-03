@@ -135,6 +135,10 @@ public class TemplateObjectTO implements DataTO {
         return this.imageDataStore;
     }
 
+    public void setHypervisorType(Hypervisor.HypervisorType hypervisorType) {
+        this.hypervisorType = hypervisorType;
+    }
+
     @Override
     public Hypervisor.HypervisorType getHypervisorType() {
         return this.hypervisorType;

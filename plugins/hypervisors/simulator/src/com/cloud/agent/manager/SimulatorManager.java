@@ -27,7 +27,7 @@ import com.cloud.simulator.MockVMVO;
 import com.cloud.simulator.dao.MockConfigurationDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
-import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.PowerState;
 
 public interface SimulatorManager extends Manager {
     public static final String Name = "simulator manager";
@@ -62,7 +62,7 @@ public interface SimulatorManager extends Manager {
 
     public HashMap<String, Pair<Long, Long>> syncNetworkGroups(String hostGuid);
 
-    Map<String, State> getVmStates(String hostGuid);
+    Map<String, PowerState> getVmStates(String hostGuid);
 
     Map<String, MockVMVO> getVms(String hostGuid);
 

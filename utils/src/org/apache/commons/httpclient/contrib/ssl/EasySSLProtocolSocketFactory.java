@@ -19,6 +19,16 @@
 
 package org.apache.commons.httpclient.contrib.ssl;
 
+import org.apache.commons.httpclient.ConnectTimeoutException;
+import org.apache.commons.httpclient.HttpClientError;
+import org.apache.commons.httpclient.params.HttpConnectionParams;
+import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -26,20 +36,9 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-
-import org.apache.commons.httpclient.ConnectTimeoutException;
-import org.apache.commons.httpclient.HttpClientError;
-import org.apache.commons.httpclient.params.HttpConnectionParams;
-import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 /**
  * <p>
- * EasySSLProtocolSocketFactory can be used to creats SSL {@link Socket}s
+ * EasySSLProtocolSocketFactory can be used to create SSL {@link Socket}s
  * that accept self-signed certificates.
  * </p>
  * <p>
@@ -84,7 +83,7 @@ import org.apache.commons.logging.LogFactory;
  * </p>
  */
 
-public class EasySSLProtocolSocketFactory implements SecureProtocolSocketFactory {
+public class EasySSLProtocolSocketFactory implements ProtocolSocketFactory {
 
     /** Log object for this class. */
     private static final Log LOG = LogFactory.getLog(EasySSLProtocolSocketFactory.class);
@@ -117,7 +116,7 @@ public class EasySSLProtocolSocketFactory implements SecureProtocolSocketFactory
     }
 
     /**
-     * @see SecureProtocolSocketFactory#createSocket(java.lang.String,int,java.net.InetAddress,int)
+     * @see ProtocolSocketFactory#createSocket(java.lang.String,int,java.net.InetAddress,int)
      */
     @Override
     public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort) throws IOException, UnknownHostException {
@@ -167,17 +166,13 @@ public class EasySSLProtocolSocketFactory implements SecureProtocolSocketFactory
     }
 
     /**
-     * @see SecureProtocolSocketFactory#createSocket(java.lang.String,int)
+     * @see ProtocolSocketFactory#createSocket(java.lang.String,int)
      */
     @Override
     public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
         return getSSLContext().getSocketFactory().createSocket(host, port);
     }
 
-    /**
-     * @see SecureProtocolSocketFactory#createSocket(java.net.Socket,java.lang.String,int,boolean)
-     */
-    @Override
     public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
         return getSSLContext().getSocketFactory().createSocket(socket, host, port, autoClose);
     }

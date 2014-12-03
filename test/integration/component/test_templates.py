@@ -95,6 +95,8 @@ class Services:
                                 "name": "Cent OS Template",
                                 "ostype": 'CentOS 5.3 (64-bit)',
                                 "templatefilter": 'self',
+                                "isfeatured": True,
+                                "ispublic": True,
                         },
                         "templatefilter": 'self',
                         "ostype": 'CentOS 5.3 (64-bit)',
@@ -162,7 +164,7 @@ class TestCreateTemplate(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "provisioning"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_01_create_template(self):
         """Test create public & private template
         """
@@ -387,7 +389,7 @@ class TestTemplates(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_01_create_template_volume(self):
         """Test Create template from volume
         """
@@ -426,7 +428,7 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_03_delete_template(self):
         """Test Delete template
         """
@@ -482,7 +484,7 @@ class TestTemplates(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_04_template_from_snapshot(self):
         """Create Template from snapshot
         """
@@ -493,8 +495,12 @@ class TestTemplates(cloudstackTestCase):
         # 4. Deploy Virtual machine using this template
         # 5. VM should be in running state
 
+        userapiclient = self.testClient.getUserApiClient(
+                                    UserName=self.account.name,
+                                    DomainName=self.account.domain)
+
         volumes = Volume.list(
-                        self.apiclient,
+                        userapiclient,
                         virtualmachineid=self.virtual_machine.id,
                         type='ROOT',
                         listall=True
@@ -504,7 +510,7 @@ class TestTemplates(cloudstackTestCase):
         self.debug("Creating a snapshot from volume: %s" % volume.id)
         #Create a snapshot of volume
         snapshot = Snapshot.create(
-                                   self.apiclient,
+                                   userapiclient,
                                    volume.id,
                                    account=self.account.name,
                                    domainid=self.account.domainid
@@ -512,14 +518,14 @@ class TestTemplates(cloudstackTestCase):
         self.debug("Creating a template from snapshot: %s" % snapshot.id)
         # Generate template from the snapshot
         template = Template.create_from_snapshot(
-                                    self.apiclient,
+                                    userapiclient,
                                     snapshot,
                                     self.services["template"]
                                     )
         self.cleanup.append(template)
         # Verify created template
         templates = Template.list(
-                                self.apiclient,
+                                userapiclient,
                                 templatefilter=\
                                 self.services["template"]["templatefilter"],
                                 id=template.id
@@ -538,7 +544,7 @@ class TestTemplates(cloudstackTestCase):
         self.debug("Deploying a VM from template: %s" % template.id)
         # Deploy new virtual machine using template
         virtual_machine = VirtualMachine.create(
-                                    self.apiclient,
+                                    userapiclient,
                                     self.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=self.account.name,
@@ -548,7 +554,7 @@ class TestTemplates(cloudstackTestCase):
         self.cleanup.append(virtual_machine)
 
         vm_response = VirtualMachine.list(
-                                        self.apiclient,
+                                        userapiclient,
                                         id=virtual_machine.id,
                                         account=self.account.name,
                                         domainid=self.account.domainid

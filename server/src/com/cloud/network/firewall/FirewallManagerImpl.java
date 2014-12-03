@@ -404,6 +404,12 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
             boolean notNullPorts =
                 (newRule.getSourcePortStart() != null && newRule.getSourcePortEnd() != null && rule.getSourcePortStart() != null && rule.getSourcePortEnd() != null);
+            boolean nullPorts =
+                (newRule.getSourcePortStart() == null && newRule.getSourcePortEnd() == null && rule.getSourcePortStart() == null && rule.getSourcePortEnd() == null);
+            if(nullPorts && duplicatedCidrs && (rule.getProtocol().equalsIgnoreCase(newRule.getProtocol())) && !newRule.getProtocol().equalsIgnoreCase(NetUtils.ICMP_PROTO))
+            {
+                throw new NetworkRuleConflictException("There is already a firewall rule specified with protocol = " +newRule.getProtocol()+ " and no ports");
+            }
             if (!notNullPorts) {
                 continue;
             } else if (!oneOfRulesIsFirewall &&
@@ -653,7 +659,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 return false;
             }
         } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Failed to apply firewall rules due to ", ex);
+            s_logger.warn("Failed to apply firewall rules due to : "+ ex.getMessage());
             return false;
         }
 

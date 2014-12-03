@@ -84,6 +84,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> MsStatusSearch;
     protected SearchBuilder<HostVO> DcPrivateIpAddressSearch;
     protected SearchBuilder<HostVO> DcStorageIpAddressSearch;
+    protected SearchBuilder<HostVO> PublicIpAddressSearch;
 
     protected SearchBuilder<HostVO> GuidSearch;
     protected SearchBuilder<HostVO> DcSearch;
@@ -206,6 +207,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         DcStorageIpAddressSearch.and("storageIpAddress", DcStorageIpAddressSearch.entity().getStorageIpAddress(), SearchCriteria.Op.EQ);
         DcStorageIpAddressSearch.and("dc", DcStorageIpAddressSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         DcStorageIpAddressSearch.done();
+
+        PublicIpAddressSearch = createSearchBuilder();
+        PublicIpAddressSearch.and("publicIpAddress", PublicIpAddressSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
+        PublicIpAddressSearch.done();
 
         GuidSearch = createSearchBuilder();
         GuidSearch.and("guid", GuidSearch.entity().getGuid(), SearchCriteria.Op.EQ);
@@ -633,7 +638,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
         host = createForUpdate();
         host.setManagementServerId(null);
-        host.setLastPinged((System.currentTimeMillis() >> 10) - (10 * 60));
+        host.setLastPinged(lastPing);
         host.setDisconnectedOn(new Date());
         ub = getUpdateBuilder(host);
         update(ub, sc, null);
@@ -1067,6 +1072,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("clusterId", clusterId);
         return listBy(sc);
     }
+
+    @Override
+    public HostVO findByPublicIp(String publicIp) {
+        SearchCriteria<HostVO> sc = PublicIpAddressSearch.create();
+        sc.setParameters("publicIpAddress", publicIp);
+        return findOneBy(sc);
+    }
+
 
     @Override
     public List<HostVO> findHypervisorHostInCluster(long clusterId) {

@@ -231,9 +231,6 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
             }
 
             if (result) {
-
-                _volumeDao.deleteVolumesByInstance(volumeInfo.getId());
-
                 long usedBytes = storagePool.getUsedBytes();
                 long capacityIops = storagePool.getCapacityIops();
 
@@ -401,13 +398,13 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
     }
 
     @Override
-    public boolean connectVolumeToHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) {
+    public boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) {
+    public void revokeAccess(DataObject dataObject, Host host, DataStore dataStore) {
         // TODO Auto-generated method stub
 
     }

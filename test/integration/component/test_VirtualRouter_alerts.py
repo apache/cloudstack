@@ -208,7 +208,7 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
 
         alertSubject = "Monitoring Service on VR " + router.name
 
-        if self.hypervisor.lower() == 'vmware':
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
             result = get_process_status(
                         self.apiclient.connection.mgtSvr,
                         22,

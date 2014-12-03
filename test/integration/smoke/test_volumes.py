@@ -30,7 +30,8 @@ from marvin.lib.base import (ServiceOffering,
                              Account,
                              Volume,
                              Host,
-                             DiskOffering)
+                             DiskOffering,
+                             StoragePool,)
 from marvin.lib.common import (get_domain,
                                 get_zone,
                                 get_template)
@@ -227,6 +228,8 @@ class TestCreateVolume(cloudstackTestCase):
                 volume_name = "/dev/vd" + chr(ord('a') + int(list_volume_response[0].deviceid))
                 self.debug(" Using KVM volume_name: %s" % (volume_name))
                 ret = checkVolumeSize(ssh_handle=ssh,volume_name=volume_name,size_to_verify=vol_sz)
+            elif list_volume_response[0].hypervisor.lower() == "hyperv":
+                ret = checkVolumeSize(ssh_handle=ssh,volume_name="/dev/sdb",size_to_verify=vol_sz)
             else:
                 ret = checkVolumeSize(ssh_handle=ssh,size_to_verify=vol_sz)
             self.debug(" Volume Size Expected %s  Actual :%s" %(vol_sz,ret[1]))
@@ -560,16 +563,8 @@ class TestVolumes(cloudstackTestCase):
 
         cmd.id             = rootvolume.id
         cmd.diskofferingid = self.services['diskofferingid']
-        success            = False
-        try:
+        with self.assertRaises(Exception):
             self.apiClient.resizeVolume(cmd)
-        except Exception as ex:
-            if "Can only resize Data volumes" in str(ex):
-                success = True
-        self.assertEqual(
-                success,
-                True,
-                "ResizeVolume - verify root disks cannot be resized by disk offering id")
 
         # Ok, now let's try and resize a volume that is not custom.
         cmd.id             = self.volume.id
@@ -593,39 +588,21 @@ class TestVolumes(cloudstackTestCase):
 
         if hosts[0].hypervisor == "XenServer":
             self.virtual_machine.stop(self.apiClient)
-        elif hosts[0].hypervisor.lower() == "vmware":
-            self.skipTest("Resize Volume is unsupported on VmWare")
+        elif hosts[0].hypervisor.lower() in ("vmware", "hyperv"):
+            self.skipTest("Resize Volume is unsupported on VmWare and Hyper-V")
 
-        self.apiClient.resizeVolume(cmd)
-        count = 0
-        success = True
-        while count < 10:
-            list_volume_response = Volume.list(
-                                                self.apiClient,
-                                                id=self.volume.id,
-                                                type='DATADISK'
-                                                )
-            for vol in list_volume_response:
-                if vol.id == self.volume.id and vol.size != currentSize and vol.state != "Resizing":
-                    success = False
-            if success:
-                break
-            else:
-                time.sleep(1)
-                count += 1
+        # Attempting to resize it should throw an exception, as we're using a non
+        # customisable disk offering, therefore our size parameter should be ignored
+        with self.assertRaises(Exception):
+            self.apiClient.resizeVolume(cmd)
 
-        self.assertEqual(
-                         success,
-                         True,
-                         "Verify the volume did not resize"
-                         )
         if hosts[0].hypervisor == "XenServer":
             self.virtual_machine.start(self.apiClient)
             time.sleep(30)
         return 
 
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true", BugId="CLOUDSTACK-6985")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_08_resize_volume(self):
         """Test resize a volume"""
         # Verify the size is the new size is what we wanted it to be.
@@ -644,8 +621,8 @@ class TestVolumes(cloudstackTestCase):
 
         if hosts[0].hypervisor == "XenServer":
             self.virtual_machine.stop(self.apiClient)
-        elif hosts[0].hypervisor.lower() == "vmware":
-            self.skipTest("Resize Volume is unsupported on VmWare")
+        elif hosts[0].hypervisor.lower() in ("vmware", "hyperv"):
+            self.skipTest("Resize Volume is unsupported on VmWare and Hyper-V")
 
         # resize the data disk
         self.debug("Resize Volume ID: %s" % self.volume.id)
@@ -686,41 +663,55 @@ class TestVolumes(cloudstackTestCase):
                          "Check if the data volume resized appropriately"
                          )
 
-        self.services["disk_offering"]["disksize"] = 10
-        disk_offering_10_GB = DiskOffering.create(
-                                    self.apiclient,
-                                    self.services["disk_offering"]
-                                    )
-        self.cleanup.append(disk_offering_10_GB)
+        can_shrink = False
 
-        cmd                = resizeVolume.resizeVolumeCmd()
-        cmd.id             = self.volume.id
-        cmd.diskofferingid = disk_offering_10_GB.id
-        cmd.shrinkok       = "true"
+        list_volume_response = Volume.list(
+                                            self.apiClient,
+                                            id=self.volume.id,
+                                            type='DATADISK'
+                                            )
+        storage_pool_id = [x.storageid for x in list_volume_response if x.id == self.volume.id][0]
+        storage = StoragePool.list(self.apiclient, id=storage_pool_id)[0]
+        # At present only CLVM supports shrinking volumes
+        if storage.type.lower() == "clvm":
+            can_shrink = True
 
-        self.apiClient.resizeVolume(cmd)
+        if can_shrink:
+            self.services["disk_offering"]["disksize"] = 10
+            disk_offering_10_GB = DiskOffering.create(
+                                        self.apiclient,
+                                        self.services["disk_offering"]
+                                        )
+            self.cleanup.append(disk_offering_10_GB)
 
-        count = 0
-        success = False
-        while count < 3:
-            list_volume_response = Volume.list(
-                                                self.apiClient,
-                                                id=self.volume.id
-                                                )
-            for vol in list_volume_response:
-                if vol.id == self.volume.id and int(vol.size) == (int(disk_offering_10_GB.disksize) * (1024 ** 3)) and vol.state == 'Ready':
-                    success = True
-            if success:
-                break
-            else:
-                time.sleep(10)
-                count += 1
+            cmd                = resizeVolume.resizeVolumeCmd()
+            cmd.id             = self.volume.id
+            cmd.diskofferingid = disk_offering_10_GB.id
+            cmd.shrinkok       = "true"
 
-        self.assertEqual(
-                         success,
-                         True,
-                         "Check if the root volume resized appropriately"
-                         )
+            self.apiClient.resizeVolume(cmd)
+
+            count = 0
+            success = False
+            while count < 3:
+                list_volume_response = Volume.list(
+                                                    self.apiClient,
+                                                    id=self.volume.id
+                                                    )
+                for vol in list_volume_response:
+                    if vol.id == self.volume.id and int(vol.size) == (int(disk_offering_10_GB.disksize) * (1024 ** 3)) and vol.state == 'Ready':
+                        success = True
+                if success:
+                    break
+                else:
+                    time.sleep(10)
+                    count += 1
+
+            self.assertEqual(
+                             success,
+                             True,
+                             "Check if the root volume resized appropriately"
+                             )
 
         #start the vm if it is on xenserver
 

@@ -67,6 +67,7 @@ import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.RawImageProcessor;
+import com.cloud.storage.template.TARProcessor;
 import com.cloud.storage.template.S3TemplateDownloader;
 import com.cloud.storage.template.ScpTemplateDownloader;
 import com.cloud.storage.template.TemplateConstants;
@@ -995,6 +996,10 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         processor = new RawImageProcessor();
         processor.configure("Raw Image Processor", params);
         _processors.put("Raw Image Processor", processor);
+
+        processor = new TARProcessor();
+        processor.configure("TAR Processor", params);
+        _processors.put("TAR Processor", processor);
 
         _templateDir = (String)params.get("public.templates.root.dir");
         if (_templateDir == null) {

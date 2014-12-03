@@ -217,6 +217,9 @@ public class TemplateObject implements TemplateInfo {
                             // For template created from snapshot, template name is determine by resource code.
                             templateVO.setUniqueName(newTemplate.getName());
                         }
+                        if (newTemplate.getHypervisorType() != null) {
+                            templateVO.setHypervisorType(newTemplate.getHypervisorType());
+                        }
                         templateVO.setSize(newTemplate.getSize());
                         imageDao.update(templateVO.getId(), templateVO);
                     }

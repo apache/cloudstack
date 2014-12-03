@@ -74,7 +74,7 @@ uncompress() {
          ;;
   bzip2)  bunzip2 -c $1 > $tmpfile
          ;;
-  ZIP)  unzip -p $1 | cat > $tmpfile
+  [zZ][iI][pP])  unzip -p $1 | cat > $tmpfile
         ;;
   *)	printf "$1"
         return 0

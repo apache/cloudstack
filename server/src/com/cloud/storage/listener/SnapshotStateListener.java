@@ -26,6 +26,7 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.utils.fsm.StateMachine2;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
@@ -72,12 +73,12 @@ public class SnapshotStateListener implements StateListener<State, Event, Snapsh
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, SnapshotVO vo, boolean status, Object opaque) {
-        pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
-        return true;
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, SnapshotVO vo, boolean status, Object opaque) {
+      pubishOnEventBus(transition.getEvent().name(), "postStateTransitionEvent", vo, transition.getCurrentState(), transition.getToState());
+      return true;
     }
 
-    private void pubishOnEventBus(String event, String status, Snapshot vo, State oldState, State newState) {
+  private void pubishOnEventBus(String event, String status, Snapshot vo, State oldState, State newState) {
 
         String configKey = Config.PublishResourceStateEvent.key();
         String value = s_configDao.getValue(configKey);

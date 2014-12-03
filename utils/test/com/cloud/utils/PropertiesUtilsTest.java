@@ -45,6 +45,14 @@ public class PropertiesUtilsTest {
     }
 
     @Test
+    public void loadPropertiesFromFile() throws IOException {
+        File file = File.createTempFile("test", ".properties");
+        FileUtils.writeStringToFile(file, "a=b\nc=d\n");
+        Properties properties = PropertiesUtil.loadFromFile(file);
+        Assert.assertEquals("b", properties.get("a"));
+    }
+
+    @Test
     public void processConfigFile() throws IOException {
         File tempFile = File.createTempFile("temp", ".properties");
         FileUtils.writeStringToFile(tempFile, "a=b\nc=d\n");

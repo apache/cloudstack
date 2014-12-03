@@ -139,6 +139,7 @@ public class TestMessageBus extends TestCase {
             int count = 0;
             while (count < 2) {
                 detector.waitAny(1000);
+                count = count + 1;
             }
         } finally {
             detector.close();

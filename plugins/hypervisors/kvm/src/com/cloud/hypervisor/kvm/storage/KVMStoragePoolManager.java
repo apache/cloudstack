@@ -96,6 +96,7 @@ public class KVMStoragePoolManager {
         // add other storage adaptors here
         // this._storageMapper.put("newadaptor", new NewStorageAdaptor(storagelayer));
         this._storageMapper.put(StoragePoolType.Iscsi.toString(), new IscsiAdmStorageAdaptor());
+        this._storageMapper.put(StoragePoolType.ManagedNFS.toString(), new ManagedNfsStorageAdaptor(storagelayer));
     }
 
     public boolean connectPhysicalDisk(StoragePoolType type, String poolUuid, String volPath, Map<String, String> details) {
@@ -195,15 +196,21 @@ public class KVMStoragePoolManager {
     }
 
     public KVMStoragePool getStoragePool(StoragePoolType type, String uuid) {
+        return this.getStoragePool(type, uuid, false);
+    }
+
+    public KVMStoragePool getStoragePool(StoragePoolType type, String uuid, boolean refreshInfo) {
 
         StorageAdaptor adaptor = getStorageAdaptor(type);
         KVMStoragePool pool = null;
         try {
-            pool = adaptor.getStoragePool(uuid);
+            pool = adaptor.getStoragePool(uuid, refreshInfo);
         } catch (Exception e) {
             StoragePoolInformation info = _storagePools.get(uuid);
             if (info != null) {
                 pool = createStoragePool(info.name, info.host, info.port, info.path, info.userInfo, info.poolType, info.type);
+            } else {
+                throw new CloudRuntimeException("Could not fetch storage pool " + uuid + " from libvirt");
             }
         }
         return pool;
@@ -298,7 +305,9 @@ public class KVMStoragePoolManager {
         StorageAdaptor adaptor = getStorageAdaptor(type);
         _haMonitor.removeStoragePool(uuid);
         adaptor.deleteStoragePool(uuid);
-        _storagePools.remove(uuid);
+        synchronized (_storagePools) {
+            _storagePools.remove(uuid);
+        }
         return true;
     }
 

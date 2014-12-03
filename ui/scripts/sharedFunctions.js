@@ -14,13 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-var g_mySession = null;
+
 var g_sessionKey = null;
 var g_role = null; // roles - root, domain-admin, ro-admin, user
 var g_username = null;
 var g_userid = null;
 var g_account = null;
 var g_domainid = null;
+var g_hostid = null;
 var g_loginCmdText = null;
 var g_enableLogging = false;
 var g_timezoneoffset = null;
@@ -48,6 +49,56 @@ var md5HashedLogin = false;
 //page size for API call (e.g."listXXXXXXX&pagesize=N" )
 var pageSize = 20;
 //var pageSize = 1; //for testing only
+
+function to_json_array(str) {
+    var simple_array = str.split(",");
+    var json_array = [];
+
+    $.each(simple_array, function(index, value) {
+        if ($.trim(value).length > 0) {
+            var obj = {
+                          id: value,
+                          name: value
+                      };
+
+            json_array.push(obj);
+        }
+    });
+
+    return json_array;
+}
+
+function _tag_equals(tag1, tag2) {
+    return (tag1.name == tag2.name) && (tag1.id == tag2.id);
+}
+
+function _tag_array_contains(tag, tags)
+{
+    for (var i = 0; i < tags.length; i++)
+    {
+        if (_tag_equals(tags[i], tag)) return true;
+    }
+
+    return false;
+}
+
+function unique_tags(tags)
+{
+    var unique = [];
+
+    if (tags != null)
+    {
+        for (var i = 0; i < tags.length; i++)
+        {
+            if (!_tag_array_contains(tags[i], unique))
+            {
+                unique.push(tags[i]);
+            }
+        }
+    }
+
+    return unique;
+}
 
 //async action
 var pollAsyncJobResult = function(args) {
@@ -212,7 +263,7 @@ var addGuestNetworkDialog = {
                                     if (items != null) {
                                         for (var i = 0; i < items.length; i++) {
                                             if (items[i].networktype == 'Advanced') {
-                                                addGuestNetworkDialog.zoneObjs.push(items[i]);
+                                                addGuestNetworkDialog.zoneObjs.push(items[i]); 
                                             }
                                         }
                                     }
@@ -238,42 +289,44 @@ var addGuestNetworkDialog = {
                         if ('physicalNetworks' in args.context) { //Infrastructure menu > zone detail > guest traffic type > network tab (only shown in advanced zone) > add guest network dialog
                             addGuestNetworkDialog.physicalNetworkObjs = args.context.physicalNetworks;
                         } else { //Network menu > guest network section > add guest network dialog
-                            var selectedZoneId = args.$form.find('.form-item[rel=zoneId]').find('select').val();
-                            $.ajax({
-                                url: createURL('listPhysicalNetworks'),
-                                data: {
-                                    zoneid: selectedZoneId
-                                },
-                                async: false,
-                                success: function(json) {                                    
-                                	var items = [];
-                                	var physicalnetworks = json.listphysicalnetworksresponse.physicalnetwork;
-                                	if (physicalnetworks != null) {
-                                	    for (var i = 0; i < physicalnetworks.length; i++) {
-                                	    	$.ajax({
-                                	    		url: createURL('listTrafficTypes'),
-                                	    		data: {
-                                	    			physicalnetworkid: physicalnetworks[i].id
-                                	    		},
-                                	    		async: false,
-                                	    		success: function(json) {                                	    			
-                                	    			var traffictypes = json.listtraffictypesresponse.traffictype;
-                                	    			if (traffictypes != null) {
-                                	    				for (var k = 0; k < traffictypes.length; k++) {
-                                	    					if (traffictypes[k].traffictype == 'Guest') {
-                                	    						items.push(physicalnetworks[i]);
-                                	    						break;
-                                	    					}
-                                	    				}
-                                	    			} 
-                                	    		}
-                                	    	});
-                                	    }	
-                                	}  
-                                	
-                                	addGuestNetworkDialog.physicalNetworkObjs = items;                                	
-                                }
-                            });
+                            var selectedZoneId = args.$form.find('.form-item[rel=zoneId]').find('select').val();                           
+                            if (selectedZoneId != undefined && selectedZoneId.length > 0) {
+	                            $.ajax({
+	                                url: createURL('listPhysicalNetworks'),
+	                                data: {
+	                                    zoneid: selectedZoneId
+	                                },
+	                                async: false,
+	                                success: function(json) {                                    
+	                                	var items = [];
+	                                	var physicalnetworks = json.listphysicalnetworksresponse.physicalnetwork;
+	                                	if (physicalnetworks != null) {
+	                                	    for (var i = 0; i < physicalnetworks.length; i++) {
+	                                	    	$.ajax({
+	                                	    		url: createURL('listTrafficTypes'),
+	                                	    		data: {
+	                                	    			physicalnetworkid: physicalnetworks[i].id
+	                                	    		},
+	                                	    		async: false,
+	                                	    		success: function(json) {                                	    			
+	                                	    			var traffictypes = json.listtraffictypesresponse.traffictype;
+	                                	    			if (traffictypes != null) {
+	                                	    				for (var k = 0; k < traffictypes.length; k++) {
+	                                	    					if (traffictypes[k].traffictype == 'Guest') {
+	                                	    						items.push(physicalnetworks[i]);
+	                                	    						break;
+	                                	    					}
+	                                	    				}
+	                                	    			} 
+	                                	    		}
+	                                	    	});
+	                                	    }	
+	                                	}  
+	                                	
+	                                	addGuestNetworkDialog.physicalNetworkObjs = items;                                	
+	                                }
+	                            });
+                            }
                         }
                         var items = [];
                         if (addGuestNetworkDialog.physicalNetworkObjs != null) {
@@ -474,7 +527,7 @@ var addGuestNetworkDialog = {
                 networkOfferingId: {
                     label: 'label.network.offering',
                     docID: 'helpGuestNetworkZoneNetworkOffering',
-                    dependsOn: ['zoneId', 'scope'],
+                    dependsOn: ['zoneId', 'physicalNetworkId', 'scope'],
                     select: function(args) {                    	
                     	if(args.$form.find('.form-item[rel=zoneId]').find('select').val() == null || args.$form.find('.form-item[rel=zoneId]').find('select').val().length == 0) {
                     		args.response.success({
@@ -584,38 +637,62 @@ var addGuestNetworkDialog = {
                 //IPv4 (begin)
                 ip4gateway: {
                     label: 'label.ipv4.gateway',
-                    docID: 'helpGuestNetworkZoneGateway'
+                    docID: 'helpGuestNetworkZoneGateway',
+                    validation: {
+                        ipv4: true
+                    }
                 },
                 ip4Netmask: {
                     label: 'label.ipv4.netmask',
-                    docID: 'helpGuestNetworkZoneNetmask'
+                    docID: 'helpGuestNetworkZoneNetmask',
+                    validation: {
+                        netmask: true
+                    }
                 },
                 startipv4: {
                     label: 'label.ipv4.start.ip',
-                    docID: 'helpGuestNetworkZoneStartIP'
+                    docID: 'helpGuestNetworkZoneStartIP',
+                    validation: {
+                        ipv4: true
+                    }
                 },
                 endipv4: {
                     label: 'label.ipv4.end.ip',
-                    docID: 'helpGuestNetworkZoneEndIP'
+                    docID: 'helpGuestNetworkZoneEndIP',
+                    validation: {
+                        ipv4: true
+                    }
                 },
                 //IPv4 (end)
 
                 //IPv6 (begin)
                 ip6gateway: {
                     label: 'label.ipv6.gateway',
-                    docID: 'helpGuestNetworkZoneGateway'
+                    docID: 'helpGuestNetworkZoneGateway',
+                    validation: {
+                        ipv6: true
+                    }
                 },
                 ip6cidr: {
-                    label: 'label.ipv6.CIDR'
+                    label: 'label.ipv6.CIDR',
+                    validation: {
+                        ipv6cidr: true
+                    }
                 },
                 startipv6: {
                     label: 'label.ipv6.start.ip',
-                    docID: 'helpGuestNetworkZoneStartIP'
+                    docID: 'helpGuestNetworkZoneStartIP',
+                    validation: {
+                        ipv6: true
+                    }
                 },
                 endipv6: {
                     label: 'label.ipv6.end.ip',
-                    docID: 'helpGuestNetworkZoneEndIP'
-                },
+                    docID: 'helpGuestNetworkZoneEndIP',
+                    validation: {
+                        ipv6: true
+                    }
+               },
                 //IPv6 (end)
 
                 networkdomain: {
@@ -795,10 +872,13 @@ var addGuestNetworkDialog = {
             var property;
             for (property in json) {
                 var errorObj = json[property];
-                if (errorObj.errorcode == 401 && errorObj.errortext == "unable to verify user credentials and/or request signature")
+                if (errorObj.errorcode == 401 && errorObj.errortext == "unable to verify user credentials and/or request signature") {
+                    $('#container').hide();
+
                     return _l('label.session.expired');
-                else
+                } else {
                     return _s(errorObj.errortext);
+                }
             }
         } else {
             return "";
@@ -1048,39 +1128,39 @@ cloudStack.converters = {
 
                 // These are old values -- can be removed in the future
             case 8:
-                return "User VM";
+                return _l('label.user.vm');
             case 11:
-                return "Routing Host";
+                return _l('label.routing.host');
             case 12:
-                return "Storage";
+                return _l('label.menu.storage');
             case 13:
-                return "Usage Server";
+                return _l('label.usage.server');
             case 14:
-                return "Management Server";
+                return _l('label.management.server');
             case 15:
-                return "Domain Router";
+                return _l('label.domain.router');
             case 16:
-                return "Console Proxy";
+                return _l('label.console.proxy');
             case 17:
-                return "User VM";
+                return _l('label.user.vm');
             case 18:
-                return "VLAN";
+                return _l('label.vlan');
             case 19:
-                return "Secondary Storage VM";
+                return _l('label.secondary.storage.vm');
             case 20:
-                return "Usage Server";
+                return _l('label.usage.server');
             case 21:
-                return "Storage";
+                return _l('label.menu.storage');
             case 22:
-                return "Update Resource Count";
+                return _l('label.action.update.resource.count');
             case 23:
-                return "Usage Sanity Result";
+                return _l('label.usage.sanity.result');
             case 24:
-                return "Direct Attached Public IP";
+                return _l('label.direct.attached.public.ip');
             case 25:
-                return "Local Storage";
+                return _l('label.local.storage');
             case 26:
-                return "Resource Limit Exceeded";
+                return _l('label.resource.limit.exceeded');
         }
     },
 
@@ -1107,25 +1187,25 @@ cloudStack.converters = {
             case 9:
                 return _l('label.local.storage');
             case 10:
-                return "Routing Host";
+                return _l('label.routing.host');
             case 11:
-                return "Storage";
+                return _l('label.menu.storage');
             case 12:
-                return "Usage Server";
+                return _l('label.usage.server');
             case 13:
-                return "Management Server";
+                return _l('label.management.server');
             case 14:
-                return "Domain Router";
+                return _l('label.domain.router');
             case 15:
-                return "Console Proxy";
+                return _l('label.console.proxy');
             case 16:
-                return "User VM";
+                return _l('label.user.vm');
             case 17:
-                return "VLAN";
+                return _l('label.vlan');
             case 18:
-                return "Secondary Storage VM";
+                return _l('label.secondary.storage.vm');
             case 19:
-                return "GPU";
+                return _l('label.gpu');
         }
     },
 
@@ -1280,6 +1360,11 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
 
     function nfsURL(server, path) {
         var url;
+
+        if (path.substring(0, 1) != "/") {
+            path = "/" + path;
+        }
+
         if (server.indexOf("://") == -1)
             url = "nfs://" + server + path;
         else
@@ -1289,6 +1374,11 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
 
     function smbURL(server, path, smbUsername, smbPassword, smbDomain) {
         var url = '';
+
+        if (path.substring(0, 1) != "/") {
+            path = "/" + path;
+        }
+
         if (server.indexOf('://') == -1) {
         	url += 'cifs://';
         }
@@ -1401,7 +1491,7 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
         }
         return vmName;
     }
-
+  
 var timezoneMap = new Object();
 timezoneMap["Etc/GMT+12"] = "Etc/GMT+12 [GMT-12:00]";
 timezoneMap["Etc/GMT+11"] = "Etc/GMT+11 [GMT-11:00]";
@@ -2123,42 +2213,42 @@ cloudStack.api = {
                 }
             },
             dataProvider: function(args) {
-            	args.response.success({
-                    data: args.jsonObj.tags
-                });
-            	
-            	/*
-                var resourceId = args.context[contextId][0].id;
-                var data = {
-                    resourceId: resourceId,
-                    resourceType: resourceType
-                };
+            	if (args.jsonObj != undefined) {
+	            	args.response.success({
+	                    data: args.jsonObj.tags
+	                });
+            	} else {
+            		var resourceId = args.context[contextId][0].id;
+                    var data = {
+                        resourceId: resourceId,
+                        resourceType: resourceType
+                    };
 
-                if (isAdmin() || isDomainAdmin()) {
-                    data.listAll = true;
-                }
-
-                if (args.context.projects) {
-                    data.projectid = args.context.projects[0].id;
-                }
-
-                if (args.jsonObj != null && args.jsonObj.projectid != null && data.projectid == null) {
-                    data.projectid = args.jsonObj.projectid;
-                }
-
-                $.ajax({
-                    url: createURL('listTags'),
-                    data: data,
-                    success: function(json) {
-                        args.response.success({
-                            data: json.listtagsresponse ? json.listtagsresponse.tag : []
-                        });
-                    },
-                    error: function(json) {
-                        args.response.error(parseXMLHttpResponse(json));
+                    if (isAdmin() || isDomainAdmin()) {
+                        data.listAll = true;
                     }
-                });
-                */
+
+                    if (args.context.projects) {
+                        data.projectid = args.context.projects[0].id;
+                    }
+
+                    if (args.jsonObj != null && args.jsonObj.projectid != null && data.projectid == null) {
+                        data.projectid = args.jsonObj.projectid;
+                    }
+
+                    $.ajax({
+                        url: createURL('listTags'),
+                        data: data,
+                        success: function(json) {
+                            args.response.success({
+                                data: json.listtagsresponse ? json.listtagsresponse.tag : []
+                            });
+                        },
+                        error: function(json) {
+                            args.response.error(parseXMLHttpResponse(json));
+                        }
+                    });
+            	}            	
             }
         };
     }
@@ -2169,3 +2259,69 @@ function strOrFunc(arg, args) {
         return arg(args);
     return arg;
 }
+
+$.validator.addMethod("netmask", function(value, element) {
+    if (this.optional(element) && value.length == 0)
+        return true;
+
+    var valid = [ 255, 254, 252, 248, 240, 224, 192, 128, 0 ];
+    var octets = value.split('.');
+    if (typeof octets == 'undefined' || octets.length != 4) {
+        return false;
+    }
+    var wasAll255 = true;
+    for (index = 0; index < octets.length; index++) {
+        if (octets[index] != Number(octets[index]).toString()) //making sure that "", " ", "00", "0 ","255  ", etc. will not pass
+            return false;
+        wasAll255 = wasAll255 && octets[index] == 255;
+        if ($.inArray(Number(octets[index]), valid) < 0)
+            return false;
+        if (!wasAll255 && index > 0 && Number(octets[index]) != 0 && Number(octets[index - 1]) != 255)
+            return false;
+    }
+
+    return true;
+}, "The specified netmask is invalid.");
+
+$.validator.addMethod("ipv6cidr", function(value, element) {
+    if (this.optional(element) && value.length == 0)
+        return true;
+
+    var parts = value.split('/');
+    if (typeof parts == 'undefined' || parts.length != 2) {
+        return false;
+    }
+
+    if (!$.validator.methods.ipv6.call(this, parts[0], element))
+        return false;
+
+    if (parts[1] != Number(parts[1]).toString()) //making sure that "", " ", "00", "0 ","2  ", etc. will not pass
+        return false;
+
+    if (Number(parts[1]) < 0 || Number(parts[1] > 32))
+        return false;
+
+    return true;
+}, "The specified IPv6 CIDR is invalid.");
+
+$.validator.addMethod("ipv4cidr", function(value, element) {
+    if (this.optional(element) && value.length == 0)
+        return true;
+
+    var parts = value.split('/');
+    if (typeof parts == 'undefined' || parts.length != 2) {
+        return false;
+    }
+
+    if (!$.validator.methods.ipv4.call(this, parts[0], element))
+        return false;
+
+    if (parts[1] != Number(parts[1]).toString()) //making sure that "", " ", "00", "0 ","2  ", etc. will not pass
+        return false;
+
+    if (Number(parts[1]) < 0 || Number(parts[1] > 32))
+        return false;
+
+    return true;
+}, "The specified IPv4 CIDR is invalid.");
+

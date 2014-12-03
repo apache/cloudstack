@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.agent.api.Answer;
@@ -41,18 +41,20 @@ import com.cloud.resource.ServerResource;
 public class DirectAgentAttache extends AgentAttache {
     private final static Logger s_logger = Logger.getLogger(DirectAgentAttache.class);
 
+    protected final ConfigKey<Integer> _HostPingRetryCount = new ConfigKey<Integer>("Advanced", Integer.class, "host.ping.retry.count", "0",
+            "Number of times retrying a host ping while waiting for check results", true);
+    protected final ConfigKey<Integer> _HostPingRetryTimer = new ConfigKey<Integer>("Advanced", Integer.class, "host.ping.retry.timer", "5",
+            "Interval to wait before retrying a host ping while waiting for check results", true);
     ServerResource _resource;
     List<ScheduledFuture<?>> _futures = new ArrayList<ScheduledFuture<?>>();
-    AgentManagerImpl _mgr;
     long _seq = 0;
     LinkedList<Task> tasks = new LinkedList<Task>();
     AtomicInteger _outstandingTaskCount;
     AtomicInteger _outstandingCronTaskCount;
 
-    public DirectAgentAttache(AgentManagerImpl agentMgr, long id, String name, ServerResource resource, boolean maintenance, AgentManagerImpl mgr) {
+    public DirectAgentAttache(AgentManagerImpl agentMgr, long id, String name, ServerResource resource, boolean maintenance) {
         super(agentMgr, id, name, maintenance);
         _resource = resource;
-        _mgr = mgr;
         _outstandingTaskCount = new AtomicInteger(0);
         _outstandingCronTaskCount = new AtomicInteger(0);
     }
@@ -162,7 +164,15 @@ public class DirectAgentAttache extends AgentAttache {
                 ServerResource resource = _resource;
 
                 if (resource != null) {
-                    PingCommand cmd = resource.getCurrentStatus(_id);
+                    PingCommand cmd = null;
+                    int retried = 0;
+                    cmd = resource.getCurrentStatus(_id);
+                    while (cmd == null && retried++ < _HostPingRetryCount.value())
+                    {
+                        Thread.sleep(1000*_HostPingRetryTimer.value());
+                        cmd = resource.getCurrentStatus(_id);
+                    }
+
                     if (cmd == null) {
                         s_logger.warn("Unable to get current status on " + _id + "(" + _name + ")");
                         return;
@@ -176,7 +186,7 @@ public class DirectAgentAttache extends AgentAttache {
                         s_logger.trace("SeqA " + _id + "-" + seq + ": " + new Request(_id, -1, cmd, false).toString());
                     }
 
-                    _mgr.handleCommands(DirectAgentAttache.this, seq, new Command[] {cmd});
+                    _agentMgr.handleCommands(DirectAgentAttache.this, seq, new Command[] {cmd});
                 } else {
                     s_logger.debug("Unable to send ping because agent is disconnected " + _id + "(" + _name + ")");
                 }

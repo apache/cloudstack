@@ -28,6 +28,9 @@ public interface StorageAdaptor {
 
     public KVMStoragePool getStoragePool(String uuid);
 
+    // Get the storage pool from libvirt, but control if libvirt should refresh the pool (can take a long time)
+    public KVMStoragePool getStoragePool(String uuid, boolean refreshInfo);
+
     // given disk path (per database) and pool, create new KVMPhysicalDisk, populate
     // it with info from local disk, and return it
     public KVMPhysicalDisk getPhysicalDisk(String volumeUuid, KVMStoragePool pool);
@@ -49,7 +52,7 @@ public interface StorageAdaptor {
     // handled by your adaptor, return false if not. 2) clean up device, return true
     public boolean disconnectPhysicalDiskByPath(String localPath);
 
-    public boolean deletePhysicalDisk(String uuid, KVMStoragePool pool);
+    public boolean deletePhysicalDisk(String uuid, KVMStoragePool pool, Storage.ImageFormat format);
 
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template,
             String name, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size,

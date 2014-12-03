@@ -33,10 +33,16 @@ qemu_img="cloud-qemu-img"
 which $qemu_img >& /dev/null
 if [ $? -gt 0 ]
 then
-   which qemu-img >& /dev/null
+   which ccp-qemu-img >& /dev/null
    if [ $? -eq 0 ]
    then
+       qemu_img="ccp-qemu-img"
+   else
+    which qemu-img >& /dev/null
+    if [ $? -eq 0 ]
+    then
        qemu_img="qemu-img"
+    fi
    fi
 fi
 
@@ -146,7 +152,8 @@ destroy_snapshot() {
     fi
     lvm lvremove -f "${vg}/${snapshotname}-cow"
   elif [ -f $disk ]; then
-     $qemu_img snapshot -d "$snapshotname" $disk
+     #delete all the existing snapshots
+     $qemu_img snapshot -l $disk |tail -n +3|awk '{print $1}'|xargs -I {} $qemu_img snapshot -d {} $disk >&2
      if [ $? -gt 0 ]
      then
        failed=2

@@ -72,17 +72,6 @@ def setup_iscsi(session, args):
  
 
 @echo
-def getgateway(session, args):
-    mgmt_ip = args['mgmtIP']
-    try:
-        cmd = ["bash", "/opt/cloud/bin/network_info.sh", "-g", mgmt_ip]
-        txt = util.pread2(cmd)
-    except:
-        txt = ''
-
-    return txt
-    
-@echo
 def preparemigration(session, args):
     uuid = args['uuid']
     try:
@@ -373,7 +362,7 @@ def allow_egress_traffic(session):
 
 def ipset(ipsetname, proto, start, end, ips):
     try:
-        util.pread2(['ipset', '-N', ipsetname, 'iptreemap'])
+        util.pread2(['ipset', '-N', ipsetname, 'iphash'])
     except:
         logging.debug("ipset chain already exists" + ipsetname)
 
@@ -381,7 +370,7 @@ def ipset(ipsetname, proto, start, end, ips):
     ipsettmp = ''.join(''.join(ipsetname.split('-')).split('_')) + str(int(time.time()) % 1000)
 
     try: 
-        util.pread2(['ipset', '-N', ipsettmp, 'iptreemap']) 
+        util.pread2(['ipset', '-N', ipsettmp, 'iphash']) 
     except:
         logging.debug("Failed to create temp ipset, reusing old name= " + ipsettmp)
         try: 
@@ -1272,7 +1261,7 @@ def inflate_rules (zipped):
 def cache_ipset_keyword():
     tmpname = 'ipsetqzvxtmp'
     try:
-        util.pread2(['/bin/bash', '-c', 'ipset -N ' + tmpname + ' iptreemap'])
+        util.pread2(['/bin/bash', '-c', 'ipset -N ' + tmpname + ' iphash'])
     except:
         util.pread2(['/bin/bash', '-c', 'ipset -F ' + tmpname])
 
@@ -1487,7 +1476,7 @@ def network_rules(session, args):
 
 if __name__ == "__main__":
      XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi,
-                            "getgateway": getgateway, "preparemigration": preparemigration, 
+                            "preparemigration": preparemigration, 
                             "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
                             "createFile": createFile, "deleteFile": deleteFile,
                             "network_rules":network_rules, 

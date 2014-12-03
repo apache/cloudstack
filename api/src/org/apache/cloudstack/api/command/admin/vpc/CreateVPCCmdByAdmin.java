@@ -31,17 +31,17 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.Vpc;
 
-@APICommand(name = "createVPC", description = "Creates a VPC", responseObject = VpcResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "createVPC", description = "Creates a VPC", responseObject = VpcResponse.class, responseView = ResponseView.Full, entityType = {Vpc.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVPCCmdByAdmin extends CreateVPCCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVPCCmdByAdmin.class.getName());
 
     @Override
     public void execute() {
         Vpc vpc = null;
-        boolean success = true;
         try {
             if (isStart()) {
-                success = _vpcService.startVpc(getEntityId(), true);
+                _vpcService.startVpc(getEntityId(), true);
             } else {
                 s_logger.debug("Not starting VPC as " + ApiConstants.START + "=false was passed to the API");
              }

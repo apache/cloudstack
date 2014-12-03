@@ -53,6 +53,9 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.ALLOCATED_ONLY, type = CommandType.BOOLEAN, description = "limits search results to allocated public IP addresses")
     private Boolean allocatedOnly;
 
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "lists all public IP addresses by state")
+    private String state;
+
     @Parameter(name = ApiConstants.FOR_VIRTUAL_NETWORK, type = CommandType.BOOLEAN, description = "the virtual network for the IP address")
     private Boolean forVirtualNetwork;
 
@@ -150,6 +153,22 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
         return super.getDisplay();
     }
 
+    public Boolean isForLoadBalancing() {
+        return forLoadBalancing;
+    }
+
+    public Boolean getForVirtualNetwork() {
+        return forVirtualNetwork;
+    }
+
+    public Boolean getForLoadBalancing() {
+        return forLoadBalancing;
+    }
+
+    public String getState() {
+        return state;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -177,21 +196,5 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
     @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.IpAddress;
-    }
-
-    public Boolean isForLoadBalancing() {
-        return forLoadBalancing;
-    }
-
-    public Boolean getAllocatedOnly() {
-        return allocatedOnly;
-    }
-
-    public Boolean getForVirtualNetwork() {
-        return forVirtualNetwork;
-    }
-
-    public Boolean getForLoadBalancing() {
-        return forLoadBalancing;
     }
 }

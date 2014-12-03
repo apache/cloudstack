@@ -16,18 +16,20 @@
 # under the License.
 
 # Import Local Modules
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackException import *
-from marvin.cloudstackAPI import *
-from marvin.sshClient import SshClient
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
-from marvin.lib.utils import checkVolumeSize
-from marvin.codes import SUCCESS
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.lib.base import (VmSnapshot,
+                             Snapshot,
+                             DiskOffering,
+                             ServiceOffering,
+                             VirtualMachine,
+                             Account,
+                             Volume)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template)
+from marvin.lib.utils import validateList, cleanup_resources
+from marvin.codes import PASS
 from nose.plugins.attrib import attr
-from time import sleep
-from ctypes.wintypes import BOOLEAN
 
 class TestSnapshots(cloudstackTestCase):
 
@@ -57,7 +59,7 @@ class TestSnapshots(cloudstackTestCase):
                 cls.services["disk_offering"]["storagetype"] = 'shared'
 
             cls.services['mode'] = cls.zone.networktype
-            cls.services["virtual_machine"]["hypervisor"] = cls.testClient.getHypervisorInfo()
+            cls.services["virtual_machine"]["hypervisor"] = cls.hypervisor
             cls.services["virtual_machine"]["zoneid"] = cls.zone.id
             cls.services["virtual_machine"]["template"] = cls.template.id
             cls.services["custom_volume"]["zoneid"] = cls.zone.id
@@ -89,7 +91,6 @@ class TestSnapshots(cloudstackTestCase):
                                         domainid=cls.account.domainid,
                                         serviceofferingid=cls.service_offering.id,
                                     )
-            cls._cleanup.append(cls.virtual_machine)
         except Exception as e:
             cls.tearDownClass()
             raise Exception("Warning: Exception in setup : %s" % e)
@@ -145,7 +146,7 @@ class TestSnapshots(cloudstackTestCase):
                                                                                           ))
         return return_flag
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_01_list_volume_snapshots_pagination(self):
         """
         @Desc: Test to List Volume Snapshots pagination
@@ -163,6 +164,8 @@ class TestSnapshots(cloudstackTestCase):
         Step11: Listing all the volume snapshots in page2
         Step12: Verifying that list size is 0
         """
+        if self.hypervisor.lower() in ['hyperv']:
+            raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # Listing all the volume snapshots for a User
         list_vol_snaps_before = Snapshot.list(
                                               self.userapiclient,
@@ -263,6 +266,7 @@ class TestSnapshots(cloudstackTestCase):
                         snapshot_created,
                         self.userapiclient
                         )
+        self.cleanup.remove(snapshot_created)
         # Listing all the snapshots in page 2 again
         list_vol_snaps_page2 = Snapshot.list(
                                              self.userapiclient,
@@ -277,7 +281,7 @@ class TestSnapshots(cloudstackTestCase):
                           )
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_02_list_volume_snapshots_byid(self):
         """
         @Desc: Test to List Volume Snapshots by Id
@@ -291,6 +295,8 @@ class TestSnapshots(cloudstackTestCase):
         Step7: Verifying that list size is 1
         Step8: Verifying details of the listed volume snapshot
         """
+        if self.hypervisor.lower() in ['hyperv']:
+            raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # Listing all the volume snapshots for a User
         list_vol_snaps_before = Snapshot.list(
                                               self.userapiclient,
@@ -395,7 +401,7 @@ class TestSnapshots(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_03_list_vm_snapshots_pagination(self):
         """
         @Desc: Test to List VM Snapshots pagination
@@ -413,8 +419,8 @@ class TestSnapshots(cloudstackTestCase):
         Step11: Listing all the volume snapshots in page2
         Step12: Verifying that list size is 0
         """
-        if self.hypervisor.lower() == 'kvm':
-            raise unittest.SkipTest("VM Snapshot is not supported on KVM. Hence, skipping the test")
+        if self.hypervisor.lower() in ['kvm', 'hyperv']:
+            raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # Listing all the VM snapshots for a User
         list_vm_snaps_before = VmSnapshot.list(
                                                self.userapiclient,
@@ -533,7 +539,7 @@ class TestSnapshots(cloudstackTestCase):
                                     )
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_04_list_vm_snapshots_byid(self):
         """
         @summary: Test to List VM Snapshots by Id
@@ -547,8 +553,8 @@ class TestSnapshots(cloudstackTestCase):
         Step7: Verifying that list size is 1
         Step8: Verifying details of the listed VM snapshot
         """
-        if self.hypervisor.lower() == 'kvm':
-            raise unittest.SkipTest("VM Snapshot is not supported on KVM. Hence, skipping the test")
+        if self.hypervisor.lower() in ['kvm', 'hyperv']:
+            raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # Listing all the VM snapshots for a User
         list_vm_snaps_before = VmSnapshot.list(
                                                self.userapiclient,

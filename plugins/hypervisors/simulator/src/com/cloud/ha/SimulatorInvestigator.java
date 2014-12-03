@@ -39,7 +39,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.simulator.dao.MockConfigurationDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.PowerState;
 
 @Local(value=Investigator.class)
 public class SimulatorInvestigator extends AdapterBase implements Investigator {
@@ -90,7 +90,7 @@ public class SimulatorInvestigator extends AdapterBase implements Investigator {
             }
             CheckVirtualMachineAnswer cvmAnswer = (CheckVirtualMachineAnswer)answer;
             s_logger.debug("Agent responded with state " + cvmAnswer.getState().toString());
-            return cvmAnswer.getState() == State.Running;
+            return cvmAnswer.getState() == PowerState.PowerOn;
         } catch (AgentUnavailableException e) {
             s_logger.debug("Unable to reach the agent for " + vm.toString() + ": " + e.getMessage());
             return null;

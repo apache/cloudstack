@@ -16,13 +16,14 @@
 // under the License.
 package org.apache.cloudstack.ldap;
 
+import java.io.IOException;
 import java.util.Hashtable;
 
 import javax.inject.Inject;
 import javax.naming.Context;
 import javax.naming.NamingException;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
+import javax.naming.ldap.InitialLdapContext;
+import javax.naming.ldap.LdapContext;
 
 import org.apache.log4j.Logger;
 
@@ -39,27 +40,28 @@ public class LdapContextFactory {
         _ldapConfiguration = ldapConfiguration;
     }
 
-    public DirContext createBindContext() throws NamingException {
+    public LdapContext createBindContext() throws NamingException, IOException {
         return createBindContext(null);
     }
 
-    public DirContext createBindContext(final String providerUrl) throws NamingException {
+    public LdapContext createBindContext(final String providerUrl) throws NamingException, IOException {
         final String bindPrincipal = _ldapConfiguration.getBindPrincipal();
         final String bindPassword = _ldapConfiguration.getBindPassword();
         return createInitialDirContext(bindPrincipal, bindPassword, providerUrl, true);
     }
 
-    private DirContext createInitialDirContext(final String principal, final String password, final boolean isSystemContext) throws NamingException {
+    private LdapContext createInitialDirContext(final String principal, final String password, final boolean isSystemContext) throws NamingException, IOException {
         return createInitialDirContext(principal, password, null, isSystemContext);
     }
 
-    private DirContext createInitialDirContext(final String principal, final String password, final String providerUrl, final boolean isSystemContext) throws NamingException {
+    private LdapContext createInitialDirContext(final String principal, final String password, final String providerUrl, final boolean isSystemContext)
+        throws NamingException, IOException {
         Hashtable<String, String> environment = getEnvironment(principal, password, providerUrl, isSystemContext);
         s_logger.debug("initializing ldap with provider url: " + environment.get(Context.PROVIDER_URL));
-        return new InitialDirContext(environment);
+        return new InitialLdapContext(environment, null);
     }
 
-    public DirContext createUserContext(final String principal, final String password) throws NamingException {
+    public LdapContext createUserContext(final String principal, final String password) throws NamingException, IOException {
         return createInitialDirContext(principal, password, false);
     }
 
@@ -82,7 +84,7 @@ public class LdapContextFactory {
 
         environment.put(Context.INITIAL_CONTEXT_FACTORY, factory);
         environment.put(Context.PROVIDER_URL, url);
-        environment.put("com.sun.jndi.ldap.read.timeout", "500");
+        environment.put("com.sun.jndi.ldap.read.timeout", _ldapConfiguration.getReadTimeout().toString());
         environment.put("com.sun.jndi.ldap.connect.pool", "true");
 
         enableSSL(environment);
@@ -109,14 +111,4 @@ public class LdapContextFactory {
         }
     }
 
-    public void testConnection(final String providerUrl) throws NamingException {
-        try {
-            createBindContext(providerUrl);
-            s_logger.info("LDAP Connection was successful");
-        } catch (final NamingException e) {
-            s_logger.warn("LDAP Connection failed");
-            s_logger.error(e.getMessage(), e);
-            throw e;
-        }
-    }
 }

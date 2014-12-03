@@ -53,6 +53,11 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
+    public KVMStoragePool getStoragePool(String uuid, boolean refreshInfo) {
+        return MapStorageUuidToStoragePool.get(uuid);
+    }
+
+    @Override
     public boolean deleteStoragePool(String uuid) {
         return MapStorageUuidToStoragePool.remove(uuid) != null;
     }
@@ -327,7 +332,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public boolean deletePhysicalDisk(String volumeUuid, KVMStoragePool pool) {
+    public boolean deletePhysicalDisk(String volumeUuid, KVMStoragePool pool, Storage.ImageFormat format) {
         throw new UnsupportedOperationException("Deleting a physical disk is not supported.");
     }
 

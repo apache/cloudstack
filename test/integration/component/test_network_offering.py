@@ -21,7 +21,8 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 #from marvin.cloudstackAPI import *
-from marvin.lib.utils import (cleanup_resources)
+from marvin.lib.utils import (cleanup_resources,
+                              validateList)
 from marvin.lib.base import (VirtualMachine,
                              Account,
                              Network,
@@ -35,6 +36,7 @@ from marvin.lib.base import (VirtualMachine,
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template)
+from marvin.codes import *
 
 
 class Services:
@@ -108,6 +110,19 @@ class Services:
                                             "Dhcp": 'VirtualRouter',
                                             "Dns": 'VirtualRouter',
                                             "SourceNat": 'VirtualRouter',
+                                        },
+                                    },
+                         "network_offering_withoutDNS" : {
+                                    "name": 'NW offering without DNS',
+                                    "displaytext": 'NW offering without DNS',
+                                    "guestiptype": 'Isolated',
+                                    "supportedservices": 'SourceNat,StaticNat,Dhcp',
+                                    "traffictype": 'GUEST',
+                                    "availability": 'Optional',
+                                    "serviceProviderList": {
+                                            "Dhcp": 'VirtualRouter',
+                                            "SourceNat": 'VirtualRouter',
+                                            "StaticNat": 'VirtualRouter',
                                         },
                                     },
                          "network": {
@@ -223,7 +238,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_01_network_off_without_conserve_mode(self):
         """Test Network offering with Conserve mode off and VR - All services
         """
@@ -468,7 +483,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                             )
         return
 
-    @attr(tags=["advanced", "selfservice"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_02_network_off_with_conserve_mode(self):
         """Test Network offering with Conserve mode ON and VR - All services
         """
@@ -735,7 +750,170 @@ class TestNOVirtualRouter(cloudstackTestCase):
                             )
         return
 
+    @attr(tags=["advanced"], required_hardware="false")
+    def test_03_network_off_CS5332(self):
+        """
+        @Desc: Test Network offering with Custom system offering for VR
+        @Steps:
+        Step1: Create new system offering for domain router
+        Step2: Verify the custom system offering creation for domain router
+        Step3: Create new network offering with domain router system offering created in step1
+        Step4: Verify the network offering creation with custom system offering for VR
+        Step5: Enable the network offering created in step3
+        Step5: Create isolated guest network using network offering created in step3
+        Step6: Deploy guest vm in network created above
+        """
+        #create custom system offering for VR
+        self.services["service_offering"]["name"] = "test_service_offering_for_router"
+        self.services["service_offering"]["displaytext"] = "test_service_offering_for_router"
+        self.services["service_offering"]["cpuspeed"] = 500
+        self.services["service_offering"]["memory"] = 512
+        self.services["service_offering"]["systemvmtype"] = "domainrouter"
+        self.services["service_offering"]["storagetype"] = "shared"
+        self.services["service_offering"]["issystem"] = "true"
+        vr_sys_off = ServiceOffering.create(
+                                            self.apiclient,
+                                            self.services["service_offering"],
+                                            )
+        self.assertIsNotNone(
+                             vr_sys_off,
+                             "Failed to create custom system offering for VR"
+                             )
+        vr_sys_off_res = ServiceOffering.list(
+                                              self.apiclient,
+                                              id = vr_sys_off.id,
+                                              issystem = "true"
+                                              )
+        status = validateList(vr_sys_off_res)
+        self.assertEquals(
+            PASS,
+            status[0],
+            "Listing of VR system offering failed"
+        )
+        self.assertEqual(
+                         len(vr_sys_off_res),
+                         1,
+                         "Listing more than VR system offerings created"
+        )
+        self.debug("Created system offering with id %s" % vr_sys_off.id)
+        # Create a network offering with all virtual router services enabled using custom system offering for VR
+        self.debug(
+            "Creating n/w offering with all services in VR & using custom system offering for VR"
+        )
+        self.network_offering = NetworkOffering.create(
+                                                  self.apiclient,
+                                                  self.services["network_offering"],
+                                                  conservemode=False,
+                                                  serviceofferingid=vr_sys_off.id
+                                                  )
+        self.assertIsNotNone(
+                             self.network_offering,
+                             "Failed to create network offering with custom system offering for VR"
+                             )
+        network_off_res = NetworkOffering.list(
+                                               self.apiclient,
+                                               id=self.network_offering.id
+                                               )
+        status = validateList(network_off_res)
+        self.assertEquals(
+                          PASS,
+                          status[0],
+                          "Listing of network offerings failed"
+        )
+        self.assertEquals(
+                          len(network_off_res),
+                          1,
+                          "More than one network offerings are created"
+        )
+        self.assertEquals(
+                          network_off_res[0].serviceofferingid,
+                          vr_sys_off.id,
+                          "FAIL: Network offering has been created with default system offering"
+        )
+        self.cleanup.append(self.network_offering)
+        self.cleanup.append(vr_sys_off)
+        self.debug("Created n/w offering with ID: %s" % self.network_offering.id)
+        # Enable Network offering
+        self.network_offering.update(self.apiclient, state='Enabled')
+        # Creating network using the network offering created
+        self.debug("Creating network with network offering: %s" % self.network_offering.id)
+        self.network = Network.create(
+                                      self.apiclient,
+                                      self.services["network"],
+                                      accountid=self.account.name,
+                                      domainid=self.account.domainid,
+                                      networkofferingid=self.network_offering.id,
+                                      zoneid=self.zone.id
+                                      )
+        self.assertIsNotNone(self.network,"Failed to create network")
+        self.debug("Created network with ID: %s" % self.network.id)
+        self.debug("Deploying VM in account: %s" % self.account.name)
+        # Spawn an instance in that network
+        virtual_machine = VirtualMachine.create(
+                                                self.apiclient,
+                                                self.services["virtual_machine"],
+                                                accountid=self.account.name,
+                                                domainid=self.account.domainid,
+                                                serviceofferingid=self.service_offering.id,
+                                                networkids=[str(self.network.id)]
+                                                )
+        self.assertIsNotNone(
+                             virtual_machine,
+                             "VM creation failed with network %s" % self.network.id
+                             )
+        self.debug("Deployed VM in network: %s" % self.network.id)
+        return
 
+    @attr(tags=["advanced"], required_hardware="false")
+    def test_04_network_without_domain_CS19303(self):
+        """
+        @Desc: Errors editing a network without a network domain specified
+        @Steps:
+        Step1: Create a network offering with SourceNAT,staticNAT and dhcp services
+        Step2: Verify the network offering creation
+        Step3: Create an isolated network with the offering created in step1 and without a network domain specified
+        Step4: Verify the network creation
+        Step5: Edit the network and verify that updating network should not error out
+        """
+        self.debug(
+            "Creating n/w offering with SourceNat,StaticNat and DHCP services in VR & conserve mode:off"
+        )
+        self.network_offering = NetworkOffering.create(
+            self.api_client,
+            self.services["network_offering_withoutDNS"],
+            conservemode=False
+        )
+        self.assertIsNotNone(
+            self.network_offering,
+            "Failed to create NO with Sourcenat,staticnat and dhcp only services"
+        )
+        self.cleanup.append(self.network_offering)
+        self.debug("Created n/w offering with ID: %s" % self.network_offering.id)
+        # Enable Network offering
+        self.network_offering.update(self.apiclient, state='Enabled')
+        self.debug("Creating nw without dns service using no id: %s" % self.network_offering.id)
+        self.network = Network.create(
+            self.apiclient,
+            self.services["network"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkofferingid=self.network_offering.id,
+            zoneid=self.zone.id
+        )
+        self.assertIsNotNone(
+            self.network,
+            "Failed to create network without DNS service and network domain"
+        )
+        self.debug("Created network with NO: %s" % self.network_offering.id)
+        try:
+            self.network_update = self.network.update(
+                self.apiclient,
+                name="NW without nw domain"
+            )
+            self.debug("Success:Network update has been successful without network domain")
+        except Exception as e:
+            self.fail("Error editing a network without network domain specified: %s" % e)
+        return
 
 class TestNetworkUpgrade(cloudstackTestCase):
 
@@ -805,7 +983,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advancedns", "provisioning"])
+    @attr(tags=["advancedns"], required_hardware="true")
     def test_01_nwupgrade_netscaler_conserve_on(self):
         """Test Nw upgrade to netscaler lb service and conserve mode ON
         """
@@ -1005,7 +1183,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advancedns", "provisioning"])
+    @attr(tags=["advancedns"], required_hardware="true")
     def test_02_nwupgrade_netscaler_conserve_off(self):
         """Test Nw upgrade to netscaler lb service and conserve mode OFF
         """
@@ -1224,7 +1402,7 @@ class TestNOWithOnlySourceNAT(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_create_network_with_snat(self):
         """Test to create a network with SourceNAT service only"""
 

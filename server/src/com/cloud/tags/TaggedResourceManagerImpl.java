@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.query.dao.ResourceTagJoinDao;
@@ -55,6 +56,7 @@ import com.cloud.network.dao.Site2SiteVpnGatewayVO;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.network.security.SecurityGroupRuleVO;
 import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.NetworkACLVO;
 import com.cloud.network.vpc.StaticRouteVO;
@@ -103,6 +105,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         s_typeMap.put(ResourceObjectType.PortForwardingRule, PortForwardingRuleVO.class);
         s_typeMap.put(ResourceObjectType.FirewallRule, FirewallRuleVO.class);
         s_typeMap.put(ResourceObjectType.SecurityGroup, SecurityGroupVO.class);
+        s_typeMap.put(ResourceObjectType.SecurityGroupRule, SecurityGroupRuleVO.class);
         s_typeMap.put(ResourceObjectType.PublicIpAddress, IPAddressVO.class);
         s_typeMap.put(ResourceObjectType.Project, ProjectVO.class);
         s_typeMap.put(ResourceObjectType.Vpc, VpcVO.class);
@@ -165,6 +168,9 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         if (entity != null) {
             return ((InternalIdentity)entity).getId();
         }
+        if (!StringUtils.isNumeric(resourceId)) {
+            throw new InvalidParameterValueException("Unable to find resource by uuid " + resourceId + " and type " + resourceType);
+        }
         entity = _entityMgr.findById(clazz, resourceId);
         if (entity != null) {
             return ((InternalIdentity)entity).getId();
@@ -178,6 +184,16 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         Object entity = _entityMgr.findById(clazz, resourceId);
         Long accountId = null;
         Long domainId = null;
+
+        // if the resource type is a security group rule, get the accountId and domainId from the security group itself
+        if (resourceType == ResourceObjectType.SecurityGroupRule) {
+            SecurityGroupRuleVO rule = (SecurityGroupRuleVO)entity;
+            Object SecurityGroup = _entityMgr.findById(s_typeMap.get(ResourceObjectType.SecurityGroup), rule.getSecurityGroupId());
+
+            accountId = ((SecurityGroupVO)SecurityGroup).getAccountId();
+            domainId = ((SecurityGroupVO)SecurityGroup).getDomainId();
+        }
+
         if (entity instanceof OwnedBy) {
             accountId = ((OwnedBy)entity).getAccountId();
         }
@@ -264,6 +280,10 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
 
     @Override
     public String getUuid(String resourceId, ResourceObjectType resourceType) {
+        if (!StringUtils.isNumeric(resourceId)) {
+            return resourceId;
+        }
+
         Class<?> clazz = s_typeMap.get(resourceType);
 
         Object entity = _entityMgr.findById(clazz, resourceId);

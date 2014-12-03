@@ -109,7 +109,7 @@ class TestSecurityGroups(cloudstackTestCase):
                                                                                           ))
         return return_flag
 
-    @attr(tags=["basic", "provisioning"])
+    @attr(tags=["basic"], required_hardware="true")
     def test_01_list_securitygroups_pagination(self):
         """
         @Desc: Test to List Security Groups pagination
@@ -235,7 +235,7 @@ class TestSecurityGroups(cloudstackTestCase):
                           )
         return
 
-    @attr(tags=["basic", "provisioning"])
+    @attr(tags=["basic"], required_hardware="true")
     def test_02_securitygroups_authorize_revoke_ingress(self):
         """
         @Desc: Test to Authorize and Revoke Ingress for Security Group
@@ -399,7 +399,7 @@ class TestSecurityGroups(cloudstackTestCase):
                           )
         return
 
-    @attr(tags=["basic", "provisioning"])
+    @attr(tags=["basic"], required_hardware="true")
     def test_03_securitygroups_authorize_revoke_egress(self):
         """
         @Desc: Test to Authorize and Revoke Egress for Security Group

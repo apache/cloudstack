@@ -164,6 +164,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     ScheduledExecutorService _rcExecutor;
     long _resourceCountCheckInterval = 0;
     Map<ResourceType, Long> accountResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class);
+    Map<ResourceType, Long> domainResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class);
     Map<ResourceType, Long> projectResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class);
 
     @Override
@@ -198,7 +199,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         templateSizeSearch.done();
 
         snapshotSizeSearch = _snapshotDataStoreDao.createSearchBuilder(SumCount.class);
-        snapshotSizeSearch.select("sum", Func.SUM, snapshotSizeSearch.entity().getSize());
+        snapshotSizeSearch.select("sum", Func.SUM, snapshotSizeSearch.entity().getPhysicalSize());
         snapshotSizeSearch.and("state", snapshotSizeSearch.entity().getState(), Op.EQ);
         snapshotSizeSearch.and("storeRole", snapshotSizeSearch.entity().getRole(), Op.EQ);
         SearchBuilder<SnapshotVO> join2 = _snapshotDao.createSearchBuilder();
@@ -235,6 +236,18 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             accountResourceLimitMap.put(Resource.ResourceType.memory, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountMemory.key())));
             accountResourceLimitMap.put(Resource.ResourceType.primary_storage, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPrimaryStorage.key())));
             accountResourceLimitMap.put(Resource.ResourceType.secondary_storage, Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountSecondaryStorage.key())));
+
+            domainResourceLimitMap.put(Resource.ResourceType.public_ip, Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainPublicIPs.key())));
+            domainResourceLimitMap.put(Resource.ResourceType.snapshot, Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainSnapshots.key())));
+            domainResourceLimitMap.put(Resource.ResourceType.template, Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainTemplates.key())));
+            domainResourceLimitMap.put(Resource.ResourceType.user_vm, Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainUserVms.key())));
+            domainResourceLimitMap.put(Resource.ResourceType.volume, Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainVolumes.key())));
+            domainResourceLimitMap.put(Resource.ResourceType.network, Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainNetworks.key())));
+            domainResourceLimitMap.put(Resource.ResourceType.vpc, Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainVpcs.key())));
+            domainResourceLimitMap.put(Resource.ResourceType.cpu, Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainCpus.key())));
+            domainResourceLimitMap.put(Resource.ResourceType.memory, Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainMemory.key())));
+            domainResourceLimitMap.put(Resource.ResourceType.primary_storage, Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainPrimaryStorage.key())));
+            domainResourceLimitMap.put(Resource.ResourceType.secondary_storage, Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainSecondaryStorage.key())));
         } catch (NumberFormatException e) {
             s_logger.error("NumberFormatException during configuration", e);
             throw new ConfigurationException("Configuration failed due to NumberFormatException, see log for the stacktrace");
@@ -371,9 +384,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             // check domain hierarchy
             Long domainId = domain.getParent();
             while ((domainId != null) && (limit == null)) {
-
                 if (domainId == Domain.ROOT_DOMAIN) {
-                    return Resource.RESOURCE_UNLIMITED;
+                    break;
                 }
                 limit = _resourceLimitDao.findByOwnerIdAndType(domainId, ResourceOwnerType.Domain, type);
                 DomainVO tmpDomain = _domainDao.findById(domainId);
@@ -382,6 +394,18 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
             if (limit != null) {
                 max = limit.getMax().longValue();
+            } else {
+                Long value = null;
+                value = domainResourceLimitMap.get(type);
+                if (value != null) {
+                    if (value < 0) { // return unlimit if value is set to negative
+                        return max;
+                    }
+                    if (type == ResourceType.primary_storage || type == ResourceType.secondary_storage) {
+                        value = value * ResourceType.bytesToGiB;
+                    }
+                    return value;
+                }
             }
         }
 
@@ -425,7 +449,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                             "Maximum number of resources of type '" + type + "' for project name=" + projectFinal.getName() + " in domain id=" + account.getDomainId() +
                                 " has been exceeded.";
                 }
-                throw new ResourceAllocationException(message, type);
+                ResourceAllocationException e=  new ResourceAllocationException(message, type);;
+                s_logger.error(message, e);
+                throw e;
             }
 
             // check all domains in the account's domain hierarchy
@@ -440,13 +466,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 DomainVO domain = _domainDao.findById(domainId);
                 // no limit check if it is ROOT domain
                 if (domainId != Domain.ROOT_DOMAIN) {
-                    ResourceLimitVO domainLimit = _resourceLimitDao.findByOwnerIdAndType(domainId, ResourceOwnerType.Domain, type);
-                    if (domainLimit != null && domainLimit.getMax().longValue() != Resource.RESOURCE_UNLIMITED) {
-                        long domainCount = _resourceCountDao.getResourceCount(domainId, ResourceOwnerType.Domain, type);
-                        if ((domainCount + numResources) > domainLimit.getMax().longValue()) {
-                                throw new ResourceAllocationException("Maximum number of resources of type '" + type + "' for domain id=" + domainId +
-                                    " has been exceeded.", type);
-                        }
+                    long domainLimit = findCorrectResourceLimitForDomain(domain, type);
+                    long domainCount = _resourceCountDao.getResourceCount(domainId, ResourceOwnerType.Domain, type) + numResources;
+                    if (domainLimit != Resource.RESOURCE_UNLIMITED && domainCount > domainLimit) {
+                        throw new ResourceAllocationException("Maximum number of resources of type '" + type + "' for domain id=" + domainId + " has been exceeded.", type);
                     }
                 }
                 domainId = domain.getParent();
@@ -886,7 +909,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
         _resourceCountDao.setResourceCount(accountId, ResourceOwnerType.Account, type, (newCount == null) ? 0 : newCount.longValue());
 
-                if (!Long.valueOf(oldCount).equals(newCount)) {
+                // No need to log message for primary and secondary storage because both are recalculating the resource count which will not lead to any discrepancy.
+                if (!Long.valueOf(oldCount).equals(newCount) && (type != Resource.ResourceType.primary_storage && type != Resource.ResourceType.secondary_storage)) {
                     s_logger.info("Discrepency in the resource count " + "(original count=" + oldCount + " correct count = " + newCount + ") for type " + type +
                         " for account ID " + accountId + " is fixed during resource count recalculation.");
         }

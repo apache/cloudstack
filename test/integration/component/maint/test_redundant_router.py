@@ -94,11 +94,6 @@ class Services:
                                         },
                                     },
                         },
-                        "host": {
-                                 "username": "root",
-                                 "password": "password",
-                                 "publicport": 22,
-                        },
                         "network": {
                                   "name": "Test Network",
                                   "displaytext": "Test Network",
@@ -843,7 +838,7 @@ class TestRVRInternals(cloudstackTestCase):
         self.debug(master_router.linklocalip)
 
         # Check eth2 port for master router
-        if self.hypervisor.lower() == 'vmware':
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
             result = get_process_status(
                                 self.apiclient.connection.mgtSvr,
                                 22,
@@ -854,14 +849,20 @@ class TestRVRInternals(cloudstackTestCase):
                                 hypervisor=self.hypervisor
                                 )
         else:
-            result = get_process_status(
-                                master_host.ipaddress,
-                                self.services['host']["publicport"],
-                                self.services['host']["username"],
-                                self.services['host']["password"],
-                                master_router.linklocalip,
-                                'ip addr show eth2'
+            try:
+                host = {}
+                host.user, host.passwd = get_host_credentials(self.config, master_host.ipaddress)
+                result = get_process_status(
+                                    master_host.ipaddress,
+                                    22,
+                                    host.user,
+                                    host.passwd,
+                                    master_router.linklocalip,
+                                    "ip addr show eth2"
                                 )
+
+            except KeyError:
+                self.skipTest("Marvin configuration has no host credentials to check router services")
 
         res = str(result)
 
@@ -879,7 +880,7 @@ class TestRVRInternals(cloudstackTestCase):
                          )
 
         # Check eth2 port for backup router
-        if self.hypervisor.lower() == 'vmware':
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
             result = get_process_status(
                                 self.apiclient.connection.mgtSvr,
                                 22,
@@ -890,14 +891,21 @@ class TestRVRInternals(cloudstackTestCase):
                                 hypervisor=self.hypervisor
                                 )
         else:
-            result = get_process_status(
-                                backup_host.ipaddress,
-                                self.services['host']["publicport"],
-                                self.services['host']["username"],
-                                self.services['host']["password"],
-                                backup_router.linklocalip,
-                                'ip addr show eth2',
+            try:
+                host = {}
+                host.user, host.passwd = get_host_credentials(self.config, backup_host.ipaddress)
+                result = get_process_status(
+                                    master_host.ipaddress,
+                                    22,
+                                    host.user,
+                                    host.passwd,
+                                    backup_router.linklocalip,
+                                    "ip addr show eth2"
                                 )
+
+            except KeyError:
+                self.skipTest("Marvin configuration has no host credentials to check router services")
+
         res = str(result)
 
         self.debug("Command 'ip addr show eth2': %s" % result)
@@ -1565,6 +1573,9 @@ class TestRvRRedundancy(cloudstackTestCase):
                          "Running",
                          "Vm should be in running state after deployment"
                          )
+
+        # wait for VR to update state
+        time.sleep(self.services["sleep"])
 
         self.debug("Checking state of the backup router in %s" % self.network.name)
         routers = Router.list(

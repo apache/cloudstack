@@ -19,16 +19,28 @@ import unittest
 """ Component tests for inter VLAN functionality
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
-from marvin.sshClient import SshClient
-import datetime
-
+from marvin.cloudstackTestCase import cloudstackTestCase
+#from marvin.cloudstackAPI import *
+from marvin.lib.utils import cleanup_resources, validateList
+from marvin.lib.base import (NetworkOffering,
+                             Network,
+                             VirtualMachine,
+                             ServiceOffering,
+                             LoadBalancerRule,
+                             PublicIPAddress,
+                             VPC,
+                             VpcOffering,
+                             PhysicalNetwork,
+                             NetworkACL,
+                             Account,
+                             NATRule,
+                             NetworkServiceProvider,
+                             StaticNATRule)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template)
+from marvin.codes import PASS, FAILED
 
 class Services:
     """Test inter VLAN services
@@ -156,7 +168,7 @@ class TestVPCDistributedRouterOffering(cloudstackTestCase):
     def setUpClass(cls):
         testClient = super(TestVPCDistributedRouterOffering, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
-        cls.services = testClient.getParsedTestDataConfig()
+        cls.services = Services().services
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
@@ -180,6 +192,28 @@ class TestVPCDistributedRouterOffering(cloudstackTestCase):
         cls._cleanup = [
                         cls.service_offering,
                         ]
+        try:
+            list_physical_networks = PhysicalNetwork.list(
+                                                     cls.apiclient,
+                                                     zoneid=cls.zone.id
+                                                     )
+            assert validateList(list_physical_networks)[0] == PASS,\
+                "physical networks list validation failed"
+
+            cls.isOvsPluginEnabled = False
+            for i in range(0, len(list_physical_networks)):
+                list_network_serviceprovider = NetworkServiceProvider.list(
+                                                                       cls.apiclient,
+                                                                       physicalnetworkid=list_physical_networks[i].id
+                                                                       )
+                for j in range(0, len(list_network_serviceprovider)):
+                    if((str(list_network_serviceprovider[j].name).lower() == 'ovs') and
+                        (str(list_network_serviceprovider[j].state).lower() == 'enabled')):
+                        cls.isOvsPluginEnabled = True
+                        break
+        except Exception as e:
+            cls.tearDownClass()
+            raise unittest.SkipTest(e)
         return
 
     @classmethod
@@ -293,6 +327,9 @@ class TestVPCDistributedRouterOffering(cloudstackTestCase):
         # 1. Create VPC Offering by specifying all supported Services
         # 2. VPC offering should be created successfully.
 
+        if not self.isOvsPluginEnabled:
+            self.skipTest("OVS plugin should be enabled to run this test case")
+
         self.debug("Creating inter VPC offering")
         vpc_off = VpcOffering.create(
                                      self.apiclient,
@@ -331,6 +368,9 @@ class TestVPCDistributedRouterOffering(cloudstackTestCase):
         #    LB PF and Static Nat rule
         # 9. Create Egress Network ACL for this network to access google.com.
         # 10. Enable VPN services
+
+        if not self.isOvsPluginEnabled:
+            self.skipTest("OVS plugin should be enabled to run this test case")
 
         self.debug("Creating a VPC offering..")
         vpc_off = VpcOffering.create(
@@ -407,7 +447,7 @@ class TestVPCDistributedRouterOffering(cloudstackTestCase):
         self.debug("Creating LB rule for IP address: %s" %
                                         public_ip.ipaddress.ipaddress)
 
-        lb_rule = LoadBalancerRule.create(
+        LoadBalancerRule.create(
                                     self.apiclient,
                                     self.services["lbrule"],
                                     ipaddressid=public_ip.ipaddress.id,
@@ -431,7 +471,7 @@ class TestVPCDistributedRouterOffering(cloudstackTestCase):
                                         network.id
                                         ))
 
-        nat_rule = NATRule.create(
+        NATRule.create(
                                   self.apiclient,
                                   virtual_machine,
                                   self.services["natrule"],
@@ -442,14 +482,14 @@ class TestVPCDistributedRouterOffering(cloudstackTestCase):
                                   )
 
         self.debug("Adding NetwrokACl rules to make PF and LB accessible")
-        networkacl_1 = NetworkACL.create(
+        NetworkACL.create(
                 self.apiclient,
                 networkid=network.id,
                 services=self.services["natrule"],
                 traffictype='Ingress'
                 )
 
-        networkacl_2 = NetworkACL.create(
+        NetworkACL.create(
                                 self.apiclient,
                                 networkid=network.id,
                                 services=self.services["lbrule"],

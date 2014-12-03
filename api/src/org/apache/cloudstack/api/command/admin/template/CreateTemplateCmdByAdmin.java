@@ -31,7 +31,8 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.template.VirtualMachineTemplate;
 
 @APICommand(name = "createTemplate", responseObject = TemplateResponse.class, description = "Creates a template of a virtual machine. " + "The virtual machine must be in a STOPPED state. "
-        + "A template created from this command is automatically designated as a private template visible to the account that created it.", responseView = ResponseView.Full)
+        + "A template created from this command is automatically designated as a private template visible to the account that created it.", responseView = ResponseView.Full,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateTemplateCmdByAdmin extends CreateTemplateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTemplateCmdByAdmin.class.getName());
 

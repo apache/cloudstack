@@ -26,12 +26,13 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import com.cloud.user.UserAccount;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "user_view")
-public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, Identity {
+public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, Identity, ControlledViewEntity {
 
     @Id
     @Column(name = "id", updatable = false, nullable = false)
@@ -234,5 +235,20 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
 
     public boolean isDefault() {
         return isDefault;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return UserAccount.class;
+    }
+
+    @Override
+    public String getProjectUuid() {
+        return null;
+    }
+
+    @Override
+    public String getProjectName() {
+        return null;
     }
 }

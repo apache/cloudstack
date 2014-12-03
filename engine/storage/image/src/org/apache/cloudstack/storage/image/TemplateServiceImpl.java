@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.storage.image;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -334,7 +333,7 @@ public class TemplateServiceImpl implements TemplateService {
                                     s_logger.info("msg");
                                     if (tmplt.getUrl() == null) {
                                         msg =
-                                            "Private Template (" + tmplt + ") with install path " + tmpltInfo.getInstallPath() +
+                                                "Private Template (" + tmplt + ") with install path " + tmpltInfo.getInstallPath() +
                                                 "is corrupted, please check in image store: " + tmpltStore.getDataStoreId();
                                         s_logger.warn(msg);
                                     } else {
@@ -362,22 +361,22 @@ public class TemplateServiceImpl implements TemplateService {
                                         long accountId = tmplt.getAccountId();
                                         try {
                                             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(accountId),
-                                                com.cloud.configuration.Resource.ResourceType.secondary_storage,
-                                                tmpltInfo.getSize() - UriUtils.getRemoteSize(tmplt.getUrl()));
+                                                    com.cloud.configuration.Resource.ResourceType.secondary_storage,
+                                                    tmpltInfo.getSize() - UriUtils.getRemoteSize(tmplt.getUrl()));
                                         } catch (ResourceAllocationException e) {
                                             s_logger.warn(e.getMessage());
                                             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, zoneId, null, e.getMessage(), e.getMessage());
                                         } finally {
                                             _resourceLimitMgr.recalculateResourceCount(accountId, _accountMgr.getAccount(accountId).getDomainId(),
-                                                com.cloud.configuration.Resource.ResourceType.secondary_storage.getOrdinal());
+                                                    com.cloud.configuration.Resource.ResourceType.secondary_storage.getOrdinal());
                                         }
                                     }
                                 }
                                 _vmTemplateStoreDao.update(tmpltStore.getId(), tmpltStore);
                             } else {
                                 tmpltStore =
-                                    new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, tmpltInfo.getInstallPath(),
-                                        tmplt.getUrl());
+                                        new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, tmpltInfo.getInstallPath(),
+                                                tmplt.getUrl());
                                 tmpltStore.setSize(tmpltInfo.getSize());
                                 tmpltStore.setPhysicalSize(tmpltInfo.getPhysicalSize());
                                 tmpltStore.setDataStoreRole(store.getRole());
@@ -392,7 +391,7 @@ public class TemplateServiceImpl implements TemplateService {
                             }
                         } else {
                             s_logger.info("Template Sync did not find " + uniqueName + " on image store " + storeId +
-                                ", may request download based on available hypervisor types");
+                                    ", may request download based on available hypervisor types");
                             if (tmpltStore != null) {
                                 if (_storeMgr.isRegionStore(store) && tmpltStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED
                                         && tmpltStore.getState() == State.Ready
@@ -451,7 +450,7 @@ public class TemplateServiceImpl implements TemplateService {
                                 createTemplateAsync(tmpl, store, null);
                             } else {
                                 s_logger.info("Skip downloading template " + tmplt.getUniqueName() + " since current data center does not have hypervisor " +
-                                    tmplt.getHypervisorType().toString());
+                                        tmplt.getHypervisorType().toString());
                             }
                         }
                     }
@@ -652,8 +651,8 @@ public class TemplateServiceImpl implements TemplateService {
         // But we need to set default install path so that sync can be done in the right s3 path
         TemplateInfo templateOnStore = _templateFactory.getTemplate(template, store);
         String installPath =
-            TemplateConstants.DEFAULT_TMPLT_ROOT_DIR + "/" + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR + template.getAccountId() + "/" + template.getId() + "/" +
-                template.getUniqueName();
+                TemplateConstants.DEFAULT_TMPLT_ROOT_DIR + "/" + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR + template.getAccountId() + "/" + template.getId() + "/" +
+                        template.getUniqueName();
         ((TemplateObject)templateOnStore).setInstallPath(installPath);
         TemplateOpContext<TemplateApiResult> context = new TemplateOpContext<TemplateApiResult>(null, (TemplateObject)templateOnStore, future);
         AsyncCallbackDispatcher<TemplateServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
@@ -710,7 +709,7 @@ public class TemplateServiceImpl implements TemplateService {
                     TemplateApiResult result = future.get();
                     if (result.isFailed()) {
                         throw new CloudRuntimeException("sync template from cache to region wide store failed for image store " + store.getName() + ":" +
-                            result.getResult());
+                                result.getResult());
                     }
                     _cacheMgr.releaseCacheObject(srcTemplate); // reduce reference count for template on cache, so it can recycled by schedule
                 } catch (Exception ex) {
@@ -733,7 +732,7 @@ public class TemplateServiceImpl implements TemplateService {
         String url = generateCopyUrl(srcTemplate);
         if (url == null) {
             s_logger.warn("Unable to start/resume copy of template " + srcTemplate.getUniqueName() + " to " + destStore.getName() +
-                ", no secondary storage vm in running state in source zone");
+                    ", no secondary storage vm in running state in source zone");
             throw new CloudRuntimeException("No secondary VM in running state in source template zone ");
         }
 
@@ -877,8 +876,8 @@ public class TemplateServiceImpl implements TemplateService {
             TemplateDataStoreVO tmpltStore = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
             if (tmpltStore == null) {
                 tmpltStore =
-                    new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null,
-                        TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + File.separator, tmplt.getUrl());
+                        new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null,
+                                TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + '/', tmplt.getUrl());
                 tmpltStore.setSize(0L);
                 tmpltStore.setPhysicalSize(0); // no size information for
                 // pre-seeded system vm templates

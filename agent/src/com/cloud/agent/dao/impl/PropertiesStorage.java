@@ -66,7 +66,7 @@ public class PropertiesStorage implements StorageComponent {
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params) {
+    public synchronized boolean configure(String name, Map<String, Object> params) {
         _name = name;
         String path = (String)params.get("path");
         if (path == null) {
@@ -86,7 +86,6 @@ public class PropertiesStorage implements StorageComponent {
                 return false;
             }
         }
-
         try {
             PropertiesUtil.loadFromFile(_properties, file);
             _file = file;
@@ -97,12 +96,11 @@ public class PropertiesStorage implements StorageComponent {
             s_logger.error("IOException: ", e);
             return false;
         }
-
         return true;
     }
 
     @Override
-    public String getName() {
+    public synchronized String getName() {
         return _name;
     }
 

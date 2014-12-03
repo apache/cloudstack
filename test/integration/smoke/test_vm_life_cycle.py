@@ -23,8 +23,7 @@ from marvin.cloudstackAPI import (recoverVirtualMachine,
                                   attachIso,
                                   detachIso)
 from marvin.lib.utils import (cleanup_resources,
-                              validateList,
-                              get_hypervisor_type)
+                              validateList)
 from marvin.lib.base import (Account,
                              ServiceOffering,
                              VirtualMachine,
@@ -50,7 +49,7 @@ class TestDeployVM(cloudstackTestCase):
         cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        domain = get_domain(cls.apiclient)
+        cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
@@ -80,7 +79,7 @@ class TestDeployVM(cloudstackTestCase):
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
-            domainid=domain.id
+            domainid=cls.domain.id
         )
         cls.debug(cls.account.id)
 
@@ -108,11 +107,12 @@ class TestDeployVM(cloudstackTestCase):
         try:
             cleanup_resources(cls.apiclient, cls.cleanup)
         except Exception as e:
-            cls.debug("Warning! Exception in tearDown: %s" % e)
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
 
 
     @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
@@ -200,8 +200,57 @@ class TestDeployVM(cloudstackTestCase):
         self.assertEqual(router.state, 'Running', msg="Router is not in running state")
         self.assertEqual(router.account, self.account.name, msg="Router does not belong to the account")
 
+    @attr(tags = ['advanced','basic','sg'], required_hardware="false")
+    def test_deploy_vm_multiple(self):
+        """Test Multiple Deploy Virtual Machine
+
+        # Validate the following:
+        # 1. deploy 2 virtual machines
+        # 2. listVirtualMachines using 'ids' parameter returns accurate information
+        """
+        account = Account.create(
+            self.apiclient,
+            self.services["account"],
+            domainid=self.domain.id
+        )
+        self.cleanup.append(account)
+
+        virtual_machine1 = VirtualMachine.create(
+            self.apiclient,
+            self.services["small"],
+            accountid=account.name,
+            domainid=account.domainid,
+            serviceofferingid=self.service_offering.id
+        )
+        virtual_machine2 = VirtualMachine.create(
+            self.apiclient,
+            self.services["small"],
+            accountid=account.name,
+            domainid=account.domainid,
+            serviceofferingid=self.service_offering.id
+        )
+
+        list_vms = VirtualMachine.list(self.apiclient, ids=[virtual_machine1.id, virtual_machine2.id], listAll=True)
+        self.debug(
+            "Verify listVirtualMachines response for virtual machines: %s, %s" % (virtual_machine1.id, virtual_machine2.id)
+        )
+        self.assertEqual(
+            isinstance(list_vms, list),
+            True,
+            "List VM response was not a valid list"
+        )
+        self.assertEqual(
+            len(list_vms),
+            2,
+            "List VM response was empty, expected 2 VMs"
+        )
+
     def tearDown(self):
-        pass
+        try:
+            # Clean up, terminate the created instance, volumes and snapshots
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
 
 class TestVMLifeCycle(cloudstackTestCase):
@@ -211,6 +260,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         testClient = super(TestVMLifeCycle, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
+        cls.hypervisor = testClient.getHypervisorInfo()
 
         # Get Zone, Domain and templates
         domain = get_domain(cls.apiclient)
@@ -290,7 +340,10 @@ class TestVMLifeCycle(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         cls.apiclient = super(TestVMLifeCycle, cls).getClsTestClient().getApiClient()
-        cleanup_resources(cls.apiclient, cls._cleanup)
+        try:
+            cleanup_resources(cls.apiclient, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
     def setUp(self):
@@ -299,12 +352,15 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        #Clean up, terminate the created ISOs
-        cleanup_resources(self.apiclient, self.cleanup)
+        try:
+            #Clean up, terminate the created ISOs
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false", BugId="6984")
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false", BugId="CLOUDSTACK-6984")
     def test_01_stop_vm(self):
         """Test Stop Virtual Machine
         """
@@ -405,7 +461,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         #    of this VM should be "Destroyed".
 
         self.debug("Destroy VM - ID: %s" % self.small_virtual_machine.id)
-        self.small_virtual_machine.delete(self.apiclient)
+        self.small_virtual_machine.delete(self.apiclient, expunge=False)
 
         list_vm_response = VirtualMachine.list(
                                             self.apiclient,
@@ -492,20 +548,21 @@ class TestVMLifeCycle(cloudstackTestCase):
         if len(hosts) < 2:
             self.skipTest("At least two hosts should be present in the zone for migration")
 
-        hypervisor = str(get_hypervisor_type(self.apiclient)).lower()
+        if self.hypervisor.lower() in ["lxc"]:
+            self.skipTest("Migration is not supported on LXC")
 
         # For KVM, two hosts used for migration should  be present in same cluster
         # For XenServer and VMware, migration is possible between hosts belonging to different clusters
         # with the help of XenMotion and Vmotion respectively.
 
-        if hypervisor.lower() in ["kvm","simulator"]:
+        if self.hypervisor.lower() in ["kvm","simulator"]:
             #identify suitable host
             clusters = [h.clusterid for h in hosts]
             #find hosts withe same clusterid
             clusters = [cluster for index, cluster in enumerate(clusters) if clusters.count(cluster) > 1]
 
             if len(clusters) <= 1:
-                self.skipTest("In " + hypervisor.lower() + " Live Migration needs two hosts within same cluster")
+                self.skipTest("In " + self.hypervisor.lower() + " Live Migration needs two hosts within same cluster")
 
             suitable_hosts = [host for host in hosts if host.clusterid == clusters[0]]
         else:
@@ -548,7 +605,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
     @attr(configuration = "expunge.interval")
     @attr(configuration = "expunge.delay")
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"],BugId="CLOUDSTACK-6708", required_hardware="false")
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_09_expunge_vm(self):
         """Test destroy(expunge) Virtual Machine
         """
@@ -593,7 +650,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.assertEqual(list_vm_response,None,"Check Expunged virtual machine is in listVirtualMachines response")
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true", BugId="CLOUDSTACK-6985")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_10_attachAndDetach_iso(self):
         """Test for attach and detach ISO to virtual machine"""
 
@@ -604,6 +661,9 @@ class TestVMLifeCycle(cloudstackTestCase):
         # 4. The device should be available for use
         # 5. Detach ISO
         # 6. Check the device is properly detached by logging into VM
+
+        if self.hypervisor.lower() in ["lxc"]:
+            self.skipTest("ISOs are not supported on LXC")
 
         iso = Iso.create(
                          self.apiclient,

@@ -43,6 +43,7 @@ import javax.crypto.SecretKey;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.nio.Link;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -202,9 +203,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     String instance = "DEFAULT";
                     String component = c.getComponent();
                     String value = c.getDefaultValue();
-                    value = ("Hidden".equals(category) || "Secure".equals(category)) ? DBEncryptionUtil.encrypt(value) : value;
                     String description = c.getDescription();
                     ConfigurationVO configVO = new ConfigurationVO(category, instance, component, name, value, description);
+                    configVO.setDefaultValue(value);
                     _configDao.persist(configVO);
                 }
             }
@@ -440,13 +441,15 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             if (propsFile == null) {
                 return null;
             } else {
-                final FileInputStream finputstream = new FileInputStream(propsFile);
                 final Properties props = new Properties();
-                props.load(finputstream);
-                finputstream.close();
+                try(final FileInputStream finputstream = new FileInputStream(propsFile);) {
+                    props.load(finputstream);
+                }catch (IOException e) {
+                    s_logger.error("getEnvironmentProperty:Exception:" + e.getMessage());
+                }
                 return props.getProperty("mount.parent");
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             return null;
         }
     }
@@ -616,7 +619,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
         if (null != confFile) {
             confPath = confFile.getParent();
-            keystorePath = confPath + "/cloud.keystore";
+            keystorePath = confPath + Link.keystoreFile;
             keystoreFile = new File(keystorePath);
         }
 
@@ -631,17 +634,10 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 }
                 String base64Keystore = getBase64Keystore(keystorePath);
                 ConfigurationVO configVO =
-                        new ConfigurationVO("Hidden", "DEFAULT", "management-server", "ssl.keystore", DBEncryptionUtil.encrypt(base64Keystore),
+                        new ConfigurationVO("Hidden", "DEFAULT", "management-server", "ssl.keystore", base64Keystore,
                                 "SSL Keystore for the management servers");
                 _configDao.persist(configVO);
                 s_logger.info("Stored SSL keystore to database.");
-            } else if (null != keystoreFile && keystoreFile.exists()) { // and dbExisted
-                // Check if they are the same one, otherwise override with local keystore
-                String base64Keystore = getBase64Keystore(keystorePath);
-                if (base64Keystore.compareTo(dbString) != 0) {
-                    _configDao.update("ssl.keystore", "Hidden", base64Keystore);
-                    s_logger.info("Updated database keystore with local one.");
-                }
             } else { // !keystoreFile.exists() and dbExisted
                 // Export keystore to local file
                 byte[] storeBytes = Base64.decodeBase64(dbString);
@@ -651,6 +647,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     fo.write(storeBytes);
                     fo.close();
                     Script script = new Script(true, "cp", 5000, null);
+                    script.add("-f");
                     script.add(tmpKeystorePath);
 
                     //There is a chance, although small, that the keystorePath is null. In that case, do not add it to the script.
@@ -845,10 +842,10 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         }
 
         if (keyfile.exists()) {
-            try {
-                FileOutputStream kStream = new FileOutputStream(keyfile);
-                kStream.write(key.getBytes());
-                kStream.close();
+            try (FileOutputStream kStream = new FileOutputStream(keyfile);){
+                if (kStream != null) {
+                    kStream.write(key.getBytes());
+                }
             } catch (FileNotFoundException e) {
                 s_logger.warn("Failed to write  key to " + keyfile.getAbsolutePath());
                 throw new CloudRuntimeException("Failed to update keypairs on disk: cannot find  key file " + keyPath);
@@ -1221,9 +1218,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 defaultVpcNetworkOfferingProviders.put(Service.PortForwarding, Provider.VPCVirtualRouter);
                 defaultVpcNetworkOfferingProviders.put(Service.Vpn, Provider.VPCVirtualRouter);
 
-                for (Service service : defaultVpcNetworkOfferingProviders.keySet()) {
-                    NetworkOfferingServiceMapVO offService =
-                            new NetworkOfferingServiceMapVO(defaultNetworkOfferingForVpcNetworks.getId(), service, defaultVpcNetworkOfferingProviders.get(service));
+                for (Map.Entry<Service,Provider> entry : defaultVpcNetworkOfferingProviders.entrySet()) {
+                     NetworkOfferingServiceMapVO offService =
+                            new NetworkOfferingServiceMapVO(defaultNetworkOfferingForVpcNetworks.getId(), entry.getKey(), entry.getValue());
                     _ntwkOfferingServiceMapDao.persist(offService);
                     s_logger.trace("Added service for the network offering: " + offService);
                 }

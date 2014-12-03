@@ -344,6 +344,8 @@ class CSTestClient(object):
 
             listuser = listUsers.listUsersCmd()
             listuser.username = UserName
+            listuser.domainid = domId
+            listuser.listall = True
 
             listuserRes = self.__apiClient.listUsers(listuser)
             userId = listuserRes[0].id
@@ -415,12 +417,14 @@ class CSTestClient(object):
             return FAILED
         return self.__createUserApiClient(UserName, DomainName, type)
 
-    def submitCmdsAndWait(self, cmds, workers=1):
+    def submitCmdsAndWait(self, cmds, workers=1, apiclient=None):
         '''
         @Desc : FixME, httplib has issue if more than one thread submitted
         '''
+        if not apiclient:
+            apiclient = self.__apiClient
         if self.__asyncJobMgr is None:
-            self.__asyncJobMgr = asyncJobMgr(self.__apiClient,
+            self.__asyncJobMgr = asyncJobMgr(apiclient,
                                              self.__dbConnection)
         return self.__asyncJobMgr.submitCmdsAndWait(cmds, workers)
 

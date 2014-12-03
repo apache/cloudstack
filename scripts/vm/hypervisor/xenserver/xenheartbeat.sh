@@ -26,11 +26,15 @@ usage() {
 if [ -z $1 ]; then
   usage
   exit 2
+else
+  host=$1
 fi
 
 if [ -z $2 ]; then
   usage
   exit 3
+else
+  timeout=$2
 fi
 
 if [ ! -z $3 ]; then
@@ -39,7 +43,7 @@ else
   interval=5
 fi
 
-if [ $interval -gt $2 ]; then
+if [ $interval -gt $timeout ]; then
   usage
   exit 3
 fi
@@ -47,7 +51,7 @@ fi
 file=/opt/cloud/bin/heartbeat
 lastdate=$(($(date +%s) + $interval))
 
-while [ $(date +%s) -lt $(($lastdate + $2)) ]
+while [ $(date +%s) -lt $(($lastdate + $timeout)) ]
 do
   sleep $interval
 
@@ -69,7 +73,7 @@ do
   for dir in $dirs
   do
     if [ -d $dir ]; then
-      hb=$dir/hb-$1
+      hb=$dir/hb-$host
       date +%s | dd of=$hb count=100 bs=1 2>/dev/null
       if [ $? -ne 0 ]; then
         /usr/bin/logger -t heartbeat "Potential problem with $hb: not reachable since $(($(date +%s) - $lastdate)) seconds"
@@ -89,7 +93,7 @@ do
   do
     mp=`mount | grep $dir`
     if [ -n "$mp" ]; then
-      hb=$dir/hb-$1
+      hb=$dir/hb-$host
       date +%s | dd of=$hb count=100 bs=1 2>/dev/null
       if [ $? -ne 0 ]; then
         /usr/bin/logger -t heartbeat "Potential problem with $hb: not reachable since $(($(date +%s) - $lastdate)) seconds"
@@ -105,4 +109,4 @@ do
 done
 
 /usr/bin/logger -t heartbeat "Problem with $hb: not reachable for $(($(date +%s) - $lastdate)) seconds, rebooting system!"
-reboot -f
+echo b > /proc/sysrq-trigger

@@ -126,6 +126,14 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
+    public VolumeVO findByPoolIdName(long poolId, String name) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("poolId", poolId);
+        sc.setParameters("name", name);
+        return findOneBy(sc);
+    }
+
+    @Override
     public List<VolumeVO> findByPoolId(long poolId, Volume.Type volumeType) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("poolId", poolId);
@@ -306,6 +314,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         AllFieldsSearch.and("destroyed", AllFieldsSearch.entity().getState(), Op.EQ);
         AllFieldsSearch.and("notDestroyed", AllFieldsSearch.entity().getState(), Op.NEQ);
         AllFieldsSearch.and("updatedCount", AllFieldsSearch.entity().getUpdatedCount(), Op.EQ);
+        AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), Op.EQ);
         AllFieldsSearch.done();
 
         DetachedAccountIdSearch = createSearchBuilder();
@@ -594,8 +603,11 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             VolumeVO srcVol = findById(srcVolId);
             VolumeVO destVol = findById(destVolId);
             String uuid = srcVol.getUuid();
+            Long instanceId = srcVol.getInstanceId();
             srcVol.setUuid(null);
+            srcVol.setInstanceId(null);
             destVol.setUuid(uuid);
+            destVol.setInstanceId(instanceId);
             update(srcVolId, srcVol);
             update(destVolId, destVol);
         } catch (Exception e) {

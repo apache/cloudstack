@@ -26,7 +26,8 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import com.cloud.storage.Volume;
 
 
-@APICommand(name = "migrateVolume", description = "Migrate volume", responseObject = VolumeResponse.class, since = "3.0.0", responseView = ResponseView.Full)
+@APICommand(name = "migrateVolume", description = "Migrate volume", responseObject = VolumeResponse.class, since = "3.0.0", responseView = ResponseView.Full, entityType = {Volume.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class MigrateVolumeCmdByAdmin extends MigrateVolumeCmd {
 
 

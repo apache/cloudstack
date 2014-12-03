@@ -50,7 +50,6 @@ public class VirtualMachineTO {
     String platformEmulator;
     String bootArgs;
     String[] bootupScripts;
-    boolean rebootOnCrash;
     boolean enableHA;
     boolean limitCpuUse;
     boolean enableDynamicallyScaleVm;

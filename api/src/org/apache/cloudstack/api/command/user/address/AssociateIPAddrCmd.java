@@ -142,7 +142,8 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             }
         }
 
-        throw new InvalidParameterValueException("Unable to figure out zone to assign ip to");
+        throw new InvalidParameterValueException("Unable to figure out zone to assign ip to."
+                + " Please specify either zoneId, or networkId, or vpcId in the call");
     }
 
     public Long getVpcId() {
@@ -170,10 +171,6 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             return networkId;
         }
         Long zoneId = getZoneId();
-
-        if (zoneId == null) {
-            return null;
-        }
 
         DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
         if (zone.getNetworkType() == NetworkType.Advanced) {

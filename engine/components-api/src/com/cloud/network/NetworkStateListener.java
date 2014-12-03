@@ -24,6 +24,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.fsm.StateMachine2;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -65,12 +66,15 @@ public class NetworkStateListener implements StateListener<State, Event, Network
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, Network vo, boolean status, Object opaque) {
-        pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
-        return true;
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, Network vo, boolean status, Object opaque) {
+      State oldState = transition.getCurrentState();
+      State newState = transition.getToState();
+      Event event = transition.getEvent();
+      pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
+      return true;
     }
 
-    private void pubishOnEventBus(String event, String status, Network vo, State oldState, State newState) {
+  private void pubishOnEventBus(String event, String status, Network vo, State oldState, State newState) {
 
         String configKey = "publish.resource.state.events";
         String value = _configDao.getValue(configKey);

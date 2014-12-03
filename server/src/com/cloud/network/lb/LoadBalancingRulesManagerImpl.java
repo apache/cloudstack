@@ -1478,6 +1478,15 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         final LoadBalancerVO lb = _lbDao.findById(loadBalancerId);
         FirewallRule.State backupState = lb.getState();
 
+        // remove any ssl certs associated with this LB rule before trying to delete it.
+        LoadBalancerCertMapVO lbCertMap = _lbCertMapDao.findByLbRuleId(loadBalancerId);
+        if (lbCertMap != null) {
+            boolean removeResult = removeCertFromLoadBalancer(loadBalancerId);
+            if (!removeResult) {
+                throw new CloudRuntimeException("Unable to remove certificate from load balancer rule " + loadBalancerId);
+            }
+        }
+
         List<LoadBalancerVMMapVO> backupMaps = Transaction.execute(new TransactionCallback<List<LoadBalancerVMMapVO>>() {
             @Override
             public List<LoadBalancerVMMapVO> doInTransaction(TransactionStatus status) {
@@ -1600,7 +1609,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             NetworkOffering off = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
             if (off.getElasticLb() && ipVO == null && network.getVpcId() == null) {
                 systemIp = _ipAddrMgr.assignSystemIp(networkId, lbOwner, true, false);
-                ipVO = _ipAddressDao.findById(systemIp.getId());
+                if (systemIp != null) {
+                    ipVO = _ipAddressDao.findById(systemIp.getId());
+                }
             }
 
             // Validate ip address
@@ -1637,6 +1648,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 if (ex instanceof NetworkRuleConflictException) {
                     throw (NetworkRuleConflictException)ex;
                 }
+
+                if (ex instanceof InvalidParameterValueException) {
+                    throw (InvalidParameterValueException)ex;
+                }
+
             } finally {
                 if (result == null && systemIp != null) {
                     s_logger.debug("Releasing system IP address " + systemIp + " as corresponding lb rule failed to create");
@@ -2084,6 +2100,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         if (forDisplay != null) {
             lb.setDisplay(forDisplay);
+        }
+
+        // Validate rule in LB provider
+        LoadBalancingRule rule = getLoadBalancerRuleToApply(lb);
+        if (!validateLbRule(rule)) {
+            throw new InvalidParameterValueException("Modifications in lb rule " + lbRuleId + " are not supported.");
         }
 
         boolean success = _lbDao.update(lbRuleId, lb);

@@ -367,7 +367,6 @@ CREATE TABLE `cloud`.`autoscale_vmgroups` (
   `max_members` int unsigned NOT NULL,
   `member_port` int unsigned NOT NULL,
   `interval` int unsigned NOT NULL,
-  `last_interval` datetime DEFAULT NULL,
   `profile_id` bigint unsigned NOT NULL,
   `state` varchar(255) NOT NULL COMMENT 'enabled or disabled, a vmgroup is disabled to stop autoscaling activity',
   `created` datetime NOT NULL COMMENT 'date created',

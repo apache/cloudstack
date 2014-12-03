@@ -38,8 +38,8 @@ class TestVmSnapshot(cloudstackTestCase):
         testClient = super(TestVmSnapshot, cls).getClsTestClient()
 
         hypervisor = testClient.getHypervisorInfo()
-        if hypervisor.lower() == KVM.lower():
-            raise unittest.SkipTest("VM snapshot feature is not supported on KVM")
+        if hypervisor.lower() in (KVM.lower(), "hyperv", "lxc"):
+            raise unittest.SkipTest("VM snapshot feature is not supported on KVM, Hyper-V or LXC")
 
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
@@ -201,6 +201,9 @@ class TestVmSnapshot(cloudstackTestCase):
             "Ready",
             "Check the snapshot of vm is ready!"
         )
+
+	# Stop Virtual machine befor reverting VM to a snapshot taken without memory  	
+	self.virtual_machine.stop(self.apiclient)
 
         VmSnapshot.revertToSnapshot(self.apiclient, list_snapshot_response[0].id)
 

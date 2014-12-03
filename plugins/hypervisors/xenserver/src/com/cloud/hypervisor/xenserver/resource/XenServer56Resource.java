@@ -65,19 +65,6 @@ public class XenServer56Resource extends CitrixResourceBase {
         }
     }
 
-    @Override
-    protected String getGuestOsType(String stdType, String platformEmulator, boolean bootFromCD) {
-        if (platformEmulator == null) {
-            if (!bootFromCD) {
-                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 guestOS type, start it as HVM guest");
-                platformEmulator = "Other install media";
-            } else {
-                String msg = "XenServer 5.6 doesn't support Guest OS type " + stdType;
-                s_logger.warn(msg);
-            }
-        }
-        return platformEmulator;
-    }
 
     @Override
     protected List<File> getPatchFiles() {
@@ -261,9 +248,6 @@ public class XenServer56Resource extends CitrixResourceBase {
             }
             Set<VM> vms = VM.getByNameLabel(conn, cmd.getVmName());
             for (VM vm : vms) {
-                synchronized (_cluster.intern()) {
-                    s_vms.remove(_cluster, _name, vm.getNameLabel(conn));
-                }
                 s_logger.info("Fence command for VM " + cmd.getVmName());
                 vm.powerStateReset(conn);
                 vm.destroy(conn);

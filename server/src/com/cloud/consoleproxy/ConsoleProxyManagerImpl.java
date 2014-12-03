@@ -539,6 +539,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             if (proxy.getState() == VirtualMachine.State.Stopped) {
                 _itMgr.advanceStart(proxy.getUuid(), null, null);
                 proxy = _consoleProxyDao.findById(proxy.getId());
+                return proxy;
             }
 
             // For VMs that are in Stopping, Starting, Migrating state, let client to wait by returning null
@@ -668,9 +669,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to allocate console proxy storage, remove the console proxy record from DB, proxy id: " + proxyVmId);
             }
-
-            SubscriptionMgr.getInstance().notifySubscribers(ConsoleProxyManager.ALERT_SUBJECT, this,
-                new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_CREATE_FAILURE, dataCenterId, proxyVmId, null, "Unable to allocate storage"));
         }
         return null;
     }
@@ -887,43 +885,58 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         ConsoleProxyVO proxy = null;
-        if (_allocProxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
-            try {
-                proxy = assignProxyFromStoppedPool(dataCenterId);
-                if (proxy == null) {
-                    if (s_logger.isInfoEnabled()) {
-                        s_logger.info("No stopped console proxy is available, need to allocate a new console proxy");
-                    }
+        String errorString = null;
+        try{
+            if (_allocProxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
+                try {
+                    proxy = assignProxyFromStoppedPool(dataCenterId);
+                    if (proxy == null) {
+                        if (s_logger.isInfoEnabled()) {
+                            s_logger.info("No stopped console proxy is available, need to allocate a new console proxy");
+                        }
 
-                    try {
-                        proxy = startNew(dataCenterId);
-                    } catch (ConcurrentOperationException e) {
-                        s_logger.info("Concurrent Operation caught " + e);
+                        try {
+                            proxy = startNew(dataCenterId);
+                        } catch (ConcurrentOperationException e) {
+                            s_logger.info("Concurrent Operation caught " + e);
+                        }
+                    } else {
+                        if (s_logger.isInfoEnabled()) {
+                            s_logger.info("Found a stopped console proxy, bring it up to running pool. proxy vm id : " + proxy.getId());
+                        }
                     }
-                } else {
-                    if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Found a stopped console proxy, bring it up to running pool. proxy vm id : " + proxy.getId());
-                    }
+                } finally {
+                    _allocProxyLock.unlock();
                 }
-            } finally {
-                _allocProxyLock.unlock();
+            } else {
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("Unable to acquire proxy allocation lock, skip for next time");
+                }
             }
-        } else {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Unable to acquire proxy allocation lock, skip for next time");
-            }
-        }
-
-        if (proxy != null) {
-            long proxyVmId = proxy.getId();
-            proxy = startProxy(proxyVmId);
 
             if (proxy != null) {
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Console proxy " + proxy.getHostName() + " is started");
+                long proxyVmId = proxy.getId();
+                proxy = startProxy(proxyVmId);
+
+                if (proxy != null) {
+                    if (s_logger.isInfoEnabled()) {
+                        s_logger.info("Console proxy " + proxy.getHostName() + " is started");
+                    }
+                    SubscriptionMgr.getInstance().notifySubscribers(ConsoleProxyManager.ALERT_SUBJECT, this,
+                        new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_UP, dataCenterId, proxy.getId(), proxy, null));
                 }
             }
+        }catch (Exception e){
+           errorString = e.getMessage();
+           throw e;
+        }finally {
+            // TODO - For now put all the alerts as creation failure. Distinguish between creation vs start failure in future.
+            // Also add failure reason since startvm masks some of them.
+            if(proxy == null || proxy.getState() != State.Running)
+                SubscriptionMgr.getInstance().notifySubscribers(ConsoleProxyManager.ALERT_SUBJECT, this,
+                    new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_CREATE_FAILURE, dataCenterId, 0l, null, errorString));
         }
+
     }
 
     public boolean isZoneReady(Map<Long, ZoneHostInfo> zoneHostInfoMap, long dataCenterId) {

@@ -34,4 +34,6 @@ public interface ResourceTagJoinDao extends GenericDao<ResourceTagJoinVO, Long> 
     List<ResourceTagJoinVO> searchByIds(Long... ids);
 
     List<ResourceTagJoinVO> listBy(String resourceUUID, ResourceObjectType resourceType);
+
+    ResourceTagJoinVO searchById(Long id);
 }

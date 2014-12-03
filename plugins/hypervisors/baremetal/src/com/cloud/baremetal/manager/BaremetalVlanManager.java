@@ -18,13 +18,30 @@
 package com.cloud.baremetal.manager;
 
 import com.cloud.baremetal.networkservice.BaremetalRctResponse;
+import com.cloud.baremetal.networkservice.BaremetalSwitchBackend;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.network.Network;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.api.AddBaremetalRctCmd;
+import org.apache.cloudstack.api.DeleteBaremetalRctCmd;
 
 /**
  * Created by frank on 4/30/14.
  */
 public interface BaremetalVlanManager extends Manager, PluggableService {
+    public static final String BAREMETAL_SYSTEM_ACCOUNT_NAME = "baremetal-system-account";
+
     BaremetalRctResponse addRct(AddBaremetalRctCmd cmd);
+
+    void prepareVlan(Network nw, DeployDestination destHost);
+
+    void releaseVlan(Network nw, VirtualMachineProfile vm);
+
+    void registerSwitchBackend(BaremetalSwitchBackend backend);
+
+    void deleteRct(DeleteBaremetalRctCmd cmd);
+
+    BaremetalRctResponse listRct();
 }

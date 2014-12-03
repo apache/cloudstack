@@ -64,7 +64,7 @@ public class Version {
 
     public static String trimRouterVersion(String version) {
         String[] tokens = version.split(" ");
-        if (tokens.length >= 3) {
+        if (tokens.length >= 3 && tokens[2].matches("[0-9]+(\\.[0-9]+)*")) {
             return tokens[2];
         }
         return "0";

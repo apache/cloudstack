@@ -273,7 +273,7 @@
 
         var vnmcProviderDetailView = {
             id: 'vnmcProvider',
-            label: 'VNMC',
+            label: 'label.vnmc',
             viewAll: vnmcDeviceViewAll,
             actions: {
             	add: {

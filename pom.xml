@@ -19,7 +19,7 @@
 
   <groupId>org.apache.cloudstack</groupId>
   <artifactId>cloudstack</artifactId>
-  <version>4.5.0-SNAPSHOT</version>
+  <version>4.6.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Apache CloudStack</name>
   <description>Apache CloudStack is an IaaS (“Infrastructure as a Service”) cloud orchestration platform.</description>
@@ -82,6 +82,7 @@
     <cs.aws.sdk.version>1.3.22</cs.aws.sdk.version>
     <cs.lang.version>2.6</cs.lang.version>
     <cs.commons-io.version>1.4</cs.commons-io.version>
+    <cs.commons-validator.version>1.4.0</cs.commons-validator.version>
     <cs.reflections.version>0.9.8</cs.reflections.version>
     <cs.java-ipv6.version>0.10</cs.java-ipv6.version>
     <cs.replace.properties>build/replace.properties</cs.replace.properties>
@@ -94,6 +95,7 @@
     <cs.mycila.license.version>2.5</cs.mycila.license.version>
     <cs.findbugs.version>2.5.3</cs.findbugs.version>
     <cs.javadoc.version>2.9.1</cs.javadoc.version>
+    <cs.opensaml.version>2.6.1</cs.opensaml.version>
   </properties>
 
   <distributionManagement>
@@ -231,6 +233,11 @@
         <groupId>commons-codec</groupId>
         <artifactId>commons-codec</artifactId>
         <version>${cs.codec.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-validator</groupId>
+        <artifactId>commons-validator</artifactId>
+        <version>${cs.commons-validator.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bouncycastle</groupId>
@@ -701,7 +708,8 @@
             <numUnapprovedLicenses>0</numUnapprovedLicenses>
             <excludeSubProjects>false</excludeSubProjects>
             <excludes>
-              <exclude>CHANGES</exclude>
+              <exclude>CHANGES.md</exclude>
+              <exclude>README.md</exclude>
               <exclude>INSTALL.md</exclude>
               <exclude>.idea/</exclude>
               <exclude>**/*.log</exclude>
@@ -758,6 +766,7 @@
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/definition.rb</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/preseed.cfg</exclude>
               <exclude>tools/marvin/Marvin.egg-info/*</exclude>
+              <exclude>ui/css/token-input-facebook.css</exclude>
               <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.crosshair.js</exclude>
               <exclude>ui/lib/flot/jquery.flot.fillbetween.js</exclude>
@@ -778,6 +787,7 @@
               <exclude>ui/lib/jquery.js</exclude>
               <exclude>ui/lib/jquery.md5.js</exclude>
               <exclude>ui/lib/jquery.validate.js</exclude>
+              <exclude>ui/lib/jquery.tokeninput.js</exclude>
               <exclude>ui/lib/qunit/qunit.css</exclude>
               <exclude>ui/lib/qunit/qunit.js</exclude>
               <exclude>ui/lib/reset.css</exclude>
@@ -814,6 +824,7 @@
               <exclude>systemvm/patches/debian/config/var/www/html/latest/.htaccess</exclude>
               <exclude>systemvm/patches/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
               <exclude>tools/transifex/.tx/config</exclude>
+              <exclude>tools/logo/apache_cloudstack.png</exclude>
               <exclude>tools/marvin/marvin/sandbox/advanced/sandbox.cfg</exclude>
               <exclude>tools/ngui/static/bootstrap/*</exclude>
               <exclude>tools/ngui/static/js/lib/*</exclude>
@@ -883,13 +894,20 @@
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>findbugs-maven-plugin</artifactId>
           <version>${cs.findbugs.version}</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.cloudstack</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>${project.version}</version>
+            </dependency>
+          </dependencies>
           <configuration>
             <effort>Max</effort>
             <threshold>High</threshold>
             <xmlOutput>true</xmlOutput>
             <failOnError>false</failOnError>
             <maxHeap>2048</maxHeap>
-            <excludeFilterFile>${basedir}/findbugsExcludeFilter.xml</excludeFilterFile>
+            <excludeFilterFile>findbugsExcludeFilter.xml</excludeFilterFile>
           </configuration>
           <executions>
             <execution>

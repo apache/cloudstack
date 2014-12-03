@@ -18,13 +18,25 @@
 """ Component tests VM life cycle in VPC network functionality
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackAPI import migrateSystemVm
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (Host,
+                             VirtualMachine,
+                             ServiceOffering,
+                             VPC,
+                             VpcOffering,
+                             Router,
+                             Network,
+                             NetworkOffering,
+                             Cluster,
+                             Account)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               wait_for_cleanup)
+import time
 
 
 class Services:
@@ -55,7 +67,7 @@ class Services:
                                     "cpunumber": 1,
                                     "cpuspeed": 100,
                                     "memory": 64,
-                                    "tags": "HOST_TAGS_HERE"
+                                    "hosttags": "hosttag1"
                                     },
                          "service_offering_2": {
                                     "name": "Tiny Instance- tagged host 2",
@@ -63,7 +75,7 @@ class Services:
                                     "cpunumber": 1,
                                     "cpuspeed": 100,
                                     "memory": 64,
-                                    "tags": "HOST_TAGS_HERE"
+                                    "hosttags": "hosttag2"
                                     },
                          "network_offering": {
                                     "name": 'VPC Network offering',
@@ -179,7 +191,7 @@ class Services:
                          "ostype": 'CentOS 5.3 (64-bit)',
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
-                         "timeout": 10,
+                         "timeout": 30,
                          "mode": 'advanced'
                     }
 
@@ -202,6 +214,19 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
+
+        clusterWithSufficientHosts = None
+        clusters = Cluster.list(cls.api_client, zoneid=cls.zone.id)
+        for cluster in clusters:
+            cls.hosts = Host.list(cls.api_client, clusterid=cluster.id)
+            if len(cls.hosts) >= 2:
+                clusterWithSufficientHosts = cluster
+
+        if clusterWithSufficientHosts is None:
+            raise unittest.SkipTest("No Cluster with 2 hosts found")
+
+        Host.update(cls.api_client, id=cls.hosts[0].id, hosttags="hosttag1")
+        Host.update(cls.api_client, id=cls.hosts[1].id, hosttags="hosttag2")
 
         cls.service_offering_1 = ServiceOffering.create(
                                             cls.api_client,
@@ -325,6 +350,9 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
+            #Delete the host tags
+            Host.update(cls.api_client, id=cls.hosts[0].id, hosttags="")
+            Host.update(cls.api_client, id=cls.hosts[1].id, hosttags="")
             cls.account.delete(cls.api_client)
             wait_for_cleanup(cls.api_client, ["account.cleanup.interval"])
             #Cleanup resources used
@@ -349,7 +377,7 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
 
         self.router = routers[0]
         if self.router.state == "Running":
-            Router.stop(self.apiclient, id=self.router.id)
+            self.debug("Verified that the Router is in Running State")
 
         self.cleanup = []
         return
@@ -421,6 +449,9 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
         # 2. VMs present on the above host should successfully migrate to the
         #    other host present in the cluster
 
+        Host.update(self.apiclient, id=self.hosts[0].id, hosttags="hosttag1,hosttag2")
+        Host.update(self.apiclient, id=self.hosts[1].id, hosttags="hosttag1,hosttag2")
+        
         self.validate_vm_deployment()
         self.debug("Stop the host on which the VPC virtual router is running")
         try:
@@ -441,12 +472,34 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
                          True,
                          "List routers shall return a valid VPCVR for account"
                          )
-        for router in routers:
-            self.assertEqual(
-                             router.state,
-                             "Running",
-                             "Router state should be running after migration"
-                             )
+        
+        router = routers[0]
+                    
+        try:
+            
+            timeout = self.services["timeout"]
+            self.debug("Timeout Value %d : " % timeout)
+            while True:
+                list_router_response = Router.list(
+                    self.apiclient,
+                    id = router.id,
+                    state = "Running"
+                )
+                
+                if list_router_response is not None:
+                    break
+                elif timeout == 0:
+                    raise Exception("Router state should be running after migration")
+
+                time.sleep(self.services["sleep"])
+                timeout = timeout - 1
+                self.debug("Waiting for %d seconds - %d tries left" % (self.services["sleep"],timeout))
+            
+            self.debug("Verified that the Router is in Running State")
+            
+        except Exception as e:
+            self.fail("Failed to find the Router in Running state %s " % e)
+                
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   account=self.account.name,
@@ -461,7 +514,7 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
         for vm in vms:
             self.assertEqual(
                              vm.state,
-                             "Ruuning",
+                             "Running",
                              "Vm state should be running after migration"
                              )
         return
@@ -479,12 +532,51 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
         # 1. Successfully cancel the Maintenance mode on the host.
         # 2. Migrate the VMs back successfully onto the host.
         # 3. Check that the network connectivity exists with the migrated VMs.
+        
+        try:
+            timeout = self.services["timeout"]
+            while True:
+                list_host_response = Host.list(
+                    self.apiclient,
+                    id=self.vpcvr.hostid,
+                    resourcestate="Maintenance")
+                
+                if list_host_response is not None:
+                    break
+                elif timeout == 0:
+                    raise Exception("Failed to list the Host in Maintenance State")
+
+                time.sleep(self.services["sleep"])
+                timeout = timeout - 1
+            
+            self.debug("Verified that the Host is in Maintenance State")
+            
+        except:
+            self.fail("Failed to find the Host in maintenance state")
 
         self.debug("Cancel host maintenence on which the VPCVR is running")
         try:
             Host.cancelMaintenance(self.apiclient, id=self.vpcvr.hostid)
+
+            timeout = self.services["timeout"]
+            while True:
+                list_host_response = Host.list(
+                    self.apiclient,
+                    id=self.vpcvr.hostid,
+                    state="Up")
+                
+                if list_host_response is not None:
+                    break
+                elif timeout == 0:
+                    raise Exception("Failed to list the Host in Up State after Canceling Maintenance Mode")
+
+                time.sleep(self.services["sleep"])
+                timeout = timeout - 1
+            
+            self.debug("Verified that the Host is in Up State after Canceling Maintenance Mode")
+            
         except Exception as e:
-            self.fail("Failed to enable maintenance mode on host: %s" % e)
+            self.fail("Failed to cancel maintenance mode on host: %s" % e)
 
         self.debug(
             "Migrating the instances back to the host: %s" %
@@ -527,6 +619,27 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
         # 1. Host should successfully reconnect.
         # 2. Network connectivity to all the VMs on the host should not be
         #    effected due to reconnection.
+
+        try:
+            timeout = self.services["timeout"]        
+            while True:
+                list_host_response = Host.list(
+                    self.apiclient,
+                    id=self.vpcvr.hostid,
+                    resourcestate="Enabled")
+                
+                if list_host_response is not None:
+                    break
+                elif timeout == 0:
+                    raise Exception("Failed to list the Host in Up State")
+
+                time.sleep(self.services["sleep"])
+                timeout = timeout - 1
+            
+            self.debug("Verified that the Host is in Up State")
+            
+        except:
+            self.fail("Failed to find the Host in Up State")
 
         self.debug("Reconnecting the host where VPC VR is running")
         try:

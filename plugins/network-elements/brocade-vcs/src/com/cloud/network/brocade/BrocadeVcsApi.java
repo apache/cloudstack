@@ -334,7 +334,15 @@ public class BrocadeVcsApi {
         HttpResponse response = executeMethod(pm);
 
         if (response.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
-            String errorMessage = responseToErrorMessage(response);
+
+            String errorMessage;
+            try {
+                errorMessage = responseToErrorMessage(response);
+            } catch (IOException e) {
+                s_logger.error("Failed to update object : " + e.getMessage());
+                throw new BrocadeVcsApiException("Failed to update object : " + e.getMessage());
+            }
+
             pm.releaseConnection();
             s_logger.error("Failed to update object : " + errorMessage);
             throw new BrocadeVcsApiException("Failed to update object : " + errorMessage);
@@ -405,7 +413,15 @@ public class BrocadeVcsApi {
         HttpResponse response = executeMethod(pm);
 
         if (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {
-            String errorMessage = responseToErrorMessage(response);
+
+            String errorMessage;
+            try {
+                errorMessage = responseToErrorMessage(response);
+            } catch (IOException e) {
+                s_logger.error("Failed to create object : " + e.getMessage());
+                throw new BrocadeVcsApiException("Failed to create object : " + e.getMessage());
+            }
+
             pm.releaseConnection();
             s_logger.error("Failed to create object : " + errorMessage);
             throw new BrocadeVcsApiException("Failed to create object : " + errorMessage);
@@ -421,7 +437,6 @@ public class BrocadeVcsApi {
             throw new BrocadeVcsApiException("Hostname/credentials are null or empty");
         }
 
-        BufferedReader br = null;
         String readLine = null;
         StringBuffer sb = null;
 
@@ -432,14 +447,21 @@ public class BrocadeVcsApi {
         HttpResponse response = executeMethod(pm);
 
         if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-            String errorMessage = responseToErrorMessage(response);
+
+            String errorMessage;
+            try {
+                errorMessage = responseToErrorMessage(response);
+            } catch (IOException e) {
+                s_logger.error("Failed to retreive status : " + e.getMessage());
+                throw new BrocadeVcsApiException("Failed to retreive status : " + e.getMessage());
+            }
+
             pm.releaseConnection();
             s_logger.error("Failed to retreive status : " + errorMessage);
             throw new BrocadeVcsApiException("Failed to retreive status : " + errorMessage);
         }
 
-        try {
-            br = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), Charset.forName("UTF-8")));
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), Charset.forName("UTF-8")))) {
             sb = new StringBuffer();
 
             while (((readLine = br.readLine()) != null)) {
@@ -448,8 +470,8 @@ public class BrocadeVcsApi {
 
             }
         } catch (Exception e) {
-            s_logger.error("Failed to get object : " + e.getMessage());
-            throw new BrocadeVcsApiException("Failed to get object : " + e.getMessage());
+            s_logger.error("Failed to retreive status : " + e.getMessage());
+            throw new BrocadeVcsApiException("Failed to retreive status : " + e.getMessage());
         }
 
         pm.releaseConnection();
@@ -468,7 +490,15 @@ public class BrocadeVcsApi {
         HttpResponse response = executeMethod(dm);
 
         if (response.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
-            String errorMessage = responseToErrorMessage(response);
+
+            String errorMessage;
+            try {
+                errorMessage = responseToErrorMessage(response);
+            } catch (IOException e) {
+                s_logger.error("Failed to delete object : " + e.getMessage());
+                throw new BrocadeVcsApiException("Failed to delete object : " + e.getMessage());
+            }
+
             dm.releaseConnection();
             s_logger.error("Failed to delete object : " + errorMessage);
             throw new BrocadeVcsApiException("Failed to delete object : " + errorMessage);
@@ -497,22 +527,18 @@ public class BrocadeVcsApi {
         return response;
     }
 
-    private String responseToErrorMessage(HttpResponse response) {
+    private String responseToErrorMessage(HttpResponse response) throws IOException {
 
         if ("text/html".equals(response.getEntity().getContentType().getValue())) {
-            try {
 
-                BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), Charset.forName("UTF-8")));
+            try (BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), Charset.forName("UTF-8")))) {
 
                 StringBuffer result = new StringBuffer();
                 String line = "";
                 while ((line = rd.readLine()) != null) {
                     result.append(line);
                 }
-
                 return result.toString();
-            } catch (IOException e) {
-                s_logger.debug("Error while loading response body", e);
             }
         }
         return null;

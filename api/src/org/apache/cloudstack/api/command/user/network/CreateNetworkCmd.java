@@ -93,9 +93,6 @@ public class CreateNetworkCmd extends BaseCmd {
         + " range. If not specified, will be defaulted to startIP")
     private String endIp;
 
-    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "the ID or VID of the network")
-    private String vlan;
-
     @Parameter(name = ApiConstants.ISOLATED_PVLAN, type = CommandType.STRING, description = "the isolated private vlan for this network")
     private String isolatedPvlan;
 
@@ -131,8 +128,7 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name = ApiConstants.END_IPV6, type = CommandType.STRING, description = "the ending IPv6 address in the IPv6 network range")
     private String endIpv6;
 
-    @Parameter(name = ApiConstants.IP6_GATEWAY, type = CommandType.STRING, description = "the gateway of the IPv6 network. Required "
-        + "for Shared networks and Isolated networks when it belongs to VPC")
+    @Parameter(name = ApiConstants.IP6_GATEWAY, type = CommandType.STRING, description = "the gateway of the IPv6 network. Required for Shared networks")
     private String ip6Gateway;
 
     @Parameter(name = ApiConstants.IP6_CIDR, type = CommandType.STRING, description = "the CIDR of IPv6 network, must be at least /64")

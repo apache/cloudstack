@@ -17,7 +17,6 @@
 package com.cloud.hypervisor.xenserver.resource;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
@@ -61,12 +60,8 @@ public class XenServerConnectionPool {
         if (file == null) {
             s_logger.debug("Unable to find environment.properties");
         } else {
-            FileInputStream finputstream;
             try {
-                finputstream = new FileInputStream(file);
-                final Properties props = new Properties();
-                props.load(finputstream);
-                finputstream.close();
+                final Properties props = PropertiesUtil.loadFromFile(file);
                 String search = props.getProperty("sleep.interval.on.error");
                 if (search != null) {
                     s_sleepOnError = NumbersUtil.parseInterval(search, 10) * 1000;

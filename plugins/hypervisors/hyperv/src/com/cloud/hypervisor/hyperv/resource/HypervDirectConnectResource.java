@@ -65,6 +65,8 @@ import org.apache.log4j.Logger;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import org.apache.cloudstack.storage.command.CopyCommand;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
@@ -90,7 +92,6 @@ import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
@@ -124,9 +125,11 @@ import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DhcpTO;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
@@ -211,8 +214,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         // Create default StartupRoutingCommand, then customise
         StartupRoutingCommand defaultStartRoutCmd =
-            new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.Hyperv, RouterPrivateIpStrategy.HostLocal, new HashMap<String, VmState>(),
-                new HashMap<String, HostVmStateReportEntry>());
+            new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.Hyperv, RouterPrivateIpStrategy.HostLocal);
 
         // Identity within the data centre is decided by CloudStack kernel,
         // and passed via ServerResource.configure()
@@ -224,7 +226,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         defaultStartRoutCmd.setPrivateIpAddress(_agentIp);
         defaultStartRoutCmd.setStorageIpAddress(_agentIp);
         defaultStartRoutCmd.setPool(_clusterGuid);
-        defaultStartRoutCmd.setHostVmStateReport(getHostVmStateReport());
 
         s_logger.debug("Generated StartupRoutingCommand for _agentIp \"" + _agentIp + "\"");
 
@@ -316,7 +317,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
     @Override
     public final PingCommand getCurrentStatus(final long id) {
-        PingCommand pingCmd = new PingRoutingCommand(getType(), id, null, getHostVmStateReport());
+        PingCommand pingCmd = new PingRoutingCommand(getType(), id, getHostVmStateReport());
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Ping host " + _name + " (IP " + _agentIp + ")");
@@ -489,6 +490,8 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             answer = execute((PlugNicCommand)cmd);
         } else if (clazz == UnPlugNicCommand.class) {
             answer = execute((UnPlugNicCommand)cmd);
+        } else if (clazz == CopyCommand.class) {
+            answer = execute((CopyCommand)cmd);
         }
         else {
             if (clazz == StartCommand.class) {
@@ -513,7 +516,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             // Only Answer instances are returned by remote agents.
             // E.g. see Response.getAnswers()
             Answer[] result = s_gson.fromJson(ansStr, Answer[].class);
-            String logResult = cleanPassword(StringEscapeUtils.unescapeJava(result.toString()));
+            String logResult = cleanPassword(s_gson.toJson(result));
             s_logger.debug("executeRequest received response " + logResult);
             if (result.length > 0) {
                 return result[0];
@@ -522,6 +525,46 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         return answer;
     }
 
+    private Answer execute(CopyCommand cmd) {
+        URI agentUri = null;
+        try {
+            String cmdName = cmd.getClass().getName();
+            agentUri =
+                    new URI("https", null, _agentIp, _port,
+                            "/api/HypervResource/" + cmdName, null, null);
+        } catch (URISyntaxException e) {
+            String errMsg = "Could not generate URI for Hyper-V agent";
+            s_logger.error(errMsg, e);
+            return null;
+        }
+        cleanPassword(cmd.getSrcTO().getDataStore());
+        cleanPassword(cmd.getDestTO().getDataStore());
+
+        // Send the cmd to hyperv agent.
+        String ansStr = postHttpRequest(s_gson.toJson(cmd), agentUri);
+        if (ansStr == null) {
+            return Answer.createUnsupportedCommandAnswer(cmd);
+        }
+
+        Answer[] result = s_gson.fromJson(ansStr, Answer[].class);
+        String logResult = cleanPassword(s_gson.toJson(result));
+        s_logger.debug("executeRequest received response " + logResult);
+        if (result.length > 0) {
+            return result[0];
+        }
+
+        return null;
+    }
+
+    private void cleanPassword(DataStoreTO dataStoreTO) {
+        if (dataStoreTO instanceof NfsTO) {
+            NfsTO nfsTO = (NfsTO)dataStoreTO;
+            String url = nfsTO.getUrl();
+            if (url.contains("cifs") && url.contains("password")) {
+                nfsTO.setUrl(url.substring(0, url.indexOf('?')));
+            }
+        }
+    }
 
     private PlugNicAnswer execute(PlugNicCommand cmd) {
         if (s_logger.isInfoEnabled()) {

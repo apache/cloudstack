@@ -145,7 +145,7 @@ class TestImplicitPlanner(cloudstackTestCase):
     # be running on that host). It uses an implicit planner to deploy instances and the
     # instances of a new account should go to an host that doesn't have vms of any other
     # account.
-    @attr(tags=["advanced", "basic", "multihosts", "implicitplanner", "selfservice"])
+    @attr(tags=["advanced", "basic", "multihosts", "implicitplanner"], required_hardware="false")
     def test_01_deploy_vm_with_implicit_planner(self):
         """Test implicit planner is placing vms of an account on implicitly dedicated hosts.
         """

@@ -25,7 +25,6 @@ under the License.
         <checker name="ManagementServerNode" class="com.cloud.cluster.ManagementServerNode"/>
         <checker name="EncryptionSecretKeyChecker" class="com.cloud.utils.crypt.EncryptionSecretKeyChecker"/>
         <checker name="DatabaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker"/>
-        <checker name="DatabaseUpgradeChecker" class="com.cloud.upgrade.PremiumDatabaseUpgradeChecker"/>
     </system-integrity-checker>
 
     <interceptor library="com.cloud.configuration.DefaultInterceptorLibrary"/>

@@ -43,6 +43,7 @@ fi
 
 
 NAME="$(basename $0)"
+export SERVICE_NAME="$NAME"
 stop() {
 	SHUTDOWN_WAIT="30"
 	count="0"
@@ -85,6 +86,11 @@ handle_pid_file() {
     fi
 }
 
+start() {
+    readpath=$(readlink -f $0)
+    source `dirname $readpath`/tomcat.sh
+}
+
 # See how we were called.
 case "$1" in
     status)
@@ -99,11 +105,11 @@ case "$1" in
 		stop
 		set start
         set_ulimit
-		. /etc/rc.d/init.d/tomcat6
+	        start
 		;;
 	*)
         set_ulimit
-		. /etc/rc.d/init.d/tomcat6
+                start
 esac
 
 exit $RETVAL

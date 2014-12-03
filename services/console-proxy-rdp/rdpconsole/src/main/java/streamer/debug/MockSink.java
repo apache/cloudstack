@@ -77,7 +77,7 @@ public class MockSink extends BaseElement {
                 Object actualValue = buf.getMetadata(key);
                 if (actualValue == null)
                     throw new AssertionError("[" + this + "] Incoming buffer #" + packetNumber + " is not equal to expected buffer in metadata for key \"" + key
-                            + "\".\n  Actual metadata value: " + actualValue + ",\n  expected value: \"" + expectedValue + "\".");
+                            + "\".\n  Actual metadata value: " + ",\n  expected value: \"" + expectedValue + "\".");
 
                 if (!expectedValue.equals(actualValue))
                     throw new AssertionError("[" + this + "] Incoming buffer #" + packetNumber + " is not equal to expected buffer in metadata for key \"" + key

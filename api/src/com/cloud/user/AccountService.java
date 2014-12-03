@@ -25,6 +25,8 @@ import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 
 public interface AccountService {
 
@@ -79,6 +81,10 @@ public interface AccountService {
 
     Account getActiveAccountByName(String accountName, Long domainId);
 
+    UserAccount getActiveUserAccount(String username, Long domainId);
+
+    UserAccount updateUser(Long userId, String firstName, String lastName, String email, String userName, String password, String apiKey, String secretKey, String timeZone);
+
     Account getActiveAccountById(long accountId);
 
     Account getAccount(long accountId);
@@ -106,6 +112,10 @@ public interface AccountService {
     void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, ControlledEntity... entities) throws PermissionDeniedException;
+
+    void checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException;
+
+    void checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException;
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName,
             ControlledEntity... entities) throws PermissionDeniedException;

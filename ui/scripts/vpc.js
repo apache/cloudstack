@@ -15,6 +15,203 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack) {
+    var assignVMAction = function() {
+        return {
+            label: 'label.assign.vms',
+            messages: {
+                notification: function(args) {
+                    return 'label.assign.vms';
+                }
+            },
+            needsRefresh: true,
+            listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
+                type: 'checkbox',
+                filters: false,
+                multiSelect: false,
+                subselect: {
+                    isMultiple: true,
+                    label: 'label.use.vm.ip',
+                    dataProvider: function(args) {        
+                        var instance = args.context.instances[0];
+                        var network = args.context.networks[0];
+
+                        $.ajax({
+                            url: createURL('listNics'),
+                            data: {
+                                virtualmachineid: instance.id,
+                                nicId: instance.nic[0].id
+                            },
+                            success: function(json) {                	
+                                var nic = json.listnicsresponse.nic[0];
+                                var primaryIp = nic.ipaddress;
+                                var secondaryIps = nic.secondaryip ? nic.secondaryip : [];
+                                var ipSelection = [];
+                                var existingIps = $(args.context.subItemData).map(
+                                    function(index, item) { return item.itemIp; }
+                                );
+
+                                // Add primary IP as default
+                                if ($.inArray(primaryIp, existingIps) == -1) {
+                                    ipSelection.push({
+                                        id: primaryIp,
+                                        description: primaryIp + ' (Primary)'
+                                    });
+                                }
+
+                                // Add secondary IPs
+                                $(secondaryIps).map(function(index, secondaryIp) {
+                                    if ($.inArray(secondaryIp.ipaddress, existingIps) == -1) {
+                                        ipSelection.push({
+                                            id: secondaryIp.ipaddress,
+                                            description: secondaryIp.ipaddress
+                                        });
+                                    }
+                                });
+
+                                args.response.success({
+                                    data: ipSelection
+                                });
+                            }
+                        });
+                    }
+                },
+                dataProvider: function(args) {
+                    var assignedInstances;
+                    $.ajax({
+                        url: createURL('listLoadBalancers'),
+                        data: {
+                            id: args.context.internalLoadBalancers[0].id
+                        },
+                        async: false,
+                        success: function(json) {
+                            assignedInstances = json.listloadbalancersresponse.loadbalancer[0].loadbalancerinstance;
+                            if (assignedInstances == null)
+                                assignedInstances = [];
+                        }
+                    });
+
+                    $.ajax({
+                        url: createURL('listVirtualMachines'),
+                        data: {
+                            networkid: args.context.networks[0].id,
+                            listAll: true
+                        },
+                        success: function(json) {
+                            var instances = json.listvirtualmachinesresponse.virtualmachine;
+
+                            // Pre-select existing instances in LB rule
+                            $(instances).map(function(index, instance) {
+                                instance._isSelected = $.grep(assignedInstances,
+                                                              function(assignedInstance) {
+                                                                  return assignedInstance.id == instance.id;
+                                                              }
+                                                             ).length ? true : false;
+                            });
+
+                            //remove assigned VMs (i.e. instance._isSelected == true)
+                            var items = [];
+                            if (instances != null) {
+                                for (var i = 0; i < instances.length; i++) {
+                                    if (instances[i]._isSelected == true)
+                                        continue;
+                                    else
+                                        items.push(instances[i]);
+                                }
+                            }
+
+                            args.response.success({
+                                data: items
+                            });
+                        }
+                    });
+                }
+            }),
+            action: function(args) {  
+            	/*
+            	 * path 1: Network > VPC (list) > click "Configure" > pick an internal LB tier > click "Internal LB" (list) > click on a grid row (Details tab) > click "Assign VMs" tab > click Assign VMs" button on top of list 
+            	 * path 2: Network > VPC (list) > click "Configure" > pick an internal LB tier > click "Internal LB" (list) > "QuickView" on a grid row > click "Assign VMs" button in QuickView 
+            	 */            	
+                var $rows = $(':ui-dialog .list-view tbody tr');
+                var vms = args.context.instances;
+                
+                // Assign subselect values
+                $(vms).each(function() {
+                    var vm = this;
+                    var $vmRow = $rows.filter(function() {
+                        return $(this).data('json-obj') === vm;
+                    });
+                    $.extend(vm, { _subselect: $vmRow.find('.subselect select').val() });
+                });
+
+                /*
+                 var array1 = [];
+                 for (var i = 0; i < vms.length; i++) {
+                 array1.push(vms[i].id);
+                 }
+                 var virtualmachineids = array1.join(',');
+                 var inputData = {
+                 id: args.context.internalLoadBalancers[0].id,
+                 virtualmachineids: virtualmachineids
+                 };
+                 */
+                //virtualmachineids parameter has been replaced with vmidipmap parameter, so comment out the lines above.
+                
+                
+                var inputData = {
+                    id: args.context.internalLoadBalancers[0].id
+                };   
+                /* 
+                 * e.g. first VM(xxx) has two IPs(10.1.1.~), second VM(yyy) has three IPs(10.2.2.~):
+                 * vmidipmap[0].vmid=xxx  vmidipmap[0].vmip=10.1.1.11 
+                 * vmidipmap[1].vmid=xxx  vmidipmap[1].vmip=10.1.1.12 
+                 * vmidipmap[2].vmid=yyy  vmidipmap[2].vmip=10.2.2.77 
+                 * vmidipmap[3].vmid=yyy  vmidipmap[3].vmip=10.2.2.78 
+                 * vmidipmap[4].vmid=yyy  vmidipmap[4].vmip=10.2.2.79 
+                 */
+                var selectedVMs = vms;
+                if (selectedVMs != null) {
+                    var vmidipmapIndex = 0;
+                    for (var vmIndex = 0; vmIndex < selectedVMs.length; vmIndex++) {      
+                        var selectedIPs = selectedVMs[vmIndex]._subselect;
+                        for (var ipIndex = 0; ipIndex < selectedIPs.length; ipIndex++) {
+                            inputData['vmidipmap[' + vmidipmapIndex + '].vmid'] = selectedVMs[vmIndex].id;
+                            
+                            //"ipAddresses" is not in args.context since this LB rule is under a VPC, not an address. 
+                            /*
+                             if (args.context.ipAddresses[0].isportable) {
+                             inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex].split(',')[1];  
+                             } else {
+                             inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex];
+                             }
+                             */
+                            inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex];
+                            
+                            vmidipmapIndex++;
+                        }                                                			
+                    }
+                }   
+
+                $.ajax({
+                    url: createURL('assignToLoadBalancerRule'),
+                    data: inputData,
+                    dataType: 'json',
+                    async: true,
+                    success: function(data) {
+                        var jid = data.assigntoloadbalancerruleresponse.jobid;
+                        args.response.success({
+                            _custom: {
+                                jobId: jid
+                            }
+                        });
+                    }
+                });
+            },
+            notification: {
+                poll: pollAsyncJobResult
+            }
+        };
+    };
+    
     var aclMultiEdit = {
         noSelect: true,
        
@@ -245,7 +442,7 @@
             },
 
             'protocolnumber': {
-                label: 'Protocol Number',
+                label: 'label.protocol.number',
                 edit: true,
                 isEditable: true
             },
@@ -262,7 +459,7 @@
                 isEditable: true
             },
             'networkid': {
-                label: 'Select Tier',
+                label: 'label.select.tier',
                 select: function(args) {
                     var data = {
                         listAll: true,
@@ -437,7 +634,7 @@
                                     jobId: json.createnetworkaclresponse.jobid
                                 }, // API response obj name needs to be fixed
                                 notification: {
-                                    label: 'Edit ACL rule',
+                                    label: 'label.edit.acl.rule',
                                     poll: pollAsyncJobResult
                                 }
                             });
@@ -557,13 +754,13 @@
                             label: 'label.name'
                         },
                         sourceipaddress: {
-                            label: 'Source IP Address'
+                            label: 'label.source.ip.address'
                         },
                         sourceport: {
-                            label: 'Source Port'
+                            label: 'label.source.port'
                         },
                         instanceport: {
-                            label: 'Instance Port'
+                            label: 'label.instance.port'
                         },
                         algorithm: {
                             label: 'label.algorithm'
@@ -576,7 +773,7 @@
                                 networkid: args.context.networks[0].id
                             },
                             success: function(json) {
-                                var items = json.listloadbalancerssresponse.loadbalancer;
+                                var items = json.listloadbalancersresponse.loadbalancer;
                                 if (items != null) {
                                     for (var i = 0; i < items.length; i++) {
                                         var item = items[i];
@@ -593,9 +790,9 @@
                     },
                     actions: {
                         add: {
-                            label: 'Add Internal LB',
+                            label: 'label.add.internal.lb',
                             createForm: {
-                                title: 'Add Internal LB',
+                                title: 'label.add.internal.lb',
                                 fields: {
                                     name: {
                                         label: 'label.name',
@@ -610,19 +807,19 @@
                                         }
                                     },
                                     sourceipaddress: {
-                                        label: 'Source IP Address',
+                                        label: 'label.source.ip.address',
                                         validation: {
                                             required: false
                                         }
                                     },
                                     sourceport: {
-                                        label: 'Source Port',
+                                        label: 'label.source.port',
                                         validation: {
                                             required: true
                                         }
                                     },
                                     instanceport: {
-                                        label: 'Instance Port',
+                                        label: 'label.instance.port',
                                         validation: {
                                             required: true
                                         }
@@ -636,13 +833,13 @@
                                             args.response.success({
                                                 data: [{
                                                     id: 'source',
-                                                    description: 'source'
+                                                    description: _l('label.lb.algorithm.source')
                                                 }, {
                                                     id: 'roundrobin',
-                                                    description: 'roundrobin'
+                                                    description: _l('label.lb.algorithm.roundrobin')
                                                 }, {
                                                     id: 'leastconn',
-                                                    description: 'leastconn'
+                                                    description: _l('label.lb.algorithm.leastconn')
                                                 }]
                                             });
                                         }
@@ -651,7 +848,7 @@
                             },
                             messages: {
                                 notification: function(args) {
-                                    return 'Add Internal LB';
+                                    return 'label.add.internal.lb';
                                 }
                             },
                             action: function(args) {
@@ -698,109 +895,18 @@
 
                     detailView: {
                         isMaximized: true,
-                        name: 'Internal LB details',
+                        name: 'label.internal.lb.details',
                         actions: {
-                            assignVMs: {
-                                label: 'Assign VMs',
-                                messages: {
-                                    notification: function(args) {
-                                        return 'Assign VMs';
-                                    }
-                                },
-                                needsRefresh: true,
-                                listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
-                                    type: 'checkbox',
-                                    filters: false,
-                                    dataProvider: function(args) {
-                                        var assignedInstances;
-                                        $.ajax({
-                                            url: createURL('listLoadBalancers'),
-                                            data: {
-                                                id: args.context.internalLoadBalancers[0].id
-                                            },
-                                            async: false,
-                                            success: function(json) {
-                                                assignedInstances = json.listloadbalancerssresponse.loadbalancer[0].loadbalancerinstance;
-                                                if (assignedInstances == null)
-                                                    assignedInstances = [];
-                                            }
-                                        });
-
-                                        $.ajax({
-                                            url: createURL('listVirtualMachines'),
-                                            data: {
-                                                networkid: args.context.networks[0].id,
-                                                listAll: true
-                                            },
-                                            success: function(json) {
-                                                var instances = json.listvirtualmachinesresponse.virtualmachine;
-
-                                                // Pre-select existing instances in LB rule
-                                                $(instances).map(function(index, instance) {
-                                                    instance._isSelected = $.grep(assignedInstances,
-                                                        function(assignedInstance) {
-                                                            return assignedInstance.id == instance.id;
-                                                        }
-                                                    ).length ? true : false;
-                                                });
-
-                                                //remove assigned VMs (i.e. instance._isSelected == true)
-                                                var items = [];
-                                                if (instances != null) {
-                                                    for (var i = 0; i < instances.length; i++) {
-                                                        if (instances[i]._isSelected == true)
-                                                            continue;
-                                                        else
-                                                            items.push(instances[i]);
-                                                    }
-                                                }
-
-                                                args.response.success({
-                                                    data: items
-                                                });
-                                            }
-                                        });
-                                    }
-                                }),
-                                action: function(args) {
-                                    var vms = args.context.instances;
-                                    var array1 = [];
-                                    for (var i = 0; i < vms.length; i++) {
-                                        array1.push(vms[i].id);
-                                    }
-                                    var virtualmachineids = array1.join(',');
-
-                                    $.ajax({
-                                        url: createURL('assignToLoadBalancerRule'),
-                                        data: {
-                                            id: args.context.internalLoadBalancers[0].id,
-                                            virtualmachineids: virtualmachineids
-                                        },
-                                        dataType: 'json',
-                                        async: true,
-                                        success: function(data) {
-                                            var jid = data.assigntoloadbalancerruleresponse.jobid;
-                                            args.response.success({
-                                                _custom: {
-                                                    jobId: jid
-                                                }
-                                            });
-                                        }
-                                    });
-                                },
-                                notification: {
-                                    poll: pollAsyncJobResult
-                                }
-                            },
+                            assignVMs: assignVMAction(),
 
                             remove: {
-                                label: 'Delete Internal LB',
+                                label: 'label.delete.internal.lb',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Please confirm you want to delete Internal LB';
+                                        return 'message.confirm.delete.internal.lb';
                                     },
                                     notification: function(args) {
-                                        return 'Delete Internal LB';
+                                        return 'label.delete.internal.lb';
                                     }
                                 },
                                 action: function(args) {
@@ -844,19 +950,19 @@
                                         label: 'label.description'
                                     },
                                     sourceipaddress: {
-                                        label: 'Source IP Address'
+                                        label: 'label.source.ip.address'
                                     },
                                     sourceport: {
-                                        label: 'Source Port'
+                                        label: 'label.source.port'
                                     },
                                     instanceport: {
-                                        label: 'Instance Port'
+                                        label: 'label.instance.port'
                                     },
                                     algorithm: {
                                         label: 'label.algorithm'
                                     },
                                     loadbalancerinstance: {
-                                        label: 'Assigned VMs',
+                                        label: 'label.assigned.vms',
                                         converter: function(objArray) {
                                             var s = '';
                                             if (objArray != null) {
@@ -878,7 +984,7 @@
                                             id: args.context.internalLoadBalancers[0].id
                                         },
                                         success: function(json) {
-                                            var item = json.listloadbalancerssresponse.loadbalancer[0];
+                                            var item = json.listloadbalancersresponse.loadbalancer[0];
 
                                             //remove Rules tab and add sourceport, instanceport at Details tab because there is only one element in loadbalancerrul array property.
                                             item.sourceport = item.loadbalancerrule[0].sourceport;
@@ -909,7 +1015,7 @@
                       id: args.context.internalLoadBalancers[0].id
                     },
                     success: function(json) {
-                      var item = json.listloadbalancerssresponse.loadbalancer[0];
+                      var item = json.listloadbalancersresponse.loadbalancer[0];
                       args.response.success({ data: item.loadbalancerrule });
                     }
                   });
@@ -936,7 +1042,7 @@
                                                 id: args.context.internalLoadBalancers[0].id
                                             },
                                             success: function(json) {
-                                                var item = json.listloadbalancerssresponse.loadbalancer[0];
+                                                var item = json.listloadbalancersresponse.loadbalancer[0];
                                                 args.response.success({
                                                     data: item.loadbalancerinstance
                                                 });
@@ -944,110 +1050,19 @@
                                         });
                                     },
                                     actions: {
-                                        add: {
-                                            label: 'Assign VMs',
-                                            messages: {
-                                                notification: function(args) {
-                                                    return 'Assign VMs';
-                                                }
-                                            },
-                                            needsRefresh: true,
-                                            listView: $.extend(true, {}, cloudStack.sections.instances.listView, {
-                                                type: 'checkbox',
-                                                filters: false,
-                                                dataProvider: function(args) {
-                                                    var assignedInstances;
-                                                    $.ajax({
-                                                        url: createURL('listLoadBalancers'),
-                                                        data: {
-                                                            id: args.context.internalLoadBalancers[0].id
-                                                        },
-                                                        async: false,
-                                                        success: function(json) {
-                                                            assignedInstances = json.listloadbalancerssresponse.loadbalancer[0].loadbalancerinstance;
-                                                            if (assignedInstances == null)
-                                                                assignedInstances = [];
-                                                        }
-                                                    });
-
-                                                    $.ajax({
-                                                        url: createURL('listVirtualMachines'),
-                                                        data: {
-                                                            networkid: args.context.networks[0].id,
-                                                            listAll: true
-                                                        },
-                                                        success: function(json) {
-                                                            var instances = json.listvirtualmachinesresponse.virtualmachine;
-
-                                                            // Pre-select existing instances in LB rule
-                                                            $(instances).map(function(index, instance) {
-                                                                instance._isSelected = $.grep(assignedInstances,
-                                                                    function(assignedInstance) {
-                                                                        return assignedInstance.id == instance.id;
-                                                                    }
-                                                                ).length ? true : false;
-                                                            });
-
-                                                            //remove assigned VMs (i.e. instance._isSelected == true)
-                                                            var items = [];
-                                                            if (instances != null) {
-                                                                for (var i = 0; i < instances.length; i++) {
-                                                                    if (instances[i]._isSelected == true)
-                                                                        continue;
-                                                                    else
-                                                                        items.push(instances[i]);
-                                                                }
-                                                            }
-
-                                                            args.response.success({
-                                                                data: items
-                                                            });
-                                                        }
-                                                    });
-                                                }
-                                            }),
-                                            action: function(args) {
-                                                var vms = args.context.instances;
-                                                var array1 = [];
-                                                for (var i = 0; i < vms.length; i++) {
-                                                    array1.push(vms[i].id);
-                                                }
-                                                var virtualmachineids = array1.join(',');
-
-                                                $.ajax({
-                                                    url: createURL('assignToLoadBalancerRule'),
-                                                    data: {
-                                                        id: args.context.internalLoadBalancers[0].id,
-                                                        virtualmachineids: virtualmachineids
-                                                    },
-                                                    dataType: 'json',
-                                                    async: true,
-                                                    success: function(data) {
-                                                        var jid = data.assigntoloadbalancerruleresponse.jobid;
-                                                        args.response.success({
-                                                            _custom: {
-                                                                jobId: jid
-                                                            }
-                                                        });
-                                                    }
-                                                });
-                                            },
-                                            notification: {
-                                                poll: pollAsyncJobResult
-                                            }
-                                        }
+                                        add: assignVMAction()
                                     },
                                     detailView: {
                                         actions: {
                                             remove: {
-                                                label: 'remove VM from load balancer',
+                                                label: 'label.remove.vm.load.balancer',
                                                 addRow: 'false',
                                                 messages: {
                                                     confirm: function(args) {
-                                                        return 'Please confirm you want to remove VM from load balancer';
+                                                        return 'message.confirm.remove.load.balancer';
                                                     },
                                                     notification: function(args) {
-                                                        return 'remove VM from load balancer';
+                                                        return 'label.remove.vm.load.balancer';
                                                     }
                                                 },
                                                 action: function(args) {
@@ -1171,10 +1186,10 @@
                             label: 'label.name'
                         },
                         description: {
-                            label: 'Description'
+                            label: 'label.description'
                         },
                         id: {
-                            label: 'id'
+                            label: 'label.id'
                         }
                     },
                     dataProvider: function(args) {                    	                  	
@@ -1198,18 +1213,18 @@
 
                     actions: {
                         add: {
-                            label: 'Add ACL List',
+                            label: 'label.add.acl.list',
                             createForm: {
-                                label: 'Add ACL List',
+                                label: 'label.add.acl.list',
                                 fields: {
                                     name: {
-                                        label: 'ACL List Name',
+                                        label: 'label.add.list.name',
                                         validation: {
                                             required: true
                                         }
                                     },
                                     description: {
-                                        label: 'Description',
+                                        label: 'label.description',
                                         validation: {
                                             required: true
                                         }
@@ -1218,7 +1233,7 @@
                             },
                             messages: {
                                 notification: function(args) {
-                                    return 'Add Network ACL List';
+                                    return 'label.add.network.acl.list';
                                 }
                             },
                             action: function(args) {
@@ -1246,13 +1261,13 @@
                         isMaximized: true,
                         actions: {
                             remove: {
-                                label: 'Delete ACL List',
+                                label: 'label.delete.acl.list',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Are you sure you want to delete this ACL list ?';
+                                        return 'message.confirm.delete.acl.list';
                                     },
                                     notification: function(args) {
-                                        return 'Delete ACL list';
+                                        return 'label.delete.acl.list';
                                     }
                                 },
                                 action: function(args) {
@@ -1286,10 +1301,10 @@
                                         isEditable: true
                                     },
                                     description: {
-                                        label: 'Description'
+                                        label: 'label.description'
                                     },
                                     id: {
-                                        label: 'id'
+                                        label: 'label.id'
                                     }
                                 }],
                                 dataProvider: function(args) {
@@ -2039,7 +2054,7 @@
 
                         actions: {
                             add: {
-                                label: 'Add Private Gateway',
+                                label: 'label.add.private.gateway',
                                 preFilter: function(args) {
                                     if (isAdmin() || isDomainAdmin())
                                         return true;
@@ -2105,14 +2120,14 @@
                                         },
 
                                         sourceNat: {
-                                            label: 'Source NAT',
+                                            label: 'label.source.nat',
                                             isBoolean: true,
                                             isChecked: false
 
                                         },
 
                                         aclid: {
-                                            label: 'ACL',
+                                            label: 'label.acl',
                                             select: function(args) {
                                                 $.ajax({
                                                     url: createURL('listNetworkACLLists'),
@@ -2243,13 +2258,13 @@
                                 },
 
                                 replaceACL: {
-                                    label: 'Replace ACL',
+                                    label: 'label.replace.acl',
                                     createForm: {
-                                        title: 'Replace ACL',
-                                        label: 'Replace ACL',
+                                        title: 'label.replace.acl',
+                                        label: 'label.replace.acl',
                                         fields: {
                                             aclid: {
-                                                label: 'ACL',
+                                                label: 'label.acl',
                                                 select: function(args) {
                                                     $.ajax({
                                                         url: createURL('listNetworkACLLists'),
@@ -2321,10 +2336,10 @@
 
                                     messages: {
                                         confirm: function(args) {
-                                            return 'Do you want to replace the ACL with a new one ?';
+                                            return 'message.confirm.replace.acl.new.one';
                                         },
                                         notification: function(args) {
-                                            return 'ACL replaced';
+                                            return 'label.acl.replaced';
                                         }
                                     }
                                 }
@@ -2362,16 +2377,16 @@
                                             label: 'label.account'
                                         },
                                         sourcenatsupported: {
-                                            label: 'SourceNAT Supported',
+                                            label: 'label.source.nat.supported',
                                             converter: function(str) {
                                                 return str ? 'Yes' : 'No';
                                             }
                                         },
                                         aclName: {
-                                            label: 'ACL Name'
+                                            label: 'label.acl.name'
                                         },
                                         aclid: {
-                                            label: 'ACL ID'
+                                            label: 'label.acl.id'
                                         }
 
 
@@ -2800,7 +2815,7 @@
                                             }
                                         },                                        
                                         passive: {
-                                            label: 'Passive',                                            
+                                            label: 'label.passive',
                                             isBoolean: true,
                                             isChecked: false
                                         }                                        
@@ -2865,7 +2880,7 @@
                                             label: 'label.id'
                                         },
                                         passive: {
-                                            label: 'Passive',
+                                            label: 'label.passive',
                                             converter: cloudStack.converters.toBooleanText
                                         },                                                                                
                                         publicip: {
@@ -3083,7 +3098,7 @@
 
                                 if (args.context.networks[0].type == "Isolated") { //Isolated network
                                     cloudStack.dialog.confirm({
-                                        message: 'Do you want to keep the current guest network CIDR unchanged?',
+                                        message: 'message.confirm.current.guest.CIDR.unchanged',
                                         action: function() { //"Yes"	button is clicked
                                             array1.push("&changecidr=false");
                                             $.ajax({
@@ -3255,13 +3270,13 @@
                     },
 
                     replaceacllist: {
-                        label: 'Replace ACL List',
+                        label: 'label.replace.acl.list',
                         createForm: {
-                            title: 'Replace ACL List',
-                            label: 'Replace ACL List',
+                            title: 'label.replace.acl.list',
+                            label: 'label.replace.acl.list',
                             fields: {
                                 aclid: {
-                                    label: 'ACL',
+                                    label: 'label.acl',
                                     select: function(args) {
                                         $.ajax({
                                             url: createURL('listNetworkACLLists&vpcid=' + args.context.vpc[0].id),
@@ -3327,10 +3342,10 @@
 
                         messages: {
                             confirm: function(args) {
-                                return 'Do you want to replace the ACL with a new one ?';
+                                return 'message.confirm.replace.acl.new.one';
                             },
                             notification: function(args) {
-                                return 'ACL replaced';
+                                return 'label.acl.replaced';
                             }
                         }
                     }
@@ -3427,7 +3442,7 @@
                             },
 
                             ispersistent: {
-                                label: 'Persistent ',
+                                label: 'label.persistent',
                                 converter: cloudStack.converters.toBooleanText
 
                             },
@@ -3506,7 +3521,7 @@
                             },
 
                             aclname: {
-                                label: 'ACL name'
+                                label: 'label.acl.name'
                             },
                             //aclid:{label:'ACL id'},
 
@@ -3646,13 +3661,13 @@
                                             args.response.success({
                                                 data: [{
                                                     name: 'roundrobin',
-                                                    description: _l('label.round.robin')
+                                                    description: _l('label.lb.algorithm.roundrobin')
                                                 }, {
                                                     name: 'leastconn',
-                                                    description: _l('label.least.connections')
+                                                    description: _l('label.lb.algorithm.leastconn')
                                                 }, {
                                                     name: 'source',
-                                                    description: _l('label.source')
+                                                    description: _l('label.lb.algorithm.source')
                                                 }]
                                             });
                                         }
@@ -3907,7 +3922,7 @@
                                 }
                             },
                             vlan: {
-                                label: 'VLAN',
+                                label: 'label.vlan',
                                 validation: {
                                     required: true
                                 },
@@ -3929,7 +3944,7 @@
                             },
 
                             aclid: {
-                                label: 'ACL',
+                                label: 'label.acl',
                                 select: function(args) {
                                     $.ajax({
                                         url: createURL('listNetworkACLLists&vpcid=' + args.context.vpc[0].id),
@@ -4047,7 +4062,7 @@
                     },
                     messages: {
                         notification: function() {
-                            return 'Add new tier';
+                            return 'label.add.new.tier';
                         }
                     }
                 },
@@ -4233,7 +4248,7 @@
                                         networkid: tier.id
                                     },
                                     success: function(json) {
-                                        internalLoadBalancers = json.listloadbalancerssresponse;
+                                        internalLoadBalancers = json.listloadbalancersresponse;
                                     },
                                     error: function(json) {
                                         error = true;

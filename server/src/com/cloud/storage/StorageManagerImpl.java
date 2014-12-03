@@ -499,7 +499,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         LocalStorageSearch.and("type", LocalStorageSearch.entity().getPoolType(), SearchCriteria.Op.IN);
         LocalStorageSearch.done();
 
-        Volume.State.getStateMachine().registerListener(new VolumeStateListener(_configDao));
+        Volume.State.getStateMachine().registerListener(new VolumeStateListener(_configDao, _vmInstanceDao));
 
         return true;
     }
@@ -641,7 +641,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             } else {
                 throw new InvalidParameterValueException("Missing parameter hypervisor. Hypervisor type is required to create zone wide primary storage.");
             }
-            if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Hyperv && hypervisorType != HypervisorType.Any) {
+            if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Hyperv && hypervisorType != HypervisorType.LXC && hypervisorType != HypervisorType.Any) {
                 throw new InvalidParameterValueException("zone wide storage pool is not supported for hypervisor type " + hypervisor);
             }
         }
@@ -683,9 +683,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         } catch (Exception e) {
             s_logger.debug("Failed to add data store: "+e.getMessage(), e);
-            // clean up the db
-            if (store != null) {
-                lifeCycle.deleteDataStore(store);
+            try {
+                // clean up the db, just absorb the exception thrown in deletion with error logged, so that user can get error for adding data store
+                // not deleting data store.
+                if (store != null) {
+                    lifeCycle.deleteDataStore(store);
+                }
+            } catch (Exception ex) {
+                s_logger.debug("Failed to clean up storage pool: " + ex.getMessage());
             }
             throw new CloudRuntimeException("Failed to add data store: "+e.getMessage(), e);
         }
@@ -794,7 +799,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         }
 
-        if (updatedDetails.size() > 0) {
+        if (updatedDetails.size() >= 0) {
             _storagePoolDao.updateDetails(id, updatedDetails);
         }
 
@@ -1028,16 +1033,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                         pool.getName());
                                 for (VMTemplateStoragePoolVO templatePoolVO : unusedTemplatesInPool) {
                                     if (templatePoolVO.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                                        s_logger.debug("Storage pool garbage collector is skipping templatePoolVO with ID: " + templatePoolVO.getId() +
-                                                " because it is not completely downloaded.");
+                                        s_logger.debug("Storage pool garbage collector is skipping template with ID: " + templatePoolVO.getTemplateId() +
+                                               " on pool " +  templatePoolVO.getPoolId() +  " because it is not completely downloaded.");
                                         continue;
                                     }
 
                                     if (!templatePoolVO.getMarkedForGC()) {
                                         templatePoolVO.setMarkedForGC(true);
                                         _vmTemplatePoolDao.update(templatePoolVO.getId(), templatePoolVO);
-                                        s_logger.debug("Storage pool garbage collector has marked templatePoolVO with ID: " + templatePoolVO.getId() +
-                                                " for garbage collection.");
+                                        s_logger.debug("Storage pool garbage collector has marked template with ID: " + templatePoolVO.getTemplateId() +
+                                               " on pool " +  templatePoolVO.getPoolId() +  " for garbage collection.");
                                         continue;
                                     }
 
@@ -1171,6 +1176,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         }
 
                         _snapshotDao.remove(destroyedSnapshotStoreVO.getSnapshotId());
+                        SnapshotDataStoreVO snapshotOnPrimary = _snapshotStoreDao.findBySnapshot(destroyedSnapshotStoreVO.getSnapshotId(), DataStoreRole.Primary);
+                        if (snapshotOnPrimary != null) {
+                            _snapshotStoreDao.remove(snapshotOnPrimary.getId());
+                        }
                         _snapshotStoreDao.remove(destroyedSnapshotStoreVO.getId());
                     }
 
@@ -1573,7 +1582,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
             if (volume.getState() != Volume.State.Ready) {
-                totalAskingSize = totalAskingSize + getVolumeSizeIncludingHvSsReserve(volume, pool);
+                totalAskingSize = totalAskingSize + getVolumeSizeIncludingHypervisorSnapshotReserve(volume, pool);
             }
         }
 
@@ -1618,7 +1627,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return true;
     }
 
-    private long getVolumeSizeIncludingHvSsReserve(Volume volume, StoragePool pool) {
+    private long getVolumeSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool) {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
         DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
 

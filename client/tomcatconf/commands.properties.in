@@ -18,6 +18,15 @@
 ### bitmap of permissions at the end of each classname, 1 = ADMIN, 2 = RESOURCE_DOMAIN_ADMIN, 4 = DOMAIN_ADMIN, 8 = USER
 ### Please standardize naming conventions to camel-case (even for acronyms).
 
+### CloudStack authentication commands
+login=15
+logout=15
+
+### SAML SSO/SLO commands
+samlSso=15
+samlSlo=15
+getSPMetadata=15
+
 ### Account commands
 createAccount=7
 deleteAccount=7
@@ -32,7 +41,7 @@ markDefaultZoneForAccount=1
 createUser=7
 deleteUser=7
 updateUser=15
-listUsers=7
+listUsers=15
 lockUser=7
 disableUser=7
 enableUser=7
@@ -122,15 +131,15 @@ updateGuestOsMapping=1
 removeGuestOsMapping=1
 
 #### service offering commands
-createServiceOffering=1
-deleteServiceOffering=1
-updateServiceOffering=1
+createServiceOffering=7
+deleteServiceOffering=7
+updateServiceOffering=7
 listServiceOfferings=15
 
 #### disk offering commands
-createDiskOffering=1
-updateDiskOffering=1
-deleteDiskOffering=1
+createDiskOffering=7
+updateDiskOffering=7
+deleteDiskOffering=7
 listDiskOfferings=15
 
 #### vlan commands
@@ -293,6 +302,7 @@ deleteHost=3
 prepareHostForMaintenance=1
 cancelHostMaintenance=1
 listHosts=3
+listHostTags=7
 findHostsForMigration=1
 addSecondaryStorage=1
 updateHostPassword=1
@@ -329,6 +339,7 @@ listAsyncJobs=15
 #### storage pools commands
 listStoragePools=3
 listStorageProviders=3
+listStorageTags=7
 createStoragePool=1
 updateStoragePool=1
 deleteStoragePool=1
@@ -647,6 +658,12 @@ listApis=15
 getApiLimit=15
 resetApiLimit=1
 
+#### API SolidFire Service Command
+getSolidFireAccountId=15
+getSolidFireVolumeSize=15
+getSolidFireVolumeAccessGroupId=15
+getSolidFireVolumeIscsiName=15
+
 #### Region commands
 addRegion=1
 updateRegion=1
@@ -674,6 +691,9 @@ addBaremetalPxePingServer=1
 addBaremetalDhcp=1
 listBaremetalDhcp=1
 listBaremetalPxeServers=1
+addBaremetalRct=1
+deleteBaremetalRct=1
+listBaremetalRct=1
 
 #### UCS commands
 addUcsManager=1
@@ -755,3 +775,6 @@ createServiceInstance=1
 addOpenDaylightController=1
 deleteOpenDaylightController=1
 listOpenDaylightControllers=1
+
+### GloboDNS commands
+addGloboDnsHost=1

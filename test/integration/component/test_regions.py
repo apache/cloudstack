@@ -46,7 +46,7 @@ class TestRegions(cloudstackTestCase):
         return
 
     def setUp(self):
-        pseudo_random_int = choice(xrange(1, 200))
+        pseudo_random_int = choice(xrange(2, 200))
         self.services["region"]["regionid"] = pseudo_random_int
         self.services["region"]["regionname"] = "region" + str(pseudo_random_int)
         self.services["region"]["regionendpoint"] = "http://region" + str(pseudo_random_int) + ":8080/client"
@@ -67,23 +67,23 @@ class TestRegions(cloudstackTestCase):
             msg="Region creation failed"
         )
 
-    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
+    @attr(tags=["simulator", "basic", "advanced"], required_hardware="false")
     def test_createRegionWithExistingRegionId(self):
         """Test for duplicate checks on region id
         """
         self.services["region"]["regionname"] = random_gen() #alter region name but not id
         self.assertRaises(Exception, Region.create, self.api_client, self.services["region"])
 
-    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
+    @attr(tags=["simulator", "basic", "advanced"], required_hardware="false")
     def test_createRegionWithExistingRegionName(self):
         """Test for duplicate checks on region name
         """
-        random_int = choice(xrange(1, 200))
+        random_int = choice(xrange(2, 200))
         self.services["region"]["regionid"] = random_int  #alter id but not name
         self.services["region"]["regionendpoint"] = "http://region" + str(random_int) + ":8080/client"
         self.assertRaises(Exception, Region.create, self.api_client, self.services["region"])
 
-    @attr(tags=["simulator", "basic", "advanced", "selfservice"])
+    @attr(tags=["simulator", "basic", "advanced"], required_hardware="false")
     def test_updateRegion(self):
        """ Test for update Region
        """

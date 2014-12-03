@@ -127,9 +127,6 @@ class workThread(threading.Thread):
             self.output.put(jobstatus)
             self.inqueue.task_done()
 
-        '''release the resource'''
-        self.connection.close()
-
 
 class jobThread(threading.Thread):
 
@@ -143,8 +140,6 @@ class jobThread(threading.Thread):
             job = self.inqueue.get()
             try:
                 job.run()
-                '''release the api connection'''
-                job.apiClient.connection.close()
             except:
                 pass
 

@@ -158,10 +158,10 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
     }
 
     @Override
-    public List<PortForwardingRuleVO> listByVmidAndDestIpAddr(String ip4Address,long vmid) {
+    public List<PortForwardingRuleVO> listByNetworkAndDestIpAddr(String ip4Address, long networkId) {
         SearchCriteria<PortForwardingRuleVO> sc = AllFieldsSearch.create();
         sc.setParameters("dstIp", ip4Address);
-        sc.setParameters("vmId", vmid);
+        sc.setParameters("networkId", networkId);
         return listBy(sc);
     }
 

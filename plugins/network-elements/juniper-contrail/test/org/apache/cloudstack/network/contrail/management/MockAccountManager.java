@@ -19,6 +19,7 @@ package org.apache.cloudstack.network.contrail.management;
 
 import java.util.List;
 import java.util.Map;
+import java.net.InetAddress;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -41,6 +42,8 @@ import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -137,6 +140,19 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
+    public UserAccount getActiveUserAccount(String username, Long domainId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public UserAccount updateUser(Long userId, String firstName, String lastName, String email, String userName, String password, String apiKey, String secretKey,
+                                  String timeZone) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public User getActiveUser(long arg0) {
         return _systemUser;
     }
@@ -218,7 +234,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public UserAccount authenticateUser(String arg0, String arg1, Long arg2, String arg3, Map<String, Object[]> arg4) {
+    public UserAccount authenticateUser(String arg0, String arg1, Long arg2, InetAddress arg3, Map<String, Object[]> arg4) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -386,5 +402,15 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public void checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
     }
 }

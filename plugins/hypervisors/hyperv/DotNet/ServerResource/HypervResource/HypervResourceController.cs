@@ -1,4 +1,4 @@
-﻿// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -873,7 +873,7 @@ namespace HypervResource
                 string details = null;
                 bool result = false;
                 string vmName = cmd.vmName;
-                string state = null;
+                string powerState = null;
 
                 // TODO: Look up the VM, convert Hyper-V state to CloudStack version.
                 var sys = wmiCallsV2.GetComputerSystem(vmName);
@@ -884,7 +884,7 @@ namespace HypervResource
                 }
                 else
                 {
-                    state = EnabledState.ToCloudStackState(sys.EnabledState); // TODO: V2 changes?
+                    powerState = EnabledState.ToCloudStackPowerState(sys.EnabledState);
                     result = true;
                 }
 
@@ -892,7 +892,7 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
-                    state = state,
+                    powerstate = powerState,
                     contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CheckVirtualMachineAnswer);
@@ -951,44 +951,54 @@ namespace HypervResource
                 string details = null;
                 string localPath;
                 StoragePoolType poolType;
-                object ansContent;
-
-                bool result = ValidateStoragePoolCommand(cmd, out localPath, out poolType, ref details);
-                if (!result)
-                {
-                    ansContent = new
-                    {
-                        result = result,
-                        details = details,
-                        contextMap = contextMap
-                    };
-                    return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
-                }
-
-                var tInfo = new Dictionary<string, string>();
                 long capacityBytes = 0;
                 long availableBytes = 0;
                 string hostPath = null;
-                if (poolType == StoragePoolType.Filesystem)
-                {
-                    GetCapacityForLocalPath(localPath, out capacityBytes, out availableBytes);
-                    hostPath = localPath;
-                }
-                else if (poolType == StoragePoolType.NetworkFilesystem ||
-                    poolType == StoragePoolType.SMB)
-                {
-                    NFSTO share = new NFSTO();
-                    String uriStr = "cifs://" + (string)cmd.pool.host + (string)cmd.pool.path;
-                    share.uri = new Uri(uriStr);
-                    hostPath = Utils.NormalizePath(share.UncPath);
+                bool result = false;
+                var tInfo = new Dictionary<string, string>();
+                object ansContent;
 
-                    // Check access to share.
-                    Utils.GetShareDetails(share.UncPath, out capacityBytes, out availableBytes);
-                    config.setPrimaryStorage((string)cmd.pool.uuid, hostPath);
+                try
+                {
+                    result = ValidateStoragePoolCommand(cmd, out localPath, out poolType, ref details);
+                    if (!result)
+                    {
+                        ansContent = new
+                        {
+                            result = result,
+                            details = details,
+                            contextMap = contextMap
+                        };
+                        return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
+                    }
+
+                    if (poolType == StoragePoolType.Filesystem)
+                    {
+                        GetCapacityForLocalPath(localPath, out capacityBytes, out availableBytes);
+                        hostPath = localPath;
+                    }
+                    else if (poolType == StoragePoolType.NetworkFilesystem ||
+                        poolType == StoragePoolType.SMB)
+                    {
+                        NFSTO share = new NFSTO();
+                        String uriStr = "cifs://" + (string)cmd.pool.host + (string)cmd.pool.path;
+                        share.uri = new Uri(uriStr);
+                        hostPath = Utils.NormalizePath(share.UncPath);
+
+                        // Check access to share.
+                        Utils.GetShareDetails(hostPath, out capacityBytes, out availableBytes);
+                        config.setPrimaryStorage((string)cmd.pool.uuid, hostPath);
+                    }
+                    else
+                    {
+                        result = false;
+                    }
                 }
-                else
+                catch
                 {
                     result = false;
+                    details = String.Format("Failed to add storage pool {0}, please verify your pool details", (string)cmd.pool.uuid);
+                    logger.Error(details);
                 }
 
                 String uuid = null;
@@ -1002,6 +1012,7 @@ namespace HypervResource
                     capacityBytes = capacityBytes,
                     availableBytes = availableBytes
                 };
+
 
                 ansContent = new
                 {
@@ -2423,7 +2434,10 @@ namespace HypervResource
                     logger.Error(details, sysEx);
                 }
 
-                return JArray.FromObject(hostVmStateReport);
+                var answer = JArray.FromObject(hostVmStateReport);
+                logger.Info(String.Format("{0}: {1}",CloudStackTypes.HostVmStateReportCommand, answer.ToString()));
+
+                return answer;
             }
         }
 

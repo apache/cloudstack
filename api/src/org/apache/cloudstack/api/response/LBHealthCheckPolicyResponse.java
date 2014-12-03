@@ -101,6 +101,7 @@ public class LBHealthCheckPolicyResponse extends BaseResponse {
         this.healthcheckthresshold = healthcheckpolicy.getHealthcheckThresshold();
         this.unhealthcheckthresshold = healthcheckpolicy.getUnhealthThresshold();
         this.forDisplay = healthcheckpolicy.isDisplay();
+        this.description = healthcheckpolicy.getDescription();
         setObjectName("healthcheckpolicy");
     }
 

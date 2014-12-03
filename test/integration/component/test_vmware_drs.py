@@ -112,6 +112,8 @@ class TestVMPlacement(cloudstackTestCase):
     def setUpClass(cls):
 
         cls.testClient = super(TestVMPlacement, cls).getClsTestClient()
+        if cls.testClient.getHypervisorInfo().lower() != "vmware":
+            raise unittest.SkipTest("VMWare tests only valid on VMWare hypervisor")
         cls.api_client = cls.testClient.getApiClient()
 
         cls.services = Services().services
@@ -169,7 +171,7 @@ class TestVMPlacement(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "vmware", "multihost", "provisioning"])
+    @attr(tags=["advanced", "vmware", "multihost"], required_hardware="true")
     def test_vm_creation_in_fully_automated_mode(self):
         """ Test VM Creation in  automation mode = Fully automated
             This test requires following preconditions:
@@ -272,6 +274,8 @@ class TestAntiAffinityRules(cloudstackTestCase):
     def setUpClass(cls):
 
         cls.testClient = super(TestAntiAffinityRules, cls).getClsTestClient()
+        if cls.testClient.getHypervisorInfo().lower() != "vmware":
+            raise unittest.SkipTest("VMWare tests only valid on VMWare hypervisor")
         cls.api_client = cls.testClient.getApiClient()
 
         cls.services = Services().services
@@ -336,7 +340,7 @@ class TestAntiAffinityRules(cloudstackTestCase):
         except Exception as e:
             raise Exception("Error: Creation of Affinity Group failed : %s" %e)
 
-    @attr(tags=["advanced", "vmware", "multihost", "provisioning"])
+    @attr(tags=["advanced", "vmware", "multihost"], required_hardware="true")
     def test_vmware_anti_affinity(self):
         """ Test Set up anti-affinity rules
 
@@ -500,6 +504,8 @@ class TestAffinityRules(cloudstackTestCase):
     def setUpClass(cls):
 
         cls.testClient = super(TestAffinityRules, cls).getClsTestClient()
+        if cls.testClient.getHypervisorInfo().lower() != "vmware":
+            raise unittest.SkipTest("VMWare tests only valid on VMWare hypervisor")
         cls.api_client = cls.testClient.getApiClient()
 
         cls.services = Services().services
@@ -564,7 +570,7 @@ class TestAffinityRules(cloudstackTestCase):
         except Exception as e:
             raise Exception("Error: Creation of Affinity Group failed : %s" %e)
 
-    @attr(tags=["advanced", "vmware", "multihost", "provisioning"])
+    @attr(tags=["advanced", "vmware", "multihost"], required_hardware="true")
     def test_vmware_affinity(self):
         """ Test Set up affinity rules
 

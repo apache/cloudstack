@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ### BEGIN INIT INFO
-# Provides:          cloudstack usage
+# Provides:          cloudstack-usage
 # Required-Start:    $network $local_fs
 # Required-Stop:     $network $local_fs
 # Default-Start:     3 4 5
@@ -48,12 +48,12 @@ setJavaHome() {
     return
   fi
 
-  # try javac first
-  java=$(which javac 2>/dev/null || :)
+  # try java first
+  java=$(which java 2>/dev/null || :)
 
-  # try java if javac is not found
+  # try javac if java is not found
   if [ -z "$java" ] ; then
-    java=$(which java 2>/dev/null || :)
+    java=$(which javac 2>/dev/null || :)
   fi
 
   if [ -n "$java" ] ; then
@@ -61,6 +61,17 @@ setJavaHome() {
     export JAVA_HOME
     return
   fi
+
+  # If everything has failed, try hardcoded paths
+  # The first existing directory is used for JAVA_HOME (if JAVA_HOME is not defined in $DEFAULT)
+  JDK_DIRS="/usr/lib/jvm/java-7-openjdk-amd64 /usr/lib/jvm/java-7-openjdk-i386 /usr/lib/jvm/java-7-oracle /usr/lib/jvm/java-7-openjdk /usr/lib/jvm/java-7-sun"
+  for jdir in $JDK_DIRS; do
+    if [ -r "$jdir/bin/java" -a -z "${JAVA_HOME}" ]; then
+      JAVA_HOME="$jdir"
+      export JAVA_HOME
+      return
+    fi
+  done
 
   # didnt find java home. exiting with error
   exit 1
@@ -73,7 +84,7 @@ PCP=`ls /usr/share/cloudstack-usage/plugins/*.jar 2>/dev/null | tr '\n' ':' | se
 
 # We need to append the JSVC daemon JAR to the classpath
 # AgentShell implements the JSVC daemon methods
-export CLASSPATH="/usr/share/java/commons-daemon.jar:$UCP:$PCP:/etc/cloudstack/usage"
+export CLASSPATH="/usr/share/java/commons-daemon.jar:/usr/share/java/mysql-connector-java.jar:$UCP:$PCP:/etc/cloudstack/usage"
 
 start() {
     if [ -s "$PIDFILE" ] && kill -0 $(cat "$PIDFILE") >/dev/null 2>&1; then
@@ -91,7 +102,7 @@ start() {
         exit 1
     fi
 
-    if start_daemon -p $PIDFILE $DAEMON -cp "$CLASSPATH" -pidfile "$PIDFILE" -outfile SYSLOG -errfile SYSLOG -Dpid=$$ $CLASS
+    if start_daemon -p $PIDFILE $DAEMON -home "$JAVA_HOME" -cp "$CLASSPATH" -pidfile "$PIDFILE" -outfile SYSLOG -errfile SYSLOG -Dpid=$$ $CLASS
         RETVAL=$?
     then
         rc=0

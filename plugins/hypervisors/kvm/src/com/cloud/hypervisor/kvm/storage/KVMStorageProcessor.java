@@ -62,6 +62,8 @@ import org.apache.cloudstack.storage.command.DettachAnswer;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -139,6 +141,13 @@ public class KVMStorageProcessor implements StorageProcessor {
         String value = (String)params.get("cmds.timeout");
         _cmdsTimeout = NumbersUtil.parseInt(value, 7200) * 1000;
         return true;
+    }
+
+    @Override
+    public SnapshotAndCopyAnswer snapshotAndCopy(SnapshotAndCopyCommand cmd) {
+        s_logger.info("'SnapshotAndCopyAnswer snapshotAndCopy(SnapshotAndCopyCommand)' not currently used for KVMStorageProcessor");
+
+        return new SnapshotAndCopyAnswer();
     }
 
     @Override
@@ -347,6 +356,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                 newVol.setFormat(ImageFormat.RAW);
             } else if (vol.getFormat() == PhysicalDiskFormat.QCOW2) {
                 newVol.setFormat(ImageFormat.QCOW2);
+            } else if (vol.getFormat() == PhysicalDiskFormat.DIR) {
+                newVol.setFormat(ImageFormat.DIR);
             }
 
             return new CopyCmdAnswer(newVol);
@@ -943,9 +954,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
                 if (attachingPool.getType() == StoragePoolType.RBD) {
                     if (resource.getHypervisorType() == Hypervisor.HypervisorType.LXC) {
-                        String[] splitPoolImage = attachingDisk.getPath().split("/");
-                        //ToDo: rbd showmapped supports json and xml output. Use json/xml to get device
-                        String device = Script.runSimpleBashScript("rbd showmapped | grep \""+splitPoolImage[0]+"  "+splitPoolImage[1]+"\" | cut -d \" \" -f10");
+                        String device = resource.mapRbdDevice(attachingDisk);
                         if (device != null) {
                             s_logger.debug("RBD device on host is: "+device);
                             attachingDisk.setPath(device);
@@ -968,11 +977,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 if (attachingPool.getType() == StoragePoolType.RBD) {
                     if(resource.getHypervisorType() == Hypervisor.HypervisorType.LXC){
                         // For LXC, map image to host and then attach to Vm
-                        String mapRbd = Script.runSimpleBashScript("rbd map " + attachingDisk.getPath() + " --id "+attachingPool.getAuthUserName());
-                        //Split pool and image details from disk path
-                        String[] splitPoolImage = attachingDisk.getPath().split("/");
-                        //ToDo: rbd showmapped supports json and xml output. Use json/xml to get device
-                        String device = Script.runSimpleBashScript("rbd showmapped | grep \""+splitPoolImage[0]+"  "+splitPoolImage[1]+"\" | cut -d \" \" -f10");
+                        String device = resource.mapRbdDevice(attachingDisk);
                         if (device != null) {
                             s_logger.debug("RBD device on host is: "+device);
                             diskdef.defBlockBasedDisk(device, devId, DiskDef.diskBus.VIRTIO);
@@ -1077,7 +1082,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                                                  volume.getProvisioningType(), disksize);
 
             VolumeObjectTO newVol = new VolumeObjectTO();
-            newVol.setPath(vol.getName());
+            if(vol != null) {
+                newVol.setPath(vol.getName());
+            }
             newVol.setSize(volume.getSize());
             newVol.setFormat(ImageFormat.valueOf(format.toString().toUpperCase()));
 
@@ -1118,9 +1125,12 @@ public class KVMStorageProcessor implements StorageProcessor {
                 String vmUuid = vm.getUUIDString();
                 Object[] args = new Object[] {snapshotName, vmUuid};
                 String snapshot = SnapshotXML.format(args);
-                s_logger.debug(snapshot);
 
+                long start = System.currentTimeMillis();
                 vm.snapshotCreateXML(snapshot);
+                long total = (System.currentTimeMillis() - start)/1000;
+                s_logger.debug("snapshot takes " + total + " seconds to finish");
+
                 /*
                  * libvirt on RHEL6 doesn't handle resume event emitted from
                  * qemu
@@ -1200,7 +1210,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 s_logger.debug("can't find volume: " + vol.getPath() + ", return true");
                 return new Answer(null);
             }
-            pool.deletePhysicalDisk(vol.getPath());
+            pool.deletePhysicalDisk(vol.getPath(), vol.getFormat());
             return new Answer(null);
         } catch (CloudRuntimeException e) {
             s_logger.debug("Failed to delete volume: ", e);
@@ -1267,4 +1277,5 @@ public class KVMStorageProcessor implements StorageProcessor {
     public Answer forgetObject(ForgetObjectCmd cmd) {
         return new Answer(cmd, false, "not implememented yet");
     }
+
 }

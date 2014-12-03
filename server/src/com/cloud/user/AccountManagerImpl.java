@@ -17,6 +17,7 @@
 package com.cloud.user;
 
 import java.net.URLEncoder;
+import java.net.InetAddress;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,6 +40,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -108,6 +110,8 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.network.vpn.Site2SiteVpnManager;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectInvitationVO;
@@ -536,8 +540,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     granted = true;
                     break;
                 }
-                granted = true;
-                break;
             }
 
             if (!granted) {
@@ -978,9 +980,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")
     })
     public UserAccount createUserAccount(final String userName, final String password, final String firstName, final String lastName, final String email,
-        final String timezone, String accountName,
-        final short accountType,
-                                         Long domainId, final String networkDomain, final Map<String, String> details, String accountUUID, final String userUUID) {
+        final String timezone, String accountName, final short accountType, Long domainId, final String networkDomain, final Map<String, String> details,
+        String accountUUID, final String userUUID) {
 
         if (accountName == null) {
             accountName = userName;
@@ -989,15 +990,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             domainId = Domain.ROOT_DOMAIN;
         }
 
-        if (userName.isEmpty()) {
+        if (StringUtils.isEmpty(userName)) {
             throw new InvalidParameterValueException("Username is empty");
         }
 
-        if (firstName.isEmpty()) {
+        if (StringUtils.isEmpty(firstName)) {
             throw new InvalidParameterValueException("Firstname is empty");
         }
 
-        if (lastName.isEmpty()) {
+        if (StringUtils.isEmpty(lastName)) {
             throw new InvalidParameterValueException("Lastname is empty");
         }
 
@@ -1046,19 +1047,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     user.setRegistrationToken(registrationToken);
                 }
 
-                // create correct account and group association based on accountType
-                if (accountType != Account.ACCOUNT_TYPE_PROJECT) {
-                    Map<Long, Long> accountGroupMap = new HashMap<Long, Long>();
-                    accountGroupMap.put(accountId, new Long(accountType + 1));
-                    _messageBus.publish(_name, MESSAGE_ADD_ACCOUNT_EVENT, PublishScope.LOCAL, accountGroupMap);
-                }
-
                 return new Pair<Long, Account>(user.getId(), account);
             }
         });
 
         long userId = pair.first();
         Account account = pair.second();
+
+        // create correct account and group association based on accountType
+        if (accountType != Account.ACCOUNT_TYPE_PROJECT) {
+            Map<Long, Long> accountGroupMap = new HashMap<Long, Long>();
+            accountGroupMap.put(account.getId(), new Long(accountType + 1));
+            _messageBus.publish(_name, MESSAGE_ADD_ACCOUNT_EVENT, PublishScope.LOCAL, accountGroupMap);
+        }
 
         CallContext.current().putContextParameter(Account.class, account.getUuid());
 
@@ -1104,19 +1105,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_UPDATE, eventDescription = "updating User")
-    public UserAccount updateUser(UpdateUserCmd cmd) {
-        Long id = cmd.getId();
-        String apiKey = cmd.getApiKey();
-        String firstName = cmd.getFirstname();
-        String email = cmd.getEmail();
-        String lastName = cmd.getLastname();
-        String password = cmd.getPassword();
-        String secretKey = cmd.getSecretKey();
-        String timeZone = cmd.getTimezone();
-        String userName = cmd.getUsername();
-
+    public UserAccount updateUser(Long userId, String firstName, String lastName, String email, String userName, String password, String apiKey, String secretKey, String timeZone) {
         // Input validation
-        UserVO user = _userDao.getUser(id);
+        UserVO user = _userDao.getUser(userId);
 
         if (user == null) {
             throw new InvalidParameterValueException("unable to find user by id");
@@ -1139,7 +1130,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // don't allow updating system account
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new PermissionDeniedException("user id : " + id + " is system account, update is not allowed");
+            throw new PermissionDeniedException("user id : " + userId + " is system account, update is not allowed");
         }
 
         checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, account);
@@ -1205,7 +1196,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("updating user with id: " + id);
+            s_logger.debug("updating user with id: " + userId);
         }
         try {
             // check if the apiKey and secretKey are globally unique
@@ -1214,23 +1205,38 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
                 if (apiKeyOwner != null) {
                     User usr = apiKeyOwner.first();
-                    if (usr.getId() != id) {
-                        throw new InvalidParameterValueException("The api key:" + apiKey + " exists in the system for user id:" + id + " ,please provide a unique key");
+                    if (usr.getId() != userId) {
+                        throw new InvalidParameterValueException("The api key:" + apiKey + " exists in the system for user id:" + userId + " ,please provide a unique key");
                     } else {
                         // allow the updation to take place
                     }
                 }
             }
 
-            _userDao.update(id, user);
+            _userDao.update(userId, user);
         } catch (Throwable th) {
             s_logger.error("error updating user", th);
-            throw new CloudRuntimeException("Unable to update user " + id);
+            throw new CloudRuntimeException("Unable to update user " + userId);
         }
 
         CallContext.current().putContextParameter(User.class, user.getUuid());
 
-        return _userAccountDao.findById(id);
+        return _userAccountDao.findById(userId);
+    }
+
+    @Override
+    public UserAccount updateUser(UpdateUserCmd cmd) {
+        Long id = cmd.getId();
+        String apiKey = cmd.getApiKey();
+        String firstName = cmd.getFirstname();
+        String email = cmd.getEmail();
+        String lastName = cmd.getLastname();
+        String password = cmd.getPassword();
+        String secretKey = cmd.getSecretKey();
+        String timeZone = cmd.getTimezone();
+        String userName = cmd.getUsername();
+
+       return updateUser(id, firstName, lastName, email, userName, password, apiKey, secretKey, timeZone);
     }
 
     @Override
@@ -1406,7 +1412,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         AccountVO account = _accountDao.findById(accountId);
 
         if (account == null || account.getRemoved() != null) {
-            s_logger.info("The account:" + account.getAccountName() + " is already removed");
+            if (account != null) {
+                s_logger.info("The account:" + account.getAccountName() + " is already removed");
+            }
             return true;
         }
 
@@ -1803,6 +1811,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
+    public UserAccount getActiveUserAccount(String username, Long domainId) {
+        return _userAccountDao.getUserAccount(username, domainId);
+    }
+
+    @Override
     public Account getActiveAccountById(long accountId) {
         return _accountDao.findById(accountId);
     }
@@ -1962,7 +1975,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public UserAccount authenticateUser(String username, String password, Long domainId, String loginIpAddress, Map<String, Object[]> requestParameters) {
+    public UserAccount authenticateUser(String username, String password, Long domainId, InetAddress loginIpAddress, Map<String, Object[]> requestParameters) {
         UserAccount user = null;
         if (password != null) {
             user = getUserAccount(username, password, domainId, requestParameters);
@@ -2070,13 +2083,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
             }
-            if (NetUtils.isValidIp(loginIpAddress)) {
-                ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN, "user has logged in from IP Address " +
+
+            ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN, "user has logged in from IP Address " +
                     loginIpAddress);
-            } else {
-                ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN,
-                        "user has logged in. The IP Address cannot be determined");
-            }
+
             return user;
         } else {
             if (s_logger.isDebugEnabled()) {
@@ -2607,5 +2617,37 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public UserAccount getUserAccountById(Long userId) {
         return _userAccountDao.findById(userId);
+    }
+
+    @Override
+    public void checkAccess(Account account, ServiceOffering so)
+            throws PermissionDeniedException {
+        for (SecurityChecker checker : _securityCheckers) {
+            if (checker.checkAccess(account, so)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Access granted to " + account + " to " + so + " by " + checker.getName());
+                }
+                return;
+            }
+        }
+
+        assert false : "How can all of the security checkers pass on checking this caller?";
+        throw new PermissionDeniedException("There's no way to confirm " + account + " has access to " + so);
+    }
+
+    @Override
+    public void checkAccess(Account account, DiskOffering dof)
+            throws PermissionDeniedException {
+        for (SecurityChecker checker : _securityCheckers) {
+            if (checker.checkAccess(account, dof)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Access granted to " + account + " to " + dof + " by " + checker.getName());
+                }
+                return;
+            }
+        }
+
+        assert false : "How can all of the security checkers pass on checking this caller?";
+        throw new PermissionDeniedException("There's no way to confirm " + account + " has access to " + dof);
     }
 }

@@ -197,7 +197,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "simulator"], required_hardware="false")
     def test_01_vm_per_account(self):
         """Test VM limit per account
         """
@@ -290,7 +290,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "simulator"], required_hardware="false")
     def test_02_publicip_per_account(self):
         """Test Public IP limit per account
         """
@@ -434,7 +434,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         return
 
     @attr(speed="slow")
-    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "simulator"], required_hardware="false")
     def test_03_snapshots_per_account(self):
         """Test Snapshot limit per account
         """
@@ -593,7 +593,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "simulator"], required_hardware="false")
     def test_04_volumes_per_account(self):
         """Test Volumes limit per account
         """
@@ -735,7 +735,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_05_templates_per_account(self):
         """Test Templates limit per account
         """
@@ -748,6 +748,13 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         #    able to create template without any error
 
         try:
+            apiclient_account1 = self.testClient.getUserApiClient(
+                                      UserName=self.account_1.name,
+                                      DomainName=self.account_1.domain)
+
+            apiclient_account2 = self.testClient.getUserApiClient(
+                                      UserName=self.account_2.name,
+                                      DomainName=self.account_2.domain)
             self.debug(
                        "Updating template resource limit for account: %s" %
                                                 self.account_1.name)
@@ -818,7 +825,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                 "Creating template from volume: %s" % volume.id)
             # Create a template from the ROOTDISK (Account 1)
             template_1 = Template.create(
-                            self.apiclient,
+                            apiclient_account1,
                             self.services["template"],
                             volumeid=volume.id,
                             account=self.account_1.name,
@@ -837,7 +844,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         # Exception should be raised for second snapshot (account_1)
         with self.assertRaises(Exception):
             Template.create(
-                            self.apiclient,
+                            apiclient_account1,
                             self.services["template"],
                             volumeid=volume.id,
                             account=self.account_1.name,
@@ -864,7 +871,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                 "Creating template from volume: %s" % volume.id)
             # Create a snapshot from the ROOTDISK (Account 1)
             template_2 = Template.create(
-                            self.apiclient,
+                            apiclient_account2,
                             self.services["template"],
                             volumeid=volume.id,
                             account=self.account_2.name,
@@ -882,7 +889,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                 "Creating template from volume: %s" % volume.id)
             # Create a second volume from the ROOTDISK (Account 2)
             template_3 = Template.create(
-                            self.apiclient,
+                            apiclient_account2,
                             self.services["template"],
                             volumeid=volume.id,
                             account=self.account_2.name,
@@ -975,7 +982,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "simulator"], required_hardware="false")
     def test_01_vm_per_domain(self):
         """Test VM limit per domain
         """
@@ -1041,7 +1048,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                                 )
         return
 
-    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "simulator"], required_hardware="false")
     def test_01_publicip_per_domain(self):
         """Test Public IP limit per domain
         """
@@ -1112,7 +1119,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         return
 
     @attr(speed="slow")
-    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "simulator"], required_hardware="false")
     def test_03_snapshots_per_domain(self):
         """Test Snapshot limit per domain
         """
@@ -1196,7 +1203,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                             )
         return
 
-    @attr(tags=["advanced", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns", "simulator"], required_hardware="false")
     def test_04_volumes_per_domain(self):
         """Test Volumes limit per domain
         """
@@ -1249,7 +1256,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_05_templates_per_domain(self):
         """Test Templates limit per domain
         """
@@ -1263,6 +1270,10 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         #    appropriate error and an alert should be generated.
 
         try:
+            userapiclient = self.testClient.getUserApiClient(
+                                      UserName=self.account.name,
+                                      DomainName=self.account.domain)
+
             # Set usage_vm=1 for Account 1
             update_resource_limit(
                               self.apiclient,
@@ -1279,7 +1290,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                               max=2
                               )
             virtual_machine_1 = VirtualMachine.create(
-                                self.apiclient,
+                                userapiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
                                 accountid=self.account.name,
@@ -1293,10 +1304,10 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                             'Running',
                             "Check VM state is Running or not"
                         )
-            virtual_machine_1.stop(self.apiclient)
+            virtual_machine_1.stop(userapiclient)
             # Get the Root disk of VM
             volumes = list_volumes(
-                            self.apiclient,
+                            userapiclient,
                             virtualmachineid=virtual_machine_1.id,
                             type='ROOT',
                             listall=True
@@ -1311,7 +1322,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
             self.debug("Creating template from volume: %s" % volume.id)
             # Create a template from the ROOTDISK
             template_1 = Template.create(
-                            self.apiclient,
+                            userapiclient,
                             self.services["template"],
                             volumeid=volume.id,
                             account=self.account.name,
@@ -1328,7 +1339,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
             self.debug("Creating template from volume: %s" % volume.id)
             # Create a template from the ROOTDISK
             template_2 = Template.create(
-                            self.apiclient,
+                            userapiclient,
                             self.services["template"],
                             volumeid=volume.id,
                             account=self.account.name,
@@ -1348,7 +1359,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         # Exception should be raised for second template
         with self.assertRaises(Exception):
             Template.create(
-                            self.apiclient,
+                            userapiclient,
                             self.services["template"],
                             volumeid=volume.id,
                             account=self.account.name,

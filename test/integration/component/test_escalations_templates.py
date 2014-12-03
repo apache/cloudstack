@@ -17,17 +17,13 @@
 
 # Import Local Modules
 from marvin.cloudstackTestCase import *
-from marvin.cloudstackException import *
 from marvin.cloudstackAPI import *
-from marvin.sshClient import SshClient
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from marvin.lib.utils import checkVolumeSize
-from marvin.codes import SUCCESS
+from marvin.codes import PASS
 from nose.plugins.attrib import attr
-from time import sleep
-from ctypes.wintypes import BOOLEAN
+import time
 
 class TestTemplates(cloudstackTestCase):
 
@@ -112,7 +108,7 @@ class TestTemplates(cloudstackTestCase):
                                                                                           ))
         return return_flag
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_01_list_templates_pagination(self):
         """
         @Desc: Test to List Templates pagination
@@ -268,7 +264,7 @@ class TestTemplates(cloudstackTestCase):
         del self.services["templateregister"]["ostype"]
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_02_download_template(self):
         """
         @Desc: Test to Download Template
@@ -385,7 +381,7 @@ class TestTemplates(cloudstackTestCase):
         del self.services["templateregister"]["isextractable"]
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_03_edit_template_details(self):
         """
         @Desc: Test to Edit Template name, displaytext, OSType
@@ -697,7 +693,7 @@ class TestTemplates(cloudstackTestCase):
         del self.services["templateregister"]["ostype"]
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_04_copy_template(self):
         """
         @Desc: Test to copy Template from one zone to another
@@ -733,7 +729,7 @@ class TestTemplates(cloudstackTestCase):
                           "Failed to list Zones"
                           )
         if not len(zones_list) > 1:
-            raise unittest.SkipTest("Enough zones doesnot exists to copy template")
+            raise unittest.SkipTest("Not enough zones exist to copy template")
         else:
             # Listing all the Templates for a User in Zone 1
             list_templates_zone1 = Template.list(
@@ -843,9 +839,8 @@ class TestTemplates(cloudstackTestCase):
                     count = count + 1
 
             # Copying the Template from Zone1 to Zone2
-            copied_template = Template.copy(
+            copied_template = template_created.copy(
                                             self.userapiclient,
-                                            template_created.id,
                                             sourcezoneid=template_created.zoneid,
                                             destzoneid=zones_list[1].id
                                             )

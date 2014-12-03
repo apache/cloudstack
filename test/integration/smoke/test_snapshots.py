@@ -36,6 +36,10 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['hyperv', 'lxc']:
+            raise unittest.SkipTest("Snapshots not supported on Hyper-V or LXC")
+
         template = get_template(
                             cls.apiclient,
                             cls.zone.id,

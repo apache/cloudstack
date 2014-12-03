@@ -434,7 +434,7 @@ public class HypervisorHostHelper {
 
     public static Pair<ManagedObjectReference, String> prepareNetwork(String physicalNetwork, String namePrefix, HostMO hostMo, String vlanId, String secondaryvlanId,
             Integer networkRateMbps, Integer networkRateMulticastMbps, long timeOutMs, VirtualSwitchType vSwitchType, int numPorts, String gateway,
-            boolean configureVServiceInNexus, BroadcastDomainType broadcastDomainType) throws Exception {
+            boolean configureVServiceInNexus, BroadcastDomainType broadcastDomainType, Map<String, String> vsmCredentials) throws Exception {
         ManagedObjectReference morNetwork = null;
         VmwareContext context = hostMo.getContext();
         ManagedObjectReference dcMor = hostMo.getHyperHostDatacenter();
@@ -567,6 +567,10 @@ public class HypervisorHostHelper {
             long peakBandwidth = (long)(averageBandwidth * 1.5);
             // TODO(sateesh): Optionally let user specify the burst coefficient
             long burstSize = 5 * averageBandwidth / 8;
+            if (vsmCredentials != null) {
+                s_logger.info("Stocking credentials of Nexus VSM");
+                context.registerStockObject("vsmcredentials", vsmCredentials);
+            }
 
             if (!dataCenterMo.hasDvPortGroup(networkName)) {
                 s_logger.info("Port profile " + networkName + " not found.");

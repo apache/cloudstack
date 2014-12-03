@@ -35,7 +35,7 @@ public interface KVMStoragePool {
 
     public boolean disconnectPhysicalDisk(String volumeUuid);
 
-    public boolean deletePhysicalDisk(String volumeUuid);
+    public boolean deletePhysicalDisk(String volumeUuid, Storage.ImageFormat format);
 
     public List<KVMPhysicalDisk> listPhysicalDisks();
 

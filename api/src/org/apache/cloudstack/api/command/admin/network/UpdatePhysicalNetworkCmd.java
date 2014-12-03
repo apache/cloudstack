@@ -97,9 +97,11 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         PhysicalNetwork result = _networkService.updatePhysicalNetwork(getId(), getNetworkSpeed(), getTags(), getVlan(), getState());
-        PhysicalNetworkResponse response = _responseGenerator.createPhysicalNetworkResponse(result);
-        response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        if (result != null) {
+            PhysicalNetworkResponse response = _responseGenerator.createPhysicalNetworkResponse(result);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        }
     }
 
     @Override

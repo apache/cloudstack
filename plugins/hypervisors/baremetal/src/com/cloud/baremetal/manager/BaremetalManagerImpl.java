@@ -26,6 +26,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.db.QueryBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.api.BaremetalProvisionDoneNotificationCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.AddBaremetalHostCmd;
@@ -45,6 +52,8 @@ public class BaremetalManagerImpl extends ManagerBase implements BaremetalManage
 
     @Inject
     protected HostDao _hostDao;
+    @Inject
+    protected VMInstanceDao vmDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -73,40 +82,77 @@ public class BaremetalManagerImpl extends ManagerBase implements BaremetalManage
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Object opaque) {
-        if (newState != State.Starting && newState != State.Error && newState != State.Expunging) {
-            return true;
-        }
-
-        if (vo.getHypervisorType() != HypervisorType.BareMetal) {
-            return true;
-        }
-
-        HostVO host = _hostDao.findById(vo.getHostId());
-        if (host == null) {
-            s_logger.debug("Skip oldState " + oldState + " to " + "newState " + newState + " transimtion");
-            return true;
-        }
-        _hostDao.loadDetails(host);
-
-        if (newState == State.Starting) {
-            host.setDetail("vmName", vo.getInstanceName());
-            s_logger.debug("Add vmName " + host.getDetail("vmName") + " to host " + host.getId() + " details");
-        } else {
-            if (host.getDetail("vmName") != null && host.getDetail("vmName").equalsIgnoreCase(vo.getInstanceName())) {
-                s_logger.debug("Remove vmName " + host.getDetail("vmName") + " from host " + host.getId() + " details");
-                host.getDetails().remove("vmName");
-            }
-        }
-        _hostDao.saveDetails(host);
-
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, VirtualMachine vo, boolean status, Object opaque) {
+      State newState = transition.getToState();
+      State oldState = transition.getCurrentState();
+      if (newState != State.Starting && newState != State.Error && newState != State.Expunging) {
         return true;
+      }
+
+      if (vo.getHypervisorType() != HypervisorType.BareMetal) {
+        return true;
+      }
+
+      HostVO host = _hostDao.findById(vo.getHostId());
+      if (host == null) {
+        s_logger.debug("Skip oldState " + oldState + " to " + "newState " + newState + " transimtion");
+        return true;
+      }
+      _hostDao.loadDetails(host);
+
+      if (newState == State.Starting) {
+        host.setDetail("vmName", vo.getInstanceName());
+        s_logger.debug("Add vmName " + host.getDetail("vmName") + " to host " + host.getId() + " details");
+      } else {
+        if (host.getDetail("vmName") != null && host.getDetail("vmName").equalsIgnoreCase(vo.getInstanceName())) {
+          s_logger.debug("Remove vmName " + host.getDetail("vmName") + " from host " + host.getId() + " details");
+          host.getDetails().remove("vmName");
+        }
+      }
+      _hostDao.saveDetails(host);
+
+      return true;
     }
 
-    @Override
+  @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmds = new ArrayList<Class<?>>();
         cmds.add(AddBaremetalHostCmd.class);
+        cmds.add(BaremetalProvisionDoneNotificationCmd.class);
         return cmds;
+    }
+
+    @Override
+    public void notifyProvisionDone(BaremetalProvisionDoneNotificationCmd cmd) {
+        QueryBuilder<HostVO> hq = QueryBuilder.create(HostVO.class);
+        hq.and(hq.entity().getPrivateMacAddress(), SearchCriteria.Op.EQ, cmd.getMac());
+        HostVO host = hq.find();
+        if (host == null) {
+            throw new CloudRuntimeException(String.format("cannot find host[mac:%s]", cmd.getMac()));
+        }
+
+        _hostDao.loadDetails(host);
+        String vmName = host.getDetail("vmName");
+        if (vmName == null) {
+            throw new CloudRuntimeException(String.format("cannot find any baremetal instance running on host[mac:%s]", cmd.getMac()));
+        }
+
+        QueryBuilder<VMInstanceVO> vmq = QueryBuilder.create(VMInstanceVO.class);
+        vmq.and(vmq.entity().getInstanceName(), SearchCriteria.Op.EQ, vmName);
+        VMInstanceVO vm = vmq.find();
+
+        if (vm == null) {
+            throw new CloudRuntimeException(String.format("cannot find baremetal instance[name:%s]", vmName));
+        }
+
+        if (State.Starting != vm.getState()) {
+            throw new CloudRuntimeException(String.format("baremetal instance[name:%s, state:%s] is not in state of Starting", vmName, vm.getState()));
+        }
+
+        vm.setState(State.Running);
+        vm.setLastHostId(vm.getHostId());
+        vmDao.update(vm.getId(), vm);
+        s_logger.debug(String.format("received baremetal provision done notification for vm[id:%s name:%s] running on host[mac:%s, ip:%s]",
+                vm.getId(), vm.getInstanceName(), host.getPrivateMacAddress(), host.getPrivateIpAddress()));
     }
 }

@@ -26,7 +26,6 @@
 
 #Import Local Modules
 from marvin.codes import (PASS,
-                          FAIL,
                           RECURRING)
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -293,7 +292,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "basic", "selfservice"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_01_deploy_instance_with_is_volatile_offering(self):
         """ Test deploy an instance with service offerings with IsVolatile set.
         """
@@ -324,7 +323,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "basic", "selfservice"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_02_reboot_instance_with_is_volatile_offering(self):
         """ Test rebooting instances created with isVolatile service offerings
         """
@@ -402,7 +401,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "basic", "selfservice"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_03_restore_vm_with_new_template(self):
         """ Test restoring a vm with different template than the one it was created with
         """
@@ -441,7 +440,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
                                                                 template.id
                                                                 ))
                 template.download(self.apiclient)
-                self.cleanup.append(template)
+                self._cleanup.append(template)
 
                 # Wait for template status to be changed across
                 time.sleep(self.services["sleep"])
@@ -518,7 +517,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
                                 )
         return
 
-    @attr(tags=["advanced", "basic", "selfservice"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_04_reoccuring_snapshot_rules(self):
         """
         1) Create a VM using the Service offering IsVolatile enabled
@@ -650,13 +649,13 @@ class TestBaseImageUpdate(cloudstackTestCase):
                    Here we are passing root disk id of vm before reboot which does not exist hence\
                    listing should fail")
 
-        try:
+        with self.assertRaises(Exception):
             listSnapshotPolicies = SnapshotPolicy.list(
                                         self.apiclient,
                                         volumeid=vm_with_reset_root_disk_id)
-        except Exception as e:
-            self.fail("Failed to list snapshot policies: %s" % e)
-
-        self.assertEqual(validateList(listSnapshotPolicies)[0], FAIL,\
-                "Snapshot policies list should be empty")
+            self.assertEqual(
+                    validateList(listSnapshotPolicies)[0],
+                    PASS,
+                    "snapshot policies list validation failed"
+                    )
         return

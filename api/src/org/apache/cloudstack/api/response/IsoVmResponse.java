@@ -19,9 +19,13 @@ package org.apache.cloudstack.api.response;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
+import com.cloud.template.VirtualMachineTemplate;
 
+@EntityReference(value=VirtualMachineTemplate.class)
+@SuppressWarnings("unused")
 public class IsoVmResponse extends BaseResponse {
     @SerializedName("id")
     @Param(description = "the ISO ID")

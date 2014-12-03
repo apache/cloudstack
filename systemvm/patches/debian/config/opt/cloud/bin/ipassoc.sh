@@ -197,6 +197,7 @@ remove_snat() {
   fi
 
   local pubIp=$1
+  local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
   logger -t cloud "$(basename $0):Removing SourceNAT $pubIp on interface $ethDev"
   sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask;
   return $?
@@ -262,6 +263,16 @@ remove_first_ip() {
      sudo ip link set $ethDev down
      return 1
   fi
+
+  for ipMask in $existingIpMask
+  do
+    if [ "$ipMask" == "$pubIp" ]
+    then
+            continue
+    fi
+    sudo ip addr add dev $ethDev $ipMask brd +
+  done
+
   sed -i /"$ethDev "/d $IFACEGWIPFILE
   remove_routing $1
   sudo ip link set $ethDev down

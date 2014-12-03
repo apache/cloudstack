@@ -138,6 +138,9 @@ import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
@@ -146,6 +149,10 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
@@ -278,6 +285,7 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.storage.snapshot.SnapshotSchedule;
 import com.cloud.template.VirtualMachineTemplate;
@@ -289,6 +297,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
@@ -307,13 +316,13 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     private static final Logger s_logger = Logger.getLogger(ApiResponseHelper.class);
     private static final DecimalFormat s_percentFormat = new DecimalFormat("##.##");
+
     @Inject
     private EntityManager _entityMgr;
     @Inject
     private UsageService _usageSvc;
     @Inject
     NetworkModel _ntwkModel;
-
     @Inject
     protected AccountManager _accountMgr;
     @Inject
@@ -322,6 +331,14 @@ public class ApiResponseHelper implements ResponseGenerator {
     ConfigurationManager _configMgr;
     @Inject
     SnapshotDataFactory snapshotfactory;
+    @Inject
+    private VolumeDao _volumeDao;
+    @Inject
+    private DataStoreManager _dataStoreMgr;
+    @Inject
+    private SnapshotDataStoreDao _snapshotStoreDao;
+    @Inject
+    private PrimaryDataStoreDao _storagePoolDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -459,10 +476,13 @@ public class ApiResponseHelper implements ResponseGenerator {
         snapshotResponse.setState(snapshot.getState());
 
         SnapshotInfo snapshotInfo = null;
-        if (!(snapshot instanceof SnapshotInfo)) {
-            snapshotInfo = snapshotfactory.getSnapshot(snapshot.getId(), DataStoreRole.Image);
-        } else {
+
+        if (snapshot instanceof SnapshotInfo) {
             snapshotInfo = (SnapshotInfo)snapshot;
+        } else {
+            DataStoreRole dataStoreRole = getDataStoreRole(snapshot);
+
+            snapshotInfo = snapshotfactory.getSnapshot(snapshot.getId(), dataStoreRole);
         }
 
         if (snapshotInfo == null) {
@@ -485,6 +505,30 @@ public class ApiResponseHelper implements ResponseGenerator {
         return snapshotResponse;
     }
 
+    private DataStoreRole getDataStoreRole(Snapshot snapshot) {
+        SnapshotDataStoreVO snapshotStore = _snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
+
+        if (snapshotStore == null) {
+            return DataStoreRole.Image;
+        }
+
+        long storagePoolId = snapshotStore.getDataStoreId();
+        DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+
+        Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
+
+        if (mapCapabilities != null) {
+            String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
+            Boolean supportsStorageSystemSnapshots = new Boolean(value);
+
+            if (supportsStorageSystemSnapshots) {
+                return DataStoreRole.Primary;
+            }
+        }
+
+        return DataStoreRole.Image;
+    }
+
     @Override
     public VMSnapshotResponse createVMSnapshotResponse(VMSnapshot vmSnapshot) {
         VMSnapshotResponse vmSnapshotResponse = new VMSnapshotResponse();
@@ -499,7 +543,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             vmSnapshotResponse.setVirtualMachineid(vm.getUuid());
         }
         if (vmSnapshot.getParent() != null) {
-            vmSnapshotResponse.setParentName(ApiDBUtils.getVMSnapshotById(vmSnapshot.getParent()).getDisplayName());
+            VMSnapshot vmSnapshotParent = ApiDBUtils.getVMSnapshotById(vmSnapshot.getParent());
+            vmSnapshotResponse.setParent(vmSnapshotParent.getUuid());
+            vmSnapshotResponse.setParentName(vmSnapshotParent.getDisplayName());
         }
         vmSnapshotResponse.setCurrent(vmSnapshot.getCurrent());
         vmSnapshotResponse.setType(vmSnapshot.getType().toString());
@@ -1026,20 +1072,24 @@ public class ApiResponseHelper implements ResponseGenerator {
 
 
         IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
-        response.setPublicIpAddressId(ip.getUuid());
-        response.setPublicIpAddress(ip.getAddress().addr());
 
-        if (ip != null && fwRule.getDestinationIpAddress() != null) {
-            response.setDestNatVmIp(fwRule.getDestinationIpAddress().toString());
-            UserVm vm = ApiDBUtils.findUserVmById(fwRule.getVirtualMachineId());
-            if (vm != null) {
-                response.setVirtualMachineId(vm.getUuid());
-                response.setVirtualMachineName(vm.getHostName());
+        if (ip != null)
+        {
+            response.setPublicIpAddressId(ip.getUuid());
+            response.setPublicIpAddress(ip.getAddress().addr());
+            if (fwRule.getDestinationIpAddress() != null)
+            {
+                response.setDestNatVmIp(fwRule.getDestinationIpAddress().toString());
+                UserVm vm = ApiDBUtils.findUserVmById(fwRule.getVirtualMachineId());
+                if (vm != null) {
+                    response.setVirtualMachineId(vm.getUuid());
+                    response.setVirtualMachineName(vm.getHostName());
 
-                if (vm.getDisplayName() != null) {
-                    response.setVirtualMachineDisplayName(vm.getDisplayName());
-                } else {
-                    response.setVirtualMachineDisplayName(vm.getHostName());
+                    if (vm.getDisplayName() != null) {
+                        response.setVirtualMachineDisplayName(vm.getDisplayName());
+                    } else {
+                        response.setVirtualMachineDisplayName(vm.getHostName());
+                    }
                 }
             }
         }
@@ -1071,18 +1121,20 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setProtocol(fwRule.getProtocol());
 
         IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
-        response.setPublicIpAddressId(ip.getId());
-        response.setPublicIpAddress(ip.getAddress().addr());
 
-        if (ip != null && fwRule.getDestIpAddress() != null) {
-            UserVm vm = ApiDBUtils.findUserVmById(ip.getAssociatedWithVmId());
-            if (vm != null) {// vm might be destroyed
-                response.setVirtualMachineId(vm.getUuid());
-                response.setVirtualMachineName(vm.getHostName());
-                if (vm.getDisplayName() != null) {
-                    response.setVirtualMachineDisplayName(vm.getDisplayName());
-                } else {
-                    response.setVirtualMachineDisplayName(vm.getHostName());
+        if (ip != null) {
+            response.setPublicIpAddressId(ip.getId());
+            response.setPublicIpAddress(ip.getAddress().addr());
+            if (fwRule.getDestIpAddress() != null) {
+                UserVm vm = ApiDBUtils.findUserVmById(ip.getAssociatedWithVmId());
+                if (vm != null) {// vm might be destroyed
+                    response.setVirtualMachineId(vm.getUuid());
+                    response.setVirtualMachineName(vm.getHostName());
+                    if (vm.getDisplayName() != null) {
+                        response.setVirtualMachineDisplayName(vm.getDisplayName());
+                    } else {
+                        response.setVirtualMachineDisplayName(vm.getHostName());
+                    }
                 }
             }
         }
@@ -1160,6 +1212,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (host != null) {
                     vmResponse.setHostId(host.getUuid());
                     vmResponse.setHostName(host.getName());
+                    vmResponse.setHypervisor(host.getHypervisorType().toString());
                 }
             }
 
@@ -1401,14 +1454,41 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long snapshotId, Long volumeId, boolean readyOnly) {
-        VolumeVO volume = null;
+        Long zoneId = null;
+
         if (snapshotId != null) {
             Snapshot snapshot = ApiDBUtils.findSnapshotById(snapshotId);
-            volume = findVolumeById(snapshot.getVolumeId());
+            VolumeVO volume = findVolumeById(snapshot.getVolumeId());
+
+            // it seems that the volume can actually be removed from the DB at some point if it's deleted
+            // if volume comes back null, use another technique to try to discover the zone
+            if (volume == null) {
+                SnapshotDataStoreVO snapshotStore = _snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
+
+                if (snapshotStore != null) {
+                    long storagePoolId = snapshotStore.getDataStoreId();
+
+                    StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
+
+                    if (storagePool != null) {
+                        zoneId = storagePool.getDataCenterId();
+                    }
+                }
+            }
+            else {
+                zoneId = volume.getDataCenterId();
+            }
         } else {
-            volume = findVolumeById(volumeId);
+            VolumeVO volume = findVolumeById(volumeId);
+
+            zoneId = volume.getDataCenterId();
         }
-        return createTemplateResponses(view, templateId, volume.getDataCenterId(), readyOnly);
+
+        if (zoneId == null) {
+            throw new CloudRuntimeException("Unable to determine the zone ID");
+        }
+
+        return createTemplateResponses(view, templateId, zoneId, readyOnly);
     }
 
     @Override
@@ -1701,7 +1781,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listNetworkOfferingServices(offering.getId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
-        for (Service service : serviceProviderMap.keySet()) {
+        for (Map.Entry<Service,Set<Provider>> entry : serviceProviderMap.entrySet()) {
+            Service service = entry.getKey();
+            Set<Provider> srvc_providers = entry.getValue();
             ServiceResponse svcRsp = new ServiceResponse();
             // skip gateway service
             if (service == Service.Gateway) {
@@ -1709,7 +1791,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             svcRsp.setName(service.getName());
             List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
-            for (Provider provider : serviceProviderMap.get(service)) {
+            for (Provider provider : srvc_providers) {
                 if (provider != null) {
                     ProviderResponse providerRsp = new ProviderResponse();
                     providerRsp.setName(provider.getName());
@@ -1956,8 +2038,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             Domain domain = ApiDBUtils.findDomainById(dedicatedDomainId);
             if (domain != null) {
                 response.setDomainId(domain.getUuid());
+                response.setDomainName(domain.getName());
             }
-            response.setDomainName(domain.getName());
+
         }
 
         response.setSpecifyIpRanges(network.getSpecifyIpRanges());
@@ -2563,7 +2646,10 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(offering.getId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
-        for (Service service : serviceProviderMap.keySet()) {
+        for (Map.Entry<Service, Set<Provider>> entry : serviceProviderMap.entrySet()) {
+            Service service = entry.getKey();
+            Set<Provider> srvc_providers = entry.getValue();
+
             ServiceResponse svcRsp = new ServiceResponse();
             // skip gateway service
             if (service == Service.Gateway) {
@@ -2571,7 +2657,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             svcRsp.setName(service.getName());
             List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
-            for (Provider provider : serviceProviderMap.get(service)) {
+            for (Provider provider : srvc_providers) {
                 if (provider != null) {
                     ProviderResponse providerRsp = new ProviderResponse();
                     providerRsp.setName(provider.getName());
@@ -2997,9 +3083,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         Account account = ApiDBUtils.findAccountById(usageRecord.getAccountId());
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             //find the project
-            Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
-            usageRecResponse.setProjectId(project.getUuid());
-            usageRecResponse.setProjectName(project.getName());
+            Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(account.getId());
+            if (project != null) {
+                usageRecResponse.setProjectId(project.getUuid());
+                usageRecResponse.setProjectName(project.getName());
+            }
         } else {
             usageRecResponse.setAccountId(account.getUuid());
             usageRecResponse.setAccountName(account.getAccountName());
@@ -3114,7 +3202,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else if (usageRecord.getUsageType() == UsageTypes.TEMPLATE || usageRecord.getUsageType() == UsageTypes.ISO) {
             //Template/ISO ID
             VMTemplateVO tmpl = _entityMgr.findByIdIncludingRemoved(VMTemplateVO.class, usageRecord.getUsageId().toString());
-            usageRecResponse.setUsageId(tmpl.getUuid());
             if (tmpl != null) {
                 usageRecResponse.setUsageId(tmpl.getUuid());
             }
@@ -3389,10 +3476,11 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         //set Lb instances information
         List<ApplicationLoadBalancerInstanceResponse> instanceResponses = new ArrayList<ApplicationLoadBalancerInstanceResponse>();
-        for (Ip ip : lbInstances.keySet()) {
+        for (Map.Entry<Ip,UserVm> entry : lbInstances.entrySet()) {
+            Ip ip = entry.getKey();
+            UserVm vm = entry.getValue();
             ApplicationLoadBalancerInstanceResponse instanceResponse = new ApplicationLoadBalancerInstanceResponse();
             instanceResponse.setIpAddress(ip.addr());
-            UserVm vm = lbInstances.get(ip);
             instanceResponse.setId(vm.getUuid());
             instanceResponse.setName(vm.getInstanceName());
             instanceResponse.setObjectName("loadbalancerinstance");

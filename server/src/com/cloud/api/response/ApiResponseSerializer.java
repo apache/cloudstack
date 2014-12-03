@@ -16,6 +16,30 @@
 // under the License.
 package com.cloud.api.response;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseGsonHelper;
+import com.cloud.api.ApiServer;
+import com.cloud.serializer.Param;
+import com.cloud.user.Account;
+import com.cloud.utils.HttpUtils;
+import com.cloud.utils.encoding.URLEncoder;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExceptionProxyObject;
+import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.AuthenticationCmdResponse;
+import org.apache.cloudstack.api.response.CreateCmdResponse;
+import org.apache.cloudstack.api.response.ExceptionResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -26,37 +50,12 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
-
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.response.AsyncJobResponse;
-import org.apache.cloudstack.api.response.CreateCmdResponse;
-import org.apache.cloudstack.api.response.ExceptionResponse;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.context.CallContext;
-
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.ApiResponseGsonHelper;
-import com.cloud.api.ApiServer;
-import com.cloud.serializer.Param;
-import com.cloud.user.Account;
-import com.cloud.utils.encoding.URLEncoder;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.exception.ExceptionProxyObject;
-
 public class ApiResponseSerializer {
     private static final Logger s_logger = Logger.getLogger(ApiResponseSerializer.class.getName());
 
     public static String toSerializedString(ResponseObject result, String responseType) {
         s_logger.trace("===Serializing Response===");
-        if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
+        if (HttpUtils.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             return toJSONSerializedString(result);
         } else {
             return toXMLSerializedString(result);
@@ -120,7 +119,7 @@ public class ApiResponseSerializer {
                 String jsonStr = gson.toJson(result);
                 if ((jsonStr != null) && !"".equals(jsonStr)) {
                     jsonStr = unescape(jsonStr);
-                    if (result instanceof AsyncJobResponse || result instanceof CreateCmdResponse) {
+                    if (result instanceof AsyncJobResponse || result instanceof CreateCmdResponse || result instanceof AuthenticationCmdResponse) {
                         sb.append(jsonStr);
                     } else {
                         sb.append(" { \"").append(result.getObjectName()).append("\" : ").append(jsonStr).append(" } ");
@@ -153,7 +152,7 @@ public class ApiResponseSerializer {
                 }
             }
         } else {
-            if (result instanceof CreateCmdResponse || result instanceof AsyncJobResponse) {
+            if (result instanceof CreateCmdResponse || result instanceof AsyncJobResponse || result instanceof AuthenticationCmdResponse) {
                 serializeResponseObjFieldsXML(sb, result);
             } else {
                 serializeResponseObjXML(sb, result);

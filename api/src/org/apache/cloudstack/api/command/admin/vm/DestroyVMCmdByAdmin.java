@@ -31,8 +31,11 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "destroyVirtualMachine", description = "Destroys a virtual machine. Once destroyed, only the administrator can recover it.", responseObject = UserVmResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "destroyVirtualMachine", description = "Destroys a virtual machine. Once destroyed, only the administrator can recover it.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = true)
 public class DestroyVMCmdByAdmin extends DestroyVMCmd {
     public static final Logger s_logger = Logger.getLogger(DestroyVMCmdByAdmin.class.getName());
 

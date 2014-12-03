@@ -185,7 +185,7 @@ class TestSnapshotOnRootVolume(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_01_snapshot_on_rootVolume(self):
         """Test create VM with default cent os template and create snapshot
             on root disk of the vm
@@ -615,8 +615,13 @@ class TestCreateSnapshot(cloudstackTestCase):
             self.debug("Create a template from snapshot: %s" % snapshot.name)
             jobs.append(self.create_Template_from_Snapshot(snapshot))
 
+
+        userapiclient = self.testClient.getUserApiClient(
+                                UserName=self.account.name,
+                                DomainName=self.account.domain)
+
         # Verify IO usage by submitting the concurrent jobs
-        self.testClient.submitCmdsAndWait(jobs)
+        self.testClient.submitCmdsAndWait(jobs, apiclient=userapiclient)
 
         self.debug("Verifying if templates are created properly or not?")
         templates = Template.list(

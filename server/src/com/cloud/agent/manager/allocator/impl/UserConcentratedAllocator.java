@@ -120,7 +120,7 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
 
                     // test for enough CPU in the pod
                     enoughCapacity =
-                        dataCenterAndPodHasEnoughCapacity(zoneId, podId, (offering.getCpu() * offering.getSpeed()), Capacity.CAPACITY_TYPE_CPU, hostCandiates);
+                        dataCenterAndPodHasEnoughCapacity(zoneId, podId, ((long)offering.getCpu() * offering.getSpeed()), Capacity.CAPACITY_TYPE_CPU, hostCandiates);
                     if (!enoughCapacity) {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Not enough cpu available in zone/pod to allocate storage for user VM (zone: " + zoneId + ", pod: " + podId + ")");

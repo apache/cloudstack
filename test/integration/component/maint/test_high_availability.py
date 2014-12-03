@@ -165,7 +165,7 @@ class TestHighAvailability(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "multihost"])
+    @attr(tags = ["advanced", "advancedns", "multihost"], required_hardware="true")
     def test_01_host_maintenance_mode(self):
         """Test host maintenance mode
         """
@@ -556,7 +556,7 @@ class TestHighAvailability(cloudstackTestCase):
                       )
         return
 
-    @attr(tags = ["advanced", "advancedns", "multihost"])
+    @attr(tags = ["advanced", "advancedns", "multihost"], required_hardware="true")
     def test_02_host_maintenance_mode_with_activities(self):
         """Test host maintenance mode with activities
         """

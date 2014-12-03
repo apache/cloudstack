@@ -32,6 +32,7 @@
         <title></title>
         <link type="text/css" rel="stylesheet" href="lib/reset.css"/>
         <link type="text/css" rel="stylesheet" href="css/cloudstack3.css" />
+        <link type="text/css" rel="stylesheet" href="css/token-input-facebook.css" />
         <c:if test="${!empty cookie.lang && cookie.lang.value != 'en'}">
             <link type="text/css" rel="stylesheet" href="css/cloudstack3.${cookie.lang.value}.css" />
         </c:if>
@@ -400,7 +401,7 @@
                             <div class="content">
                                 <div class="select-container">
                                     <!-- Name -->
-                                    <div class="select vm-instance-name">
+                                    <div class="select odd vm-instance-name">
                                         <div class="name">
                                             <span><fmt:message key="label.name"/> (<fmt:message key="label.optional"/>)</span>
                                         </div>
@@ -409,7 +410,7 @@
                                         </div>
                                     </div>
                                     <!-- Add to group -->
-                                    <div class="select odd">
+                                    <div class="select">
                                         <div class="name">
                                             <span><fmt:message key="label.add.to.group"/> (<fmt:message key="label.optional"/>)</span>
                                         </div>
@@ -417,6 +418,23 @@
                                             <input type="text" name="groupname" class="disallowSpecialCharacters" />
                                         </div>
                                     </div>
+
+                                    <!-- Keyboard Language -->
+                                    <div class="select odd">
+                                        <div class="name">
+                                            <span>Keyboard language</span>
+                                        </div>
+                                        <div class="value">
+                                            <select name="keyboardLanguage">
+                                                <option value=""></option>
+                                                <option value="us">Standard (US) keyboard</option>
+                                                <option value="uk">UK keyboard</option>
+                                                <option value="jp">Japanese keyboard</option>
+                                                <option value="sc">Simplified Chinese keyboard</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
                                     <!-- Zone -->
                                     <div class="select">
                                         <div class="name">
@@ -1669,11 +1687,16 @@
         <script src="lib/jquery.js" type="text/javascript"></script>
         <script src="lib/jquery.easing.js" type="text/javascript"></script>
         <script src="lib/jquery.validate.js" type="text/javascript"></script>
+        <script src="lib/jquery.validate.additional-methods.js" type="text/javascript"></script>
         <script src="lib/jquery-ui/js/jquery-ui.js" type="text/javascript"></script>
         <script src="lib/date.js" type="text/javascript"></script>
         <script src="lib/jquery.cookies.js" type="text/javascript"></script>
         <script src="lib/jquery.md5.js" type="text/javascript" ></script>
         <script src="lib/require.js" type="text/javascript"></script>
+
+        <!-- localized messages -->
+        <jsp:include page="dictionary.jsp" />
+        <jsp:include page="dictionary2.jsp" />
 
         <script src="lib/excanvas.js" type="text/javascript"></script>
         <script src="lib/flot/jquery.flot.js" type="text/javascript"></script>
@@ -1688,6 +1711,8 @@
         <script src="lib/flot/jquery.flot.stack.js" type="text/javascript"></script>
         <script src="lib/flot/jquery.flot.symbol.js" type="text/javascript"></script>
         <script src="lib/flot/jquery.flot.threshold.js" type="text/javascript"></script>
+        <!-- jquery.tokeninput.js -->
+        <script src="lib/jquery.tokeninput.js" type="text/javascript"></script>
         <!-- CloudStack -->
         <script type="text/javascript" src="scripts/ui/core.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/ui/utils.js?t=<%=now%>"></script>
@@ -1757,8 +1782,5 @@
         <script type="text/javascript" src="plugins/plugins.js?t=<%=now%>"></script>
         <script type="text/javascript" src="modules/modules.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/plugins.js?t=<%=now%>"></script>
-
-        <!-- localized messages -->
-        <jsp:include page="dictionary.jsp" />
     </body>
 </html>

@@ -355,13 +355,13 @@
                 var chartItems = {
                     // The keys are based on the internal type ID associated with each capacity
                     0: {
-                        name: _l('label.memory')
+                        name: _l('label.memory.allocated')
                     },
                     1: {
-                        name: _l('label.cpu')
+                        name: _l('label.cpu.allocated')
                     },
                     2: {
-                        name: _l('label.storage')
+                        name: _l('label.primary.used')
                     },
                     3: {
                         name: _l('label.primary.allocated')

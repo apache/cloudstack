@@ -469,7 +469,7 @@
                                         data: [
                                             $.extend(args.data, {
                                                 state: 'Creating',
-                                                status: 'Creating',
+                                                status: 'state.Creating',
                                                 allocationstate: 'Creating'
                                             })
                                         ]
@@ -516,7 +516,7 @@
                                     data: [
                                         $.extend(args.data, {
                                             state: 'Creating',
-                                            status: 'Creating',
+                                            status: 'state.Creating',
                                             allocationstate: 'Creating'
                                         })
                                     ]
@@ -1589,7 +1589,7 @@
 
             sectionPreFilter = args.sectionSelect.preFilter ?
                 args.sectionSelect.preFilter({
-                    context: cloudStack.context
+                    context: $.extend({}, cloudStack.context, args.context)
                 }) : null;
         } else {
             $sectionSelect.hide();
@@ -1854,6 +1854,7 @@
         //basic search
         var basicSearch = function() {
             $listView.removeData('advSearch');
+            advancedSearchData = {};
 
             $listView.data('page', 1);
             loadBody(
@@ -1930,6 +1931,8 @@
             );
         };
 
+        var advancedSearchData = {};
+
         var closeAdvancedSearch = function() {
             $listView.find('.advanced-search .form-container:visible').remove();
         };
@@ -1941,6 +1944,11 @@
                 return false;
             }
 
+            // Setup advanced search default values, when existing data is present
+            $.each(listViewData.advSearchFields, function(fieldID, field) {
+                field.defaultValue = advancedSearchData[fieldID];
+            });
+
             var form = cloudStack.dialog.createForm({
                 noDialog: true,
                 form: {
@@ -1949,6 +1957,7 @@
                 },
                 after: function(args) {
                     advancedSearch(args);
+                    advancedSearchData = args.data;
                     $listView.find('.button.search#basic_search').siblings('.search-bar').find('input').val(''); //clear basic search input field to avoid confusion of search result
                     closeAdvancedSearch();
                 }

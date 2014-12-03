@@ -435,6 +435,9 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
                 detailsVO.add(new StoragePoolDetailVO(poolId, key, details.get(key), true));
             }
             _detailsDao.saveDetails(detailsVO);
+            if(details.size() == 0) {
+                _detailsDao.removeDetails(poolId);
+            }
         }
     }
 

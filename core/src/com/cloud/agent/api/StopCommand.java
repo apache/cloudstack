@@ -56,6 +56,10 @@ public class StopCommand extends RebootCommand {
 
     @Override
     public boolean executeInSequence() {
+        //VR stop doesn't go through queue
+        if (vmName != null && vmName.startsWith("r-")) {
+            return false;
+        }
         return executeInSequence;
     }
 

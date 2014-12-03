@@ -21,6 +21,9 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 
-@APICommand(name = "listAccounts", description = "Lists accounts and provides detailed account information for listed accounts", responseObject = AccountResponse.class, responseView = ResponseView.Full)
+import com.cloud.user.Account;
+
+@APICommand(name = "listAccounts", description = "Lists accounts and provides detailed account information for listed accounts", responseObject = AccountResponse.class, responseView = ResponseView.Full, entityType = {Account.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ListAccountsCmdByAdmin extends ListAccountsCmd {
 }

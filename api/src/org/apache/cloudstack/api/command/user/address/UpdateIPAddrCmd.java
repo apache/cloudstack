@@ -127,8 +127,10 @@ public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
             NetworkRuleConflictException {
 
         IpAddress result = _networkService.updateIP(getId(), getCustomId(), getDisplayIp());
-        IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(ResponseView.Restricted, result);
-        ipResponse.setResponseName(getCommandName());
-        setResponseObject(ipResponse);
+        if(result != null) {
+            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(ResponseView.Restricted, result);
+            ipResponse.setResponseName(getCommandName());
+            setResponseObject(ipResponse);
+        }
     }
 }

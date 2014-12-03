@@ -43,15 +43,6 @@ def echo(fn):
     return wrapped
 
 @echo
-def gethostvmstats(session, args):
-    collect_host_stats = args['collectHostStats']
-    consolidation_function = args['consolidationFunction']
-    interval = args['interval']
-    start_time = args['startTime']
-    result = hostvmstats.get_stats(session, collect_host_stats, consolidation_function, interval, start_time)
-    return result
-    
-@echo
 def setup_iscsi(session, args):
    uuid=args['uuid']
    try:
@@ -61,18 +52,6 @@ def setup_iscsi(session, args):
        txt = ''
    return '> DONE <'
  
-
-@echo
-def getgateway(session, args):
-    mgmt_ip = args['mgmtIP']
-    try:
-        cmd = ["bash", "/opt/cloud/bin/network_info.sh", "-g", mgmt_ip]
-        txt = util.pread2(cmd)
-    except:
-        txt = ''
-
-    return txt
-    
 @echo
 def preparemigration(session, args):
     uuid = args['uuid']
@@ -1457,8 +1436,8 @@ def getDomRVersion(session, args):
     return txt
 
 if __name__ == "__main__":
-     XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, 
-                            "getgateway": getgateway, "preparemigration": preparemigration, 
+     XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi,
+                            "preparemigration": preparemigration, 
                             "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
                             "ipassoc": ipassoc, "savePassword": savePassword, 
                             "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, 

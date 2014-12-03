@@ -36,6 +36,10 @@ public class StartCommand extends Command {
 
     @Override
     public boolean executeInSequence() {
+        //VR start doesn't go through queue
+        if (vm.getName() != null && vm.getName().startsWith("r-")) {
+            return false;
+        }
         return executeInSequence;
     }
 

@@ -1415,7 +1415,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String vmName = cmd.getVmName();
         Boolean snapshotMemory = cmd.getTarget().getType() == VMSnapshot.Type.DiskAndMemory;
         List<VolumeObjectTO> listVolumeTo = cmd.getVolumeTOs();
-        VirtualMachine.State vmState = VirtualMachine.State.Running;
+        VirtualMachine.PowerState vmState = VirtualMachine.PowerState.PowerOn;
         VirtualMachineMO vmMo = null;
         VmwareContext context = hostService.getServiceContext(cmd);
 
@@ -1468,7 +1468,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                     setVolumeToPathAndSize(listVolumeTo, mapNewDisk, context, hyperHost, cmd.getVmName());
 
                     if (!snapshotMemory) {
-                        vmState = VirtualMachine.State.Stopped;
+                        vmState = VirtualMachine.PowerState.PowerOff;
                     }
 
                     return new RevertToVMSnapshotAnswer(cmd, listVolumeTo, vmState);

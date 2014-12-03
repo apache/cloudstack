@@ -1140,7 +1140,7 @@ CREATE TABLE `cloud`.`user_vm_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
   `name` varchar(255) NOT NULL,
-  `value` varchar(1024) NOT NULL,
+  `value` varchar(5120) NOT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_user_vm_details__vm_id` FOREIGN KEY `fk_user_vm_details__vm_id`(`vm_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

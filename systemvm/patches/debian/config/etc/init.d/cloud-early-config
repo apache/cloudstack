@@ -117,16 +117,18 @@ get_boot_params() {
           if [ ! -e /dev/vport0p1 ]; then
             log_it "/dev/vport0p1 not loaded, perhaps guest kernel is too old." && exit 2
           fi
-          while read line; do
-            if [[ $line == cmdline:* ]]; then
-              cmd=${line//cmdline:/}
-              echo $cmd > /var/cache/cloud/cmdline
-            elif [[ $line == pubkey:* ]]; then
-              pubkey=${line//pubkey:/}
-              echo $pubkey > /var/cache/cloud/authorized_keys
-              echo $pubkey > /root/.ssh/authorized_keys
-            fi
-          done < /dev/vport0p1
+		  while [$cmd -eq ""]; do         
+            while read line; do
+              if [[ $line == cmdline:* ]]; then
+                cmd=${line//cmdline:/}
+                echo $cmd > /var/cache/cloud/cmdline
+              elif [[ $line == pubkey:* ]]; then
+                pubkey=${line//pubkey:/}
+                echo $pubkey > /var/cache/cloud/authorized_keys
+                echo $pubkey > /root/.ssh/authorized_keys
+              fi
+            done < /dev/vport0p1
+		  done
           chmod go-rwx /root/.ssh/authorized_keys
           ;;
      vmware)
@@ -398,12 +400,16 @@ setup_interface_ipv6() {
   sysctl net.ipv6.conf.all.disable_ipv6=0
   sysctl net.ipv6.conf.all.forwarding=1
   sysctl net.ipv6.conf.all.accept_ra=1
-  
+
+  sed  -i "s/net.ipv6.conf.all.disable_ipv6 =.*$/net.ipv6.conf.all.disable_ipv6 = 0/" /etc/sysctl.conf
+  sed  -i "s/net.ipv6.conf.all.forwarding =.*$/net.ipv6.conf.all.forwarding = 1/" /etc/sysctl.conf
+  sed  -i "s/net.ipv6.conf.all.accept_ra =.*$/net.ipv6.conf.all.accept_ra = 1/" /etc/sysctl.conf
+
   local intfnum=$1
   local ipv6="$2"
   local prelen="$3"
   local intf=eth${intfnum}
-  
+
   echo "iface $intf inet6 static" >> /etc/network/interfaces
   echo "  address $ipv6 " >> /etc/network/interfaces
   echo "  netmask $prelen" >> /etc/network/interfaces
@@ -889,6 +895,7 @@ setup_redundant_router() {
     then
         (crontab -l; echo -e "SHELL=/bin/bash\nPATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n*/1 * * * * $rrouter_bin_path/check_heartbeat.sh 2>&1 > /dev/null") | crontab
     fi
+    load_modules
 }
 
 setup_aesni() {
@@ -896,6 +903,13 @@ setup_aesni() {
   then
     modprobe aesni_intel
   fi
+}
+
+load_modules() {
+
+ #load nf modules for ftp
+ modprobe nf_nat_ftp
+ modprobe nf_conntrack_ftp
 }
 
 setup_router() {
@@ -972,6 +986,7 @@ setup_router() {
 #for old templates
   cp /etc/iptables/iptables-router /etc/iptables/rules
   setup_sshd $ETH1_IP "eth1"
+  load_modules
 }
 
 
@@ -1071,6 +1086,7 @@ EOF
   else
       echo 0 > /var/cache/cloud/dnsmasq_managed_lease
   fi
+  load_modules
 }
 
 
@@ -1121,6 +1137,7 @@ setup_storage_network() {
 	echo "auto eth3" >> /etc/network/interfaces
 	
 	setup_interface "3" "$STORAGE_IP" "$STORAGE_NETMASK"
+    [ -n "$MTU" ] && ifconfig eth3 mtu $MTU && echo "  mtu $MTU" >> /etc/network/interfaces
 	#ip route add "$STORAGE_CIDR" via "$STORAGE_IP"
 	log_it "Successfully setup storage network with STORAGE_IP:$STORAGE_IP, STORAGE_NETMASK:$STORAGE_NETMASK, STORAGE_CIDR:$STORAGE_CIDR"
 }
@@ -1131,7 +1148,6 @@ setup_secstorage() {
   local hyp=$1
   setup_common eth0 eth1 eth2
   setup_storage_network
-  [ -n "$MTU" ] && ifconfig eth1 mtu $MTU
   sed -i  /gateway/d /etc/hosts
   public_ip=$ETH2_IP
   [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
@@ -1153,6 +1169,7 @@ setup_secstorage() {
   enable_svc dnsmasq 0
   enable_svc cloud-passwd-srvr 0
   enable_svc cloud 1
+  rm /etc/logrotate.d/cloud
 }
 
 setup_console_proxy() {
@@ -1179,6 +1196,7 @@ setup_console_proxy() {
   enable_svc cloud-passwd-srvr 0
   enable_svc cloud 1
   chkconfig nfs-common off
+  rm /etc/logrotate.d/cloud
 }
 
 setup_elbvm() {

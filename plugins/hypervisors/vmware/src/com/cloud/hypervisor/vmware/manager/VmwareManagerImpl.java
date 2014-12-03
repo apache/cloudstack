@@ -183,10 +183,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private int _routerExtraPublicNics = 2;
     private int _vCenterSessionTimeout = 1200000; // Timeout in milliseconds
 
-    private String _reserveCpu = "false";
-
-    private String _reserveMem = "false";
-
     private String _rootDiskController = DiskControllerType.ide.toString();
 
     private final Map<String, String> _storageMounts = new HashMap<String, String>();
@@ -283,15 +279,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         _vCenterSessionTimeout = NumbersUtil.parseInt(_configDao.getValue(Config.VmwareVcenterSessionTimeout.key()), 1200) * 1000;
         s_logger.info("VmwareManagerImpl config - vmware.vcenter.session.timeout: " + _vCenterSessionTimeout);
-
-        _reserveCpu = _configDao.getValue(Config.VmwareReserveCpu.key());
-        if (_reserveCpu == null || _reserveCpu.isEmpty()) {
-            _reserveCpu = "false";
-        }
-        _reserveMem = _configDao.getValue(Config.VmwareReserveMem.key());
-        if (_reserveMem == null || _reserveMem.isEmpty()) {
-            _reserveMem = "false";
-        }
 
         _recycleHungWorker = _configDao.getValue(Config.VmwareRecycleHungWorker.key());
         if (_recycleHungWorker == null || _recycleHungWorker.isEmpty()) {
@@ -778,7 +765,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         // Change permissions for the mountpoint
         script = new Script(true, "chmod", _timeout, s_logger);
-        script.add("-R", "777", mountPoint);
+        script.add("777", mountPoint);
         result = script.execute();
         if (result != null) {
             s_logger.warn("Unable to set permissions for " + mountPoint + " due to " + result);
@@ -1217,5 +1204,20 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         // Currently a zone can have only 1 VMware DC associated with.
         // Returning list of VmwareDatacenterVO objects, in-line with future requirements, if any, like participation of multiple VMware DCs in a zone.
         return vmwareDcList;
+    }
+
+    @Override
+    public boolean hasNexusVSM(Long clusterId) {
+        ClusterVSMMapVO vsmMapVo = null;
+
+        vsmMapVo = _vsmMapDao.findByClusterId(clusterId);
+        if (vsmMapVo == null) {
+            s_logger.info("There is no instance of Nexus 1000v VSM associated with this cluster [Id:" + clusterId + "] yet.");
+            return false;
+        }
+        else {
+            s_logger.info("An instance of Nexus 1000v VSM [Id:" + vsmMapVo.getVsmId() + "] associated with this cluster [Id:" + clusterId + "]");
+            return true;
+        }
     }
 }

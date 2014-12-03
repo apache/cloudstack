@@ -350,12 +350,7 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
     }
 
     public void setRefCnt(Long refCnt) {
-        if (refCnt > 0) {
-            refCnt--;
-        }
-        else {
-            s_logger.warn("We should not try to decrement a zero reference count even though our code has guarded");
-        }
+        this.refCnt = refCnt;
     }
 
     public void incrRefCnt() {
@@ -363,7 +358,12 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
     }
 
     public void decrRefCnt() {
-        refCnt--;
+        if (refCnt > 0) {
+            refCnt--;
+        }
+        else {
+            s_logger.warn("We should not try to decrement a zero reference count even though our code has guarded");
+        }
     }
 
     public String getExtractUrl() {

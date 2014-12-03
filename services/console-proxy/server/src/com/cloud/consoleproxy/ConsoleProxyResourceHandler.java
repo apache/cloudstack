@@ -144,18 +144,17 @@ public class ConsoleProxyResourceHandler implements HttpHandler {
     }
 
     private static void responseFileContent(HttpExchange t, File f) throws Exception {
-        OutputStream os = t.getResponseBody();
-        FileInputStream fis = new FileInputStream(f);
-        while (true) {
-            byte[] b = new byte[8192];
-            int n = fis.read(b);
-            if (n < 0) {
-                break;
+        try(OutputStream os = t.getResponseBody();
+        FileInputStream fis = new FileInputStream(f);) {
+            while (true) {
+                byte[] b = new byte[8192];
+                int n = fis.read(b);
+                if (n < 0) {
+                    break;
+                }
+                os.write(b, 0, n);
             }
-            os.write(b, 0, n);
         }
-        fis.close();
-        os.close();
     }
 
     private static boolean validatePath(String path) {

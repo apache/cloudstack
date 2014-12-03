@@ -19,11 +19,20 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackAPI import (migrateVirtualMachine,
+                                  prepareHostForMaintenance,
+                                  cancelHostMaintenance)
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (Account,
+                             VirtualMachine,
+                             ServiceOffering)
+from marvin.lib.common import (get_zone,
+                               get_domain,
+                               get_template,
+                               list_hosts,
+                               list_virtual_machines,
+                               list_service_offering)
 import time
 
 
@@ -336,14 +345,16 @@ class TestHostHighAvailability(cloudstackTestCase):
         """ Verify you can not migrate VMs to hosts with an ha.tag (positive) """
 
         # Steps,
-        #1. Create a Compute service offering with the 'Offer HA' option selected.
-        #2. Create a Guest VM with the compute service offering created above.
-        #3. Select the VM and migrate VM to another host. Choose a 'Suitable' host (i.e. host2)
+        # 1. Create a Compute service offering with the 'Offer HA' option selected.
+        # 2. Create a Guest VM with the compute service offering created above.
+        # 3. Select the VM and migrate VM to another host. Choose a 'Suitable' host (i.e. host2)
         # Validations
-        #The option from the 'Migrate instance to another host' dialog box' should list host3 as 'Not Suitable' for migration.
-        #Confirm that the VM is migrated to the 'Suitable' host you selected (i.e. host2)
+        # The option from the 'Migrate instance to another host' dialog box' should list host3 as 'Not Suitable' for migration.
+        # Confirm that the VM is migrated to the 'Suitable' host you selected
+        # (i.e. host2)
 
-        #create and verify the virtual machine with HA enabled service offering
+        # create and verify the virtual machine with HA enabled service
+        # offering
         virtual_machine_with_ha = VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
@@ -374,9 +385,10 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         self.debug("Deployed VM on host: %s" % vm.hostid)
 
-        #Find out a Suitable host for VM migration
+        # Find out a Suitable host for VM migration
         list_hosts_response = list_hosts(
             self.apiclient,
+            virtualmachineid = vm.id
         )
         self.assertEqual(
             isinstance(list_hosts_response, list),
@@ -391,21 +403,25 @@ class TestHostHighAvailability(cloudstackTestCase):
         )
         suitableHost = None
         for host in list_hosts_response:
-            if host.suitableformigration == True and host.hostid != vm.hostid:
+            if host.suitableformigration and host.hostid != vm.hostid:
                 suitableHost = host
                 break
 
-        self.assertTrue(suitableHost is not None, "suitablehost should not be None")
+        self.assertTrue(
+            suitableHost is not None,
+            "suitablehost should not be None")
 
-        #Migration of the VM to a suitable host
-        self.debug("Migrating VM-ID: %s to Host: %s" % (self.vm.id, suitableHost.id))
+        # Migration of the VM to a suitable host
+        self.debug(
+            "Migrating VM-ID: %s to Host: %s" %
+            (vm.id, suitableHost.id))
 
         cmd = migrateVirtualMachine.migrateVirtualMachineCmd()
         cmd.hostid = suitableHost.id
-        cmd.virtualmachineid = self.vm.id
+        cmd.virtualmachineid = vm.id
         self.apiclient.migrateVirtualMachine(cmd)
 
-        #Verify that the VM migrated to a targeted Suitable host
+        # Verify that the VM migrated to a targeted Suitable host
         list_vm_response = list_virtual_machines(
             self.apiclient,
             id=vm.id
@@ -483,6 +499,7 @@ class TestHostHighAvailability(cloudstackTestCase):
         #Find out Non-Suitable host for VM migration
         list_hosts_response = list_hosts(
             self.apiclient,
+            type="Routing"
         )
         self.assertEqual(
             isinstance(list_hosts_response, list),
@@ -498,7 +515,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         notSuitableHost = None
         for host in list_hosts_response:
-            if not host.suitableformigration and host.hostid != vm.hostid:
+            if not host.suitableformigration and host.id != vm.hostid:
                 notSuitableHost = host
                 break
 

@@ -160,8 +160,15 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceAllocationException {
-        CallContext.current().setEventDetails("Volume Id: " + getEntityId() + " to size " + getSize() + "G");
-        Volume volume = _volumeService.resizeVolume(this);
+        Volume volume = null;
+        try {
+            CallContext.current().setEventDetails("Volume Id: " + getEntityId() + " to size " + getSize() + "G");
+            volume = _volumeService.resizeVolume(this);
+        } catch (InvalidParameterValueException ex) {
+            s_logger.info(ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, ex.getMessage());
+        }
+
         if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, volume);
             //FIXME - have to be moved to ApiResponseHelper

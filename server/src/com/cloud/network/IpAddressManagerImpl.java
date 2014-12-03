@@ -758,7 +758,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         assert (addrs.size() == 1) : "Return size is incorrect: " + addrs.size();
 
-        if (!fetchFromDedicatedRange) {
+        if (!fetchFromDedicatedRange && VlanType.VirtualNetwork.equals(vlanUse)) {
             // Check that the maximum number of public IPs for the given accountId will not be exceeded
             try {
                 _resourceLimitMgr.checkResourceLimit(owner, ResourceType.public_ip);
@@ -807,32 +807,32 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     public void markPublicIpAsAllocated(final IPAddressVO addr) {
 
-        assert (addr.getState() == IpAddress.State.Allocating || addr.getState() == IpAddress.State.Free) : "Unable to transition from state " + addr.getState() + " to "
-                + IpAddress.State.Allocated;
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-        Account owner = _accountMgr.getAccount(addr.getAllocatedToAccountId());
-
-        addr.setState(IpAddress.State.Allocated);
-        _ipAddressDao.update(addr.getId(), addr);
-
-        // Save usage event
-        if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-            VlanVO vlan = _vlanDao.findById(addr.getVlanId());
-
-            String guestType = vlan.getVlanType().toString();
-
-            if (!isIpDedicated(addr)) {
-                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(),
-                                addr.isSourceNat(), guestType, addr.getSystem(), addr.getClass().getName(), addr.getUuid());
-            }
-
-                    if (updateIpResourceCount(addr)) {
-                _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
+            Account owner = _accountMgr.getAccount(addr.getAllocatedToAccountId());
+            synchronized (this) {
+                if (_ipAddressDao.lockRow(addr.getId(),true) != null) {
+                    IPAddressVO userIp = _ipAddressDao.findById(addr.getId());
+                    if (userIp.getState() == IpAddress.State.Allocating || addr.getState() == IpAddress.State.Free) {
+                        addr.setState(IpAddress.State.Allocated);
+                        _ipAddressDao.update(addr.getId(), addr);
+                        // Save usage event
+                        if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
+                            VlanVO vlan = _vlanDao.findById(addr.getVlanId());
+                            String guestType = vlan.getVlanType().toString();
+                            if (!isIpDedicated(addr)) {
+                                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(),
+                                        addr.isSourceNat(), guestType, addr.getSystem(), addr.getClass().getName(), addr.getUuid());
+                            }
+                            if (updateIpResourceCount(addr)) {
+                                _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
+                            }
+                        }
+                    }
+                }
             }
         }
-            }
         });
     }
 
@@ -922,7 +922,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     public boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException {
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
         boolean success = true;
-
         // CloudStack will take a lazy approach to associate an acquired public IP to a network service provider as
         // it will not know what service an acquired IP will be used for. An IP is actually associated with a provider when first
         // rule is applied. Similarly when last rule on the acquired IP is revoked, IP is not associated with any provider
@@ -941,7 +940,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 }
             }
         }
-
         return success;
     }
 
@@ -1597,10 +1595,12 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             s_logger.debug("Implementing network " + guestNetwork + " as a part of network provision for persistent network");
             try {
                 Pair<? extends NetworkGuru, ? extends Network> implementedNetwork = _networkMgr.implementNetwork(guestNetwork.getId(), dest, context);
-                if (implementedNetwork.first() == null) {
+                if (implementedNetwork == null || implementedNetwork.first() == null) {
                     s_logger.warn("Failed to implement the network " + guestNetwork);
                 }
-                guestNetwork = implementedNetwork.second();
+                if (implementedNetwork != null) {
+                    guestNetwork = implementedNetwork.second();
+                }
             } catch (Exception ex) {
                 s_logger.warn("Failed to implement network " + guestNetwork + " elements and resources as a part of" + " network provision due to ", ex);
                 CloudRuntimeException e = new CloudRuntimeException("Failed to implement network (with specified id)"

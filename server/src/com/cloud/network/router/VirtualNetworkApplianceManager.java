@@ -17,35 +17,25 @@
 package com.cloud.network.router;
 
 import java.util.List;
-import java.util.Map;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 
-import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VirtualNetworkApplianceService;
-import com.cloud.network.VpnUser;
-import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.StaticNat;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.NicProfile;
-import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * NetworkManager manages the network for the different end users.
- *
  */
 public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkApplianceService {
+
     static final String RouterTemplateXenCK = "router.template.xenserver";
     static final String RouterTemplateKvmCK = "router.template.kvm";
     static final String RouterTemplateVmwareCK = "router.template.vmware";
@@ -77,9 +67,11 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     static final ConfigKey<Integer> RouterAlertsCheckInterval = new ConfigKey<Integer>(Integer.class, RouterAlertsCheckIntervalCK, "Advanced", "1800",
             "Interval (in seconds) to check for alerts in Virtual Router.", false, ConfigKey.Scope.Global, null);
 
-    public static final int DEFAULT_ROUTER_VM_RAMSIZE = 128;            // 128M
+    public static final int DEFAULT_ROUTER_VM_RAMSIZE = 256;            // 256M
     public static final int DEFAULT_ROUTER_CPU_MHZ = 500;                // 500 MHz
     public static final boolean USE_POD_VLAN = false;
+    public static final int DEFAULT_PRIORITY = 100;
+    public static final int DEFAULT_DELTA = 2;
 
     /**
     /*
@@ -87,14 +79,11 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
      * @param hostId
      * @param pubKey
      * @param prvKey
-     */
-    boolean sendSshKeysToHost(Long hostId, String pubKey, String prvKey);
-
-    /**
-     * save a vm password on the router.
-     * @param routers TODO
+     *
+     * NOT USED IN THE VIRTUAL NET APPLIANCE
      *
      */
+<<<<<<< HEAD
     boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile profile, List<? extends VirtualRouter> routers)
             throws ResourceUnavailableException;
 
@@ -106,24 +95,29 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 
     List<DomainRouterVO> deployVirtualRouterInGuestNetwork(Network guestNetwork, DeployDestination dest, Account owner, Map<VirtualMachineProfile.Param, Object> params,
             boolean isRedundant) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
+=======
+    //boolean sendSshKeysToHost(Long hostId, String pubKey, String prvKey):
+>>>>>>> master
 
     boolean startRemoteAccessVpn(Network network, RemoteAccessVpn vpn, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 
     boolean deleteRemoteAccessVpn(Network network, RemoteAccessVpn vpn, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 
+<<<<<<< HEAD
     boolean associatePublicIP(Network network, final List<? extends PublicIpAddress> ipAddress, List<? extends VirtualRouter> routers)
             throws ResourceUnavailableException;
 
     boolean applyFirewallRules(Network network, final List<? extends FirewallRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 
+=======
+>>>>>>> master
     List<VirtualRouter> getRoutersForNetwork(long networkId);
-
-    String[] applyVpnUsers(Network network, List<? extends VpnUser> users, List<DomainRouterVO> routers) throws ResourceUnavailableException;
 
     VirtualRouter stop(VirtualRouter router, boolean forced, User callingUser, Account callingAccount) throws ConcurrentOperationException, ResourceUnavailableException;
 
     String getDnsBasicZoneUpdate();
 
+<<<<<<< HEAD
     boolean applyStaticNats(Network network, final List<? extends StaticNat> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 
     boolean applyDhcpEntry(Network config, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, List<DomainRouterVO> routers)
@@ -137,11 +131,11 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     boolean configDhcpForSubnet(Network network, NicProfile nic, VirtualMachineProfile uservm, DeployDestination dest, List<DomainRouterVO> routers)
             throws ResourceUnavailableException;
 
+=======
+>>>>>>> master
     boolean removeDhcpSupportForSubnet(Network network, List<DomainRouterVO> routers) throws ResourceUnavailableException;
 
-    boolean setupDhcpForPvlan(boolean add, DomainRouterVO router, Long hostId, NicProfile nic);
+    public boolean prepareAggregatedExecution(Network network, List<DomainRouterVO> routers) throws AgentUnavailableException, ResourceUnavailableException;
 
-    public boolean prepareAggregatedExecution(Network network, List<DomainRouterVO> routers) throws AgentUnavailableException;
-
-    public boolean completeAggregatedExecution(Network network, List<DomainRouterVO> routers) throws AgentUnavailableException;
+    public boolean completeAggregatedExecution(Network network, List<DomainRouterVO> routers) throws AgentUnavailableException, ResourceUnavailableException;
 }

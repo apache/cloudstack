@@ -24,17 +24,26 @@ import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Volume;
 
 
-@APICommand(name = "resizeVolume", description = "Resizes a volume", responseObject = VolumeResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "resizeVolume", description = "Resizes a volume", responseObject = VolumeResponse.class, responseView = ResponseView.Full, entityType = {Volume.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ResizeVolumeCmdByAdmin extends ResizeVolumeCmd {
 
     @Override
     public void execute() throws ResourceAllocationException{
-        CallContext.current().setEventDetails("Volume Id: " + getEntityId() + " to size " + getSize() + "G");
-        Volume volume = _volumeService.resizeVolume(this);
+        Volume volume = null;
+        try {
+            CallContext.current().setEventDetails("Volume Id: " + getEntityId() + " to size " + getSize() + "G");
+            volume = _volumeService.resizeVolume(this);
+        } catch (InvalidParameterValueException ex) {
+            s_logger.info(ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, ex.getMessage());
+        }
+
         if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Full, volume);
             //FIXME - have to be moved to ApiResponseHelper

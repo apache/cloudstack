@@ -72,7 +72,6 @@ import com.citrix.netscaler.nitro.resource.config.ssl.sslvserver_sslcertkey_bind
 import com.citrix.netscaler.nitro.resource.stat.lb.lbvserver_stats;
 import com.citrix.netscaler.nitro.service.nitro_service;
 import com.citrix.netscaler.nitro.util.filtervalue;
-import com.citrix.sdx.nitro.resource.config.mps.device_profile;
 import com.citrix.sdx.nitro.resource.config.mps.mps;
 import com.citrix.sdx.nitro.resource.config.ns.ns;
 import com.citrix.sdx.nitro.resource.config.xen.xen_nsvpx_image;
@@ -923,15 +922,7 @@ public class NetscalerResource implements ServerResource {
             ns_obj.set_throughput(new Double(1000));
             ns_obj.set_pps(new Double(1000000));
             ns_obj.set_number_of_ssl_cores(0);
-
-            // use the first device profile available on the SDX to create an instance of VPX
-            device_profile[] profiles = device_profile.get(_netscalerSdxService);
-            if (!(profiles != null && profiles.length >= 1)) {
-                new Answer(cmd, new ExecutionException("Failed to create VPX instance on the netscaler SDX device " + _ip +
-                        " as there are no admin profile to use for creating VPX."));
-            }
-            String profileName = profiles[0].get_name();
-            ns_obj.set_profile_name(profileName);
+            ns_obj.set_profile_name("ns_nsroot_profile");
 
             // use the first VPX image of the available VPX images on the SDX to create an instance of VPX
             // TODO: should enable the option to choose the template while adding the SDX device in to CloudStack
@@ -959,7 +950,7 @@ public class NetscalerResource implements ServerResource {
             // wait for VPX instance to start-up
             long startTick = System.currentTimeMillis();
             long startWaitMilliSeconds = 600000;
-            while (!newVpx.get_state().equalsIgnoreCase("up") && System.currentTimeMillis() - startTick < startWaitMilliSeconds) {
+            while (!newVpx.get_instance_state().equalsIgnoreCase("up") && System.currentTimeMillis() - startTick < startWaitMilliSeconds) {
                 try {
                     Thread.sleep(10000);
                 } catch (InterruptedException e) {
@@ -970,7 +961,7 @@ public class NetscalerResource implements ServerResource {
             }
 
             // if vpx instance never came up then error out
-            if (!newVpx.get_state().equalsIgnoreCase("up")) {
+            if (!newVpx.get_instance_state().equalsIgnoreCase("up")) {
                 return new Answer(cmd, new ExecutionException("Failed to start VPX instance " + vpxName + " created on the netscaler SDX device " + _ip));
             }
 
@@ -981,6 +972,8 @@ public class NetscalerResource implements ServerResource {
             while (System.currentTimeMillis() - startTick < nsServiceWaitMilliSeconds) {
                 try {
                     nitro_service _netscalerService = new nitro_service(cmd.getLoadBalancerIP(), "https");
+                    _netscalerService.set_certvalidation(false);
+                    _netscalerService.set_hostnameverification(false);
                     _netscalerService.set_credential(username, password);
                     apiCallResult = _netscalerService.login();
                     if (apiCallResult.errorcode == 0) {
@@ -3174,7 +3167,9 @@ public class NetscalerResource implements ServerResource {
                 scaleUpAction.set_vserver(nsVirtualServerName); // Actions Vserver, the one that is autoscaled, with CS
                 // now both are same. Not exposed in API.
                 scaleUpAction.set_profilename(profileName);
-                scaleUpAction.set_quiettime(scaleUpQuietTime);
+                if(scaleUpQuietTime != null) {
+                    scaleUpAction.set_quiettime(scaleUpQuietTime);
+                }
                 String scaleUpParameters =
                         "command=deployVirtualMachine" + "&" + ApiConstants.ZONE_ID + "=" + profileTO.getZoneId() + "&" + ApiConstants.SERVICE_OFFERING_ID + "=" +
                                 profileTO.getServiceOfferingId() + "&" + ApiConstants.TEMPLATE_ID + "=" + profileTO.getTemplateId() + "&" + ApiConstants.DISPLAY_NAME + "=" +

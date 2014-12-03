@@ -27,8 +27,10 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.storage.Volume;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "detachVolume", description = "Detaches a disk volume from a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "detachVolume", description = "Detaches a disk volume from a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DetachVolumeCmdByAdmin extends DetachVolumeCmd {
     public static final Logger s_logger = Logger.getLogger(DetachVolumeCmdByAdmin.class.getName());
 

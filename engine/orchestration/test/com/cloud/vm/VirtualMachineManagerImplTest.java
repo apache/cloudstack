@@ -102,6 +102,7 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -397,7 +398,7 @@ public class VirtualMachineManagerImplTest {
 
         CheckVirtualMachineAnswer checkVmAnswerMock = mock(CheckVirtualMachineAnswer.class);
         when(checkVmAnswerMock.getResult()).thenReturn(true);
-        when(checkVmAnswerMock.getState()).thenReturn(State.Running);
+        when(checkVmAnswerMock.getState()).thenReturn(PowerState.PowerOn);
         when(_agentMgr.send(anyLong(), isA(CheckVirtualMachineCommand.class))).thenReturn(checkVmAnswerMock);
 
         // Mock the state transitions of vm.

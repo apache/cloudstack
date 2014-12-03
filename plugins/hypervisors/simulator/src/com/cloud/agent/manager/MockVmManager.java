@@ -56,11 +56,11 @@ import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.simulator.MockVMVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
-import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.PowerState;
 
 public interface MockVmManager extends Manager {
 
-    Map<String, State> getVmStates(String hostGuid);
+    Map<String, PowerState> getVmStates(String hostGuid);
 
     Map<String, MockVMVO> getVms(String hostGuid);
 

@@ -19,8 +19,6 @@ package org.apache.cloudstack.api.command.user.network;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -29,8 +27,10 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.offering.NetworkOffering;
+import com.cloud.utils.Pair;
 
 @APICommand(name = "listNetworkOfferings", description = "Lists all available network offerings.", responseObject = NetworkOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -187,15 +187,15 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        List<? extends NetworkOffering> offerings = _configService.searchForNetworkOfferings(this);
+        Pair<List<? extends NetworkOffering>, Integer> offerings = _configService.searchForNetworkOfferings(this);
         ListResponse<NetworkOfferingResponse> response = new ListResponse<NetworkOfferingResponse>();
         List<NetworkOfferingResponse> offeringResponses = new ArrayList<NetworkOfferingResponse>();
-        for (NetworkOffering offering : offerings) {
+        for (NetworkOffering offering : offerings.first()) {
             NetworkOfferingResponse offeringResponse = _responseGenerator.createNetworkOfferingResponse(offering);
             offeringResponses.add(offeringResponse);
         }
 
-        response.setResponses(offeringResponses);
+        response.setResponses(offeringResponses, offerings.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

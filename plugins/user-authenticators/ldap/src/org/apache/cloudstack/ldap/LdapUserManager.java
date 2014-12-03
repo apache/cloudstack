@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.ldap;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,13 +26,19 @@ import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
-import javax.naming.directory.DirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
+import javax.naming.ldap.Control;
+import javax.naming.ldap.LdapContext;
+import javax.naming.ldap.PagedResultsControl;
+import javax.naming.ldap.PagedResultsResponseControl;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 
 public class LdapUserManager {
+    private static final Logger s_logger = Logger.getLogger(LdapUserManager.class.getName());
 
     @Inject
     private LdapConfiguration _ldapConfiguration;
@@ -111,35 +118,29 @@ public class LdapUserManager {
         return result.toString();
     }
 
-    public LdapUser getUser(final String username, final DirContext context) throws NamingException {
-        final NamingEnumeration<SearchResult> result = searchUsers(username, context);
-        if (result.hasMoreElements()) {
-            return createUser(result.nextElement());
+    public LdapUser getUser(final String username, final LdapContext context) throws NamingException, IOException {
+        List<LdapUser> result = searchUsers(username, context);
+        if (result!= null && result.size() == 1) {
+            return result.get(0);
         } else {
             throw new NamingException("No user found for username " + username);
         }
     }
 
-    public List<LdapUser> getUsers(final DirContext context) throws NamingException {
+    public List<LdapUser> getUsers(final LdapContext context) throws NamingException, IOException {
         return getUsers(null, context);
     }
 
-    public List<LdapUser> getUsers(final String username, final DirContext context) throws NamingException {
-        final NamingEnumeration<SearchResult> results = searchUsers(username, context);
+    public List<LdapUser> getUsers(final String username, final LdapContext context) throws NamingException, IOException {
+        List<LdapUser> users = searchUsers(username, context);
 
-        final List<LdapUser> users = new ArrayList<LdapUser>();
-
-        while (results.hasMoreElements()) {
-            final SearchResult result = results.nextElement();
-            users.add(createUser(result));
+        if (CollectionUtils.isNotEmpty(users)) {
+            Collections.sort(users);
         }
-
-        Collections.sort(users);
-
         return users;
     }
 
-    public List<LdapUser> getUsersInGroup(String groupName, DirContext context) throws NamingException {
+    public List<LdapUser> getUsersInGroup(String groupName, LdapContext context) throws NamingException {
         String attributeName = _ldapConfiguration.getGroupUniqueMemeberAttribute();
         final SearchControls controls = new SearchControls();
         controls.setSearchScope(_ldapConfiguration.getScope());
@@ -155,7 +156,11 @@ public class LdapUserManager {
 
             while (values.hasMoreElements()) {
                 String userdn = String.valueOf(values.nextElement());
-                users.add(getUserForDn(userdn, context));
+                try{
+                    users.add(getUserForDn(userdn, context));
+                } catch (NamingException e){
+                    s_logger.info("Userdn: " + userdn + " Not Found:: Exception message: " + e.getMessage());
+                }
             }
         }
 
@@ -164,7 +169,7 @@ public class LdapUserManager {
         return users;
     }
 
-    private LdapUser getUserForDn(String userdn, DirContext context) throws NamingException {
+    private LdapUser getUserForDn(String userdn, LdapContext context) throws NamingException {
         final SearchControls controls = new SearchControls();
         controls.setSearchScope(_ldapConfiguration.getScope());
         controls.setReturningAttributes(_ldapConfiguration.getReturnAttributes());
@@ -177,20 +182,46 @@ public class LdapUserManager {
         }
     }
 
-    public NamingEnumeration<SearchResult> searchUsers(final DirContext context) throws NamingException {
+    public List<LdapUser> searchUsers(final LdapContext context) throws NamingException, IOException {
         return searchUsers(null, context);
     }
 
-    public NamingEnumeration<SearchResult> searchUsers(final String username, final DirContext context) throws NamingException {
-        final SearchControls controls = new SearchControls();
+    public List<LdapUser> searchUsers(final String username, final LdapContext context) throws NamingException, IOException {
 
-        controls.setSearchScope(_ldapConfiguration.getScope());
-        controls.setReturningAttributes(_ldapConfiguration.getReturnAttributes());
+        final SearchControls searchControls = new SearchControls();
+
+        searchControls.setSearchScope(_ldapConfiguration.getScope());
+        searchControls.setReturningAttributes(_ldapConfiguration.getReturnAttributes());
 
         String basedn = _ldapConfiguration.getBaseDn();
         if (StringUtils.isBlank(basedn)) {
             throw new IllegalArgumentException("ldap basedn is not configured");
         }
-        return context.search(basedn, generateSearchFilter(username), controls);
+        byte[] cookie = null;
+        int pageSize = _ldapConfiguration.getLdapPageSize();
+        context.setRequestControls(new Control[]{new PagedResultsControl(pageSize, Control.NONCRITICAL)});
+        final List<LdapUser> users = new ArrayList<LdapUser>();
+        NamingEnumeration<SearchResult> results;
+        do {
+            results = context.search(basedn, generateSearchFilter(username), searchControls);
+            while (results.hasMoreElements()) {
+                final SearchResult result = results.nextElement();
+                users.add(createUser(result));
+            }
+            Control[] contextControls = context.getResponseControls();
+            if (contextControls != null) {
+                for (Control control : contextControls) {
+                    if (control instanceof PagedResultsResponseControl) {
+                        PagedResultsResponseControl prrc = (PagedResultsResponseControl) control;
+                        cookie = prrc.getCookie();
+                    }
+                }
+            } else {
+                s_logger.info("No controls were sent from the ldap server");
+            }
+            context.setRequestControls(new Control[] {new PagedResultsControl(pageSize, cookie, Control.CRITICAL)});
+        } while (cookie != null);
+
+        return users;
     }
 }

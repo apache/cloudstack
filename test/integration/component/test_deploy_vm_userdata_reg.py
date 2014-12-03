@@ -105,7 +105,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         self.hypervisor = self.testClient.getHypervisorInfo()
 
 
-    @attr(tags=["simulator", "devcloud", "basic", "advanced", "provisioning"])
+    @attr(tags=["simulator", "devcloud", "basic", "advanced"], required_hardware="true")
     def test_deployvm_userdata_post(self):
         """Test userdata as POST, size > 2k
         """
@@ -175,11 +175,9 @@ class TestDeployVmWithUserData(cloudstackTestCase):
             'Running',
             "Check list router response for router state"
         )
-        host.user="root"
-        host.passwd="password"
         cmd="cat /var/www/html/userdata/"+deployVmResponse.ipaddress+"/user-data"
 
-        if self.hypervisor.lower() == 'vmware':
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
 
             try:
                 result = get_process_status(
@@ -200,6 +198,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
 
         else:
             try:
+                host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
                 result = get_process_status(
                     host.ipaddress,
                     22,

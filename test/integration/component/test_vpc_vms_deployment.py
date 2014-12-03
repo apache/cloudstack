@@ -42,7 +42,8 @@ from marvin.lib.common import (get_domain,
                                            wait_for_cleanup,
                                            get_free_vlan)
 
-from marvin.lib.utils import cleanup_resources
+from marvin.lib.utils import (cleanup_resources, validateList)
+from marvin.codes import *
 from marvin.cloudstackAPI import rebootRouter
 
 
@@ -275,7 +276,87 @@ class TestVMDeployVPC(cloudstackTestCase):
         self.debug("VPC network validated - %s" % network.name)
         return
 
-    @attr(tags=["advanced", "intervlan", "selfservice"])
+    def acquire_publicip(self, network):
+        self.debug("Associating public IP for network: %s" % network.name)
+        public_ip = PublicIPAddress.create(self.apiclient,
+                                           accountid=self.account.name,
+                                           zoneid=self.zone.id,
+                                           domainid=self.account.domainid,
+                                           networkid=network.id,
+                                           vpcid=self.vpc.id
+        )
+        self.debug("Associated {} with network {}".format(public_ip.ipaddress.ipaddress, network.id))
+        return public_ip
+
+    def create_natrule(self, vm, public_ip, network, services=None):
+        self.debug("Creating NAT rule in network for vm with public IP")
+        if not services:
+            services = self.services["natrule"]
+        nat_rule = NATRule.create(self.apiclient,
+                                  vm,
+                                  services,
+                                  ipaddressid=public_ip.ipaddress.id,
+                                  openfirewall=False,
+                                  networkid=network.id,
+                                  vpcid=self.vpc.id
+        )
+        self.debug("Adding NetworkACL rules to make NAT rule accessible")
+        nwacl_nat = NetworkACL.create(self.apiclient,
+                                      networkid=network.id,
+                                      services=services,
+                                      traffictype='Ingress'
+        )
+        self.debug('nwacl_nat=%s' % nwacl_nat.__dict__)
+        return nat_rule
+
+    def check_ssh_into_vm(self, vm, public_ip, testnegative=False):
+        self.debug("Checking if we can SSH into VM={} on public_ip={}".format(vm.name, public_ip.ipaddress.ipaddress))
+        try:
+            vm.get_ssh_client(ipaddress=public_ip.ipaddress.ipaddress)
+            if not testnegative:
+                self.debug("SSH into VM={} on public_ip={} is successful".format(vm.name, public_ip.ipaddress.ipaddress))
+            else:
+                self.fail("SSH into VM={} on public_ip={} is successful".format(vm.name, public_ip.ipaddress.ipaddress))
+        except:
+            if not testnegative:
+                self.fail("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
+            else:
+                self.debug("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
+
+    def deployVM_and_verify_ssh_access(self, network, ip):
+        # Spawn an instance in that network
+        vm = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            networkids=[str(network.id)],
+            ipaddress=ip,
+            )
+        self.assertIsNotNone(
+            vm,
+            "Failed to deploy vm with ip address {} and hostname {}".format(ip, self.services["virtual_machine"]["name"])
+        )
+        vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=vm.id,
+            )
+        status = validateList(vm_response)
+        self.assertEquals(
+            PASS,
+            status[0],
+            "vm list api returned invalid response after vm {} deployment".format(vm)
+        )
+        public_ip_1 = self.acquire_publicip(network)
+        #ensure vm is accessible over public ip
+        nat_rule = self.create_natrule(vm, public_ip_1, network)
+        self.check_ssh_into_vm(vm, public_ip_1, testnegative=False)
+        #remove the nat rule
+        nat_rule.delete(self.apiclient)
+        return vm
+
+    @attr(tags=["advanced", "intervlan"], required_hardware="false")
     def test_01_deploy_vms_in_network(self):
         """ Test deploy VMs in VPC networks
         """
@@ -489,7 +570,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "intervlan", "selfservice"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="false")
     def test_02_deploy_vms_delete_network(self):
         """ Test deploy VMs in VPC networks and delete one of the network
         """
@@ -741,7 +822,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "intervlan", "selfservice"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="false")
     def test_03_deploy_vms_delete_add_network(self):
         """ Test deploy VMs, delete one of the network and add another one
         """
@@ -1010,7 +1091,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "intervlan", "selfservice"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="false")
     def test_04_deploy_vms_delete_add_network_noLb(self):
         """ Test deploy VMs, delete one network without LB and add another one
         """
@@ -1304,7 +1385,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "intervlan", "selfservice"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="false")
     def test_05_create_network_max_limit(self):
         """ Test create networks in VPC upto maximum limit for hypervisor
         """
@@ -1475,7 +1556,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "intervlan", "selfservice"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="false")
     def test_06_delete_network_vm_running(self):
         """ Test delete network having running instances in VPC
         """
@@ -1717,7 +1798,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "intervlan", "selfservice"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_07_delete_network_with_rules(self):
         """ Test delete network that has PF/staticNat/LB rules/Network Acl
         """
@@ -2006,26 +2087,6 @@ class TestVMDeployVPC(cloudstackTestCase):
             self.fail("Failed to enable static NAT on IP: %s - %s" % (
                                         public_ip_4.ipaddress.ipaddress, e))
 
-        public_ips = PublicIPAddress.list(
-                                    self.apiclient,
-                                    networkid=network_2.id,
-                                    listall=True,
-                                    isstaticnat=True,
-                                    account=self.account.name,
-                                    domainid=self.account.domainid
-                                  )
-        self.assertEqual(
-                         isinstance(public_ips, list),
-                         True,
-                         "List public Ip for network should list the Ip addr"
-                         )
-        self.assertEqual(
-                         public_ips[0].ipaddress,
-                         public_ip_4.ipaddress.ipaddress,
-                         "List public Ips %s for network should list the Ip addr %s"
-                         % (public_ips[0].ipaddress, public_ip_4.ipaddress.ipaddress )
-                         )
-
         self.debug("Adding NetwrokACl rules to make NAT rule accessible with network %s" % network_1.id)
         NetworkACL.create(
                                          self.apiclient,
@@ -2290,4 +2351,95 @@ class TestVMDeployVPC(cloudstackTestCase):
                          domainid=self.account.domainid
                          )
         return
+
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    def test_08_ip_reallocation_CS5986(self):
+        """
+        @Desc: Test to verify dnsmasq dhcp conflict issue due to /ect/hosts not getting udpated
+	    @Steps:
+	    Step1: Create a VPC
+        Step2: Create one network in vpc
+        Step3: Deploy vm1 with hostname hostA and ip address IP A in the above network
+        Step4: List the vm and verify the ip address in the response and verify ssh access to vm
+        Step5: Deploy vm2 with hostname hostB and ip address IP B in the same network
+        Step6: Repeat step4
+        Step7: Destroy vm1 and vm2
+        Step8: Deploy vm3 with hostname hostA and ip address IP B
+        Step9: Repeat step4
+        Step10: Deploy vm4 with IP A and hostC
+        Step11: Repeat step4
+        """
+
+        self.debug("creating a VPC network in the account: %s" % self.account.name)
+        self.services["vpc"]["cidr"] = '10.1.1.1/16'
+        self.vpc = VPC.create(
+            self.apiclient,
+            self.services["vpc"],
+            vpcofferingid=self.vpc_off.id,
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+        self.validate_vpc_network(self.vpc)
+        self.nw_off = NetworkOffering.create(
+            self.apiclient,
+            self.services["network_offering"],
+            conservemode=False
+        )
+        # Enable Network offering
+        self.nw_off.update(self.apiclient, state='Enabled')
+        self._cleanup.append(self.nw_off)
+        # Creating network using the network offering created
+        self.debug("Creating network with network offering: %s" % self.nw_off.id)
+        network_1 = Network.create(
+            self.apiclient,
+            self.services["network"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkofferingid=self.nw_off.id,
+            zoneid=self.zone.id,
+            gateway='10.1.1.1',
+            vpcid=self.vpc.id
+        )
+        self.debug("Created network with ID: %s" % network_1.id)
+        # Spawn vm1 in that network
+        vm1_ip = "10.1.1.10"
+        name1 = "hostA"
+        self.services["virtual_machine"]["name"] = name1
+        vm1 = self.deployVM_and_verify_ssh_access(network_1, vm1_ip)
+        #Deploy vm2 with host name "hostB" and ip address "10.1.1.20"
+        vm2_ip = "10.1.1.20"
+        name2 = "hostB"
+        self.services["virtual_machine"]["name"] = name2
+        vm2 = self.deployVM_and_verify_ssh_access(network_1, vm2_ip)
+        #Destroy both the vms
+        try:
+            vm1.delete(self.apiclient, expunge=True)
+            vm2.delete(self.apiclient, expunge=True)
+        except Exception as e:
+            raise Exception("Warning: Exception in expunging vms: %s" % e)
+        """
+        Deploy vm3 with ip address of vm1 and host name of vm2 so both the vm1 and vm2 entries
+        would be deleted from dhcphosts file on VR becase dhcprelease matches entries with
+        host name and ip address so it matches both the entries.
+        """
+        # Deploying a VM3 with ip1 and name2
+        self.services["virtual_machine"]["name"] = name2
+        vm3 = self.deployVM_and_verify_ssh_access(network_1, vm1_ip)
+        #Deploy 4th vm
+        """
+        Deploy vm4 with ip address of vm2. dnsmasq and dhcprelase should be in sync.
+    	We should not see dhcp lease block due to IP reallocation.
+     	"""
+        name3 = "hostC"
+        self.services["virtual_machine"]["name"] = name3
+        vm4 = self.deployVM_and_verify_ssh_access(network_1, vm2_ip)
+        try:
+            vm3.delete(self.apiclient, expunge=True)
+            vm4.delete(self.apiclient, expunge=True)
+        except Exception as e:
+            raise Exception("Warning: Excepting in expunging vms vm3 and vm4:  %s" % e)
+        return
+
+
 

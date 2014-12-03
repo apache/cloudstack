@@ -61,9 +61,9 @@ public class VirtualMachineDiskInfoBuilder {
         return null;
     }
 
-    public VirtualMachineDiskInfo getDiskInfoByBackingFileBaseName(String diskBackingFileBaseName) {
+    public VirtualMachineDiskInfo getDiskInfoByBackingFileBaseName(String diskBackingFileBaseName, String dataStoreName) {
         for (Map.Entry<String, List<String>> entry : disks.entrySet()) {
-            if (chainContains(entry.getValue(), diskBackingFileBaseName)) {
+            if (chainContains(entry.getValue(), diskBackingFileBaseName, dataStoreName)) {
                 VirtualMachineDiskInfo diskInfo = new VirtualMachineDiskInfo();
                 diskInfo.setDiskDeviceBusName(entry.getKey());
                 diskInfo.setDiskChain(entry.getValue().toArray(new String[1]));
@@ -84,11 +84,11 @@ public class VirtualMachineDiskInfoBuilder {
         return chain;
     }
 
-    private static boolean chainContains(List<String> chain, String diskBackingFileBaseName) {
+    private static boolean chainContains(List<String> chain, String diskBackingFileBaseName, String dataStoreName) {
         for (String backing : chain) {
             DatastoreFile file = new DatastoreFile(backing);
-
-            if (file.getFileBaseName().equals(diskBackingFileBaseName))
+            // Ensure matching disk exists in the right datastore
+            if (file.getFileBaseName().equals(diskBackingFileBaseName) && backing.contains(dataStoreName))
                 return true;
         }
 

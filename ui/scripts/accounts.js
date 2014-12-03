@@ -22,7 +22,7 @@
         title: 'label.accounts',
         id: 'accounts',
         sectionSelect: {
-            label: 'Select View',
+            label: 'label.select-view',
             preFilter: function() {
                 return ['accounts'];
             }
@@ -93,11 +93,11 @@
                         },
                                                 
                         addLdapAccount: {
-                            label: 'Add LDAP Account',
+                            label: 'label.add.ldap.account',
                             isHeader: true,
                             preFilter: function(args) {
-                                //if ((isAdmin() || isDomainAdmin()) && true) { //for testing only
-                                if ((isAdmin() || isDomainAdmin()) && isLdapEnabled()) {
+                                //if (isAdmin() && true) { //for testing only
+                                if (isAdmin() && isLdapEnabled()) {
                                     return true;
                                 } else {
                                     return false;
@@ -105,7 +105,7 @@
                             },
                             messages: {
                                 notification: function(args) {
-                                    return 'Add LDAP Account';
+                                    return 'label.add.ldap.account';
                                 }
                             },
                             notification: {
@@ -659,7 +659,7 @@
                                     }
                                 }, {
                                     id: {
-                                        label: 'ID'
+                                        label: 'label.id'
                                     },
                                     accounttype: {
                                         label: 'label.role',
@@ -1369,7 +1369,7 @@
                                     }
                                 }, {
                                     id: {
-                                        label: 'ID'
+                                        label: 'label.id'
                                     },
                                     state: {
                                         label: 'label.state'

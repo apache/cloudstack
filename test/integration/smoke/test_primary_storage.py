@@ -39,6 +39,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         # Get Zone and pod
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.pod = get_pod(self.apiclient, self.zone.id)
+        self.hypervisor = self.testClient.getHypervisorInfo()
 
         return
 
@@ -53,8 +54,12 @@ class TestPrimaryStorageServices(cloudstackTestCase):
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_01_primary_storage_nfs(self):
-        """Test primary storage pools - XEN, KVM, VMWare
+        """Test primary storage pools - XEN, KVM, VMWare. Not Supported for hyperv
         """
+
+        if self.hypervisor.lower() in ["hyperv"]:
+            raise self.skipTest("NFS primary storage not supported for Hyper-V")
+
 
         # Validate the following:
         # 1. List Clusters
@@ -146,8 +151,11 @@ class TestPrimaryStorageServices(cloudstackTestCase):
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_01_primary_storage_iscsi(self):
-        """Test primary storage pools - XEN, KVM, VMWare
+        """Test primary storage pools - XEN. Not Supported for kvm,hyperv,vmware
         """
+
+        if self.hypervisor.lower() in ["kvm","hyperv", "vmware", "lxc"]:
+            raise self.skipTest("iscsi primary storage not supported on kvm, VMWare, Hyper-V, or LXC")
 
         # Validate the following:
         # 1. List Clusters
@@ -182,7 +190,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
 
 
             storage = StoragePool.create(self.apiclient,
-                                         self.services["iscsi"],
+                                         self.services["configurableData"]["iscsi"],
                                          clusterid=cluster.id,
                                          zoneid=self.zone.id,
                                          podid=self.pod.id

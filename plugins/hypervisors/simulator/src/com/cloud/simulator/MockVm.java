@@ -16,16 +16,16 @@
 // under the License.
 package com.cloud.simulator;
 
-import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.PowerState;
 
 // As storage is mapped from storage device, can virtually treat that VM here does
 public interface MockVm {
 
     public String getName();
 
-    public State getState();
+    public PowerState getPowerState();
 
-    public void setState(State state);
+    public void setPowerState(PowerState state);
 
     public void setHostId(long hostId);
 

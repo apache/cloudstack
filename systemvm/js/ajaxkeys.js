@@ -229,114 +229,86 @@ var	keyboardTables = [
                   {keycode: JS_KEY_ALT,					entry : X11_KEY_ALT},
                   //{keycode: JS_KEY_GRAVE_ACCENT,		entry : X11_KEY_GRAVE_ACCENT},
                   //[192 / 64 = "' @"]
-                  {keycode: 192,	entry : 0x5b,	browser: "IE"},
-                  {keycode: 64,		entry : 0x5b, 	browser: "Firefox"},
+                  {keycode: 192,	entry : 0x40,	guestos: "windows",	browser: "IE"},
+                  {keycode: 64,		entry : 0x40,	guestos: "windows",	browser: "Firefox"},
                   //{keycode: JS_KEY_ADD,					entry : X11_KEY_ADD},
                   //[187 / 59 = "; +"]
-                  {keycode: 187,	entry : 0x3a,	browser: "IE"},
-                  {keycode: 59,		entry : 0x3b, 	browser: "Firefox"},
+                  {keycode: 187,	entry : 0x3b,	guestos: "windows",	browser: "IE"},
+                  {keycode: 59,		entry : 0x3b,	guestos: "windows",	browser: "Firefox"},
                   //{keycode: JS_KEY_OPEN_BRACKET,		entry : X11_KEY_OPEN_BRACKET},
                   //[219 = "[{"]
-                  {keycode: 219,	entry : 0x5d,	browser: "IE"},
-                  {keycode: 219,	entry : 0x5d, 	browser: "Firefox"},
+                  {keycode: 219,	entry : 0x5b,	guestos: "windows",	browser: "IE"},
+                  {keycode: 219,	entry : 0x5b,	guestos: "windows",	browser: "Firefox"},
                   //{keycode: JS_KEY_CLOSE_BRACKET,		entry : X11_KEY_CLOSE_BRACKET},
                   //[221 = "]}"]
-                  {keycode: 221,	entry : 0x5c,	browser: "IE"},
-                  {keycode: 221,	entry : 0x5c,	browser: "Firefox"},
-                  {keycode: JS_KEY_BACK_SLASH,			entry : X11_KEY_BACK_SLASH},
+                  {keycode: 221,	entry : 0x5d,	guestos: "windows",	browser: "IE"},
+                  {keycode: 221,	entry : 0x5d,	guestos: "windows",	browser: "Firefox"},
+                  {keycode: JS_KEY_BACK_SLASH,		entry : X11_KEY_BACK_SLASH,	guestos: "windows"},
                   //{keycode: JS_KEY_SINGLE_QUOTE,		entry : X11_KEY_SINGLE_QUOTE},
                   //[222 / 160 = "~^"]
-                  {keycode: 222,		entry : 0x3d,	browser: "IE"},
-                  {keycode: 160,		entry : 0x3d,	browser: "Firefox"},
+                  {keycode: 222,	entry : 0x5e,	guestos: "windows",	browser: "IE"},
+                  {keycode: 160,	entry : 0x5e,	guestos: "windows",	browser: "Firefox"},
                   //[173 = "-=" ] specific to Firefox browser
-                  {keycode: 173,		entry : 0x2d,	browser: "Firefox"},
-                  {keycode: JS_KEY_COMMA,				entry : X11_KEY_COMMA},
-                  {keycode: JS_KEY_PERIOD, 				entry : X11_KEY_PERIOD},
-                  {keycode: JS_KEY_FORWARD_SLASH,		entry : X11_KEY_FORWARD_SLASH},
-                  {keycode: JS_KEY_DASH,				entry : X11_KEY_DASH},
-                  {keycode: JS_KEY_SEMI_COLON,			entry : X11_KEY_SEMI_COLON},
-                  {keycode: JS_KEY_NUMPAD0,				entry : X11_KEY_KP_0},
-                  {keycode: JS_KEY_NUMPAD1,				entry : X11_KEY_KP_1},
-                  {keycode: JS_KEY_NUMPAD2,				entry : X11_KEY_KP_2},
-                  {keycode: JS_KEY_NUMPAD3,				entry : X11_KEY_KP_3},
-                  {keycode: JS_KEY_NUMPAD4,				entry : X11_KEY_KP_4},
-                  {keycode: JS_KEY_NUMPAD5,				entry : X11_KEY_KP_5},
-                  {keycode: JS_KEY_NUMPAD6,				entry : X11_KEY_KP_6},
-                  {keycode: JS_KEY_NUMPAD7,				entry : X11_KEY_KP_7},
-                  {keycode: JS_KEY_NUMPAD8,				entry : X11_KEY_KP_8},
-                  {keycode: JS_KEY_NUMPAD9,				entry : X11_KEY_KP_9},
-                  {keycode: JS_KEY_DECIMAL_POINT,		entry : X11_KEY_KP_Decimal},
-                  {keycode: JS_KEY_DIVIDE,				entry : 0xffaf},
-                  {keycode: JS_KEY_MULTIPLY,			entry : 0xffaa},
-                  {keycode: JS_KEY_ADD,					entry : 0xffab},
-                  {keycode: JS_KEY_SUBSTRACT,			entry : 0xffad},
+                  {keycode: 173,	entry : 0x2d,	guestos: "windows",	browser: "Firefox"},
+                  {keycode: JS_KEY_COMMA,				entry : X11_KEY_COMMA, guestos: "windows"},
+                  {keycode: JS_KEY_PERIOD, 				entry : X11_KEY_PERIOD, guestos: "windows"},
+                  {keycode: JS_KEY_FORWARD_SLASH,		entry : X11_KEY_FORWARD_SLASH, guestos: "windows"},
+                  {keycode: JS_KEY_DASH,				entry : X11_KEY_DASH, guestos: "windows"},
+                  {keycode: JS_KEY_SEMI_COLON,			entry : 0x3a,	guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD0,				entry : X11_KEY_NUMPAD0, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD1,				entry : X11_KEY_NUMPAD1, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD2,				entry : X11_KEY_NUMPAD2, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD3,				entry : X11_KEY_NUMPAD3, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD4,				entry : X11_KEY_NUMPAD4, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD5,				entry : X11_KEY_NUMPAD5, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD6,				entry : X11_KEY_NUMPAD6, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD7,				entry : X11_KEY_NUMPAD7, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD8,				entry : X11_KEY_NUMPAD8, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD9,				entry : X11_KEY_NUMPAD9, guestos: "windows"},
+                  {keycode: JS_KEY_DECIMAL_POINT,		entry : X11_KEY_PERIOD, guestos: "windows"},
+                  {keycode: JS_KEY_DIVIDE,				entry : 0xffaf, guestos: "windows"},
+                  {keycode: JS_KEY_MULTIPLY,			entry : 0xffaa, guestos: "windows"},
+                  {keycode: JS_KEY_ADD,					entry : 0xffab, guestos: "windows"},
+                  {keycode: JS_KEY_SUBSTRACT,			entry : 0xffad, guestos: "windows"},
                   //Kanji Key = 243 / 244
                   {keycode: 243,	entry : 0x7e,	browser: "IE"},
                   {keycode: 244,	entry : 0x7e,	browser: "IE"},
                   //Caps Lock = 240
                   {keycode: 240,			entry : 0xffe5},
-                  /*
-                  {keycode: JS_KEY_MULTIPLY,    entry : [
-                                                         {type: KEY_DOWN, code: X11_KEY_SHIFT, modifiers: 0 },
-                                                         {type: KEY_DOWN, code: X11_KEY_ASTERISK, modifiers: 0 },
-                                                         {type: KEY_UP, code: X11_KEY_ASTERISK, modifiers: 0 },
-                                                         {type: KEY_UP, code: X11_KEY_SHIFT, modifiers: 0 }
-                                                         ]},
-                  {keycode: JS_KEY_ADD,         entry : false}
-                   */
                   //[186 / 58 = "~^"]
-                  {keycode: 186,		entry : 0x22, browser: "IE"},
-                  {keycode: 58,		entry : 0x22, browser: "Firefox"},
+                  {keycode: 186,	entry : 0x3a, guestos: "windows", browser: "IE"},
+                  {keycode: 58,		entry : 0x3a, guestos: "windows",	browser: "Firefox"},
+                  //[226 = "_"]
+                  {keycode: 226,	entry : 0x5f, guestos: "windows"},
                   ],
                   keyPress: [
-                             {keycode: 61,      entry:  [
-                                                         {type: KEY_DOWN, code: X11_KEY_ADD, modifiers: 0, shift: false },
-                                                         {type: KEY_UP, code: X11_KEY_ADD, modifiers: 0, shift: false }
-                                                         ]},
-                                                         ]
+                             // These mappings are for japanese guestOS. it is recommended that admin should deploy
+                             // the VM with "keyboard=jp" paramenter or change the VM properties in hypervisor to use jp mapping.
+                             {keycode: 42,       entry:  0xffaa}, // *
+                             {keycode: 43,       entry:  0xffab}, // +
+                            ]
            }
            }, {tindex: 2, keyboardType: KEYBOARD_TYPE_UK, mappingTable:
-                 {X11: [
-                          //[223 = `¬¦]
-                          {keycode: 223,		entry : 0x60, 	browser: "IE"},
-                          ],
+                 {X11: [],
                   keyPress: [
-                             //[34 = "]
-                          {keycode: 34, entry:
-                              [{type : KEY_DOWN, code : 0x40, modifiers : 64, shift : true}]
-                          },
+                          //[34 = "]
+                          {keycode: 34,		entry: 0x40,	guestos: "windows"},
                           //[35 = #]
-                          {keycode: 35, entry:
-                              [{type : KEY_DOWN, code : 0x5c, modifiers : 0, shift : false}]
-                          },
+                          {keycode: 35,		entry: 0x5c,	guestos: "windows"},
                           // [64 = @]
-                          {keycode: 64, entry:
-                              [{type : KEY_DOWN, code : 0x22, modifiers : 64, shift : true}]
-                          },
+                          {keycode: 64,		entry: 0x22,	guestos: "windows"},
                           // [92 = \]
-                          {keycode: 92, entry:
-                              [{type : KEY_DOWN, code : 0xa6, modifiers : 0, shift : false}]
-                          },
+                          {keycode: 92,		entry: 0xa6,	guestos: "windows"},
                           // [124 = |]
-                          {keycode: 124, entry:
-                              [{type : KEY_DOWN, code : 0xa6, modifiers : 64, shift : true}]
-                          },
+                          {keycode: 124,	entry: 0xa6,	guestos: "windows"},
                           // [126 = ~]
-                          {keycode: 126, entry:
-                              [{type : KEY_DOWN, code : 0x7c, modifiers : 64, shift : true}]
-                          },
+                          {keycode: 126,	entry: 0x7c,	guestos: "windows"},
                           // [163 = £]
-                          {keycode: 163, entry:
-                              [{type : KEY_DOWN, code : 0x23, modifiers : 64, shift : true}]
-                          },
+                          {keycode: 163,	entry: 0x23,	guestos: "windows"},
                           // [172 = ¬]
-                          {keycode: 172, entry:
-                              [{type : KEY_DOWN, code : 0x7e, modifiers : 64, shift : true}]
-                          },
+                          {keycode: 172,	entry: 0x7e,	guestos: "windows"},
                           // [166 = ¦]
-                          {keycode: 166, entry:
-                              [{type : KEY_DOWN, code : 0x60, modifiers : 896, shift : false}]
-                          }
+                          {keycode: 166,	entry: [{type : KEY_DOWN, code : 0x60, modifiers : 896, shift : false}],	guestos: "windows"}
                           ]
            }
            }]

@@ -18,7 +18,7 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import             attr
-from marvin.cloudstackTestCase import       cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import       cloudstackTestCase
 
 from marvin.lib.base import     (Snapshot,
                                              Template,
@@ -186,37 +186,17 @@ class TestSnapshots(cloudstackTestCase):
         cls.services["zoneid"] = cls.zone.id
         cls.services["diskoffering"] = cls.disk_offering.id
 
-        # Create VMs, NAT Rules etc
-        cls.account = Account.create(
-                            cls.api_client,
-                            cls.services["account"],
-                            domainid=cls.domain.id
-                            )
-
-        cls.services["account"] = cls.account.name
-
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
-        cls.virtual_machine = cls.virtual_machine_with_disk = \
-                    VirtualMachine.create(
-                                cls.api_client,
-                                cls.services["server_with_disk"],
-                                templateid=cls.template.id,
-                                accountid=cls.account.name,
-                                domainid=cls.account.domainid,
-                                serviceofferingid=cls.service_offering.id,
-                                mode=cls.services["mode"]
-                                )
 
         # Get Hypervisor Type
         cls.hypervisor = (get_hypervisor_type(cls.api_client)).lower()
 
         cls._cleanup = [
                         cls.service_offering,
-                        cls.disk_offering,
-                        cls.account,
+                        cls.disk_offering
                         ]
         return
 
@@ -231,9 +211,27 @@ class TestSnapshots(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self.hypervisor = self.testClient.getHypervisorInfo()
+        self.hypervisor = str(self.testClient.getHypervisorInfo()).lower()
         self.dbclient = self.testClient.getDbConnection()
-        self.cleanup = []
+
+        # Create VMs, NAT Rules etc
+        self.account = Account.create(
+                            self.apiclient,
+                            self.services["account"],
+                            domainid=self.domain.id
+                            )
+
+        self.virtual_machine = self.virtual_machine_with_disk = \
+                    VirtualMachine.create(
+                                self.api_client,
+                                self.services["server_with_disk"],
+                                templateid=self.template.id,
+                                accountid=self.account.name,
+                                domainid=self.account.domainid,
+                                serviceofferingid=self.service_offering.id,
+                                mode=self.services["mode"]
+                                )
+        self.cleanup = [self.account, ]
         return
 
     def tearDown(self):
@@ -245,7 +243,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advanced", "advancedns", "smoke", "provisioning"])
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_02_snapshot_data_disk(self):
         """Test Snapshot Data Disk
         """
@@ -292,7 +290,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advanced", "advancedns", "basic", "sg", "provisioning"])
+    @attr(tags=["advanced", "advancedns", "basic", "sg"], required_hardware="true")
     def test_01_volume_from_snapshot(self):
         """Test Creating snapshot from volume having spaces in name(KVM)
         """
@@ -537,7 +535,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advanced", "advancedns", "smoke", "provisioning"])
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_04_delete_snapshot(self):
         """Test Delete Snapshot
         """
@@ -596,7 +594,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advanced", "advancedns", "basic", "sg", "provisioning"])
+    @attr(tags=["advanced", "advancedns", "basic", "sg"], required_hardware="true")
     def test_03_snapshot_detachedDisk(self):
         """Test snapshot from detached disk
         """
@@ -722,7 +720,7 @@ class TestSnapshots(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advanced", "advancedns", "smoke", "xen", "provisioning"])
+    @attr(tags=["advanced", "advancedns", "smoke", "xen"], required_hardware="true")
     def test_07_template_from_snapshot(self):
         """Create Template from snapshot
         """
@@ -733,6 +731,10 @@ class TestSnapshots(cloudstackTestCase):
         #4. Deploy Virtual machine using this template
         #5. Login to newly created virtual machine
         #6. Compare data in the root disk with the one that was written on the volume, it should match
+
+        userapiclient = self.testClient.getUserApiClient(
+                                    UserName=self.account.name,
+                                    DomainName=self.account.domain)
 
         random_data_0 = random_gen(size=100)
         random_data_1 = random_gen(size=100)
@@ -788,7 +790,7 @@ class TestSnapshots(cloudstackTestCase):
             ssh_client.execute(c)
 
         volumes = list_volumes(
-                        self.apiclient,
+                        userapiclient,
                         virtualmachineid=self.virtual_machine.id,
                         type='ROOT',
                         listall=True
@@ -803,7 +805,7 @@ class TestSnapshots(cloudstackTestCase):
 
         #Create a snapshot of volume
         snapshot = Snapshot.create(
-                                   self.apiclient,
+                                   userapiclient,
                                    volume.id,
                                    account=self.account.name,
                                    domainid=self.account.domainid
@@ -812,7 +814,7 @@ class TestSnapshots(cloudstackTestCase):
         self.debug("Snapshot created from volume ID: %s" % volume.id)
         # Generate template from the snapshot
         template = Template.create_from_snapshot(
-                                    self.apiclient,
+                                    userapiclient,
                                     snapshot,
                                     self.services["templates"]
                                     )
@@ -821,7 +823,7 @@ class TestSnapshots(cloudstackTestCase):
 
         # Verify created template
         templates = list_templates(
-                                self.apiclient,
+                                userapiclient,
                                 templatefilter=\
                                 self.services["templates"]["templatefilter"],
                                 id=template.id
@@ -841,7 +843,7 @@ class TestSnapshots(cloudstackTestCase):
 
         # Deploy new virtual machine using template
         new_virtual_machine = VirtualMachine.create(
-                                    self.apiclient,
+                                    userapiclient,
                                     self.services["server_without_disk"],
                                     templateid=template.id,
                                     accountid=self.account.name,
@@ -849,8 +851,6 @@ class TestSnapshots(cloudstackTestCase):
                                     serviceofferingid=self.service_offering.id,
                                     mode=self.services["mode"]
                                     )
-        self.cleanup.append(new_virtual_machine)
-
         try:
             #Login to VM & mount directory
             ssh = new_virtual_machine.get_ssh_client()
@@ -938,8 +938,6 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
 
-        cls.services["account"] = cls.account.name
-
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
@@ -961,7 +959,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self.hypervisor = self.testClient.getHypervisorInfo()
+        self.hypervisor = str(self.testClient.getHypervisorInfo()).lower()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
         return
@@ -975,7 +973,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advanced", "advancedns", "provisioning"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_01_createVM_snapshotTemplate(self):
         """Test create VM, Snapshot and Template
         """
@@ -995,8 +993,13 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
         #    State of this VM should be Running.
 
         #Create Virtual Machine
+
+        userapiclient = self.testClient.getUserApiClient(
+                                    UserName=self.account.name,
+                                    DomainName=self.account.domain)
+
         self.virtual_machine = VirtualMachine.create(
-                                self.apiclient,
+                                userapiclient,
                                 self.services["server"],
                                 templateid=self.template.id,
                                 accountid=self.account.name,
@@ -1006,7 +1009,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
         self.debug("Created VM with ID: %s" % self.virtual_machine.id)
         # Get the Root disk of VM
         volumes = list_volumes(
-                            self.apiclient,
+                            userapiclient,
                             virtualmachineid=self.virtual_machine.id,
                             type='ROOT',
                             listall=True
@@ -1014,12 +1017,12 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
         volume = volumes[0]
 
         # Create a snapshot from the ROOTDISK
-        snapshot = Snapshot.create(self.apiclient, volume.id)
+        snapshot = Snapshot.create(userapiclient, volume.id)
         self.debug("Snapshot created: ID - %s" % snapshot.id)
         self.cleanup.append(snapshot)
 
         snapshots = list_snapshots(
-                                   self.apiclient,
+                                   userapiclient,
                                    id=snapshot.id
                                    )
         self.assertEqual(
@@ -1043,7 +1046,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
 
         # Generate template from the snapshot
         template = Template.create_from_snapshot(
-                                    self.apiclient,
+                                    userapiclient,
                                     snapshot,
                                     self.services["templates"]
                                     )
@@ -1051,7 +1054,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
         self.cleanup.append(template)
 
         templates = list_templates(
-                                self.apiclient,
+                                userapiclient,
                                 templatefilter=\
                                 self.services["templates"]["templatefilter"],
                                 id=template.id
@@ -1071,7 +1074,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
 
         # Deploy new virtual machine using template
         new_virtual_machine = VirtualMachine.create(
-                                    self.apiclient,
+                                    userapiclient,
                                     self.services["server"],
                                     templateid=template.id,
                                     accountid=self.account.name,
@@ -1086,7 +1089,7 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
 
         # Newly deployed VM should be 'Running'
         virtual_machines = list_virtual_machines(
-                                self.apiclient,
+                                userapiclient,
                                 id=new_virtual_machine.id,
                                 account=self.account.name,
                                 domainid=self.account.domainid
@@ -1172,7 +1175,7 @@ class TestSnapshotEvents(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self.hypervisor = self.testClient.getHypervisorInfo()
+        self.hypervisor = str(self.testClient.getHypervisorInfo()).lower()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
         return
@@ -1186,7 +1189,7 @@ class TestSnapshotEvents(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advanced", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_05_snapshot_events(self):
         """Test snapshot events
         """

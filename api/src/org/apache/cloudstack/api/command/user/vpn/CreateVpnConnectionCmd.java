@@ -112,8 +112,12 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Vpc vpc = _entityMgr.findById(Vpc.class, getVpnGateway().getVpcId());
-        return vpc.getAccountId();
+        Site2SiteVpnGateway  vpnGw = getVpnGateway();
+        if (vpnGw != null) {
+            Vpc vpc = _entityMgr.findById(Vpc.class, getVpnGateway().getVpcId());
+            return vpc.getAccountId();
+        }
+        return -1;
     }
 
     @Override
@@ -167,7 +171,12 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
 
     @Override
     public Long getSyncObjId() {
-        return getVpnGateway().getVpcId();
+        Site2SiteVpnGateway vpnGw = getVpnGateway();
+        if (vpnGw != null)
+        {
+          return vpnGw.getVpcId();
+        }
+        return null;
     }
 
     private Site2SiteVpnGateway getVpnGateway() {

@@ -19,6 +19,8 @@
 
 package com.cloud.utils.net;
 
+import com.cloud.utils.NumbersUtil;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -26,8 +28,6 @@ import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Formatter;
-
-import com.cloud.utils.NumbersUtil;
 
 /**
  * copied from the public domain utility from John Burkard.
@@ -114,8 +114,12 @@ public class MacAddress {
                 String l = null;
                 while ((l = in.readLine()) != null) {
                     macAddress = MacAddress.parse(l);
-                    if (macAddress != null && MacAddress.parseShort(macAddress) != 0xff)
-                        break;
+                    if (macAddress != null) {
+                        short parsedShortMacAddress = MacAddress.parseShort(macAddress);
+                        if (parsedShortMacAddress != 0xff && parsedShortMacAddress != 0x00)
+                            break;
+                    }
+                    macAddress = null;
                 }
             }
 

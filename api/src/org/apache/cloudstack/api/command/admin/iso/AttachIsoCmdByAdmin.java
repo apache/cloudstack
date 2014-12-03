@@ -29,7 +29,8 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "attachIso", description = "Attaches an ISO to a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "attachIso", description = "Attaches an ISO to a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Full,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class AttachIsoCmdByAdmin extends AttachIsoCmd {
     public static final Logger s_logger = Logger.getLogger(AttachIsoCmdByAdmin.class.getName());
 

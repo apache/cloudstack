@@ -173,11 +173,40 @@ public class LibvirtVMDef {
         }
     }
 
+    public static class HyperVEnlightenmentFeatureDef {
+        private final Map<String, String> features = new HashMap<String,String>();
+        public void setRelaxed(boolean on) {
+            String state = on ? "On":"Off";
+            features.put("relaxed", state);
+        }
+        @Override
+        public String toString() {
+            if (features.isEmpty()) {
+                return "";
+            }
+            StringBuilder feaBuilder = new StringBuilder();
+            feaBuilder.append("<hyperv>\n");
+            for (Map.Entry<String, String> e : features.entrySet()) {
+                feaBuilder.append("<");
+                feaBuilder.append(e.getKey());
+                feaBuilder.append(" state='" + e.getValue() + "'");
+                feaBuilder.append("/>\n");
+            }
+            feaBuilder.append("</hyperv>\n");
+            return feaBuilder.toString();
+        }
+    }
+
     public static class FeaturesDef {
         private final List<String> _features = new ArrayList<String>();
 
+        private HyperVEnlightenmentFeatureDef hyperVEnlightenmentFeatureDef = null;
         public void addFeatures(String feature) {
             _features.add(feature);
+        }
+
+        public void addHyperVFeature(HyperVEnlightenmentFeatureDef hyperVEnlightenmentFeatureDef) {
+            this.hyperVEnlightenmentFeatureDef = hyperVEnlightenmentFeatureDef;
         }
 
         @Override
@@ -186,6 +215,12 @@ public class LibvirtVMDef {
             feaBuilder.append("<features>\n");
             for (String feature : _features) {
                 feaBuilder.append("<" + feature + "/>\n");
+            }
+            if (hyperVEnlightenmentFeatureDef != null) {
+                String hpervF = hyperVEnlightenmentFeatureDef.toString();
+                if (!hpervF.isEmpty()) {
+                    feaBuilder.append(hpervF);
+                }
             }
             feaBuilder.append("</features>\n");
             return feaBuilder.toString();
@@ -336,8 +371,14 @@ public class LibvirtVMDef {
             for (List<?> devs : devices.values()) {
                 for (Object dev : devs) {
                     if (_guestType == GuestDef.guestType.LXC) {
-                        if (dev instanceof GraphicDef || dev instanceof InputDef || dev instanceof DiskDef) {
+                        if (dev instanceof GraphicDef || dev instanceof InputDef) {
                             continue;
+                        }
+                        if(dev instanceof DiskDef){
+                            DiskDef disk = (DiskDef)dev;
+                            if(!disk.getDiskType().toString().equals("block")){
+                                continue;
+                            }
                         }
                     }
                     devicesBuilder.append(dev.toString());
@@ -441,7 +482,7 @@ public class LibvirtVMDef {
             @Override
             public String toString() {
                 if (_diskCacheMode == null) {
-                    return "none";
+                    return "NONE";
                 }
                 return _diskCacheMode;
             }
@@ -466,6 +507,7 @@ public class LibvirtVMDef {
         private Long _iopsReadRate;
         private Long _iopsWriteRate;
         private diskCacheMode _diskCacheMode;
+        private boolean qemuDriver = true;
 
         public void setDeviceType(deviceType deviceType) {
             _deviceType = deviceType;
@@ -541,7 +583,7 @@ public class LibvirtVMDef {
         }
 
         public void defNetworkBasedDisk(String diskName, String sourceHost, int sourcePort, String authUserName, String authSecretUUID, int devId, diskBus bus,
-            diskProtocol protocol, diskFmtType diskFmtType) {
+                diskProtocol protocol, diskFmtType diskFmtType) {
             _diskType = diskType.NETWORK;
             _deviceType = deviceType.DISK;
             _diskFmtType = diskFmtType;
@@ -557,7 +599,7 @@ public class LibvirtVMDef {
         }
 
         public void defNetworkBasedDisk(String diskName, String sourceHost, int sourcePort, String authUserName, String authSecretUUID, String diskLabel, diskBus bus,
-            diskProtocol protocol, diskFmtType diskFmtType) {
+                diskProtocol protocol, diskFmtType diskFmtType) {
             _diskType = diskType.NETWORK;
             _deviceType = deviceType.DISK;
             _diskFmtType = diskFmtType;
@@ -645,6 +687,10 @@ public class LibvirtVMDef {
             return _diskCacheMode;
         }
 
+        public void setQemuDriver(boolean qemuDriver){
+            this.qemuDriver = qemuDriver;
+        }
+
         @Override
         public String toString() {
             StringBuilder diskBuilder = new StringBuilder();
@@ -654,8 +700,11 @@ public class LibvirtVMDef {
             }
             diskBuilder.append(" type='" + _diskType + "'");
             diskBuilder.append(">\n");
-            diskBuilder.append("<driver name='qemu'" + " type='" + _diskFmtType
-                + "' cache='" + _diskCacheMode + "' " + "/>\n");
+            if(qemuDriver) {
+                diskBuilder.append("<driver name='qemu'" + " type='" + _diskFmtType
+                        + "' cache='" + _diskCacheMode + "' " + "/>\n");
+            }
+
             if (_diskType == diskType.FILE) {
                 diskBuilder.append("<source ");
                 if (_sourcePath != null) {
@@ -696,10 +745,10 @@ public class LibvirtVMDef {
             diskBuilder.append("/>\n");
 
             if ((_deviceType != deviceType.CDROM) &&
-                (s_libvirtVersion >= 9008) &&
-                (s_qemuVersion >= 1001000) &&
-                (((_bytesReadRate != null) && (_bytesReadRate > 0)) || ((_bytesWriteRate != null) && (_bytesWriteRate > 0)) ||
-                    ((_iopsReadRate != null) && (_iopsReadRate > 0)) || ((_iopsWriteRate != null) && (_iopsWriteRate > 0)))) { // not CDROM, from libvirt 0.9.8 and QEMU 1.1.0
+                    (s_libvirtVersion >= 9008) &&
+                    (s_qemuVersion >= 1001000) &&
+                    (((_bytesReadRate != null) && (_bytesReadRate > 0)) || ((_bytesWriteRate != null) && (_bytesWriteRate > 0)) ||
+                            ((_iopsReadRate != null) && (_iopsReadRate > 0)) || ((_iopsWriteRate != null) && (_iopsWriteRate > 0)))) { // not CDROM, from libvirt 0.9.8 and QEMU 1.1.0
                 diskBuilder.append("<iotune>\n");
                 if ((_bytesReadRate != null) && (_bytesReadRate > 0))
                     diskBuilder.append("<read_bytes_sec>" + _bytesReadRate + "</read_bytes_sec>\n");
@@ -751,9 +800,9 @@ public class LibvirtVMDef {
         }
 
         private guestNetType _netType; /*
-                                         * bridge, ethernet, network, user,
-                                         * internal
-                                         */
+         * bridge, ethernet, network, user,
+         * internal
+         */
         private hostNicType _hostNetType; /* Only used by agent java code */
         private String _netSourceMode;
         private String _sourceName;

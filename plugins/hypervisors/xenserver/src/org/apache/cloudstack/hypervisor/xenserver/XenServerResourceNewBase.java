@@ -40,7 +40,6 @@ import com.cloud.hypervisor.xenserver.resource.XenServer620SP1Resource;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineName;
 
 /**
  *
@@ -205,99 +204,7 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
         }
 
         protected void recordChanges(Connection conn, VM.Record rec, String hostUuid) {
-            String vm = rec.nameLabel;
-            if (!VirtualMachineName.isValidCloudStackVmName(vm, _instance)) {
-                s_logger.debug("Skipping over VMs that does not conform to CloudStack naming convention: " + vm);
-                return;
-            }
 
-            VirtualMachine.State currentState = convertToState(rec.powerState);
-            if (vm.startsWith("migrating")) {
-                s_logger.warn("Skipping " + vm + " because it is migrating.");
-                return;
-            }
-
-            if (currentState == VirtualMachine.State.Stopped) {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Double check the power state to make sure we got the correct state for " + vm);
-                }
-                currentState = getRealPowerState(conn, vm);
-            }
-
-            boolean updateMap = false;
-            boolean reportChange = false;
-
-            // NOTE: For now we only record change when the VM is stopped.  We don't find out any VMs starting for now.
-            synchronized (_cluster.intern()) {
-                Pair<String, VirtualMachine.State> oldState = s_vms.get(_cluster, vm);
-                if (oldState == null) {
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("Unable to find " + vm + " from previous map.  Assuming it was in Stopped state.");
-                    }
-                    oldState = new Pair<String, VirtualMachine.State>(null, VirtualMachine.State.Stopped);
-                }
-
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(vm + ": current state=" + currentState + ", previous state=" + oldState);
-                }
-
-                if (oldState.second() == VirtualMachine.State.Starting) {
-                    if (currentState == VirtualMachine.State.Running) {
-                        updateMap = true;
-                        reportChange = false;
-                    } else if (currentState == VirtualMachine.State.Stopped) {
-                        updateMap = false;
-                        reportChange = false;
-                    }
-                } else if (oldState.second() == VirtualMachine.State.Migrating) {
-                    updateMap = true;
-                    reportChange = false;
-                } else if (oldState.second() == VirtualMachine.State.Stopping) {
-                    if (currentState == VirtualMachine.State.Stopped) {
-                        updateMap = true;
-                        reportChange = false;
-                    } else if (currentState == VirtualMachine.State.Running) {
-                        updateMap = false;
-                        reportChange = false;
-                    }
-                } else if (oldState.second() != currentState) {
-                    updateMap = true;
-                    reportChange = true;
-                } else if (hostUuid != null && !hostUuid.equals(oldState.first())) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Detecting " + vm + " moved from " + oldState.first() + " to " + hostUuid);
-                    }
-                    reportChange = true;
-                    updateMap = true;
-                }
-
-                if (updateMap) {
-                    s_vms.put(_cluster, hostUuid, vm, currentState);
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("Updated " + vm + " to [" + hostUuid + ", " + currentState);
-                    }
-                }
-                if (reportChange) {
-                    Pair<String, VirtualMachine.State> change = _changes.get(vm);
-                    if (hostUuid == null) {
-                        // This is really strange code.  It looks like the sync
-                        // code wants this to be set, which is extremely weird
-                        // for VMs that are dead.  Why would I want to set the
-                        // hostUuid if the VM is stopped.
-                        hostUuid = oldState.first();
-                        if (hostUuid == null) {
-                            hostUuid = _host.uuid;
-                        }
-                    }
-                    if (change == null) {
-                        change = new Pair<String, VirtualMachine.State>(hostUuid, currentState);
-                    } else {
-                        change.first(hostUuid);
-                        change.second(currentState);
-                    }
-                    _changes.put(vm, change);
-                }
-            }
         }
 
         @Override

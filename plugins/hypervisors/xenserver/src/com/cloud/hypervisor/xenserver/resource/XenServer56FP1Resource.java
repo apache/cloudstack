@@ -18,7 +18,6 @@ package com.cloud.hypervisor.xenserver.resource;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -49,20 +48,6 @@ public class XenServer56FP1Resource extends XenServer56Resource {
 
     public XenServer56FP1Resource() {
         super();
-    }
-
-    @Override
-    protected String getGuestOsType(String stdType, String platformEmulator, boolean bootFromCD) {
-        if (platformEmulator == null) {
-            if (!bootFromCD) {
-                s_logger.debug("Can't find the guest os: " + stdType + " mapping into XenServer 5.6 FP1 guestOS type, start it as HVM guest");
-                platformEmulator = "Other install media";
-            } else {
-                String msg = "XenServer 5.6 FP1 DOES NOT support Guest OS type " + stdType;
-                s_logger.warn(msg);
-            }
-        }
-        return platformEmulator;
     }
 
     @Override
@@ -101,9 +86,6 @@ public class XenServer56FP1Resource extends XenServer56Resource {
                         vdis.add(vdi);
                     }
                 }
-                synchronized (_cluster.intern()) {
-                    s_vms.remove(_cluster, _name, vm.getNameLabel(conn));
-                }
                 s_logger.info("Fence command for VM " + cmd.getVmName());
                 vm.powerStateReset(conn);
                 vm.destroy(conn);
@@ -127,37 +109,6 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         }
     }
 
-    @Override
-    public long getStaticMax(String os, boolean b, long dynamicMinRam, long dynamicMaxRam) {
-        long recommendedValue = CitrixHelper.getXenServer56FP1StaticMax(os, b);
-        if (recommendedValue == 0) {
-            s_logger.warn("No recommended value found for dynamic max, setting static max and dynamic max equal");
-            return dynamicMaxRam;
-        }
-
-        long staticMax = Math.min(recommendedValue, 4l * dynamicMinRam);  // XS constraint for stability
-        if (dynamicMaxRam > staticMax) { // XS contraint that dynamic max <= static max
-            s_logger.warn("dynamixMax " + dynamicMaxRam + " cant be greater than static max " + staticMax +
-                ", can lead to stability issues. Setting static max as much as dynamic max ");
-            return dynamicMaxRam;
-        }
-        return staticMax;
-    }
-
-    @Override
-    public long getStaticMin(String os, boolean b, long dynamicMinRam, long dynamicMaxRam) {
-        long recommendedValue = CitrixHelper.getXenServer56FP1StaticMin(os, b);
-        if (recommendedValue == 0) {
-            s_logger.warn("No recommended value found for dynamic min");
-            return dynamicMinRam;
-        }
-
-        if (dynamicMinRam < recommendedValue) {   // XS contraint that dynamic min > static min
-            s_logger.warn("Vm is set to dynamixMin " + dynamicMinRam + " less than the recommended static min " + recommendedValue + ", could lead to stability issues.");
-        }
-        return dynamicMinRam;
-    }
-
     /**
      * When Dynamic Memory Control (DMC) is enabled -
      * xenserver allows scaling the guest memory while the guest is running
@@ -167,11 +118,8 @@ public class XenServer56FP1Resource extends XenServer56Resource {
      */
     @Override
     protected boolean isDmcEnabled(Connection conn, Host host) throws XenAPIException, XmlRpcException {
-        Map<String, String> hostParams = new HashMap<String, String>();
-        hostParams = host.getLicenseParams(conn);
-
+        Map<String, String> hostParams = host.getLicenseParams(conn);
         Boolean isDmcEnabled = hostParams.get("restrict_dmc").equalsIgnoreCase("false");
-
         return isDmcEnabled;
     }
 }

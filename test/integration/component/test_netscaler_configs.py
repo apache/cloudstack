@@ -20,7 +20,6 @@
 #Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
-#from marvin.cloudstackAPI import *
 from marvin.lib.utils import (cleanup_resources,
                               random_gen)
 from marvin.lib.base import (VirtualMachine,
@@ -41,160 +40,25 @@ from marvin.lib.common import (get_domain,
 from marvin.sshClient import SshClient
 import time
 
-
-class Services:
-    """Test netscaler Services
-    """
-
-    def __init__(self):
-        self.services = {
-                         "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    # Random characters are appended for unique
-                                    # username
-                                    "password": "password",
-                         },
-                         "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 128, # In MBs
-                         },
-                         "virtual_machine": {
-                                    "displayname": "TestVM",
-                                    "username": "root",
-                                    "password": "password",
-                                    "ssh_port": 22,
-                                    "hypervisor": 'XenServer',
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "protocol": 'TCP',
-                                },
-                         "netscaler": {
-                                "ipaddress": '10.147.60.26',
-                                "username": 'nsroot',
-                                "password": 'nsroot',
-                                "networkdevicetype": 'NetscalerVPXLoadBalancer',
-                                "publicinterface": '0/1',
-                                "privateinterface": '1/1',
-                                "numretries": 2,
-                                "lbdevicededicated": False,
-                                "lbdevicecapacity": 50,
-                                "port": 22,
-                         },
-                         "netscaler_dedicated": {
-                                "ipaddress": '10.147.60.27',
-                                "username": 'nsroot',
-                                "password": 'nsroot',
-                                "networkdevicetype": 'NetscalerVPXLoadBalancer',
-                                "publicinterface": '0/1',
-                                "privateinterface": '1/1',
-                                "numretries": 2,
-                                "lbdevicededicated": True,
-                                "port": 22,
-                         },
-                         "network_offering_dedicated": {
-                                    "name": 'Netscaler',
-                                    "displaytext": 'Netscaler',
-                                    "guestiptype": 'Isolated',
-                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
-                                    "traffictype": 'GUEST',
-                                    "availability": 'Optional',
-                                    "specifyVlan": False,
-                                    "specifyIpRanges": False,
-                                    "serviceProviderList" : {
-                                            "Dhcp": 'VirtualRouter',
-                                            "Dns": 'VirtualRouter',
-                                            "SourceNat": 'VirtualRouter',
-                                            "PortForwarding": 'VirtualRouter',
-                                            "Vpn": 'VirtualRouter',
-                                            "Firewall": 'VirtualRouter',
-                                            "Lb": 'Netscaler',
-                                            "UserData": 'VirtualRouter',
-                                            "StaticNat": 'VirtualRouter',
-                                    },
-                                    "serviceCapabilityList": {
-                                        "SourceNat": {
-                                            "SupportedSourceNatTypes": "peraccount"
-                                        },
-                                        "lb": {
-                                               "SupportedLbIsolation": "dedicated"
-                                        },
-                                    },
-                         },
-                         "network_offering": {
-                                    "name": 'Netscaler',
-                                    "displaytext": 'Netscaler',
-                                    "guestiptype": 'Isolated',
-                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
-                                    "traffictype": 'GUEST',
-                                    "availability": 'Optional',
-                                    "serviceProviderList" : {
-                                            "Dhcp": 'VirtualRouter',
-                                            "Dns": 'VirtualRouter',
-                                            "SourceNat": 'VirtualRouter',
-                                            "PortForwarding": 'VirtualRouter',
-                                            "Vpn": 'VirtualRouter',
-                                            "Firewall": 'VirtualRouter',
-                                            "Lb": 'Netscaler',
-                                            "UserData": 'VirtualRouter',
-                                            "StaticNat": 'VirtualRouter',
-                                    },
-                         },
-                         "network": {
-                                  "name": "Netscaler",
-                                  "displaytext": "Netscaler",
-                         },
-                         "lbrule": {
-                                    "name": "SSH",
-                                    "alg": "roundrobin",
-                                    # Algorithm used for load balancing
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "openfirewall": False,
-                         },
-                         "ostype": 'CentOS 5.3 (64-bit)',
-                         # Cent OS 5.3 (64 bit)
-                         "sleep": 60,
-                         "timeout": 10,
-                         "mode":'advanced'
-                    }
-
-
-class TestAddNetScaler(cloudstackTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.testClient = super(TestAddNetScaler, cls).getClsTestClient()
-        cls.api_client = cls.testClient.getApiClient()
-
-        cls.services = Services().services
-        # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client)
-        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        cls._cleanup = []
-        return
-
+class _NetScalerBase(cloudstackTestCase):
+    """Base class for NetScaler tests in this file"""
     @classmethod
     def tearDownClass(cls):
+        """Generic class tear-down method"""
         try:
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     def setUp(self):
+        """Generic test-case setup method"""
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
-        return
 
     def tearDown(self):
+        """Generic test-case tear-down method"""
         try:
             self.debug("Cleaning up the resources")
             #Clean up, terminate the created network offerings
@@ -202,9 +66,89 @@ class TestAddNetScaler(cloudstackTestCase):
             self.debug("Cleanup complete!")
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
-    @attr(tags=["advancedns", "provisioning"])
+    @classmethod
+    def _addNetScaler(cls, netscaler_config):
+        """Helper method for common Netscaler add procedure"""
+        physical_networks = PhysicalNetwork.list(
+                                                 cls.api_client,
+                                                 zoneid=cls.zone.id
+                                                 )
+        if isinstance(physical_networks, list):
+            cls.physical_network = physical_networks[0]
+
+        # Check if a NetScaler network service provider exists - if not add one
+        nw_service_providers = NetworkServiceProvider.list(
+                                        cls.api_client,
+                                        name='Netscaler',
+                                        physicalnetworkid=cls.physical_network.id
+                                        )
+        if not isinstance(nw_service_providers, list) or len(nw_service_providers) < 1:
+            NetworkServiceProvider.add(cls.api_client,
+                                       name='Netscaler',
+                                       physicalnetworkid=cls.physical_network.id,
+                                       servicelist=["Lb"]
+                                       )
+
+        cls.netscaler = NetScaler.add(
+                                  cls.api_client,
+                                  netscaler_config,
+                                  physicalnetworkid=cls.physical_network.id
+                                  )
+
+        nw_service_providers = NetworkServiceProvider.list(
+                                        cls.api_client,
+                                        name='Netscaler',
+                                        physicalnetworkid=cls.physical_network.id
+                                        )
+        if isinstance(nw_service_providers, list):
+            cls.netscaler_provider = nw_service_providers[0]
+
+        if cls.netscaler_provider.state != 'Enabled':
+            NetworkServiceProvider.update(
+                                          cls.api_client,
+                                          id=cls.netscaler_provider.id,
+                                          state='Enabled'
+                                          )
+
+class _NetScalerAddBase(_NetScalerBase):
+    """Base class for tests that add a NetScaler (valid & invalid)
+       Provides standard Setup / TearDown methods"""
+    @classmethod
+    def setUpClass(cls):
+        cls.testClient = super(_NetScalerAddBase, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
+
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+
+        physical_networks = PhysicalNetwork.list(
+                                                 cls.api_client,
+                                                 zoneid=cls.zone.id
+                                                 )
+        assert isinstance(physical_networks, list), "There should be atleast one physical network for advanced zone"
+        cls.physical_network = physical_networks[0]
+
+        # Check if a NetScaler network service provider exists - if not add one
+        nw_service_providers = NetworkServiceProvider.list(
+                                        cls.api_client,
+                                        name='Netscaler',
+                                        physicalnetworkid=cls.physical_network.id
+                                        )
+        if not isinstance(nw_service_providers, list) or len(nw_service_providers) < 1:
+            NetworkServiceProvider.add(cls.api_client,
+                                       name='Netscaler',
+                                       physicalnetworkid=cls.physical_network.id,
+                                       servicelist=["Lb"]
+                                       )
+
+        cls._cleanup = []
+
+class TestAddNetScaler(_NetScalerAddBase):
+
+    @attr(tags=["advancedns"], required_hardware="true")
     def test_add_netscaler_device(self):
         """Test add netscaler device
         """
@@ -213,23 +157,14 @@ class TestAddNetScaler(cloudstackTestCase):
         #    credentials , public , private interface and enabling Load
         #    Balancing feature.
         # 2. Netscaler should be configured successfully.
-
-        physical_networks = PhysicalNetwork.list(
-                                                 self.apiclient,
-                                                 zoneid=self.zone.id
-                                                 )
-        self.assertEqual(
-            isinstance(physical_networks, list),
-            True,
-            "There should be atleast one physical network for advanced zone"
-            )
-        physical_network = physical_networks[0]
         self.debug("Adding netscaler device: %s" %
-                                    self.services["netscaler"]["ipaddress"])
+                                    self.services["configurableData"]["netscaler"]["ipaddress"])
+        netscaler_config = dict(self.services["configurableData"]["netscaler"])
+        netscaler_config.update({'lbdevicededicated': "False"})
         netscaler = NetScaler.add(
                                   self.apiclient,
-                                  self.services["netscaler"],
-                                  physicalnetworkid=physical_network.id
+                                  netscaler_config,
+                                  physicalnetworkid=self.physical_network.id
                                   )
         self.cleanup.append(netscaler)
         self.debug("Checking if Netscaler network service provider is enabled?")
@@ -237,7 +172,7 @@ class TestAddNetScaler(cloudstackTestCase):
         nw_service_providers = NetworkServiceProvider.list(
                                         self.apiclient,
                                         name='Netscaler',
-                                        physicalnetworkid=physical_network.id
+                                        physicalnetworkid=self.physical_network.id
                                         )
         self.assertEqual(
                          isinstance(nw_service_providers, list),
@@ -283,53 +218,13 @@ class TestAddNetScaler(cloudstackTestCase):
                          )
         self.assertEqual(
             ns.physicalnetworkid,
-            physical_network.id,
+            self.physical_network.id,
             "Physical network id should match with the network in which device is configured"
             )
-        return
 
+class TestInvalidParametersNetscaler(_NetScalerAddBase):
 
-
-class TestInvalidParametersNetscaler(cloudstackTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.testClient = super(TestInvalidParametersNetscaler, cls).getClsTestClient()
-        cls.api_client = cls.testClient.getApiClient()
-
-        cls.services = Services().services
-        # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client)
-        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        cls._cleanup = []
-        return
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.dbclient = self.testClient.getDbConnection()
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            self.debug("Cleaning up the resources")
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-            self.debug("Cleanup complete!")
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    @attr(tags=["advancedns", "provisioning"])
+    @attr(tags=["advancedns"], required_hardware="true")
     def test_invalid_cred(self):
         """Test add netscaler device with invalid credential
         """
@@ -339,66 +234,25 @@ class TestInvalidParametersNetscaler(cloudstackTestCase):
         #    credentials , but valid public, private interface
         # 2. Netscaler API should throw error
 
-        physical_networks = PhysicalNetwork.list(
-                                                 self.apiclient,
-                                                 zoneid=self.zone.id
-                                                 )
-        self.assertEqual(
-            isinstance(physical_networks, list),
-            True,
-            "There should be atleast one physical network for advanced zone"
-            )
-        physical_network = physical_networks[0]
-
-        self.debug("Checking if Netscaler network service provider is enabled?")
-
-        nw_service_providers = NetworkServiceProvider.list(
-                                        self.apiclient,
-                                        name='Netscaler',
-                                        physicalnetworkid=physical_network.id
-                                        )
-        self.assertEqual(
-                         isinstance(nw_service_providers, list),
-                         True,
-                         "Network service providers list should not be empty"
-                         )
-        netscaler_provider = nw_service_providers[0]
-
-        if netscaler_provider.state != 'Enabled':
-            self.debug("Netscaler provider is not enabled. Enabling it..")
-            response = NetworkServiceProvider.update(
-                                          self.apiclient,
-                                          id=netscaler_provider.id,
-                                          state='Enabled'
-                                          )
-            self.assertEqual(
-                        response.state,
-                        "Enabled",
-                        "Network service provider should be in enabled state"
-                         )
-        else:
-            self.debug("NetScaler service provider is already enabled.")
-
         self.debug("Passing invalid credential for NetScaler")
-        self.services["netscaler"]["username"] = random_gen()
-        self.services["netscaler"]["password"] = random_gen()
+        netscaler_config = dict(self.services["configurableData"]["netscaler"])
+        netscaler_config.update({'username': random_gen(), 'password': random_gen()})
         self.debug("Adding netscaler device: %s" %
-                                    self.services["netscaler"]["ipaddress"])
+                                    netscaler_config["ipaddress"])
 
         self.debug("Username: %s, password: %s" % (
-                                    self.services["netscaler"]["username"],
-                                    self.services["netscaler"]["password"]
+                                    netscaler_config["username"],
+                                    netscaler_config["password"]
                                     ))
 
         with self.assertRaises(Exception):
             NetScaler.add(
-                                  self.apiclient,
-                                  self.services["netscaler"],
-                                  physicalnetworkid=physical_network.id
-                                  )
-        return
+                          self.apiclient,
+                          netscaler_config,
+                          physicalnetworkid=self.physical_network.id
+                         )
 
-    @attr(tags=["advancedns", "provisioning"])
+    @attr(tags=["advancedns"], required_hardware="true")
     def test_invalid_public_interface(self):
         """Test add netscaler device with invalid public interface
         """
@@ -408,64 +262,23 @@ class TestInvalidParametersNetscaler(cloudstackTestCase):
         #    credentials , private interface and invalid public interface
         # 2. Netscaler API should throw error
 
-        physical_networks = PhysicalNetwork.list(
-                                                 self.apiclient,
-                                                 zoneid=self.zone.id
-                                                 )
-        self.assertEqual(
-            isinstance(physical_networks, list),
-            True,
-            "There should be atleast one physical network for advanced zone"
-            )
-        physical_network = physical_networks[0]
-
-        self.debug("Checking if Netscaler network service provider is enabled?")
-
-        nw_service_providers = NetworkServiceProvider.list(
-                                        self.apiclient,
-                                        name='Netscaler',
-                                        physicalnetworkid=physical_network.id
-                                        )
-        self.assertEqual(
-                         isinstance(nw_service_providers, list),
-                         True,
-                         "Network service providers list should not be empty"
-                         )
-        netscaler_provider = nw_service_providers[0]
-
-        if netscaler_provider.state != 'Enabled':
-            self.debug("Netscaler provider is not enabled. Enabling it..")
-            response = NetworkServiceProvider.update(
-                                          self.apiclient,
-                                          id=netscaler_provider.id,
-                                          state='Enabled'
-                                          )
-            self.assertEqual(
-                        response.state,
-                        "Enabled",
-                        "Network service provider should be in enabled state"
-                         )
-        else:
-            self.debug("NetScaler service provider is already enabled.")
-
         self.debug("Passing invalid public interface for NetScaler")
-        self.services["netscaler"]["publicinterface"] = random_gen()
-
+        netscaler_config = dict(self.services["configurableData"]["netscaler"])
+        netscaler_config.update({'publicinterface': random_gen()})
         self.debug("Adding netscaler device: %s" %
-                                    self.services["netscaler"]["ipaddress"])
+                                    netscaler_config["ipaddress"])
 
         self.debug("Public interface: %s" %
-                                self.services["netscaler"]["publicinterface"])
+                                netscaler_config["publicinterface"])
 
         with self.assertRaises(Exception):
             NetScaler.add(
-                                  self.apiclient,
-                                  self.services["netscaler"],
-                                  physicalnetworkid=physical_network.id
-                                  )
-        return
+                          self.apiclient,
+                          netscaler_config,
+                          physicalnetworkid=self.physical_network.id
+                         )
 
-    @attr(tags=["advancedns", "provisioning"])
+    @attr(tags=["advancedns"], required_hardware="true")
     def test_invalid_private_interface(self):
         """Test add netscaler device with invalid private interface
         """
@@ -474,142 +287,24 @@ class TestInvalidParametersNetscaler(cloudstackTestCase):
         # 1. Add Netscaler device into a Zone by providing valid log in
         #    credentials , public interface and invalid private interface
         # 2. Netscaler API should throw error
-
-        physical_networks = PhysicalNetwork.list(
-                                                 self.apiclient,
-                                                 zoneid=self.zone.id
-                                                 )
-        self.assertEqual(
-            isinstance(physical_networks, list),
-            True,
-            "There should be atleast one physical network for advanced zone"
-            )
-        physical_network = physical_networks[0]
-
-        self.debug("Checking if Netscaler network service provider is enabled?")
-
-        nw_service_providers = NetworkServiceProvider.list(
-                                        self.apiclient,
-                                        name='Netscaler',
-                                        physicalnetworkid=physical_network.id
-                                        )
-        self.assertEqual(
-                         isinstance(nw_service_providers, list),
-                         True,
-                         "Network service providers list should not be empty"
-                         )
-        netscaler_provider = nw_service_providers[0]
-
-        if netscaler_provider.state != 'Enabled':
-            self.debug("Netscaler provider is not enabled. Enabling it..")
-            response = NetworkServiceProvider.update(
-                                          self.apiclient,
-                                          id=netscaler_provider.id,
-                                          state='Enabled'
-                                          )
-            self.assertEqual(
-                        response.state,
-                        "Enabled",
-                        "Network service provider should be in enabled state"
-                         )
-        else:
-            self.debug("NetScaler service provider is already enabled.")
-
-        self.debug("Passing invalid private interface for NetScaler")
-        self.services["netscaler"]["privateinterface"] = random_gen()
-
+        netscaler_config = dict(self.services["configurableData"]["netscaler"])
+        netscaler_config.update({'privateinterface': random_gen()})
         self.debug("Adding netscaler device: %s" %
-                                    self.services["netscaler"]["ipaddress"])
+                                    netscaler_config["ipaddress"])
 
         self.debug("Private interface: %s" %
-                                self.services["netscaler"]["privateinterface"])
+                                netscaler_config["privateinterface"])
 
         with self.assertRaises(Exception):
             NetScaler.add(
-                                  self.apiclient,
-                                  self.services["netscaler"],
-                                  physicalnetworkid=physical_network.id
-                                  )
-        return
+                          self.apiclient,
+                          netscaler_config,
+                          physicalnetworkid=self.physical_network.id
+                         )
 
-
-class TestNetScalerDedicated(cloudstackTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.testClient = super(TestNetScalerDedicated, cls).getClsTestClient()
-        cls.api_client = cls.testClient.getApiClient()
-
-        cls.services = Services().services
-        # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client)
-        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        cls.template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
-
-        physical_networks = PhysicalNetwork.list(
-                                                 cls.api_client,
-                                                 zoneid=cls.zone.id
-                                                 )
-        if isinstance(physical_networks, list):
-            physical_network = physical_networks[0]
-
-        cls.netscaler = NetScaler.add(
-                                  cls.api_client,
-                                  cls.services["netscaler_dedicated"],
-                                  physicalnetworkid=physical_network.id
-                                  )
-
-        nw_service_providers = NetworkServiceProvider.list(
-                                        cls.api_client,
-                                        name='Netscaler',
-                                        physicalnetworkid=physical_network.id
-                                        )
-        if isinstance(nw_service_providers, list):
-            netscaler_provider = nw_service_providers[0]
-
-        if netscaler_provider.state != 'Enabled':
-            NetworkServiceProvider.update(
-                                          cls.api_client,
-                                          id=netscaler_provider.id,
-                                          state='Enabled'
-                                          )
-
-        cls.network_offering = NetworkOffering.create(
-                                            cls.api_client,
-                                            cls.services["network_offering_dedicated"],
-                                            conservemode=False,
-                                            state="Creating",
-                                            status="Creating",
-                                            allocationstate="Creating",
-                                            )
-        # Enable Network offering
-        cls.network_offering.update(cls.api_client, state='Enabled')
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
-
-        cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.network_offering,
-                        cls.netscaler,
-                        ]
-        return
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+class _NetScalerDeployVMBase(_NetScalerBase):
+    """Base class for testing VM deployment using NetScaler networking
+       Provides standard test-case setup / tear-down methods"""
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -627,27 +322,64 @@ class TestNetScalerDedicated(cloudstackTestCase):
                                      domainid=self.domain.id
                                      )
         self.cleanup = [self.account_1, self.account_2]
-        return
 
     def tearDown(self):
         try:
             self.debug("Cleaning up the resources")
             #Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = Configurations.list(
-                                    self.apiclient,
-                                    name='network.gc.interval'
-                                    )
-            wait = Configurations.list(
-                                    self.apiclient,
-                                    name='network.gc.wait'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            self.debug("Cleanup complete!")
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+
+class TestNetScalerDedicated(_NetScalerDeployVMBase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.testClient = super(TestNetScalerDedicated, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
+
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostype"]
+                            )
+
+        netscaler_config = dict(cls.services["configurableData"]["netscaler"])
+        netscaler_config.update({'lbdevicededicated': "True"})
+        cls._addNetScaler(netscaler_config)
+
+        nw_offering_config = dict(cls.services["nw_off_isolated_netscaler"])
+        nw_offering_config.update({"serviceCapabilityList": {
+                                       "SourceNat": {
+                                           "SupportedSourceNatTypes": "peraccount"
+                                       },
+                                       "lb": {
+                                           "SupportedLbIsolation": "dedicated"
+                                       }
+                                       }
+                                  })
+
+        cls.network_offering = NetworkOffering.create(
+                                            cls.api_client,
+                                            nw_offering_config,
+                                            conservemode=False
+                                            )
+        # Enable Network offering
+        cls.network_offering.update(cls.api_client, state='Enabled')
+
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
+        cls._cleanup = [
+                        cls.service_offering,
+                        cls.network_offering,
+                        cls.netscaler,
+                        ]
 
     @attr(tags = ["advancedns"])
     def test_netscaler_dedicated_mode(self):
@@ -685,7 +417,7 @@ class TestNetScalerDedicated(cloudstackTestCase):
                                                     self.network_offering.id)
         self.network = Network.create(
                                     self.apiclient,
-                                    self.services["network"],
+                                    self.services["netscaler_network"],
                                     accountid=self.account_1.name,
                                     domainid=self.account_1.domainid,
                                     networkofferingid=self.network_offering.id,
@@ -702,7 +434,9 @@ class TestNetScalerDedicated(cloudstackTestCase):
                                   accountid=self.account_1.name,
                                   domainid=self.account_1.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network.id)]
+                                  networkids=[str(self.network.id)],
+                                  templateid=self.template.id,
+                                  zoneid=self.zone.id
                                   )
         self.debug("Deployed VM in network: %s" % self.network.id)
         list_vm_response = VirtualMachine.list(
@@ -734,7 +468,7 @@ class TestNetScalerDedicated(cloudstackTestCase):
 
         Network.create(
                             self.apiclient,
-                            self.services["network"],
+                            self.services["netscaler_network"],
                             accountid=self.account_2.name,
                             domainid=self.account_2.domainid,
                             networkofferingid=self.network_offering.id,
@@ -748,21 +482,20 @@ class TestNetScalerDedicated(cloudstackTestCase):
                                   accountid=self.account_2.name,
                                   domainid=self.account_2.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network.id)]
+                                  networkids=[str(self.network.id)],
+                                  templateid=self.template.id,
+                                  zoneid=self.zone.id
                                   )
-        self.debug("Deply instance in dedicated Network offering mode failed")
-        return
+            self.debug("Deply instance in dedicated Network offering mode failed")
 
-
-
-class TestNetScalerShared(cloudstackTestCase):
+class TestNetScalerShared(_NetScalerDeployVMBase):
 
     @classmethod
     def setUpClass(cls):
         cls.testClient = super(TestNetScalerShared, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -772,42 +505,17 @@ class TestNetScalerShared(cloudstackTestCase):
                             cls.services["ostype"]
                             )
 
-        physical_networks = PhysicalNetwork.list(
-                                                 cls.api_client,
-                                                 zoneid=cls.zone.id
-                                                 )
-        if isinstance(physical_networks, list):
-            physical_network = physical_networks[0]
+        netscaler_config = dict(cls.services["configurableData"]["netscaler"])
+        netscaler_config.update({'lbdevicededicated': "False"})
+        cls._addNetScaler(netscaler_config)
 
-        cls.netscaler = NetScaler.add(
-                                  cls.api_client,
-                                  cls.services["netscaler"],
-                                  physicalnetworkid=physical_network.id
-                                  )
-
-        nw_service_providers = NetworkServiceProvider.list(
-                                        cls.api_client,
-                                        name='Netscaler',
-                                        physicalnetworkid=physical_network.id
-                                        )
-        if isinstance(nw_service_providers, list):
-            netscaler_provider = nw_service_providers[0]
-
-        if netscaler_provider.state != 'Enabled':
-            NetworkServiceProvider.update(
-                                          cls.api_client,
-                                          id=netscaler_provider.id,
-                                          state='Enabled'
-                                          )
         cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
-                                            cls.services["network_offering"],
+                                            cls.services["nw_off_isolated_netscaler"],
                                             conservemode=True
                                             )
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -818,54 +526,6 @@ class TestNetScalerShared(cloudstackTestCase):
                         cls.network_offering,
                         cls.netscaler,
                         ]
-        return
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.dbclient = self.testClient.getDbConnection()
-        self.account_1 = Account.create(
-                                     self.apiclient,
-                                     self.services["account"],
-                                     admin=True,
-                                     domainid=self.domain.id
-                                     )
-        self.account_2 = Account.create(
-                                     self.apiclient,
-                                     self.services["account"],
-                                     admin=True,
-                                     domainid=self.domain.id
-                                     )
-        self.cleanup = [self.account_1, self.account_2]
-        return
-
-    def tearDown(self):
-        try:
-            self.debug("Cleaning up the resources")
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-            interval = Configurations.list(
-                                    self.apiclient,
-                                    name='network.gc.interval'
-                                    )
-            wait = Configurations.list(
-                                    self.apiclient,
-                                    name='network.gc.wait'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            self.debug("Cleanup complete!")
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     @attr(tags = ["advancedns"])
     def test_netscaler_shared_mode(self):
@@ -903,7 +563,7 @@ class TestNetScalerShared(cloudstackTestCase):
                                                     self.network_offering.id)
         self.network_1 = Network.create(
                                     self.apiclient,
-                                    self.services["network"],
+                                    self.services["netscaler_network"],
                                     accountid=self.account_1.name,
                                     domainid=self.account_1.domainid,
                                     networkofferingid=self.network_offering.id,
@@ -920,7 +580,9 @@ class TestNetScalerShared(cloudstackTestCase):
                                   accountid=self.account_1.name,
                                   domainid=self.account_1.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network_1.id)]
+                                  networkids=[str(self.network_1.id)],
+                                  templateid=self.template.id,
+                                  zoneid=self.zone.id
                                   )
         self.debug("Deployed VM in network: %s" % self.network_1.id)
         list_vm_response = VirtualMachine.list(
@@ -951,7 +613,7 @@ class TestNetScalerShared(cloudstackTestCase):
                                                     self.network_offering.id)
         self.network_2 = Network.create(
                                 self.apiclient,
-                                self.services["network"],
+                                self.services["netscaler_network"],
                                 accountid=self.account_2.name,
                                 domainid=self.account_2.domainid,
                                 networkofferingid=self.network_offering.id,
@@ -968,7 +630,9 @@ class TestNetScalerShared(cloudstackTestCase):
                                   accountid=self.account_2.name,
                                   domainid=self.account_2.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network_2.id)]
+                                  networkids=[str(self.network_2.id)],
+                                  templateid=self.template.id,
+                                  zoneid=self.zone.id
                                   )
         self.debug("Deployed VM in network: %s" % self.network_2.id)
         list_vm_response = VirtualMachine.list(
@@ -993,84 +657,10 @@ class TestNetScalerShared(cloudstackTestCase):
                             "Running",
                             "VM state should be running after deployment"
                         )
-        return
 
-
-
-class TestNetScalerCustomCapacity(cloudstackTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.testClient = super(TestNetScalerCustomCapacity, cls).getClsTestClient()
-        cls.api_client = cls.testClient.getApiClient()
-
-        cls.services = Services().services
-        # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client)
-        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        cls.template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
-
-        physical_networks = PhysicalNetwork.list(
-                                                 cls.api_client,
-                                                 zoneid=cls.zone.id
-                                                 )
-        if isinstance(physical_networks, list):
-            physical_network = physical_networks[0]
-        cls.services["netscaler"]["lbdevicecapacity"] = 2
-        cls.netscaler = NetScaler.add(
-                                  cls.api_client,
-                                  cls.services["netscaler"],
-                                  physicalnetworkid=physical_network.id
-                                  )
-
-        nw_service_providers = NetworkServiceProvider.list(
-                                        cls.api_client,
-                                        name='Netscaler',
-                                        physicalnetworkid=physical_network.id
-                                        )
-        if isinstance(nw_service_providers, list):
-            netscaler_provider = nw_service_providers[0]
-
-        if netscaler_provider.state != 'Enabled':
-            NetworkServiceProvider.update(
-                                          cls.api_client,
-                                          id=netscaler_provider.id,
-                                          state='Enabled'
-                                          )
-        cls.network_offering = NetworkOffering.create(
-                                            cls.api_client,
-                                            cls.services["network_offering"],
-                                            conservemode=True
-                                            )
-        # Enable Network offering
-        cls.network_offering.update(cls.api_client, state='Enabled')
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
-
-        cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.network_offering,
-                        cls.netscaler,
-                        ]
-        return
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
+class _NetScalerCapacity(_NetScalerDeployVMBase):
+    """Base class for NetScaler capacity tests
+       Provides standard test-case setup / tear-down method"""
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
@@ -1093,27 +683,45 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
                                      domainid=self.domain.id
                                      )
         self.cleanup = [self.account_1, self.account_2, self.account_3]
-        return
 
-    def tearDown(self):
-        try:
-            self.debug("Cleaning up the resources")
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-            interval = Configurations.list(
-                                    self.apiclient,
-                                    name='network.gc.interval'
-                                    )
-            wait = Configurations.list(
-                                    self.apiclient,
-                                    name='network.gc.wait'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            self.debug("Cleanup complete!")
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+class TestNetScalerCustomCapacity(_NetScalerCapacity):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.testClient = super(TestNetScalerCustomCapacity, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
+
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostype"]
+                            )
+
+        netscaler_config = dict(cls.services["configurableData"]["netscaler"])
+        netscaler_config.update({'lbdevicecapacity': 3, 'lbdevicededicated': "False"})
+        cls._addNetScaler(netscaler_config)
+
+        cls.network_offering = NetworkOffering.create(
+                                            cls.api_client,
+                                            cls.services["nw_off_isolated_netscaler"],
+                                            conservemode=True
+                                            )
+        # Enable Network offering
+        cls.network_offering.update(cls.api_client, state='Enabled')
+
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
+        cls._cleanup = [
+                        cls.service_offering,
+                        cls.network_offering,
+                        cls.netscaler,
+                        ]
 
     @attr(tags = ["advancedns","test"])
     def test_netscaler_custom_capacity(self):
@@ -1151,7 +759,7 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
                                                     self.network_offering.id)
         self.network_1 = Network.create(
                                     self.apiclient,
-                                    self.services["network"],
+                                    self.services["netscaler_network"],
                                     accountid=self.account_1.name,
                                     domainid=self.account_1.domainid,
                                     networkofferingid=self.network_offering.id,
@@ -1168,7 +776,9 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
                                   accountid=self.account_1.name,
                                   domainid=self.account_1.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network_1.id)]
+                                  networkids=[str(self.network_1.id)],
+                                  templateid=self.template.id,
+                                  zoneid=self.zone.id
                                   )
         self.debug("Deployed VM in network: %s" % self.network_1.id)
         list_vm_response = VirtualMachine.list(
@@ -1199,7 +809,7 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
                                                     self.network_offering.id)
         self.network_2 = Network.create(
                                 self.apiclient,
-                                self.services["network"],
+                                self.services["netscaler_network"],
                                 accountid=self.account_2.name,
                                 domainid=self.account_2.domainid,
                                 networkofferingid=self.network_offering.id,
@@ -1216,7 +826,9 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
                                   accountid=self.account_2.name,
                                   domainid=self.account_2.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network_2.id)]
+                                  networkids=[str(self.network_2.id)],
+                                  templateid=self.template.id,
+                                  zoneid=self.zone.id
                                   )
         self.debug("Deployed VM in network: %s" % self.network_2.id)
         list_vm_response = VirtualMachine.list(
@@ -1246,7 +858,7 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
                                                     self.network_offering.id)
         self.network_3 = Network.create(
                             self.apiclient,
-                            self.services["network"],
+                            self.services["netscaler_network"],
                             accountid=self.account_3.name,
                             domainid=self.account_3.domainid,
                             networkofferingid=self.network_offering.id,
@@ -1255,28 +867,50 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
         self.debug("Created network with ID: %s" % self.network_3.id)
 
         self.debug("Deploying VM in account: %s" % self.account_3.name)
-        with self.assertRaises(Exception):
-            # Spawn an instance in that network
-            VirtualMachine.create(
+        # Spawn an instance in that network
+        virtual_machine_3 = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account_3.name,
                                   domainid=self.account_3.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network_3.id)]
+                                  networkids=[str(self.network_3.id)],
+                                  templateid=self.template.id,
+                                  zoneid=self.zone.id
                                   )
-        return
 
+        self.debug("Deployed VM in network: %s" % self.network_3.id)
+        list_vm_response = VirtualMachine.list(
+                                        self.apiclient,
+                                        id=virtual_machine_3.id
+                                        )
 
+        self.debug(
+                "Verify listVirtualMachines response for virtual machine: %s" \
+                % virtual_machine_3.id
+            )
 
-class TestNetScalerNoCapacity(cloudstackTestCase):
+        self.assertEqual(
+                            isinstance(list_vm_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        vm_response = list_vm_response[0]
+
+        self.assertEqual(
+                            vm_response.state,
+                            "Running",
+                            "VM state should be running after deployment"
+                        )
+
+class TestNetScalerNoCapacity(_NetScalerCapacity):
 
     @classmethod
     def setUpClass(cls):
         cls.testClient = super(TestNetScalerNoCapacity, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -1286,42 +920,17 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
                             cls.services["ostype"]
                             )
 
-        physical_networks = PhysicalNetwork.list(
-                                                 cls.api_client,
-                                                 zoneid=cls.zone.id
-                                                 )
-        if isinstance(physical_networks, list):
-            physical_network = physical_networks[0]
-        cls.services["netscaler"]["lbdevicecapacity"] = 2
-        cls.netscaler = NetScaler.add(
-                                  cls.api_client,
-                                  cls.services["netscaler"],
-                                  physicalnetworkid=physical_network.id
-                                  )
+        netscaler_config = dict(cls.services["configurableData"]["netscaler"])
+        netscaler_config.update({'lbdevicecapacity': 2, 'lbdevicededicated': "False"})
+        cls._addNetScaler(netscaler_config)
 
-        nw_service_providers = NetworkServiceProvider.list(
-                                        cls.api_client,
-                                        name='Netscaler',
-                                        physicalnetworkid=physical_network.id
-                                        )
-        if isinstance(nw_service_providers, list):
-            netscaler_provider = nw_service_providers[0]
-
-        if netscaler_provider.state != 'Enabled':
-            NetworkServiceProvider.update(
-                                          cls.api_client,
-                                          id=netscaler_provider.id,
-                                          state='Enabled'
-                                          )
         cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
-                                            cls.services["network_offering"],
+                                            cls.services["nw_off_isolated_netscaler"],
                                             conservemode=True
                                             )
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -1332,60 +941,6 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
                         cls.network_offering,
                         cls.netscaler,
                         ]
-        return
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.dbclient = self.testClient.getDbConnection()
-        self.account_1 = Account.create(
-                                     self.apiclient,
-                                     self.services["account"],
-                                     admin=True,
-                                     domainid=self.domain.id
-                                     )
-        self.account_2 = Account.create(
-                                     self.apiclient,
-                                     self.services["account"],
-                                     admin=True,
-                                     domainid=self.domain.id
-                                     )
-        self.account_3 = Account.create(
-                                     self.apiclient,
-                                     self.services["account"],
-                                     admin=True,
-                                     domainid=self.domain.id
-                                     )
-        self.cleanup = [self.account_1, self.account_2, self.account_3]
-        return
-
-    def tearDown(self):
-        try:
-            self.debug("Cleaning up the resources")
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-            interval = Configurations.list(
-                                    self.apiclient,
-                                    name='network.gc.interval'
-                                    )
-            wait = Configurations.list(
-                                    self.apiclient,
-                                    name='network.gc.wait'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            self.debug("Cleanup complete!")
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     @attr(tags = ["advancedns","test"])
     def test_netscaler_no_capacity(self):
@@ -1424,7 +979,7 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
                                                     self.network_offering.id)
         self.network_1 = Network.create(
                                     self.apiclient,
-                                    self.services["network"],
+                                    self.services["netscaler_network"],
                                     accountid=self.account_1.name,
                                     domainid=self.account_1.domainid,
                                     networkofferingid=self.network_offering.id,
@@ -1441,7 +996,9 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
                                   accountid=self.account_1.name,
                                   domainid=self.account_1.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network_1.id)]
+                                  networkids=[str(self.network_1.id)],
+                                  templateid=self.template.id,
+                                  zoneid=self.zone.id
                                   )
         self.debug("Deployed VM in network: %s" % self.network_1.id)
         list_vm_response = VirtualMachine.list(
@@ -1472,7 +1029,7 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
                                                     self.network_offering.id)
         self.network_2 = Network.create(
                                 self.apiclient,
-                                self.services["network"],
+                                self.services["netscaler_network"],
                                 accountid=self.account_2.name,
                                 domainid=self.account_2.domainid,
                                 networkofferingid=self.network_offering.id,
@@ -1489,7 +1046,9 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
                                   accountid=self.account_2.name,
                                   domainid=self.account_2.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network_2.id)]
+                                  networkids=[str(self.network_2.id)],
+                                  templateid=self.template.id,
+                                  zoneid=self.zone.id
                                   )
         self.debug("Deployed VM in network: %s" % self.network_2.id)
         list_vm_response = VirtualMachine.list(
@@ -1519,7 +1078,7 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
                                                     self.network_offering.id)
         self.network_3 = Network.create(
                             self.apiclient,
-                            self.services["network"],
+                            self.services["netscaler_network"],
                             accountid=self.account_3.name,
                             domainid=self.account_3.domainid,
                             networkofferingid=self.network_offering.id,
@@ -1536,20 +1095,19 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
                                   accountid=self.account_3.name,
                                   domainid=self.account_3.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network_3.id)]
+                                  networkids=[str(self.network_3.id)],
+                                  templateid=self.template.id,
+                                  zoneid=self.zone.id
                                   )
-        return
 
-
-
-class TestGuestNetworkWithNetScaler(cloudstackTestCase):
+class TestGuestNetworkWithNetScaler(_NetScalerDeployVMBase):
 
     @classmethod
     def setUpClass(cls):
         cls.testClient = super(TestGuestNetworkWithNetScaler, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -1559,42 +1117,17 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                             cls.services["ostype"]
                             )
 
-        physical_networks = PhysicalNetwork.list(
-                                                 cls.api_client,
-                                                 zoneid=cls.zone.id
-                                                 )
-        if isinstance(physical_networks, list):
-            physical_network = physical_networks[0]
+        netscaler_config = dict(cls.services["configurableData"]["netscaler"])
+        netscaler_config.update({'lbdevicededicated': "False"})
+        cls._addNetScaler(netscaler_config)
 
-        cls.netscaler = NetScaler.add(
-                                  cls.api_client,
-                                  cls.services["netscaler"],
-                                  physicalnetworkid=physical_network.id
-                                  )
-
-        nw_service_providers = NetworkServiceProvider.list(
-                                        cls.api_client,
-                                        name='Netscaler',
-                                        physicalnetworkid=physical_network.id
-                                        )
-        if isinstance(nw_service_providers, list):
-            netscaler_provider = nw_service_providers[0]
-
-        if netscaler_provider.state != 'Enabled':
-            NetworkServiceProvider.update(
-                                          cls.api_client,
-                                          id=netscaler_provider.id,
-                                          state='Enabled'
-                                          )
         cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
-                                            cls.services["network_offering"],
+                                            cls.services["nw_off_isolated_netscaler"],
                                             conservemode=True
                                             )
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -1605,54 +1138,7 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                         cls.network_offering,
                         cls.netscaler,
                         ]
-        return
 
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.dbclient = self.testClient.getDbConnection()
-        self.account_1 = Account.create(
-                                     self.apiclient,
-                                     self.services["account"],
-                                     admin=True,
-                                     domainid=self.domain.id
-                                     )
-        self.account_2 = Account.create(
-                                     self.apiclient,
-                                     self.services["account"],
-                                     admin=True,
-                                     domainid=self.domain.id
-                                     )
-        self.cleanup = [self.account_1, self.account_2]
-        return
-
-    def tearDown(self):
-        try:
-            self.debug("Cleaning up the resources")
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-            interval = Configurations.list(
-                                    self.apiclient,
-                                    name='network.gc.interval'
-                                    )
-            wait = Configurations.list(
-                                    self.apiclient,
-                                    name='network.gc.wait'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            self.debug("Cleanup complete!")
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     @attr(tags = ["advancedns","test"])
     def test_01_guest_network(self):
@@ -1699,7 +1185,7 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                                                     self.network_offering.id)
         self.network_1 = Network.create(
                                     self.apiclient,
-                                    self.services["network"],
+                                    self.services["netscaler_network"],
                                     accountid=self.account_1.name,
                                     domainid=self.account_1.domainid,
                                     networkofferingid=self.network_offering.id,
@@ -1716,7 +1202,9 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                                   accountid=self.account_1.name,
                                   domainid=self.account_1.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network_1.id)]
+                                  networkids=[str(self.network_1.id)],
+                                  templateid=self.template.id,
+                                  zoneid=self.zone.id
                                   )
         self.debug("Deployed VM in network: %s" % self.network_1.id)
         list_vm_response = VirtualMachine.list(
@@ -1749,13 +1237,13 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                                     )
         nw = network_list[0]
         self.debug("SSH into netscaler: %s" %
-                                    self.services["netscaler"]["ipaddress"])
+                                    self.services["configurableData"]["netscaler"]["ipaddress"])
         try:
             ssh_client = SshClient(
-                                    self.services["netscaler"]["ipaddress"],
-                                    self.services["netscaler"]["port"],
-                                    self.services["netscaler"]["username"],
-                                    self.services["netscaler"]["password"],
+                                    self.services["configurableData"]["netscaler"]["ipaddress"],
+                                    self.services["configurableData"]["netscaler"]["port"],
+                                    self.services["configurableData"]["netscaler"]["username"],
+                                    self.services["configurableData"]["netscaler"]["password"],
                                     )
             cmd = "show vlan %s" % (nw.vlan)
             self.debug("command: %s" % cmd)
@@ -1771,7 +1259,7 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                     )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % \
-                      (self.services["netscaler"]["ipaddress"], e))
+                      (self.services["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
     @attr(tags = ["advancedns","test"])
@@ -1798,7 +1286,7 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                                                     self.network_offering.id)
         self.network_1 = Network.create(
                                     self.apiclient,
-                                    self.services["network"],
+                                    self.services["netscaler_network"],
                                     accountid=self.account_1.name,
                                     domainid=self.account_1.domainid,
                                     networkofferingid=self.network_offering.id,
@@ -1815,7 +1303,9 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                                   accountid=self.account_1.name,
                                   domainid=self.account_1.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network_1.id)]
+                                  networkids=[str(self.network_1.id)],
+                                  templateid=self.template.id,
+                                  zoneid=self.zone.id
                                   )
         self.debug("Deployed VM in network: %s" % self.network_1.id)
         list_vm_response = VirtualMachine.list(
@@ -1845,7 +1335,7 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                                                     self.network_offering.id)
         self.network_2 = Network.create(
                                     self.apiclient,
-                                    self.services["network"],
+                                    self.services["netscaler_network"],
                                     accountid=self.account_2.name,
                                     domainid=self.account_2.domainid,
                                     networkofferingid=self.network_offering.id,
@@ -1862,7 +1352,9 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                                   accountid=self.account_2.name,
                                   domainid=self.account_2.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network_2.id)]
+                                  networkids=[str(self.network_2.id)],
+                                  templateid=self.template.id,
+                                  zoneid=self.zone.id
                                   )
         self.debug("Deployed VM in network: %s" % self.network_2.id)
         list_vm_response = VirtualMachine.list(
@@ -1888,7 +1380,7 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                             "VM state should be running after deployment"
                         )
         self.debug("SSH into netscaler: %s" %
-                                    self.services["netscaler"]["ipaddress"])
+                                    self.services["configurableData"]["netscaler"]["ipaddress"])
         try:
             # Find Network vlan used
             network_list = Network.list(
@@ -1898,10 +1390,10 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                                     )
             nw = network_list[0]
             ssh_client = SshClient(
-                                    self.services["netscaler"]["ipaddress"],
-                                    self.services["netscaler"]["port"],
-                                    self.services["netscaler"]["username"],
-                                    self.services["netscaler"]["password"],
+                                    self.services["configurableData"]["netscaler"]["ipaddress"],
+                                    self.services["configurableData"]["netscaler"]["port"],
+                                    self.services["configurableData"]["netscaler"]["username"],
+                                    self.services["configurableData"]["netscaler"]["password"],
                                     )
             cmd = "show vlan %s" % (nw.vlan)
             self.debug("command: %s" % cmd)
@@ -1937,7 +1429,7 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                     )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % \
-                      (self.services["netscaler"]["ipaddress"], e))
+                      (self.services["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
     @attr(tags = ["advancedns","test"])
@@ -1962,7 +1454,7 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                                                     self.network_offering.id)
         self.network = Network.create(
                                     self.apiclient,
-                                    self.services["network"],
+                                    self.services["netscaler_network"],
                                     accountid=self.account_1.name,
                                     domainid=self.account_1.domainid,
                                     networkofferingid=self.network_offering.id,
@@ -1979,7 +1471,9 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                                   accountid=self.account_1.name,
                                   domainid=self.account_1.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network.id)]
+                                  networkids=[str(self.network.id)],
+                                  templateid=self.template.id,
+                                  zoneid=self.zone.id
                                   )
         self.debug("Deployed VM in network: %s" % self.network.id)
         list_vm_response = VirtualMachine.list(
@@ -2055,13 +1549,13 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
         time.sleep(int(interval[0].value) + int(wait[0].value))
 
         self.debug("SSH into netscaler: %s" %
-                                    self.services["netscaler"]["ipaddress"])
+                                    self.services["configurableData"]["netscaler"]["ipaddress"])
         try:
             ssh_client = SshClient(
-                                    self.services["netscaler"]["ipaddress"],
-                                    self.services["netscaler"]["port"],
-                                    self.services["netscaler"]["username"],
-                                    self.services["netscaler"]["password"],
+                                    self.services["configurableData"]["netscaler"]["ipaddress"],
+                                    self.services["configurableData"]["netscaler"]["port"],
+                                    self.services["configurableData"]["netscaler"]["username"],
+                                    self.services["configurableData"]["netscaler"]["password"],
                                     )
             cmd = "show vlan %s" % (nw.vlan)
             self.debug("command: %s" % cmd)
@@ -2092,20 +1586,20 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                     )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % \
-                      (self.services["netscaler"]["ipaddress"], e))
+                      (self.services["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
 
 
-class TestGuestNetworkShutDown(cloudstackTestCase):
+class TestGuestNetworkShutDown(_NetScalerBase):
 
     @classmethod
     def setUpClass(cls):
         cls._cleanup = []
         cls.testClient = super(TestGuestNetworkShutDown, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -2115,17 +1609,17 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                             cls.services["ostype"]
                             )
         try:
-           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, cls.services)
+           netscaler_config = dict(cls.services["configurableData"]["netscaler"])
+           netscaler_config.update({'lbdevicededicated': "False"})
+           cls.netscaler = add_netscaler(cls.api_client, cls.zone.id, netscaler_config)
            cls._cleanup.append(cls.netscaler)
            cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
-                                            cls.services["network_offering"],
+                                            cls.services["nw_off_isolated_netscaler"],
                                             conservemode=True
                                             )
            # Enable Network offering
            cls.network_offering.update(cls.api_client, state='Enabled')
-           cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-           cls.services["virtual_machine"]["template"] = cls.template.id
 
            cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -2141,7 +1635,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
            # Creating network using the network offering created
            cls.network = Network.create(
                                     cls.api_client,
-                                    cls.services["network"],
+                                    cls.services["netscaler_network"],
                                     accountid=cls.account.name,
                                     domainid=cls.account.domainid,
                                     networkofferingid=cls.network_offering.id,
@@ -2155,7 +1649,9 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                                   accountid=cls.account.name,
                                   domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
-                                  networkids=[str(cls.network.id)]
+                                  networkids=[str(cls.network.id)],
+                                  templateid=cls.template.id,
+                                  zoneid=cls.zone.id
                                   )
            cls.vm_2 = VirtualMachine.create(
                                   cls.api_client,
@@ -2163,7 +1659,9 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                                   accountid=cls.account.name,
                                   domainid=cls.account.domainid,
                                   serviceofferingid=cls.service_offering.id,
-                                  networkids=[str(cls.network.id)]
+                                  networkids=[str(cls.network.id)],
+                                  templateid=cls.template.id,
+                                  zoneid=cls.zone.id
                                   )
            cls.public_ip = PublicIPAddress.create(
                                 cls.api_client,
@@ -2183,33 +1681,6 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
         except Exception as e:
            cls.tearDownClass()
            raise Exception ("Warning: Exception in setUpClass: %s" % e)
-
-        return
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.dbclient = self.testClient.getDbConnection()
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            self.debug("Cleaning up the resources")
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-            self.debug("Cleanup complete!")
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     @attr(tags = ["advancedns","test"])
     def test_01_stop_all_vms(self):
@@ -2255,13 +1726,13 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
         time.sleep((int(interval[0].value) + int(wait[0].value)) * 2)
 
         self.debug("SSH into netscaler: %s" %
-                                    self.services["netscaler"]["ipaddress"])
+                                    self.services["configurableData"]["netscaler"]["ipaddress"])
         try:
             ssh_client = SshClient(
-                                    self.services["netscaler"]["ipaddress"],
-                                    self.services["netscaler"]["port"],
-                                    self.services["netscaler"]["username"],
-                                    self.services["netscaler"]["password"],
+                                    self.services["configurableData"]["netscaler"]["ipaddress"],
+                                    self.services["configurableData"]["netscaler"]["port"],
+                                    self.services["configurableData"]["netscaler"]["username"],
+                                    self.services["configurableData"]["netscaler"]["password"],
                                     )
             cmd = "show vlan %s" % (nw.vlan)
             self.debug("command: %s" % cmd)
@@ -2292,7 +1763,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                     )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % \
-                      (self.services["netscaler"]["ipaddress"], e))
+                      (self.services["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
     @attr(tags = ["advancedns","test"])
@@ -2333,7 +1804,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                         )
 
         self.debug("SSH into netscaler: %s" %
-                                    self.services["netscaler"]["ipaddress"])
+                                    self.services["configurableData"]["netscaler"]["ipaddress"])
         try:
             # Find Network vlan used
             network_list = Network.list(
@@ -2343,10 +1814,10 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                                     )
             nw = network_list[0]
             ssh_client = SshClient(
-                                    self.services["netscaler"]["ipaddress"],
-                                    self.services["netscaler"]["port"],
-                                    self.services["netscaler"]["username"],
-                                    self.services["netscaler"]["password"],
+                                    self.services["configurableData"]["netscaler"]["ipaddress"],
+                                    self.services["configurableData"]["netscaler"]["port"],
+                                    self.services["configurableData"]["netscaler"]["username"],
+                                    self.services["configurableData"]["netscaler"]["password"],
                                     )
             cmd = "show vlan %s" % (nw.vlan)
             self.debug("command: %s" % cmd)
@@ -2377,7 +1848,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                     )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % \
-                      (self.services["netscaler"]["ipaddress"], e))
+                      (self.services["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
     @attr(tags = ["advancedns","test"])
@@ -2395,7 +1866,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
         self.network.restart(self.apiclient, cleanup=False)
 
         self.debug("SSH into netscaler: %s" %
-                                    self.services["netscaler"]["ipaddress"])
+                                    self.services["configurableData"]["netscaler"]["ipaddress"])
         try:
             # Find Network vlan used
             network_list = Network.list(
@@ -2405,10 +1876,10 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                                     )
             nw = network_list[0]
             ssh_client = SshClient(
-                                    self.services["netscaler"]["ipaddress"],
-                                    self.services["netscaler"]["port"],
-                                    self.services["netscaler"]["username"],
-                                    self.services["netscaler"]["password"],
+                                    self.services["configurableData"]["netscaler"]["ipaddress"],
+                                    self.services["configurableData"]["netscaler"]["port"],
+                                    self.services["configurableData"]["netscaler"]["username"],
+                                    self.services["configurableData"]["netscaler"]["password"],
                                     )
             cmd = "show vlan %s" % (nw.vlan)
             self.debug("command: %s" % cmd)
@@ -2439,7 +1910,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                     )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % \
-                      (self.services["netscaler"]["ipaddress"], e))
+                      (self.services["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
     @attr(tags = ["advancedns","test"])
@@ -2457,7 +1928,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
         self.network.restart(self.apiclient, cleanup=True)
 
         self.debug("SSH into netscaler: %s" %
-                                    self.services["netscaler"]["ipaddress"])
+                                    self.services["configurableData"]["netscaler"]["ipaddress"])
         try:
             # Find Network vlan used
             network_list = Network.list(
@@ -2467,10 +1938,10 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                                     )
             nw = network_list[0]
             ssh_client = SshClient(
-                                    self.services["netscaler"]["ipaddress"],
-                                    self.services["netscaler"]["port"],
-                                    self.services["netscaler"]["username"],
-                                    self.services["netscaler"]["password"],
+                                    self.services["configurableData"]["netscaler"]["ipaddress"],
+                                    self.services["configurableData"]["netscaler"]["port"],
+                                    self.services["configurableData"]["netscaler"]["username"],
+                                    self.services["configurableData"]["netscaler"]["password"],
                                     )
             cmd = "show vlan %s" % (nw.vlan)
             self.debug("command: %s" % cmd)
@@ -2501,19 +1972,19 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                     )
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % \
-                      (self.services["netscaler"]["ipaddress"], e))
+                      (self.services["configurableData"]["netscaler"]["ipaddress"], e))
         return
 
 
 
-class TestServiceProvider(cloudstackTestCase):
+class TestServiceProvider(_NetScalerDeployVMBase):
 
     @classmethod
     def setUpClass(cls):
         cls.testClient = super(TestServiceProvider, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -2523,41 +1994,15 @@ class TestServiceProvider(cloudstackTestCase):
                             cls.services["ostype"]
                             )
 
-        physical_networks = PhysicalNetwork.list(
-                                                 cls.api_client,
-                                                 zoneid=cls.zone.id
-                                                 )
-        if isinstance(physical_networks, list):
-            physical_network = physical_networks[0]
+        netscaler_config = dict(cls.services["configurableData"]["netscaler"])
+        netscaler_config.update({'lbdevicededicated': "False"})
+        cls._addNetScaler(netscaler_config)
 
-        cls.netscaler = NetScaler.add(
-                                  cls.api_client,
-                                  cls.services["netscaler"],
-                                  physicalnetworkid=physical_network.id
-                                  )
-
-        nw_service_providers = NetworkServiceProvider.list(
-                                        cls.api_client,
-                                        name='Netscaler',
-                                        physicalnetworkid=physical_network.id
-                                        )
-        if isinstance(nw_service_providers, list):
-            cls.netscaler_provider = nw_service_providers[0]
-
-        if cls.netscaler_provider.state != 'Enabled':
-            NetworkServiceProvider.update(
-                                          cls.api_client,
-                                          id=cls.netscaler_provider.id,
-                                          state='Enabled'
-                                          )
         cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
-                                            cls.services["network_offering"],
+                                            cls.services["nw_off_isolated_netscaler"],
                                             conservemode=True
                                             )
-
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -2568,22 +2013,6 @@ class TestServiceProvider(cloudstackTestCase):
                         cls.network_offering,
                         cls.netscaler,
                         ]
-        return
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            # Enable the service provider
-            NetworkServiceProvider.update(
-                                      cls.api_client,
-                                      id=cls.netscaler_provider.id,
-                                      state='Enabled'
-                                    )
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -2595,27 +2024,6 @@ class TestServiceProvider(cloudstackTestCase):
                                      domainid=self.domain.id
                                      )
         self.cleanup = [self.account]
-        return
-
-    def tearDown(self):
-        try:
-            self.debug("Cleaning up the resources")
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-            interval = Configurations.list(
-                                    self.apiclient,
-                                    name='network.gc.interval'
-                                    )
-            wait = Configurations.list(
-                                    self.apiclient,
-                                    name='network.gc.wait'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            self.debug("Cleanup complete!")
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     @attr(tags = ["advancedns","test"])
     def test_01_create_nw_off_disabled(self):
@@ -2655,7 +2063,7 @@ class TestServiceProvider(cloudstackTestCase):
         with self.assertRaises(Exception):
             Network.create(
                             self.apiclient,
-                            self.services["network"],
+                            self.services["netscaler_network"],
                             accountid=self.account.name,
                             domainid=self.account.domainid,
                             networkofferingid=self.network_offering.id,
@@ -2688,7 +2096,7 @@ class TestServiceProvider(cloudstackTestCase):
         with self.assertRaises(Exception):
             Network.create(
                             self.apiclient,
-                            self.services["network"],
+                            self.services["netscaler_network"],
                             accountid=self.account.name,
                             domainid=self.account.domainid,
                             networkofferingid=self.network_offering.id,
@@ -2718,7 +2126,7 @@ class TestServiceProvider(cloudstackTestCase):
                                                     self.network_offering.id)
         self.network = Network.create(
                             self.apiclient,
-                            self.services["network"],
+                            self.services["netscaler_network"],
                             accountid=self.account.name,
                             domainid=self.account.domainid,
                             networkofferingid=self.network_offering.id,
@@ -2735,7 +2143,9 @@ class TestServiceProvider(cloudstackTestCase):
                                   accountid=self.account.name,
                                   domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network.id)]
+                                  networkids=[str(self.network.id)],
+                                  templateid=self.template.id,
+                                  zoneid=self.zone.id
                                   )
         self.debug("Deployed VM in network: %s" % self.network.id)
         list_vm_response = VirtualMachine.list(
@@ -2814,20 +2224,19 @@ class TestServiceProvider(cloudstackTestCase):
                                   accountid=self.account.name,
                                   domainid=self.account.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network.id)]
+                                  networkids=[str(self.network.id)],
+                                  templateid=self.template.id,
+                                  zoneid=self.zone.id
                                   )
-        return
 
-
-
-class TestDeleteNetscaler(cloudstackTestCase):
+class TestDeleteNetscaler(_NetScalerDeployVMBase):
 
     @classmethod
     def setUpClass(cls):
         cls.testClient = super(TestDeleteNetscaler, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -2837,42 +2246,17 @@ class TestDeleteNetscaler(cloudstackTestCase):
                             cls.services["ostype"]
                             )
 
-        physical_networks = PhysicalNetwork.list(
-                                                 cls.api_client,
-                                                 zoneid=cls.zone.id
-                                                 )
-        if isinstance(physical_networks, list):
-            physical_network = physical_networks[0]
+        netscaler_config = dict(cls.services["configurableData"]["netscaler"])
+        netscaler_config.update({'lbdevicededicated': "False"})
+        cls._addNetScaler(netscaler_config)
 
-        cls.netscaler = NetScaler.add(
-                                  cls.api_client,
-                                  cls.services["netscaler"],
-                                  physicalnetworkid=physical_network.id
-                                  )
-
-        nw_service_providers = NetworkServiceProvider.list(
-                                        cls.api_client,
-                                        name='Netscaler',
-                                        physicalnetworkid=physical_network.id
-                                        )
-        if isinstance(nw_service_providers, list):
-            netscaler_provider = nw_service_providers[0]
-
-        if netscaler_provider.state != 'Enabled':
-            NetworkServiceProvider.update(
-                                          cls.api_client,
-                                          id=netscaler_provider.id,
-                                          state='Enabled'
-                                          )
         cls.network_offering = NetworkOffering.create(
                                             cls.api_client,
-                                            cls.services["network_offering"],
+                                            cls.services["nw_off_isolated_netscaler"],
                                             conservemode=True
                                             )
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
 
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
@@ -2883,54 +2267,6 @@ class TestDeleteNetscaler(cloudstackTestCase):
                         cls.network_offering,
                         cls.netscaler,
                         ]
-        return
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.dbclient = self.testClient.getDbConnection()
-        self.account_1 = Account.create(
-                                     self.apiclient,
-                                     self.services["account"],
-                                     admin=True,
-                                     domainid=self.domain.id
-                                     )
-        self.account_2 = Account.create(
-                                     self.apiclient,
-                                     self.services["account"],
-                                     admin=True,
-                                     domainid=self.domain.id
-                                     )
-        self.cleanup = [self.account_1, self.account_2]
-        return
-
-    def tearDown(self):
-        try:
-            self.debug("Cleaning up the resources")
-            #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
-            interval = Configurations.list(
-                                    self.apiclient,
-                                    name='network.gc.interval'
-                                    )
-            wait = Configurations.list(
-                                    self.apiclient,
-                                    name='network.gc.wait'
-                                    )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
-            self.debug("Cleanup complete!")
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     @attr(tags = ["advancedns","test"])
     def test_delete_netscaler_with_lb(self):
@@ -2973,7 +2309,7 @@ class TestDeleteNetscaler(cloudstackTestCase):
                                                     self.network_offering.id)
         self.network_1 = Network.create(
                                     self.apiclient,
-                                    self.services["network"],
+                                    self.services["netscaler_network"],
                                     accountid=self.account_1.name,
                                     domainid=self.account_1.domainid,
                                     networkofferingid=self.network_offering.id,
@@ -2990,7 +2326,9 @@ class TestDeleteNetscaler(cloudstackTestCase):
                                   accountid=self.account_1.name,
                                   domainid=self.account_1.domainid,
                                   serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network_1.id)]
+                                  networkids=[str(self.network_1.id)],
+                                  templateid=self.template.id,
+                                  zoneid=self.zone.id
                                   )
         self.debug("Deployed VM in network: %s" % self.network_1.id)
         list_vm_response = VirtualMachine.list(
@@ -3019,4 +2357,3 @@ class TestDeleteNetscaler(cloudstackTestCase):
         with self.assertRaises(Exception):
             self.netscaler.delete(self.apiclient)
         self.debug("Attempt to delete Netscaler device failed!")
-        return

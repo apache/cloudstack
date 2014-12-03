@@ -110,8 +110,10 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
         VirtualRouterProvider result = _service.get(0).getCreatedElement(getEntityId());
         if (result != null) {
             VirtualRouterProviderResponse response = _responseGenerator.createVirtualRouterProviderResponse(result);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            if(response != null) {
+                response.setResponseName(getCommandName());
+                this.setResponseObject(response);
+            }
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Virtual Router entity to physical network");
         }

@@ -294,7 +294,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
                     CiscoNexusVSMDeviceVO vsm = null;
                     if (_vsmDao.getVSMbyIpaddress(vsmIp) == null) {
                         vsm = new CiscoNexusVSMDeviceVO(vsmIp, vsmUser, vsmPassword);
-                        vsm = _vsmDao.persist(vsm);
+                        _vsmDao.persist(vsm);
                     }
                     // Create a mapping between the cluster and the vsm.
                     vsm = _vsmDao.getVSMbyIpaddress(vsmIp);

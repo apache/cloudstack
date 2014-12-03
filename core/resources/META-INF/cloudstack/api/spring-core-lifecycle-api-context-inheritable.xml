@@ -36,6 +36,12 @@
     </bean>
 
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="pluggableAPIAuthenticatorsRegistry" />
+        <property name="typeClass"
+                  value=" org.apache.cloudstack.api.auth.PluggableAPIAuthenticator" />
+    </bean>
+
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
         <property name="registry" ref="securityCheckersRegistry" />
         <property name="typeClass"
             value="org.apache.cloudstack.acl.SecurityChecker" />

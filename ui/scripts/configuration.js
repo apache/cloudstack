@@ -26,6 +26,14 @@
         title: 'label.menu.service.offerings',
         id: 'configuration',
         sectionSelect: {
+            preFilter: function(args) {
+               if(isAdmin())
+                   return ["serviceOfferings", "systemServiceOfferings", "diskOfferings", "networkOfferings"];
+               else if(isDomainAdmin())
+                   return ["serviceOfferings", "diskOfferings"];
+               else
+                   return null;
+            },
             label: 'label.select.offering'
         },
         sections: {
@@ -62,6 +70,17 @@
 
                             createForm: {
                                 title: 'label.add.compute.offering',
+                                preFilter: function(args) {
+                                    if (isAdmin()) {
+                                    } else {
+                                        args.$form.find('.form-item[rel=isPublic]').hide();
+                                        args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                        args.$form.find('.form-item[rel=deploymentPlanner]').hide();
+                                        args.$form.find('.form-item[rel=plannerMode]').hide();
+                                        args.$form.find('.form-item[rel=storageTags]').hide();
+                                        args.$form.find('.form-item[rel=hostTags]').hide();
+                                    }
+                                },
                                 fields: {
                                     name: {
                                         label: 'label.name',
@@ -305,11 +324,75 @@
                                     },
                                     storageTags: {
                                         label: 'label.storage.tags',
-                                        docID: 'helpComputeOfferingStorageType'
+                                        docID: 'helpComputeOfferingStorageType',
+                                        isTokenInput: true,
+                                        dataProvider: function(args) {
+                                            $.ajax({
+                                                url: createURL("listStorageTags"),
+                                                dataType: "json",
+                                                success: function(json) {
+                                                    var item = json.liststoragetagsresponse.storagetag;
+                                                    var tags = [];
+
+                                                    if (item != null)
+                                                    {
+                                                        tags = $.map(item, function(tag) {
+                                                            return {
+                                                                       id: tag.name,
+                                                                       name: tag.name
+                                                                   };
+                                                        });
+                                                    }
+
+                                                    args.response.success({
+                                                        data: tags,
+                                                        hintText: _l('hint.type.part.storage.tag'),
+                                                        noResultsText: _l('hint.no.storage.tags')
+                                                    });
+                                                },
+                                                error: function(XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+
+                                                    args.response.error(errorMsg);
+                                                }
+                                            });
+                                        }
                                     },
                                     hostTags: {
                                         label: 'label.host.tags',
-                                        docID: 'helpComputeOfferingHostTags'
+                                        docID: 'helpComputeOfferingHostTags',
+                                        isTokenInput: true,
+                                        dataProvider: function(args) {
+                                            $.ajax({
+                                                url: createURL("listHostTags"),
+                                                dataType: "json",
+                                                success: function(json) {
+                                                    var item = json.listhosttagsresponse.hosttag;
+                                                    var tags = [];
+
+                                                    if (item != null)
+                                                    {
+                                                        tags = $.map(item, function(tag) {
+                                                            return {
+                                                                       id: tag.name,
+                                                                       name: tag.name
+                                                                   };
+                                                        });
+                                                    }
+
+                                                    args.response.success({
+                                                        data: tags,
+                                                        hintText: _l('hint.type.part.host.tag'),
+                                                        noResultsText: _l('hint.no.host.tags')
+                                                    });
+                                                },
+                                                error: function(XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+
+                                                    args.response.error(errorMsg);
+                                                }
+                                            });
+                                        }
                                     },
                                     cpuCap: {
                                         label: 'label.CPU.cap',
@@ -321,7 +404,7 @@
                                         label: 'label.public',
                                         isBoolean: true,
                                         isReverse: true,
-                                        isChecked: true,
+                                        isChecked: false,
                                         docID: 'helpComputeOfferingPublic'
                                     },
 
@@ -335,6 +418,7 @@
                                     deploymentPlanner: {
                                         label: 'label.deployment.planner',
                                         select: function(args) {
+                                          if (isAdmin()) {
                                             $.ajax({
                                                 url: createURL('listDeploymentPlanners'),
                                                 dataType: 'json',
@@ -364,6 +448,7 @@
                                                     });
                                                 }
                                             });
+                                          }
                                         }
                                     },
 
@@ -391,7 +476,7 @@
                                     },
 
                                     pciDevice: {
-                                        label: 'GPU',
+                                        label: 'label.gpu',
                                         select: function(args) {
                                             var items = [];
                                             items.push({
@@ -411,8 +496,8 @@
                                             });
 
                                             var vGpuMap = {};
-                                            vGpuMap['Group of NVIDIA Corporation GK107GL [GRID K1] GPUs'] = ['passthrough', 'GRID K100', 'GRID K120Q', 'GRID K140Q'];
-                                            vGpuMap['Group of NVIDIA Corporation GK104GL [GRID K2] GPUs'] = ['passthrough', 'GRID K200', 'GRID K220Q', 'GRID K240Q', 'GRID K260Q'];
+                                            vGpuMap['Group of NVIDIA Corporation GK107GL [GRID K1] GPUs'] = ['passthrough', 'GRID K100', 'GRID K120Q', 'GRID K140Q', 'GRID K160Q', 'GRID K180Q'];
+                                            vGpuMap['Group of NVIDIA Corporation GK104GL [GRID K2] GPUs'] = ['passthrough', 'GRID K200', 'GRID K220Q', 'GRID K240Q', 'GRID K260Q', 'GRID K280Q'];
 
                                             args.$select.change(function() {
                                                 var gpu = $(this).val();
@@ -444,7 +529,7 @@
                                     },
 
                                     vgpuType: {
-                                        label: 'vGPU Type',
+                                        label: 'label.vgpu.type',
                                         isHidden: true,
                                         select: function(args) {
                                             var items = [];
@@ -469,6 +554,14 @@
                                                 description: 'GRID K140Q'
                                             });
                                             items.push({
+                                                id: 'GRID K160Q',
+                                                description: 'GRID K160Q'
+                                            });
+                                            items.push({
+                                                id: 'GRID K180Q',
+                                                description: 'GRID K180Q'
+                                            });
+                                            items.push({
                                                 id: 'GRID K200',
                                                 description: 'GRID K200'
                                             });
@@ -483,6 +576,10 @@
                                             items.push({
                                                 id: 'GRID K260Q',
                                                 description: 'GRID K260Q'
+                                            });
+                                            items.push({
+                                                id: 'GRID K280Q',
+                                                description: 'GRID K280Q'
                                             });
                                             args.response.success({
                                                 data: items
@@ -685,7 +782,7 @@
                         });
 
                         $.ajax({
-                            url: createURL('listServiceOfferings'),
+                            url: createURL('listServiceOfferings&isrecursive=true'),
                             data: data,
                             success: function(json) {
                                 var items = json.listserviceofferingsresponse.serviceoffering;
@@ -863,20 +960,20 @@
                                         converter: cloudStack.converters.toBooleanText
                                     },
                                     isvolatile: {
-                                        label: 'Volatile',
+                                        label: 'label.volatile',
                                         converter: cloudStack.converters.toBooleanText
                                     },
                                     deploymentplanner: {
-                                        label: 'Deployment Planner'
+                                        label: 'label.deployment.planner'
                                     },                                    
                                     plannerMode: {
-                                        label: 'Planner Mode'
+                                        label: 'label.planner.mode'
                                     },                                    
                                     pciDevice: {
-                                        label: 'GPU'
+                                        label: 'label.gpu'
                                     },
                                     vgpuType: {
-                                        label: 'vGPU type'
+                                        label: 'label.vgpu.type'
                                     },
                                     tags: {
                                         label: 'label.storage.tags'
@@ -899,7 +996,7 @@
                                         id: args.context.serviceOfferings[0].id
                                     };
                                     $.ajax({
-                                        url: createURL('listServiceOfferings'),
+                                        url: createURL('listServiceOfferings&isrecursive=true'),
                                         data: data,
                                         async: true,
                                         success: function(json) {
@@ -962,6 +1059,13 @@
 
                             createForm: {
                                 title: 'label.add.system.service.offering',
+                                preFilter: function(args) {
+                                    if (isAdmin()) {
+                                    } else {
+                                        args.$form.find('.form-item[rel=isPublic]').hide();
+                                        args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                    }
+                                },
                                 fields: {
                                     name: {
                                         label: 'label.name',
@@ -984,15 +1088,15 @@
                                             var items = [];
                                             items.push({
                                                 id: 'domainrouter',
-                                                description: dictionary['label.domain.router']
+                                                description: _l('label.domain.router')
                                             });
                                             items.push({
                                                 id: 'consoleproxy',
-                                                description: dictionary['label.console.proxy']
+                                                description: _l('label.console.proxy')
                                             });
                                             items.push({
                                                 id: 'secondarystoragevm',
-                                                description: dictionary['label.secondary.storage.vm']
+                                                description: _l('label.secondary.storage.vm')
                                             });
                                             args.response.success({
                                                 data: items
@@ -1127,7 +1231,7 @@
                                         label: 'label.public',
                                         isBoolean: true,
                                         isReverse: true,
-                                        isChecked: true,
+                                        isChecked: false,
                                         docID: 'helpSystemOfferingPublic'
                                     },
                                     domainId: {
@@ -1256,7 +1360,7 @@
                         });
 
                         $.ajax({
-                            url: createURL('listServiceOfferings'),
+                            url: createURL('listServiceOfferings&isrecursive=true'),
                             data: data,
                             success: function(json) {
                                 var items = json.listserviceofferingsresponse.serviceoffering;
@@ -1359,13 +1463,13 @@
                                             var text = '';
                                             switch (args) {
                                                 case 'domainrouter':
-                                                    text = dictionary['label.domain.router'];
+                                                    text = _l('label.domain.router');
                                                     break;
                                                 case 'consoleproxy':
-                                                    text = dictionary['label.console.proxy'];
+                                                    text = _l('label.console.proxy');
                                                     break;
                                                 case 'secondarystoragevm':
-                                                    text = dictionary['label.secondary.storage.vm'];
+                                                    text = _l('label.secondary.storage.vm');
                                                     break;
                                             }
                                             return text;
@@ -1399,13 +1503,13 @@
                                         label: 'label.network.rate'
                                     },
                                     diskBytesReadRate: {
-                                        label: 'label.disk.bytes.write.rate'
+                                        label: 'label.disk.bytes.read.rate'
                                     },
                                     diskBytesWriteRate: {
                                         label: 'label.disk.bytes.write.rate'
                                     },
                                     diskIopsReadRate: {
-                                        label: 'label.disk.iops.write.rate'
+                                        label: 'label.disk.iops.read.rate'
                                     },
                                     diskIopsWriteRate: {
                                         label: 'label.disk.iops.write.rate'
@@ -1439,7 +1543,7 @@
                                         id: args.context.systemServiceOfferings[0].id
                                     };
                                     $.ajax({
-                                        url: createURL('listServiceOfferings'),
+                                        url: createURL('listServiceOfferings&isrecursive=true'),
                                         data: data,
                                         success: function(json) {
                                             var item = json.listserviceofferingsresponse.serviceoffering[0];
@@ -1491,7 +1595,7 @@
                         listViewDataProvider(args, data);
 
                         $.ajax({
-                            url: createURL('listDiskOfferings'),
+                            url: createURL('listDiskOfferings&isrecursive=true'),
                             data: data,
                             success: function(json) {
                                 var items = json.listdiskofferingsresponse.diskoffering;
@@ -1520,6 +1624,14 @@
 
                             createForm: {
                                 title: 'label.add.disk.offering',
+                                preFilter: function(args) {
+                                    if (isAdmin()) {
+                                    } else {
+                                        args.$form.find('.form-item[rel=isPublic]').hide();
+                                        args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                        args.$form.find('.form-item[rel=tags]').hide();
+                                    }
+                                },
                                 fields: {
                                     name: {
                                         label: 'label.name',
@@ -1754,13 +1866,45 @@
                                     },
                                     tags: {
                                         label: 'label.storage.tags',
-                                        docID: 'helpDiskOfferingStorageTags'
+                                        docID: 'helpDiskOfferingStorageTags',
+                                        isTokenInput: true,
+                                        dataProvider: function(args) {
+                                            $.ajax({
+                                                url: createURL("listStorageTags"),
+                                                dataType: "json",
+                                                success: function(json) {
+                                                    var item = json.liststoragetagsresponse.storagetag;
+                                                    var tags = [];
+
+                                                    if (item != null)
+                                                    {
+                                                        tags = $.map(item, function(tag) {
+                                                            return {
+                                                                       id: tag.name,
+                                                                       name: tag.name
+                                                                   };
+                                                        });
+                                                    }
+
+                                                    args.response.success({
+                                                        data: tags,
+                                                        hintText: _l('hint.type.part.storage.tag'),
+                                                        noResultsText: _l('hint.no.storage.tags')
+                                                    });
+                                                },
+                                                error: function(XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+
+                                                    args.response.error(errorMsg);
+                                                }
+                                            });
+                                        }
                                     },
                                     isPublic: {
                                         label: 'label.public',
                                         isBoolean: true,
                                         isReverse: true,
-                                        isChecked: true,
+                                        isChecked: false,
                                         docID: 'helpDiskOfferingPublic'
                                     },
                                     domainId: {
@@ -2024,13 +2168,13 @@
                                         }
                                     },
                                     diskBytesReadRate: {
-                                        label: 'label.disk.bytes.write.rate'
+                                        label: 'label.disk.bytes.read.rate'
                                     },
                                     diskBytesWriteRate: {
                                         label: 'label.disk.bytes.write.rate'
                                     },
                                     diskIopsReadRate: {
-                                        label: 'label.disk.iops.write.rate'
+                                        label: 'label.disk.iops.read.rate'
                                     },
                                     diskIopsWriteRate: {
                                         label: 'label.disk.iops.write.rate'
@@ -2057,7 +2201,7 @@
                                         id: args.context.diskOfferings[0].id
                                     };
                                     $.ajax({
-                                        url: createURL('listDiskOfferings'),
+                                        url: createURL('listDiskOfferings&isrecursive=true'),
                                         data: data,
                                         success: function(json) {
                                             var item = json.listdiskofferingsresponse.diskoffering[0];
@@ -2140,9 +2284,7 @@
                                     // Check whether there are any advanced zones
                                     $.ajax({
                                         url: createURL('listZones'),
-                                        data: {
-                                            listAll: true
-                                        },
+                                        data: {},
                                         async: false,
                                         success: function(json) {
                                             var zones = json.listzonesresponse.zone;
@@ -2267,7 +2409,7 @@
                                             if ($("input[name='" + checkboxName + "']").is(":checked") == true) {
                                                 var providerFieldName = checkboxName.replace(".isEnabled", ".provider"); //either dropdown or input hidden field
                                                 var providerName = $("[name='" + providerFieldName + "']").val();
-                                                if (providerName == "VirtualRouter") {
+                                                if (providerName == "VirtualRouter" || providerName == "VpcVirtualRouter") {
                                                     havingVirtualRouterForAtLeastOneService = true;
                                                     return false; //break each loop
                                                 }
@@ -2516,7 +2658,7 @@
                                     },
 
                                     isPersistent: {
-                                        label: 'Persistent ',
+                                        label: 'label.persistent',
                                         isBoolean: true,
                                         isChecked: false
 
@@ -2530,13 +2672,13 @@
                                     },
 
                                     useVpc: {
-                                        label: 'VPC',
+                                        label: 'label.vpc',
                                         docID: 'helpNetworkOfferingVPC',
                                         isBoolean: true
                                     },
 
                                     lbType: { //only shown when VPC is checked and LB service is checked
-                                        label: 'Load Balancer Type',
+                                        label: 'label.load.balancer.type',
                                         isHidden: true,
                                         select: function(args) {
                                             args.response.success({
@@ -2571,34 +2713,34 @@
                                                         // Sanitize names
                                                         switch (serviceName) {
                                                             case 'Vpn':
-                                                                serviceDisplayName = dictionary['label.vpn'];
+                                                                serviceDisplayName = _l('label.vpn');
                                                                 break;
                                                             case 'Dhcp':
-                                                                serviceDisplayName = dictionary['label.dhcp'];
+                                                                serviceDisplayName = _l('label.dhcp');
                                                                 break;
                                                             case 'Dns':
-                                                                serviceDisplayName = dictionary['label.dns'];
+                                                                serviceDisplayName = _l('label.dns');
                                                                 break;
                                                             case 'Lb':
-                                                                serviceDisplayName = dictionary['label.load.balancer'];
+                                                                serviceDisplayName = _l('label.load.balancer');
                                                                 break;
                                                             case 'SourceNat':
-                                                                serviceDisplayName = dictionary['label.source.nat'];
+                                                                serviceDisplayName = _l('label.source.nat');
                                                                 break;
                                                             case 'StaticNat':
-                                                                serviceDisplayName = dictionary['label.static.nat'];
+                                                                serviceDisplayName = _l('label.static.nat');
                                                                 break;
                                                             case 'PortForwarding':
-                                                                serviceDisplayName = dictionary['label.port.forwarding'];
+                                                                serviceDisplayName = _l('label.port.forwarding');
                                                                 break;
                                                             case 'SecurityGroup':
-                                                                serviceDisplayName = dictionary['label.security.groups'];
+                                                                serviceDisplayName = _l('label.security.groups');
                                                                 break;
                                                             case 'UserData':
-                                                                serviceDisplayName = dictionary['label.user.data'];
+                                                                serviceDisplayName = _l('label.user.data');
                                                                 break;
                                                             case 'Connectivity':
-                                                                serviceDisplayName = dictionary['label.virtual.networking'];
+                                                                serviceDisplayName = _l('label.virtual.networking');
                                                                 break;
                                                             default:
                                                                 serviceDisplayName = serviceName;
@@ -2984,7 +3126,7 @@
                                     delete inputData.specifyIpRanges; //if specifyIpRanges should be false, do not pass specifyIpRanges parameter to API call since we need to keep API call's size as small as possible (p.s. specifyIpRanges is defaulted as false at server-side)                                          
 
                                     if (inputData['specifyVlan'] == 'on') { //specifyVlan checkbox is checked
-                                        inputData['specifyVlan'] = true;
+                                        inputData['specifyVlan'] = true;                                        
                                     } else { //specifyVlan checkbox is unchecked
                                         delete inputData.specifyVlan; //if specifyVlan checkbox is unchecked, do not pass specifyVlan parameter to API call since we need to keep API call's size as small as possible (p.s. specifyVlan is defaulted as false at server-side)                                        
                                     }
@@ -3058,7 +3200,7 @@
 
                             messages: {
                                 notification: function(args) {
-                                    return 'Added network offering';
+                                    return 'label.add.network.offering';
                                 }
                             }
                         }
@@ -3242,7 +3384,7 @@
                                     },
 
                                     ispersistent: {
-                                        label: 'label.persistent ',
+                                        label: 'label.persistent',
                                         converter: cloudStack.converters.toBooleanText
                                     },
 
@@ -3401,9 +3543,7 @@
                                     // Check whether there are any advanced zones
                                     $.ajax({
                                         url: createURL('listZones'),
-                                        data: {
-                                            listAll: true
-                                        },
+                                        data: {},
                                         async: false,
                                         success: function(json) {
                                             var zones = json.listzonesresponse.zone;
@@ -3523,28 +3663,28 @@
                                                 // Sanitize names
                                                 switch (serviceName) {
                                                     case 'Vpn':
-                                                        serviceDisplayName = dictionary['label.vpn'];
+                                                        serviceDisplayName = _l('label.vpn');
                                                         break;
                                                     case 'Dhcp':
-                                                        serviceDisplayName = dictionary['label.dhcp'];
+                                                        serviceDisplayName = _l('label.dhcp');
                                                         break;
                                                     case 'Dns':
-                                                        serviceDisplayName = dictionary['label.dns'];
+                                                        serviceDisplayName = _l('label.dns');
                                                         break;
                                                     case 'Lb':
-                                                        serviceDisplayName = dictionary['label.load.balancer'];
+                                                        serviceDisplayName = _l('label.load.balancer');
                                                         break;
                                                     case 'SourceNat':
-                                                        serviceDisplayName = dictionary['label.source.nat'];
+                                                        serviceDisplayName = _l('label.source.nat');
                                                         break;
                                                     case 'StaticNat':
-                                                        serviceDisplayName = dictionary['label.static.nat'];
+                                                        serviceDisplayName = _l('label.static.nat');
                                                         break;
                                                     case 'PortForwarding':
-                                                        serviceDisplayName = dictionary['label.port.forwarding'];
+                                                        serviceDisplayName = _l('label.port.forwarding');
                                                         break;
                                                     case 'UserData':
-                                                        serviceDisplayName = dictionary['label.user.data'];
+                                                        serviceDisplayName = _l('label.user.data');
                                                         break;
                                                     default:
                                                         serviceDisplayName = serviceName;
@@ -3684,7 +3824,7 @@
 
                             messages: {
                                 notification: function(args) {
-                                    return 'Added VPC offering';
+                                    return 'message.added.vpc.offering';
                                 }
                             }
                         }

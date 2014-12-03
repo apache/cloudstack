@@ -112,6 +112,8 @@ class Distribution:
             version = file("/etc/redhat-release").readline()
             if version.find("Red Hat Enterprise Linux Server release 6") != -1 or version.find("Scientific Linux release 6") != -1 or version.find("CentOS Linux release 6") != -1 or version.find("CentOS release 6.") != -1:
                 self.distro = "RHEL6"
+            elif version.find("Red Hat Enterprise Linux Server release 7") != -1:
+                self.distro = "RHEL7"
             elif version.find("CentOS release") != -1:
                 self.distro = "CentOS"
             else:
@@ -210,3 +212,39 @@ class serviceOpsUbuntu(serviceOps):
 
     def isKVMEnabled(self):
         return bash("kvm-ok").isSuccess() 
+
+class serviceOpsRedhat7(serviceOps):
+    def isServiceRunning(self, servicename):
+        try:
+            o = bash("systemctl status " + servicename)
+            if "running" in o.getStdout() or "start" in o.getStdout() or "Running" in o.getStdout():
+                return True
+            else:
+                return False
+        except:
+            return False
+
+    def stopService(self, servicename,force=False):
+        if self.isServiceRunning(servicename) or force:
+            return bash("systemctl stop " + servicename).isSuccess()
+
+        return True
+    def disableService(self, servicename):
+        result = self.stopService(servicename)
+        bash("systemctl disable " + servicename)
+        return result
+
+    def startService(self, servicename,force=False):
+        if not self.isServiceRunning(servicename) or force:
+            return bash("systemctl start " + servicename).isSuccess()
+        return True
+
+    def enableService(self, servicename,forcestart=False):
+        bash("systemctl enable " + servicename)
+        return self.startService(servicename,force=forcestart)
+
+    def isKVMEnabled(self):
+        if os.path.exists("/dev/kvm"):
+            return True
+        else:
+            return False

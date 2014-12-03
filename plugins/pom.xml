@@ -17,7 +17,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.5.0-SNAPSHOT</version>
+    <version>4.6.0-SNAPSHOT</version>
   </parent>
 
   <build>
@@ -73,6 +73,7 @@
     <module>user-authenticators/ldap</module>
     <module>user-authenticators/md5</module>
     <module>user-authenticators/plain-text</module>
+    <module>user-authenticators/saml2</module>
     <module>user-authenticators/sha256salted</module>
     <module>network-elements/dns-notifier</module>
     <module>storage/image/s3</module>
@@ -88,6 +89,7 @@
     <module>alert-handlers/syslog-alerts</module>
     <module>network-elements/internal-loadbalancer</module>
     <module>network-elements/vxlan</module>
+    <module>network-elements/globodns</module>
   </modules>
 
   <dependencies>
@@ -130,17 +132,6 @@
       </activation>
       <modules>
         <module>file-systems/netapp</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>kvm</id>
-      <activation>
-        <property>
-          <name>noredist</name>
-        </property>
-      </activation>
-      <modules>
-        <module>hypervisors/kvm</module>
       </modules>
     </profile>
     <profile>

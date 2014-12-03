@@ -52,7 +52,9 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
@@ -62,6 +64,7 @@ import com.cloud.utils.concurrency.TestClock;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = {SnapshotScheduler.class})
@@ -84,6 +87,8 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     protected ConfigurationDao _configDao;
     @Inject
     protected ApiDispatcher _dispatcher;
+    @Inject
+    protected AccountDao _acctDao;
 
     protected AsyncJobDispatcher _asyncDispatcher;
 
@@ -235,6 +240,14 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                     // this volume is not attached
                     continue;
                 }
+                Account volAcct = _acctDao.findById(volume.getAccountId());
+                if (volAcct == null || volAcct.getState() == Account.State.disabled) {
+                    // this account has been removed, so don't trigger recurring snapshot
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Skip snapshot for volume " + volume.getUuid() + " since its account has been removed or disabled");
+                    }
+                    continue;
+                }
                 if (_snapshotPolicyDao.findById(policyId) == null) {
                     _snapshotScheduleDao.remove(snapshotToBeExecuted.getId());
                 }
@@ -321,6 +334,8 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             spstSchedVO = new SnapshotScheduleVO(policy.getVolumeId(), policyId, nextSnapshotTimestamp);
             _snapshotScheduleDao.persist(spstSchedVO);
         } else {
+            TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+
             try {
                 spstSchedVO = _snapshotScheduleDao.acquireInLockTable(spstSchedVO.getId());
                 spstSchedVO.setPolicyId(policyId);
@@ -328,10 +343,12 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 spstSchedVO.setAsyncJobId(null);
                 spstSchedVO.setSnapshotId(null);
                 _snapshotScheduleDao.update(spstSchedVO.getId(), spstSchedVO);
+                txn.commit();
             } finally {
                 if (spstSchedVO != null) {
                     _snapshotScheduleDao.releaseFromLockTable(spstSchedVO.getId());
                 }
+                txn.close();
             }
         }
         return nextSnapshotTimestamp;

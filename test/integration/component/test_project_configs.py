@@ -173,7 +173,7 @@ class TestUserProjectCreation(cloudstackTestCase):
         return
 
     @attr(configuration = "allow.user.create.projects")
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_admin_project_creation(self):
         """Test create project as a domain admin and domain user
         """
@@ -477,7 +477,7 @@ class TestProjectInviteRequired(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
     def test_add_user_to_project(self):
         """Add user to project when 'project.invite.required' is false"""
 
@@ -628,7 +628,7 @@ class TestProjectInviteRequiredTrue(cloudstackTestCase):
         return
 
     @attr(configuration = "project.invite.required")
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "selfservice"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
     def test_add_user_to_project(self):
         """Add user to project when 'project.invite.required' is true"""
 

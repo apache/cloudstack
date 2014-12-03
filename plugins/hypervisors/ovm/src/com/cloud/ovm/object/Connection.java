@@ -108,8 +108,8 @@ public class Connection {
             throw new XmlRpcException(-2, e.getMessage());
         } finally {
             long endTime = System.currentTimeMillis();
-            float during = (endTime - startTime) / 1000; // in secs
-            s_logger.debug("Ovm call " + method + " finished in " + during + " secs");
+            long during = (endTime - startTime) / 1000; // in secs
+            s_logger.debug("Ovm call " + method + " finished in " + String.valueOf(during) + " secs");
         }
     }
 

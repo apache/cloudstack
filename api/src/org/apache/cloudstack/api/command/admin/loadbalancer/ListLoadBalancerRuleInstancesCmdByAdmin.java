@@ -32,7 +32,9 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listLoadBalancerRuleInstances", description = "List all virtual machine instances that are assigned to a load balancer rule.", responseObject = LoadBalancerRuleVmMapResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "listLoadBalancerRuleInstances", description = "List all virtual machine instances that are assigned to a load balancer rule.", responseObject = LoadBalancerRuleVmMapResponse.class, responseView = ResponseView.Full,
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = true)
 public class ListLoadBalancerRuleInstancesCmdByAdmin extends ListLoadBalancerRuleInstancesCmd {
     public static final Logger s_logger = Logger.getLogger (ListLoadBalancerRuleInstancesCmdByAdmin.class.getName());
 

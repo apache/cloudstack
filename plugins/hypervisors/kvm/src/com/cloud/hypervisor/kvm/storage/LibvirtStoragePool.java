@@ -171,8 +171,8 @@ public class LibvirtStoragePool implements KVMStoragePool {
     }
 
     @Override
-    public boolean deletePhysicalDisk(String uuid) {
-        return this._storageAdaptor.deletePhysicalDisk(uuid, this);
+    public boolean deletePhysicalDisk(String uuid, Storage.ImageFormat format) {
+        return this._storageAdaptor.deletePhysicalDisk(uuid, this, format);
     }
 
     @Override
@@ -255,6 +255,11 @@ public class LibvirtStoragePool implements KVMStoragePool {
     public StoragePool getPool() {
         return this._pool;
     }
+
+    public void setPool(StoragePool pool) {
+        this._pool = pool;
+    }
+
 
     @Override
     public boolean delete() {

@@ -113,7 +113,10 @@ public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public Long getSyncObjId() {
-        return _firewallService.getFirewallRule(id).getNetworkId();
+        FirewallRule fwlrule = _firewallService.getFirewallRule(id);
+        if (fwlrule != null)
+            return fwlrule.getNetworkId();
+        return null;
     }
 
     @Override

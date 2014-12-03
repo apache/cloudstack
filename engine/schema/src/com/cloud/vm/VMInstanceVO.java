@@ -16,9 +16,10 @@
 // under the License.
 package com.cloud.vm;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Date;
 import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -36,6 +37,9 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
@@ -48,6 +52,7 @@ import com.cloud.vm.VirtualMachine.State;
 @Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.STRING, length = 32)
 public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, VirtualMachine.Event> {
+    private static final Logger s_logger = Logger.getLogger(VMInstanceVO.class);
     @Id
     @TableGenerator(name = "vm_instance_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "vm_instance_seq", allocationSize = 1)
     @Column(name = "id", updatable = false, nullable = false)
@@ -191,13 +196,20 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.type = type;
         this.guestOSId = guestOSId;
         this.haEnabled = haEnabled;
-        vncPassword = Long.toHexString(new Random().nextLong());
         state = State.Stopped;
         this.accountId = accountId;
         this.domainId = domainId;
         this.serviceOfferingId = serviceOfferingId;
         this.hypervisorType = hypervisorType;
         limitCpuUse = false;
+        try {
+            SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+            byte[] randomBytes = new byte[16];
+            random.nextBytes(randomBytes);
+            vncPassword = Base64.encodeBase64String(randomBytes);
+        } catch (NoSuchAlgorithmException e) {
+            s_logger.error("Unexpected exception in SecureRandom Algorithm selection ", e);
+        }
     }
 
     public VMInstanceVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,

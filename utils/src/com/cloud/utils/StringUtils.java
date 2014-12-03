@@ -159,7 +159,7 @@ public class StringUtils {
     }
 
     // removes a password request param and it's value, also considering password is in query parameter value which has been url encoded
-    private static final Pattern REGEX_PASSWORD_QUERYSTRING = Pattern.compile("(&|%26)?((p|P)assword|accesskey|secretkey)(=|%3D).*?(?=(%26|[&'\"]))");
+    private static final Pattern REGEX_PASSWORD_QUERYSTRING = Pattern.compile("(&|%26)?[^(&|%26)]*((p|P)assword|accesskey|secretkey)(=|%3D).*?(?=(%26|[&'\"]|$))");
 
     // removes a password/accesskey/ property from a response json object
     private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"((p|P)assword|accesskey|secretkey)\":\\s?\".*?\",?");
@@ -267,5 +267,33 @@ public class StringUtils {
             s = s.substring(0, s.length() - 1);
         }
         return s;
+    }
+
+    public static <T> List<T> applyPagination(List<T> originalList, Long startIndex, Long pageSizeVal) {
+        // Most likely pageSize will never exceed int value, and we need integer to partition the listToReturn
+        boolean applyPagination = startIndex != null && pageSizeVal != null
+                && startIndex <= Integer.MAX_VALUE && startIndex >= Integer.MIN_VALUE && pageSizeVal <= Integer.MAX_VALUE
+                && pageSizeVal >= Integer.MIN_VALUE;
+        List<T> listWPagination = null;
+        if (applyPagination) {
+            listWPagination = new ArrayList<>();
+            int index = startIndex.intValue() == 0 ? 0 : startIndex.intValue() / pageSizeVal.intValue();
+            List<List<T>> partitions = StringUtils.partitionList(originalList, pageSizeVal.intValue());
+            if (index < partitions.size()) {
+                listWPagination = partitions.get(index);
+            }
+        }
+        return listWPagination;
+    }
+
+    private static <T> List<List<T>> partitionList(List<T> originalList, int chunkSize) {
+        List<List<T>> listOfChunks = new ArrayList<List<T>>();
+        for (int i = 0; i < originalList.size() / chunkSize; i++) {
+            listOfChunks.add(originalList.subList(i * chunkSize, i * chunkSize + chunkSize));
+        }
+        if (originalList.size() % chunkSize != 0) {
+            listOfChunks.add(originalList.subList(originalList.size() - originalList.size() % chunkSize, originalList.size()));
+        }
+        return listOfChunks;
     }
 }

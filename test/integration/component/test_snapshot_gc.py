@@ -217,7 +217,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags=["advanced", "advancedns", "basic", "sg", "provisioning"])
+    @attr(tags=["advanced", "advancedns", "basic", "sg"], required_hardware="true")
     def test_02_accountSnapshotClean(self):
         """Test snapshot cleanup after account deletion
         """
@@ -271,8 +271,6 @@ class TestAccountSnapshotClean(cloudstackTestCase):
 
             self.assertTrue(is_snapshot_on_nfs(self.apiclient, self.dbclient, self.config, self.zone.id, self.snapshot.id),
                 "Snapshot was not found on NFS")
-
-            raise Exception("self raised exception")
         except Exception as e:
             self._cleanup.append(self.account)
             self.fail("Exception occured: %s" % e)

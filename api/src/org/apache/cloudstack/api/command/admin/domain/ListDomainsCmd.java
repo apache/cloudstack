@@ -16,9 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.domain;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -27,9 +24,6 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-
-import com.cloud.domain.Domain;
-import com.cloud.utils.Pair;
 
 @APICommand(name = "listDomains", description = "Lists domains and provides detailed information for listed domains", responseObject = DomainResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -86,17 +80,8 @@ public class ListDomainsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute() {
-        Pair<List<? extends Domain>, Integer> result = _domainService.searchForDomains(this);
-        ListResponse<DomainResponse> response = new ListResponse<DomainResponse>();
-        List<DomainResponse> domainResponses = new ArrayList<DomainResponse>();
-        for (Domain domain : result.first()) {
-            DomainResponse domainResponse = _responseGenerator.createDomainResponse(domain);
-            domainResponse.setObjectName("domain");
-            domainResponses.add(domainResponse);
-        }
-
-        response.setResponses(domainResponses, result.second());
+    public void execute(){
+        ListResponse<DomainResponse> response = _queryService.searchForDomains(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

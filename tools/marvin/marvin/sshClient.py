@@ -120,14 +120,13 @@ class SshClient(object):
                                      password=self.passwd,
                                      timeout=self.timeout)
                 else:
-                    self.ssh.load_host_keys(self.keyPairFiles)
                     self.ssh.connect(hostname=self.host,
                                      port=self.port,
                                      username=self.user,
                                      password=self.passwd,
                                      key_filename=self.keyPairFiles,
                                      timeout=self.timeout,
-                                     look_for_keys=True
+                                     look_for_keys=False
                                      )
                 self.logger.debug("===SSH to Host %s port : %s SUCCESSFUL==="
                                   % (str(self.host), str(self.port)))

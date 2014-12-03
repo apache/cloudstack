@@ -1,4 +1,4 @@
-﻿// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -66,52 +66,6 @@ namespace HypervResource
                     uncPath = @"\\" + uri.Host + uri.LocalPath;
                 }
                 return uncPath;
-            }
-        }
-
-        public string User
-        {
-            get
-            {
-                string user = null;
-                if (uri != null)
-                {
-                    var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                    user = System.Web.HttpUtility.UrlDecode(queryDictionary["user"]);
-                }
-                return user;
-            }
-        }
-
-        public string Password
-        {
-            get
-            {
-                string password = null;
-                if (uri != null)
-                {
-                    var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                    password = System.Web.HttpUtility.UrlDecode(queryDictionary["password"]);
-                }
-                return password;
-            }
-        }
-
-        public string Domain
-        {
-            get
-            {
-                string domain = null;
-                if (uri != null)
-                {
-                    var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                    if (queryDictionary["domain"] != null)
-                    {
-                        domain = System.Web.HttpUtility.UrlDecode(queryDictionary["domain"]);
-                    }
-                    else domain = uri.Host;
-                }
-                return domain;
             }
         }
 
@@ -457,36 +411,7 @@ namespace HypervResource
                 return uncPath;
             }
         }
-        public string User
-        {
-            get
-            {
-                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                return System.Web.HttpUtility.UrlDecode(queryDictionary["user"]);
-            }
-        }
 
-        public string Password
-        {
-            get
-            {
-                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                return System.Web.HttpUtility.UrlDecode(queryDictionary["password"]);
-            }
-        }
-
-        public string Domain
-        {
-            get
-            {
-                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                if (queryDictionary["domain"] != null)
-                {
-                    return System.Web.HttpUtility.UrlDecode(queryDictionary["domain"]);
-                }
-                else return uri.Host;
-            }
-        }
         public static NFSTO ParseJson(dynamic json)
         {
             NFSTO result = null;

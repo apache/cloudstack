@@ -31,8 +31,8 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -65,6 +65,7 @@ public class Link {
     private boolean _gotFollowingPacket;
 
     private SSLEngine _sslEngine;
+    public static String keystoreFile = "/cloud.keystore";
 
     public Link(InetSocketAddress addr, NioConnection connection) {
         _addr = addr;
@@ -90,7 +91,9 @@ public class Link {
     }
 
     public void setKey(SelectionKey key) {
-        _key = key;
+        synchronized (this) {
+            _key = key;
+        }
     }
 
     public void setSSLEngine(SSLEngine sslEngine) {
@@ -158,7 +161,7 @@ public class Link {
             pkgBuf.clear();
             engResult = sslEngine.wrap(buffers, pkgBuf);
             if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED && engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
-                engResult.getStatus() != SSLEngineResult.Status.OK) {
+                    engResult.getStatus() != SSLEngineResult.Status.OK) {
                 throw new IOException("SSL: SSLEngine return bad result! " + engResult);
             }
 
@@ -284,7 +287,7 @@ public class Link {
             appBuf = ByteBuffer.allocate(sslSession.getApplicationBufferSize() + 40);
             engResult = _sslEngine.unwrap(_readBuffer, appBuf);
             if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED && engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
-                engResult.getStatus() != SSLEngineResult.Status.OK) {
+                    engResult.getStatus() != SSLEngineResult.Status.OK) {
                 throw new IOException("SSL: SSLEngine return bad result! " + engResult);
             }
             if (remaining == _readBuffer.remaining()) {
@@ -404,7 +407,7 @@ public class Link {
         _connection.scheduleTask(task);
     }
 
-    public static SSLContext initSSLContext(boolean isClient) throws Exception {
+    public static SSLContext initSSLContext(boolean isClient) throws GeneralSecurityException, IOException {
         InputStream stream;
         SSLContext sslContext = null;
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
@@ -414,15 +417,19 @@ public class Link {
 
         File confFile = PropertiesUtil.findConfigFile("db.properties");
         if (null != confFile && !isClient) {
-            final Properties dbProps = DbProperties.getDbProperties();
-            char[] passphrase = dbProps.getProperty("db.cloud.keyStorePassphrase").toCharArray();
+            final String pass = DbProperties.getDbProperties().getProperty("db.cloud.keyStorePassphrase");
+            char[] passphrase = "vmops.com".toCharArray();
+            if (pass != null) {
+                passphrase = pass.toCharArray();
+            }
             String confPath = confFile.getParent();
-            String keystorePath = confPath + "/cloud.keystore";
+            String keystorePath = confPath + keystoreFile;
             if (new File(keystorePath).exists()) {
                 stream = new FileInputStream(keystorePath);
             } else {
                 s_logger.warn("SSL: Fail to find the generated keystore. Loading fail-safe one to continue.");
                 stream = NioConnection.class.getResourceAsStream("/cloud.keystore");
+                passphrase = "vmops.com".toCharArray();
             }
             ks.load(stream, passphrase);
             stream.close();

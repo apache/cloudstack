@@ -19,14 +19,6 @@
 
 package com.cloud.utils.net;
 
-import com.googlecode.ipv6.IPv6Address;
-import org.apache.log4j.Logger;
-import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -38,6 +30,15 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+
+import java.math.BigInteger;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
+import org.apache.log4j.Logger;
+import org.junit.Test;
+
+import com.googlecode.ipv6.IPv6Address;
 
 public class NetUtilsTest {
 
@@ -138,8 +139,22 @@ public class NetUtilsTest {
 
     @Test
     public void testCountIp6InRange() {
-        assertEquals(NetUtils.countIp6InRange("1234:5678::1-1234:5678::2"), new BigInteger("2"));
-        assertEquals(NetUtils.countIp6InRange("1234:5678::2-1234:5678::0"), null);
+        assertEquals(new BigInteger("2"), NetUtils.countIp6InRange("1234:5678::1-1234:5678::2"));
+    }
+
+    @Test
+    public void testCountIp6InRangeWithInvalidRange() {
+        assertEquals(null, NetUtils.countIp6InRange("1234:5678::2-1234:5678::0"));
+    }
+
+    @Test
+    public void testCountIp6InRangeWithNullStart() {
+        assertEquals(null, NetUtils.countIp6InRange("-1234:5678::0"));
+    }
+
+    @Test
+    public void testCountIp6InRangeWithNoEnd() {
+        assertEquals(new BigInteger("1"), NetUtils.countIp6InRange("1234:5678::2"));
     }
 
     @Test

@@ -17,8 +17,13 @@
 package org.apache.cloudstack.solidfire;
 
 import com.cloud.utils.component.PluggableService;
+import com.cloud.storage.Volume;
+import com.cloud.storage.StoragePool;
 
 import org.apache.cloudstack.api.response.ApiSolidFireAccountIdResponse;
+import org.apache.cloudstack.api.response.ApiSolidFireVolumeSizeResponse;
+import org.apache.cloudstack.api.response.ApiSolidFireVolumeAccessGroupIdResponse;
+import org.apache.cloudstack.api.response.ApiSolidFireVolumeIscsiNameResponse;
 
 /**
  * Provide API for SolidFire integration tests
@@ -26,4 +31,7 @@ import org.apache.cloudstack.api.response.ApiSolidFireAccountIdResponse;
  */
 public interface ApiSolidFireService extends PluggableService {
     public ApiSolidFireAccountIdResponse getSolidFireAccountId(Long csAccountId, Long storagePoolId);
+    public ApiSolidFireVolumeSizeResponse getSolidFireVolumeSize(Volume volume, StoragePool storagePool);
+    public ApiSolidFireVolumeAccessGroupIdResponse getSolidFireVolumeAccessGroupId(Long csClusterId, Long storagePoolId);
+    public ApiSolidFireVolumeIscsiNameResponse getSolidFireVolumeIscsiName(Volume volume);
 }

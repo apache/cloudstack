@@ -20,6 +20,7 @@ package com.cloud.network.vpc;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -31,6 +32,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -113,6 +115,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -212,6 +215,19 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     int _cleanupInterval;
     int _maxNetworks;
     SearchBuilder<IPAddressVO> IpAddressSearch;
+
+    protected final List<HypervisorType> hTypes = new ArrayList<HypervisorType>();
+
+    @PostConstruct
+    protected void setupSupportedVpcHypervisorsList() {
+        this.hTypes.add(HypervisorType.XenServer);
+        this.hTypes.add(HypervisorType.VMware);
+        this.hTypes.add(HypervisorType.KVM);
+        this.hTypes.add(HypervisorType.Simulator);
+        this.hTypes.add(HypervisorType.LXC);
+        this.hTypes.add(HypervisorType.Hyperv);
+        this.hTypes.add(HypervisorType.Ovm3);
+    }
 
     @Override
     @DB
@@ -608,9 +624,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     @Override
-    public List<? extends VpcOffering> listVpcOfferings(Long id, String name, String displayText, List<String> supportedServicesStr, Boolean isDefault, String keyword,
+    public Pair<List<? extends VpcOffering>,Integer> listVpcOfferings(Long id, String name, String displayText, List<String> supportedServicesStr, Boolean isDefault, String keyword,
         String state, Long startIndex, Long pageSizeVal) {
-        Filter searchFilter = new Filter(VpcOfferingVO.class, "created", false, startIndex, pageSizeVal);
+        Filter searchFilter = new Filter(VpcOfferingVO.class, "created", false, null, null);
         SearchCriteria<VpcOfferingVO> sc = _vpcOffDao.createSearchCriteria();
 
         if (keyword != null) {
@@ -670,9 +686,19 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
 
-            return supportedOfferings;
+            List<? extends VpcOffering> wPagination = StringUtils.applyPagination(supportedOfferings, startIndex, pageSizeVal);
+            if (wPagination != null) {
+                Pair<List<? extends VpcOffering>, Integer> listWPagination = new Pair<List<? extends VpcOffering>, Integer>(wPagination, supportedOfferings.size());
+                return listWPagination;
+            }
+            return new Pair<List<? extends VpcOffering>, Integer>(supportedOfferings, supportedOfferings.size());
         } else {
-            return offerings;
+            List<? extends VpcOffering> wPagination = StringUtils.applyPagination(offerings, startIndex, pageSizeVal);
+            if (wPagination != null) {
+                Pair<List<? extends VpcOffering>, Integer> listWPagination = new Pair<List<? extends VpcOffering>, Integer>(wPagination, offerings.size());
+                return listWPagination;
+            }
+            return new Pair<List<? extends VpcOffering>, Integer>(offerings, offerings.size());
         }
     }
 
@@ -990,7 +1016,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     @Override
-    public List<? extends Vpc> listVpcs(Long id, String vpcName, String displayText, List<String> supportedServicesStr, String cidr, Long vpcOffId, String state,
+    public Pair<List<? extends Vpc>, Integer> listVpcs(Long id, String vpcName, String displayText, List<String> supportedServicesStr, String cidr, Long vpcOffId, String state,
         String accountName, Long domainId, String keyword, Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, Boolean restartRequired,
         Map<String, String> tags, Long projectId, Boolean display) {
         Account caller = CallContext.current().getCallingAccount();
@@ -1002,7 +1028,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        Filter searchFilter = new Filter(VpcVO.class, "created", false, startIndex, pageSizeVal);
+        Filter searchFilter = new Filter(VpcVO.class, "created", false, null, null);
 
         SearchBuilder<VpcVO> sb = _vpcDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
@@ -1115,9 +1141,19 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
 
-            return supportedVpcs;
+            List<? extends Vpc> wPagination = StringUtils.applyPagination(supportedVpcs, startIndex, pageSizeVal);
+            if (wPagination != null) {
+                Pair<List<? extends Vpc>, Integer> listWPagination = new Pair<List<? extends Vpc>, Integer>(wPagination, supportedVpcs.size());
+                return listWPagination;
+            }
+            return new Pair<List<? extends Vpc>, Integer>(supportedVpcs, supportedVpcs.size());
         } else {
-            return vpcs;
+            List<? extends Vpc> wPagination = StringUtils.applyPagination(vpcs, startIndex, pageSizeVal);
+            if (wPagination != null) {
+                Pair<List<? extends Vpc>, Integer> listWPagination = new Pair<List<? extends Vpc>, Integer>(wPagination, vpcs.size());
+                return listWPagination;
+            }
+            return new Pair<List<? extends Vpc>, Integer>(vpcs, vpcs.size());
         }
     }
 
@@ -1400,7 +1436,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     public List<? extends Vpc> getVpcsForAccount(long accountId) {
-        return _vpcDao.listByAccountId(accountId);
+        List<Vpc> vpcs = new ArrayList<Vpc>();
+        vpcs.addAll(_vpcDao.listByAccountId(accountId));
+        return vpcs;
     }
 
     public boolean cleanupVpcResources(long vpcId, Account caller, long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
@@ -2173,10 +2211,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 try {
                     // Cleanup inactive VPCs
                     List<VpcVO> inactiveVpcs = _vpcDao.listInactiveVpcs();
-                    s_logger.info("Found " + inactiveVpcs.size() + " removed VPCs to cleanup");
-                    for (VpcVO vpc : inactiveVpcs) {
-                        s_logger.debug("Cleaning up " + vpc);
-                        destroyVpc(vpc, _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM);
+                    if (inactiveVpcs != null) {
+                        s_logger.info("Found " + inactiveVpcs.size() + " removed VPCs to cleanup");
+                        for (VpcVO vpc : inactiveVpcs) {
+                            s_logger.debug("Cleaning up " + vpc);
+                            destroyVpc(vpc, _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM);
+                        }
                     }
                 } catch (Exception e) {
                     s_logger.error("Exception ", e);
@@ -2371,15 +2411,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     public List<HypervisorType> getSupportedVpcHypervisors() {
-        List<HypervisorType> hTypes = new ArrayList<HypervisorType>();
-        hTypes.add(HypervisorType.XenServer);
-        hTypes.add(HypervisorType.VMware);
-        hTypes.add(HypervisorType.KVM);
-        hTypes.add(HypervisorType.Simulator);
-        hTypes.add(HypervisorType.LXC);
-        hTypes.add(HypervisorType.Hyperv);
-        hTypes.add(HypervisorType.Ovm3);
-        return hTypes;
+        return Collections.unmodifiableList(this.hTypes);
     }
 
     private List<Provider> getVpcProviders(long vpcId) {

@@ -22,7 +22,8 @@
             protocol: elem.protocol,
             startport: elem.startport,
             endport: elem.endport,
-            cidr: elem.cidr ? elem.cidr : ''.concat(elem.account, ' - ', elem.securitygroupname)
+            cidr: elem.cidr ? elem.cidr : ''.concat(elem.account, ' - ', elem.securitygroupname),
+            tags: elem.tags
         };
 
         if (elemData.startport == 0 && elemData.endport) {
@@ -397,8 +398,7 @@
                     }),
                     data: {
                         supportedServices: 'SecurityGroup',
-                        listAll: true,
-                        details: 'min'
+                        listAll: true
                     },
                     async: false,
                     success: function(json) {
@@ -559,7 +559,7 @@
                                     },
 
                                     vlan: {
-                                        label: 'VLAN',
+                                        label: 'label.vlan',
                                         validation: {
                                             required: true
                                         },
@@ -752,7 +752,7 @@
                             },
                             messages: {
                                 notification: function() {
-                                    return 'Add Isolated Guest Network';
+                                    return 'label.add.isolated.guest.network';
                                 }
                             }
                         },
@@ -945,7 +945,7 @@
 
                                         if (args.context.networks[0].type == "Isolated") { //Isolated network
                                             cloudStack.dialog.confirm({
-                                                message: 'Do you want to keep the current guest network CIDR unchanged?',
+                                                message: 'message.confirm.current.guest.CIDR.unchanged',
                                                 action: function() { //"Yes"	button is clicked
                                                     $.extend(data, {
                                                         changecidr: false
@@ -1084,6 +1084,7 @@
                                     confirm: function(args) {
                                         return 'message.action.delete.network';
                                     },
+				    isWarning: true,
                                     notification: function(args) {
                                         return 'label.action.delete.network';
                                     }
@@ -1251,7 +1252,7 @@
                                             if (args != null)
                                                 return args;
                                             else
-                                                return 'N/A';
+                                                return _l('label.na');
                                         }
                                     },
                                     
@@ -1383,12 +1384,13 @@
                                         async: true,
                                         success: function(json) {
                                             var jsonObj = json.listnetworksresponse.network[0];
-                                            addExtraPropertiesToGuestNetworkObject(jsonObj);
-                                             
-                                            if (isModuleIncluded("dr")) {
-                                                cloudStack.dr.sharedFunctions.addExtraProperties(jsonObj, "Network"); 
-                                            }
-                                                                                     
+                                            addExtraPropertiesToGuestNetworkObject(jsonObj);  
+                                            
+                                            $(window).trigger('cloudStack.module.sharedFunctions.addExtraProperties', {
+                                            	obj: jsonObj,
+                                            	objType: "Network"
+                                            });
+                                            
                                             args.response.success({
                                                 actionFilter: cloudStack.actionFilter.guestNetwork,
                                                 data: jsonObj
@@ -1682,17 +1684,9 @@
                                             'algorithm': {
                                                 label: 'label.algorithm',
                                                 select: function(args) {
+                                                    var data = getLBAlgorithms(args.context.networks[0]);
                                                     args.response.success({
-                                                        data: [{
-                                                            name: 'roundrobin',
-                                                            description: _l('label.round.robin')
-                                                        }, {
-                                                            name: 'leastconn',
-                                                            description: _l('label.least.connections')
-                                                        }, {
-                                                            name: 'source',
-                                                            description: _l('label.source')
-                                                        }]
+                                                        data: data
                                                     });
                                                 }
                                             },
@@ -1868,7 +1862,10 @@
                                 desc: 'message.acquire.ip.nic',
                                 fields: {
                                     ipaddress: {
-                                        label: 'label.ip.address'
+                                        label: 'label.ip.address',
+                                        validation: {
+                                            ipv4: true
+                                        }
                                     }
                                 }
                             },
@@ -2359,10 +2356,15 @@
                                         success: function(data) {
                                             args.response.success({
                                                 _custom: {
-                                                    getUpdatedItem: function(json) {
+                                                    getUpdatedItem: function(json) {                                                    	
+                                                    	var vpnenabledAndRunning = false;
+                                                    	if (json.queryasyncjobresultresponse.jobresult.remoteaccessvpn.state == "Running") {
+                                                    		vpnenabledAndRunning = true;
+                                                    	}                                                    	
+                                                    	                                                    	
                                                         return {
                                                             vpn: json.queryasyncjobresultresponse.jobresult.remoteaccessvpn,
-                                                            vpnenabled: true
+                                                            vpnenabled: vpnenabledAndRunning
                                                         };
                                                     },
                                                     getActionFilter: function() {
@@ -2385,7 +2387,13 @@
                                         return 'label.enable.vpn';
                                     },
                                     complete: function(args) {
-                                        return _l('message.enabled.vpn') + ' ' + args.vpn.publicip + '.' + '<br/>' + _l('message.enabled.vpn.ip.sec') + '<br/>' + args.vpn.presharedkey;
+                                    	var msg;
+                                    	if (args.vpn.state == "Running") {
+                                    	    msg = _l('message.enabled.vpn') + ' ' + args.vpn.publicip + '.' + '<br/>' + _l('message.enabled.vpn.ip.sec') + '<br/>' + args.vpn.presharedkey;                                	
+                                    	} else {
+                                    		msg = "Remote Access VPN configuration has been generated, but it failed to apply. Please check connectivity of the network element, then re-try.";
+                                    	}   
+                                        return msg;
                                     }
                                 },
                                 notification: {
@@ -2783,6 +2791,9 @@
                                     isstaticnat: {
                                         label: 'label.static.nat',
                                         converter: cloudStack.converters.toBooleanText
+                                    },
+                                    vmipaddress: {
+                                        label: 'label.vm.ip'
                                     },
                                     issystem: {
                                         label: 'label.is.system',
@@ -3505,20 +3516,9 @@
                                                 label: 'label.algorithm',
                                                 isEditable: true,
                                                 select: function(args) {
+                                                    var data = getLBAlgorithms(args.context.networks[0]);
                                                     args.response.success({
-                                                        data: [{
-                                                            id: 'roundrobin',
-                                                            name: 'roundrobin',
-                                                            description: _l('label.round.robin')
-                                                        }, {
-                                                            id: 'leastconn',
-                                                            name: 'leastconn',
-                                                            description: _l('label.least.connections')
-                                                        }, {
-                                                            id: 'source',
-                                                            name: 'source',
-                                                            description: _l('label.source')
-                                                        }]
+                                                        data: data
                                                     });
                                                 }
                                             },
@@ -4338,14 +4338,25 @@
                                                             },
                                                             success: function(data) {
                                                                 loadCurrent++;
+                                                                var vms = data.listvirtualmachinesresponse.virtualmachine;
+                                                                                                                                
+                                                                //if this VM is destroyed, data.listvirtualmachinesresponse.virtualmachine will be undefined for regular-user (CLOUDSTACK-3195)
+                                                                if (vms == undefined) {                                                                	
+                                                                	vms = [{
+                                                                        "id": item.virtualmachineid,
+                                                                        "name": item.virtualmachinename,
+                                                                        "displayname": item.virtualmachinedisplayname
+                                                                	}];                                                                	
+                                                                }                                                               
+                                                                
                                                                 $.extend(item, {
-                                                                    _itemData: $.map(data.listvirtualmachinesresponse.virtualmachine, function(vm) {
+                                                                    _itemData: $.map(vms, function(vm) {
                                                                         return $.extend(vm, {
                                                                             _displayName: '<p>VM: ' + vm.name + '</p>' + '<p>IP: ' + item.vmguestip + '</p>' // Also display attached IP
                                                                         });
                                                                     }),
                                                                     _context: {
-                                                                        instances: data.listvirtualmachinesresponse.virtualmachine
+                                                                        instances: vms
                                                                     }
                                                                 });
 
@@ -4721,11 +4732,19 @@
                                         },
                                         'startport': {
                                             edit: true,
-                                            label: 'label.start.port'
+                                            label: 'label.start.port',
+                                            validation: {
+                                                number: true,
+                                                range: [0, 65535]
+                                            }
                                         },
                                         'endport': {
                                             edit: true,
-                                            label: 'label.end.port'
+                                            label: 'label.end.port',
+                                            validation: {
+                                                number: true,
+                                                range: [0, 65535]
+                                            }
                                         },
                                         'icmptype': {
                                             edit: true,
@@ -4740,7 +4759,10 @@
                                         'cidr': {
                                             edit: true,
                                             label: 'label.cidr',
-                                            isHidden: true
+                                            isHidden: true,
+                                            validation: {
+                                                ipv4cidr: true
+                                            }
                                         },
                                         'accountname': {
                                             edit: true,
@@ -4838,6 +4860,10 @@
                                         }
                                     },
                                     ignoreEmptyFields: true,
+                                    tags: cloudStack.api.tags({
+                                        resourceType: 'SecurityGroupRule',
+                                        contextId: 'multiRule'
+                                    }),
                                     dataProvider: function(args) {
                                         $.ajax({
                                             url: createURL('listSecurityGroups'),
@@ -4916,11 +4942,19 @@
                                         },
                                         'startport': {
                                             edit: true,
-                                            label: 'label.start.port'
+                                            label: 'label.start.port',
+                                            validation: {
+                                                number: true,
+                                                range: [0, 65535]
+                                            }
                                         },
                                         'endport': {
                                             edit: true,
-                                            label: 'label.end.port'
+                                            label: 'label.end.port',
+                                            validation: {
+                                                number: true,
+                                                range: [0, 65535]
+                                            }
                                         },
                                         'icmptype': {
                                             edit: true,
@@ -4935,7 +4969,10 @@
                                         'cidr': {
                                             edit: true,
                                             label: 'label.cidr',
-                                            isHidden: true
+                                            isHidden: true,
+                                            validation: {
+                                                ipv4cidr: true
+                                            }
                                         },
                                         'accountname': {
                                             edit: true,
@@ -5033,6 +5070,10 @@
                                         }
                                     },
                                     ignoreEmptyFields: true,
+                                    tags: cloudStack.api.tags({
+                                        resourceType: 'SecurityGroupRule',
+                                        contextId: 'multiRule'
+                                    }),
                                     dataProvider: function(args) {
                                         $.ajax({
                                             url: createURL('listSecurityGroups'),
@@ -5239,7 +5280,13 @@
                                 args.response.success({
                                     data: items
                                 });
-                            }
+                            },
+                            error: function(XMLHttpResponse) {
+                                cloudStack.dialog.notice({
+                                    message: parseXMLHttpResponse(XMLHttpResponse)
+                                });
+                                args.response.error();
+                             }
                         });
                     },
                     actions: {
@@ -5279,9 +5326,7 @@
                                             required: true
                                         },
                                         select: function(args) {
-                                            var data = {
-                                                listAll: true
-                                            };
+                                            var data = {};
                                             $.ajax({
                                                 url: createURL('listZones'),
                                                 data: data,
@@ -5306,12 +5351,14 @@
                                         label: 'label.super.cidr.for.guest.networks',
                                         docID: 'helpVPCSuperCIDR',
                                         validation: {
-                                            required: true
+                                            required: true,
+                                            ipv4cidr: true
                                         }
                                     },
                                     networkdomain: {
                                         docID: 'helpVPCDomain',
                                         label: 'label.DNS.domain.for.guest.networks'
+                                        //format: FQDN
                                     },
                                     publicLoadBalancerProvider: {
                                         label: 'label.public.load.balancer.provider',
@@ -5337,14 +5384,10 @@
                                         },
 
                                         select: function(args) {
-                                            var data = {
-                                                listAll: true
-                                            };
+                                            var data = {};
                                             $.ajax({
                                                 url: createURL('listVPCOfferings'),
-                                                data: {
-                                                    listAll: true
-                                                },
+                                                data: {},
                                                 success: function(json) {
                                                       var offerings  = json.listvpcofferingsresponse.vpcoffering ? json.listvpcofferingsresponse.vpcoffering : [];
                                                       var filteredofferings = $.grep(offerings, function(offering) {
@@ -5830,7 +5873,7 @@
                                             var items = [];
                                             items.push({
                                                 id: '',
-                                                description: 'None'
+                                                description: 'label.none'
                                             });
                                             items.push({
                                                 id: 'modp1024',
@@ -5898,7 +5941,7 @@
                                             var items = [];
                                             items.push({
                                                 id: '',
-                                                description: 'None'
+                                                description: 'label.none'
                                             });
                                             items.push({
                                                 id: 'modp1024',
@@ -6166,7 +6209,7 @@
                                             var items = [];
                                             items.push({
                                                 id: '',
-                                                description: 'None'
+                                                description: 'label.none'
                                             });
                                             items.push({
                                                 id: 'modp1024',
@@ -6234,7 +6277,7 @@
                                             var items = [];
                                             items.push({
                                                 id: '',
-                                                description: 'None'
+                                                description: 'label.none'
                                             });
                                             items.push({
                                                 id: 'modp1024',
@@ -6382,6 +6425,44 @@
 				});             		
         	} 
         }
+    };
+
+    var getLBAlgorithms = function(networkObj) {
+        if (!networkObj || !networkObj.service) {
+            return [];
+        }
+
+        var lbService = $.grep(networkObj.service, function(service) {
+            return service.name == 'Lb';
+        })[0];
+
+        if (!lbService || !lbService.capability) {
+            return [];
+        }
+
+        var algorithmCapabilities = $.grep(
+            lbService.capability,
+            function(capability) {
+                return capability.name == 'SupportedLbAlgorithms';
+            }
+        )[0];
+
+        if (!algorithmCapabilities) {
+            return [];
+        }
+
+        var algorithms = algorithmCapabilities.value.split(',');
+
+        if (!algorithms) {
+            return [];
+        }
+
+        var data = [];
+        $(algorithms).each(function() {
+            data.push({id: this.valueOf(), name: this.valueOf(), description: _l('label.lb.algorithm.' + this.valueOf())});
+        });
+
+        return data;
     }
 
 })(cloudStack, jQuery);

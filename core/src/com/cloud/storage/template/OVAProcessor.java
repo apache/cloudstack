@@ -86,7 +86,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
     }
 
     @Override
-    public Long getVirtualSize(File file) {
+    public long getVirtualSize(File file) {
         try {
             long size = getTemplateVirtualSize(file.getParent(), file.getName());
             return size;

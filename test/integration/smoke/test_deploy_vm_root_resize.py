@@ -35,6 +35,8 @@ from marvin.codes import FAILED
 
 from nose.plugins.attrib import attr
 
+import re
+
 class TestData(object):
     """Test data object that is required to create resources
     """
@@ -112,8 +114,8 @@ class TestDeployVM(cloudstackTestCase):
         # 2. root disk has new size per listVolumes
         # 3. Rejects non-supported hypervisor types
         """
-        if(self.hypervisor == 'kvm'):
-            newrootsize = (self.template.size >> 30) + 2 
+        if(self.hypervisor.lower() == 'kvm'):
+            newrootsize = (self.template.size >> 30) + 2
             self.virtual_machine = VirtualMachine.create(
                 self.apiclient,
                 self.testdata["virtual_machine"],
@@ -195,7 +197,7 @@ class TestDeployVM(cloudstackTestCase):
                     rootdisksize=newrootsize
                 )
             except Exception as ex:
-                if "Hypervisor XenServer does not support rootdisksize override" in str(ex):
+                if re.search("Hypervisor \S+ does not support rootdisksize override", str(ex)):
                     success = True
                 else:
                     self.debug("virtual machine create did not fail appropriately. Error was actually : " + str(ex));
@@ -204,9 +206,9 @@ class TestDeployVM(cloudstackTestCase):
 
     @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="true")
     def test_01_deploy_vm_root_resize(self):
-        """Test proper failure to deploy virtual machine with rootdisksize of 0 
+        """Test proper failure to deploy virtual machine with rootdisksize of 0
         """
-        if (self.hypervisor == 'kvm'):
+        if (self.hypervisor.lower() == 'kvm'):
             newrootsize = 0
             success = False
             try:
@@ -230,13 +232,13 @@ class TestDeployVM(cloudstackTestCase):
         else:
             self.debug("test 01 does not support hypervisor type " + self.hypervisor);
 
-    @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="true", BugId="6984")
+    @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="true", BugId="CLOUDSTACK-6984")
     def test_02_deploy_vm_root_resize(self):
         """Test proper failure to deploy virtual machine with rootdisksize less than template size
         """
-        if (self.hypervisor == 'kvm'):
+        if (self.hypervisor.lower() == 'kvm'):
             newrootsize = (self.template.size >> 30) - 1
-            
+
             self.assertEqual(newrootsize > 0, True, "Provided template is less than 1G in size, cannot run test")
 
             success = False

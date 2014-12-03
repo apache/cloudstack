@@ -30,7 +30,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.network.IpAddress;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listPublicIpAddresses", description = "Lists all public ip addresses", responseObject = IPAddressResponse.class, responseView = ResponseView.Full)
+@APICommand(name = "listPublicIpAddresses", description = "Lists all public ip addresses", responseObject = IPAddressResponse.class, responseView = ResponseView.Full,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, entityType = {IpAddress.class})
 public class ListPublicIpAddressesCmdByAdmin extends ListPublicIpAddressesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPublicIpAddressesCmdByAdmin.class.getName());
 

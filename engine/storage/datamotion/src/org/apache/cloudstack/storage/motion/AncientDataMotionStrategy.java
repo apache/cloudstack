@@ -174,15 +174,29 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
 
             if (cacheData != null) {
-                if (srcData.getType() == DataObjectType.VOLUME && destData.getType() == DataObjectType.VOLUME) {
-                    // volume transfer from primary to secondary or vice versa. Volume transfer between primary pools are already handled by copyVolumeBetweenPools
+                final Long cacheId = cacheData.getId();
+                final String cacheType = cacheData.getType().toString();
+                final String cacheUuid = cacheData.getUuid().toString();
+
+                if (srcData.getType() == DataObjectType.VOLUME &&
+                    (destData.getType() == DataObjectType.VOLUME ||
+                     destData.getType() == DataObjectType.TEMPLATE)) {
+                    // volume transfer from primary to secondary. Volume transfer between primary pools are already handled by copyVolumeBetweenPools
+                    // Delete cache in order to certainly transfer a latest image.
+                    s_logger.debug("Delete " + cacheType + " cache(id: " + cacheId +
+                                   ", uuid: " + cacheUuid + ")");
                     cacheMgr.deleteCacheObject(srcForCopy);
                 } else {
                     // for template, we want to leave it on cache for performance reason
                     if ((answer == null || !answer.getResult()) && srcForCopy.getRefCount() < 2) {
                         // cache object created by this copy, not already there
+                        s_logger.warn("Copy may not be handled correctly by agent(id: " + ep.getId() + ")." +
+                                      " Delete " + cacheType + " cache(id: " + cacheId +
+                                      ", uuid: " + cacheUuid + ")");
                         cacheMgr.deleteCacheObject(srcForCopy);
                     } else {
+                        s_logger.debug("Decrease reference count of " + cacheType +
+                                       " cache(id: " + cacheId + ", uuid: " + cacheUuid + ")");
                         cacheMgr.releaseCacheObject(srcForCopy);
                     }
                 }
@@ -370,9 +384,12 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     protected Answer migrateVolumeToPool(DataObject srcData, DataObject destData) {
+        String value = configDao.getValue(Config.MigrateWait.key());
+        int waitInterval = NumbersUtil.parseInt(value, Integer.parseInt(Config.MigrateWait.getDefaultValue()));
+
         VolumeInfo volume = (VolumeInfo)srcData;
         StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(destData.getDataStore().getId(), DataStoreRole.Primary);
-        MigrateVolumeCommand command = new MigrateVolumeCommand(volume.getId(), volume.getPath(), destPool, volume.getAttachedVmName());
+        MigrateVolumeCommand command = new MigrateVolumeCommand(volume.getId(), volume.getPath(), destPool, volume.getAttachedVmName(), waitInterval);
         EndPoint ep = selector.select(srcData, StorageAction.MIGRATEVOLUME);
         Answer answer = null;
         if (ep == null) {

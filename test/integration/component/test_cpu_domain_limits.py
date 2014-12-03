@@ -218,7 +218,7 @@ class TestDomainCPULimitsUpdateResources(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_01_multiple_core_vm_start_stop_instance(self):
         """Test Deploy VM with 4 core CPU & verify the usage"""
 
@@ -291,7 +291,7 @@ class TestDomainCPULimitsUpdateResources(cloudstackTestCase):
                 "Resource count should be same as before, after starting the instance")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "provisioning"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="true")
     def test_02_multiple_core_vm_migrate_instance(self):
         """Test Deploy VM with 4 core CPU & verify the usage"""
 
@@ -352,7 +352,7 @@ class TestDomainCPULimitsUpdateResources(cloudstackTestCase):
                 "Resource count should be same as before, after migrating the instance")
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_03_multiple_core_vm_delete_instance(self):
         """Test Deploy VM with 4 core CPU & verify the usage"""
 
@@ -409,7 +409,7 @@ class TestDomainCPULimitsUpdateResources(cloudstackTestCase):
                 "Resource count for %s should be 0" % get_resource_type(resource_id=8))#CPU
         return
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_04_deploy_multiple_vm_with_multiple_core(self):
         """Test Deploy multiple VM with 4 core CPU & verify the usage"""
 
@@ -664,7 +664,7 @@ class TestMultipleChildDomains(cloudstackTestCase):
         }
         return users
 
-    @attr(tags=["advanced", "advancedns","simulator", "selfservice"])
+    @attr(tags=["advanced", "advancedns","simulator"], required_hardware="false")
     def test_01_multiple_child_domains(self):
         """Test CPU limits with multiple child domains"""
 

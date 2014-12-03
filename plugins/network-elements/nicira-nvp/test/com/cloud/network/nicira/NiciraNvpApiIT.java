@@ -41,8 +41,7 @@ public class NiciraNvpApiIT {
 
     @Before
     public void setup() throws IOException {
-        final Properties properties = new Properties();
-        PropertiesUtil.loadFromFile(properties, PropertiesUtil.findConfigFile("config.properties"));
+        final Properties properties = PropertiesUtil.loadFromFile(PropertiesUtil.findConfigFile("config.properties"));
         api = new NiciraNvpApi();
         api.setControllerAddress(properties.getProperty("nvp.host"));
         api.setAdminCredentials(properties.getProperty("nvp.admin.user"),

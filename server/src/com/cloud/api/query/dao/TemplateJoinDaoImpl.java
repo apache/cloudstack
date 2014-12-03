@@ -156,8 +156,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         templateResponse.setDomainId(template.getDomainUuid());
         templateResponse.setDomainName(template.getDomainName());
 
-        // If the user is an Admin, add the template download status
-        if (view == ResponseView.Full) {
+        // If the user is an 'Admin' or 'the owner of template', add the template download status
+        if (view == ResponseView.Full ||  template.getAccountId() == CallContext.current().getCallingAccount().getId() ) {
             String templateStatus = getTemplateStatus(template);
             if (templateStatus != null) {
                 templateResponse.setStatus(templateStatus);
@@ -278,6 +278,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         isoResponse.setPublic(iso.isPublicTemplate());
         isoResponse.setExtractable(iso.isExtractable() && !(iso.getTemplateType() == TemplateType.PERHOST));
         isoResponse.setCreated(iso.getCreatedOnStore());
+        isoResponse.setDynamicallyScalable(iso.isDynamicallyScalable());
         if (iso.getTemplateType() == TemplateType.PERHOST) {
             // for xs-tools.iso and vmware-tools.iso, we didn't download, but is ready to use.
             isoResponse.setReady(true);

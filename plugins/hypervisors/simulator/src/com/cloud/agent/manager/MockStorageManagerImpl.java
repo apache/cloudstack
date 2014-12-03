@@ -100,7 +100,6 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VirtualMachine.State;
 
 @Component
 @Local(value = {MockStorageManager.class})
@@ -511,13 +510,10 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             if (volume != null) {
                 _mockVolumeDao.remove(volume.getId());
             }
-
             if (cmd.getVmName() != null) {
                 MockVm vm = _mockVMDao.findByVmName(cmd.getVmName());
                 if (vm != null) {
-                    vm.setState(State.Expunging);
-                    MockVMVO vmVo = _mockVMDao.createForUpdate(vm.getId());
-                    _mockVMDao.update(vm.getId(), vmVo);
+                    _mockVMDao.remove(vm.getId());
                 }
             }
             txn.commit();

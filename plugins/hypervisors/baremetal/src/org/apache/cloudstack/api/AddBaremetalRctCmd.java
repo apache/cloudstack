@@ -25,6 +25,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
@@ -34,7 +35,7 @@ import javax.inject.Inject;
  * Created by frank on 5/8/14.
  */
 @APICommand(name = "addBaremetalRct", description = "adds baremetal rack configuration text", responseObject = BaremetalRctResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class AddBaremetalRctCmd extends BaseAsyncCmd {
     private static final String s_name = "addbaremetalrctresponse";
     public static final Logger s_logger = Logger.getLogger(AddBaremetalRctCmd.class);

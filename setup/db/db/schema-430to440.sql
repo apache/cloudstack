@@ -662,6 +662,7 @@ ALTER TABLE `cloud`.`vpc` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' C
 ALTER TABLE `cloud`.`firewall_rules` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the rule can be displayed to the end user';
 ALTER TABLE `cloud`.`autoscale_vmgroups` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
 ALTER TABLE `cloud`.`autoscale_vmprofiles` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
+ALTER TABLE `cloud`.`autoscale_vmgroups` ADD COLUMN `last_interval` datetime NULL DEFAULT NULL COMMENT 'last updated time';
 ALTER TABLE `cloud`.`network_acl_item` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
 ALTER TABLE `cloud`.`network_acl` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
 ALTER TABLE `cloud`.`remote_access_vpn` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the entry can be displayed to the end user';
@@ -685,13 +686,6 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("VmWare", 'CentOS 6.5 (64-bit)', 228);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'CentOS 6.5 (64-bit)', 228);
 
-CREATE TABLE `cloud`.`baremetal_rct` (
-  `id` bigint unsigned UNIQUE AUTO_INCREMENT,
-  `uuid` varchar(40) UNIQUE NOT NULL,
-  `url` varchar(2048) NOT NULL,
-  `rct` text NOT NULL,
-   PRIMARY KEY (`id`)
-) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_router_monitoring_services` (
   `vm_id` bigint unsigned UNIQUE NOT NULL COMMENT 'Primary Key',

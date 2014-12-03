@@ -1004,6 +1004,10 @@
                     }
                 };
 
+                $wizard.bind('cloudStack.instanceWizard.showStep', function(e, args) {
+                    showStep(args.index, { refresh: true });
+                });
+
                 // Go to specified step in wizard,
                 // updating nav items and diagram
                 var showStep = function(index, options) {
@@ -1019,6 +1023,10 @@
                     var $targetStep = $($steps.hide()[targetIndex]).show();
                     var stepID = $targetStep.attr('wizard-step-id');
                     var formData = cloudStack.serializeForm($form);
+
+                    if (options.refresh) {
+                        $targetStep.removeClass('loaded');
+                    }
 
                     if (!$targetStep.hasClass('loaded')) {
                         // Remove previous content

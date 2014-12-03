@@ -154,7 +154,7 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             } else if (!receiveAnswer.getResult()) {
                 s_logger.error("Migration with storage of vm " + vm + " failed. Details: " + receiveAnswer.getDetails());
-                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost + ". " + receiveAnswer.getDetails());
+                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             }
 
             MigrateWithStorageSendCommand sendCmd =
@@ -165,7 +165,7 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             } else if (!sendAnswer.getResult()) {
                 s_logger.error("Migration with storage of vm " + vm + " failed. Details: " + sendAnswer.getDetails());
-                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost + ". " + sendAnswer.getDetails());
+                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             }
 
             MigrateWithStorageCompleteCommand command = new MigrateWithStorageCompleteCommand(to);
@@ -175,7 +175,7 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             } else if (!answer.getResult()) {
                 s_logger.error("Migration with storage of vm " + vm + " failed. Details: " + answer.getDetails());
-                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost + ". " + answer.getDetails());
+                throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
             } else {
                 // Update the volume details after migration.
                 updateVolumePathsAfterMigration(volumeToPool, answer.getVolumeTos());

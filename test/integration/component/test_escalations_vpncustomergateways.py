@@ -134,7 +134,7 @@ class TestVpnCustomerGateways(cloudstackTestCase):
                                                                                           ))
         return return_flag
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_01_list_vpncustomergateways_pagination(self):
         """
         @Desc: Test to List VPN Customer Gateways pagination
@@ -240,6 +240,7 @@ class TestVpnCustomerGateways(cloudstackTestCase):
                                   vpncustomergateway_created,
                                   self.userapiclient
                                   )
+        self.cleanup.remove(vpncustomergateway_created)
         # Listing all the VPN Customer Gateways in page 2 again
         list_vpncustomergateways_page2 = VpnCustomerGateway.list(
                                                                  self.userapiclient,
@@ -254,7 +255,7 @@ class TestVpnCustomerGateways(cloudstackTestCase):
                           )
         return
 
-    @attr(tags=["advanced", "basic", "provisioning"])
+    @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_02_update_vpncustomergateways(self):
         """
         @Desc: Test to update VPN Customer Gateways pagination

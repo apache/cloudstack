@@ -80,7 +80,7 @@ class TestBaremetal(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["baremetal", "basic"])
+    @attr(tags = ["baremetal", "invalid"])
     def test_baremetal(self):
         self.debug("Test create baremetal network offering")
         networkoffering = NetworkOffering.create(self.apiclient, self.services["network_offering"])

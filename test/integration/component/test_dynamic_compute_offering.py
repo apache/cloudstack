@@ -26,7 +26,8 @@
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import (cleanup_resources,
                               validateList,
-                              random_gen)
+                              random_gen,
+                              get_hypervisor_type)
 from marvin.lib.base import (Account,
                              VirtualMachine,
                              ServiceOffering,
@@ -422,6 +423,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
     def setUpClass(cls):
         cloudstackTestClient = super(TestScaleVmDynamicServiceOffering,cls).getClsTestClient()
         cls.api_client = cloudstackTestClient.getApiClient()
+        cls.hypervisor = cloudstackTestClient.getHypervisorInfo()
 
         # Fill services from the external config file
         cls.services = cloudstackTestClient.getParsedTestDataConfig()
@@ -437,7 +439,23 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
                             )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
+
         cls._cleanup = []
+        cls.serviceOffering_static_1 = ServiceOffering.create(cls.api_client,
+                                                 cls.services["service_offering"])
+        cls._cleanup.append(cls.serviceOffering_static_1)
+
+        if cls.hypervisor.lower() == "vmware":
+            virtual_machine = VirtualMachine.create(cls.api_client,cls.services["virtual_machine"],
+                serviceofferingid=cls.serviceOffering_static_1.id, mode=cls.zone.networktype)
+            cls._cleanup.append(virtual_machine)
+            sshClient = virtual_machine.get_ssh_client()
+            result = str(
+                sshClient.execute("service vmware-tools status")).lower()
+            if not "running" in result:
+                cls.tearDownClass()
+                raise unittest.SkipTest("Skipping scale VM operation because\
+                    VMware tools are not installed on the VM")
         return
 
     @classmethod
@@ -739,7 +757,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["basic","advanced"],required_hardware="true")
     def test_change_so_running_vm_static_to_static(self, value):
         """Test scale running VM from static offering to static offering"""
 
@@ -751,6 +769,10 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Validations:
         # 1. Scaling operation should be successful
+
+        hypervisor = get_hypervisor_type(self.apiclient)
+        if hypervisor.lower() == "kvm":
+            self.skipTest("Scaling VM in running state is not supported on KVM")
 
         isadmin=True
         if value == USER_ACCOUNT:
@@ -795,7 +817,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["basic","advanced"],required_hardware="true")
     def test_change_so_running_vm_static_to_dynamic(self, value):
         """Test scale running VM from static offering to dynamic offering"""
 
@@ -811,6 +833,10 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         # Validations:
         # 1. Scale operation in step 4 should be successful
         # 2. Scale operation in step 6 should fail
+
+        hypervisor = get_hypervisor_type(self.apiclient)
+        if hypervisor.lower() == "kvm":
+            self.skipTest("Scaling VM in running state is not supported on KVM")
 
         isadmin=True
         if value == USER_ACCOUNT:
@@ -874,7 +900,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["basic","advanced"],required_hardware="true")
     def test_change_so_running_vm_dynamic_to_static(self, value):
         """Test scale running VM from dynamic offering to static offering"""
 
@@ -886,6 +912,9 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
 
         # Validations:
         # 1. Scale operation in step 4 should be successful
+        hypervisor = get_hypervisor_type(self.apiclient)
+        if hypervisor.lower() == "kvm":
+            self.skipTest("Scaling VM in running state is not supported on KVM")
 
         isadmin=True
         if value == USER_ACCOUNT:
@@ -934,7 +963,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["basic","advanced"],required_hardware="true")
     def test_change_so_running_vm_dynamic_to_dynamic(self, value):
         """Test scale running VM from dynamic offering to dynamic offering"""
 
@@ -951,6 +980,10 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         # 1. Scale operation in step 4 should be successful
         # 2. Scale operation in step 5 should be successful
         # 3. Scale operation in step 6 should fail
+
+        hypervisor = get_hypervisor_type(self.apiclient)
+        if hypervisor.lower() == "kvm":
+            self.skipTest("Scaling VM in running state is not supported on KVM")
 
         isadmin=True
         if value == USER_ACCOUNT:
@@ -1345,7 +1378,7 @@ class TestAffinityGroup(cloudstackTestCase):
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
-    @attr(tags=["basic","advanced"])
+    @attr(tags=["basic","advanced"], BugId="7180", required_hardware="true")
     def test_deploy_VM_with_affinity_group(self, value):
         """Test deploy VMs with affinity group and dynamic compute offering"""
 

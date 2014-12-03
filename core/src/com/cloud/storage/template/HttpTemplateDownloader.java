@@ -19,15 +19,15 @@
 
 package com.cloud.storage.template;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Date;
 
-import org.apache.commons.httpclient.ChunkedInputStream;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
@@ -232,9 +232,10 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                 remoteSize = maxTemplateSizeInBytes;
             }
 
-            InputStream in = !chunked ? new BufferedInputStream(request.getResponseBodyAsStream()) : new ChunkedInputStream(request.getResponseBodyAsStream());
+            URL url = new URL(getDownloadUrl());
+            InputStream in = url.openStream();
 
-            RandomAccessFile out = new RandomAccessFile(file, "rwd");
+            RandomAccessFile out = new RandomAccessFile(file, "rw");
             out.seek(localFileSize);
 
             s_logger.info("Starting download from " + getDownloadUrl() + " to " + toFile + " remoteSize=" + remoteSize + " , max size=" + maxTemplateSizeInBytes);
@@ -251,7 +252,14 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                     out.seek(offset);
                     totalBytes += bytes;
                         if (!verifiedFormat && (offset >= 1048576 || offset >= remoteSize)) { //let's check format after we get 1MB or full file
-                            String unsupportedFormat = TemplateUtils.checkTemplateFormat(file.getAbsolutePath(), getDownloadUrl());
+                        String uripath = null;
+                        try {
+                            URI str = new URI(getDownloadUrl());
+                            uripath = str.getPath();
+                        } catch (URISyntaxException e) {
+                            s_logger.warn("Invalid download url: " + getDownloadUrl() + ", This should not happen since we have validated the url before!!");
+                        }
+                        String unsupportedFormat = TemplateUtils.checkTemplateFormat(file.getAbsolutePath(), uripath);
                             if (unsupportedFormat == null || !unsupportedFormat.isEmpty()) {
                                  try {
                                      request.abort();
@@ -271,6 +279,8 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                     done = true;
                 }
             }
+            out.getFD().sync();
+
             Date finish = new Date();
             String downloaded = "(incomplete download)";
             if (totalBytes >= remoteSize) {

@@ -45,6 +45,7 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -116,9 +117,16 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 ss.setRole(dataStore.getRole());
                 ss.setVolumeId(snapshotInfo.getVolumeId());
                 ss.setSize(snapshotInfo.getSize()); // this is the virtual size of snapshot in primary storage.
+                ss.setPhysicalSize(snapshotInfo.getSize()); // this physical size will get updated with actual size once the snapshot backup is done.
                 SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), dataStore.getId(), snapshotInfo.getVolumeId());
                 if (snapshotDataStoreVO != null) {
-                    ss.setParentSnapshotId(snapshotDataStoreVO.getSnapshotId());
+                    //Double check the snapshot is removed or not
+                    SnapshotVO parentSnap = snapshotDao.findById(snapshotDataStoreVO.getSnapshotId());
+                    if (parentSnap != null) {
+                        ss.setParentSnapshotId(snapshotDataStoreVO.getSnapshotId());
+                    } else {
+                        s_logger.debug("find inconsistent db for snapshot " + snapshotDataStoreVO.getSnapshotId());
+                    }
                 }
                 ss.setState(ObjectInDataStoreStateMachine.State.Allocated);
                 ss = snapshotDataStoreDao.persist(ss);
@@ -156,7 +164,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     ss.setSnapshotId(obj.getId());
                     ss.setDataStoreId(dataStore.getId());
                     ss.setRole(dataStore.getRole());
-                    ss.setRole(dataStore.getRole());
+                    ss.setSize(snapshot.getSize());
                     ss.setVolumeId(snapshot.getVolumeId());
                     SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), dataStore.getId(), snapshot.getVolumeId());
                     if (snapshotDataStoreVO != null) {

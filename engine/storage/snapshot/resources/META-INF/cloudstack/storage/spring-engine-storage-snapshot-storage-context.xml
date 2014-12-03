@@ -30,6 +30,9 @@
     <bean id="xenserverSnapshotStrategy"
         class="org.apache.cloudstack.storage.snapshot.XenserverSnapshotStrategy" />
 
+    <bean id="storageSystemSnapshotStrategy"
+        class="org.apache.cloudstack.storage.snapshot.StorageSystemSnapshotStrategy" />
+
     <bean id="DefaultVMSnapshotStrategy"
         class="org.apache.cloudstack.storage.vmsnapshot.DefaultVMSnapshotStrategy" />
 

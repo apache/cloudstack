@@ -35,6 +35,7 @@ import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -45,6 +46,7 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Connection;
@@ -53,6 +55,8 @@ import com.xensource.xenapi.PBD;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Task;
 import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VDI;
 
 public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
@@ -61,69 +65,94 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
     public Xenserver625StorageProcessor(CitrixResourceBase resource) {
         super(resource);
     }
+
     protected boolean mountNfs(Connection conn, String remoteDir, String localDir) {
         if (localDir == null) {
             localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(remoteDir.getBytes());
         }
+
         String results = hypervisorResource.callHostPluginAsync(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", 100 * 1000,
                 "localDir", localDir, "remoteDir", remoteDir);
+
         if (results == null || results.isEmpty()) {
             String errMsg = "Could not mount secondary storage " + remoteDir + " on host " + localDir;
+
             s_logger.warn(errMsg);
+
             throw new CloudRuntimeException(errMsg);
         }
+
         return true;
     }
 
     protected boolean makeDirectory(Connection conn, String path) {
         String result = hypervisorResource.callHostPlugin(conn, "cloud-plugin-storage", "makeDirectory", "path", path);
+
         if (result == null || result.isEmpty()) {
             return false;
         }
+
         return true;
     }
 
     protected SR createFileSR(Connection conn, String path) {
         SR sr = null;
         PBD pbd = null;
+
         try {
             String srname = hypervisorResource.getHost().uuid + path.trim();
+
             Set<SR> srs = SR.getByNameLabel(conn, srname);
-            if ( srs != null && !srs.isEmpty()) {
+
+            if (srs != null && !srs.isEmpty()) {
                 return srs.iterator().next();
             }
+
             Map<String, String> smConfig = new HashMap<String, String>();
+
             Host host = Host.getByUuid(conn, hypervisorResource.getHost().uuid);
             String uuid = UUID.randomUUID().toString();
 
-            sr = SR.introduce(conn,uuid, uuid, uuid, "file", "file", false, smConfig);
+            sr = SR.introduce(conn, uuid, srname, srname, "file", "file", false, smConfig);
+
             PBD.Record record = new PBD.Record();
+
             record.host = host;
             record.SR = sr;
+
             smConfig.put("location", path);
+
             record.deviceConfig = smConfig;
+
             pbd = PBD.create(conn, record);
+
             pbd.plug(conn);
+
             sr.scan(conn);
+
             return sr;
-        } catch (Exception e) {
+        } catch (Exception ex) {
             try {
                 if (pbd != null) {
                     pbd.destroy(conn);
                 }
             } catch (Exception e1) {
-                s_logger.debug("Failed to destroy pbd", e);
+                s_logger.debug("Failed to destroy PBD", ex);
             }
+
             try {
                 if (sr != null) {
                     sr.forget(conn);
                 }
             } catch (Exception e2) {
-                s_logger.error("Failed to forget sr", e);
+                s_logger.error("Failed to forget SR", ex);
             }
-            String msg = "createFileSR failed! due to " + e.toString();
-            s_logger.warn(msg, e);
-            throw new CloudRuntimeException(msg, e);
+
+            String msg = "createFileSR failed! due to the following: " + ex.toString();
+
+            s_logger.warn(msg, ex);
+
+            throw new CloudRuntimeException(msg, ex);
         }
     }
 
@@ -329,8 +358,8 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                     }
                 }
             }
-            String backupUuid = dvdi.getUuid(conn);
-            return backupUuid;
+            String result = dvdi.getUuid(conn).concat("#").concat(dvdi.getPhysicalUtilisation(conn).toString());
+            return result;
         } catch (Exception e) {
             String msg = "Exception in backupsnapshot stage due to " + e.toString();
             s_logger.debug(msg);
@@ -392,6 +421,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         String details = null;
         String snapshotBackupUuid = null;
         boolean fullbackup = Boolean.parseBoolean(options.get("fullSnapshot"));
+        Long physicalSize = null;
         try {
             SR primaryStorageSR = hypervisorResource.getSRByNameLabelandHost(conn, primaryStorageNameLabel);
             if (primaryStorageSR == null) {
@@ -431,6 +461,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                     hypervisorResource.checkForSuccess(conn, task);
                     VDI backedVdi = Types.toVDI(task, conn);
                     snapshotBackupUuid = backedVdi.getUuid(conn);
+                    physicalSize = backedVdi.getPhysicalUtilisation(conn);
 
                     if( destStore instanceof SwiftTO) {
                         try {
@@ -488,9 +519,11 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                         throw new CloudRuntimeException("S3 upload of snapshots " + snapshotPaUuid + " failed");
                     }
                 } else {
-                    snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, localMountPoint, folder,
+                    String result = backupSnapshot(conn, primaryStorageSRUuid, localMountPoint, folder,
                             secondaryStorageMountPath, snapshotUuid, prevBackupUuid, prevSnapshotUuid, isISCSI, wait);
-
+                    String[] tmp = result.split("#");
+                    snapshotBackupUuid = tmp[0];
+                    physicalSize = Long.parseLong(tmp[1]);
                     finalPath = folder + File.separator + snapshotBackupUuid;
                 }
             }
@@ -499,6 +532,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
             SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
             newSnapshot.setPath(finalPath);
+            newSnapshot.setPhysicalSize(physicalSize);
             if (fullbackup) {
                 newSnapshot.setParentSnapshotPath(null);
             } else {
@@ -835,21 +869,31 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
     @Override
     public Answer createTemplateFromSnapshot(CopyCommand cmd) {
         Connection conn = hypervisorResource.getConnection();
+
         DataTO srcData = cmd.getSrcTO();
         DataTO destData = cmd.getDestTO();
+
+        if (srcData.getDataStore() instanceof PrimaryDataStoreTO && destData.getDataStore() instanceof NfsTO) {
+            return createTemplateFromSnapshot2(cmd);
+        }
+
         int wait = cmd.getWait();
+
         SnapshotObjectTO srcObj = (SnapshotObjectTO)srcData;
         TemplateObjectTO destObj = (TemplateObjectTO)destData;
+
         NfsTO srcStore = (NfsTO)srcObj.getDataStore();
         NfsTO destStore = (NfsTO)destObj.getDataStore();
 
         URI srcUri = null;
         URI destUri = null;
+
         try {
             srcUri = new URI(srcStore.getUrl());
             destUri = new URI(destStore.getUrl());
         } catch (Exception e) {
             s_logger.debug("incorrect url", e);
+
             return new CopyCmdAnswer("incorrect url" + e.toString());
         }
 
@@ -857,61 +901,95 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         int index = srcPath.lastIndexOf("/");
         String srcDir = srcPath.substring(0, index);
         String destDir = destObj.getPath();
+
         SR srcSr = null;
         SR destSr = null;
+
         VDI destVdi = null;
+
         boolean result = false;
+
         try {
             srcSr = createFileSr(conn, srcUri.getHost() + ":" + srcUri.getPath(), srcDir);
 
             String destNfsPath = destUri.getHost() + ":" + destUri.getPath();
             String localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(destNfsPath.getBytes());
+
             mountNfs(conn, destUri.getHost() + ":" + destUri.getPath(), localDir);
             makeDirectory(conn, localDir + "/" + destDir);
+
             destSr = createFileSR(conn, localDir + "/" + destDir);
 
             String nameLabel = "cloud-" + UUID.randomUUID().toString();
 
             String[] parents = srcObj.getParents();
             List<VDI> snapshotChains = new ArrayList<VDI>();
+
             if (parents != null) {
-                for(int i = 0; i < parents.length; i++) {
+                for (int i = 0; i < parents.length; i++) {
                     String snChainPath = parents[i];
                     String uuid = getSnapshotUuid(snChainPath);
                     VDI chain = VDI.getByUuid(conn, uuid);
+
                     snapshotChains.add(chain);
                 }
             }
+
             String snapshotUuid = getSnapshotUuid(srcPath);
             VDI snapshotVdi = VDI.getByUuid(conn, snapshotUuid);
+
             snapshotChains.add(snapshotVdi);
 
             long templateVirtualSize = snapshotChains.get(0).getVirtualSize(conn);
+
             destVdi = createVdi(conn, nameLabel, destSr, templateVirtualSize);
+
             String destVdiUuid = destVdi.getUuid(conn);
 
-            for(VDI snapChain : snapshotChains) {
+            for (VDI snapChain : snapshotChains) {
                 Task task = snapChain.copyAsync(conn, null, null, destVdi);
                 // poll every 1 seconds ,
                 hypervisorResource.waitForTask(conn, task, 1000, wait * 1000);
                 hypervisorResource.checkForSuccess(conn, task);
+
                 task.destroy(conn);
             }
 
             destVdi = VDI.getByUuid(conn, destVdiUuid);
-            String templatePath = destDir + "/" + destVdiUuid + ".vhd";
+
+            // scan makes XenServer pick up VDI physicalSize
+            destSr.scan(conn);
+
+            String templateUuid = destVdi.getUuid(conn);
+            String templateFilename = templateUuid + ".vhd";
+            long virtualSize = destVdi.getVirtualSize(conn);
+            long physicalSize = destVdi.getPhysicalUtilisation(conn);
+
+            String templatePath = destNfsPath + "/" + destDir;
+
             templatePath = templatePath.replaceAll("//","/");
+
+            result = hypervisorResource.postCreatePrivateTemplate(conn, templatePath, templateFilename, templateUuid, nameLabel, null,
+                    physicalSize, virtualSize, destObj.getId());
+
+            if (!result) {
+                throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir");
+            }
+
             TemplateObjectTO newTemplate = new TemplateObjectTO();
-            newTemplate.setPath(templatePath);
+
+            newTemplate.setPath(destDir + "/" + templateFilename);
             newTemplate.setFormat(Storage.ImageFormat.VHD);
             newTemplate.setSize(destVdi.getVirtualSize(conn));
             newTemplate.setPhysicalSize(destVdi.getPhysicalUtilisation(conn));
             newTemplate.setName(destVdiUuid);
 
             result = true;
+
             return new CopyCmdAnswer(newTemplate);
         } catch (Exception e) {
             s_logger.error("Failed create template from snapshot", e);
+
             return new CopyCmdAnswer("Failed create template from snapshot " + e.toString());
         } finally {
             if (!result) {
@@ -924,14 +1002,140 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 }
             }
 
+            if (srcSr != null) {
+                hypervisorResource.removeSR(conn, srcSr);
+            }
+
             if (destSr != null) {
                 hypervisorResource.removeSR(conn, destSr);
+            }
+        }
+    }
+
+    public Answer createTemplateFromSnapshot2(CopyCommand cmd) {
+        Connection conn = hypervisorResource.getConnection();
+
+        SnapshotObjectTO snapshotObjTO = (SnapshotObjectTO)cmd.getSrcTO();
+        TemplateObjectTO templateObjTO = (TemplateObjectTO)cmd.getDestTO();
+
+        if (!(snapshotObjTO.getDataStore() instanceof PrimaryDataStoreTO) || !(templateObjTO.getDataStore() instanceof NfsTO)) {
+            return null;
+        }
+
+        NfsTO destStore = null;
+        URI destUri = null;
+
+        try {
+            destStore = (NfsTO)templateObjTO.getDataStore();
+
+            destUri = new URI(destStore.getUrl());
+        } catch (Exception ex) {
+            s_logger.debug("Invalid URI", ex);
+
+            return new CopyCmdAnswer("Invalid URI: " + ex.toString());
+        }
+
+        SR srcSr = null;
+        SR destSr = null;
+
+        String destDir = templateObjTO.getPath();
+        VDI destVdi = null;
+
+        boolean result = false;
+
+        try {
+            Map<String, String> srcDetails = cmd.getOptions();
+
+            String iScsiName = srcDetails.get(DiskTO.IQN);
+            String storageHost = srcDetails.get(DiskTO.STORAGE_HOST);
+            String chapInitiatorUsername = srcDetails.get(DiskTO.CHAP_INITIATOR_USERNAME);
+            String chapInitiatorSecret = srcDetails.get(DiskTO.CHAP_INITIATOR_SECRET);
+
+            srcSr = hypervisorResource.getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, true);
+
+            String destNfsPath = destUri.getHost() + ":" + destUri.getPath();
+            String localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(destNfsPath.getBytes());
+
+            mountNfs(conn, destNfsPath, localDir);
+            makeDirectory(conn, localDir + "/" + destDir);
+
+            destSr = createFileSR(conn, localDir + "/" + destDir);
+
+            // there should only be one VDI in this SR
+            VDI srcVdi = srcSr.getVDIs(conn).iterator().next();
+
+            destVdi = srcVdi.copy(conn, destSr);
+
+            String nameLabel = "cloud-" + UUID.randomUUID().toString();
+
+            destVdi.setNameLabel(conn, nameLabel);
+
+            // scan makes XenServer pick up VDI physicalSize
+            destSr.scan(conn);
+
+            String templateUuid = destVdi.getUuid(conn);
+            String templateFilename = templateUuid + ".vhd";
+            long virtualSize = destVdi.getVirtualSize(conn);
+            long physicalSize = destVdi.getPhysicalUtilisation(conn);
+
+            // create the template.properties file
+            String templatePath = destNfsPath + "/" + destDir;
+
+            templatePath = templatePath.replaceAll("//", "/");
+
+            result = hypervisorResource.postCreatePrivateTemplate(conn, templatePath, templateFilename, templateUuid, nameLabel, null,
+                    physicalSize, virtualSize, templateObjTO.getId());
+
+            if (!result) {
+                throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir");
+            }
+
+            TemplateObjectTO newTemplate = new TemplateObjectTO();
+
+            newTemplate.setPath(destDir + "/" + templateFilename);
+            newTemplate.setFormat(Storage.ImageFormat.VHD);
+            newTemplate.setHypervisorType(HypervisorType.XenServer);
+            newTemplate.setSize(virtualSize);
+            newTemplate.setPhysicalSize(physicalSize);
+            newTemplate.setName(templateUuid);
+
+            result = true;
+
+            return new CopyCmdAnswer(newTemplate);
+//        } catch (Exception ex) {
+//            s_logger.error("Failed to create a template from a snapshot", ex);
+//
+//            return new CopyCmdAnswer("Failed to create a template from a snapshot: " + ex.toString());
+        } catch (BadServerResponse e) {
+          s_logger.error("Failed to create a template from a snapshot due to incomprehensible server response", e);
+
+          return new CopyCmdAnswer("Failed to create a template from a snapshot: " + e.toString());
+        } catch (XenAPIException e) {
+          s_logger.error("Failed to create a template from a snapshot due to xenapi error", e);
+
+          return new CopyCmdAnswer("Failed to create a template from a snapshot: " + e.toString());
+        } catch (XmlRpcException e) {
+            s_logger.error("Failed to create a template from a snapshot due to rpc error", e);
+
+            return new CopyCmdAnswer("Failed to create a template from a snapshot: " + e.toString());
+        } finally {
+            if (!result) {
+                if (destVdi != null) {
+                    try {
+                        destVdi.destroy(conn);
+                    } catch (Exception e) {
+                        s_logger.debug("Cleaned up leftover VDI on destination storage due to failure: ", e);
+                    }
+                }
             }
 
             if (srcSr != null) {
                 hypervisorResource.removeSR(conn, srcSr);
             }
+
+            if (destSr != null) {
+                hypervisorResource.removeSR(conn, destSr);
+            }
         }
     }
-
 }

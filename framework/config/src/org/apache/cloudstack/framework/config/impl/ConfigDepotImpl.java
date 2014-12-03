@@ -136,12 +136,14 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
             }
             _configDao.persist(vo);
         } else {
-            if (vo.isDynamic() != key.isDynamic() || !ObjectUtils.equals(vo.getDescription(), key.description()) || !ObjectUtils.equals(vo.getDefaultValue(), key.defaultValue())
-                    || !ObjectUtils.equals(vo.getScope(), key.scope().toString())) {
+            if (vo.isDynamic() != key.isDynamic() || !ObjectUtils.equals(vo.getDescription(), key.description()) || !ObjectUtils.equals(vo.getDefaultValue(), key.defaultValue()) ||
+                !ObjectUtils.equals(vo.getScope(), key.scope().toString()) ||
+                !ObjectUtils.equals(vo.getComponent(), componentName)) {
                 vo.setDynamic(key.isDynamic());
                 vo.setDescription(key.description());
                 vo.setDefaultValue(key.defaultValue());
                 vo.setScope(key.scope().toString());
+                vo.setComponent(componentName);
                 vo.setUpdated(date);
                 _configDao.persist(vo);
             }

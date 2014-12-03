@@ -32,7 +32,8 @@ public class Storage {
         BAREMETAL(false, false, false, "BAREMETAL"),
         VMDK(true, true, false, "vmdk"),
         VDI(true, true, false, "vdi"),
-        TAR(false, false, false, "tar");
+        TAR(false, false, false, "tar"),
+        DIR(false, false, false, "dir");
 
         private final boolean supportThinProvisioning;
         private final boolean supportSparse;
@@ -130,7 +131,8 @@ public class Storage {
         EXT(false), // XenServer local EXT SR
         OCFS2(true),
         SMB(true),
-        Gluster(true);
+        Gluster(true),
+        ManagedNFS(true);
 
         boolean shared;
 

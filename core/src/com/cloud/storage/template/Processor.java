@@ -20,6 +20,7 @@
 package com.cloud.storage.template;
 
 import java.io.File;
+import java.io.IOException;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
@@ -51,6 +52,6 @@ public interface Processor extends Adapter {
         public boolean isCorrupted;
     }
 
-    Long getVirtualSize(File file);
+    long getVirtualSize(File file) throws IOException;
 
 }

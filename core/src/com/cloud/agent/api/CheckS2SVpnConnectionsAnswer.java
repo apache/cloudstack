@@ -60,7 +60,12 @@ public class CheckS2SVpnConnectionsAnswer extends Answer {
 
     public boolean isConnected(String ip) {
         if (this.getResult()) {
-            return ipToConnected.get(ip);
+            Boolean status = ipToConnected.get(ip);
+
+            if (status != null) {
+                return status;
+            }
+
         }
         return false;
     }

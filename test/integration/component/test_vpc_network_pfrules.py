@@ -18,7 +18,7 @@
 """ Component tests for VPC network functionality - Port Forwarding Rules.
 """
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (stopRouter,
                                          startRouter,
                                          Account,
@@ -327,20 +327,31 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
                 else:
                     self.debug("Failed to SSH into VM - %s" % (public_ip.ipaddress.ipaddress))
 
-    def check_wget_from_vm(self, vm, public_ip, testnegative=False):
+    def check_wget_from_vm(self, vm, public_ip, network=None, testnegative=False, isVmAccessible=True):
         import urllib
         self.debug("Checking if we can wget from a VM=%s http server on public_ip=%s"  % (vm.name, public_ip.ipaddress.ipaddress))
         try:
+                if not isVmAccessible:
+                    self.create_natrule(vm, public_ip, network)
+                # Start httpd service on VM first
+                sshClient = vm.get_ssh_client()
+                sshClient.execute("service httpd start")
+                time.sleep(5)
+                ssh_response = str(sshClient.execute("service httpd status")).lower()
+                self.debug("httpd service status is: %s" % ssh_response)
+                if not "running" in ssh_response:
+                    raise Exception("Failed to start httpd service")
+
                 urllib.urlretrieve("http://%s/test.html" % public_ip.ipaddress.ipaddress, filename="test.html")
                 if not testnegative:
                     self.debug("Successesfull to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
                 else:
                     self.fail("Successesfull to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
-        except:
+        except Exception as e:
                 if not testnegative:
-                    self.fail("Failed to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
+                    self.fail("Failed to wget from VM=%s http server on public_ip=%s: %s" % (vm.name, public_ip.ipaddress.ipaddress, e))
                 else:
-                    self.debug("Failed to wget from VM=%s http server on public_ip=%s" % (vm.name, public_ip.ipaddress.ipaddress))
+                    self.debug("Failed to wget from VM=%s http server on public_ip=%s: %s" % (vm.name, public_ip.ipaddress.ipaddress, e))
 
     def create_natrule(self, vm, public_ip, network, services=None):
         self.debug("Creating NAT rule in network for vm with public IP")
@@ -483,7 +494,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         return nwacl_internet_1
 
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_01_network_services_VPC_StopCreatePF(self):
         """ Test : Create VPC PF rules on acquired public ip when VpcVirtualRouter is stopped
         """
@@ -514,7 +525,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         return
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_02_network_services_VPC_CreatePF(self):
         """ Test Create VPC PF rules on acquired public ip when VpcVirtualRouter is Running
         """
@@ -534,7 +545,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         return
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_03_network_services_VPC_StopCreateMultiplePF(self):
         """ Test Create multiple VPC PF rules on acquired public ip in diff't networks when VpcVirtualRouter is stopped
         """
@@ -570,7 +581,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_2, public_ip_2, testnegative=False)
         return
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_04_network_services_VPC_CreateMultiplePF(self):
         """ Test Create multiple VPC PF rules on acquired public ip in diff't networks when VpcVirtualRouter is running
         """
@@ -598,7 +609,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_2, public_ip_2, testnegative=False)
         return
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_05_network_services_VPC_StopDeletePF(self):
         """ Test delete a PF rule in VPC when VpcVirtualRouter is Stopped
         """
@@ -629,7 +640,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
         return
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_06_network_services_VPC_DeletePF(self):
         """ Test delete a PF rule in VPC when VpcVirtualRouter is Running
         """
@@ -656,7 +667,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
         return
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_07_network_services_VPC_StopDeleteAllPF(self):
         """ Test delete all PF rules in VPC when VpcVirtualRouter is Stopped
         """
@@ -687,10 +698,11 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         nat_rule.delete(self.apiclient)
         self.start_vpcrouter(router)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
-        self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
+        self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True,
+                isVmAccessible=False, network=network_1)
         return
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_08_network_services_VPC_DeleteAllPF(self):
         """ Test delete all PF rules in VPC when VpcVirtualRouter is Running
         """
@@ -717,10 +729,11 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         http_rule.delete(self.apiclient)
         nat_rule.delete(self.apiclient)
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=True)
-        self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
+        self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True,
+                isVmAccessible=False, network=network_1)
         return
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_09_network_services_VPC_StopDeleteAllMultiplePF(self):
         """ Test delete all PF rules in VPC across multiple networks when VpcVirtualRouter is Stopped
         """
@@ -781,13 +794,17 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_2, public_ip_2, testnegative=True)
         self.check_ssh_into_vm(vm_3, public_ip_3, testnegative=True)
         self.check_ssh_into_vm(vm_4, public_ip_4, testnegative=True)
-        self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
-        self.check_wget_from_vm(vm_2, public_ip_2, testnegative=True)
-        self.check_wget_from_vm(vm_3, public_ip_3, testnegative=True)
-        self.check_wget_from_vm(vm_4, public_ip_4, testnegative=True)
+        self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True,
+                isVmAccessible=False, network=network_1)
+        self.check_wget_from_vm(vm_2, public_ip_2, testnegative=True,
+                isVmAccessible=False, network=network_1)
+        self.check_wget_from_vm(vm_3, public_ip_3, testnegative=True,
+                isVmAccessible=False, network=network_2)
+        self.check_wget_from_vm(vm_4, public_ip_4, testnegative=True,
+                isVmAccessible=False, network=network_2)
         return
 
-    @attr(tags=["advanced", "intervlan", "provisioning"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_10_network_services_VPC_DeleteAllMultiplePF(self):
         """ Test delete all PF rules in VPC across multiple networks when VpcVirtualRouter is Running
         """
@@ -843,8 +860,12 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_2, public_ip_2, testnegative=True)
         self.check_ssh_into_vm(vm_3, public_ip_3, testnegative=True)
         self.check_ssh_into_vm(vm_4, public_ip_4, testnegative=True)
-        self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
-        self.check_wget_from_vm(vm_2, public_ip_2, testnegative=True)
-        self.check_wget_from_vm(vm_3, public_ip_3, testnegative=True)
-        self.check_wget_from_vm(vm_4, public_ip_4, testnegative=True)
+        self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True,
+                isVmAccessible=False, network=network_1)
+        self.check_wget_from_vm(vm_2, public_ip_2, testnegative=True,
+                isVmAccessible=False, network=network_1)
+        self.check_wget_from_vm(vm_3, public_ip_3, testnegative=True,
+                isVmAccessible=False, network=network_2)
+        self.check_wget_from_vm(vm_4, public_ip_4, testnegative=True,
+                isVmAccessible=False, network=network_2)
         return

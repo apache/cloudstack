@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,27 +16,34 @@
 # under the License.
 """ P1 tests for Scaling up Vm
 """
-#Import Local Modules
-import marvin
+# Import Local Modules
 from marvin.codes import FAILED
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackAPI import scaleVirtualMachine
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (Account,
+                             VirtualMachine,
+                             ServiceOffering)
+from marvin.lib.common import (get_zone,
+                               get_template,
+                               get_domain)
 from nose.plugins.attrib import attr
 
 _multiprocess_shared_ = True
 
+
 class TestScaleVm(cloudstackTestCase):
+
     @classmethod
     def setUpClass(cls):
         testClient = super(TestScaleVm, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
         cls.hypervisor = cls.testClient.getHypervisorInfo()
-        if cls.hypervisor.lower() == 'kvm':
-            raise unittest.SkipTest("ScaleVM is not supported on KVM. Hence, skipping the test")
+        if cls.hypervisor.lower() in ('kvm', 'hyperv', 'lxc'):
+            raise unittest.SkipTest(
+                "ScaleVM is not supported on KVM, Hyper-V or LXC.\
+                        Hence, skipping the test")
 
         # Get Zone, Domain and templates
         domain = get_domain(cls.apiclient)
@@ -49,7 +56,8 @@ class TestScaleVm(cloudstackTestCase):
             cls.services["ostype"]
         )
         if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template\
+                    with description %s" % cls.services["ostype"]
 
         # Set Zones and disk offerings ??
         cls.services["small"]["zoneid"] = zone.id
@@ -72,7 +80,7 @@ class TestScaleVm(cloudstackTestCase):
             cls.services["service_offerings"]["big"]
         )
 
-        #create a virtual machine
+        # create a virtual machine
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
             cls.services["small"],
@@ -88,7 +96,9 @@ class TestScaleVm(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.apiclient = super(TestScaleVm, cls).getClsTestClient().getApiClient()
+        cls.apiclient = super(
+            TestScaleVm,
+            cls).getClsTestClient().getApiClient()
         cleanup_resources(cls.apiclient, cls._cleanup)
         return
 
@@ -98,23 +108,48 @@ class TestScaleVm(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        #Clean up, terminate the created ISOs
+        # Clean up, terminate the created ISOs
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
     @attr(hypervisor="xenserver")
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_01_scale_vm(self):
-        """Test scale virtual machine 
+        """Test scale virtual machine
         """
         # Validate the following
-        # Scale up the vm and see if it scales to the new svc offering and is finally in running state
+        # Scale up the vm and see if it scales to the new svc offering and is
+        # finally in running state
+
+        #        VirtualMachine should be updated to tell cloudstack
+        #        it has PV tools
+        #        available and successfully scaled. We will only mock
+        #        that behaviour
+        #        here but it is not expected in production since the VM
+        #        scaling is not
+        #        guaranteed until tools are installed, vm rebooted
+
+        # If hypervisor is Vmware, then check if
+        # the vmware tools are installed and the process is running
+        # Vmware tools are necessary for scale VM operation
+        if self.hypervisor.lower() == "vmware":
+            sshClient = self.virtual_machine.get_ssh_client()
+            result = str(
+                sshClient.execute("service vmware-tools status")).lower()
+            self.debug("and result is: %s" % result)
+            if not "running" in result:
+                self.skipTest("Skipping scale VM operation because\
+                    VMware tools are not installed on the VM")
+
+        self.virtual_machine.update(
+            self.apiclient,
+            isdynamicallyscalable='true')
 
         self.debug("Scaling VM-ID: %s to service offering: %s and state %s" % (
             self.virtual_machine.id,
             self.big_offering.id,
             self.virtual_machine.state
-            ))
+        ))
 
         cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
         cmd.serviceofferingid = self.big_offering.id
@@ -144,18 +179,13 @@ class TestScaleVm(cloudstackTestCase):
             "Check virtual machine ID of scaled VM"
         )
 
-        #        VirtualMachine should be updated to tell cloudstack it has PV tools
-        #        available and successfully scaled. We will only mock that behaviour
-        #        here but it is not expected in production since the VM scaling is not
-        #        guaranteed until tools are installed, vm rebooted
-        self.virtual_machine.update(self.apiclient, isdynamicallyscalable='true')
-
-        self.debug("Scaling VM-ID: %s from service offering: %s to new service offering %s and the response says %s" % (
-            self.virtual_machine.id,
-            self.virtual_machine.serviceofferingid,
-            self.big_offering.id,
-            vm_response.serviceofferingid
-            ))
+        self.debug(
+            "Scaling VM-ID: %s from service offering: %s to new service\
+                    offering %s and the response says %s" %
+            (self.virtual_machine.id,
+             self.virtual_machine.serviceofferingid,
+             self.big_offering.id,
+             vm_response.serviceofferingid))
         self.assertEqual(
             vm_response.serviceofferingid,
             self.big_offering.id,

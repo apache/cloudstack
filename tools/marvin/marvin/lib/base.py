@@ -24,7 +24,7 @@ from marvin.cloudstackAPI import *
 from marvin.codes import (FAILED, FAIL, PASS, RUNNING, STOPPED,
                           STARTING, DESTROYED, EXPUNGING,
                           STOPPING, BACKED_UP, BACKING_UP)
-from marvin.cloudstackException import GetDetailExceptionInfo
+from marvin.cloudstackException import GetDetailExceptionInfo, CloudstackAPIException
 from marvin.lib.utils import validateList, is_server_ssh_ready, random_gen
 # Import System modules
 import time
@@ -104,11 +104,13 @@ class Account:
         cmd.lastname = services["lastname"]
 
         cmd.password = services["password"]
-
-        username = "-".join([services["username"],
-                             random_gen(id=apiclient.id)])
-        #  Trim username to 99 characters to prevent failure
-        cmd.username = username[:99] if len(username) > 99 else username
+        username = services["username"]
+        # Limit account username to 99 chars to avoid failure
+        # 6 chars start string + 85 chars apiclientid + 6 chars random string + 2 chars joining hyphen string = 99
+        username = username[:6]
+        apiclientid = apiclient.id[-85:] if len(apiclient.id) > 85 else apiclient.id
+        cmd.username = "-".join([username,
+                             random_gen(id=apiclientid, size=6)])
 
         if "accountUUID" in services:
             cmd.accountid = "-".join([services["accountUUID"], random_gen()])
@@ -338,12 +340,17 @@ class VirtualMachine:
             ipaddressid=public_ip.ipaddress.id
         )
         if allow_egress:
-            EgressFireWallRule.create(
-                apiclient=apiclient,
-                networkid=virtual_machine.nic[0].networkid,
-                protocol='All',
-                cidrlist='0.0.0.0/0'
-            )
+            try:
+                EgressFireWallRule.create(
+                    apiclient=apiclient,
+                    networkid=virtual_machine.nic[0].networkid,
+                    protocol='All',
+                    cidrlist='0.0.0.0/0'
+                )
+            except CloudstackAPIException, e:
+                # This could fail because we've already set up the same rule
+                if not "There is already a firewall rule specified".lower() in e.errorMsg.lower():
+                    raise
         virtual_machine.ssh_ip = nat_rule.ipaddress
         virtual_machine.public_ip = nat_rule.ipaddress
 
@@ -354,7 +361,7 @@ class VirtualMachine:
                projectid=None, startvm=None, diskofferingid=None,
                affinitygroupnames=None, affinitygroupids=None, group=None,
                hostid=None, keypair=None, ipaddress=None, mode='default',
-               method='GET', hypervisor="XenServer", customcpunumber=None,
+               method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None):
         """Create the instance"""
 
@@ -369,7 +376,9 @@ class VirtualMachine:
             cmd.zoneid = zoneid
         elif "zoneid" in services:
             cmd.zoneid = services["zoneid"]
-        cmd.hypervisor = hypervisor
+
+        if hypervisor:
+            cmd.hypervisor = hypervisor
 
         if "displayname" in services:
             cmd.displayname = services["displayname"]
@@ -519,11 +528,19 @@ class VirtualMachine:
         cmd.id = self.id
         apiclient.rebootVirtualMachine(cmd)
 
+        response = self.getState(apiclient, VirtualMachine.RUNNING)
+        if response[0] == FAIL:
+            raise Exception(response[1])
+
     def recover(self, apiclient):
         """Recover the instance"""
         cmd = recoverVirtualMachine.recoverVirtualMachineCmd()
         cmd.id = self.id
         apiclient.recoverVirtualMachine(cmd)
+
+        response = self.getState(apiclient, VirtualMachine.STOPPED)
+        if response[0] == FAIL:
+            raise Exception(response[1])
 
     def restore(self, apiclient, templateid=None):
         """Restore the instance"""
@@ -612,10 +629,11 @@ class VirtualMachine:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.updateVirtualMachine(cmd))
 
-    def delete(self, apiclient, **kwargs):
+    def delete(self, apiclient, expunge=True, **kwargs):
         """Destroy an Instance"""
         cmd = destroyVirtualMachine.destroyVirtualMachineCmd()
         cmd.id = self.id
+        cmd.expunge = expunge
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         apiclient.destroyVirtualMachine(cmd)
 
@@ -874,7 +892,7 @@ class Volume:
 
     @classmethod
     def upload(cls, apiclient, services, zoneid=None,
-               account=None, domainid=None, url=None):
+               account=None, domainid=None, url=None, **kwargs):
         """Uploads the volume to specified account"""
 
         cmd = uploadVolume.uploadVolumeCmd()
@@ -890,6 +908,7 @@ class Volume:
             cmd.url = url
         else:
             cmd.url = services["url"]
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
         return Volume(apiclient.uploadVolume(cmd).__dict__)
 
     def wait_for_upload(self, apiclient, timeout=10, interval=60):
@@ -1066,7 +1085,8 @@ class Template:
 
     @classmethod
     def register(cls, apiclient, services, zoneid=None,
-                 account=None, domainid=None, hypervisor=None):
+                 account=None, domainid=None, hypervisor=None,
+                 projectid=None):
         """Create template from URL"""
 
         # Create template from Virtual machine and Volume ID
@@ -1074,7 +1094,10 @@ class Template:
         cmd.displaytext = services["displaytext"]
         cmd.name = "-".join([services["name"], random_gen()])
         cmd.format = services["format"]
-        cmd.hypervisor = hypervisor
+        if hypervisor:
+            cmd.hypervisor = hypervisor
+        elif "hypervisor" in services:
+            cmd.hypervisor = services["hypervisor"]
 
         if "ostypeid" in services:
             cmd.ostypeid = services["ostypeid"]
@@ -1114,6 +1137,11 @@ class Template:
 
         if domainid:
             cmd.domainid = domainid
+
+        if projectid:
+            cmd.projectid = projectid
+        elif "projectid" in services:
+            cmd.projectid = services["projectid"]
 
         # Register Template
         template = apiclient.registerTemplate(cmd)
@@ -1164,11 +1192,13 @@ class Template:
         cmd.snapshotid = snapshot.id
         return Template(apiclient.createTemplate(cmd).__dict__)
 
-    def delete(self, apiclient):
+    def delete(self, apiclient, zoneid=None):
         """Delete Template"""
 
         cmd = deleteTemplate.deleteTemplateCmd()
         cmd.id = self.id
+        if zoneid:
+            cmd.zoneid = zoneid
         apiclient.deleteTemplate(cmd)
 
     def download(self, apiclient, timeout=5, interval=60):
@@ -1225,12 +1255,11 @@ class Template:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.updateTemplate(cmd))
 
-    @classmethod
-    def copy(cls, apiclient, id, sourcezoneid, destzoneid):
+    def copy(self, apiclient, sourcezoneid, destzoneid):
         "Copy Template from source Zone to Destination Zone"
 
         cmd = copyTemplate.copyTemplateCmd()
-        cmd.id = id
+        cmd.id = self.id
         cmd.sourcezoneid = sourcezoneid
         cmd.destzoneid = destzoneid
 
@@ -1393,7 +1422,7 @@ class PublicIPAddress:
 
         if accountid:
             cmd.account = accountid
-        elif "account" in services:
+        elif services and "account" in services:
             cmd.account = services["account"]
 
         if zoneid:
@@ -1403,7 +1432,7 @@ class PublicIPAddress:
 
         if domainid:
             cmd.domainid = domainid
-        elif "domainid" in services:
+        elif services and "domainid" in services:
             cmd.domainid = services["domainid"]
 
         if isportable:
@@ -1940,17 +1969,11 @@ class DiskOffering:
         if "customizediops" in services:
             cmd.customizediops = services["customizediops"]
 
-        if "disksize" in services:
-            cmd.disksize = services["disksize"]
-
         if "maxiops" in services:
             cmd.maxiops = services["maxiops"]
 
         if "miniops" in services:
             cmd.miniops = services["miniops"]
-
-        if "storagetype" in services:
-            cmd.storagetype = services["storagetype"]
 
         if "tags" in services:
             cmd.tags = services["tags"]
@@ -2158,19 +2181,25 @@ class LoadBalancerRule:
         apiclient.deleteLoadBalancerRule(cmd)
         return
 
-    def assign(self, apiclient, vms):
+    def assign(self, apiclient, vms=None, vmidipmap=None):
         """Assign virtual machines to load balancing rule"""
         cmd = assignToLoadBalancerRule.assignToLoadBalancerRuleCmd()
         cmd.id = self.id
-        cmd.virtualmachineids = [str(vm.id) for vm in vms]
+        if vmidipmap:
+            cmd.vmidipmap = vmidipmap
+        if vms:
+            cmd.virtualmachineids = [str(vm.id) for vm in vms]
         apiclient.assignToLoadBalancerRule(cmd)
         return
 
-    def remove(self, apiclient, vms):
+    def remove(self, apiclient, vms=None, vmidipmap=None):
         """Remove virtual machines from load balancing rule"""
         cmd = removeFromLoadBalancerRule.removeFromLoadBalancerRuleCmd()
         cmd.id = self.id
-        cmd.virtualmachineids = [str(vm.id) for vm in vms]
+        if vms:
+            cmd.virtualmachineids = [str(vm.id) for vm in vms]
+        if vmidipmap:
+            cmd.vmidipmap = vmidipmap
         apiclient.removeFromLoadBalancerRule(cmd)
         return
 
@@ -2234,13 +2263,14 @@ class LoadBalancerRule:
         return(apiclient.listLoadBalancerRules(cmd))
 
     @classmethod
-    def listLoadBalancerRuleInstances(cls, apiclient, id, applied=None, **kwargs):
+    def listLoadBalancerRuleInstances(cls, apiclient, id, lbvmips=False, applied=None, **kwargs):
         """Lists load balancing rule Instances"""
 
         cmd = listLoadBalancerRuleInstances.listLoadBalancerRuleInstancesCmd()
         cmd.id = id
         if applied:
             cmd.applied = applied
+        cmd.lbvmips = lbvmips
 
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return apiclient.listLoadBalancerRuleInstances(cmd)
@@ -2432,6 +2462,13 @@ class Host:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.updateHost(cmd))
 
+    @classmethod
+    def reconnect(cls, apiclient, **kwargs):
+        """Reconnect the Host"""
+        
+        cmd = reconnectHost.reconnectHostCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.reconnectHost(cmd))
 
 class StoragePool:
     """Manage Storage pools (Primary Storage)"""
@@ -2536,6 +2573,13 @@ class StoragePool:
             cmd.listall = True
         return(apiclient.findStoragePoolsForMigration(cmd))
 
+    @classmethod
+    def update(cls,apiclient, **kwargs):
+        """Update storage pool"""
+        cmd=updateStoragePool.updateStoragePoolCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.updateStoragePool(cmd)
+
 class Network:
     """Manage Network pools"""
 
@@ -2546,7 +2590,7 @@ class Network:
     def create(cls, apiclient, services, accountid=None, domainid=None,
                networkofferingid=None, projectid=None,
                subdomainaccess=None, zoneid=None,
-               gateway=None, netmask=None, vpcid=None, aclid=None):
+               gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None):
         """Create Network for account"""
         cmd = createNetwork.createNetworkCmd()
         cmd.name = services["name"]
@@ -2577,7 +2621,9 @@ class Network:
             cmd.startip = services["startip"]
         if "endip" in services:
             cmd.endip = services["endip"]
-        if "vlan" in services:
+        if vlan:
+            cmd.vlan = vlan
+        elif "vlan" in services:
             cmd.vlan = services["vlan"]
         if "acltype" in services:
             cmd.acltype = services["acltype"]
@@ -4397,19 +4443,25 @@ class ApplicationLoadBalancer:
         apiclient.deleteLoadBalancerRule(cmd)
         return
 
-    def assign(self, apiclient, vms):
+    def assign(self, apiclient, vms=None, vmidipmap=None):
         """Assign virtual machines to load balancing rule"""
         cmd = assignToLoadBalancerRule.assignToLoadBalancerRuleCmd()
         cmd.id = self.id
-        cmd.virtualmachineids = [str(vm.id) for vm in vms]
+        if vmidipmap:
+            cmd.vmidipmap = vmidipmap
+        if vms:
+            cmd.virtualmachineids = [str(vm.id) for vm in vms]
         apiclient.assignToLoadBalancerRule(cmd)
         return
 
-    def remove(self, apiclient, vms):
+    def remove(self, apiclient, vms=None, vmidipmap=None):
         """Remove virtual machines from load balancing rule"""
         cmd = removeFromLoadBalancerRule.removeFromLoadBalancerRuleCmd()
         cmd.id = self.id
-        cmd.virtualmachineids = [str(vm.id) for vm in vms]
+        if vms:
+            cmd.virtualmachineids = [str(vm.id) for vm in vms]
+        if vmidipmap:
+            cmd.vmidipmap = vmidipmap
         apiclient.removeFromLoadBalancerRule(cmd)
         return
 

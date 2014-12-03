@@ -17,10 +17,8 @@
 package com.cloud.agent;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -37,7 +35,6 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
@@ -174,16 +171,12 @@ public class AgentShell implements IAgentShell, Daemon {
 
         s_logger.info("agent.properties found at " + file.getAbsolutePath());
 
-        InputStream propertiesStream = null;
         try {
-            propertiesStream = new FileInputStream(file);
-            _properties.load(propertiesStream);
+            PropertiesUtil.loadFromFile(_properties, file);
         } catch (final FileNotFoundException ex) {
             throw new CloudRuntimeException("Cannot find the file: " + file.getAbsolutePath(), ex);
         } catch (final IOException ex) {
             throw new CloudRuntimeException("IOException in reading " + file.getAbsolutePath(), ex);
-        } finally {
-            IOUtils.closeQuietly(propertiesStream);
         }
     }
 
@@ -413,7 +406,37 @@ public class AgentShell implements IAgentShell, Daemon {
             /* By default we only search for log4j.xml */
             LogUtils.initLog4j("log4j-cloud.xml");
 
-            System.setProperty("java.net.preferIPv4Stack", "true");
+            /*
+                By default we disable IPv6 for now to maintain backwards
+                compatibility. At a later point in time we can change this
+                behavior to prefer IPv6 over IPv4.
+            */
+            boolean ipv6disabled = true;
+            String ipv6 = getProperty(null, "ipv6disabled");
+            if (ipv6 != null) {
+                ipv6disabled = Boolean.parseBoolean(ipv6);
+            }
+
+            boolean ipv6prefer = false;
+            String ipv6p = getProperty(null, "ipv6prefer");
+            if (ipv6p != null) {
+                ipv6prefer = Boolean.parseBoolean(ipv6p);
+            }
+
+            if (ipv6disabled) {
+                s_logger.info("Preferring IPv4 address family for agent connection");
+                System.setProperty("java.net.preferIPv4Stack", "true");
+                if (ipv6prefer) {
+                    s_logger.info("ipv6prefer is set to true, but ipv6disabled is false. Not preferring IPv6 for agent connection");
+                }
+            } else {
+                if (ipv6prefer) {
+                    s_logger.info("Preferring IPv6 address family for agent connection");
+                    System.setProperty("java.net.preferIPv6Addresses", "true");
+                } else {
+                    s_logger.info("Using default Java settings for IPv6 preference for agent connection");
+                }
+            }
 
             String instance = getProperty(null, "instance");
             if (instance == null) {

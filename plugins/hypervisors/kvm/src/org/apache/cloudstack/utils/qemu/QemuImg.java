@@ -17,6 +17,7 @@
 package org.apache.cloudstack.utils.qemu;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import com.cloud.storage.Storage;
 
@@ -122,8 +123,14 @@ public class QemuImg {
         if (options != null && !options.isEmpty()) {
             s.add("-o");
             final StringBuilder optionsStr = new StringBuilder();
-            for (Map.Entry<String, String> option : options.entrySet()) {
-                optionsStr.append(option.getKey()).append('=').append(option.getValue()).append(',');
+            Iterator<Map.Entry<String, String>> optionsIter = options.entrySet().iterator();
+            while(optionsIter.hasNext()){
+                Map.Entry option = optionsIter.next();
+                optionsStr.append(option.getKey()).append('=').append(option.getValue());
+                if(optionsIter.hasNext()){
+                    //Add "," only if there are more options
+                    optionsStr.append(',');
+                }
             }
             s.add(optionsStr.toString());
         }

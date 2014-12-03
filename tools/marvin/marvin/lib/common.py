@@ -300,6 +300,59 @@ def get_template(
     return list_templatesout[0]
 
 
+
+def get_windows_template(
+        apiclient, zone_id=None, ostype_desc=None, template_filter="featured", template_type='USER',
+        template_id=None, template_name=None, account=None, domain_id=None, project_id=None,
+        hypervisor=None):
+    '''
+    @Name : get_template
+    @Desc : Retrieves the template Information based upon inputs provided
+            Template is retrieved based upon either of the inputs matched
+            condition
+    @Input : returns a template"
+    @Output : FAILED in case of any failure
+              template Information matching the inputs
+    '''
+    cmd = listTemplates.listTemplatesCmd()
+    cmd.templatefilter = template_filter
+    if domain_id is not None:
+        cmd.domainid = domain_id
+    if zone_id is not None:
+        cmd.zoneid = zone_id
+    if template_id is not None:
+        cmd.id = template_id
+    if template_name is not None:
+        cmd.name = template_name
+    if hypervisor is not None:
+        cmd.hypervisor = hypervisor
+    if project_id is not None:
+        cmd.projectid = project_id
+    if account is not None:
+        cmd.account = account
+
+
+    '''
+    Get the Templates pertaining to the inputs provided
+    '''
+    list_templatesout = apiclient.listTemplates(cmd)
+    #print("template result is %s"%(list_templatesout))
+    if list_templatesout is None:
+        return FAILED
+    if validateList(list_templatesout[0]) == FAIL :
+            return FAILED
+
+    for template in list_templatesout:
+        if template.isready and template.templatetype == "USER" and template.ostypename == ostype_desc:
+            return template
+    '''
+    Return default first template, if no template matched
+    '''
+
+    return FAILED
+
+
+
 def download_systemplates_sec_storage(server, services):
     """Download System templates on sec storage"""
 
@@ -1098,7 +1151,7 @@ def shouldTestBeSkipped(networkType, zoneType):
         skipIt = True
     return skipIt
 
-def verifyNetworkState(apiclient, networkid, state):
+def verifyNetworkState(apiclient, networkid, state, listall=True):
     """List networks and check if the network state matches the given state"""
     retriesCount = 10
     isNetworkInDesiredState = False
@@ -1106,7 +1159,7 @@ def verifyNetworkState(apiclient, networkid, state):
     exceptionMessage = ""
     try:
         while retriesCount >= 0:
-            networks = Network.list(apiclient, id=networkid)
+            networks = Network.list(apiclient, id=networkid, listall=listall)
             assert validateList(
                 networks)[0] == PASS, "Networks list validation failed"
             if str(networks[0].state).lower() == state:
@@ -1114,6 +1167,9 @@ def verifyNetworkState(apiclient, networkid, state):
                 break
             retriesCount -= 1
             time.sleep(60)
+        if not isNetworkInDesiredState:
+            exceptionMessage = "Network state should be %s, it is %s" %\
+                                (state, networks[0].state)
     except Exception as e:
         exceptionOccured = True
         exceptionMessage = e
@@ -1164,6 +1220,42 @@ def createNetworkRulesForVM(apiclient, virtualmachine, ruletype,
     except Exception as e:
         [FAIL, e]
     return [PASS, public_ip]
+
+def getPortableIpRangeServices(config):
+    """ Reads config values related to portable ip and fills up
+    services accordingly"""
+
+    services = {}
+    attributeError = False
+
+    if config.portableIpRange.startip:
+        services["startip"] = config.portableIpRange.startip
+    else:
+        attributeError = True
+
+    if config.portableIpRange.endip:
+        services["endip"] = config.portableIpRange.endip
+    else:
+        attributeError = True
+
+    if config.portableIpRange.netmask:
+        services["netmask"] = config.portableIpRange.netmask
+    else:
+        attributeError = True
+
+    if config.portableIpRange.gateway:
+        services["gateway"] = config.portableIpRange.gateway
+    else:
+        attributeError = True
+
+    if config.portableIpRange.vlan:
+        services["vlan"] = config.portableIpRange.vlan
+
+    if attributeError:
+        services = FAILED
+
+    return services
+
 
 def uploadVolume(apiclient, zoneid, account, services):
     try:
@@ -1271,3 +1363,16 @@ def isDomainResourceCountEqualToExpectedCount(apiclient, domainid, expectedcount
     if resourcecount == expectedcount:
         isResourceCountEqual = True
     return [isExceptionOccured, reasonForException, isResourceCountEqual]
+
+def isNetworkDeleted(apiclient, networkid, timeout=600):
+    """ List the network and check that the list is empty or not"""
+    networkDeleted = False
+    while timeout >= 0:
+        networks = Network.list(apiclient, id=networkid)
+        if networks is None:
+            networkDeleted = True
+            break
+        timeout -= 60
+        time.sleep(60)
+    #end while
+    return networkDeleted

@@ -590,6 +590,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                 hasFreeIps = isIP6AddressAvailableInNetwork(network.getId());
             }
         } else {
+            if (network.getCidr() == null) {
+                s_logger.debug("Network - " + network.getId() +  " has NULL CIDR.");
+                return false;
+            }
             hasFreeIps = (getAvailableIps(network, null)).size() > 0;
         }
 
@@ -2172,7 +2176,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                     List<? extends Vlan> vlans = _vlanDao.listVlansForPod(podId);
                     for (Vlan vlan : vlans) {
                         if (nic.getIp4Address() != null) {
-                            IpAddress ip = _ipAddressDao.findByIpAndNetworkId(network.getId(), nic.getIp4Address());
+                            IpAddress ip = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), nic.getIp4Address());
                             if (ip != null && ip.getVlanId() == vlan.getId()) {
                                 return nic;
                             }
@@ -2236,6 +2240,13 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         //don't GC
         if (_nicDao.countNicsForStartingVms(networkId) > 0) {
             s_logger.debug("Network id=" + networkId + " is not ready for GC as it has vms that are Starting at the moment");
+            return false;
+        }
+
+        // Due to VMSync issue, there can be cases where nic count is zero, but there can be VM's running in the network
+        // so add extra guard to check if network GC is actially required.
+        if (_nicDao.countNicsForRunningVms(networkId) > 0) {
+            s_logger.debug("Network id=" + networkId + " is not ready for GC as it has vms that are Running at the moment");
             return false;
         }
 

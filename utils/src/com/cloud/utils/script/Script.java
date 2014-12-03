@@ -21,7 +21,6 @@ package com.cloud.utils.script;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -308,24 +307,24 @@ public class Script implements Callable<String> {
         public Task(OutputInterpreter interpreter, BufferedReader reader) {
             this.interpreter = interpreter;
             this.reader = reader;
-            this.result = null;
+            result = null;
         }
 
         @Override
         public void run() {
-            done = false;
-            try {
-                result = interpreter.interpret(reader);
-            } catch (IOException ex) {
-                result = stackTraceAsString(ex);
-            } catch (Exception ex) {
-                result = stackTraceAsString(ex);
-            } finally {
-                synchronized (this) {
-                    done = true;
-                    notifyAll();
+            synchronized(this) {
+                done = false;
+                try {
+                    result = interpreter.interpret(reader);
+                } catch (IOException ex) {
+                    result = stackTraceAsString(ex);
+                } catch (Exception ex) {
+                    result = stackTraceAsString(ex);
+                } finally {
+                        done = true;
+                        notifyAll();
+                        IOUtils.closeQuietly(reader);
                 }
-                IOUtils.closeQuietly(reader);
             }
         }
 
@@ -340,8 +339,6 @@ public class Script implements Callable<String> {
     public static String findScript(String path, String script) {
         s_logger.debug("Looking for " + script + " in the classpath");
 
-        path = path.replace("/", File.separator);
-
         URL url = ClassLoader.getSystemResource(script);
         s_logger.debug("System resource: " + url);
         File file = null;
@@ -350,6 +347,12 @@ public class Script implements Callable<String> {
             s_logger.debug("Absolute path =  " + file.getAbsolutePath());
             return file.getAbsolutePath();
         }
+
+        if (path == null) {
+            s_logger.warn("No search path specified, unable to look for " + script);
+            return null;
+        }
+        path = path.replace("/", File.separator);
 
         /**
          * Look in WEB-INF/classes of the webapp
@@ -410,10 +413,7 @@ public class Script implements Callable<String> {
                     if (propsFile == null) {
                         s_logger.debug("environment.properties could not be opened");
                     } else {
-                        final FileInputStream finputstream = new FileInputStream(propsFile);
-                        final Properties props = new Properties();
-                        props.load(finputstream);
-                        finputstream.close();
+                        final Properties props = PropertiesUtil.loadFromFile(propsFile);
                         search = props.getProperty("paths.script");
                     }
                 } catch (IOException e) {
