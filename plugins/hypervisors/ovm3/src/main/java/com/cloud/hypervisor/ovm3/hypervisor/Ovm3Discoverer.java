@@ -31,27 +31,27 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.Listener;
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.host.Status;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.configuration.Config;
+import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
-import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.exception.DiscoveryException;
+import com.cloud.host.Host;
 import com.cloud.host.HostInfo;
 import com.cloud.host.HostVO;
-import com.cloud.host.Host;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.ovm3.object.Linux;
 import com.cloud.hypervisor.ovm3.object.Connection;
+import com.cloud.hypervisor.ovm3.object.Linux;
 import com.cloud.hypervisor.ovm3.object.Ovm3ResourceException;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
@@ -66,7 +66,7 @@ import com.cloud.utils.ssh.SSHCmdHelper;
 
 @Local(value = Discoverer.class)
 public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
-        Listener, ResourceStateAdapter {
+Listener, ResourceStateAdapter {
     private static final Logger LOGGER = Logger
             .getLogger(Ovm3Discoverer.class);
     protected String publicNetworkDevice;
@@ -122,16 +122,10 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
         return !hosts.isEmpty();
     }
 
-    @Override
-    public Map<? extends ServerResource, Map<String, String>> find(long dcId,
-            Long podId, Long clusterId, URI url, String username,
-            String password, List<String> hostTags)
-            throws DiscoveryException {
-        Connection c = null;
-
+    private boolean CheckUrl(URI url) throws DiscoveryException {
         if ("http".equals(url.getScheme()) || "https".equals(url.getScheme())) {
             String msg = "Discovering " + url
-                + ": " + _params;
+                    + ": " + _params;
             LOGGER.debug(msg);
         } else {
             String msg = "urlString is not http(s) so we're not taking care of the discovery for this: "
@@ -139,7 +133,17 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
             LOGGER.info(msg);
             throw new DiscoveryException(msg);
         }
+        return true;
+    }
 
+    @Override
+    public Map<? extends ServerResource, Map<String, String>> find(long dcId,
+            Long podId, Long clusterId, URI url, String username,
+            String password, List<String> hostTags)
+                    throws DiscoveryException {
+        Connection c = null;
+
+        CheckUrl(url);
         if (clusterId == null) {
             String msg = "must specify cluster Id when add host";
             LOGGER.info(msg);
@@ -188,7 +192,8 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
 
             InetAddress ia = InetAddress.getByName(hostname);
             String hostIp = ia.getHostAddress();
-            String guid = UUID.nameUUIDFromBytes(hostIp.getBytes()).toString();
+            String guid = UUID.nameUUIDFromBytes(hostIp.getBytes("UTF8"))
+                    .toString();
 
             if (checkIfExisted(guid)) {
                 String msg = "The host " + hostIp + " has been added before";

@@ -179,8 +179,8 @@ import com.trilead.ssh2.SCPClient;
 /* TODO: Seperate the Resources out */
 @Local(value = ServerResource.class)
 public class Ovm3ResourceBase extends ServerResourceBase implements
-        ServerResource, HypervisorResource, VirtualRouterDeployer,
-        StorageProcessor {
+ServerResource, HypervisorResource, VirtualRouterDeployer,
+StorageProcessor {
     private static final Logger LOGGER = Logger
             .getLogger(Ovm3ResourceBase.class);
     private Connection c;
@@ -339,13 +339,13 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
 
         if (!NetUtils.isValidIp(ovm3PoolVip)) {
             LOGGER.debug("No VIP, Setting ovm3pool and ovm3cluster to false");
-            this.agentInOvm3Pool = false;
-            this.agentInOvm3Cluster = false;
-            this.ovm3PoolVip = "";
+            agentInOvm3Pool = false;
+            agentInOvm3Cluster = false;
+            ovm3PoolVip = "";
         }
         /* if we're a cluster we are a pool */
         if (agentInOvm3Cluster) {
-            this.agentInOvm3Pool = true;
+            agentInOvm3Pool = true;
         }
 
         /* check if we're master or not and if we can connect */
@@ -361,7 +361,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         try {
             installOvsPlugin();
             CloudStackPlugin cSp = new CloudStackPlugin(c);
-            cSp.ovsUploadSshKey(this.agentSshKey,
+            cSp.ovsUploadSshKey(agentSshKey,
                     FileUtils.readFileToString(getSystemVMKeyFile()));
         } catch (Ovm3ResourceException | IOException e) {
             throw new CloudRuntimeException("Failed to setup server: "
@@ -449,7 +449,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                         "OVM 3.2.X is only supported, not "
                                 + host.getOvmVersion());
             }
-            /* we might need dom0 vm stats here at some point */
             cmd.setName(host.getHostName());
             cmd.setSpeed(host.getCpuKhz());
             cmd.setCpus(host.getTotalThreads());
@@ -469,7 +468,6 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             cmd.setHypervisorVersion(host.getOvmVersion());
             cmd.setVersion(host.getAgentVersion());
             cmd.setHypervisorType(HypervisorType.Ovm3);
-            /* is this true ? */
             cmd.setCaps(host.getCapabilities());
             // TODO: Control ip, for now cheat ?
             cmd.setPrivateIpAddress(agentIp);
@@ -477,15 +475,12 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             cmd.setHostVmStateReport(hostVmStateReport());
 
             Network net = new Network(c);
-            /* more detail -- fix -- and shouldn't matter */
-            /* should this be the bond before the bridge ? */
             String defaultBridge = net.getBridgeByIp(agentIp).getName();
             if (defaultBridge == null) {
                 throw new CloudRuntimeException(
                         "Unable to obtain valid bridge with " + agentIp);
             }
 
-            /* do some stuff here, validity but also other things */
             if (agentPublicNetworkName == null) {
                 agentPublicNetworkName = defaultBridge;
             }
@@ -503,8 +498,8 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             d.put("private.network.device", agentPrivateNetworkName);
             d.put("guest.network.device", agentGuestNetworkName);
             d.put("storage.network.device", agentStorageNetworkName);
-            d.put("ismaster", this.agentIsMaster.toString());
-            d.put("hasmaster", this.agentHasMaster.toString());
+            d.put("ismaster", agentIsMaster.toString());
+            d.put("hasmaster", agentHasMaster.toString());
             cmd.setHostDetails(d);
             LOGGER.debug("Add an Ovm3 host " + agentName + ":"
                     + cmd.getHostDetails());
@@ -521,6 +516,10 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         /* ssh-copy-id anyone ? */
         /* version dependent patching ? */
         try {
+            /*
+             * Do an agent check first, so we don't have to ssh, upload over the
+             * agent and restart if possible
+             */
             com.trilead.ssh2.Connection sshConnection = SSHCmdHelper
                     .acquireAuthorizedConnection(agentIp, agentSshUserName,
                             agentSshPassword);
@@ -539,8 +538,8 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             }
             scp.put(userDataScriptPath, "", "0755");
             String prepareCmd = String.format("./cloudstack.py " + "--ssl="
-                    + this.agentOvsAgentSsl + " " + "--port="
-                    + this.agentOvsAgentPort);
+                    + agentOvsAgentSsl + " " + "--port="
+                    + agentOvsAgentPort);
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, prepareCmd)) {
                 throw new ConfigurationException("Module insertion at "
                         + agentHostname + " failed");
@@ -636,7 +635,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
      * is a part of this, for now
      */
     protected boolean createRepo(StorageFilerTO cmd) throws XmlRpcException {
-        String basePath = this.agentOvmRepoPath;
+        String basePath = agentOvmRepoPath;
         Repository repo = new Repository(c);
         String primUuid = repo.deDash(cmd.getUuid());
         String ovsRepo = basePath + "/" + primUuid;
@@ -681,14 +680,14 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             }
 
             /* add base pooling first */
-            if (this.agentInOvm3Pool) {
+            if (agentInOvm3Pool) {
                 try {
                     msg = "Configuring host for pool";
                     LOGGER.debug(msg);
                     setupPool(cmd);
                     msg = "Configured host for pool";
                     /* add clustering after pooling */
-                    if (this.agentInOvm3Cluster) {
+                    if (agentInOvm3Cluster) {
                         msg = "Configuring host for cluster";
                         LOGGER.debug(msg);
                         /* setup cluster */
@@ -716,7 +715,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             try {
                 URI uri = new URI(cmd.getType() + "://" + cmd.getHost() + ":"
                         + +cmd.getPort() + cmd.getPath() + "/VirtualMachines");
-                this.setupNfsStorage(uri, cmd.getUuid());
+                setupNfsStorage(uri, cmd.getUuid());
             } catch (Exception e) {
                 msg = "NFS mount " + mountPoint + " on " + agentSecStoragePath
                         + "/" + cmd.getUuid() + " create failed!";
@@ -748,7 +747,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         GlobalLock lock = GlobalLock.getInternLock("prepare.systemvm");
         try {
             /* double check */
-            if (this.agentHasMaster && this.agentInOvm3Pool) {
+            if (agentHasMaster && agentInOvm3Pool) {
                 LOGGER.debug("Skip systemvm iso copy, leave it to the master");
                 return;
             }
@@ -764,7 +763,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                         StoragePlugin sp = new StoragePlugin(c);
                         FileProperties fp = sp.storagePluginGetFileInfo(
                                 poolUuid, host, destPath + File.separator
-                                        + srcIso.getName());
+                                + srcIso.getName());
                         if (fp.getSize() != srcIso.getTotalSpace()) {
                             LOGGER.info(" System VM patch ISO file already exists: "
                                     + srcIso.getAbsolutePath().toString()
@@ -776,10 +775,10 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                                 + ", destination: "
                                 + destPath);
                         try {
-                            SshHelper.scpTo(this.agentHostname, 22,
-                                    this.agentSshUserName, null,
-                                    this.agentSshPassword, destPath, srcIso
-                                            .getAbsolutePath().toString(),
+                            SshHelper.scpTo(agentHostname, 22,
+                                    agentSshUserName, null,
+                                    agentSshPassword, destPath, srcIso
+                                    .getAbsolutePath().toString(),
                                     "0644");
                         } catch (Exception es) {
                             LOGGER.error("Unexpected exception ", es);
@@ -838,7 +837,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
     /* get the key */
     public File getSystemVMKeyFile() {
         URL url = this.getClass().getClassLoader()
-                .getResource("scripts/vm/systemvm/" + this.agentSshKey);
+                .getResource("scripts/vm/systemvm/" + agentSshKey);
         File keyFile = null;
         if (url != null) {
             keyFile = new File(url.getPath());
@@ -879,7 +878,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                         + pool.getType().name() + " is not supported.");
             }
 
-            if (this.agentInOvm3Cluster) {
+            if (agentInOvm3Cluster) {
                 /* TODO: What extras do we need here ? HB? */
             }
             /* TODO: needs to be in network fs above */
@@ -981,9 +980,9 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
 
                 String secPoolUuid = setupSecondaryStorage(storeUrl);
                 String primaryPoolUuid = destData.getDataStore().getUuid();
-                String destPath = this.agentOvmRepoPath + "/"
+                String destPath = agentOvmRepoPath + "/"
                         + ovmObject.deDash(primaryPoolUuid) + "/" + "Templates";
-                String sourcePath = this.agentSecStoragePath + "/"
+                String sourcePath = agentSecStoragePath + "/"
                         + secPoolUuid;
 
                 Linux host = new Linux(c);
@@ -1113,7 +1112,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             try {
                 if (volume.getType() == Volume.Type.ROOT) {
                     VolumeObjectTO vol = (VolumeObjectTO) volume.getData();
-                    DataStoreTO ds = (DataStoreTO) vol.getDataStore();
+                    DataStoreTO ds = vol.getDataStore();
                     String dsk = vol.getPath() + "/" + vol.getUuid() + ".raw";
                     vm.addRootDisk(dsk);
                     /* TODO: needs to be replaced by rootdiskuuid? */
@@ -1131,7 +1130,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                         NfsTO nfsStore = (NfsTO) store;
                         String secPoolUuid = setupSecondaryStorage(nfsStore
                                 .getUrl());
-                        String isoPath = this.agentSecStoragePath
+                        String isoPath = agentSecStoragePath
                                 + File.separator + secPoolUuid + File.separator
                                 + template.getPath();
                         vm.addIso(isoPath);
@@ -1295,7 +1294,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         }
         String vmName = vm.getVmName();
         /* should become a single entity */
-        this.vmStats.remove(vmName);
+        vmStats.remove(vmName);
     }
 
     @Override
@@ -1306,8 +1305,8 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         Xen xen = new Xen(c);
 
         try {
-            synchronized (this.vmStateMap) {
-                this.vmStateMap.put(vmName, State.Starting);
+            synchronized (vmStateMap) {
+                vmStateMap.put(vmName, State.Starting);
             }
             Xen.Vm vm = xen.getVmConfig();
             /* max and min ? */
@@ -1390,8 +1389,8 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                     } catch (Exception x) {
                         LOGGER.info(
                                 "unable to connect to " + controlIp
-                                        + " on attempt " + count + " "
-                                        + x.getMessage(), x);
+                                + " on attempt " + count + " "
+                                + x.getMessage(), x);
                     }
                 }
             }
@@ -1410,8 +1409,8 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             state = State.Stopped;
             return new StartAnswer(cmd, e.getMessage());
         } finally {
-            synchronized (this.vmStateMap) {
-                this.vmStateMap.put(vmName, state);
+            synchronized (vmStateMap) {
+                vmStateMap.put(vmName, state);
             }
         }
     }
@@ -1504,8 +1503,8 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
     @Override
     public ExecutionResult executeInVR(String routerIp, String script,
             String args, int timeout) {
-        if (!script.contains(this.domRCloudPath)) {
-            script = this.domRCloudPath + "/" + script;
+        if (!script.contains(domRCloudPath)) {
+            script = domRCloudPath + "/" + script;
         }
         String cmd = script + " " + args;
         LOGGER.debug("executeInVR via " + agentName + " on " + routerIp + ": "
@@ -1537,8 +1536,8 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             error = e.getMessage();
             LOGGER.warn(
                     "createFileInVR failed for " + path + "/" + filename
-                            + " in VR " + routerIp + " via " + agentName + ": "
-                            + error, e);
+                    + " in VR " + routerIp + " via " + agentName + ": "
+                    + error, e);
         }
         return new ExecutionResult(error == null, error);
     }
@@ -1701,7 +1700,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         try {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
             Map<String, String> stats = cSp
-                    .ovsDom0Stats(this.agentPublicNetworkName);
+                    .ovsDom0Stats(agentPublicNetworkName);
             Double cpuUtil = Double.parseDouble(stats.get("cpu"));
             Double rxBytes = Double.parseDouble(stats.get("rx"));
             Double txBytes = Double.parseDouble(stats.get("tx"));
@@ -1723,9 +1722,9 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
     public StopAnswer execute(StopCommand cmd) {
         String vmName = cmd.getVmName();
         State state = State.Error;
-        synchronized (this.vmStateMap) {
+        synchronized (vmStateMap) {
             state = vmStateMap.get(vmName);
-            this.vmStateMap.put(vmName, State.Stopping);
+            vmStateMap.put(vmName, State.Stopping);
         }
 
         try {
@@ -1752,7 +1751,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                 Thread.sleep(10 * 1000);
             }
             vms.deleteVm(repoId, vmId);
-            this.cleanup(vm);
+            cleanup(vm);
 
             if (vms.getRunningVmConfig(vmName) != null) {
                 String msg = "Stop " + vmName + " failed ";
@@ -1765,11 +1764,11 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             LOGGER.debug("Stop " + vmName + " failed ", e);
             return new StopAnswer(cmd, e.getMessage(), false);
         } finally {
-            synchronized (this.vmStateMap) {
+            synchronized (vmStateMap) {
                 if (state != null) {
-                    this.vmStateMap.put(vmName, state);
+                    vmStateMap.put(vmName, state);
                 } else {
-                    this.vmStateMap.remove(vmName);
+                    vmStateMap.remove(vmName);
                 }
             }
         }
@@ -1780,8 +1779,8 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
     public RebootAnswer execute(RebootCommand cmd) {
         String vmName = cmd.getVmName();
 
-        synchronized (this.vmStateMap) {
-            this.vmStateMap.put(vmName, State.Starting);
+        synchronized (vmStateMap) {
+            vmStateMap.put(vmName, State.Starting);
         }
 
         try {
@@ -1796,8 +1795,8 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             LOGGER.debug("Reboot " + vmName + " failed", e);
             return new RebootAnswer(cmd, e.getMessage(), false);
         } finally {
-            synchronized (this.vmStateMap) {
-                this.vmStateMap.put(cmd.getVmName(), State.Running);
+            synchronized (vmStateMap) {
+                vmStateMap.put(cmd.getVmName(), State.Running);
             }
         }
     }
@@ -1864,7 +1863,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                 /* The guest has requested to be shutdown, still migrating... */
             } else if (as.contains("s")) {
                 /* TODO: Double check this, as the change might hurt us */
-                if (this.vmStateMap.get(vm.getVmName()) == State.Migrating) {
+                if (vmStateMap.get(vm.getVmName()) == State.Migrating) {
                     ns = State.Migrating;
                 } else {
                     ns = State.Stopped;
@@ -2023,7 +2022,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
 
     private VmStatsEntry getVmStat(String vmName) {
         CloudStackPlugin cSp = new CloudStackPlugin(c);
-        Map<String, String> oleStats = this.vmStats.get(vmName);
+        Map<String, String> oleStats = vmStats.get(vmName);
         VmStatsEntry stats = new VmStatsEntry();
         Map<String, String> newStats;
         try {
@@ -2067,8 +2066,8 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             stats.setCPUUtilization(cpupct);
             stats.setEntityType("vm");
         }
-        ((ConcurrentHashMap<String, Map<String, String>>) this.vmStats)
-                .replace(vmName, newStats);
+        ((ConcurrentHashMap<String, Map<String, String>>) vmStats)
+        .replace(vmName, newStats);
         return stats;
     }
 
@@ -2140,7 +2139,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
          */
         String msg = "Migrating " + vmName + " to " + destIp;
         LOGGER.info(msg);
-        if (!this.agentInOvm3Cluster && !this.agentInOvm3Pool) {
+        if (!agentInOvm3Cluster && !agentInOvm3Pool) {
             try {
                 Xen xen = new Xen(c);
                 Xen.Vm vm = xen.getRunningVmConfig(vmName);
@@ -2443,7 +2442,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             throws Ovm3ResourceException {
         String fsUri = "nfs";
         String msg = "";
-        String mountPoint = this.agentSecStoragePath + "/" + uuid;
+        String mountPoint = agentSecStoragePath + "/" + uuid;
         Linux host = new Linux(c);
 
         Map<String, Linux.FileSystem> fsList = host.getFileSystemMap(fsUri);
@@ -2494,7 +2493,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                     + e.getMessage());
             agentHasMaster = false;
         }
-        return this.agentIsMaster;
+        return agentIsMaster;
     }
 
     /* check if a VM is running should be added */
@@ -2574,7 +2573,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
                     "Delete storage pool on host "
                             + agentHostname
                             + " failed, however, we leave to user for cleanup and tell managment server it succeeded",
-                    e);
+                            e);
         }
 
         return new Answer(cmd);
@@ -2596,16 +2595,16 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
         /* here we assume all networks are set */
         for (PhysicalNetworkSetupInfo info : infoList) {
             if (info.getGuestNetworkName() == null) {
-                info.setGuestNetworkName(this.agentGuestNetworkName);
+                info.setGuestNetworkName(agentGuestNetworkName);
             }
             if (info.getPublicNetworkName() == null) {
-                info.setPublicNetworkName(this.agentPublicNetworkName);
+                info.setPublicNetworkName(agentPublicNetworkName);
             }
             if (info.getPrivateNetworkName() == null) {
-                info.setPrivateNetworkName(this.agentPrivateNetworkName);
+                info.setPrivateNetworkName(agentPrivateNetworkName);
             }
             if (info.getStorageNetworkName() == null) {
-                info.setStorageNetworkName(this.agentStorageNetworkName);
+                info.setStorageNetworkName(agentStorageNetworkName);
             }
 
             if (!isNetworkSetupByName(info.getGuestNetworkName())) {
@@ -3011,7 +3010,7 @@ public class Ovm3ResourceBase extends ServerResourceBase implements
             String storeUrl = data.getDataStore().getUrl();
             URI uri = new URI(storeUrl);
             String host = uri.getHost();
-            String file = this.agentOvmRepoPath + "/"
+            String file = agentOvmRepoPath + "/"
                     + ovmObject.deDash(poolUuid) + "/VirtualDisks/"
                     + volume.getUuid() + ".raw";
             Long size = volume.getSize();
