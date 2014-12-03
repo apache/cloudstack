@@ -442,7 +442,11 @@ public class ApiDBUtils {
     @Inject
     private NetworkOrchestrationService networkMgr;
     @Inject
+    private StatsCollector statsCollector;
+    @Inject
     private TemplateManager templateMgr;
+    @Inject
+    private VolumeOrchestrationService volumeMgr;
 
     @Inject
     private AccountDao accountDao;
