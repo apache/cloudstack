@@ -14,22 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.query.dao;
+package org.apache.cloudstack.api.command.admin.domain;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
 
-import com.cloud.api.query.vo.DomainJoinVO;
 import com.cloud.domain.Domain;
-import com.cloud.utils.db.GenericDao;
 
-public interface DomainJoinDao extends GenericDao<DomainJoinVO, Long> {
-
-    DomainResponse newDomainResponse(ResponseView view, DomainJoinVO vol);
-
-    DomainJoinVO newDomainView(Domain vol);
-
-    void setResourceLimits(DomainJoinVO domain, boolean isRootDomain, ResourceLimitAndCountResponse response);
-
+@APICommand(name = "listDomains", description = "Lists domains and provides detailed information for listed domains", responseObject = DomainResponse.class, responseView = ResponseView.Full, entityType = {Domain.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class ListDomainsCmdByAdmin extends ListDomainsCmd {
 }

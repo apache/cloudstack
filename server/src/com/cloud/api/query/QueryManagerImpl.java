@@ -40,6 +40,7 @@ import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.admin.account.ListAccountsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
+import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.host.ListHostTagsCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
@@ -1840,7 +1841,13 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<DomainResponse> searchForDomains(ListDomainsCmd cmd) {
         Pair<List<DomainJoinVO>, Integer> result = searchForDomainsInternal(cmd);
         ListResponse<DomainResponse> response = new ListResponse<DomainResponse>();
-        List<DomainResponse> domainResponses = ViewResponseHelper.createDomainResponse(result.first().toArray(
+
+        ResponseView respView = ResponseView.Restricted;
+        if (cmd instanceof ListDomainsCmdByAdmin) {
+            respView = ResponseView.Full;
+        }
+
+        List<DomainResponse> domainResponses = ViewResponseHelper.createDomainResponse(respView, result.first().toArray(
                 new DomainJoinVO[result.first().size()]));
         response.setResponses(domainResponses, result.second());
         return response;
