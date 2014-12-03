@@ -42,6 +42,7 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.io.FileUtils;
@@ -472,7 +473,8 @@ StorageProcessor {
             // TODO: Control ip, for now cheat ?
             cmd.setPrivateIpAddress(agentIp);
             cmd.setStorageIpAddress(agentIp);
-            cmd.setHostVmStateReport(hostVmStateReport());
+            /* do we need the state report here now ? */
+            // cmd.setHostVmStateReport(hostVmStateReport());
 
             Network net = new Network(c);
             String defaultBridge = net.getBridgeByIp(agentIp).getName();
@@ -562,12 +564,11 @@ StorageProcessor {
             fillHostInfo(srCmd);
             LOGGER.debug("Ovm3 pool " + ssCmd + " " + srCmd);
 
-            Map<String, State> changes = null;
             synchronized (vmStateMap) {
                 vmStateMap.clear();
-                changes = syncState();
+                syncState();
             }
-            srCmd.setStateChanges(changes);
+            // srCmd.setStateChanges(changes);
             return new StartupCommand[] { srCmd, ssCmd };
         } catch (Exception e) {
             LOGGER.debug("Ovm3 resource initializes failed", e);
@@ -584,9 +585,10 @@ StorageProcessor {
             String ping = "put";
             String pong = test.echo(ping);
             if (pong.contains(ping)) {
-                Map<String, State> newStates = syncState();
-                return new PingRoutingCommand(getType(), id, newStates,
-                        hostVmStateReport());
+                syncState();
+                return new PingRoutingCommand(getType(), id, hostVmStateReport());
+                // newStates);
+                // hostVmStateReport());
             } else {
                 LOGGER.debug("Agent did not respond correctly: " + ping
                         + " but got " + pong);
@@ -2215,10 +2217,12 @@ StorageProcessor {
             synchronized (vmStateMap) {
                 vmStateMap.put(vmName, State.Running);
             }
-            return new CheckVirtualMachineAnswer(cmd, vmState, vncPort);
+            return new CheckVirtualMachineAnswer(cmd,
+                    convertStateToPower(vmState), vncPort);
         } catch (Ovm3ResourceException e) {
             LOGGER.debug("Check migration for " + vmName + " failed", e);
-            return new CheckVirtualMachineAnswer(cmd, State.Stopped, null);
+            return new CheckVirtualMachineAnswer(cmd,
+                    convertStateToPower(State.Stopped), null);
         }
     }
 
@@ -3095,6 +3099,12 @@ StorageProcessor {
     /* we don't need this as we use the agent */
     @Override
     protected String getDefaultScriptsDir() {
+        return null;
+    }
+
+    /* TODO: no snapshots yet, so no need to have this, or only when stopped ? */
+    @Override
+    public Answer snapshotAndCopy(SnapshotAndCopyCommand cmd) {
         return null;
     }
 
