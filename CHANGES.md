@@ -111,6 +111,7 @@ This is a bug fix release. The following issues were fixed:
     CLOUDSTACK-5997: Template state changes side affects
     CLOUDSTACK-5685: reboot VR if a out-of-band power-on event is detected
     CLOUDSTACK-7994: Network rules are not configured in VR after out-of-band movement due to host crash
+    CLOUDSTACK-5923: CS doesn't do master switch for XS any more, CS will depend on XS HA to do master switch, XS HA needs to be enabled.
 
 Version 4.3.1
 -------------
