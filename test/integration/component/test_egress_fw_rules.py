@@ -18,9 +18,8 @@
 """
 """
 #Import Local Modules
-import unittest
 from nose.plugins.attrib           import attr
-from marvin.cloudstackTestCase     import cloudstackTestCase
+from marvin.cloudstackTestCase     import cloudstackTestCase, unittest
 from marvin.lib.base   import (Account,
                                            Domain,
                                            Router,
@@ -35,7 +34,6 @@ from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            list_routers,
-                                           wait_for_cleanup,
                                            list_virtual_machines
                                            )
 from marvin.lib.utils import cleanup_resources, validateList
@@ -146,16 +144,6 @@ class TestEgressFWRules(cloudstackTestCase):
                                     cls.services["ostype"])
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
-        parentDomain = None
-        cls.domain  =  Domain.create(cls.api_client,
-                                     cls.services["domain"],
-                                     parentdomainid=parentDomain.id if parentDomain else None)
-        cls._cleanup.append(cls.domain)
-        # Create an Account associated with domain
-        cls.account = Account.create(cls.api_client,
-                                     cls.services["account"],
-                                     domainid=cls.domain.id)
-        cls._cleanup.append(cls.account)
         # Create service offerings.
         cls.service_offering = ServiceOffering.create(cls.api_client,
                                                       cls.services["service_offering"])
@@ -173,11 +161,16 @@ class TestEgressFWRules(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.api_client
         self.dbclient = self.testClient.getDbConnection()
-        self.cleanup_vms = []
-        self.cleanup_networks = []
-        self.cleanup   = []
-        self.snapshot  = None
         self.egressruleid = None
+        self.cleanup   = []
+        self.domain  =  Domain.create(self.apiclient,
+                                      self.services["domain"])
+        # Create an Account associated with domain
+        self.account = Account.create(self.apiclient,
+                                      self.services["account"],
+                                      domainid=self.domain.id)
+        self.cleanup.append(self.account)
+        self.cleanup.append(self.domain)
         return
 
     def create_network_offering(self, egress_policy=True, RR=False):
@@ -211,7 +204,6 @@ class TestEgressFWRules(cloudstackTestCase):
                                       domainid=self.account.domainid,
                                       networkofferingid=self.network_offering.id,
                                       zoneid=self.zone.id)
-        self.cleanup_networks.append(self.network)
         self.debug("Created network with ID: %s" % self.network.id)
         self.debug("Deploying instance in the account: %s" % self.account.name)
 
@@ -225,7 +217,6 @@ class TestEgressFWRules(cloudstackTestCase):
                                                          mode=self.zone.networktype if pfrule else 'basic',
                                                          networkids=[str(self.network.id)],
                                                          projectid=project.id if project else None)
-            self.cleanup_vms.append(self.virtual_machine)
         except Exception as e:
             self.fail("Virtual machine deployment failed with exception: %s" % e)
         self.debug("Deployed instance %s in account: %s" % (self.virtual_machine.id,self.account.name))
@@ -346,42 +337,8 @@ class TestEgressFWRules(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            if self.egressruleid:
-                self.debug('remove egress rule id=%s' % self.egressruleid)
-                self.deleteEgressRule()
-
             self.debug("Cleaning up the resources")
-
-            #below components is not a part of cleanup because to mandate the order and to cleanup network
-            try:
-                for vm in self.cleanup_vms:
-                    if str(vm.state).lower() != "error":
-                        vm.delete(self.api_client)
-            except Exception as e:
-                self.fail("Warning: Exception during virtual machines cleanup : %s" % e)
-
-            if len(self.cleanup_vms) > 0:
-                retriesCount = 10
-                while True:
-                    vms = list_virtual_machines(self.api_client, id=self.virtual_machine.id)
-                    if vms is None:
-                        break
-                    elif retriesCount == 0:
-                        self.fail("Failed to expunge vm even after 10 minutes")
-                    time.sleep(60)
-                    retriesCount -= 1
-
-            try:
-                for network in self.cleanup_networks:
-                    network.delete(self.api_client)
-            except Exception as e:
-                self.fail("Warning: Exception during networks cleanup : %s" % e)
-
-            self.debug("Sleep for Network cleanup to complete.")
-            wait_for_cleanup(self.apiclient, ["network.gc.wait", "network.gc.interval"])
-
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-            self.debug("Cleanup complete!")
+            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             self.fail("Warning! Cleanup failed: %s" % e)
 
