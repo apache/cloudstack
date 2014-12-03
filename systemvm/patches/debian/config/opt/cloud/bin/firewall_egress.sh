@@ -145,11 +145,11 @@ fi
 
 success=0
 
-if [ "$pvalue" == "0" -o "$pvalue" == "2" ]
+if [ "$pvalue" == "1" -o "$pvalue" == "2" ]
   then
-     target="ACCEPT"
-  else
      target="DROP"
+  else
+     target="ACCEPT"
   fi
 
 fw_egress_chain
@@ -172,7 +172,7 @@ then
   fw_egress_backup_restore
 else
   logger -t cloud "deleting backup for guest network"
-    if [ "$pvalue" == "1" -o "$pvalue" == "2" ]
+    if [ "$pvalue" == "1" ]
        then
        #Adding default policy rule
        sudo iptables -A FW_EGRESS_RULES  -j ACCEPT

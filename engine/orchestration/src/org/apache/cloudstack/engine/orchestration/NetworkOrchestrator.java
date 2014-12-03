@@ -1147,6 +1147,22 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     // This method re-programs the rules/ips for existing network
     protected boolean reprogramNetworkRules(long networkId, Account caller, Network network) throws ResourceUnavailableException {
         boolean success = true;
+
+        //Apply egress rules first to effect the egress policy early on the guest traffic
+        List<FirewallRuleVO> firewallEgressRulesToApply = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Egress);
+        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        DataCenter zone = _dcDao.findById(network.getDataCenterId());
+        if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall) && _networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall)
+                && (network.getGuestType() == Network.GuestType.Isolated || (network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced))) {
+            // add default egress rule to accept the traffic
+            _firewallMgr.applyDefaultEgressFirewallRule(network.getId(), offering.getEgressDefaultPolicy(), true);
+        }
+        if (!_firewallMgr.applyFirewallRules(firewallEgressRulesToApply, false, caller)) {
+            s_logger.warn("Failed to reapply firewall Egress rule(s) as a part of network id=" + networkId + " restart");
+            success = false;
+        }
+
+
         // associate all ip addresses
         if (!_ipAddrMgr.applyIpAssociations(network, false)) {
             s_logger.warn("Failed to apply ip addresses as a part of network id" + networkId + " restart");
@@ -1163,20 +1179,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         List<FirewallRuleVO> firewallIngressRulesToApply = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Ingress);
         if (!_firewallMgr.applyFirewallRules(firewallIngressRulesToApply, false, caller)) {
             s_logger.warn("Failed to reapply Ingress firewall rule(s) as a part of network id=" + networkId + " restart");
-            success = false;
-        }
-
-        List<FirewallRuleVO> firewallEgressRulesToApply = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Egress);
-        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        //there are no egress rules then apply the default egress rule
-        DataCenter zone = _dcDao.findById(network.getDataCenterId());
-        if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall) && _networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall)
-                && (network.getGuestType() == Network.GuestType.Isolated || (network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced))) {
-            // add default egress rule to accept the traffic
-            _firewallMgr.applyDefaultEgressFirewallRule(network.getId(), offering.getEgressDefaultPolicy(), true);
-        }
-        if (!_firewallMgr.applyFirewallRules(firewallEgressRulesToApply, false, caller)) {
-            s_logger.warn("Failed to reapply firewall Egress rule(s) as a part of network id=" + networkId + " restart");
             success = false;
         }
 

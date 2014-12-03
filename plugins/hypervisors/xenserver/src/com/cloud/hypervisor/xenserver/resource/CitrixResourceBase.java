@@ -573,6 +573,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     public ExecutionResult createFileInVR(String routerIp, String path, String filename, String content) {
         Connection conn = getConnection();
         String rc = callHostPlugin(conn, "vmops", "createFileInDomr", "domrip", routerIp, "filepath", path + filename, "filecontents", content);
+        s_logger.debug ("VR Config file " + filename + " got created in VR with ip " + routerIp + " with content \n" + content);
         // Fail case would be start with "fail#"
         return new ExecutionResult(rc.startsWith("succ#"), rc.substring(5));
     }
