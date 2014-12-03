@@ -38,13 +38,13 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <cs.log4j.version>1.2.16</cs.log4j.version>
-    <cs.log4j.extras.version>1.1</cs.log4j.extras.version>
-    <cs.cglib.version>2.2.2</cs.cglib.version>
+    <cs.log4j.version>1.2.17</cs.log4j.version>
+    <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
+    <cs.cglib.version>3.1</cs.cglib.version>
     <cs.dbcp.version>1.4</cs.dbcp.version>
     <cs.pool.version>1.6</cs.pool.version>
-    <cs.codec.version>1.6</cs.codec.version>
-    <cs.configuration.version>1.8</cs.configuration.version>
+    <cs.codec.version>1.10</cs.codec.version>
+    <cs.configuration.version>1.10</cs.configuration.version>
     <cs.collections.version>3.2.1</cs.collections.version>
     <cs.logging.version>1.1.1</cs.logging.version>
     <cs.discovery.version>0.5</cs.discovery.version>
@@ -53,42 +53,44 @@
     <cs.junit.version>4.11</cs.junit.version>
     <cs.hamcrest.version>1.3</cs.hamcrest.version>
     <cs.bcprov.version>1.46</cs.bcprov.version>
-    <cs.jsch.version>0.1.42</cs.jsch.version>
-    <cs.jpa.version>2.0.0</cs.jpa.version>
-    <cs.jasypt.version>1.9.0</cs.jasypt.version>
-    <cs.trilead.version>build213-svnkit-1.3-patch</cs.trilead.version>
-    <cs.ehcache.version>2.6.6</cs.ehcache.version>
+    <cs.jsch.version>0.1.51</cs.jsch.version>
+    <cs.jpa.version>2.1.0</cs.jpa.version>
+    <cs.jasypt.version>1.9.2</cs.jasypt.version>
+    <cs.trilead.version>1.0.0-build217</cs.trilead.version>
+    <cs.ehcache.version>2.6.9</cs.ehcache.version>
     <cs.gson.version>1.7.2</cs.gson.version>
-    <cs.guava.version>14.0-rc1</cs.guava.version>
+    <cs.guava.version>18.0</cs.guava.version>
     <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
-    <cs.httpclient.version>3.1</cs.httpclient.version>
-    <cs.httpcore.version>4.2.1</cs.httpcore.version>
-    <cs.mysql.version>5.1.21</cs.mysql.version>
-    <cs.xstream.version>1.3.1</cs.xstream.version>
+    <cs.httpclient.version>4.3.6</cs.httpclient.version>
+    <cs.httpcore.version>4.3.3</cs.httpcore.version>
+    <cs.commons-httpclient.version>3.1</cs.commons-httpclient.version>
+    <cs.mysql.version>5.1.34</cs.mysql.version>
+    <cs.xstream.version>1.4.7</cs.xstream.version>
     <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
-    <cs.mail.version>1.4</cs.mail.version>
+    <cs.mail.version>1.4.7</cs.mail.version>
     <cs.axis.version>1.4</cs.axis.version>
     <cs.axis2.version>1.5.6</cs.axis2.version>
     <cs.rampart.version>1.5.1</cs.rampart.version>
     <cs.axiom.version>1.2.8</cs.axiom.version>
     <cs.neethi.version>2.0.4</cs.neethi.version>
-    <cs.servlet.version>2.4</cs.servlet.version>
+    <cs.servlet.version>2.5</cs.servlet.version>
     <cs.jstl.version>1.2</cs.jstl.version>
     <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
     <cs.vmware.api.version>5.1</cs.vmware.api.version>
-    <org.springframework.version>3.2.4.RELEASE</org.springframework.version>
+    <org.springframework.version>3.2.12.RELEASE</org.springframework.version>
     <cs.mockito.version>1.9.5</cs.mockito.version>
     <cs.powermock.version>1.5.3</cs.powermock.version>
-    <cs.aws.sdk.version>1.3.22</cs.aws.sdk.version>
+    <cs.aws.sdk.version>1.9.8</cs.aws.sdk.version>
     <cs.lang.version>2.6</cs.lang.version>
-    <cs.commons-io.version>1.4</cs.commons-io.version>
+    <cs.commons-io.version>2.4</cs.commons-io.version>
+    <cs.commons-validator.version>1.4.0</cs.commons-validator.version>
     <cs.reflections.version>0.9.8</cs.reflections.version>
-    <cs.java-ipv6.version>0.10</cs.java-ipv6.version>
+    <cs.java-ipv6.version>0.15</cs.java-ipv6.version>
     <cs.replace.properties>build/replace.properties</cs.replace.properties>
     <cs.libvirt-java.version>0.5.1</cs.libvirt-java.version>
     <cs.rados-java.version>0.1.4</cs.rados-java.version>
     <cs.target.dir>target</cs.target.dir>
-    <cs.daemon.version>1.0.10</cs.daemon.version>
+    <cs.daemon.version>1.0.15</cs.daemon.version>
     <cs.jna.version>4.0.0</cs.jna.version>
     <cs.checkstyle.version>2.11</cs.checkstyle.version>
     <cs.mycila.license.version>2.5</cs.mycila.license.version>
@@ -298,7 +300,7 @@
       <dependency>
         <groupId>org.owasp.esapi</groupId>
         <artifactId>esapi</artifactId>
-        <version>2.0.1</version>
+        <version>2.1.0</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.persistence</groupId>
@@ -323,7 +325,7 @@
       <dependency>
         <groupId>org.apache.httpcomponents</groupId>
         <artifactId>httpclient</artifactId>
-        <version>${cs.httpcore.version}</version>
+        <version>${cs.httpclient.version}</version>
       </dependency>
       <dependency>
         <groupId>com.thoughtworks.xstream</groupId>
@@ -363,17 +365,17 @@
       <dependency>
         <groupId>org.apache.servicemix.bundles</groupId>
         <artifactId>org.apache.servicemix.bundles.snmp4j</artifactId>
-        <version>2.1.0_1</version>
+        <version>2.3.1_1</version>
       </dependency>
       <dependency>
         <groupId>org.aspectj</groupId>
         <artifactId>aspectjtools</artifactId>
-        <version>1.7.0</version>
+        <version>1.8.4</version>
       </dependency>
       <dependency>
         <groupId>org.aspectj</groupId>
         <artifactId>aspectjweaver</artifactId>
-        <version>1.7.0</version>
+        <version>1.8.4</version>
       </dependency>
       <dependency>
         <groupId>org.apache.axis</groupId>
@@ -393,17 +395,17 @@
       <dependency>
         <groupId>wsdl4j</groupId>
         <artifactId>wsdl4j</artifactId>
-        <version>1.4</version>
+        <version>1.6.3</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>1.7.5</version>
+        <version>1.7.7</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-log4j12</artifactId>
-        <version>1.7.5</version>
+        <version>1.7.7</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -424,7 +426,7 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
-      <version>1.9.5</version>
+      <version>${cs.mockito.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>

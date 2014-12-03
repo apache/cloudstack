@@ -199,8 +199,8 @@ public class NetUtilsTest {
 
     @Test
     public void testStandardizeIp6Address() {
-        assertEquals(NetUtils.standardizeIp6Address("1234:0000:0000:5678:0000:000:ABCD:0001"), "1234::5678:0:0:abcd:1");
-        assertEquals(NetUtils.standardizeIp6Cidr("1234:0000:0000:5678:0000:000:ABCD:0001/64"), "1234::5678:0:0:0:0/64");
+        assertEquals(NetUtils.standardizeIp6Address("1234:0000:0000:5678:0000:0000:ABCD:0001"), "1234::5678:0:0:abcd:1");
+        assertEquals(NetUtils.standardizeIp6Cidr("1234:0000:0000:5678:0000:0000:ABCD:0001/64"), "1234:0:0:5678::/64");
     }
 
     @Test
