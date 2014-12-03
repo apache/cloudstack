@@ -2377,7 +2377,7 @@ public class VirtualMachineMO extends BaseMO {
 
         List<Integer> existingUnitNumbers = new ArrayList<Integer>();
         int deviceNumber = 0;
-        int ideControllerKey = getIDEDeviceControllerKey();
+        int scsiControllerKey = getScsiDeviceControllerKeyNoException();
         if (devices != null && devices.size() > 0) {
             for (VirtualDevice device : devices) {
                 if (device.getControllerKey() != null && device.getControllerKey().intValue() == controllerKey) {
@@ -2388,7 +2388,7 @@ public class VirtualMachineMO extends BaseMO {
         while (true) {
             // Next device number should be the lowest device number on the key that is not in use and is not reserved.
             if (!existingUnitNumbers.contains(Integer.valueOf(deviceNumber))) {
-                if (controllerKey != ideControllerKey && !VmwareHelper.isReservedScsiDeviceNumber(deviceNumber))
+                if (controllerKey != scsiControllerKey || !VmwareHelper.isReservedScsiDeviceNumber(deviceNumber))
                     break;
             }
             ++deviceNumber;
