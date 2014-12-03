@@ -569,7 +569,6 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         vm_instance.uuid uuid,
         vm_instance.last_host_id last_host_id,
         vm_instance.vm_type type,
-        vm_instance.vnc_password vnc_password,
         vm_instance.limit_cpu_use limit_cpu_use,
         vm_instance.created created,
         vm_instance.state state,
