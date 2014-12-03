@@ -388,7 +388,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
-        <version>2.3</version>
+        <version>2.5</version>
         <configuration>
           <webXml>./target/generated-webapp/WEB-INF/web.xml</webXml>
           <warSourceDirectory>./target/generated-webapp</warSourceDirectory>
@@ -744,7 +744,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-war-plugin</artifactId>
-            <version>2.3</version>
+            <version>2.5</version>
             <configuration>
               <webappDirectory>target/client</webappDirectory>
               <webXml>./target/generated-webapp/WEB-INF/web.xml</webXml>
