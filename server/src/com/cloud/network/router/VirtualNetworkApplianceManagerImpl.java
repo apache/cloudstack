@@ -1918,7 +1918,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
 
         // construct rule when egress policy is true. In true case for VR we default allow rule need to be added
-        if (defaultEgressPolicy) {
+        if (!defaultEgressPolicy) {
             systemRule = String.valueOf(FirewallRule.FirewallRuleType.System);
 
             List<String> sourceCidr = new ArrayList<String>();
@@ -1928,6 +1928,9 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     null, null, null, FirewallRule.TrafficType.Egress, FirewallRule.FirewallRuleType.System);
 
             rules.add(rule);
+        } else {
+            s_logger.debug(" Egress policy for the Network "+ networkId +" is "+defaultEgressPolicy + " So no need"+
+                    " of default rule is needed. ");
         }
     }
 
