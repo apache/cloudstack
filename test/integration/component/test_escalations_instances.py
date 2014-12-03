@@ -2854,17 +2854,33 @@ class TestInstances(cloudstackTestCase):
             len(list_volumes_page1),
             "VM's volume count is not matching in page 1"
         )
-        # stopping VM before detaching volumes
-        vm_created.stop(self.userapiclient)
 
-        # Detaching root volume is allowed on XenServer only
-        if self.hypervisor.lower() == 'xenserver':
-            # Detaching all the volumes attached from VM
-            for i in range(0, len(list_volumes_page1)):
-                vm_created.detach_volume(
-                    self.userapiclient,
-                    list_volumes_page1[i]
-                )
+        list_data_disks = Volume.list(
+            self.userapiclient,
+            listall=self.services["listall"],
+            virtualmachineid=vm_created.id,
+            page=1,
+            pagesize=self.services["pagesize"],
+            type="DATADISK"
+        )
+
+        for volume in list_data_disks:
+            vm_created.detach_volume(self.userapiclient, volume)
+
+        volumes = Volume.list(
+            self.userapiclient,
+            listall=self.services["listall"],
+            virtualmachineid=vm_created.id,
+            page=1,
+            pagesize=self.services["pagesize"]
+        )
+
+        self.assertEqual(
+                len(volumes),
+                len(list_volumes_page1) - len(list_data_disks),
+                "The volumes number should match with (volumes initially\
+                        present minus volumes detached")
+
         return
 
     @attr(tags=["advanced", "basic"], required_hardware="true")
