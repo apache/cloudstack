@@ -90,7 +90,14 @@ set -e
 
 # Export for KVM
 vboxmanage internalcommands converttoraw -format vdi "$hdd_path" raw.img
-qemu-img convert -f raw -c -O qcow2 raw.img $appliance-$build_date-$branch-kvm.qcow2
+set +e
+qemu-img convert -o compat=0.10 -f raw -c -O qcow2 raw.img $appliance-$build_date-$branch-kvm.qcow2
+local qemuresult=$?
+set -e
+if [ ${qemuresult} != 0 ]; then
+  log INFO "'qemu-img convert' failed, trying without compat option"
+  qemu-img convert -f raw -c -O qcow2 raw.img $appliance-$build_date-$branch-kvm.qcow2
+fi
 rm raw.img
 bzip2 $appliance-$build_date-$branch-kvm.qcow2
 echo "$appliance exported for KVM: dist/$appliance-$build_date-$branch-kvm.qcow2.bz2"
