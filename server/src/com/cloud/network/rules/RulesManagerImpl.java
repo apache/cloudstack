@@ -1374,7 +1374,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             throw new CloudRuntimeException("Ip address is not associated with any network");
         }
 
-        VMInstanceVO vm = _vmInstanceDao.findById(sourceIp.getAssociatedWithVmId());
+        VMInstanceVO vm = _vmInstanceDao.findByIdIncludingRemoved(sourceIp.getAssociatedWithVmId());
         Network network = _networkModel.getNetwork(networkId);
         if (network == null) {
             CloudRuntimeException ex = new CloudRuntimeException("Unable to find an ip address to map to specified vm id");
