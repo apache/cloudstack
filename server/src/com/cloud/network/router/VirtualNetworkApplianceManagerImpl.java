@@ -200,7 +200,6 @@ import com.cloud.user.dao.UserStatsLogDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
@@ -3642,9 +3641,8 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
 
         // password should be set only on default network element
         if (password != null && nic.isDefaultNic()) {
-            final String encodedPassword = PasswordGenerator.rot13(password);
             final SavePasswordCommand cmd =
-                    new SavePasswordCommand(encodedPassword, nic.getIp4Address(), profile.getVirtualMachine().getHostName(), _networkModel.getExecuteInSeqNtwkElmtCmd());
+                    new SavePasswordCommand(password, nic.getIp4Address(), profile.getVirtualMachine().getHostName(), _networkModel.getExecuteInSeqNtwkElmtCmd());
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(nic.getNetworkId(), router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
