@@ -1164,6 +1164,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_ATTACH, eventDescription = "attaching volume", async = true)
     public Volume attachVolumeToVM(AttachVolumeCmd command) {
         return attachVolumeToVM(command.getVirtualMachineId(), command.getId(), command.getDeviceId());
     }
@@ -1238,7 +1239,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return newVol;
     }
 
-    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_ATTACH, eventDescription = "attaching volume", async = true)
     public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId) {
         Account caller = CallContext.current().getCallingAccount();
 
