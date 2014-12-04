@@ -18,7 +18,7 @@
 
 function usage() {
     echo ""
-    echo "usage: ./package.sh [-p|--pack] [-h|--help] [-o|--operating-system] [ARGS]"
+    echo "usage: ./package.sh [-p|--pack] [-h|--help] [ARGS]"
     echo ""
     echo "The commonly used Arguments are:"
     echo "-p|--pack oss|OSS             To package with only redistributable libraries (default)"
