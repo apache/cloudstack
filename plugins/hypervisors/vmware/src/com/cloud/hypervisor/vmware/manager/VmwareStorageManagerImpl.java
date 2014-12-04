@@ -1159,36 +1159,6 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return size;
     }
 
-    private String extractSnapshotBaseFileName(String input) {
-        if (input == null) {
-            return null;
-        }
-
-        String result = input;
-
-        final String fileType = ".vmdk";
-
-        if (result.endsWith(fileType)) {
-            // get rid of fileType
-            result = result.substring(0, result.length() - (fileType).length());
-        }
-
-        final String token = "-";
-
-        String[] str = result.split(token);
-        int length = str.length;
-
-        if (length == 1 || length == 2) {
-            return result;
-        }
-
-        if (length > 2) {
-            return str[0] + token + str[1];
-        }
-
-        return result;
-    }
-
     @Override
     public CreateVMSnapshotAnswer execute(VmwareHostService hostService, CreateVMSnapshotCommand cmd) {
         List<VolumeObjectTO> volumeTOs = cmd.getVolumeTOs();
@@ -1291,7 +1261,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                         vmdkName = vmdkName.substring(vmdkName.indexOf(token) + token.length());
                     }
 
-                    baseName = extractSnapshotBaseFileName(vmdkName);
+                    baseName = VmwareHelper.trimSnapshotDeltaPostfix(vmdkName);
                 }
 
                 mapNewDisk.put(baseName, vmdkName);
@@ -1316,7 +1286,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 baseName = oldPath.substring(1, oldPath.length() - 1);
             }
             else {
-                baseName = extractSnapshotBaseFileName(volumeTO.getPath());
+                baseName = VmwareHelper.trimSnapshotDeltaPostfix(volumeTO.getPath());
             }
 
             String newPath = mapNewDisk.get(baseName);
