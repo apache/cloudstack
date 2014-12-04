@@ -667,7 +667,6 @@ class TestSnapshots(cloudstackTestCase):
 
             #Create snapshot from detached volume
             snapshot = Snapshot.create(self.apiclient, volume.id)
-            self.cleanup.append(snapshot)
 
             volumes = list_volumes(
                                self.apiclient,
