@@ -16149,8 +16149,9 @@
                                                     if (json.listdedicatedhostsresponse.dedicatedhost != undefined) {
                                                         var hostItem = json.listdedicatedhostsresponse.dedicatedhost[0];
                                                         if (hostItem.domainid != null) {
-                                                            $.extend(item, hostItem, {
-                                                                isdedicated: _l('label.yes')
+                                                            $.extend(item, {
+                                                                isdedicated: _l('label.yes'),
+                                                                domainid: hostItem.domainid
                                                             });
                                                         }
                                                     } else
