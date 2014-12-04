@@ -44,7 +44,7 @@ INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created,
 
 -- 1- already taken, the upgrade 410 to 420 breaks...
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
-    VALUES (12, UUID(), 'routing-11', 'SystemVM Template (Ovm3)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/4.3/systemvm64template-2014-01-14-master-ovm.vhd.bz2', '4425688804dbcf0abc9e9e56c53070d7', 0, 'SystemVM Template (Ovm3)', 'RAW', 183, 0, 1, 'Ovm3' );
+    VALUES (12, UUID(), 'routing-12', 'SystemVM Template (Ovm3)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/4.3/systemvm64template-2014-01-14-master-ovm.vhd.bz2', '4425688804dbcf0abc9e9e56c53070d7', 0, 'SystemVM Template (Ovm3)', 'RAW', 183, 0, 1, 'Ovm3' );
 
 INSERT INTO `cloud`.`guest_os_category` (id, uuid, name) VALUES (1, UUID(), 'CentOS');
 INSERT INTO `cloud`.`guest_os_category` (id, uuid, name) VALUES (2, UUID(), 'Debian');
