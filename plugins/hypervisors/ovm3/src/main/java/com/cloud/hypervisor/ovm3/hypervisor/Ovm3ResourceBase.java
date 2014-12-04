@@ -812,19 +812,22 @@ StorageProcessor {
     /* stolen from vmware impl */
     private File getSystemVMPatchIsoFile() {
         // locate systemvm.iso
+        String iso = "systemvm.iso";
         String svmName = getSystemVMIsoFileNameOnDatastore();
-        URL url = this.getClass().getClassLoader()
-                .getResource("vms/" + svmName);
+        String systemVmIsoPath = Script.findScript("", "vms/" + iso);
         LOGGER.debug(url);
         File isoFile = null;
-        if (url != null) {
-            isoFile = new File(url.getPath());
+        if (systemVmIsoPath != null) {
+            LOGGER.debug("found systemvm patch iso " + systemVmIsoPath);
+            isoFile = new File(systemVmIsoPath);
         }
         if (isoFile == null || !isoFile.exists()) {
+            LOGGER.debug("found local systemvm patch iso " + svm);
             isoFile = new File("/usr/share/cloudstack-common/vms/" + svmName);
         }
         if (isoFile == null || !isoFile.exists()) {
-            String svm = "systemvm/dist/systemvm.iso";
+            String svm = "client/target/generated-webapp/WEB-INF/classes/vms/"
+                    + iso;
             LOGGER.debug("last resort for systemvm patch iso " + svm);
             isoFile = new File(svm);
         }
