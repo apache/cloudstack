@@ -815,14 +815,13 @@ StorageProcessor {
         String iso = "systemvm.iso";
         String svmName = getSystemVMIsoFileNameOnDatastore();
         String systemVmIsoPath = Script.findScript("", "vms/" + iso);
-        LOGGER.debug(url);
         File isoFile = null;
         if (systemVmIsoPath != null) {
             LOGGER.debug("found systemvm patch iso " + systemVmIsoPath);
             isoFile = new File(systemVmIsoPath);
         }
         if (isoFile == null || !isoFile.exists()) {
-            LOGGER.debug("found local systemvm patch iso " + svm);
+            LOGGER.debug("found no local systemvm patch iso " + systemVmIsoPath + " moving on");
             isoFile = new File("/usr/share/cloudstack-common/vms/" + svmName);
         }
         if (isoFile == null || !isoFile.exists()) {
