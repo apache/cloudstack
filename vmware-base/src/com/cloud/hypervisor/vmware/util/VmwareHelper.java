@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
@@ -711,4 +712,16 @@ public class VmwareHelper {
         // Object name that is greater than 32 is not safe in vCenter
         return UUID.randomUUID().toString().replaceAll("-", "");
     }
+
+    public static String trimSnapshotDeltaPostfix(String name) {
+        String[] tokens = name.split("-");
+        if (tokens.length > 1 && tokens[tokens.length - 1].matches("[0-9]{6,}")) {
+            List<String> trimmedTokens = new ArrayList<String>();
+            for (int i = 0; i < tokens.length - 1; i++)
+                trimmedTokens.add(tokens[i]);
+            return StringUtils.join(trimmedTokens, "-");
+        }
+        return name;
+    }
+
 }

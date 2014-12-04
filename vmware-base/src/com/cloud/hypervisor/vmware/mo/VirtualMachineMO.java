@@ -34,7 +34,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -1958,24 +1957,13 @@ public class VirtualMachineMO extends BaseMO {
         }
     }
 
-    private static String trimSnapshotDeltaPostfix(String name) {
-        String[] tokens = name.split("-");
-        if (tokens.length > 1 && tokens[tokens.length - 1].matches("[0-9]{6,}")) {
-            List<String> trimmedTokens = new ArrayList<String>();
-            for (int i = 0; i < tokens.length - 1; i++)
-                trimmedTokens.add(tokens[i]);
-            return StringUtils.join(trimmedTokens, "-");
-        }
-        return name;
-    }
-
     // return pair of VirtualDisk and disk device bus name(ide0:0, etc)
     public Pair<VirtualDisk, String> getDiskDevice(String vmdkDatastorePath, boolean matchExactly) throws Exception {
         List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
 
         DatastoreFile dsSrcFile = new DatastoreFile(vmdkDatastorePath);
         String srcBaseName = dsSrcFile.getFileBaseName();
-        String trimmedSrcBaseName = trimSnapshotDeltaPostfix(srcBaseName);
+        String trimmedSrcBaseName = VmwareHelper.trimSnapshotDeltaPostfix(srcBaseName);
 
         if (matchExactly) {
             s_logger.info("Look for disk device info from volume : " + vmdkDatastorePath + " with base name: " + srcBaseName);
