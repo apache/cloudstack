@@ -74,3 +74,7 @@ table thead th.quick-view {
   font-size: 10px;
 }
 
+.quick-view-tooltip .detail-view .detail-group.actions .action.text .label {
+  font-size: 8px;
+}
+
