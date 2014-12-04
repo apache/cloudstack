@@ -8499,7 +8499,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 
 .security-rules .multi-edit .range input {
   width: 44px;
-  margin: 0 0 0 8px;
+  margin: 0;
 }
 
 /*Recurring snapshots*/
