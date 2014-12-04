@@ -112,7 +112,6 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.net.NetUtils;
@@ -616,8 +615,7 @@ public class CommandSetupHelper {
 
         // password should be set only on default network element
         if (password != null && nic.isDefaultNic()) {
-            final String encodedPassword = PasswordGenerator.rot13(password);
-            final SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), profile.getVirtualMachine().getHostName(),
+            final SavePasswordCommand cmd = new SavePasswordCommand(password, nic.getIp4Address(), profile.getVirtualMachine().getHostName(),
                     _networkModel.getExecuteInSeqNtwkElmtCmd());
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(nic.getNetworkId(), router.getId()));

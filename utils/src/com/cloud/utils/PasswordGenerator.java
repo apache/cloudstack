@@ -87,22 +87,4 @@ public class PasswordGenerator {
         return psk.toString();
 
     }
-
-    public static String rot13(final String password) {
-        final StringBuilder newPassword = new StringBuilder(password.length());
-
-        for (int i = 0; i < password.length(); i++) {
-            char c = password.charAt(i);
-
-            if ((c >= 'a' && c <= 'm') || ((c >= 'A' && c <= 'M'))) {
-                c += 13;
-            } else if ((c >= 'n' && c <= 'z') || (c >= 'N' && c <= 'Z')) {
-                c -= 13;
-            }
-
-            newPassword.append(c);
-        }
-
-        return newPassword.toString();
-    }
 }

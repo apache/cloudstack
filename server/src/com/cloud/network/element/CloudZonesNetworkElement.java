@@ -50,7 +50,6 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -215,8 +214,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
 
             Commands cmds = new Commands(Command.OnError.Continue);
             if (password != null && nic.isDefaultNic()) {
-                final String encodedPassword = PasswordGenerator.rot13(password);
-                SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), uservm.getHostName(), _networkMgr.getExecuteInSeqNtwkElmtCmd());
+                SavePasswordCommand cmd = new SavePasswordCommand(password, nic.getIp4Address(), uservm.getHostName(), _networkMgr.getExecuteInSeqNtwkElmtCmd());
                 cmds.addCommand("password", cmd);
             }
             String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(uservm.getServiceOfferingId()).getDisplayText();

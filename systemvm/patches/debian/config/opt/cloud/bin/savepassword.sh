@@ -40,9 +40,7 @@ do
   case $OPTION in
   v)	VM_IP="$OPTARG"
 		;;
-  p)	
-		ENCODEDPASSWORD="$OPTARG"
-		PASSWORD=$(echo $ENCODEDPASSWORD | tr '[a-m][n-z][A-M][N-Z]' '[n-z][a-m][N-Z][A-M]')
+  p)    PASSWORD="$OPTARG"
 		;;
   ?)	echo "Incorrect usage"
                 unlock_exit 1 $lock $locked
