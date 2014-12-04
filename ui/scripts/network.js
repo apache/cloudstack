@@ -99,7 +99,7 @@
 	
 	                // Add primary IP as default
 	                ipSelection.push({
-	                    id: -1,
+	                    id: primaryIp,
 	                    description: primaryIp + ' (Primary)'
 	                });
 	
