@@ -422,15 +422,15 @@
                                     <!-- Keyboard Language -->
                                     <div class="select odd">
                                         <div class="name">
-                                            <span>Keyboard language</span>
+                                            <span><fmt:message key="label.keyboard.language" /></span>
                                         </div>
                                         <div class="value">
                                             <select name="keyboardLanguage">
                                                 <option value=""></option>
-                                                <option value="us">Standard (US) keyboard</option>
-                                                <option value="uk">UK keyboard</option>
-                                                <option value="jp">Japanese keyboard</option>
-                                                <option value="sc">Simplified Chinese keyboard</option>
+                                                <option value="us"><fmt:message key="label.standard.us.keyboard" /></option>
+                                                <option value="uk"><fmt:message key="label.uk.keyboard" /></option>
+                                                <option value="jp"><fmt:message key="label.japanese.keyboard" /></option>
+                                                <option value="sc"><fmt:message key="label.simplified.chinese.keyboard" /></option>
                                             </select>
                                         </div>
                                     </div>
@@ -1190,7 +1190,7 @@
                     <ul>
                         <li>
                             <div class="icon"><span>1</span></div>
-                            <div class="title">Guest</div>
+                            <div class="title"><fmt:message key="label.guest" /></div>
                             <p>Set up the network for traffic between end-user VMs.</p>
                         </li>
                         <li>
@@ -1470,7 +1470,7 @@
 
             <!-- Recurring Snapshots -->
             <div class="recurring-snapshots">
-                <p class="desc">Description</p>
+                <p class="desc"><fmt:message key="label.description" /></p>
 
                 <div class="schedule">
                     <p>Schedule:</p>
@@ -1493,7 +1493,7 @@
                                     <div class="name"></div>
                                     <div class="value">
                                         <select name="schedule"></select>
-                                        <label for="schedule">minutes(s) past the hour</label>
+                                        <label for="schedule"><fmt:message key="label.minutes.past.hour" /></label>
                                     </div>
                                 </div>
 
@@ -1508,10 +1508,10 @@
 
                                 <!-- Max snapshots -->
                                 <div class="field maxsnaps">
-                                    <div class="name">Keep</div>
+                                    <div class="name"><fmt:message key="label.keep" /></div>
                                     <div class="value">
                                         <input type="text" name="maxsnaps" class="required" />
-                                        <label for="maxsnaps">snapshot(s)</label>
+                                        <label for="maxsnaps"><fmt:message key="label.snapshots" /></label>
                                     </div>
                                 </div>
                             </form>
@@ -1524,7 +1524,7 @@
 
                                 <!-- Time -->
                                 <div class="field time">
-                                    <div class="name">Time</div>
+                                    <div class="name"><fmt:message key="label.time" /></div>
                                     <div class="value">
                                         <select name="time-hour"></select>
                                         <select name="time-minute"></select>
@@ -1534,7 +1534,7 @@
 
                                 <!-- Timezone -->
                                 <div class="field timezone">
-                                    <div class="name">Timezone</div>
+                                    <div class="name"><fmt:message key="label.time.zone" /></div>
                                     <div class="value">
                                         <select name="timezone"></select>
                                     </div>
@@ -1542,10 +1542,10 @@
 
                                 <!-- Max snapshots -->
                                 <div class="field maxsnaps">
-                                    <div class="name">Keep</div>
+                                    <div class="name"><fmt:message key="label.keep" /></div>
                                     <div class="value">
                                         <input type="text" name="maxsnaps" class="required" />
-                                        <label for="maxsnaps">snapshot(s)</label>
+                                        <label for="maxsnaps"><fmt:message key="label.snapshots" /></label>
                                     </div>
                                 </div>
                             </form>
@@ -1558,7 +1558,7 @@
 
                                 <!-- Time -->
                                 <div class="field time">
-                                    <div class="name">Time</div>
+                                    <div class="name"><fmt:message key="label.time" /></div>
                                     <div class="value">
                                         <select name="time-hour"></select>
                                         <select name="time-minute"></select>
@@ -1568,7 +1568,7 @@
 
                                 <!-- Day of week -->
                                 <div class="field day-of-week">
-                                    <div class="name">Day of week</div>
+                                    <div class="name"><fmt:message key="label.day.of.week" /></div>
                                     <div class="value">
                                         <select name="day-of-week"></select>
                                     </div>
@@ -1576,7 +1576,7 @@
 
                                 <!-- Timezone -->
                                 <div class="field timezone">
-                                    <div class="name">Timezone</div>
+                                    <div class="name"><fmt:message key="label.time.zone" /></div>
                                     <div class="value">
                                         <select name="timezone"></select>
                                     </div>
@@ -1584,10 +1584,10 @@
 
                                 <!-- Max snapshots -->
                                 <div class="field maxsnaps">
-                                    <div class="name">Keep</div>
+                                    <div class="name"><fmt:message key="label.keep" /></div>
                                     <div class="value">
                                         <input type="text" name="maxsnaps" class="required" />
-                                        <label for="maxsnaps">snapshot(s)</label>
+                                        <label for="maxsnaps"><fmt:message key="label.snapshots" /></label>
                                     </div>
                                 </div>
                             </form>
@@ -1600,7 +1600,7 @@
 
                                 <!-- Time -->
                                 <div class="field time">
-                                    <div class="name">Time</div>
+                                    <div class="name"><fmt:message key="label.time" /></div>
                                     <div class="value">
                                         <select name="time-hour"></select>
                                         <select name="time-minute"></select>
@@ -1610,7 +1610,7 @@
 
                                 <!-- Day of week -->
                                 <div class="field day-of-month">
-                                    <div class="name">Day of month</div>
+                                    <div class="name"><fmt:message key="label.day.of.month" /></div>
                                     <div class="value">
                                         <select name="day-of-month"></select>
                                     </div>
@@ -1618,7 +1618,7 @@
 
                                 <!-- Timezone -->
                                 <div class="field timezone">
-                                    <div class="name">Timezone</div>
+                                    <div class="name"><fmt:message key="label.time.zone" /></div>
                                     <div class="value">
                                         <select name="timezone"></select>
                                     </div>
@@ -1626,10 +1626,10 @@
 
                                 <!-- Max snapshots -->
                                 <div class="field maxsnaps">
-                                    <div class="name">Keep</div>
+                                    <div class="name"><fmt:message key="label.keep" /></div>
                                     <div class="value">
                                         <input type="text" name="maxsnaps" class="required" />
-                                        <label for="maxsnaps">snapshot(s)</label>
+                                        <label for="maxsnaps"><fmt:message key="label.snapshots" /></label>
                                     </div>
                                 </div>
                             </form>
@@ -1647,34 +1647,34 @@
                         <tbody>
                             <!-- Hourly -->
                             <tr class="hourly">
-                                <td class="time">Time: <span></span> min past the hr</td>
+                                <td class="time"><fmt:message key="label.time.colon" /> <span></span> <fmt:message key="label.min.past.the.hr" /></td>
                                 <td class="day-of-week"><span></span></td>
-                                <td class="timezone">Timezone:<br/><span></span></td>
-                                <td class="keep">Keep: <span></span></td>
+                                <td class="timezone"><fmt:message key="label.timezone.colon" /><br/><span></span></td>
+                                <td class="keep"><fmt:message key="label.keep.colon" /> <span></span></td>
                                 <td class="actions"><div class="action destroy"><span class="icon">&nbsp;</span></div></td>
                             </tr>
                             <!-- Daily -->
                             <tr class="daily">
-                                <td class="time">Time: <span></span></td>
+                                <td class="time"><fmt:message key="label.time.colon" /> <span></span></td>
                                 <td class="day-of-week"><span></span></td>
-                                <td class="timezone">Timezone:<br/><span></span></td>
-                                <td class="keep">Keep: <span></span></td>
+                                <td class="timezone"><fmt:message key="label.timezone.colon" /><br/><span></span></td>
+                                <td class="keep"><fmt:message key="label.keep.colon" /> <span></span></td>
                                 <td class="actions"><div class="action destroy"><span class="icon">&nbsp;</span></div></td>
                             </tr>
                             <!-- Weekly -->
                             <tr class="weekly">
-                                <td class="time">Time: <span></span></td>
-                                <td class="day-of-week">Every <span></span></td>
-                                <td class="timezone">Timezone:<br/><span></span></td>
-                                <td class="keep">Keep: <span></span></td>
+                                <td class="time"><fmt:message key="label.time.colon" /> <span></span></td>
+                                <td class="day-of-week"><fmt:message key="label.every" /> <span></span></td>
+                                <td class="timezone"><fmt:message key="label.timezone.colon" /><br/><span></span></td>
+                                <td class="keep"><fmt:message key="label.keep.colon" /> <span></span></td>
                                 <td class="actions"><div class="action destroy"><span class="icon">&nbsp;</span></div></td>
                             </tr>
                             <!-- Monthly -->
                             <tr class="monthly">
-                                <td class="time">Time: <span></span></td>
-                                <td class="day-of-week">Day <span></span> of month</td>
-                                <td class="timezone">Timezone:<br/><span></span></td>
-                                <td class="keep">Keep: <span></span></td>
+                                <td class="time"><fmt:message key="label.time.colon" /> <span></span></td>
+                                <td class="day-of-week"><fmt:message key="label.day" /> <span></span> <fmt:message key="label.of.month" /></td>
+                                <td class="timezone"><fmt:message key="label.timezone.colon" /><br/><span></span></td>
+                                <td class="keep"><fmt:message key="label.keep.colon" /> <span></span></td>
                                 <td class="actions"><div class="action destroy"><span class="icon">&nbsp;</span></div></td>
                             </tr>
                         </tbody>

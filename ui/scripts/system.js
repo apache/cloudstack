@@ -10098,9 +10098,9 @@
                                     label: 'label.upgrade.required',
                                     converter: function (args) {
                                         if (args > 0) {
-                                            return 'label.yes';
+                                            return _l('label.yes');
                                         } else {
-                                            return 'label.no';
+                                            return _l('label.no');
                                         }
                                     }
                                 }
@@ -10189,9 +10189,9 @@
                                                 label: 'label.upgrade.required',
                                                 converter: function (args) {
                                                     if (args > 0) {
-                                                        return 'label.yes';
+                                                        return _l('label.yes');
                                                     } else {
-                                                        return 'label.no';
+                                                        return _l('label.no');
                                                     }
                                                 }
                                             },                                            
@@ -10229,9 +10229,9 @@
                                     label: 'label.upgrade.required',
                                     converter: function (args) {
                                         if (args > 0) {
-                                            return 'label.yes';
+                                            return _l('label.yes');
                                         } else {
-                                            return 'label.no';
+                                            return _l('label.no');
                                         }
                                     }
                                 }
@@ -10320,9 +10320,9 @@
                                                 label: 'label.upgrade.required',
                                                 converter: function (args) {
                                                     if (args > 0) {
-                                                        return 'label.yes';
+                                                        return _l('label.yes');
                                                     } else {
-                                                        return 'label.no';
+                                                        return _l('label.no');
                                                     }
                                                 }
                                             },
@@ -10363,9 +10363,9 @@
                                     label: 'label.upgrade.required',
                                     converter: function (args) {
                                         if (args > 0) {
-                                            return 'label.yes';
+                                            return _l('label.yes');
                                         } else {
-                                            return 'label.no';
+                                            return _l('label.no');
                                         }
                                     }
                                 }
@@ -10454,14 +10454,14 @@
                                                 label: 'label.upgrade.required',
                                                 converter: function (args) {
                                                     if (args > 0) {
-                                                        return 'label.yes';
+                                                        return _l('label.yes');
                                                     } else {
-                                                        return 'label.no';
+                                                        return _l('label.no');
                                                     }
                                                 }
                                             },
                                             numberOfRouterRequiresUpgrade: {
-                                            	label: 'label.total.virtual.routers that require upgrade'
+                                            	label: 'label.total.virtual.routers.upgrade'
                                             },
                                             podname: {
                                                 label: 'label.pod'
@@ -10485,7 +10485,7 @@
                     routerGroupByAccount: {
                         id: 'routerGroupByAccount',
                         type: 'select',
-                        title: 'group by account',
+                        title: 'label.group.by.account',
                         listView: {
                             id: 'routerGroupByAccount',
                             label: 'label.virtual.appliances',
@@ -10503,9 +10503,9 @@
                                     label: 'label.upgrade.required',
                                     converter: function (args) {
                                         if (args > 0) {
-                                            return 'label.yes';
+                                            return _l('label.yes');
                                         } else {
-                                            return 'label.no';
+                                            return _l('label.no');
                                         }
                                     }
                                 }
@@ -10659,14 +10659,14 @@
                                                 label: 'label.upgrade.required',
                                                 converter: function (args) {
                                                     if (args > 0) {
-                                                        return 'label.yes';
+                                                        return _l('label.yes');
                                                     } else {
-                                                        return 'label.no';
+                                                        return _l('label.no');
                                                     }
                                                 }
                                             },                                            
                                             numberOfRouterRequiresUpgrade: {
-                                            	label: 'label.total.virtual.routers that require upgrade'
+                                            	label: 'label.total.virtual.routers.upgrade'
                                             }
                                         }],
                                         dataProvider: function (args) {
