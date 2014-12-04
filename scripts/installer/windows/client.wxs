@@ -1645,7 +1645,7 @@
                             <File Id="fil48FA51E3DD79B7C9D1227F5C14AF1E16" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\lib\jackson-module-jaxb-annotations-2.1.1.jar" />
                         </Component>
                         <Component Id="cmpB461DFEF3B05553DE179C1A846F3FF87" Guid="{35A17A68-E6CB-4D49-9B90-A11E904E185E}">
-                            <File Id="filE15E39FEEA47584E295154E280235A62" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\lib\jasypt-1.9.2.jar" />
+                            <File Id="filE15E39FEEA47584E295154E280235A62" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\lib\jasypt-1.9.0.jar" />
                         </Component>
                         <Component Id="cmp18523225741C1B62B821A603B4785A02" Guid="{30FA0BF7-E64F-43EE-8004-0D521C648B40}">
                             <File Id="filBF2E885F28757D248A6061B3EE3A3831" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\lib\java-ipv6-0.10.jar" />
