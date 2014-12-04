@@ -1929,7 +1929,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_CREATE, eventDescription = "allocating snapshot", create = true)
-    public Snapshot allocSnapshot(Long volumeId, Long policyId) throws ResourceAllocationException {
+    public Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
 
         VolumeInfo volume = volFactory.getVolume(volumeId);
@@ -1972,7 +1972,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " please attach this volume to a VM before create snapshot for it");
         }
 
-        return snapshotMgr.allocSnapshot(volumeId, policyId);
+        return snapshotMgr.allocSnapshot(volumeId, policyId, snapshotName);
     }
 
     @Override

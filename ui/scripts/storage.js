@@ -597,12 +597,25 @@
                                                         else
                                                 	return true;
                                             }
+                                        },
+                                        name: {
+                                            label: 'label.name',
                                         }
                                     }
                                 },
                                 action: function(args) {
+                                    var data = {
+                                        volumeId: args.context.volumes[0].id,
+                                        quiescevm: (args.data.quiescevm == 'on' ? true: false)
+                                    };
+                                    if (args.data.name != null && args.data.name.length > 0) {
+                                        $.extend(data, {
+                                            name: args.data.name
+                                        });
+                                    }
                                     $.ajax({
-                                        url: createURL("createSnapshot&volumeid=" + args.context.volumes[0].id + "&quiescevm=" + (args.data.quiescevm=='on')),
+                                        url: createURL("createSnapshot"),
+                                        data: data,
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
