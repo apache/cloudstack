@@ -647,8 +647,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         if (oldIP != null) {
             // If elasticIP functionality is supported in the network, we always have to disable static nat on the old
-// ip in order to re-enable it on the new one
+            // ip in order to re-enable it on the new one
             Long networkId = oldIP.getAssociatedWithNetworkId();
+            VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+
             boolean reassignStaticNat = false;
             if (networkId != null) {
                 Network guestNetwork = _networkModel.getNetwork(networkId);
@@ -660,13 +662,16 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
             // If there is public ip address already associated with the vm, throw an exception
             if (!reassignStaticNat) {
-                throw new InvalidParameterValueException("Failed to enable static nat for the ip address id=" + ipAddress.getId() + " as vm id=" + vmId +
-                    " is already associated with ip id=" + oldIP.getId());
+                throw new InvalidParameterValueException("Failed to enable static nat on the  ip " +
+                          ipAddress.getAddress()+" with Id " +ipAddress.getUuid()+" as the vm " +vm.getInstanceName() + " with Id " +
+                        vm.getUuid() +" is already associated with another public ip " + oldIP.getAddress() +" with id "+
+                        oldIP.getUuid());
             }
         // unassign old static nat rule
         s_logger.debug("Disassociating static nat for ip " + oldIP);
         if (!disableStaticNat(oldIP.getId(), caller, callerUserId, true)) {
-                throw new CloudRuntimeException("Failed to disable old static nat rule for vm id=" + vmId + " and ip " + oldIP);
+                throw new CloudRuntimeException("Failed to disable old static nat rule for vm "+ vm.getInstanceName() +
+                        " with id "+vm.getUuid() +"  and public ip " + oldIP);
             }
         }
     }
