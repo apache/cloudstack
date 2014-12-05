@@ -97,7 +97,8 @@ class TestPersistentNetworks(cloudstackTestCase):
         cls.isolated_network_offering_netscaler = cls.createNetworkOffering(
             "nw_off_isolated_netscaler")
 
-        cls.services["configurableData"]["netscaler"]["lbdevicededicated"] = False
+        cls.services["configurableData"]["netscaler"]["lbdevicededicated"] =\
+            False
 
         # Configure Netscaler device
         # If configuration succeeds, set ns_configured to True so that
@@ -172,9 +173,9 @@ class TestPersistentNetworks(cloudstackTestCase):
         try:
             sshClient = SshClient(
                 host=sourceip,
-                port=22,
-                user='root',
-                passwd=self.services["host_password"])
+                port=self.services['configurableData']['host']["publicport"],
+                user=self.services['configurableData']['host']["username"],
+                passwd=self.services['configurableData']['host']["password"])
             res = sshClient.execute("ping -c 1 %s" % (
                 router.linklocalip
             ))
@@ -1502,7 +1503,8 @@ class TestAssignVirtualMachine(cloudstackTestCase):
         cls.persistent_network_offering_netscaler = cls.createNetworkOffering(
             "nw_off_isolated_persistent_netscaler")
 
-        cls.services["configurableData"]["netscaler"]["lbdevicededicated"] = False
+        cls.services["configurableData"]["netscaler"]["lbdevicededicated"] =\
+            False
 
         # Configure Netscaler device
         # If configuration succeeds, set ns_configured to True so that
@@ -1968,7 +1970,8 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
             cls.api_client,
             state="enabled")
 
-        cls.services["configurableData"]["netscaler"]["lbdevicededicated"] = False
+        cls.services["configurableData"]["netscaler"]["lbdevicededicated"] =\
+            False
 
         # Configure Netscaler device
         # If configuration succeeds, set ns_configured to True so that
@@ -2039,9 +2042,9 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
         try:
             sshClient = SshClient(
                 host=sourceip,
-                port=22,
-                user='root',
-                passwd=self.services["host_password"])
+                port=self.services['configurableData']['host']["publicport"],
+                user=self.services['configurableData']['host']["username"],
+                passwd=self.services['configurableData']['host']["password"])
             res = sshClient.execute("ping -c 1 %s" % (
                 router.linklocalip
             ))
