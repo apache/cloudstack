@@ -934,10 +934,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             return result.getVolume();
         } catch (InterruptedException e) {
             s_logger.debug("migrate volume failed", e);
-            return null;
+            throw new CloudRuntimeException(e.getMessage());
         } catch (ExecutionException e) {
             s_logger.debug("migrate volume failed", e);
-            return null;
+            throw new CloudRuntimeException(e.getMessage());
         }
     }
 

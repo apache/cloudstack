@@ -1817,6 +1817,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (jobResult != null) {
                     if (jobResult instanceof ConcurrentOperationException)
                         throw (ConcurrentOperationException)jobResult;
+                    else if (jobResult instanceof RuntimeException)
+                        throw (RuntimeException)jobResult;
                     else if (jobResult instanceof Throwable)
                         throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
                 }
@@ -1839,35 +1841,39 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         assert (destPool != null);
 
         Volume newVol = null;
-        if (liveMigrateVolume) {
-            newVol = liveMigrateVolume(vol, destPool);
-        } else {
-            try {
+        try {
+            if (liveMigrateVolume) {
+                newVol = liveMigrateVolume(vol, destPool);
+            } else {
                 newVol = _volumeMgr.migrateVolume(vol, destPool);
-            } catch (StorageUnavailableException e) {
-                s_logger.debug("Failed to migrate volume", e);
             }
+        } catch (StorageUnavailableException e) {
+            s_logger.debug("Failed to migrate volume", e);
+            throw new CloudRuntimeException(e.getMessage());
+        }  catch (Exception e) {
+            s_logger.debug("Failed to migrate volume", e);
+            throw new CloudRuntimeException(e.getMessage());
         }
         return newVol;
     }
 
     @DB
-    protected Volume liveMigrateVolume(Volume volume, StoragePool destPool) {
+    protected Volume liveMigrateVolume(Volume volume, StoragePool destPool) throws StorageUnavailableException {
         VolumeInfo vol = volFactory.getVolume(volume.getId());
         AsyncCallFuture<VolumeApiResult> future = volService.migrateVolume(vol, (DataStore)destPool);
         try {
             VolumeApiResult result = future.get();
             if (result.isFailed()) {
                 s_logger.debug("migrate volume failed:" + result.getResult());
-                return null;
+                throw new StorageUnavailableException("Migrate volume failed: " + result.getResult(), destPool.getId());
             }
             return result.getVolume();
         } catch (InterruptedException e) {
             s_logger.debug("migrate volume failed", e);
-            return null;
+            throw new CloudRuntimeException(e.getMessage());
         } catch (ExecutionException e) {
             s_logger.debug("migrate volume failed", e);
-            return null;
+            throw new CloudRuntimeException(e.getMessage());
         }
     }
 
