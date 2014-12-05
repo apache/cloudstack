@@ -322,6 +322,19 @@ test_data = {
         "affinity": {
             "name": "webvms",
             "type": "host anti-affinity",
+        }
+    },
+    "virtual_machine_userdata": {
+        "displayname": "Test VM",
+        "username": "root",
+        "password": "password",
+        "ssh_port": 22,
+        "privateport": 22,
+        "publicport": 22,
+        "protocol": "TCP",
+        "affinity": {
+            "name": "webvms",
+            "type": "host anti-affinity",
         },
         "userdata": "This is sample data"
     },
