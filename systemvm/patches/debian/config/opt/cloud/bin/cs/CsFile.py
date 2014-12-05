@@ -46,6 +46,9 @@ class CsFile:
         else:
             return False
 
+    def __len__(self):
+        return len(self.config)
+
     def empty(self):
         self.config = []
         self.new_config = []
@@ -80,11 +83,12 @@ class CsFile:
     def add(self, string, where=-1):
         for index, line in enumerate(self.new_config):
             if line.strip() == string:
-                return
+                return False
         if where == -1:
             self.new_config.append("%s\n" % string)
         else:
             self.new_config.insert(where, "%s\n" % string)
+        return True
 
     def section(self, start, end, content):
         sind = -1
@@ -114,6 +118,8 @@ class CsFile:
                     self.new_config[index] = replace + "\n"
         if not found:
             self.new_config.append(replace + "\n")
+            return True
+        return False
 
     def compare(self, o):
         return (isinstance(o, self.__class__) and set(self.config) == set(o.new_config))
