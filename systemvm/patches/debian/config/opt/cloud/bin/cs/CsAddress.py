@@ -20,7 +20,9 @@ from CsApp import CsApache, CsDnsmasq, CsPasswdSvc
 import CsHelper
 import logging
 import CsHelper
+
 import subprocess
+import time
 from CsRoute import CsRoute
 from CsRule import CsRule
 
@@ -51,6 +53,26 @@ class CsAddress(CsDataBag):
         for ip in self.get_ips():
             if ip.is_guest():
                 return ip.get_ip()
+        return None
+
+    def get_guest_gateway(self):
+        """
+        Return the gateway of the first guest interface
+        For use with routers not vpcrouters
+        """
+        for ip in self.get_ips():
+            if ip.is_guest():
+                return ip.get_gateway()
+        return None
+
+    def get_guest_netmask(self):
+        """
+        Return the gateway of the first guest interface
+        For use with routers not vpcrouters
+        """
+        for ip in self.get_ips():
+            if ip.is_guest():
+                return ip.get_netmask()
         return None
 
     def needs_vrrp(self, o):
@@ -127,6 +149,12 @@ class CsInterface:
 
     def get_ip(self):
         return self.get_attr("public_ip")
+
+    def get_netmask(self):
+        return self.get_attr("netmask")
+
+    def get_gateway(self):
+        return self.get_attr("gateway")
 
     def get_device(self):
         return self.get_attr("device")

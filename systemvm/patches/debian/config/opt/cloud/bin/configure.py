@@ -141,18 +141,19 @@ class CsAcl(CsDataBag):
     class AclDevice():
         """ A little class for each list of acls per device """
 
-        def __init__(self, obj, fw):
+        def __init__(self, obj, config):
             self.ingess = []
             self.egress = []
             self.device = obj['device']
             self.ip = obj['nic_ip']
             self.netmask = obj['nic_netmask']
+            self.config = config
             self.cidr = "%s/%s" % (self.ip, self.netmask)
             if "ingress_rules" in obj.keys():
                 self.ingress = obj['ingress_rules']
             if "egress_rules" in obj.keys():
                 self.egress = obj['egress_rules']
-            self.fw = fw
+            self.fw = config.get_fw()
 
         def create(self):
             self.process("ingress", self.ingress)
@@ -166,10 +167,8 @@ class CsAcl(CsDataBag):
         class AclRule():
 
             def __init__(self, direction, acl, rule, config):
-                if config_is_vpc():
-                    self.init_vpc(self, direction, acl, rule, config)
-                else:
-                    self.init_vr(self, direction, acl, rule, config)
+                if config.is_vpc():
+                    self.init_vpc(direction, acl, rule, config)
 
             def init_vpc(self, direction, acl, rule, config):
                 self.table = ""
@@ -179,7 +178,7 @@ class CsAcl(CsDataBag):
                 self.dest = "-s %s" % rule['cidr']
                 if direction == "egress":
                     self.table = config.get_egress_table()
-                    self.chain = config.get_egress_chain(self.device, ip)
+                    self.chain = config.get_egress_chain(self.device, acl.ip)
                     self.dest = "-d %s" % rule['cidr']
                 self.type = ""
                 self.type = rule['type']
@@ -217,9 +216,9 @@ class CsAcl(CsDataBag):
             if item == "id":
                 continue
             if self.config.is_vpc():
-                dev_obj = self.AclDevice(self.dbag[item], self.fw).create()
+                dev_obj = self.AclDevice(self.dbag[item], self.config).create()
             else:
-                self.AclIP(self.dbag[item], self.fw).create()
+                self.AclIP(self.dbag[item], self.config).create()
 
 
 class CsVmMetadata(CsDataBag):

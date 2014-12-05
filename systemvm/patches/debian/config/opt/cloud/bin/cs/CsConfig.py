@@ -65,6 +65,9 @@ class CsConfig(object):
     def get_domain(self):
         return self.cl.get_domain()
 
+    def get_dns(self):
+        return self.get_cmdline().get_dns()
+
     def get_format(self):
         return self.__LOG_FORMAT
 
