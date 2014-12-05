@@ -181,7 +181,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             //check if account's domain is a child of zone's domain (Note: This is made consistent with the list command for disk offering)
             else if (_accountService.isNormalUser(account.getId())
                     || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
-                    || _accountService.isDomainAdmin(account.getId())) {
+                    || _accountService.isDomainAdmin(account.getId())
+                    || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                 if (account.getDomainId() == dof.getDomainId()) {
                     return true; //disk offering and account at exact node
                 } else {
@@ -219,7 +220,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             //check if account's domain is a child of zone's domain (Note: This is made consistent with the list command for service offering)
             else if (_accountService.isNormalUser(account.getId())
                     || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
-                    || _accountService.isDomainAdmin(account.getId())) {
+                    || _accountService.isDomainAdmin(account.getId())
+                    || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                 if (account.getDomainId() == so.getDomainId()) {
                     return true; //service offering and account at exact node
                 } else {
