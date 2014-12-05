@@ -2363,7 +2363,7 @@
                                                     	}                                                    	
                                                     	                                                    	
                                                         return {
-                                                            vpn: json.queryasyncjobresultresponse.jobresult.remoteaccessvpn,
+                                                            remoteaccessvpn: json.queryasyncjobresultresponse.jobresult.remoteaccessvpn,
                                                             vpnenabled: vpnenabledAndRunning
                                                         };
                                                     },
@@ -2388,8 +2388,8 @@
                                     },
                                     complete: function(args) {
                                     	var msg;
-                                    	if (args.vpn.state == "Running") {
-                                    	    msg = _l('message.enabled.vpn') + ' ' + args.vpn.publicip + '.' + '<br/>' + _l('message.enabled.vpn.ip.sec') + '<br/>' + args.vpn.presharedkey;                                	
+                                    	if (args.remoteaccessvpn.state == "Running") {
+                                    	    msg = _l('message.enabled.vpn') + ' ' + args.remoteaccessvpn.publicip + '.' + '<br/>' + _l('message.enabled.vpn.ip.sec') + '<br/>' + args.remoteaccessvpn.presharedkey;                                	
                                     	} else {
                                     		msg = "Remote Access VPN configuration has been generated, but it failed to apply. Please check connectivity of the network element, then re-try.";
                                     	}   
