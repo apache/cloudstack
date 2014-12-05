@@ -835,7 +835,6 @@ test_data = {
     "page": 1,
     "pagesize": 2,
     "listall": 'true',
-    "host_password": "password",
     "advanced_sg": {
         "zone": {
             "name": "",
@@ -925,13 +924,6 @@ test_data = {
     "forvirtualnetwork": "true",
     "customdisksize": 1,
     "diskname": "Test Volume",
-    "portableIpRange": {
-        "gateway": "10.223.252.195",
-        "netmask": "255.255.255.192",
-        "startip": "10.223.252.196",
-        "endip": "10.223.252.197",
-        "vlan": "1001"
-    },
     "sparse": {
         "name": "Sparse Type Disk offering",
         "displaytext":
