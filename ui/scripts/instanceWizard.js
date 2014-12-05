@@ -306,23 +306,36 @@
                 // if the user is leveraging a template, then we can show custom IOPS, if applicable
                 var canShowCustomIopsForServiceOffering = (args.currentData["select-template"] != "select-iso" ? true : false);
 
-                $.ajax({
-                    url: createURL("listServiceOfferings&issystem=false"),
-                    dataType: "json",
-                    async: true,
-                    success: function(json) {
-                        serviceOfferingObjs = json.listserviceofferingsresponse.serviceoffering;
-                        args.response.success({
-                            canShowCustomIops: canShowCustomIopsForServiceOffering,
-                            customFlag: 'iscustomized',
-                        	//customFlag: 'offerha', //for testing only
-                        	customIopsFlag: 'iscustomizediops',
-                            data: {
-                                serviceOfferings: serviceOfferingObjs
-                            }
-                        });
+                
+                // get serviceOfferingObjs
+                $(window).removeData("cloudStack.module.instanceWizard.serviceOfferingObjs");                 
+                $(window).trigger("cloudStack.module.instanceWizard.serviceOffering.dataProvider", {
+                	context: args.context,
+                	currentData: args.currentData
+                });     
+                if ($(window).data("cloudStack.module.instanceWizard.serviceOfferingObjs") == undefined) {                	
+	                $.ajax({
+	                    url: createURL("listServiceOfferings&issystem=false"),
+	                    dataType: "json",
+	                    async: false,
+	                    success: function(json) {	                    	
+	                        serviceOfferingObjs = json.listserviceofferingsresponse.serviceoffering;
+	                    }
+	                });	                
+                } else {                	
+                	serviceOfferingObjs = $(window).data("cloudStack.module.instanceWizard.serviceOfferingObjs");                	
+                }
+                
+                                
+                args.response.success({
+                    canShowCustomIops: canShowCustomIopsForServiceOffering,
+                    customFlag: 'iscustomized',
+                	//customFlag: 'offerha', //for testing only
+                	customIopsFlag: 'iscustomizediops',
+                    data: {
+                        serviceOfferings: serviceOfferingObjs
                     }
-                });
+                });                
             },
 
             // Step 4: Data disk offering
