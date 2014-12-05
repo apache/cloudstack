@@ -20567,8 +20567,8 @@
         if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
                         
-            //when router is Running, only XenServer, VMware support scaleUp(change service offering)
-            if (jsonObj.hypervisor == 'XenServer' || jsonObj.hypervisor == "VMware") {
+            //when router is Running, only VMware support scaleUp(change service offering)
+            if (jsonObj.hypervisor == "VMware") {
                 allowedActions.push("scaleUp");
             }                         
             
@@ -20613,8 +20613,8 @@
             allowedActions.push("restart");
             allowedActions.push("remove");
             
-            //when systemvm is Running, only XenServer, VMware support scaleUp(change service offering)
-            if (jsonObj.hypervisor == 'XenServer' ||jsonObj.hypervisor == "VMware") {
+            //when systemvm is Running, only VMware support scaleUp(change service offering)
+            if (jsonObj.hypervisor == "VMware") {
                 allowedActions.push("scaleUp");
             }
             
