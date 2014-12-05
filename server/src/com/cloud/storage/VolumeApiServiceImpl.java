@@ -984,6 +984,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 hosts = new long[] {userVm.getLastHostId()};
             }
 
+            final String errorMsg = "The VM must be stopped or the disk detached in order to resize with the XenServer Hypervisor.";
             StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
 
             if (storagePool.isManaged() && storagePool.getHypervisor() == HypervisorType.Any && hosts != null && hosts.length > 0) {

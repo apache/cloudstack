@@ -5028,35 +5028,29 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw ex;
         }
 
+        // If target VM has associated VM snapshots then don't allow restore of VM
+        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
+        if (vmSnapshots.size() > 0) {
+            throw new InvalidParameterValueException("Unable to restore VM, please remove VM snapshots before restoring VM");
+        }
+
         VolumeVO root = rootVols.get(0);
-        if ( !Volume.State.Allocated.equals(root.getState()) || newTemplateId != null ){
-            Long templateId = root.getTemplateId();
-            boolean isISO = false;
-            if (templateId == null) {
-                // Assuming that for a vm deployed using ISO, template ID is set to NULL
-                isISO = true;
-               templateId = vm.getIsoId();
-            }
+        Long templateId = root.getTemplateId();
+        boolean isISO = false;
+        if(templateId == null) {
+            // Assuming that for a vm deployed using ISO, template ID is set to NULL
+            isISO = true;
+            templateId = vm.getIsoId();
+        }
 
-            // If target VM has associated VM snapshots then don't allow restore of VM
-            List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
-            if (vmSnapshots.size() > 0) {
-                throw new InvalidParameterValueException("Unable to restore VM, please remove VM snapshots before restoring VM");
-            }
-
-            VMTemplateVO template = null;
-            //newTemplateId can be either template or ISO id. In the following snippet based on the vm deployment (from template or ISO) it is handled accordingly
-            if (newTemplateId != null) {
-                template = _templateDao.findById(newTemplateId);
-                _accountMgr.checkAccess(caller, null, true, template);
-                if (isISO) {
-                    if (!template.getFormat().equals(ImageFormat.ISO)) {
-                        throw new InvalidParameterValueException("Invalid ISO id provided to restore the VM ");
-                    }
-                } else {
-                    if (template.getFormat().equals(ImageFormat.ISO)) {
-                        throw new InvalidParameterValueException("Invalid template id provided to restore the VM ");
-                    }
+        VMTemplateVO template = null;
+        //newTemplateId can be either template or ISO id. In the following snippet based on the vm deployment (from template or ISO) it is handled accordingly
+        if(newTemplateId != null) {
+            template = _templateDao.findById(newTemplateId);
+            _accountMgr.checkAccess(caller, null, true, template);
+            if (isISO) {
+                if (!template.getFormat().equals(ImageFormat.ISO)) {
+                    throw new InvalidParameterValueException("Invalid ISO id provided to restore the VM ");
                 }
             } else {
                 if (template.getFormat().equals(ImageFormat.ISO)) {

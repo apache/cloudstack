@@ -32,9 +32,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -99,6 +102,7 @@ public class UserVmManagerTest {
     @Mock UserDao _userDao;
     @Mock UserVmDao _vmDao;
     @Mock VMInstanceDao _vmInstanceDao;
+    @Mock VMSnapshotDao _vmSnapshotDao;
     @Mock VMTemplateDao _templateDao;
     @Mock VolumeDao _volsDao;
     @Mock RestoreVMCmd _restoreVMCmd;
@@ -123,6 +127,7 @@ public class UserVmManagerTest {
 
         _userVmMgr._vmDao = _vmDao;
         _userVmMgr._vmInstanceDao = _vmInstanceDao;
+        _userVmMgr._vmSnapshotDao = _vmSnapshotDao;
         _userVmMgr._templateDao = _templateDao;
         _userVmMgr._volsDao = _volsDao;
         _userVmMgr._itMgr = _itMgr;
@@ -323,6 +328,10 @@ public class UserVmManagerTest {
 
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
 
+        List<VMSnapshotVO> vmSnapshots = new ArrayList<VMSnapshotVO>();
+        vmSnapshots.add(new VMSnapshotVO());
+        when(_vmSnapshotDao.findByVm(anyLong())).thenReturn(vmSnapshots);
+
        // UserContext.current().setEventDetails("Vm Id: "+getId());
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short) 0, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString());
@@ -356,6 +365,10 @@ public class UserVmManagerTest {
 
 
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
+        List<VMSnapshotVO> vmSnapshots = new ArrayList<VMSnapshotVO>();
+        vmSnapshots.add(new VMSnapshotVO());
+        when(_vmSnapshotDao.findByVm(anyLong())).thenReturn(vmSnapshots);
+
         doReturn(Hypervisor.HypervisorType.XenServer).when(_vmInstance).getHypervisorType();
 
         doReturn(VirtualMachine.State.Running).when(_vmInstance).getState();
