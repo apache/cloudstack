@@ -408,20 +408,18 @@
                                     osTypeId: {
                                         label: 'label.os.type',
                                         docID: 'helpRegisterTemplateOSType',
-                                        select: function(args) {                                        	
-                                        	if (ostypeObjs == undefined) {
-	                                            $.ajax({
-	                                                url: createURL("listOsTypes"),
-	                                                dataType: "json",
-	                                                async: false,
-	                                                success: function(json) {	                                                	
-	                                                	ostypeObjs = json.listostypesresponse.ostype;	                                                    
-	                                                }
-	                                            });
-                                        	}                                        	
-                                        	args.response.success({
-                                                data: ostypeObjs
-                                            });
+                                        select: function(args) {    
+                                            $.ajax({
+                                                url: createURL("listOsTypes"),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {	                                                	
+                                                	var ostypeObjs = json.listostypesresponse.ostype;
+                                                	args.response.success({
+                                                        data: ostypeObjs
+                                                    });
+                                                }
+                                            });                                        	    
                                         }
                                     },
 
@@ -849,16 +847,16 @@
                                     }
                                                                       
                                     if ('templates' in args.context && args.context.templates[0].ostypeid != undefined) {
-                                    	if (ostypeObjs == undefined) {
-        	                            	$.ajax({
-        	                                    url: createURL("listOsTypes"),
-        	                                    dataType: "json",
-        	                                    async: false,
-        	                                    success: function(json) {	                                    	
-        	                                    	ostypeObjs = json.listostypesresponse.ostype;		                                    	
-        	                                    }
-        	                                });
-                                    	}                            	
+                                    	var ostypeObjs;
+    	                            	$.ajax({
+    	                                    url: createURL("listOsTypes"),
+    	                                    dataType: "json",
+    	                                    async: false,
+    	                                    success: function(json) {	                                    	
+    	                                    	var ostypeObjs = json.listostypesresponse.ostype;		                                    	
+    	                                    }
+    	                                });
+                                    	                           	
                                     	if (ostypeObjs != undefined) {
                                     		var ostypeName;
                                     		for (var i = 0; i < ostypeObjs.length; i++) {
@@ -963,16 +961,16 @@
                                         label: 'label.os.type',
                                         isEditable: true,
                                         select: function(args) {
-                                        	if (ostypeObjs == undefined) {
-	                                            $.ajax({
-	                                                url: createURL("listOsTypes"),
-	                                                dataType: "json",
-	                                                async: false,
-	                                                success: function(json) {	                                                	
-	                                                	ostypeObjs = json.listostypesresponse.ostype;	                                                   
-	                                                }
-	                                            });
-                                        	}                                        	
+                                        	var ostypeObjs;
+                                            $.ajax({
+                                                url: createURL("listOsTypes"),
+                                                dataType: "json",
+                                                async: false,
+                                                success: function(json) {	                                                	
+                                                	ostypeObjs = json.listostypesresponse.ostype;	                                                   
+                                                }
+                                            });
+                                        	                                        	
                                         	var items = [];
                                             $(ostypeObjs).each(function() {
                                                 items.push({
@@ -1231,16 +1229,16 @@
                                                 }
                                                                                                
                                                 if ('templates' in args.context && args.context.templates[0].ostypeid != undefined) {
-                                                	if (ostypeObjs == undefined) {
-                    	                            	$.ajax({
-                    	                                    url: createURL("listOsTypes"),
-                    	                                    dataType: "json",
-                    	                                    async: false,
-                    	                                    success: function(json) {	                                    	
-                    	                                    	ostypeObjs = json.listostypesresponse.ostype;		                                    	
-                    	                                    }
-                    	                                });
-                                                	}                            	
+                                                	var ostypeObjs;
+                	                            	$.ajax({
+                	                                    url: createURL("listOsTypes"),
+                	                                    dataType: "json",
+                	                                    async: false,
+                	                                    success: function(json) {	                                    	
+                	                                    	ostypeObjs = json.listostypesresponse.ostype;		                                    	
+                	                                    }
+                	                                });
+                                                	                           	
                                                 	if (ostypeObjs != undefined) {
                                                 		var ostypeName;
                                                 		for (var i = 0; i < ostypeObjs.length; i++) {
@@ -1362,16 +1360,16 @@
                                                     label: 'label.os.type',
                                                     isEditable: true,
                                                     select: function(args) {                                                    
-                                                    	if (ostypeObjs == undefined) {      
-	                                                        $.ajax({
-	                                                            url: createURL("listOsTypes"),
-	                                                            dataType: "json",
-	                                                            async: false,
-	                                                            success: function(json) {
-	                                                            	ostypeObjs = json.listostypesresponse.ostype;	                                                                
-	                                                            }
-	                                                        });
-                                                    	}                                                    
+                                                    	var ostypeObjs;
+                                                        $.ajax({
+                                                            url: createURL("listOsTypes"),
+                                                            dataType: "json",
+                                                            async: false,
+                                                            success: function(json) {
+                                                            	ostypeObjs = json.listostypesresponse.ostype;	                                                                
+                                                            }
+                                                        });
+                                                    	                                                    
                                                     	var items = [];
                                                         $(ostypeObjs).each(function() {
                                                             items.push({
@@ -1565,27 +1563,25 @@
                                             required: true
                                         },
                                         select: function(args) {
-                                        	if (ostypeObjs == undefined) {   
-	                                            $.ajax({
-	                                                url: createURL("listOsTypes"),
-	                                                dataType: "json",
-	                                                async: false,
-	                                                success: function(json) {
-	                                                    ostypeObjs = json.listostypesresponse.ostype;	                                                    
-	                                                }
-	                                            });
-                                        	}
-                                        	var items = [];
-                                            //items.push({id: "", description: "None"}); //shouldn't have None option when bootable is checked
-                                            $(ostypeObjs).each(function() {
-                                                items.push({
-                                                    id: this.id,
-                                                    description: this.description
-                                                });
-                                            });
-                                            args.response.success({
-                                                data: items
-                                            });
+                                        	$.ajax({
+                                                url: createURL("listOsTypes"),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var ostypeObjs = json.listostypesresponse.ostype;	
+                                                    var items = [];
+                                                    //items.push({id: "", description: "None"}); //shouldn't have None option when bootable is checked
+                                                    $(ostypeObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.description
+                                                        });
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });                                        	                                        	
                                         }
                                     },
 
@@ -2286,16 +2282,16 @@
                                                     label: 'label.os.type',
                                                     isEditable: true,
                                                     select: function(args) {
-                                                    	if (ostypeObjs == undefined) {  
-	                                                        $.ajax({
-	                                                            url: createURL("listOsTypes"),
-	                                                            dataType: "json",
-	                                                            async: false,
-	                                                            success: function(json) {
-	                                                            	ostypeObjs = json.listostypesresponse.ostype;	                                                                
-	                                                            }
-	                                                        });
-                                                    	}
+                                                    	var ostypeObjs;
+                                                        $.ajax({
+                                                            url: createURL("listOsTypes"),
+                                                            dataType: "json",
+                                                            async: false,
+                                                            success: function(json) {
+                                                            	ostypeObjs = json.listostypesresponse.ostype;	                                                                
+                                                            }
+                                                        });
+                                                	
                                                     	var items = [];
                                                         $(ostypeObjs).each(function() {
                                                             items.push({
