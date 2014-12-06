@@ -8986,7 +8986,7 @@
     <response>
       <arg>
         <name>encryptedpassword</name>
-        <description>The encrypted password of the VM</description>
+        <description>The base64 encoded encrypted password of the VM</description>
       </arg>
     </response>
   </command>
@@ -59808,6 +59808,11 @@
         <name>accounttype</name>
         <description>Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin</description>
         <required>true</required>
+      </arg>
+      <arg>
+        <name>account</name>
+        <description>Creates the user under the specified account. If no account is specified, the username will be used as the account name.</description>
+        <required>false</required>
       </arg>
       <arg>
         <name>accountdetails</name>
