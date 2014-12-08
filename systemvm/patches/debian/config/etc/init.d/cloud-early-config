@@ -118,7 +118,7 @@ get_boot_params() {
             log_it "/dev/vport0p1 not loaded, perhaps guest kernel is too old." && exit 2
           fi
 
-          while [$cmd -eq ""]; do
+          while [ -z "$cmd" ]; do
               while read line; do
                 if [[ $line == cmdline:* ]]; then
                   cmd=${line//cmdline:/}
