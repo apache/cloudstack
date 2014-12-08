@@ -23,7 +23,7 @@ vpnoutmark="0x525"
 vpninmark="0x524"
 
 usage() {
-    printf "Usage: %s: (-A|-D) -l <left-side vpn peer> -n <left-side guest cidr> -g <left-side next hop> -r <right-side vpn peer> -N <right-side private subnets> -e <esp policy> -i <ike policy> -t <ike lifetime> -T <esp lifetime> -s <pre-shared secret> -d <dpd 0 or 1> [ -p <passive or not> ]\n" $(basename $0) >&2
+    printf "Usage: %s: (-A|-D) -l <left-side vpn peer> -n <left-side guest cidr> -g <left-side next hop> -r <right-side vpn peer> -N <right-side private subnets> -e <esp policy> -i <ike policy> -t <ike lifetime> -T <esp lifetime> -s <pre-shared secret> -d <dpd 0 or 1> [ -p <passive or not> -c <check if up on creation ]\n" $(basename $0) >&2
 }
 
 #set -x
@@ -174,6 +174,9 @@ ipsec_tunnel_add() {
   if [ $passive -eq 0 ]
   then
       sudo ipsec auto --up vpn-$rightpeer
+  fi
+  if [ $checkup -eq 1 ]
+  then
 
     #5 seconds for checking if it's ready
     for i in {1..5}
@@ -209,8 +212,9 @@ Iflag=
 sflag=
 passive=0
 op=""
+checkup=0
 
-while getopts 'ADpl:n:g:r:N:e:i:t:T:s:d:' OPTION
+while getopts 'ADpcl:n:g:r:N:e:i:t:T:s:d:' OPTION
 do
   case $OPTION in
   A)    opflag=1
@@ -253,6 +257,8 @@ do
         dpd="$OPTARG"
         ;;
   p)    passive=1
+        ;;
+  c)    checkup=1
         ;;
   ?)    usage
         exit 2
