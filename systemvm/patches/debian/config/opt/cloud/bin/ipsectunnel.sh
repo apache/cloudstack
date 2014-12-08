@@ -23,7 +23,7 @@ vpnoutmark="0x525"
 vpninmark="0x524"
 
 usage() {
-    printf "Usage: %s: (-A|-D) -l <left-side vpn peer> -n <left-side guest cidr> -g <left-side gateway> -r <right-side vpn peer> -N <right-side private subnets> -e <esp policy> -i <ike policy> -t <ike lifetime> -T <esp lifetime> -s <pre-shared secret> -d <dpd 0 or 1> [ -p <passive or not> ]\n" $(basename $0) >&2
+    printf "Usage: %s: (-A|-D) -l <left-side vpn peer> -n <left-side guest cidr> -g <left-side next hop> -r <right-side vpn peer> -N <right-side private subnets> -e <esp policy> -i <ike policy> -t <ike lifetime> -T <esp lifetime> -s <pre-shared secret> -d <dpd 0 or 1> [ -p <passive or not> ]\n" $(basename $0) >&2
 }
 
 #set -x
@@ -129,7 +129,7 @@ ipsec_tunnel_add() {
   local vpnsecretsfile=$vpnconfdir/ipsec.vpn-$rightpeer.secrets
 
   logger -t cloud "$(basename $0): creating configuration for ipsec tunnel: left peer=$leftpeer \
-    left net=$leftnet left gateway=$leftgw right peer=$rightpeer right network=$rightnets phase1 policy=$ikepolicy \
+    left net=$leftnet left gateway=$leftnexthop right peer=$rightpeer right network=$rightnets phase1 policy=$ikepolicy \
     phase2 policy=$esppolicy secret=$secret"
 
   [ "$op" == "-A" ] && ipsec_tunnel_del
@@ -139,7 +139,7 @@ ipsec_tunnel_add() {
     sudo echo "conn vpn-$rightpeer" > $vpnconffile &&
     sudo echo "  left=$leftpeer" >> $vpnconffile &&
     sudo echo "  leftsubnet=$leftnet" >> $vpnconffile &&
-    sudo echo "  leftnexthop=$leftgw" >> $vpnconffile &&
+    sudo echo "  leftnexthop=$leftnexthop" >> $vpnconffile &&
     sudo echo "  right=$rightpeer" >> $vpnconffile &&
     sudo echo "  rightsubnets={$rightnets}" >> $vpnconffile &&
     sudo echo "  type=tunnel" >> $vpnconffile &&
@@ -226,7 +226,7 @@ do
         leftnet="$OPTARG"
         ;;
   g)    gflag=1
-        leftgw="$OPTARG"
+        leftnexthop="$OPTARG"
         ;;
   r)    rflag=1
         rightpeer="$OPTARG"
