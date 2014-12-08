@@ -100,12 +100,13 @@ function KeyboardMapper() {
 KeyboardMapper.KEYBOARD_TYPE_RAW = 0;
 KeyboardMapper.KEYBOARD_TYPE_COOKED = 1;
 KeyboardMapper.KEYBOARD_TYPE_UK = 2;
+KeyboardMapper.KEYBOARD_TYPE_FR = 3;
 
 KeyboardMapper.prototype = {
 
 	setKeyboardType : function(keyboardType) {
 		this.keyboardType = keyboardType;
-		if(keyboardType == KeyboardMapper.KEYBOARD_TYPE_COOKED || keyboardType == KeyboardMapper.KEYBOARD_TYPE_UK) {
+		if(keyboardType == KeyboardMapper.KEYBOARD_TYPE_COOKED || keyboardType == KeyboardMapper.KEYBOARD_TYPE_UK || keyboardType == KeyboardMapper.KEYBOARD_TYPE_FR) {
 			// initialize mapping for COOKED keyboard
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_CAPSLOCK] 		= AjaxViewer.X11_KEY_CAPSLOCK;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_BACKSPACE] 		= AjaxViewer.X11_KEY_BACKSPACE;
@@ -312,7 +313,14 @@ KeyboardMapper.prototype = {
 			if(entry.shift ^ shift)
 				return false;
 		}
-		
+
+                // Consider Alt+Ctrl as AltGr
+                if(entry.altgr != undefined){
+                        var altgr = ((modifiers & AjaxViewer.ALT_KEY_MASK) && (modifiers & AjaxViewer.CTRL_KEY_MASK)) != 0 ? true : false;
+                        if(entry.altgr ^ altgr)
+                                return false;
+                }
+
 		if(entry.guestos != undefined) {
 			if(entry.guestos != guestos)
 				return false;
@@ -367,7 +375,7 @@ function AjaxViewer(panelId, imageUrl, updateUrl, locale, guestos, tileMap, widt
 	this.tileHeight = tileHeight;
 	this.maxTileZIndex = 1;
 
-	if (locale == AjaxViewer.KEYBOARD_TYPE_UK_ENGLISH || locale == AjaxViewer.KEYBOARD_TYPE_JAPANESE)
+	if (locale == AjaxViewer.KEYBOARD_TYPE_UK_ENGLISH || locale == AjaxViewer.KEYBOARD_TYPE_JAPANESE || locale == AjaxViewer.KEYBOARD_TYPE_FRENCH)
 		this.currentKeyboard = locale;
 	else
 		this.currentKeyboard = AjaxViewer.KEYBOARD_TYPE_ENGLISH;
@@ -419,6 +427,7 @@ AjaxViewer.STATUS_SENT = 4;
 AjaxViewer.KEYBOARD_TYPE_ENGLISH = "us";
 AjaxViewer.KEYBOARD_TYPE_UK_ENGLISH = "uk";
 AjaxViewer.KEYBOARD_TYPE_JAPANESE = "jp";
+AjaxViewer.KEYBOARD_TYPE_FRENCH = "fr";
 
 AjaxViewer.JS_KEY_BACKSPACE = 8;
 AjaxViewer.JS_KEY_TAB = 9;
@@ -688,6 +697,10 @@ AjaxViewer.prototype = {
 		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_JAPANESE] = mapper;
 		mapper.setKeyboardType(KeyboardMapper.KEYBOARD_TYPE_RAW);
 
+                var mapper = new KeyboardMapper();
+                this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_FRENCH] = mapper;
+                mapper.setKeyboardType(KeyboardMapper.KEYBOARD_TYPE_FR);
+
 		// JP keyboard plugged in a English host OS
 /*		
 		mapper.jsX11KeysymMap[AjaxViewer.JS_KEY_JP_COLON] = AjaxViewer.X11_KEY_COLON;
@@ -822,6 +835,9 @@ AjaxViewer.prototype = {
 		} else if(cmd == "keyboard_uk") {
 			$("#toolbar").find(".pulldown").find("ul").hide();
 			this.currentKeyboard = AjaxViewer.KEYBOARD_TYPE_UK_ENGLISH;
+                } else if(cmd == "keyboard_fr") {
+                        $("#toolbar").find(".pulldown").find("ul").hide();
+                        this.currentKeyboard = AjaxViewer.KEYBOARD_TYPE_FRENCH;
 		} else if(cmd == "sendCtrlAltDel") {
 			this.sendKeyboardEvent(AjaxViewer.KEY_DOWN, 0xffe9, 0);		// X11 Alt
 			this.sendKeyboardEvent(AjaxViewer.KEY_DOWN, 0xffe3, 0);		// X11 Ctrl
