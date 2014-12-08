@@ -583,8 +583,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
             }
 
-            HostScope scope = new HostScope(host.getId(), host.getClusterId(), host.getDataCenterId());
-            lifeCycle.attachHost(store, scope, pInfo);
+            pool = _storagePoolDao.findById(store.getId());
+            if (pool.getStatus() != StoragePoolStatus.Maintenance && pool.getStatus() != StoragePoolStatus.Removed) {
+                HostScope scope = new HostScope(host.getId(), host.getClusterId(), host.getDataCenterId());
+                lifeCycle.attachHost(store, scope, pInfo);
+            }
+
         } catch (Exception e) {
             s_logger.warn("Unable to setup the local storage pool for " + host, e);
             throw new ConnectionException(true, "Unable to setup the local storage pool for " + host, e);
