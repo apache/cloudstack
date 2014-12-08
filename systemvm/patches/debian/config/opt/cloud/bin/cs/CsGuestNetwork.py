@@ -35,6 +35,15 @@ class CsGuestNetwork:
     def is_guestnetwork(self):
         return self.guest
 
+    def get_dns(self):
+        return self.config.get_dns()
+
+    def get_netmask(self):
+        return self.data['router_guest_netmask']
+
+    def get_gateway(self):
+        return self.data['router_guest_gateway']
+
     def get_domain(self):
         domain = "cloudnine.internal"
         if not self.guest:
