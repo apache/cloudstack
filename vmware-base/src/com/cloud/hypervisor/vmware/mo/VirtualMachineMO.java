@@ -87,6 +87,7 @@ import com.vmware.vim25.VirtualMachineConfigOption;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineConfigSummary;
 import com.vmware.vim25.VirtualMachineFileInfo;
+import com.vmware.vim25.VirtualMachineFileLayoutEx;
 import com.vmware.vim25.VirtualMachineMessage;
 import com.vmware.vim25.VirtualMachineMovePriority;
 import com.vmware.vim25.VirtualMachinePowerState;
@@ -739,6 +740,41 @@ public class VirtualMachineMO extends BaseMO {
 
     public VirtualMachineFileInfo getFileInfo() throws Exception {
         return (VirtualMachineFileInfo)_context.getVimClient().getDynamicProperty(_mor, "config.files");
+    }
+
+    public VirtualMachineFileLayoutEx getFileLayout() throws Exception {
+        VirtualMachineFileLayoutEx fileLayout = null;
+        PropertySpec pSpec = new PropertySpec();
+        pSpec.setType("VirtualMachine");
+        pSpec.getPathSet().add("layoutEx");
+
+        ObjectSpec oSpec = new ObjectSpec();
+        oSpec.setObj(_mor);
+        oSpec.setSkip(Boolean.FALSE);
+
+        PropertyFilterSpec pfSpec = new PropertyFilterSpec();
+        pfSpec.getPropSet().add(pSpec);
+        pfSpec.getObjectSet().add(oSpec);
+        List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
+        pfSpecArr.add(pfSpec);
+
+        List<ObjectContent> ocs = _context.getService().retrieveProperties(_context.getPropertyCollector(), pfSpecArr);
+
+        if (ocs != null) {
+            for (ObjectContent oc : ocs) {
+                List<DynamicProperty> props = oc.getPropSet();
+                if (props != null) {
+                    for (DynamicProperty prop : props) {
+                        if (prop.getName().equals("layoutEx")) {
+                            fileLayout = (VirtualMachineFileLayoutEx)prop.getVal();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return fileLayout;
     }
 
     @Override

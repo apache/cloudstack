@@ -84,6 +84,9 @@ import com.vmware.vim25.VirtualEthernetCard;
 import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
 import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
 import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualMachineFileInfo;
+import com.vmware.vim25.VirtualMachineFileLayoutEx;
+import com.vmware.vim25.VirtualMachineFileLayoutExFileInfo;
 import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualMachinePowerState;
 import com.vmware.vim25.VirtualMachineRelocateSpec;
@@ -1326,17 +1329,22 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
         boolean vmAlreadyExistsInVcenter = false;
 
+        String existingVmName = null;
+        VirtualMachineFileInfo existingVmFileInfo = null;
+        VirtualMachineFileLayoutEx existingVmFileLayout = null;
+
         Pair<String, String> names = composeVmNames(vmSpec);
         String vmInternalCSName = names.first();
         String vmNameOnVcenter = names.second();
 
         // Thus, vmInternalCSName always holds i-x-y, the cloudstack generated internal VM name.
         VmwareContext context = getServiceContext();
+        DatacenterMO dcMo = null;
         try {
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
             VmwareHypervisorHost hyperHost = getHyperHost(context);
-            DatacenterMO dcMo = new DatacenterMO(hyperHost.getContext(), hyperHost.getHyperHostDatacenter());
+            dcMo = new DatacenterMO(hyperHost.getContext(), hyperHost.getHyperHostDatacenter());
 
             // Validate VM name is unique in Datacenter
             VirtualMachineMO vmInVcenter = dcMo.checkIfVmAlreadyExistsInVcenter(vmNameOnVcenter, vmInternalCSName);
@@ -1404,6 +1412,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         vmMo.tearDownDevices(new Class<?>[] {VirtualEthernetCard.class});
                     vmMo.ensureScsiDeviceController();
                 } else {
+                    // If a VM with the same name is found in a different cluster in the DC, unregister the old VM and configure a new VM (cold-migration).
+                    VirtualMachineMO existingVmInDc = dcMo.findVm(vmInternalCSName);
+                    if (existingVmInDc != null) {
+                        s_logger.debug("Found VM: " + vmInternalCSName + " on a host in a different cluster. Unregistering the exisitng VM.");
+                        existingVmName = existingVmInDc.getName();
+                        existingVmFileInfo = existingVmInDc.getFileInfo();
+                        existingVmFileLayout = existingVmInDc.getFileLayout();
+                        existingVmInDc.unregisterVm();
+                    }
                     Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
                     for (DiskTO vol : disks) {
                         if (vol.getType() == Volume.Type.ROOT) {
@@ -1429,7 +1446,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     assert (vmSpec.getMinSpeed() != null) && (rootDiskDataStoreDetails != null);
 
-                    if (rootDiskDataStoreDetails.second().folderExists(String.format("[%s]", rootDiskDataStoreDetails.second().getName()), vmNameOnVcenter)) {
+                    boolean vmFolderExists = rootDiskDataStoreDetails.second().folderExists(String.format("[%s]", rootDiskDataStoreDetails.second().getName()), vmNameOnVcenter);
+                    String vmxFileFullPath = dsRootVolumeIsOn.searchFileInSubFolders(vmNameOnVcenter + ".vmx", false);
+                    if (vmFolderExists && vmxFileFullPath != null) { // VM can be registered only if .vmx is present.
                         registerVm(vmNameOnVcenter, dsRootVolumeIsOn);
                         vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
                         tearDownVm(vmMo);
@@ -1740,6 +1759,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             startAnswer.setIqnToPath(iqnToPath);
 
+            // Since VM was successfully powered-on, if there was an existing VM in a different cluster that was unregistered, delete all the files associated with it.
+            if (existingVmName != null && existingVmFileLayout != null) {
+                deleteUnregisteredVmFiles(existingVmFileLayout, dcMo);
+            }
+
             return startAnswer;
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
@@ -1753,6 +1777,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if(vmAlreadyExistsInVcenter) {
                 startAnswer.setContextParam("stopRetry", "true");
             }
+
+            // Since VM start failed, if there was an existing VM in a different cluster that was unregistered, register it back.
+            if (existingVmName != null && existingVmFileInfo != null) {
+                s_logger.debug("Since VM start failed, registering back an existing VM: " + existingVmName + " that was unregistered");
+                try {
+                    DatastoreFile fileInDatastore = new DatastoreFile(existingVmFileInfo.getVmPathName());
+                    DatastoreMO existingVmDsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(fileInDatastore.getDatastoreName()));
+                    registerVm(existingVmName, existingVmDsMo);
+                } catch (Exception ex){
+                    String message = "Failed to register an existing VM: " + existingVmName + " due to " + VmwareHelper.getExceptionMessage(ex);
+                    s_logger.warn(message, ex);
+                }
+            }
+
             return startAnswer;
         } finally {
         }
@@ -2201,6 +2239,41 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             volInSpec.setChainInfo(_gson.toJson(diskInfo));
+        }
+    }
+
+    private void deleteUnregisteredVmFiles(VirtualMachineFileLayoutEx vmFileLayout, DatacenterMO dcMo) throws Exception {
+        s_logger.debug("Deleting files associated with an existing VM that was unregistered");
+        DatastoreFile vmFolder = null;
+        try {
+            List<VirtualMachineFileLayoutExFileInfo> fileInfo = vmFileLayout.getFile();
+            for (VirtualMachineFileLayoutExFileInfo file : fileInfo) {
+                DatastoreFile fileInDatastore = new DatastoreFile(file.getName());
+                // In case of linked clones, VM file layout includes the base disk so don't delete all disk files.
+                if (file.getType().startsWith("disk") || file.getType().startsWith("digest"))
+                    continue;
+                else if (file.getType().equals("config"))
+                    vmFolder = new DatastoreFile(fileInDatastore.getDatastoreName(), fileInDatastore.getDir());
+                DatastoreMO dsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(fileInDatastore.getDatastoreName()));
+                s_logger.debug("Deleting file: " + file.getName());
+                dsMo.deleteFile(file.getName(), dcMo.getMor(), true);
+            }
+            // Delete files that are present in the VM folder - this will take care of the VM disks as well.
+            DatastoreMO vmFolderDsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(vmFolder.getDatastoreName()));
+            String[] files = vmFolderDsMo.listDirContent(vmFolder.getPath());
+            if (files.length != 0) {
+                for (String file : files) {
+                    String vmDiskFileFullPath = String.format("%s/%s", vmFolder.getPath(), file);
+                    s_logger.debug("Deleting file: " + vmDiskFileFullPath);
+                    vmFolderDsMo.deleteFile(vmDiskFileFullPath, dcMo.getMor(), true);
+                }
+            }
+            // Delete VM folder
+            s_logger.debug("Deleting folder: " + vmFolder.getPath());
+            vmFolderDsMo.deleteFolder(vmFolder.getPath(), dcMo.getMor());
+        } catch (Exception e) {
+            String message = "Failed to delete files associated with an existing VM that was unregistered due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.warn(message, e);
         }
     }
 
