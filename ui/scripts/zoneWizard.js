@@ -4480,8 +4480,16 @@
                     array1.push("&scope=" + todb(args.data.primaryStorage.scope));
 
                     //zone-wide-primary-storage is supported only for KVM and VMWare
-                    if (args.data.primaryStorage.scope == "zone") {
-                        array1.push("&hypervisor=" + todb(args.data.cluster.hypervisor)); //hypervisor type of the hosts in zone that will be attached to this storage pool. KVM, VMware supported as of now.
+                    if (args.data.primaryStorage.scope == "zone") { //hypervisor type of the hosts in zone that will be attached to this storage pool. KVM, VMware supported as of now.
+                        if(args.data.cluster.hypervisor != undefined) {        
+                    	    array1.push("&hypervisor=" + todb(args.data.cluster.hypervisor)); 
+                        } else if(args.data.returnedCluster.hypervisortype != undefined) {        
+                    	    array1.push("&hypervisor=" + todb(args.data.returnedCluster.hypervisortype)); 
+                        } else {
+                        	cloudStack.dialog.notice({
+                            	message: "Error: args.data.cluster.hypervisor is undefined. So is args.data.returnedCluster.hypervisortype (zone-wide-primary-storage)"
+                            });     
+                        }
                     }
 
                     var server = args.data.primaryStorage.server;
