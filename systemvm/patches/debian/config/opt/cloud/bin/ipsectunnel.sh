@@ -18,13 +18,6 @@
 
 source /root/func.sh
 
-lock="biglock"
-locked=$(getLockFile $lock)
-if [ "$locked" != "1" ]
-then
-    exit 1
-fi
-
 vpnconfdir="/etc/ipsec.d"
 vpnoutmark="0x525"
 vpninmark="0x524"
@@ -262,7 +255,7 @@ do
   p)    passive=1
         ;;
   ?)    usage
-        unlock_exit 2 $lock $locked
+        exit 2
         ;;
   esac
 done
@@ -301,7 +294,7 @@ then
     ret=$?
 else
     printf "Invalid action specified, must choose -A or -D to add/del tunnels\n" >&2
-    unlock_exit 5 $lock $locked
+    exit 5
 fi
 
-unlock_exit $ret $lock $locked
+exit $ret
