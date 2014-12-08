@@ -981,6 +981,13 @@
                     hostid : g_hostid
                 });
             }
+
+            var userdata = args.data.userdata;
+            if (userdata != null && userdata.length > 0) {
+                $.extend(deployVmData, {
+                    userdata : todb(btoa(userdata))
+                });
+            }
  
             $(window).trigger('cloudStack.deployVirtualMachine', {
                 deployVmData: deployVmData,
