@@ -2035,15 +2035,31 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         if (diskInfoBuilder != null) {
             VolumeObjectTO volume = (VolumeObjectTO)vol.getData();
 
-            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, volume.getDataStore().getUuid());
-            DatastoreMO dsMo = new DatastoreMO(context, morDs);
-            String dsName = dsMo.getName();
+            String dsName = null;
+            String diskBackingFileBaseName= null;
 
             Map<String, String> details = vol.getDetails();
             boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
 
+            if (isManaged) {
+                String iScsiName = details.get(DiskTO.IQN);
+
+                // if the storage is managed, iScsiName should not be null
+                dsName = VmwareResource.getDatastoreName(iScsiName);
+
+                diskBackingFileBaseName = new DatastoreFile(volume.getPath()).getFileBaseName();
+            }
+            else {
+                ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, volume.getDataStore().getUuid());
+                DatastoreMO dsMo = new DatastoreMO(context, morDs);
+
+                dsName = dsMo.getName();
+
+                diskBackingFileBaseName = volume.getPath();
+            }
+
             VirtualMachineDiskInfo diskInfo =
-                    diskInfoBuilder.getDiskInfoByBackingFileBaseName(isManaged ? new DatastoreFile(volume.getPath()).getFileBaseName() : volume.getPath(), dsName);
+                    diskInfoBuilder.getDiskInfoByBackingFileBaseName(diskBackingFileBaseName, dsName);
             if (diskInfo != null) {
                 s_logger.info("Found existing disk info from volume path: " + volume.getPath());
                 return diskInfo;
