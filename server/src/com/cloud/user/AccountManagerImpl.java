@@ -1998,6 +1998,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             String signature = null;
             long timestamp = 0L;
             String unsignedRequest = null;
+            StringBuffer unsignedRequestBuffer = new StringBuffer();
 
             // - build a request string with sorted params, make sure it's all lowercase
             // - sign the request, verify the signature is the same
@@ -2038,11 +2039,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                             }
                         }
 
-                        if (unsignedRequest == null) {
-                            unsignedRequest = paramName + "=" + URLEncoder.encode(paramValue, "UTF-8").replaceAll("\\+", "%20");
-                        } else {
-                            unsignedRequest = unsignedRequest + "&" + paramName + "=" + URLEncoder.encode(paramValue, "UTF-8").replaceAll("\\+", "%20");
+                        if (unsignedRequestBuffer.length() != 0) {
+                            unsignedRequestBuffer.append("&");
                         }
+                        unsignedRequestBuffer.append(paramName).append("=").append(URLEncoder.encode(paramValue, "UTF-8"));
                     }
                 }
 
@@ -2053,7 +2053,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     return null;
                 }
 
-                unsignedRequest = unsignedRequest.toLowerCase();
+                unsignedRequest = unsignedRequestBuffer.toString().toLowerCase().replaceAll("\\+", "%20");
 
                 Mac mac = Mac.getInstance("HmacSHA1");
                 SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(), "HmacSHA1");
