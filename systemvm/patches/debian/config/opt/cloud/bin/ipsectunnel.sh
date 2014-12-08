@@ -151,7 +151,7 @@ ipsec_tunnel_add() {
     sudo echo "  salifetime=${esplifetime}s" >> $vpnconffile &&
     sudo echo "  pfs=$pfs" >> $vpnconffile &&
     sudo echo "  keyingtries=2" >> $vpnconffile &&
-    sudo echo "  auto=add" >> $vpnconffile &&
+    sudo echo "  auto=start" >> $vpnconffile &&
     sudo echo "$leftpeer $rightpeer: PSK \"$secret\"" > $vpnsecretsfile &&
     sudo chmod 0400 $vpnsecretsfile
 
