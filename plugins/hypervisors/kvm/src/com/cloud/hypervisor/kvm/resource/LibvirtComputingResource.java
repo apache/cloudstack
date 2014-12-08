@@ -3834,24 +3834,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             // pass cmdline info to system vms
             if (vmSpec.getType() != VirtualMachine.Type.User) {
-                if ((conn.getVersion() < 1001000)) { // CLOUDSTACK-2823: try passCmdLine some times if kernel < 2.6.34 and qemu < 1.1.0 on hypervisor (for instance, CentOS 6.4)
-                    //wait for 5 minutes at most
-                    String controlIp = null;
-                    for (NicTO nic : nics) {
-                        if (nic.getType() == TrafficType.Control) {
-                            controlIp = nic.getIp();
-                        }
+                //wait and try passCmdLine for 5 minutes at most for CLOUDSTACK-2823
+                String controlIp = null;
+                for (NicTO nic : nics) {
+                    if (nic.getType() == TrafficType.Control) {
+                        controlIp = nic.getIp();
+                        break;
                     }
-                    for (int count = 0; count < 30; count++) {
-                        passCmdLine(vmName, vmSpec.getBootArgs());
-                        //check router is up?
-                        boolean result = _virtRouterResource.connect(controlIp, 1, 5000);
-                        if (result) {
-                            break;
-                        }
-                    }
-                } else {
+                }
+                for (int count = 0; count < 30; count++) {
                     passCmdLine(vmName, vmSpec.getBootArgs());
+                    //check router is up?
+                    boolean result = _virtRouterResource.connect(controlIp, 1, 5000);
+                    if (result) {
+                        break;
+                    }
                 }
             }
 
