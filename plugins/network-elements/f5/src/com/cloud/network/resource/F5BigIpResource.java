@@ -420,7 +420,7 @@ public class F5BigIpResource implements ServerResource {
     private void addGuestVlan(long vlanTag, String vlanSelfIp, String vlanNetmask, boolean inline) throws ExecutionException {
         try {
             String vlanName = genVlanName(vlanTag);
-            List<String> allVlans = getVlans();
+            List<String> allVlans = getStrippedVlans();
             if (!allVlans.contains(vlanName)) {
                 String[] vlanNames = genStringArray(vlanName);
                 long[] vlanTags = genLongArray(vlanTag);
@@ -434,8 +434,10 @@ public class F5BigIpResource implements ServerResource {
 
                 s_logger.debug("Creating a guest VLAN with tag " + vlanTag);
                 _vlanApi.create(vlanNames, vlanTags, vlanMemberEntries, commonEnabledState, new long[] {10L}, new String[] {"00:00:00:00:00:00"});
+                s_logger.debug("vlanName " + vlanName);
+                s_logger.debug("getStrippedVlans " + getStrippedVlans());
 
-                if (!getVlans().contains(vlanName)) {
+                if (!getStrippedVlans().contains(vlanName)) {
                     throw new ExecutionException("Failed to create vlan with tag " + vlanTag);
                 }
             }
@@ -505,7 +507,7 @@ public class F5BigIpResource implements ServerResource {
             }
 
             String vlanName = genVlanName(vlanTag);
-            List<String> allVlans = getVlans();
+            List<String> allVlans = getStrippedVlans();
             if (allVlans.contains(vlanName)) {
                 _vlanApi.delete_vlan(genStringArray(vlanName));
 
@@ -522,7 +524,7 @@ public class F5BigIpResource implements ServerResource {
         vlanSelfIp = stripRouteDomainFromAddress(vlanSelfIp);
         List<String> virtualServersToDelete = new ArrayList<String>();
 
-        List<String> allVirtualServers = getVirtualServers();
+        List<String> allVirtualServers = getStrippedVirtualServers();
         for (String virtualServerName : allVirtualServers) {
             // Check if the virtual server's default pool has members in this guest VLAN
             List<String> poolMembers = getMembers(virtualServerName);
@@ -576,6 +578,9 @@ public class F5BigIpResource implements ServerResource {
         }
     }
 
+    //This was working with Big IP 10.x
+    //getVlans retuns vlans with user partition information
+    //ex: if vlanname is vlan-100 then the get_list() will return /Common/vlan-100
     private List<String> getVlans() throws ExecutionException {
         try {
             List<String> vlans = new ArrayList<String>();
@@ -591,6 +596,27 @@ public class F5BigIpResource implements ServerResource {
         }
     }
 
+    //getVlans retuns vlan names without user partition information
+    //ex: if vlanname is vlan-100 then the get_list() will return /Common/vlan-100
+    // This method will strip the partition information and only returns a list with vlan name (vlan-100)
+    private List<String> getStrippedVlans() throws ExecutionException {
+        try {
+            List<String> vlans = new ArrayList<String>();
+            String[] vlansArray = _vlanApi.get_list();
+
+            for (String vlan : vlansArray) {
+                if(vlan.contains("/")){
+                    vlans.add(vlan.substring(vlan.lastIndexOf("/") + 1));
+                }else{
+                    vlans.add(vlan);
+                }
+            }
+
+            return vlans;
+        } catch (RemoteException e) {
+            throw new ExecutionException(e.getMessage());
+        }
+    }
     // Login
 
     private void login() throws ExecutionException {
@@ -681,7 +707,7 @@ public class F5BigIpResource implements ServerResource {
                 s_logger.debug("Deleting virtual server " + virtualServerName);
                 _virtualServerApi.delete_virtual_server(genStringArray(virtualServerName));
 
-                if (getVirtualServers().contains(virtualServerName)) {
+                if (getStrippedVirtualServers().contains(virtualServerName)) {
                     throw new ExecutionException("Failed to delete virtual server " + virtualServerName);
                 }
 
@@ -699,9 +725,12 @@ public class F5BigIpResource implements ServerResource {
     }
 
     private boolean virtualServerExists(String virtualServerName) throws ExecutionException {
-        return getVirtualServers().contains(virtualServerName);
+        return getStrippedVirtualServers().contains(virtualServerName);
     }
 
+    //This was working with Big IP 10.x
+    //getVirtualServers retuns VirtualServers with user partition information
+    //ex: if VirtualServers is vs-tcp-10.147.44.8-22 then the get_list() will return /Common/vs-tcp-10.147.44.8-22
     private List<String> getVirtualServers() throws ExecutionException {
         try {
             List<String> virtualServers = new ArrayList<String>();
@@ -709,6 +738,28 @@ public class F5BigIpResource implements ServerResource {
 
             for (String virtualServer : virtualServersArray) {
                 virtualServers.add(virtualServer);
+            }
+
+            return virtualServers;
+        } catch (RemoteException e) {
+            throw new ExecutionException(e.getMessage());
+        }
+    }
+
+/*    getStrippedVirtualServers retuns VirtualServers without user partition information
+    ex: if VirtualServers is vs-tcp-10.147.44.8-22 then the get_list() will return /Common/vs-tcp-10.147.44.8-22
+    This method will strip the partition information and only returns a list with VirtualServers (vs-tcp-10.147.44.8-22)*/
+    private List<String> getStrippedVirtualServers() throws ExecutionException {
+        try {
+            List<String> virtualServers = new ArrayList<String>();
+            String[] virtualServersArray = _virtualServerApi.get_list();
+
+            for (String virtualServer : virtualServersArray) {
+                if(virtualServer.contains("/")){
+                    virtualServers.add(virtualServer.substring(virtualServer.lastIndexOf("/") + 1));
+                }else{
+                    virtualServers.add(virtualServer);
+                }
             }
 
             return virtualServers;
@@ -843,7 +894,7 @@ public class F5BigIpResource implements ServerResource {
     private void deletePoolMember(String virtualServerName, String destIp, int destPort) throws ExecutionException {
         try {
             String memberIdentifier = destIp + "-" + destPort;
-            List<String> lbPools = getAllLbPools();
+            List<String> lbPools = getAllStrippedLbPools();
 
             if (lbPools.contains(virtualServerName) && memberExists(virtualServerName, memberIdentifier)) {
                 s_logger.debug("Deleting member " + memberIdentifier + " from pool for virtual server " + virtualServerName);
@@ -880,7 +931,7 @@ public class F5BigIpResource implements ServerResource {
     }
 
     private boolean poolExists(String poolName) throws ExecutionException {
-        return getAllLbPools().contains(poolName);
+        return getAllStrippedLbPools().contains(poolName);
     }
 
     private boolean memberExists(String poolName, String memberIdentifier) throws ExecutionException {
@@ -895,6 +946,9 @@ public class F5BigIpResource implements ServerResource {
         return memberIdentifier.split("-");
     }
 
+    //This was working with Big IP 10.x
+    //getAllLbPools retuns LbPools with user partition information
+    //ex: if LbPools is vs-tcp-10.147.44.8-22 then the get_list() will return /Common/vs-tcp-10.147.44.8-22
     public List<String> getAllLbPools() throws ExecutionException {
         try {
             List<String> lbPools = new ArrayList<String>();
@@ -906,6 +960,28 @@ public class F5BigIpResource implements ServerResource {
 
             return lbPools;
         } catch (RemoteException e) {
+            throw new ExecutionException(e.getMessage());
+        }
+    }
+
+    //Big IP 11.x
+    //getAllLbPools retuns LbPools without user partition information
+    //ex: if LbPools is vs-tcp-10.147.44.8-22 then the get_list() will return /Common/vs-tcp-10.147.44.8-22
+    //This method will strip the partition information and only returns a list with LbPools (vs-tcp-10.147.44.8-22)
+    public List<String> getAllStrippedLbPools() throws ExecutionException {
+        try {
+            List<String> lbPools = new ArrayList<String>();
+            String[] pools = _loadbalancerApi.get_list();
+
+            for (String pool : pools) {
+                 if(pool.contains("/")){
+                    lbPools.add(pool.substring(pool.lastIndexOf("/") + 1));
+                }else{
+                    lbPools.add(pool);
+                }
+             }
+                return lbPools;
+            } catch (RemoteException e) {
             throw new ExecutionException(e.getMessage());
         }
     }
