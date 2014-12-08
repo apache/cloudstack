@@ -173,7 +173,7 @@ ipsec_tunnel_add() {
 
   if [ $passive -eq 0 ]
   then
-      sudo ipsec auto --up vpn-$rightpeer
+      sudo ipsec auto --up vpn-$rightpeer &
   fi
   if [ $checkup -eq 1 ]
   then
