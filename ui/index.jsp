@@ -534,6 +534,16 @@
                                             <a href="6"><fmt:message key="label.edit"/></a>
                                         </div>
                                     </div>
+
+                                    <!-- userdata -->
+                                    <div class="select">
+                                        <div class="select">
+                                            <span><fmt:message key="label.add.userdata"/> (<fmt:message key="label.optional"/>)</span>
+                                        </div>
+                                        <div class="value">
+                                            <textarea name="userdata" class="disallowSpecialCharacters"></textarea>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
