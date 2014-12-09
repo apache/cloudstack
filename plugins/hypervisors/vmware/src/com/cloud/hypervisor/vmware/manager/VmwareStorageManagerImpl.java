@@ -1249,7 +1249,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                     vmdkName = fullPath; // for managed storage, vmdkName == fullPath
                 }
                 else {
-                    vmdkName = fullPath.split(" ")[1];
+                    vmdkName = fullPath.split("] ")[1];
 
                     if (vmdkName.endsWith(".vmdk")) {
                         vmdkName = vmdkName.substring(0, vmdkName.length() - (".vmdk").length());
