@@ -568,6 +568,21 @@
                         }
                     }
 
+                                                        
+                    // get networkObjsToPopulate
+                    $(window).removeData("cloudStack.module.instanceWizard.networkObjs");                 
+                    $(window).trigger("cloudStack.module.instanceWizard.network.dataProvider", {
+                    	context: args.context,
+                    	currentData: args.currentData,
+                    	networkObjsToPopulate: networkObjsToPopulate
+                    });                     
+                    if ($(window).data("cloudStack.module.instanceWizard.networkObjs") == undefined) {  
+    	                //do nothing         
+                    } else {                      	
+                    	networkObjsToPopulate = $(window).data("cloudStack.module.instanceWizard.networkObjs"); //override networkObjsToPopulate           	
+                    }                    
+                    
+                    
                     $.ajax({
                         url: createURL("listNetworkOfferings"),
                         dataType: "json",
