@@ -636,13 +636,13 @@
                                             args.response.success({
                                                 data: [{
                                                     id: 'source',
-                                                    description: _l('label.lb.algorithm.source')
+                                                    description: 'source'
                                                 }, {
                                                     id: 'roundrobin',
-                                                    description: _l('label.lb.algorithm.roundrobin')
+                                                    description: 'roundrobin'
                                                 }, {
                                                     id: 'leastconn',
-                                                    description: _l('label.lb.algorithm.leastconn')
+                                                    description: 'leastconn'
                                                 }]
                                             });
                                         }
@@ -3646,13 +3646,13 @@
                                             args.response.success({
                                                 data: [{
                                                     name: 'roundrobin',
-                                                    description: _l('label.lb.algorithm.roundrobin')
+                                                    description: _l('label.round.robin')
                                                 }, {
                                                     name: 'leastconn',
-                                                    description: _l('label.lb.algorithm.leastconn')
+                                                    description: _l('label.least.connections')
                                                 }, {
                                                     name: 'source',
-                                                    description: _l('label.lb.algorithm.source')
+                                                    description: _l('label.source')
                                                 }]
                                             });
                                         }
