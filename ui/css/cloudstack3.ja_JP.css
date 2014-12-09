@@ -78,3 +78,6 @@ table thead th.quick-view {
   font-size: 8px;
 }
 
+.detail-view .multi-edit table tr th, .detail-view .multi-edit table tr td {
+  font-size: 8px;
+}
