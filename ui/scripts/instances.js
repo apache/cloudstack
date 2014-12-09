@@ -2043,7 +2043,10 @@
                                         success: function(json) {
                                             args.response.success({
                                                 _custom: {
-                                                    jobId: json.addnictovirtualmachineresponse.jobid
+                                                    jobId: json.addnictovirtualmachineresponse.jobid,
+                                                    getUpdatedItem: function(json) {
+                                                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                                    }
                                                 }
                                             });
                                         }
@@ -2109,7 +2112,10 @@
                                         success: function(json) {
                                             args.response.success({
                                                 _custom: {
-                                                    jobId: json.removenicfromvirtualmachineresponse.jobid
+                                                    jobId: json.removenicfromvirtualmachineresponse.jobid,
+                                                    getUpdatedItem: function(json) {
+                                                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                                    }
                                                 }
                                             })
                                         }
