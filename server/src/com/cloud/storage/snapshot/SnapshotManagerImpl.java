@@ -938,7 +938,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                     List<SnapshotVO> activeSnapshots =
                         _snapshotDao.listByInstanceId(volume.getInstanceId(), Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp);
                     if (activeSnapshots.size() > 0) {
-                        throw new CloudRuntimeException("There is other active snapshot tasks on the instance to which the volume is attached, please try again later");
+                        throw new InvalidParameterValueException("There is other active snapshot tasks on the instance to which the volume is attached, please try again later");
                     }
                 }
 
