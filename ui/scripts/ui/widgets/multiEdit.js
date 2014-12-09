@@ -992,10 +992,6 @@
                         .attr('disabled', field.isDisabled ? 'disabled' : false)
                         .appendTo($td);
 
-                    if (field.validation) {
-                        $td.find('input').first().data("validation-settings",  field.validation );    
-                    }
-
                     if (field.isDisabled) $input.hide();
                     if (field.defaultValue) {
                         $input.val(field.defaultValue);
@@ -1247,11 +1243,6 @@
 
         $multiForm.validate();
 
-        var inputs = $multiForm.find('input');
-        $.each(inputs, function() {
-            if ($(this).data && $(this).data('validation-settings'))
-                $(this).rules('add', $(this).data('validation-settings'));
-        });
         return this;
     };
 
