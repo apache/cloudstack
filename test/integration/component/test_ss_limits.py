@@ -233,7 +233,14 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to create template: %s" % e)
 
-        templateSize = (template.size / (1024**3))
+        templates = Template.list(apiclient,
+                                  templatefilter=\
+                                  self.services["template_2"]["templatefilter"],
+                                  id=template.id)
+        self.assertEqual(validateList(templates)[0],PASS,\
+                        "templates list validation failed")
+
+        templateSize = (templates[0].size / (1024**3))
         response = matchResourceCount(self.apiclient, templateSize,
                                       resourceType=RESOURCE_SECONDARY_STORAGE,
                                       accountid=self.account.id)
