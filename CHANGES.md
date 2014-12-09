@@ -48,7 +48,6 @@ This is a bug fix release. The following issues were fixed:
     CLOUDSTACK-6075: Increase the ram size for router service offering
     CLOUDSTACK-7966: remove snapshot_store_ref entry, in which role is Primary, during storage GC
     CLOUDSTACK-7917: Validating Load Balancer Rule when updating LB + unit test
-    CLOUDSTACK-7915: Remove hard-coded values for Load Balancer algorithms in UI
     CLOUDSTACK-7951: Limit amount of memory used by cloudstack-agent jsvc
     CLOUDSTACK-7886: cloudstackoperations like deployvm,deleteNW are failing if CS fail to contact rabbit mq server. This is happening in case of Async API calls.
     CLOUDSTACK-7884: Cloudstack MS is not responding (happening randomly) after some restart.
@@ -57,7 +56,6 @@ This is a bug fix release. The following issues were fixed:
     CLOUDSTACK-7869: Add simulator support for findHostsForMigration API
     CLOUDSTACK-7849: Sorting projects alphabetically in drop down menu
     CLOUDSTACK-7837: [UI] Make the Source CIDR column wide enough to fit the CIDR value without ellipsizing
-    CLOUDSTACK-7766: Field Validations Missing for Ingress and Egress Rules
     CLOUDSTACK-7700: Volume Snapshot Async Job returns Success for a failed operation
     CLOUDSTACK-7679: Bump rabbitmq client library to latest 3.4.1
     CLOUDSTACK-7589: VM not Starting and always stuck in Stopped state after management server restarts.
@@ -114,6 +112,7 @@ This is a bug fix release. The following issues were fixed:
     CLOUDSTACK-5923: CS doesn't do master switch for XS any more, CS will depend on XS HA to do master switch, XS HA needs to be enabled.
     CLOUDSTACK-7688, CLOUDSTACK-7747: restricted various operations for VM with VM snapshots which breaks VM snapshots.
     CLOUDSTACK-7950: AttachIsoCmd shoud give correct messge when trying to attach vmwaretools installer iso on non supported guestvm deployed by ISO
+    CLOUDSTACK-7986 [F5 LB] Failed to execute IPAssocCommand due to com.cloud.utils.exception.ExecutionException
 
 Version 4.3.1
 -------------
