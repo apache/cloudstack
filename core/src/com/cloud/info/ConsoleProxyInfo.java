@@ -41,7 +41,7 @@ public class ConsoleProxyInfo {
 				sb.append(consoleProxyUrlDomain.substring(1)); //skip the *
 			} else {
 				//LB address
-				sb.append(".realhostip.com");
+				sb.append(consoleProxyUrlDomain);
 			}
 			
 			proxyAddress = sb.toString();
