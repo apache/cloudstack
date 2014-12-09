@@ -2002,13 +2002,30 @@
                                                     url: createURL('listNetworks'),
                                                     data: data1,
                                                     success: function(json) {
+                                                        var networkObjs = json.listnetworksresponse.network;
+                                                        var nicObjs = args.context.instances[0].nic;
+                                                        var items = [];
+
+                                                        for (var i = 0; i < networkObjs.length; i++) {
+                                                            var networkObj = networkObjs[i];
+                                                            var isNetworkExists = false;
+
+                                                            for (var j = 0; j < nicObjs.length; j++) {
+                                                                if (nicObjs[j].networkid == networkObj.id) {
+                                                                    isNetworkExists = true;
+                                                                    break;
+                                                               }
+                                                            }
+
+                                                            if (!isNetworkExists) {
+                                                                items.push({
+                                                                    id: networkObj.id,
+                                                                    description: networkObj.name
+                                                                });
+                                                            }
+                                                        }
                                                         args.response.success({
-                                                            data: $.map(json.listnetworksresponse.network, function(network) {
-                                                                return {
-                                                                    id: network.id,
-                                                                    description: network.name
-                                                                };
-                                                            })
+                                                            data: items
                                                         });
                                                     }
                                                 });
