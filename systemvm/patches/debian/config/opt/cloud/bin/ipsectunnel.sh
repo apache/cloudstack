@@ -18,19 +18,12 @@
 
 source /root/func.sh
 
-lock="biglock"
-locked=$(getLockFile $lock)
-if [ "$locked" != "1" ]
-then
-    exit 1
-fi
-
 vpnconfdir="/etc/ipsec.d"
 vpnoutmark="0x525"
 vpninmark="0x524"
 
 usage() {
-    printf "Usage: %s: (-A|-D) -l <left-side vpn peer> -n <left-side guest cidr> -g <left-side gateway> -r <right-side vpn peer> -N <right-side private subnets> -e <esp policy> -i <ike policy> -t <ike lifetime> -T <esp lifetime> -s <pre-shared secret> -d <dpd 0 or 1> [ -p <passive or not> ]\n" $(basename $0) >&2
+    printf "Usage: %s: (-A|-D) -l <left-side vpn peer> -n <left-side guest cidr> -g <left-side next hop> -r <right-side vpn peer> -N <right-side private subnets> -e <esp policy> -i <ike policy> -t <ike lifetime> -T <esp lifetime> -s <pre-shared secret> -d <dpd 0 or 1> [ -p <passive or not> -c <check if up on creation> -S <disable vpn ports iptables> ]\n" $(basename $0) >&2
 }
 
 #set -x
@@ -68,13 +61,16 @@ enable_iptables_subnets() {
   return 0
 }
 
+#
+# Add the right side here to close the gap, so we're sure no one else comes in
+#   also double check the default behaviour of ipsec to drop if wrong....
 check_and_enable_iptables() {
   sudo iptables-save | grep "A INPUT -i $outIf -p udp -m udp --dport 500 -j ACCEPT"
   if [ $? -ne 0 ]
   then
-      sudo iptables -A INPUT -i $outIf -p udp -m udp --dport 500 -j ACCEPT
-      sudo iptables -A INPUT -i $outIf -p udp -m udp --dport 4500 -j ACCEPT
-      sudo iptables -A INPUT -i $outIf -p 50 -j ACCEPT
+      sudo iptables -A INPUT -i $outIf -p udp -m udp --dport 500 $iptables_secure -j ACCEPT
+      sudo iptables -A INPUT -i $outIf -p udp -m udp --dport 4500 $iptables_secure -j ACCEPT
+      sudo iptables -A INPUT -i $outIf -p 50 $iptables_secure -j ACCEPT
       # Prevent NAT on "marked" VPN traffic, so need to be the first one on POSTROUTING chain
       sudo iptables -t nat -I POSTROUTING -t nat -o $outIf -m mark --mark $vpnoutmark -j ACCEPT
   fi
@@ -97,9 +93,9 @@ check_and_disable_iptables() {
   if [ $? -ne 0 ]
   then
     #Nobody else use s2s vpn now, so delete the iptables rules
-    sudo iptables -D INPUT -i $outIf -p udp -m udp --dport 500 -j ACCEPT
-    sudo iptables -D INPUT -i $outIf -p udp -m udp --dport 4500 -j ACCEPT
-    sudo iptables -D INPUT -i $outIf -p 50 -j ACCEPT
+    sudo iptables -D INPUT -i $outIf -p udp -m udp --dport 500 $iptables_secure -j ACCEPT
+    sudo iptables -D INPUT -i $outIf -p udp -m udp --dport 4500 $iptables_secure -j ACCEPT
+    sudo iptables -D INPUT -i $outIf -p 50 $iptables_secure -j ACCEPT
     sudo iptables -t nat -D POSTROUTING -t nat -o $outIf -m mark --mark $vpnoutmark -j ACCEPT
   fi
   return 0
@@ -136,7 +132,7 @@ ipsec_tunnel_add() {
   local vpnsecretsfile=$vpnconfdir/ipsec.vpn-$rightpeer.secrets
 
   logger -t cloud "$(basename $0): creating configuration for ipsec tunnel: left peer=$leftpeer \
-    left net=$leftnet left gateway=$leftgw right peer=$rightpeer right network=$rightnets phase1 policy=$ikepolicy \
+    left net=$leftnet left gateway=$leftnexthop right peer=$rightpeer right network=$rightnets phase1 policy=$ikepolicy \
     phase2 policy=$esppolicy secret=$secret"
 
   [ "$op" == "-A" ] && ipsec_tunnel_del
@@ -146,7 +142,7 @@ ipsec_tunnel_add() {
     sudo echo "conn vpn-$rightpeer" > $vpnconffile &&
     sudo echo "  left=$leftpeer" >> $vpnconffile &&
     sudo echo "  leftsubnet=$leftnet" >> $vpnconffile &&
-    sudo echo "  leftnexthop=$leftgw" >> $vpnconffile &&
+    sudo echo "  leftnexthop=$leftnexthop" >> $vpnconffile &&
     sudo echo "  right=$rightpeer" >> $vpnconffile &&
     sudo echo "  rightsubnets={$rightnets}" >> $vpnconffile &&
     sudo echo "  type=tunnel" >> $vpnconffile &&
@@ -158,7 +154,7 @@ ipsec_tunnel_add() {
     sudo echo "  salifetime=${esplifetime}s" >> $vpnconffile &&
     sudo echo "  pfs=$pfs" >> $vpnconffile &&
     sudo echo "  keyingtries=2" >> $vpnconffile &&
-    sudo echo "  auto=add" >> $vpnconffile &&
+    sudo echo "  auto=start" >> $vpnconffile &&
     sudo echo "$leftpeer $rightpeer: PSK \"$secret\"" > $vpnsecretsfile &&
     sudo chmod 0400 $vpnsecretsfile
 
@@ -180,7 +176,10 @@ ipsec_tunnel_add() {
 
   if [ $passive -eq 0 ]
   then
-      sudo ipsec auto --up vpn-$rightpeer
+      sudo ipsec auto --up vpn-$rightpeer &
+  fi
+  if [ $checkup -eq 1 ]
+  then
 
     #5 seconds for checking if it's ready
     for i in {1..5}
@@ -216,8 +215,10 @@ Iflag=
 sflag=
 passive=0
 op=""
+checkup=0
+secure=1
 
-while getopts 'ADpl:n:g:r:N:e:i:t:T:s:d:' OPTION
+while getopts 'ADSpcl:n:g:r:N:e:i:t:T:s:d:' OPTION
 do
   case $OPTION in
   A)    opflag=1
@@ -233,7 +234,7 @@ do
         leftnet="$OPTARG"
         ;;
   g)    gflag=1
-        leftgw="$OPTARG"
+        leftnexthop="$OPTARG"
         ;;
   r)    rflag=1
         rightpeer="$OPTARG"
@@ -261,13 +262,21 @@ do
         ;;
   p)    passive=1
         ;;
+  c)    checkup=1
+        ;;
+  S)    secure=0
+        ;;
   ?)    usage
-        unlock_exit 2 $lock $locked
+        exit 2
         ;;
   esac
 done
 
 logger -t cloud "$(basename $0): parameters $*"
+if [ $secure -eq 1 ]
+then
+   iptables_secure=" -s $rightpeer -d $leftpeer "
+fi
 
 # get interface for public ip
 ip link|grep BROADCAST|grep -v eth0|cut -d ":" -f 2 > /tmp/iflist
@@ -301,7 +310,7 @@ then
     ret=$?
 else
     printf "Invalid action specified, must choose -A or -D to add/del tunnels\n" >&2
-    unlock_exit 5 $lock $locked
+    exit 5
 fi
 
-unlock_exit $ret $lock $locked
+exit $ret
