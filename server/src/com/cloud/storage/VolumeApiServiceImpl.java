@@ -141,6 +141,7 @@ import com.cloud.vm.VmWork;
 import com.cloud.vm.VmWorkAttachVolume;
 import com.cloud.vm.VmWorkConstants;
 import com.cloud.vm.VmWorkDetachVolume;
+import com.cloud.vm.VmWorkExtractVolume;
 import com.cloud.vm.VmWorkJobHandler;
 import com.cloud.vm.VmWorkJobHandlerProxy;
 import com.cloud.vm.VmWorkMigrateVolume;
@@ -2040,14 +2041,70 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             return volumeStoreRef.getExtractUrl();
         }
 
-        dataStoreMgr.getPrimaryDataStore(volume.getPoolId());
-        ImageStoreEntity secStore = (ImageStoreEntity)dataStoreMgr.getImageStore(zoneId);
-        secStore.getUri();
+        VMInstanceVO vm = null;
+        if (volume.getInstanceId() != null) {
+            vm = _vmInstanceDao.findById(volume.getInstanceId());
+        }
 
+        if (vm != null) {
+            // serialize VM operation
+            AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+            if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+                // avoid re-entrance
+
+                VmWorkJobVO placeHolder = null;
+                placeHolder = createPlaceHolderWork(vm.getId());
+                try {
+                    return orchestrateExtractVolume(volume.getId(), zoneId);
+                } finally {
+                    _workJobDao.expunge(placeHolder.getId());
+                }
+
+            } else {
+                Outcome<String> outcome = extractVolumeThroughJobQueue(vm.getId(), volume.getId(), zoneId);
+
+                try {
+                    outcome.get();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("Operation is interrupted", e);
+                } catch (java.util.concurrent.ExecutionException e) {
+                    throw new RuntimeException("Execution excetion", e);
+                }
+
+                Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+                if (jobResult != null) {
+                    if (jobResult instanceof ConcurrentOperationException)
+                        throw (ConcurrentOperationException)jobResult;
+                    else if (jobResult instanceof RuntimeException)
+                        throw (RuntimeException)jobResult;
+                    else if (jobResult instanceof Throwable)
+                        throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+                }
+
+                // retrieve the entity url from job result
+                if (jobResult != null && jobResult instanceof String) {
+                    return (String)jobResult;
+                }
+                return null;
+            }
+        }
+
+        return orchestrateExtractVolume(volume.getId(), zoneId);
+    }
+
+    private String orchestrateExtractVolume(long volumeId, long zoneId) {
+        // get latest volume state to make sure that it is not updated by other parallel operations
+        VolumeVO volume = _volsDao.findById(volumeId);
+        if (volume == null || volume.getState() != Volume.State.Ready) {
+            throw new InvalidParameterValueException("Volume to be extracted has been removed or not in right state!");
+        }
+        // perform extraction
+        ImageStoreEntity secStore = (ImageStoreEntity)dataStoreMgr.getImageStore(zoneId);
         String value = _configDao.getValue(Config.CopyVolumeWait.toString());
         NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
+
         // Copy volume from primary to secondary storage
-        VolumeInfo srcVol = volFactory.getVolume(volume.getId());
+        VolumeInfo srcVol = volFactory.getVolume(volumeId);
         AsyncCallFuture<VolumeApiResult> cvAnswer = volService.copyVolume(srcVol, secStore);
         // Check if you got a valid answer.
         VolumeApiResult cvResult = null;
@@ -2068,11 +2125,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         VolumeInfo vol = cvResult.getVolume();
 
         String extractUrl = secStore.createEntityExtractUrl(vol.getPath(), vol.getFormat(), vol);
-        volumeStoreRef = _volumeStoreDao.findByVolume(volumeId);
+        VolumeDataStoreVO volumeStoreRef = _volumeStoreDao.findByVolume(volumeId);
         volumeStoreRef.setExtractUrl(extractUrl);
         volumeStoreRef.setExtractUrlCreated(DateUtil.now());
         _volumeStoreDao.update(volumeStoreRef.getId(), volumeStoreRef);
-
         return extractUrl;
     }
 
@@ -2347,6 +2403,23 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _storagePoolAllocators = storagePoolAllocators;
     }
 
+    public class VmJobVolumeUrlOutcome extends OutcomeImpl<String> {
+
+        public VmJobVolumeUrlOutcome(final AsyncJob job) {
+            super(String.class, job, VmJobCheckInterval.value(), new Predicate() {
+                @Override
+                public boolean checkCondition() {
+                    AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, job.getId());
+                    assert (jobVo != null);
+                    if (jobVo == null || jobVo.getStatus() != JobInfo.Status.IN_PROGRESS)
+                        return true;
+
+                    return false;
+                }
+            }, AsyncJob.Topics.JOB_STATE);
+        }
+    }
+
     public class VmJobVolumeOutcome extends OutcomeImpl<Volume> {
         private long _volumeId;
 
@@ -2495,6 +2568,39 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return new VmJobVolumeOutcome(workJob,volumeId);
     }
 
+    public Outcome<String> extractVolumeThroughJobQueue(final Long vmId, final long volumeId,
+            final long zoneId) {
+
+        final CallContext context = CallContext.current();
+        final User callingUser = context.getCallingUser();
+        final Account callingAccount = context.getCallingAccount();
+
+        final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+
+        VmWorkJobVO workJob = new VmWorkJobVO(context.getContextId());
+
+        workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+        workJob.setCmd(VmWorkExtractVolume.class.getName());
+
+        workJob.setAccountId(callingAccount.getId());
+        workJob.setUserId(callingUser.getId());
+        workJob.setStep(VmWorkJobVO.Step.Starting);
+        workJob.setVmType(VirtualMachine.Type.Instance);
+        workJob.setVmInstanceId(vm.getId());
+        workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
+
+        // save work context info (there are some duplications)
+        VmWorkExtractVolume workInfo = new VmWorkExtractVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
+                VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, zoneId);
+        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+        _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
+
+        return new VmJobVolumeUrlOutcome(workJob);
+    }
+
     public Outcome<Volume> migrateVolumeThroughJobQueue(final Long vmId, final long volumeId,
             final long destPoolId, final boolean liveMigrate) {
 
@@ -2560,6 +2666,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
 
         return new VmJobSnapshotOutcome(workJob,snapshotId);
+    }
+
+    @ReflectionUse
+    private Pair<JobInfo.Status, String> orchestrateExtractVolume(VmWorkExtractVolume work) throws Exception {
+        String volUrl = orchestrateExtractVolume(work.getVolumeId(), work.getZoneId());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(volUrl));
     }
 
     @ReflectionUse
