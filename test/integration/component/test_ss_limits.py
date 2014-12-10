@@ -128,7 +128,7 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         return [PASS, None]
 
     @data(ROOT_DOMAIN_ADMIN, CHILD_DOMAIN_ADMIN)
-    @attr(tags = ["advanced"], required_hardware="false")
+    @attr(tags = ["advanced"], required_hardware="true")
     def test_01_register_template(self, value):
         """Test register template
         # Validate the following:
@@ -189,7 +189,7 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         return
 
     @data(ROOT_DOMAIN_ADMIN, CHILD_DOMAIN_ADMIN)
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced"], required_hardware="true")
     def test_02_create_template_snapshot(self, value):
         """Test create snapshot and templates from volume
 
@@ -248,7 +248,7 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         return
 
     @data(ROOT_DOMAIN_ADMIN, CHILD_DOMAIN_ADMIN)
-    @attr(tags = ["advanced"], required_hardware="false")
+    @attr(tags = ["advanced"], required_hardware="true")
     def test_03_register_iso(self, value):
         """Test register iso
         Steps and validations:
@@ -310,7 +310,7 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         return
 
     @data(ROOT_DOMAIN_ADMIN, CHILD_DOMAIN_ADMIN)
-    @attr(tags = ["advanced"], required_hardware="false")
+    @attr(tags = ["advanced"], required_hardware="true")
     def test_04_copy_template(self, value):
         """Test copy template between zones
 
