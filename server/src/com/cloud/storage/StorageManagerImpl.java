@@ -1558,8 +1558,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         long totalAskingSize = 0;
         for (Volume volume : volumes) {
             if (volume.getTemplateId() != null) {
-                VMTemplateVO tmpl = _templateDao.findById(volume.getTemplateId());
-                if (tmpl.getFormat() != ImageFormat.ISO) {
+                VMTemplateVO tmpl = _templateDao.findByIdIncludingRemoved(volume.getTemplateId());
+                if (tmpl != null && tmpl.getFormat() != ImageFormat.ISO) {
                     allocatedSizeWithtemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, tmpl);
                 }
             }
