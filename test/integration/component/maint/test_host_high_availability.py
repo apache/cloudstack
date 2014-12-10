@@ -19,14 +19,17 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.cloudstackAPI import (migrateVirtualMachine,
                                   prepareHostForMaintenance,
                                   cancelHostMaintenance)
 from marvin.lib.utils import cleanup_resources
 from marvin.lib.base import (Account,
                              VirtualMachine,
-                             ServiceOffering)
+                             ServiceOffering,
+                             Cluster,
+                             Host,
+                             Configurations)
 from marvin.lib.common import (get_zone,
                                get_domain,
                                get_template,
@@ -99,6 +102,33 @@ class TestHostHighAvailability(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"]
         )
+
+
+        clusterWithSufficientHosts = None
+        clusters = Cluster.list(cls.api_client, zoneid=cls.zone.id)
+        for cluster in clusters:
+            cls.hosts = Host.list(cls.api_client, clusterid=cluster.id, type="Routing")
+            if len(cls.hosts) >= 3:
+                clusterWithSufficientHosts = cluster
+                break
+
+        if clusterWithSufficientHosts is None:
+            raise unittest.SkipTest("No Cluster with 3 hosts found")
+
+        configs = Configurations.list(
+                                      cls.api_client,
+                                      name='ha.tag'
+                                      )
+
+        assert isinstance(configs, list), "Config list not\
+                retrieved for ha.tag"
+
+        if configs[0].value != "ha":
+            raise unittest.SkipTest("Please set the global config\
+                    value for ha.tag as 'ha'")
+
+        Host.update(cls.api_client, id=cls.hosts[2].id, hosttags="ha")
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
@@ -123,6 +153,8 @@ class TestHostHighAvailability(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
+            # Remove the host from HA
+            Host.update(cls.api_client, id=cls.hosts[2].id, hosttags="")
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
