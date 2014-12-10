@@ -322,11 +322,19 @@
                                             });
                                             items.push({
                                                 id: "us",
-                                                description: "US"
+                                                description: "US Keboard"
+                                            });
+                                            items.push({
+                                                id: "uk",
+                                                description: "UK Keyboard"
                                             });
                                             items.push({
                                                 id: "jp",
-                                                description: "Japanese"
+                                                description: "Japanese Keyboard"
+                                            });
+                                            items.push({
+                                                id: "sc",
+                                                description: "Simplified Chinese"
                                             });
                                             args.response.success({
                                                 data: items
