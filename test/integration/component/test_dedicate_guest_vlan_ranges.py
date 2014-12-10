@@ -434,7 +434,7 @@ class TestDedicateGuestVLANRange(cloudstackTestCase):
         return
 
 
-    @attr(tags = ["advanced", "selfservice"], required_hardware="false")
+    @attr(tags = ["invalid"])
     def test_04_dedicate_guest_vlan_in_project(self):
         """Dedicate guest vlan range project owner account and test guest network vlan in project
 
