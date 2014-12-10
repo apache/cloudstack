@@ -54,7 +54,7 @@ class CsRedundant(object):
     CONNTRACKD_CONFIG = "/etc/conntrackd/conntrackd.conf"
 
     def __init__(self, config):
-        self.cl = config.get_cmdline()
+        self.cl = config.cmdline()
         self.address = config.address()
 
     def set(self):
@@ -95,10 +95,16 @@ class CsRedundant(object):
         file.commit()
 
         # conntrackd configuration
-        control = self.address.get_control_if()
+        guest = self.address.get_guest_if()
         connt = CsFile("/etc/conntrackd/conntrackd.conf")
-        connt.search("[\s\t]IPv4_interface ", "\t\tIPv4_interface %s" % control.get_ip())
-        connt.search("[\s\t]Interface ", "\t\tInterface %s" % control.get_device())
+        connt.section("Multicast {", "}", [
+                      "IPv4_address 225.0.0.50\n",
+                      "Group 3780\n",
+                      "IPv4_interface %s\n" % guest.get_ip(),
+                      "Interface %s\n" % guest.get_device(),
+                      "SndSocketBuffer 1249280\n",
+                      "RcvSocketBuffer 1249280\n",
+                      "Checksum on\n"])
         connt.section("Address Ignore {", "}", self._collect_ignore_ips())
         connt.commit()
         if connt.is_changed():
@@ -209,6 +215,6 @@ class CsRedundant(object):
         lines = []
         for o in self.address.get_ips():
             if o.needs_vrrp():
-                str = "        %s brd %s dev %s\n" % (o.get_cidr(), o.get_broadcast(), o.get_ip())
+                str = "        %s brd %s dev %s\n" % (o.get_gateway_cidr(), o.get_broadcast(), o.get_device())
                 lines.append(str)
         return lines
