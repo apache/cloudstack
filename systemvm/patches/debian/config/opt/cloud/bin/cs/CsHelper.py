@@ -38,7 +38,6 @@ def is_mounted(name):
 
 def mount_tmpfs(name):
     if not is_mounted(name):
-        print "Mounting it"
         execute("mount tmpfs %s -t tmpfs" % name)
 
 

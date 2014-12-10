@@ -28,7 +28,7 @@ class CsDataBag(object):
         self.dbag = self.db.getDataBag()
         if config:
             self.fw = config.get_fw()
-            self.cl = config.get_cmdline()
+            self.cl = config.cmdline()
             self.config = config
 
     def dump(self):
@@ -51,14 +51,32 @@ class CsDataBag(object):
 class CsCmdLine(CsDataBag):
     """ Get cmdline config parameters """
 
+    def idata(self):
+        if "config" in self.dbag:
+            return self.dbag['config']
+        else:
+            return {}
+
     def is_redundant(self):
-        if "redundant_router" in self.dbag['config']:
-            return self.dbag['config']['redundant_router'] == "true"
+        if "redundant_router" in self.idata():
+            return self.idata()['redundant_router'] == "true"
         return False
 
+    def get_guest_gw(self):
+        if "guestgw" in self.idata():
+            return self.idata()['guestgw']
+        else:
+            return "1.2.3.4"
+
+    def get_guest_gw_cidr(self):
+        if "guestgw" in self.idata():
+            return "%s/%s" % (self.idata()['guestgw'], self.idata()['guestcidrsize'])
+        else:
+            return "1.2.3.4/8"
+
     def get_name(self):
-        if "name" in self.dbag['config']:
-            return self.dbag['config']['name']
+        if "name" in self.idata():
+            return self.idata()['name']
         else:
             return "unloved-router"
 
@@ -66,31 +84,31 @@ class CsCmdLine(CsDataBag):
         dns = []
         names = "dns1 dns2"
         for name in names:
-            if name in self.dbag['config']:
-                dns.append(self.dbag['config'][name])
+            if name in self.idata():
+                dns.append(self.idata()[name])
         return dns
 
     def get_type(self):
-        if "type" in self.dbag['config']:
-            return self.dbag['config']['type']
+        if "type" in self.idata():
+            return self.idata()['type']
         else:
             return "unknown"
 
     def get_domain(self):
-        if "domain" in self.dbag['config']:
-            return self.dbag['config']['domain']
+        if "domain" in self.config:
+            return self.idata()['domain']
         else:
             return "cloudnine.internal"
 
     def get_vpccidr(self):
-        if "vpccidr" in self.dbag['config']:
-            return self.dbag['config']['vpccidr']
+        if "vpccidr" in self.idata():
+            return self.idata()['vpccidr']
         else:
             return "unknown"
 
     def is_master(self):
         if not self.is_redundant():
             return False
-        if "redundant_master" in self.dbag['config']:
-            return self.dbag['config']['redundant_master'] == "true"
+        if "redundant_master" in self.idata():
+            return self.idata()['redundant_master'] == "true"
         return False

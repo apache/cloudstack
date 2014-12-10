@@ -101,6 +101,9 @@ class CsFile:
             if line.strip() == start:
                 sind = index + 1
                 found = True
+        if sind == -1:
+            content.insert(0, start + "\n")
+            content.append(end + "\n")
         self.new_config[sind:eind] = content
 
     def greplace(self, search, replace):

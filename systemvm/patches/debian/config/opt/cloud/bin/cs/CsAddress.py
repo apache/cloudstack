@@ -26,7 +26,7 @@ import time
 from CsRoute import CsRoute
 from CsRule import CsRule
 
-VRRP_TYPES = ['guest', 'public']
+VRRP_TYPES = ['guest']
 
 
 class CsAddress(CsDataBag):
@@ -42,38 +42,37 @@ class CsAddress(CsDataBag):
             if dev == "id":
                 continue
             for ip in self.dbag[dev]:
-                ret.append(CsInterface(ip))
+                ret.append(CsInterface(ip, self.config))
         return ret
+
+    def get_guest_if(self):
+        """
+        Return CsIp object for the first guest interface
+        """
+        for ip in self.get_ips():
+            if ip.is_guest():
+                return ip
+        return None
 
     def get_guest_ip(self):
         """
         Return the ip of the first guest interface
         For use with routers not vpcrouters
         """
-        for ip in self.get_ips():
-            if ip.is_guest():
-                return ip.get_ip()
-        return None
-
-    def get_guest_gateway(self):
-        """
-        Return the gateway of the first guest interface
-        For use with routers not vpcrouters
-        """
-        for ip in self.get_ips():
-            if ip.is_guest():
-                return ip.get_gateway()
+        ip = self.get_guest_if()
+        if ip:
+            return ip.get_ip()
         return None
 
     def get_guest_netmask(self):
         """
-        Return the gateway of the first guest interface
+        Return the netmask of the first guest interface
         For use with routers not vpcrouters
         """
-        for ip in self.get_ips():
-            if ip.is_guest():
-                return ip.get_netmask()
-        return None
+        ip = self.get_guest_if()
+        if ip:
+            return ip.get_netmask()
+        return "255.255.255.0"
 
     def needs_vrrp(self, o):
         """
@@ -144,8 +143,9 @@ class CsAddress(CsDataBag):
 
 class CsInterface:
     """ Hold one single ip """
-    def __init__(self, o):
+    def __init__(self, o, config):
         self.address = o
+        self.config = config
 
     def get_ip(self):
         return self.get_attr("public_ip")
@@ -154,7 +154,17 @@ class CsInterface:
         return self.get_attr("netmask")
 
     def get_gateway(self):
-        return self.get_attr("gateway")
+        if self.config.is_vpc():
+            return self.get_attr("gateway")
+        else:
+            return self.config.cmdline().get_guest_gw()
+
+    def get_gateway_cidr(self):
+        return "%s/%s" % (self.get_gateway(), self.get_size())
+
+    def get_size(self):
+        """ Return the network size in bits (24, 16, 8 etc) """
+        return self.get_attr("size")
 
     def get_device(self):
         return self.get_attr("device")
@@ -205,7 +215,7 @@ class CsDevice:
             self.tableNo = dev[3]
             self.table = "Table_%s" % dev
         self.fw = config.get_fw()
-        self.cl = config.get_cmdline()
+        self.cl = config.cmdline()
 
     def configure_rp(self):
         """
@@ -250,7 +260,7 @@ class CsIP:
         self.address = {}
         self.list()
         self.fw = config.get_fw()
-        self.cl = config.get_cmdline()
+        self.cl = config.cmdline()
         self.config = config
 
     def setAddress(self, address):
@@ -284,7 +294,7 @@ class CsIP:
             if " DOWN " in i:
                 cmd2 = "ip link set %s up" % self.getDevice()
                 # Do not change the state of ips on a redundant router that are managed by vrrp or CsRedundant
-                if self.cl.is_redundant() and self.needs_vrrp():
+                if self.config.cmdline().is_redundant() and self.needs_vrrp():
                     pass
                 else:
                     CsHelper.execute(cmd2)
@@ -412,7 +422,7 @@ class CsIP:
 
         if self.get_type() == "public" and self.config.is_vpc():
             if self.address["source_nat"]:
-                vpccidr = self.cl.get_vpccidr()
+                vpccidr = self.config.cmdline().get_vpccidr()
                 self.fw.append(["filter", "", "-A FORWARD -s %s ! -d %s -j ACCEPT" % (vpccidr, vpccidr)])
                 self.fw.append(["nat", "", "-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
         # route.flush()

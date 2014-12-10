@@ -28,24 +28,25 @@ class CsConfig(object):
     __LOG_FILE = "/var/log/cloud.log"
     __LOG_LEVEL = "DEBUG"
     __LOG_FORMAT = "%(asctime)s %(levelname)-8s %(message)s"
+    cl = None
 
-    def __init__(self, load=False):
-        if load:
-            self_set_cl()
-            self_set_address()
+    def __init__(self):
         self.fw = []
-
-    def set_cl(self):
-        self.cl = CsCmdLine("cmdline")
-
-    def address(self):
-        return self.ips
 
     def set_address(self):
         self.ips = CsAddress("ips", self)
 
-    def get_cmdline(self):
-        return self.cl
+    @classmethod
+    def get_cmdline_instance(cls):
+        if cls.cl is None:
+            cls.cl = CsCmdLine("cmdline")
+        return cls.cl
+
+    def cmdline(self):
+        return self.get_cmdline_instance()
+
+    def address(self):
+        return self.ips
 
     def get_fw(self):
         return self.fw
@@ -66,7 +67,7 @@ class CsConfig(object):
         return self.cl.get_domain()
 
     def get_dns(self):
-        return self.get_cmdline().get_dns()
+        return self.cmdline().get_dns()
 
     def get_format(self):
         return self.__LOG_FORMAT
