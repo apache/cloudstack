@@ -104,7 +104,7 @@ This is a bug fix release. The following issues were fixed:
     CLOUDSTACK-7903: Decreased minimal usage aggregation range value
     CLOUDSTACK-5834: got VBD statistics from RRD
     CLOUDSTACK-7595: Remove unnecessary multiply factor for job expiry
-    CLOUDSTACK-7360 [vmware] Add host to existing cluster fails if the cluster is using Nexus 1000v as backend for atleast one traffic type
+    CLOUDSTACK-7360: [vmware] Add host to existing cluster fails if the cluster is using Nexus 1000v as backend for atleast one traffic type
     CLOUDSTACK-5812: pass podId information when request for secondary ip address in Basic zone guest network
     CLOUDSTACK-5997: Template state changes side affects
     CLOUDSTACK-5685: reboot VR if a out-of-band power-on event is detected
@@ -112,7 +112,10 @@ This is a bug fix release. The following issues were fixed:
     CLOUDSTACK-5923: CS doesn't do master switch for XS any more, CS will depend on XS HA to do master switch, XS HA needs to be enabled.
     CLOUDSTACK-7688, CLOUDSTACK-7747: restricted various operations for VM with VM snapshots which breaks VM snapshots.
     CLOUDSTACK-7950: AttachIsoCmd shoud give correct messge when trying to attach vmwaretools installer iso on non supported guestvm deployed by ISO
-    CLOUDSTACK-7986 [F5 LB] Failed to execute IPAssocCommand due to com.cloud.utils.exception.ExecutionException
+    CLOUDSTACK-7986: [F5 LB] Failed to execute IPAssocCommand due to com.cloud.utils.exception.ExecutionException
+    CLOUDSTACK-7572: Fix regression from 156bd9b
+    CLOUDSTACK-7974: remove old hostname entry for a VM when adding a VM
+    CLOUDSTACK-8014: Fix NPE searching including removed templates
 
 Version 4.3.1
 -------------
