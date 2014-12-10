@@ -54,7 +54,7 @@ class CsDhcp(CsDataBag):
                 CsHelper.hup_dnsmasq("dnsmasq", "dnsmasq")
 
     def configure_server(self):
-        #self.conf.addeq("dhcp-hostsfile=%s" % DHCP_HOSTS)
+        # self.conf.addeq("dhcp-hostsfile=%s" % DHCP_HOSTS)
         for i in self.devinfo:
             if not i['dnsmasq']:
                 continue
@@ -137,9 +137,9 @@ class CsDhcp(CsDataBag):
     def add(self, entry):
         self.add_host(entry['ipv4_adress'], entry['host_name'])
         if self.cloud.search("%s," % entry['mac_address'],
-                          "%s,%s,%s,infinite" % (entry['mac_address'],
-                                                 entry['ipv4_adress'],
-                                                 entry['host_name'])):
+                             "%s,%s,%s,infinite" % (entry['mac_address'],
+                                                    entry['ipv4_adress'],
+                                                    entry['host_name'])):
                         self.changed.append({'mac': entry['mac_address'],
                                              'ip4': entry['ipv4_adress'],
                                              'host': entry['host_name']})

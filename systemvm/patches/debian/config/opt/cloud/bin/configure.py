@@ -530,13 +530,11 @@ class CsForwardingRules(CsDataBag):
 
 
 def main(argv):
-    config = CsConfig(False)
+    config = CsConfig()
     logging.basicConfig(filename=config.get_logger(),
                         level=config.get_level(),
                         format=config.get_format())
-    config.set_cl()
     config.set_address()
-    cl = config.get_cmdline()
 
     # IP configuration
     config.address().compare()

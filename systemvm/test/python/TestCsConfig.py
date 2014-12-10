@@ -9,7 +9,7 @@ class TestCsConfig(unittest.TestCase):
         merge.DataBag.DPATH = "."
 
     def test_ini(self):
-        csconfig = CsConfig(False)
+        csconfig = CsConfig()
         self.assertTrue(csconfig is not None)
 
 if __name__ == '__main__':
