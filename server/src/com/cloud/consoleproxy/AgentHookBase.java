@@ -208,12 +208,13 @@ public abstract class AgentHookBase implements AgentHook {
             HostVO consoleProxyHost = findConsoleProxyHost(startupCmd);
 
             assert (consoleProxyHost != null);
-
-            Answer answer = _agentMgr.send(consoleProxyHost.getId(), cmd);
-            if (answer == null || !answer.getResult()) {
-                s_logger.error("Console proxy agent reported that it failed to execute http handling startup command");
-            } else {
-                s_logger.info("Successfully sent out command to start HTTP handling in console proxy agent");
+            if (consoleProxyHost != null) {
+                Answer answer = _agentMgr.send(consoleProxyHost.getId(), cmd);
+                if (answer == null || !answer.getResult()) {
+                    s_logger.error("Console proxy agent reported that it failed to execute http handling startup command");
+                } else {
+                    s_logger.info("Successfully sent out command to start HTTP handling in console proxy agent");
+                }
             }
         }catch (NoSuchAlgorithmException e) {
             s_logger.error("Unexpected exception in SecureRandom Algorithm selection ", e);
