@@ -52,15 +52,25 @@ class CsCmdLine(CsDataBag):
     """ Get cmdline config parameters """
 
     def idata(self):
-        if "config" in self.dbag:
-            return self.dbag['config']
-        else:
-            return {}
+        if "config" not in self.dbag:
+            self.dbag['config'] = {}
+        return self.dbag['config']
+
+    def get_priority(self):
+        if "router_pr" in self.idata():
+            return self.idata()['router_pr']
+        return 99
 
     def is_redundant(self):
         if "redundant_router" in self.idata():
             return self.idata()['redundant_router'] == "true"
         return False
+
+    def set_redundant(self, val="true"):
+        self.idata()['redundant_router'] = val
+
+    def set_guest_gw(self, val):
+        self.idata()['guestgw'] = val
 
     def get_guest_gw(self):
         if "guestgw" in self.idata():
@@ -95,7 +105,7 @@ class CsCmdLine(CsDataBag):
             return "unknown"
 
     def get_domain(self):
-        if "domain" in self.config:
+        if "domain" in self.idata();
             return self.idata()['domain']
         else:
             return "cloudnine.internal"

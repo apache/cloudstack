@@ -47,7 +47,7 @@ class CsAddress(CsDataBag):
 
     def get_guest_if(self):
         """
-        Return CsIp object for the first guest interface
+        Return CsInterface object for the first guest interface
         """
         for ip in self.get_ips():
             if ip.is_guest():
@@ -199,6 +199,11 @@ class CsInterface:
             return True
         return False
 
+    def is_public(self):
+        if "nw_type" in self.address and self.address['nw_type'] in ['public']:
+            return True
+        return False
+
     def to_str(self):
         pprint(self.address)
 
@@ -294,7 +299,7 @@ class CsIP:
             if " DOWN " in i:
                 cmd2 = "ip link set %s up" % self.getDevice()
                 # Do not change the state of ips on a redundant router that are managed by vrrp or CsRedundant
-                if self.config.cmdline().is_redundant() and self.needs_vrrp():
+                if self.config.cmdline().is_redundant() and self.is_public():
                     pass
                 else:
                     CsHelper.execute(cmd2)
@@ -445,6 +450,11 @@ class CsIP:
         Returns if the ip needs to be managed by keepalived or not
         """
         if "nw_type" in self.address and self.address['nw_type'] in VRRP_TYPES:
+            return True
+        return False
+
+    def is_public(self):
+        if "nw_type" in self.address and self.address['nw_type'] in ['public']:
             return True
         return False
 
