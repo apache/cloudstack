@@ -28,7 +28,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -212,6 +215,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     IpAddressManager _ipAddrMgr;
     @Inject
     ConfigDepot _configDepot;
+
+    @Inject
+    private VpcPrivateGatewayTransactionCallable vpcTxCallable;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
@@ -1779,37 +1785,26 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         //check if there are ips allocted in the network
         final long networkId = gateway.getNetworkId();
 
-        boolean deleteNetwork = true;
-        final List<PrivateIpVO> privateIps = _privateIpDao.listByNetworkId(networkId);
-        if (privateIps.size() > 1 || !privateIps.get(0).getIpAddress().equalsIgnoreCase(gateway.getIp4Address())) {
-            s_logger.debug("Not removing network id=" + gateway.getNetworkId() + " as it has private ip addresses for other gateways");
-            deleteNetwork = false;
-        }
+        vpcTxCallable.setGateway(gateway);
 
-        //TODO: Clean this up, its bad.  There is a DB transaction wrapping calls to NetworkElements (destroyNetwork will
-        // call network elements).
-        final boolean deleteNetworkFinal = deleteNetwork;
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(final TransactionStatus status) {
-                final PrivateIpVO ip = _privateIpDao.findByIpAndVpcId(gateway.getVpcId(), gateway.getIp4Address());
-                if (ip != null) {
-                    _privateIpDao.remove(ip.getId());
-                    s_logger.debug("Deleted private ip " + ip);
-                }
+        final ExecutorService txExecutor = Executors.newSingleThreadExecutor();
+        final Future<Boolean> futureResult = txExecutor.submit(vpcTxCallable);
 
-                if (deleteNetworkFinal) {
-                    final User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
-                    final Account owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
-                    final ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
-                    _ntwkMgr.destroyNetwork(networkId, context, false);
-                    s_logger.debug("Deleted private network id=" + networkId);
-                }
-
-                _vpcGatewayDao.remove(gateway.getId());
-                s_logger.debug("Deleted private gateway " + gateway);
+        boolean deleteNetworkFinal;
+        try {
+            deleteNetworkFinal = futureResult.get();
+            if (deleteNetworkFinal) {
+                final User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
+                final Account owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
+                final ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
+                _ntwkMgr.destroyNetwork(networkId, context, false);
+                s_logger.debug("Deleted private network id=" + networkId);
             }
-        });
+        } catch (final InterruptedException e) {
+            s_logger.error("deletePrivateGatewayFromTheDB failed to delete network id " + networkId + "due to => ", e);
+        } catch (final ExecutionException e) {
+            s_logger.error("deletePrivateGatewayFromTheDB failed to delete network id " + networkId + "due to => ", e);
+        }
 
         return true;
     }

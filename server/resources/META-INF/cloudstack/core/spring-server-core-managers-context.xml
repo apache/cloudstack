@@ -183,6 +183,8 @@
         <property name="vpcElements" value="#{vpcProvidersRegistry.registered}"></property>
     </bean>
     
+    <bean id="vpcTxCallable" class="com.cloud.network.vpc.VpcPrivateGatewayTransactionCallable" />
+    
     <bean id="vpcVirtualNetworkApplianceManagerImpl"
         class="com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl" />
     
