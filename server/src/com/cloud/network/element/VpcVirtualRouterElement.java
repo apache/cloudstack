@@ -239,22 +239,26 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
             }
 
-            if (routers.size() > 1) {
-                throw new CloudRuntimeException("Found more than one router in vpc " + vpc);
-            }
+            // [FIXME] Comment added by Wilder Rodrigues - This exception has to be removed once we are able to test multiple routers.
+            //        if (routers.size() > 1) {
+            //            throw new CloudRuntimeException("Found more than one router in vpc " + vpc);
+            //        }
 
-            final DomainRouterVO router = routers.get(0);
-            // Add router to guest network if needed
-            if (!_networkMdl.isVmPartOfNetwork(router.getId(), network.getId())) {
-                final Map<VirtualMachineProfile.Param, Object> paramsForRouter = new HashMap<VirtualMachineProfile.Param, Object>(1);
-                // need to reprogram guest network if it comes in a setup state
-                if (network.getState() == State.Setup) {
-                    paramsForRouter.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
-                }
-                if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(router, network, false, paramsForRouter)) {
-                    throw new CloudRuntimeException("Failed to add VPC router " + router + " to guest network " + network);
-                } else {
-                    s_logger.debug("Successfully added VPC router " + router + " to guest network " + network);
+            s_logger.info("Adding VPC routers to Guest Network: " + routers.size() + " to be added!");
+
+            for (final DomainRouterVO domainRouterVO : routers) {
+                // Add router to guest network if needed
+                if (!_networkMdl.isVmPartOfNetwork(domainRouterVO.getId(), network.getId())) {
+                    final Map<VirtualMachineProfile.Param, Object> paramsForRouter = new HashMap<VirtualMachineProfile.Param, Object>(1);
+                    // need to reprogram guest network if it comes in a setup state
+                    if (network.getState() == State.Setup) {
+                        paramsForRouter.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
+                    }
+                    if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(domainRouterVO, network, false, paramsForRouter)) {
+                        s_logger.error("Failed to add VPC router " + domainRouterVO + " to guest network " + network);
+                    } else {
+                        s_logger.debug("Successfully added VPC router " + domainRouterVO + " to guest network " + network);
+                    }
                 }
             }
         }
@@ -367,30 +371,34 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return true;
         }
 
-        if (routers.size() > 1) {
-            throw new CloudRuntimeException("Found more than one router in vpc " + gateway.getVpcId());
-        }
+        // [FIXME] Comment added by Wilder Rodrigues - This exception has to be removed once we are able to test multiple routers.
+        //        if (routers.size() > 1) {
+        //            throw new CloudRuntimeException("Found more than one router in vpc " + vpc);
+        //        }
 
-        final VirtualRouter router = routers.get(0);
+        s_logger.info("Adding VPC routers to Guest Network: " + routers.size() + " to be added!");
 
         final DataCenterVO dcVO = _dcDao.findById(gateway.getZoneId());
         final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-        if (networkTopology.setupPrivateGateway(gateway, router)) {
-            try {
-                final List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(gateway.getNetworkACLId());
-                if (!applyACLItemsToPrivateGw(gateway, rules)) {
+        for (final DomainRouterVO domainRouterVO : routers) {
+            if (networkTopology.setupPrivateGateway(gateway, domainRouterVO)) {
+                try {
+                    final List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(gateway.getNetworkACLId());
+                    if (!applyACLItemsToPrivateGw(gateway, rules)) {
+                        s_logger.debug("Failed to apply network acl id  " + gateway.getNetworkACLId() + "  on gateway ");
+                        return false;
+                    }
+                } catch (final Exception ex) {
                     s_logger.debug("Failed to apply network acl id  " + gateway.getNetworkACLId() + "  on gateway ");
                     return false;
                 }
-            } catch (final Exception ex) {
-                s_logger.debug("Failed to apply network acl id  " + gateway.getNetworkACLId() + "  on gateway ");
+            } else {
+                s_logger.debug("Failed to setup private gateway  " + gateway);
                 return false;
             }
-        } else {
-            s_logger.debug("Failed to setup private gateway  " + gateway);
-            return false;
         }
+
         return true;
     }
 
@@ -407,13 +415,21 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return true;
         }
 
-        if (routers.size() > 1) {
-            throw new CloudRuntimeException("Found more than one router in vpc " + gateway.getVpcId());
+        // [FIXME] Comment added by Wilder Rodrigues - This exception has to be removed once we are able to test multiple routers.
+        //        if (routers.size() > 1) {
+        //            throw new CloudRuntimeException("Found more than one router in vpc " + vpc);
+        //        }
+
+        s_logger.info("Adding VPC routers to Guest Network: " + routers.size() + " to be added!");
+
+        int result = 0;
+        for (final DomainRouterVO domainRouterVO : routers) {
+            if (_vpcRouterMgr.destroyPrivateGateway(gateway, domainRouterVO)) {
+                result++;
+            }
         }
 
-        final VirtualRouter router = routers.get(0);
-
-        return _vpcRouterMgr.destroyPrivateGateway(gateway, router);
+        return result > 0 ? true : false;
     }
 
     @Override
