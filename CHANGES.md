@@ -4,6 +4,56 @@ Apache CloudStack CHANGES
 
 Full release notes for each release are located in the project's documentation [website](http://docs.cloudstack.apache.org/projects/cloudstack-release-notes)
 
+Version 4.4.3
+-------------
+This maintenance release has the following bug fixes:
+
+Bug ID | Description
+
+CLOUDSTACK-2625, CLOUDSTACK-3401: Usage records are ordered by start_date which is not unique.
+CLOUDSTACK-2823: pass cmdline info to system vms for 30 times
+CLOUDSTACK-5446: delete all the leftover snapshots on primary storage in case of snapshot errors, after a new backup snapshot is finished
+CLOUDSTACK-5576: UI > IP Address > EnableVPN, DisableVPN: change label.
+CLOUDSTACK-5719: UI > Network > Add Guest Network > when Physical Network dropdown is changed, refresh Network Offering dropdown
+CLOUDSTACK-5821: systemvmiso is locked by systevmvm in hyperv
+CLOUDSTACK-5834: got VBD statistics from RRD
+CLOUDSTACK-6075: Increase the ram size for router service offering
+CLOUDSTACK-6172: Adding new test case to verify this fix
+CLOUDSTACK-6210: LDAP:listLdapUsers api throws exception when we click on "Add LDAP Account" This occurs when ldap basedn is not configured.
+CLOUDSTACK-6236: Fix a copy-and-paste error for decrRefCnt in VolumeDataStoreVO. (cherry picked from commit 672bb353be2f159966f351ab2de914b433a934f9)
+CLOUDSTACK-6261: remove the forceful timeout setting when login to NetScaler.
+CLOUDSTACK-6467: Add pre/post-state transition status to messages published on
+CLOUDSTACK-6892: use lowercase noredist, as package.sh lowercases build type
+CLOUDSTACK-7144: No GSLB provider is available during assigning load balancing rule
+CLOUDSTACK-7191: On restartNetwork destroy the VR immediatley, instead of cleanup the rules then destroy
+CLOUDSTACK-7293: UI: Fixed localization issues on the login page
+CLOUDSTACK-7302: UI: Remove Hover Interaction from breadcrumbs at top page
+CLOUDSTACK-7360: [vmware] Add host to existing cluster fails if the cluster is using Nexus 1000v as backend for atleast one traffic type.
+CLOUDSTACK-7412: Can't create proper template from VM on S3 secondary storage environment
+CLOUDSTACK-7415: Management server PingTask should update PingMap entry for an agent only if it is already present in the Management Server's PingMap.
+CLOUDSTACK-7463: UI: Domain Admin UI shows 'Add LDAP Users' button (should not be shown)
+CLOUDSTACK-7589: VM not Starting and always stuck in Stopped state after management server restarts.
+CLOUDSTACK-7595: Config parameters "job.expire.minutes" and "job.cancel.threshold.minutes" incorrectly getting multiplied by a factor of 60
+CLOUDSTACK-7658: Upgrading debian packages as part of system vm template build
+CLOUDSTACK-7679: Bump rabbitmq client library to latest 3.4.1
+CLOUDSTACK-7700: Volume Snapshot Async Job returns Success for a failed operation.
+CLOUDSTACK-7766: Field Validations Missing for Ingress and Egress Rules
+CLOUDSTACK-7837: [UI] Make the Source CIDR column wide enough to fit the CIDR value without ellipsizing
+CLOUDSTACK-7869: Add simulator support for findHostsForMigration API
+CLOUDSTACK-7871: allow VM and template details update using update APIs
+CLOUDSTACK-7872: network getting shutdown inspite of running VM's in the network
+CLOUDSTACK-7884: Cloudstack MS is not responding (happening randomly) after some restart.
+CLOUDSTACK-7886: cloudstackoperations like deployvm,deleteNW are failing if CS fail to contact rabbit mq server. This is happening in case of Async API calls.
+CLOUDSTACK-7903: Decreased minimal usage aggregation range value
+CLOUDSTACK-7917: Validating Load Balancer Rule when updating LB + unit test
+CLOUDSTACK-7950: AttachIsoCmd shoud give correct messge when trying to attach vmwaretools installer iso on non supported guestvm deployed by ISO
+CLOUDSTACK-7951: Limit amount of memory used by cloudstack-agent jsvc
+CLOUDSTACK-7954: ListTags API is ignoring the resourceID and displaying     all the tags of all resources.
+CLOUDSTACK-7966: remove snapshot_store_ref entry, in which role is Primary, during storage GC
+CLOUDSTACK-7974: remove old hostname entry for a VM when adding a VM
+CLOUDSTACK-7986: [F5 LB] Failed to execute IPAssocCommand due to com.cloud.utils.exception.ExecutionException: Exception caught in Networking::urn:iControl:Networking/VLAN::create()
+CLOUDSTACK-8014: Fix NPE searching including removed templates
+
 Version 4.4.2
 -------------
 
