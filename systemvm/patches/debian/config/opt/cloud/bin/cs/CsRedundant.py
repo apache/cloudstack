@@ -88,7 +88,7 @@ class CsRedundant(object):
         # keepalived configuration
         file = CsFile("/etc/keepalived/keepalived.conf")
         file.search(" router_id ", "    router_id %s" % self.cl.get_name())
-        file.search(" priority ", "    priority %s" % 20)
+        file.search(" priority ", "    priority %s" % self.cl.get_priority())
         file.search(" weight ", "    weight %s" % 2)
         file.greplace("[RROUTER_BIN_PATH]", self.CS_ROUTER_DIR)
         file.section("virtual_ipaddress {", "}", self._collect_ips())
@@ -146,11 +146,13 @@ class CsRedundant(object):
         if not self.cl.is_redundant():
             logging.error("Set backup called on non-redundant router")
             return
+        """ 
         if not self.cl.is_master():
             logging.error("Set backup called on node that is already backup")
             return
+        """
         logging.info("Router switched to backup mode")
-        ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
+        ads = [o for o in self.address.get_ips() if o.is_public()]
         for o in ads:
             CsHelper.execute("ifconfig %s down" % o.get_device())
         cmd = "%s -C %s" % (self.CONNTRACKD_BIN, self.CONNTRACKD_CONFIG)
@@ -160,6 +162,7 @@ class CsRedundant(object):
         CsHelper.service("cloud-passwd-srvr", "stop")
         CsHelper.service("dnsmasq", "stop")
         self.cl.dbag['config']['redundant_master'] = "false"
+        CsHelper.service("keepalived", "restart")
         self.cl.save()
 
     def set_master(self):
@@ -167,10 +170,12 @@ class CsRedundant(object):
         if not self.cl.is_redundant():
             logging.error("Set master called on non-redundant router")
             return
+        """
         if self.cl.is_master():
             logging.error("Set master called on master node")
             return
-        ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
+        """
+        ads = [o for o in self.address.get_ips() if o.is_public()]
         for o in ads:
             # cmd2 = "ip link set %s up" % self.getDevice()
             CsHelper.execute("ifconfig %s down" % o.get_device())
@@ -189,6 +194,7 @@ class CsRedundant(object):
         CsHelper.service("dnsmasq", "restart")
         self.cl.dbag['config']['redundant_master'] = "true"
         self.cl.save()
+        CsHelper.service("keepalived", "restart")
         logging.info("Router switched to master mode")
 
     def _collect_ignore_ips(self):
