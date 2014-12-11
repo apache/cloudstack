@@ -1697,11 +1697,17 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     @Override
     public boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError, boolean forRevoke) throws ResourceUnavailableException {
+        if (staticNats == null || staticNats.size() == 0) {
+            s_logger.debug("There are no static nat rules for the network elements");
+            return true;
+        }
+
         Network network = _networksDao.findById(staticNats.get(0).getNetworkId());
         boolean success = true;
 
-        if (staticNats == null || staticNats.size() == 0) {
-            s_logger.debug("There are no static nat rules for the network elements");
+        // Check if the StaticNat service is supported
+        if (!_networkModel.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
+            s_logger.debug("StaticNat service is not supported in specified network id");
             return true;
         }
 
