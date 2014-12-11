@@ -21,6 +21,7 @@ from cs.CsRedundant import CsRedundant
 from cs.CsDatabag import CsCmdLine
 from cs.CsAddress import CsAddress
 from cs.CsConfig import CsConfig
+import logging
 from optparse import OptionParser
 
 parser = OptionParser()
@@ -35,15 +36,15 @@ parser.add_option("-f", "--fault",
                   help="Notify Fault")
 (options, args) = parser.parse_args()
 
-config = CsConfig(False)
+config = CsConfig()
 logging.basicConfig(filename=config.get_logger(),
                     level=config.get_level(),
                     format=config.get_format())
-config.set_cl()
+config.cmdline()
 cl = CsCmdLine("cmdline", config)
 
-address = CsAddress("ips")
-red = CsRedundant(config, address)
+config.set_address()
+red = CsRedundant(config)
 
 if options.master:
     red.set_master()
