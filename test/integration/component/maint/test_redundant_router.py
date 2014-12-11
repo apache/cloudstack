@@ -720,8 +720,7 @@ class TestRVRInternals(cloudstackTestCase):
 
         hosts = Host.list(
             self.apiclient,
-            id=master_router.hostid,
-            listall=True
+            id=master_router.hostid
         )
         self.assertEqual(
             isinstance(hosts, list),
@@ -734,8 +733,7 @@ class TestRVRInternals(cloudstackTestCase):
 
         hosts = Host.list(
             self.apiclient,
-            id=backup_router.hostid,
-            listall=True
+            id=backup_router.hostid
         )
         self.assertEqual(
             isinstance(hosts, list),
@@ -796,7 +794,7 @@ class TestRVRInternals(cloudstackTestCase):
             )
         else:
             result = get_process_status(
-                master_host.ipaddress,
+                backup_host.ipaddress,
                 22,
                 self.testdata['configurableData']['host']["username"],
                 self.testdata['configurableData']['host']["password"],
