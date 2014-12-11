@@ -829,6 +829,14 @@ test_data = {
             "epslifetime": "3600",
             "dpd": "false"
     },
+    "vlan_ip_range": {
+                "startip": "",
+                "endip": "",
+                "netmask": "",
+                "gateway": "",
+                "forvirtualnetwork": "false",
+                "vlan": "untagged",
+    },
     "ostype": "CentOS 5.6 (64-bit)",
     "sleep": 90,
     "timeout": 10,
