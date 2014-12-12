@@ -169,13 +169,13 @@ import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatImpl;
 import com.cloud.network.rules.StaticNatRule;
-import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
@@ -745,10 +745,14 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                         final List<? extends Nic> routerNics = _nicDao.listByVmId(router.getId());
                         for (final Nic routerNic : routerNics) {
                             final Network network = _networkModel.getNetwork(routerNic.getNetworkId());
-                            // Send network usage command for public nic in VPC
-                            // VR
-                            // Send network usage command for isolated guest nic
-                            // of non VPC VR
+                            // Send network usage command for public nic in VPC VR
+                            // Send network usage command for isolated guest nic of non) VPC VR
+
+                            //[TODO] Avoiding the NPE now, but I have to find out what is going on with the network. - Wilder Rodrigues
+                            if (network == null) {
+                                s_logger.error("Could not find a network with ID => " + routerNic.getNetworkId() + ". It might be a problem!");
+                                continue;
+                            }
                             if (forVpc && network.getTrafficType() == TrafficType.Public || !forVpc && network.getTrafficType() == TrafficType.Guest
                                     && network.getGuestType() == Network.GuestType.Isolated) {
                                 final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(), forVpc, routerNic.getIp4Address());
@@ -1917,12 +1921,12 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         }
     }
 
-    private void createDefaultEgressFirewallRule(List<FirewallRule> rules, long networkId) {
+    private void createDefaultEgressFirewallRule(final List<FirewallRule> rules, final long networkId) {
         String systemRule = null;
 
         Boolean defaultEgressPolicy = false;
-        NetworkVO network = _networkDao.findById(networkId);
-        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        final NetworkVO network = _networkDao.findById(networkId);
+        final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         defaultEgressPolicy = offering.getEgressDefaultPolicy();
 
 
@@ -1930,10 +1934,10 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         if (!defaultEgressPolicy) {
             systemRule = String.valueOf(FirewallRule.FirewallRuleType.System);
 
-            List<String> sourceCidr = new ArrayList<String>();
+            final List<String> sourceCidr = new ArrayList<String>();
 
             sourceCidr.add(NetUtils.ALL_CIDRS);
-            FirewallRule rule = new FirewallRuleVO(null, null, null, null, "all", networkId, network.getAccountId(), network.getDomainId(), Purpose.Firewall, sourceCidr,
+            final FirewallRule rule = new FirewallRuleVO(null, null, null, null, "all", networkId, network.getAccountId(), network.getDomainId(), Purpose.Firewall, sourceCidr,
                     null, null, null, FirewallRule.TrafficType.Egress, FirewallRule.FirewallRuleType.System);
 
             rules.add(rule);
@@ -2023,6 +2027,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 final String errorDetails = "Details: " + answer.getDetails() + " " + answer.toString();
                 // add alerts for the failed commands
                 _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), errorMessage, errorDetails);
+                s_logger.error(answer.getDetails());
                 s_logger.warn(errorMessage);
                 // Stop the router if any of the commands failed
                 return false;
@@ -2590,12 +2595,12 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             if (vo.getType() == VirtualMachine.Type.DomainRouter) {
                 // opaque -> <hostId, powerHostId>
                 if (opaque != null && opaque instanceof Pair<?, ?>) {
-                    Pair<?, ?> pair = (Pair<?, ?>)opaque;
-                    Object first = pair.first();
-                    Object second = pair.second();
+                    final Pair<?, ?> pair = (Pair<?, ?>)opaque;
+                    final Object first = pair.first();
+                    final Object second = pair.second();
                     // powerHostId cannot be null in case of out-of-band VM movement
                     if (second != null && second instanceof Long) {
-                        Long powerHostId = (Long)second;
+                        final Long powerHostId = (Long)second;
                         Long hostId = null;
                         if (first != null && first instanceof Long) {
                             hostId = (Long)first;
@@ -2603,7 +2608,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                         // The following scenarios are due to out-of-band VM movement
                         // 1. If VM is in stopped state in CS due to 'PowerMissing' report from old host (hostId is null) and then there is a 'PowerOn' report from new host
                         // 2. If VM is in running state in CS and there is a 'PowerOn' report from new host
-                        if (hostId == null || (hostId.longValue() != powerHostId.longValue())) {
+                        if (hostId == null || hostId.longValue() != powerHostId.longValue()) {
                             s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band, need to reboot to refresh network rules");
                             _executor.schedule(new RebootTask(vo.getId()), 1000, TimeUnit.MICROSECONDS);
                         }
