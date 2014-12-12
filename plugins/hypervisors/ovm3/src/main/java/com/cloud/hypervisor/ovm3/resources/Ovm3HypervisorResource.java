@@ -37,6 +37,8 @@ import com.cloud.hypervisor.ovm3.objects.Network;
 import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
 import com.cloud.hypervisor.ovm3.objects.OvmObject;
 import com.cloud.hypervisor.ovm3.objects.Xen;
+import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3HypervisorNetwork;
+import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3StoragePool;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3VmGuestTypes;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3VmSupport;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3HypervisorSupport;
@@ -55,6 +57,11 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     private static final Logger LOGGER = Logger
             .getLogger(Ovm3HypervisorResource.class);
     private Connection c;
+    private Ovm3StoragePool ovm3sp;
+    private Ovm3HypervisorSupport ovm3hs;
+    private Ovm3VmSupport ovm3vs;
+    private Ovm3HypervisorNetwork ovm3hn;
+    private Ovm3VirtualRoutingResource ovm3vrr;
     private String agentName;
     private String agentIp;
     private Long agentZoneId;
@@ -122,12 +129,18 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         try {
             StartupRoutingCommand srCmd = new StartupRoutingCommand();
             StartupStorageCommand ssCmd = new StartupStorageCommand();
-            Ovm3HypervisorSupport.fillHostInfo(srCmd);
+            ovm3hs = new Ovm3HypervisorSupport(c);
+            ovm3sp = new Ovm3StoragePool(c);
+            ovm3vs = new Ovm3VmSupport(c);
+            ovm3hn = new Ovm3HypervisorNetwork(c);
+            ovm3vrr = new Ovm3VirtualRoutingResource(c);
+
+            ovm3hs.fillHostInfo(srCmd);
             LOGGER.debug("Ovm3 pool " + ssCmd + " " + srCmd);
 
             synchronized (vmStateMap) {
                 vmStateMap.clear();
-                Ovm3HypervisorSupport.syncState(this.vmStateMap);
+                ovm3hs.syncState(this.vmStateMap);
             }
             // srCmd.setStateChanges(changes);
             return new StartupCommand[] { srCmd, ssCmd };
@@ -145,9 +158,9 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             String ping = "put";
             String pong = test.echo(ping);
             if (pong.contains(ping)) {
-                Ovm3HypervisorSupport.syncState(this.vmStateMap);
+                ovm3hs.syncState(this.vmStateMap);
                 return new PingRoutingCommand(getType(), id,
-                        hostVmStateReport());
+                        ovm3hs.hostVmStateReport());
             } else {
                 LOGGER.debug("Agent did not respond correctly: " + ping
                         + " but got " + pong);
@@ -290,7 +303,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     @Override
     public void setRunLevel(int level) {
         // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -299,20 +311,20 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         String agentName = name;
         LOGGER.debug("configure " + name + " with params: " + params);
         agentZoneId = Long.parseLong((String) params.get("zone"));
-        agentPodId = Long.parseLong(validateParam("PodId", (String) params.get("pod")));
+        agentPodId = Long.parseLong(ovm3hs.validateParam("PodId", (String) params.get("pod")));
         agentClusterId = Long.parseLong((String) params.get("cluster"));
         ovm3PoolVip = String.valueOf(params.get("ovm3vip"));
         agentInOvm3Pool = BooleanUtils.toBoolean((String) params
                 .get("ovm3pool"));
         agentInOvm3Cluster = BooleanUtils.toBoolean((String) params
                 .get("ovm3cluster"));
-        agentHostname = validateParam("Hostname", (String) params.get("host"));
+        agentHostname = ovm3hs.validateParam("Hostname", (String) params.get("host"));
         agentIp = (String) params.get("ip");
-        agentSshUserName = validateParam("Username", (String) params.get("username"));
-        agentSshPassword = validateParam("Password", (String) params.get("password"));
-        csGuid = validateParam("Cloudstack GUID", (String) params.get("guid"));
-        agentOvsAgentUser = validateParam("OVS Username", (String) params.get("agentusername"));
-        agentOvsAgentPassword = validateParam("OVS Password", (String) params.get("agentpassword"));
+        agentSshUserName = ovm3hs.validateParam("Username", (String) params.get("username"));
+        agentSshPassword = ovm3hs.validateParam("Password", (String) params.get("password"));
+        csGuid = ovm3hs.validateParam("Cloudstack GUID", (String) params.get("guid"));
+        agentOvsAgentUser = ovm3hs.validateParam("OVS Username", (String) params.get("agentusername"));
+        agentOvsAgentPassword = ovm3hs.validateParam("OVS Password", (String) params.get("agentpassword"));
         agentPrivateNetworkName = (String) params.get("private.network.device");
         agentPublicNetworkName = (String) params.get("public.network.device");
         agentGuestNetworkName = (String) params.get("guest.network.device");
@@ -324,13 +336,13 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
                     .get("agentport"));
         }
         /* TODO: the agentssl parameter */
-        Ovm3HypervisorSupport.validatePoolAndCluster();
+        ovm3hs.validatePoolAndCluster();
 
         /* check if we're master or not and if we can connect */
         try {
             c = new Connection(agentHostname, agentOvsAgentPort,
                     agentOvsAgentUser, agentOvsAgentPassword);
-            masterCheck();
+            ovm3hs.masterCheck();
         } catch (Exception e) {
             throw new CloudRuntimeException("Base checks failed for "
                     + agentHostname, e);
@@ -380,9 +392,9 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             LOGGER.error(msg, e);
             throw new ConfigurationException(msg + ", " + e.getMessage());
         }
-        prepareForPool();
+        ovm3sp.prepareForPool();
 
-        vrResource = new Ovm3VirtualRoutingResource(this);
+        vrResource = new VirtualRoutingResource(ovm3vrr);
         if (!vrResource.configure(name, params)) {
             throw new ConfigurationException(
                     "Unable to configure VirtualRoutingResource");
@@ -440,17 +452,17 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
              * simple way around it..
              */
             /* TODO: pool uuid now comes from here should change! */
-            createVbds(vm, vmSpec);
+            ovm3vs.createVbds(vm, vmSpec);
 
             if (vmSpec.getType() != VirtualMachine.Type.User) {
                 String svmPath = agentOvmRepoPath + "/"
                         + ovmObject.deDash(vm.getPrimaryPoolUuid()) + "/ISOs";
                 String svmIso = svmPath + "/"
-                        + getSystemVMPatchIsoFile().getName();
+                        + ovm3sp.getSystemVMPatchIsoFile().getName();
                 vm.addIso(svmIso);
             }
             /* TODO: OVS should go here! */
-            createVifs(vm, vmSpec);
+            ovm3vs.createVifs(vm, vmSpec);
             vm.setupVifs();
 
             /* vm migration requires a 0.0.0.0 bind */
@@ -552,7 +564,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
                 Thread.sleep(10 * 1000);
             }
             vms.deleteVm(repoId, vmId);
-            cleanup(vm);
+            ovm3vs.cleanup(vm);
 
             if (vms.getRunningVmConfig(vmName) != null) {
                 String msg = "Stop " + vmName + " failed ";

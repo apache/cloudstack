@@ -79,7 +79,7 @@ public class Ovm3HypervisorSupport {
      * @return param
      * @throws ConfigurationException
      */
-    public String validateParam(String name, String param) throws ConfigurationException {
+    public static String validateParam(String name, String param) throws ConfigurationException {
         if (param == null) {
             String msg = "Unable to get " + name + " param is:" + param;
             LOGGER.debug(msg);
@@ -532,20 +532,20 @@ public class Ovm3HypervisorSupport {
         try {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
             if (cSp.dom0HasIp(ovm3PoolVip)) {
-                LOGGER.debug("Host " + agentHostname
+                LOGGER.debug("Host " + c.getHostname()
                         + " is a master, already has vip " + ovm3PoolVip);
                 agentIsMaster = true;
             } else if (cSp.ping(ovm3PoolVip)) {
-                LOGGER.debug("Host " + agentHostname
+                LOGGER.debug("Host " + c.getHostname()
                         + " has a master, someone has vip " + ovm3PoolVip);
                 agentHasMaster = true;
             } else {
-                LOGGER.debug("Host " + agentHostname
+                LOGGER.debug("Host " + c.getHostname()
                         + " becomes a master, no one has vip " + ovm3PoolVip);
                 agentIsMaster = true;
             }
         } catch (Ovm3ResourceException e) {
-            LOGGER.debug("Host " + agentHostname + " can't reach master: "
+            LOGGER.debug("Host " + c.getHostname() + " can't reach master: "
                     + e.getMessage());
             agentHasMaster = false;
         }
@@ -559,20 +559,20 @@ public class Ovm3HypervisorSupport {
 
             /* only interesting when doing cluster */
             if (!host.getIsMaster() && agentInOvm3Cluster) {
-                if (pool.getPoolMasterVip().equalsIgnoreCase(agentIp)) {
+                if (pool.getPoolMasterVip().equalsIgnoreCase(c.getIp())) {
                     /* check pool state here */
                     return new ReadyAnswer(cmd);
                 } else {
                     LOGGER.debug("Master IP changes to "
                             + pool.getPoolMasterVip() + ", it should be "
-                            + agentIp);
+                            + c.getIp());
                     return new ReadyAnswer(cmd, "I am not the master server");
                 }
             } else if (host.getIsMaster()) {
-                LOGGER.debug("Master, not clustered " + agentHostname);
+                LOGGER.debug("Master, not clustered " + c.getHostname());
                 return new ReadyAnswer(cmd);
             } else {
-                LOGGER.debug("No master, not clustered " + agentHostname);
+                LOGGER.debug("No master, not clustered " + c.getHostname());
                 return new ReadyAnswer(cmd);
             }
         } catch (CloudRuntimeException | Ovm3ResourceException e) {

@@ -293,7 +293,7 @@ public class Ovm3VmSupport {
         /* peel out vif info for vlan stuff */
     }
 
-    private void cleanup(Xen.Vm vm) {
+    public void cleanup(Xen.Vm vm) {
         try {
             cleanupNetwork(vm.getVmVifs());
         } catch (XmlRpcException e) {
@@ -307,7 +307,7 @@ public class Ovm3VmSupport {
     /*
      * Add rootdisk, datadisk and iso's
      */
-    private Boolean createVbds(Xen.Vm vm, VirtualMachineTO spec) {
+    public Boolean createVbds(Xen.Vm vm, VirtualMachineTO spec) {
         for (DiskTO volume : spec.getDisks()) {
             try {
                 if (volume.getType() == Volume.Type.ROOT) {
