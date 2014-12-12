@@ -116,6 +116,7 @@ This is a bug fix release. The following issues were fixed:
     CLOUDSTACK-7572: Fix regression from 156bd9b
     CLOUDSTACK-7974: remove old hostname entry for a VM when adding a VM
     CLOUDSTACK-8014: Fix NPE searching including removed templates
+    CLOUDSTACK-8070: during 4.3.1 to 4.3.2 upgrade encrypt config that are hidden
 
 Version 4.3.1
 -------------
