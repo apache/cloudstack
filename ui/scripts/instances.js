@@ -2143,6 +2143,9 @@
                             ipaddress: {
                                 label: 'label.ip.address'
                             },
+                            secondaryips: {
+                                label: 'label.secondary.ips'
+                            },
                             gateway: {
                                 label: 'label.gateway'
                             },
@@ -2169,8 +2172,8 @@
                         }],
                         viewAll: {
                             path: 'network.secondaryNicIps',
-                            attachTo: 'ipaddress',
-                            label: 'label.view.secondary.ips',
+                            attachTo: 'secondaryips',
+                            label: 'label.edit.secondary.ips',
                             title: function(args) {
                                 var title = _l('label.menu.ipaddresses') + ' - ' + args.context.nics[0].name;
 
@@ -2193,6 +2196,19 @@
                                             }
                                         },
                                         data: $.map(json.listvirtualmachinesresponse.virtualmachine[0].nic, function(nic, index) {
+                                            if (nic.secondaryip != null) {
+                                                var secondaryips = "";
+                                                for (var i = 0; i < nic.secondaryip.length; i++) {
+                                                    if (i == 0)
+                                                        secondaryips = nic.secondaryip[i].ipaddress;
+                                                    else
+                                                        secondaryips = secondaryips + " , " + nic.secondaryip[i].ipaddress;
+                                                }
+                                                $.extend(nic, {
+                                                    secondaryips: secondaryips
+                                                })
+                                            }
+                                                
                                             var name = 'NIC ' + (index + 1);
                                             if (nic.isdefault) {
                                                 name += ' (' + _l('label.default') + ')';

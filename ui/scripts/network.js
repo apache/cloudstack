@@ -1864,6 +1864,7 @@
                                     ipaddress: {
                                         label: 'label.ip.address',
                                         validation: {
+                                            required: false,
                                             ipv4: true
                                         }
                                     }
