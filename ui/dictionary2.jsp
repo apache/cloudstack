@@ -671,7 +671,6 @@ $.extend(dictionary, {
 'state.Expunging': '<fmt:message key="state.Expunging" />',
 'state.Migrating': '<fmt:message key="state.Migrating" />',
 'state.Pending': '<fmt:message key="state.Pending" />',
-'state.ready': '<fmt:message key="state.ready" />',
 'state.Ready': '<fmt:message key="state.Ready" />',
 'state.Running': '<fmt:message key="state.Running" />',
 'state.Starting': '<fmt:message key="state.Starting" />',

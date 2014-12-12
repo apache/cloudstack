@@ -1068,7 +1068,7 @@
                                             label: 'label.status'
                                         },
                                         isready: {
-                                            label: 'state.ready',
+                                            label: 'state.Ready',
                                             converter: cloudStack.converters.toBooleanText
                                         }
                                     },
@@ -1283,7 +1283,7 @@
                                                     label: 'label.zone.id'
                                                 },
                                             	isready: {
-                                                    label: 'state.ready',
+                                                    label: 'state.Ready',
                                                     converter: cloudStack.converters.toBooleanText
                                                 },
                                                 status: {
@@ -2067,7 +2067,7 @@
                                             label: 'label.status'
                                         },
                                         isready: {
-                                            label: 'state.ready',
+                                            label: 'state.Ready',
                                             converter: cloudStack.converters.toBooleanText
                                         }
                                     },
