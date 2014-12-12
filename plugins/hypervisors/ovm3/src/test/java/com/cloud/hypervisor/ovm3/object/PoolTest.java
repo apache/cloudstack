@@ -5,6 +5,9 @@ import java.util.List;
 
 import org.junit.Test;
 
+import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
+import com.cloud.hypervisor.ovm3.objects.Pool;
+
 public class PoolTest {
     ConnectionTest con = new ConnectionTest();
     Pool pool = new Pool(con);

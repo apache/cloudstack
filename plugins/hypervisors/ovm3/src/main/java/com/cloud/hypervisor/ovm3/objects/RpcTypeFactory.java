@@ -18,7 +18,7 @@
  * i8 - aka long
  */
 
-package com.cloud.hypervisor.ovm3.object;
+package com.cloud.hypervisor.ovm3.objects;
 
 import org.apache.ws.commons.util.NamespaceContextImpl;
 import org.apache.xmlrpc.common.TypeFactoryImpl;

@@ -1,7 +1,7 @@
 /**
  *
  */
-package com.cloud.hypervisor.ovm3.object;
+package com.cloud.hypervisor.ovm3.objects;
 
 public class Ovm3ResourceException extends Exception {
     private static final long serialVersionUID = 1L;

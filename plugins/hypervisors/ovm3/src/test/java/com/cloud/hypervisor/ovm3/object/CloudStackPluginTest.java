@@ -9,7 +9,9 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.cloud.hypervisor.ovm3.object.CloudStackPlugin.ReturnCode;
+import com.cloud.hypervisor.ovm3.objects.CloudStackPlugin;
+import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
+import com.cloud.hypervisor.ovm3.objects.CloudStackPlugin.ReturnCode;
 
 public class CloudStackPluginTest {
     private static final String VMNAME = "test";

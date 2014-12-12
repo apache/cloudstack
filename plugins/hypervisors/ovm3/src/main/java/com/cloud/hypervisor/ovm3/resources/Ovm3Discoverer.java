@@ -14,7 +14,7 @@
 // KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.hypervisor.ovm3.hypervisor;
+package com.cloud.hypervisor.ovm3.resources;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -50,9 +50,9 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.ovm3.object.Connection;
-import com.cloud.hypervisor.ovm3.object.Linux;
-import com.cloud.hypervisor.ovm3.object.Ovm3ResourceException;
+import com.cloud.hypervisor.ovm3.objects.Connection;
+import com.cloud.hypervisor.ovm3.objects.Linux;
+import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceManager;
@@ -232,7 +232,7 @@ Listener, ResourceStateAdapter {
             }
 
             Map<String, String> details = new HashMap<String, String>();
-            Ovm3ResourceBase ovmResource = new Ovm3ResourceBase();
+            Ovm3HypervisorResource ovmResource = new Ovm3HypervisorResource();
             details.put("ip", hostIp);
             details.put("host", hostname);
             details.put("username", username);
@@ -279,7 +279,7 @@ Listener, ResourceStateAdapter {
             details.put(HostInfo.HYPERVISOR_VERSION,
                     host.getHypervisorVersion());
 
-            Map<Ovm3ResourceBase, Map<String, String>> resources = new HashMap<Ovm3ResourceBase, Map<String, String>>();
+            Map<Ovm3HypervisorResource, Map<String, String>> resources = new HashMap<Ovm3HypervisorResource, Map<String, String>>();
             resources.put(ovmResource, details);
             return resources;
         } catch (UnknownHostException e) {

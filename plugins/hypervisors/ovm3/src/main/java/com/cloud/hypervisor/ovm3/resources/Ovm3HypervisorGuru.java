@@ -16,7 +16,7 @@
 // under the License.
 
 /* shameless rip from original ovm guru */
-package com.cloud.hypervisor.ovm3.hypervisor;
+package com.cloud.hypervisor.ovm3.resources;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -30,11 +30,11 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = HypervisorGuru.class)
-public class Ovm3Guru extends HypervisorGuruBase implements HypervisorGuru {
+public class Ovm3HypervisorGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject
     GuestOSDao guestOsDao;
 
-    protected Ovm3Guru() {
+    protected Ovm3HypervisorGuru() {
         super();
     }
 

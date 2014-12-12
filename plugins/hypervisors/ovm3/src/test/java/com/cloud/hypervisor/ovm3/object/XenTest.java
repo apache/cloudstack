@@ -4,6 +4,9 @@ import java.util.UUID;
 
 import org.junit.Test;
 
+import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
+import com.cloud.hypervisor.ovm3.objects.Xen;
+
 public class XenTest {
     ConnectionTest con = new ConnectionTest();
     Xen xEn = new Xen(con);

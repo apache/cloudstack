@@ -13,7 +13,7 @@
  ******************************************************************************/
 /* contains VM related stuff too */
 
-package com.cloud.hypervisor.ovm3.object;
+package com.cloud.hypervisor.ovm3.objects;
 
 import java.io.File;
 import java.util.ArrayList;

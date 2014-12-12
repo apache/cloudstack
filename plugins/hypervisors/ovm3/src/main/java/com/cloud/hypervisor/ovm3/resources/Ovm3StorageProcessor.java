@@ -1,0 +1,503 @@
+package com.cloud.hypervisor.ovm3.resources;
+
+import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.UUID;
+
+import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.CreateObjectAnswer;
+import org.apache.cloudstack.storage.command.CreateObjectCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.ForgetObjectCmd;
+import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
+// import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
+
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
+import com.cloud.agent.api.storage.CopyVolumeAnswer;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.CreateAnswer;
+import com.cloud.agent.api.storage.CreateCommand;
+import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
+import com.cloud.agent.api.storage.DestroyCommand;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.hypervisor.ovm3.objects.Connection;
+import com.cloud.hypervisor.ovm3.objects.Linux;
+import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
+import com.cloud.hypervisor.ovm3.objects.OvmObject;
+import com.cloud.hypervisor.ovm3.objects.StoragePlugin;
+import com.cloud.hypervisor.ovm3.objects.Xen;
+import com.cloud.hypervisor.ovm3.objects.StoragePlugin.FileProperties;
+import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3StoragePool;
+import com.cloud.storage.Volume;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.resource.StorageProcessor;
+import com.cloud.vm.DiskProfile;
+
+/* This should only contain stuff that @Override(s) */
+public class Ovm3StorageProcessor implements StorageProcessor {
+    private static final Logger LOGGER = Logger
+            .getLogger(Ovm3StorageProcessor.class);
+    private Connection c;
+    private String agentOvmRepoPath = "/OVS/Repositories";
+    private String agentSecStoragePath = "/nfsmnt";
+    private OvmObject ovmObject = new OvmObject();
+    private Ovm3StoragePool ovm3ResourceBase;
+    public Ovm3StorageProcessor(Connection conn) {
+        c = conn;
+        Ovm3StoragePool ovm3pool = new Ovm3StoragePool(c);
+    }
+    /*
+     * TODO: Split out in Sec to prim and prim to prim and types ? Storage mount
+     * also goes in here for secstorage
+     */
+    private final Answer execute(final CopyCommand cmd) {
+        DataTO srcData = cmd.getSrcTO();
+        DataStoreTO srcStore = srcData.getDataStore();
+        DataTO destData = cmd.getDestTO();
+        DataStoreTO destStore = destData.getDataStore();
+
+        try {
+            /* target and source are NFS and TEMPLATE */
+            if ((srcStore instanceof NfsTO)
+                    && (srcData.getObjectType() == DataObjectType.TEMPLATE)
+                    && (destData.getObjectType() == DataObjectType.TEMPLATE)) {
+                NfsTO srcImageStore = (NfsTO) srcStore;
+                TemplateObjectTO srcTemplate = (TemplateObjectTO) srcData;
+                String storeUrl = srcImageStore.getUrl();
+
+                String secPoolUuid = ovm3ResourceBase.setupSecondaryStorage(storeUrl);
+                String primaryPoolUuid = destData.getDataStore().getUuid();
+                String destPath = agentOvmRepoPath + "/"
+                        + ovmObject.deDash(primaryPoolUuid) + "/" + "Templates";
+                String sourcePath = agentSecStoragePath + "/" + secPoolUuid;
+
+                Linux host = new Linux(c);
+                String destUuid = srcTemplate.getUuid();
+                /*
+                 * TODO: add dynamic formats (tolower), it also supports VHD and
+                 * QCOW2, although Ovm3.2 does not have tapdisk2 anymore so we
+                 * can forget about that.
+                 */
+                /* TODO: add checksumming */
+                String srcFile = sourcePath + "/" + srcData.getPath();
+                if (srcData.getPath().endsWith("/")) {
+                    srcFile = sourcePath + "/" + srcData.getPath() + "/"
+                            + destUuid + ".raw";
+                }
+                String destFile = destPath + "/" + destUuid + ".raw";
+                LOGGER.debug("CopyFrom: " + srcData.getObjectType() + ","
+                        + srcFile + " to " + destData.getObjectType() + ","
+                        + destFile);
+                host.copyFile(srcFile, destFile);
+
+                TemplateObjectTO newVol = new TemplateObjectTO();
+                newVol.setUuid(destUuid);
+                newVol.setPath(destPath);
+                newVol.setFormat(ImageFormat.RAW);
+                return new CopyCmdAnswer(newVol);
+                /* we assume the cache for templates is local */
+            } else if ((srcData.getObjectType() == DataObjectType.TEMPLATE)
+                    && (destData.getObjectType() == DataObjectType.VOLUME)) {
+                if (srcStore.getUrl().equals(destStore.getUrl())) {
+                    TemplateObjectTO srcTemplate = (TemplateObjectTO) srcData;
+                    VolumeObjectTO dstVolume = (VolumeObjectTO) destData;
+
+                    String srcFile = srcTemplate.getPath() + "/"
+                            + srcTemplate.getUuid() + ".raw";
+                    String vDisksPath = srcTemplate.getPath().replace(
+                            "Templates", "VirtualDisks");
+                    String destFile = vDisksPath + "/" + dstVolume.getUuid()
+                            + ".raw";
+
+                    Linux host = new Linux(c);
+                    LOGGER.debug("CopyFrom: " + srcData.getObjectType() + ","
+                            + srcFile + " to " + destData.getObjectType() + ","
+                            + destFile);
+                    host.copyFile(srcFile, destFile);
+                    VolumeObjectTO newVol = new VolumeObjectTO();
+                    newVol.setUuid(dstVolume.getUuid());
+                    newVol.setPath(vDisksPath);
+                    newVol.setFormat(ImageFormat.RAW);
+                    return new CopyCmdAnswer(newVol);
+                } else {
+                    LOGGER.debug("Primary to Primary doesn't match");
+                }
+            } else {
+                String msg = "Unable to do stuff for " + srcStore.getClass()
+                        + ":" + srcData.getObjectType() + " to "
+                        + destStore.getClass() + ":" + destData.getObjectType();
+                LOGGER.debug(msg);
+            }
+        } catch (Exception e) {
+            String msg = "Catch Exception " + e.getClass().getName()
+                    + " for template due to " + e.toString();
+            LOGGER.warn(msg, e);
+            return new CopyCmdAnswer(msg);
+        }
+        return new CopyCmdAnswer("not implemented yet");
+    }
+
+    private Answer execute(DeleteCommand cmd) {
+        DataTO data = cmd.getData();
+        LOGGER.debug("Deleting object: " + data.getObjectType());
+        if (data.getObjectType() == DataObjectType.VOLUME) {
+            return deleteVolume(cmd);
+        } else if (data.getObjectType() == DataObjectType.SNAPSHOT) {
+            LOGGER.info("Snapshot deletion is not implemented yet.");
+        } else if (data.getObjectType() == DataObjectType.TEMPLATE) {
+            LOGGER.info("Template deletion is not implemented yet.");
+        } else {
+            LOGGER.info(data.getObjectType()
+                    + " deletion is not implemented yet.");
+        }
+        return new Answer(cmd);
+    }
+    /* TODO: Create a Disk from a template needs cleaning */
+    private CreateAnswer execute(CreateCommand cmd) {
+        StorageFilerTO primaryStorage = cmd.getPool();
+        DiskProfile disk = cmd.getDiskCharacteristics();
+
+        /* disk should have a uuid */
+        String fileName = UUID.randomUUID().toString() + ".img";
+        String dst = primaryStorage.getPath() + "/" + primaryStorage.getUuid()
+                + "/" + fileName;
+
+        try {
+            StoragePlugin store = new StoragePlugin(c);
+            if (cmd.getTemplateUrl() != null) {
+                LOGGER.debug("CreateCommand " + cmd.getTemplateUrl() + " "
+                        + dst);
+                Linux host = new Linux(c);
+                host.copyFile(cmd.getTemplateUrl(), dst);
+            } else {
+                /* this is a dup with the createVolume ? */
+                LOGGER.debug("CreateCommand " + dst);
+                store.storagePluginCreate(primaryStorage.getUuid(),
+                        primaryStorage.getHost(), dst, disk.getSize());
+            }
+
+            FileProperties fp = store.storagePluginGetFileInfo(
+                    primaryStorage.getUuid(), primaryStorage.getHost(), dst);
+            VolumeTO volume = new VolumeTO(cmd.getVolumeId(), disk.getType(),
+                    primaryStorage.getType(), primaryStorage.getUuid(),
+                    primaryStorage.getPath(), fileName, fp.getName(),
+                    fp.getSize(), null);
+            return new CreateAnswer(cmd, volume);
+        } catch (Exception e) {
+            LOGGER.debug("CreateCommand failed", e);
+            return new CreateAnswer(cmd, e.getMessage());
+        }
+    }
+
+    /* TODO: move to the StoragPprocessor */
+    @Override
+    public Answer copyTemplateToPrimaryStorage(CopyCommand cmd) {
+        return new Answer(cmd);
+    }
+
+    @Override
+    public Answer copyVolumeFromPrimaryToSecondary(CopyCommand cmd) {
+        return new Answer(cmd);
+    }
+
+    @Override
+    public Answer cloneVolumeFromBaseTemplate(CopyCommand cmd) {
+        return new Answer(cmd);
+    }
+
+    @Override
+    public Answer createTemplateFromVolume(CopyCommand cmd) {
+        return new Answer(cmd);
+    }
+
+    @Override
+    public Answer copyVolumeFromImageCacheToPrimary(CopyCommand cmd) {
+        return new Answer(cmd);
+    }
+
+    @Override
+    public Answer createTemplateFromSnapshot(CopyCommand cmd) {
+        /*
+         * To change body of implemented methods use File | Settings | File
+         * Templates.
+         */
+        return null;
+    }
+
+    @Override
+    public Answer backupSnapshot(CopyCommand cmd) {
+        return new Answer(cmd);
+    }
+
+    private Answer execute(CreateObjectCommand cmd) {
+        DataTO data = cmd.getData();
+        if (data.getObjectType() == DataObjectType.VOLUME) {
+            return createVolume(cmd);
+        } else if (data.getObjectType() == DataObjectType.SNAPSHOT) {
+            /*
+             * if stopped yes, if running ... no, unless we have ocfs2 when
+             * using raw partitions (file:) if using tap:aio we cloud...
+             */
+            LOGGER.debug("Snapshot object creation not supported.");
+        } else if (data.getObjectType() == DataObjectType.TEMPLATE) {
+            LOGGER.debug("Template object creation not supported.");
+        }
+        return new CreateObjectAnswer(data.getObjectType()
+                + " object creation not supported");
+    }
+
+    @Override
+    public Answer attachIso(AttachCommand cmd) {
+        String vmName = cmd.getVmName();
+        DiskTO disk = cmd.getDisk();
+        Boolean success = false;
+        String answer = "";
+        if (cmd.getDisk().getType() == Volume.Type.ISO) {
+            answer = isoAttachDetach(vmName, disk, true);
+        }
+        if (answer == null) {
+            success = true;
+        }
+        return new Answer(cmd, success, answer);
+    }
+
+    @Override
+    public Answer dettachIso(DettachCommand cmd) {
+        String vmName = cmd.getVmName();
+        DiskTO disk = cmd.getDisk();
+        Boolean success = false;
+        String answer = "";
+        if (cmd.getDisk().getType() == Volume.Type.ISO) {
+            answer = isoAttachDetach(vmName, disk, false);
+        }
+        if (answer == null) {
+            success = true;
+        }
+        return new Answer(cmd, success, answer);
+    }
+
+    private String isoAttachDetach(String vmName, DiskTO disk, boolean isAttach) {
+        Xen xen = new Xen(c);
+        String doThis = (isAttach) ? "AttachIso" : "DettachIso";
+        String msg = null;
+        try {
+            Xen.Vm vm = xen.getVmConfig(vmName);
+            /* check running */
+            if (vm == null) {
+                msg = doThis + " can't find VM " + vmName;
+                return msg;
+            }
+            TemplateObjectTO isoTO = (TemplateObjectTO) disk.getData();
+            DataStoreTO store = isoTO.getDataStore();
+            if (!(store instanceof NfsTO)) {
+                msg = doThis + " only NFS is supported at the moment.";
+                return msg;
+            }
+            NfsTO nfsStore = (NfsTO) store;
+            String secPoolUuid = ovm3ResourceBase.setupSecondaryStorage(nfsStore.getUrl());
+            String isoPath = agentSecStoragePath + File.separator + secPoolUuid
+                    + File.separator + isoTO.getPath();
+            if (isAttach) {
+                /* check if iso is not already there ? */
+                vm.addIso(isoPath);
+            } else {
+                if (!vm.removeDisk(isoPath)) {
+                    msg = doThis + " failed for " + vmName
+                            + " iso was not attached " + isoPath;
+                    return msg;
+                }
+            }
+            xen.configureVm(ovmObject.deDash(vm.getPrimaryPoolUuid()),
+                    vm.getVmUuid());
+            return msg;
+        } catch (Ovm3ResourceException e) {
+            msg = doThis + " failed for " + vmName + " " + e.getMessage();
+            LOGGER.info(msg, e);
+            return msg;
+        }
+    }
+
+    @Override
+    public Answer attachVolume(AttachCommand cmd) {
+        return new Answer(cmd, false, "not implemented yet");
+    }
+
+    @Override
+    public Answer dettachVolume(DettachCommand cmd) {
+        return new Answer(cmd, false, "not implemented yet");
+    }
+
+    @Override
+    public Answer createVolume(CreateObjectCommand cmd) {
+        DataTO data = cmd.getData();
+        VolumeObjectTO volume = (VolumeObjectTO) data;
+        try {
+            /*
+             * public Boolean storagePluginCreate(String uuid, String ssuuid,
+             * String host, String file, Integer size)
+             */
+            String poolUuid = data.getDataStore().getUuid();
+            String storeUrl = data.getDataStore().getUrl();
+            URI uri = new URI(storeUrl);
+            String host = uri.getHost();
+            String file = agentOvmRepoPath + "/" + ovmObject.deDash(poolUuid)
+                    + "/VirtualDisks/" + volume.getUuid() + ".raw";
+            Long size = volume.getSize();
+            StoragePlugin sp = new StoragePlugin(c);
+            FileProperties fp = sp.storagePluginCreate(poolUuid, host, file,
+                    size);
+            // sp.storagePluginGetFileInfo(file);
+            VolumeObjectTO newVol = new VolumeObjectTO();
+            newVol.setName(volume.getName());
+            newVol.setSize(fp.getSize());
+            newVol.setPath(file);
+            return new CreateObjectAnswer(newVol);
+        } catch (Ovm3ResourceException | URISyntaxException e) {
+            LOGGER.info("Volume creation failed: " + e.toString(), e);
+            return new CreateObjectAnswer(e.toString());
+        }
+    }
+
+    @Override
+    public Answer createSnapshot(CreateObjectCommand cmd) {
+        return new Answer(cmd, false, "not implemented yet");
+    }
+
+    @Override
+    public Answer deleteVolume(DeleteCommand cmd) {
+        /* storagePluginDestroy(String ssuuid, String file) */
+        DataTO data = cmd.getData();
+        VolumeObjectTO volume = (VolumeObjectTO) data;
+        try {
+            String poolUuid = data.getDataStore().getUuid();
+            /* needs the file attached too please... */
+            String path = volume.getPath();
+            if (!path.contains(volume.getUuid())) {
+                path = volume.getPath() + "/" + volume.getUuid() + ".raw";
+            }
+            StoragePlugin sp = new StoragePlugin(c);
+            sp.storagePluginDestroy(poolUuid, path);
+            LOGGER.debug("Volume deletion success: " + path);
+        } catch (Ovm3ResourceException e) {
+            LOGGER.info("Volume deletion failed: " + e.toString(), e);
+            return new CreateObjectAnswer(e.toString());
+        }
+        return new Answer(cmd);
+    }
+
+    /*
+     * Might have some logic errors that's what debugging is for...
+     */
+    private CopyVolumeAnswer execute(CopyVolumeCommand cmd) {
+        String volumePath = cmd.getVolumePath();
+        /* is a repository */
+        String secondaryStorageURL = cmd.getSecondaryStorageURL();
+        int wait = cmd.getWait();
+        if (wait == 0) {
+            wait = 7200;
+        }
+
+        /* TODO: we need to figure out what sec and prim really is */
+        try {
+            Linux host = new Linux(c);
+
+            /* to secondary storage */
+            if (cmd.toSecondaryStorage()) {
+                LOGGER.debug("Copy to  secondary storage " + volumePath
+                        + " to " + secondaryStorageURL);
+                host.copyFile(volumePath, secondaryStorageURL);
+                /* from secondary storage */
+            } else {
+                LOGGER.debug("Copy from secondary storage "
+                        + secondaryStorageURL + " to " + volumePath);
+                host.copyFile(secondaryStorageURL, volumePath);
+            }
+            /* check the truth of this */
+            return new CopyVolumeAnswer(cmd, true, null, null, null);
+        } catch (Ovm3ResourceException e) {
+            LOGGER.debug("Copy volume failed", e);
+            return new CopyVolumeAnswer(cmd, false, e.getMessage(), null, null);
+        }
+    }
+    /* Destroy a volume (image) */
+    private Answer execute(DestroyCommand cmd) {
+        VolumeTO vol = cmd.getVolume();
+        String vmName = cmd.getVmName();
+        try {
+            StoragePlugin store = new StoragePlugin(c);
+            store.storagePluginDestroy(vol.getPoolUuid(), vol.getPath());
+            return new Answer(cmd, true, "Success");
+        } catch (Ovm3ResourceException e) {
+            LOGGER.debug("Destroy volume " + vol.getName() + " failed for "
+                    + vmName + " ", e);
+            return new Answer(cmd, false, e.getMessage());
+        }
+    }
+    /* check if a VM is running should be added */
+    private CreatePrivateTemplateAnswer execute(
+            final CreatePrivateTemplateFromVolumeCommand cmd) {
+        String volumePath = cmd.getVolumePath();
+        Long accountId = cmd.getAccountId();
+        Long templateId = cmd.getTemplateId();
+        int wait = cmd.getWait();
+        if (wait == 0) {
+            /* Defaut timeout 2 hours */
+            wait = 7200;
+        }
+
+        try {
+            /* missing uuid */
+            String installPath = agentOvmRepoPath + "/Templates/" + accountId
+                    + "/" + templateId;
+            Linux host = new Linux(c);
+            /* check if VM is running or thrown an error, or pause it :P */
+            host.copyFile(volumePath, installPath);
+            /* TODO: look at the original */
+            return new CreatePrivateTemplateAnswer(cmd, true, installPath);
+        } catch (Exception e) {
+            LOGGER.debug("Create template failed", e);
+            return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage());
+        }
+    }
+
+    @Override
+    public Answer createVolumeFromSnapshot(CopyCommand cmd) {
+        return new Answer(cmd, false, "not implemented yet");
+    }
+
+    @Override
+    public Answer deleteSnapshot(DeleteCommand cmd) {
+        return new Answer(cmd, false, "not implemented yet");
+    }
+
+    @Override
+    public Answer introduceObject(IntroduceObjectCmd cmd) {
+        return new Answer(cmd, false, "not implemented yet");
+    }
+
+    @Override
+    public Answer forgetObject(ForgetObjectCmd cmd) {
+        return new Answer(cmd, false, "not implemented yet");
+    }
+
+    @Override
+    public Answer snapshotAndCopy(SnapshotAndCopyCommand cmd) {
+        return new Answer(cmd, false, "not implemented yet");
+    }
+
+}

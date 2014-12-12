@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package com.cloud.hypervisor.ovm3.object;
+package com.cloud.hypervisor.ovm3.objects;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -32,6 +32,10 @@ public class Connection extends XmlRpcClient {
     private String hostUser = null;
     private String hostPass = null;
     private String hostIp;
+    private String sshUser = "";
+    private String sshPassword = "";
+    private String hostname = "";
+    private String sshKey = "";
     private Integer hostPort = 8898;
     private Boolean hostUseSsl = false;
     private String cert = "";
@@ -170,5 +174,37 @@ public class Connection extends XmlRpcClient {
 
     public String getKey() {
         return key;
+    }
+
+    public String getSshKey() {
+        return sshKey;
+    }
+
+    public void setSshKey(String sshKey) {
+        this.sshKey = sshKey;
+    }
+
+    public String getSshPassword() {
+        return sshPassword;
+    }
+
+    public void setSshPassword(String sshPassword) {
+        this.sshPassword = sshPassword;
+    }
+
+    public String getSshUser() {
+        return sshUser;
+    }
+
+    public void setSshUser(String sshUser) {
+        this.sshUser = sshUser;
+    }
+
+    public String getHostname() {
+        return hostname;
+    }
+
+    public void setHostname(String hostname) {
+        this.hostname = hostname;
     }
 }

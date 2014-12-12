@@ -6,6 +6,9 @@ import java.util.List;
 
 import org.junit.Test;
 
+import com.cloud.hypervisor.ovm3.objects.Ntp;
+import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
+
 public class NtpTest {
     ConnectionTest con = new ConnectionTest();
     Ntp nTp = new Ntp(con);

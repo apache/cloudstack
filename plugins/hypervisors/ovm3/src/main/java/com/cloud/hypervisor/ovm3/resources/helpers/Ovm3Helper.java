@@ -14,7 +14,7 @@
 // KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.hypervisor.ovm3.hypervisor;
+package com.cloud.hypervisor.ovm3.resources.helpers;
 
 import java.util.HashMap;
 import java.util.Map;

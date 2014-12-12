@@ -14,7 +14,7 @@
 // KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.hypervisor.ovm3.hypervisor;
+package com.cloud.hypervisor.ovm3.resources;
 
 import java.util.List;
 import java.util.Map;
@@ -40,9 +40,9 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
 @Local(value = FenceBuilder.class)
-public class Ovm3Fencer extends AdapterBase implements FenceBuilder {
+public class Ovm3FenceBuilder extends AdapterBase implements FenceBuilder {
     Map<String, Object> fenceParams;
-    private static final Logger LOGGER = Logger.getLogger(Ovm3Fencer.class);
+    private static final Logger LOGGER = Logger.getLogger(Ovm3FenceBuilder.class);
     @Inject
     AgentManager agentMgr;
     @Inject
@@ -68,7 +68,7 @@ public class Ovm3Fencer extends AdapterBase implements FenceBuilder {
         return true;
     }
 
-    public Ovm3Fencer() {
+    public Ovm3FenceBuilder() {
         super();
     }
 
