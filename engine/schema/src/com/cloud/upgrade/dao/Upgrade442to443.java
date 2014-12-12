@@ -69,7 +69,7 @@ public class Upgrade442to443 implements DbUpgrade {
         PreparedStatement updatePstmt = null;
         try {
             String encryptedValue = DBEncryptionUtil.encrypt("256");
-            updatePstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value=? WHERE name='router.ram.size' AND category='Hidden');
+            updatePstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value=? WHERE name='router.ram.size' AND category='Hidden'");
             updatePstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
             updatePstmt.executeUpdate();
         } catch (SQLException e) {
