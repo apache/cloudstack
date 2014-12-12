@@ -18,11 +18,13 @@
 package com.cloud.upgrade.dao;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -66,10 +68,14 @@ public class Upgrade442to443 implements DbUpgrade {
     private void updateMaxRouterSizeConfig(Connection conn) {
         PreparedStatement updatePstmt = null;
         try {
-            updatePstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value='256' WHERE name='router.ram.size'");
+            String encryptedValue = DBEncryptionUtil.encrypt("256");
+            updatePstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value=? WHERE name='router.ram.size' AND category='Hidden');
+            updatePstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
             updatePstmt.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to upgrade max ram size of router in config.", e);
+        } catch (UnsupportedEncodingException e) {
+            throw new CloudRuntimeException("Unable encrypt configuration values ", e);
         } finally {
             try {
                 if (updatePstmt != null) {
