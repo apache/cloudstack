@@ -58,6 +58,7 @@ import org.apache.cloudstack.api.response.ControlledEntityResponse;
 import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
 import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.CreateCmdResponse;
+import org.apache.cloudstack.api.response.CreateSSHKeyPairResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -105,6 +106,7 @@ import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
 import org.apache.cloudstack.api.response.ResourceCountResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.SSHKeyPairResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
@@ -291,6 +293,7 @@ import com.cloud.storage.snapshot.SnapshotSchedule;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.SSHKeyPair;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
@@ -3654,4 +3657,17 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
+    @Override
+    public SSHKeyPairResponse createSSHKeyPairResponse(SSHKeyPair sshkeyPair, boolean privatekey) {
+        SSHKeyPairResponse response = new SSHKeyPairResponse(sshkeyPair.getName(), sshkeyPair.getFingerprint());
+        if (privatekey) {
+            response = new CreateSSHKeyPairResponse(sshkeyPair.getName(), sshkeyPair.getFingerprint(), sshkeyPair.getPrivateKey());
+        }
+        Account account = ApiDBUtils.findAccountById(sshkeyPair.getAccountId());
+        response.setAccountName(account.getAccountName());
+        Domain domain = ApiDBUtils.findDomainById(sshkeyPair.getDomainId());
+        response.setDomainId(domain.getUuid());
+        response.setDomainName(domain.getName());
+        return response;
+    }
 }

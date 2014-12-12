@@ -68,7 +68,7 @@ public class ListSSHKeyPairsCmd extends BaseListProjectAndAccountResourcesCmd {
         Pair<List<? extends SSHKeyPair>, Integer> resultList = _mgr.listSSHKeyPairs(this);
         List<SSHKeyPairResponse> responses = new ArrayList<SSHKeyPairResponse>();
         for (SSHKeyPair result : resultList.first()) {
-            SSHKeyPairResponse r = new SSHKeyPairResponse(result.getName(), result.getFingerprint());
+            SSHKeyPairResponse r = _responseGenerator.createSSHKeyPairResponse(result, false);
             r.setObjectName("sshkeypair");
             responses.add(r);
         }

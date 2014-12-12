@@ -715,6 +715,51 @@
                         };
                     },
 
+                    'sshkeyPairs': function($step, formData) {
+                        var originalValues = function(formData) {
+                            if (formData.sshkeypair) {
+                                $step.find('input[type=radio]').filter(function() {
+                                    return $(this).val() == formData.sshkeypair;
+                                }).click();
+                            } else {
+                                $step.find('input[type=radio]:first').click();
+                            }
+                        };
+                        return {
+                            response: {
+                                success: function(args) {
+                                    $step.find('.main-desc, p.no-sshkey-pairs').remove();
+
+                                    if (args.data.sshkeyPairs && args.data.sshkeyPairs.length) {
+                                        $step.prepend(
+                                            $('<div>').addClass('main-desc').append(
+                                                $('<p>').html(_l('Please select a ssh key pair you want this VM to use:'))
+                                            )
+                                        );
+                                        $step.find('.section.no-thanks').show();
+                                        $step.find('.select-container').append(
+                                            makeSelects(
+                                                'sshkeypair',
+                                                args.data.sshkeyPairs, {
+                                                    name: 'name',
+                                                    id: 'name'
+                                                }, {
+                                                    'wizard-field': 'sshkey-pairs'
+                                                }
+                                            )
+                                        );
+                                        originalValues(formData); // if we can select only one.
+                                    } else {
+                                        $step.find('.section.no-thanks').hide();
+                                        $step.find('.select-container').append(
+                                            $('<p>').addClass('no-sshkey-pairs').html(_l('You do not have any ssh key pairs. Please continue to the next step.'))
+                                        );
+                                    }
+                                }
+                            }
+                        };
+                    },
+
                     'network': function($step, formData) {
                         var showAddNetwork = true;
 
@@ -1253,7 +1298,7 @@
 
                 return $wizard.dialog({
                     title: _l('label.vm.add'),
-                    width: 800,
+                    width: 896,
                     height: 570,
                     closeOnEscape: false,
                     zIndex: 5000

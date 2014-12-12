@@ -101,7 +101,8 @@
                         <li><span class="number">4</span><span class="multiline"><fmt:message key="label.disk.offering"/></span><span class="arrow"></span></li>
                         <li><span class="number">5</span><span><fmt:message key="label.affinity"/></span><span class="arrow"></span></li>
                         <li><span class="number">6</span><span><fmt:message key="label.menu.network"/></span><span class="arrow"></span></li>
-                        <li class="last"><span class="number">7</span><span><fmt:message key="label.review"/></span></li>
+                        <li><span class="number">7</span><span><fmt:message key="label.menu.sshkeypair"/></span><span class="arrow"></span></li>
+                        <li class="last"><span class="number">8</span><span><fmt:message key="label.review"/></span></li>
                     </ul>
                 </div>
                 <form>
@@ -393,7 +394,18 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- Step 7: Review -->
+                        <!-- Step 7: SSH Key pairs -->
+                        <div class="step sshkeyPairs" wizard-step-id="sshkeyPairs">
+                          <div class="content">
+                            <div class="section no-thanks">
+                              <input type="radio" name="sshkeypair" value="" />
+                              <label><fmt:message key="label.no.thanks"/></label>
+                            </div>
+                            <!-- Existing key pairs -->
+                            <div class="select-container"></div>
+                          </div>
+                        </div>
+                        <!-- Step 8: Review -->
                         <div class="step review" wizard-step-id="review">
                             <div class="main-desc">
                                 <fmt:message key="message.vm.review.launch"/>
@@ -532,6 +544,19 @@
                                         </div>
                                         <div class="edit">
                                             <a href="6"><fmt:message key="label.edit"/></a>
+                                        </div>
+                                    </div>
+
+                                    <!-- SSH Key Pairs -->
+                                    <div class="select">
+                                        <div class="name">
+                                            <span>SSH Key Pairs</span>
+                                        </div>
+                                        <div class="value">
+                                            <span wizard-field="sshkey-pairs"></span>
+                                        </div>
+                                        <div class="edit">
+                                            <a href="7"><fmt:message key="label.edit"/></a>
                                         </div>
                                     </div>
 

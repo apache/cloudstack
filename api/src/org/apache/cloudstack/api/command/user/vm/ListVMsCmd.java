@@ -120,6 +120,9 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.AFFINITY_GROUP_ID, type = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "list vms by affinity group")
     private Long affinityGroupId;
 
+    @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING, description = "list vms by ssh keypair name")
+    private String keypair;
+
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "list by the service offering", since = "4.4")
     private Long serviceOffId;
 
@@ -182,6 +185,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
 
     public Long getAffinityGroupId() {
         return affinityGroupId;
+    }
+
+    public String getKeyPairName() {
+        return keypair;
     }
 
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {

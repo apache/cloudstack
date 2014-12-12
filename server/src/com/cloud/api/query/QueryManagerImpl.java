@@ -835,6 +835,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Object isoId = cmd.getIsoId();
         Object vpcId = cmd.getVpcId();
         Object affinityGroupId = cmd.getAffinityGroupId();
+        Object keyPairName = cmd.getKeyPairName();
         Object serviceOffId = cmd.getServiceOfferingId();
         Object pod = null;
         Object hostId = null;
@@ -884,6 +885,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (affinityGroupId != null) {
             sb.and("affinityGroupId", sb.entity().getAffinityGroupId(), SearchCriteria.Op.EQ);
+        }
+
+        if (keyPairName != null) {
+            sb.and("keyPairName", sb.entity().getKeypairName(), SearchCriteria.Op.EQ);
         }
 
         if (!isRootAdmin) {
@@ -976,6 +981,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (affinityGroupId != null) {
             sc.setParameters("affinityGroupId", affinityGroupId);
+        }
+
+        if (keyPairName != null) {
+            sc.setParameters("keyPairName", keyPairName);
         }
 
         if (cmd instanceof ListVMsCmdByAdmin) {

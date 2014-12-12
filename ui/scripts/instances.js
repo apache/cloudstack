@@ -362,6 +362,14 @@
                     });
                 }
 
+                if ("sshkeypairs" in args.context) {
+                    $.extend(data, {
+                        domainid: args.context.sshkeypairs[0].domainid,
+                        account: args.context.sshkeypairs[0].account,
+                        keypair: args.context.sshkeypairs[0].name
+                    });
+                }
+
                 $.ajax({
                     url: createURL('listVirtualMachines'),
                     data: data,
@@ -1624,7 +1632,99 @@
                             poll: pollAsyncJobResult
                         }
                     },
-                   
+                  
+                    resetSSHKeyForVirtualMachine: {
+                        label: 'Reset SSH Key Pair',
+                        createForm: {
+                            title: 'Reset SSH Key Pair on VM',
+                            desc: 'Please specify a ssh key pair that you would like to add to this VM. Please note the root password will be changed by this operation if password is enabled.',
+                            fields: {
+                                sshkeypair: {
+                                    label: 'New SSH Key Pair',
+                                    validation: {
+                                        required: true
+                                    },
+                                    select: function(args) {
+                                        var data = {
+                                            domainid: args.context.instances[0].domainid,
+                                            account: args.context.instances[0].account,
+                                            listAll: true
+                                        };
+
+                                        $.ajax({
+                                            url: createURL("listSSHKeyPairs"),
+                                            data: data,
+                                            async: false,
+                                            success: function(json) {
+                                                var items = [];
+                                                var sshkeypairs = json.listsshkeypairsresponse.sshkeypair;
+                                                if (sshkeypairs == null) {
+                                                } else {
+                                                    for (var i = 0; i < sshkeypairs.length; i++) {
+                                                        var sshkeypair = sshkeypairs[i];
+                                                        if (sshkeypair.name != args.context.instances[0].keypair) {
+                                                            items.push({
+                                                                id: sshkeypair.name,
+                                                                description: sshkeypair.name
+                                                            });
+                                                        }
+                                                    }
+                                                }
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        },
+
+                        action: function(args) {
+                            var data = {
+                                domainid: args.context.instances[0].domainid,
+                                account: args.context.instances[0].account,
+                                id: args.context.instances[0].id,
+                                keypair: args.data.sshkeypair
+                            };
+
+                            $.ajax({
+                                url: createURL("resetSSHKeyForVirtualMachine"),
+                                data: data,
+                                async: true,
+                                success: function(json) {
+                                    var jid = json.resetSSHKeyforvirtualmachineresponse.jobid;
+                                    args.response.success({
+                                        _custom: {
+                                            jobId: jid,
+                                            getUpdatedItem: function(json) {
+                                                return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                            },
+                                            getActionFilter: function() {
+                                                return vmActionfilter;
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        },
+                        messages: {
+                            notification: function(args) {
+                                return 'Reset SSH Key Pair on VM';
+                            },
+                            complete: function(args) {
+                                if (args.password != null) {
+                                    return 'Password of the VM has been reset to ' + args.password;
+                                }
+
+                                return false;
+                            }
+                        },
+                        notification: {
+                            poll: pollAsyncJobResult
+                        }
+                    },
+ 
                     assignVmToAnotherAccount: {
                         label: 'label.assign.instance.another',
                         createForm: {
@@ -1898,6 +1998,9 @@
                             },
                             publicip: {
                                 label: 'label.public.ip'
+                            },
+                            keypair: {
+                                label: 'SSH Key Pair'
                             },
                             domain: {
                                 label: 'label.domain'
@@ -2387,7 +2490,7 @@
             if (isAdmin() || isDomainAdmin()) {
                 allowedActions.push("assignVmToAnotherAccount");
             }
-            
+            allowedActions.push("resetSSHKeyForVirtualMachine");
         } else if (jsonObj.state == 'Starting') {
             //  allowedActions.push("stop");
         } else if (jsonObj.state == 'Error') {

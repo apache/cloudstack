@@ -1135,6 +1135,10 @@
                         });
 
                         $ul.appendTo($td);
+                    } else if (field.span == false) {
+                        $td.append(
+                            $('<pre>').html(_s(content))
+                        );
                     } else {
                         $td.append(
                             $('<span>').html(_s(content))

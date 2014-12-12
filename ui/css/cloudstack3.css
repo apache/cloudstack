@@ -5500,7 +5500,7 @@ label.error {
 }
 
 .multi-wizard .progress ul {
-  width: 780px;
+  width: 900px;
   height: 40px;
   float: left;
   clear: both;
@@ -6072,7 +6072,7 @@ label.error {
 }
 
 /*** Data disk offering*/
-.multi-wizard.instance-wizard .data-disk-offering .content .section {
+.multi-wizard.instance-wizard .content .section {
   padding: 9px 0 16px;
   margin: 12px 0 15px 8px;
 }
@@ -12445,6 +12445,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .resetPassword:hover .icon,
 .changePassword:hover .icon {
   background-position: -68px -612px;
+}
+
+.resetSSHKeyForVirtualMachine .icon {
+  background-position: -196px -3px;
+}
+
+.resetSSHKeyForVirtualMachine:hover .icon {
+  background-position: -195px -586px;
 }
 
 .changeService .icon {

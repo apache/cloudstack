@@ -665,7 +665,22 @@
 
             },
 
-            // Step 7: Review
+            // Step 7: SSH Key Pairs
+            function(args) {
+                $.ajax({
+                    url: createURL('listSSHKeyPairs'),
+                    success: function(json) {
+                        var sshkeypair = json.listsshkeypairsresponse.sshkeypair;
+                        args.response.success({
+                            data: {
+                                sshkeyPairs: sshkeypair
+                            }
+                        });
+                    }
+                });
+            },
+
+            // Step 8: Review
             function(args) {
                 return false;
             }
@@ -950,6 +965,13 @@
                     	});
                     }
                 }
+            }
+
+            //step 4: select ssh key pair
+            if (args.data.sshkeypair != null && args.data.sshkeypair.length > 0) {
+                $.extend(deployVmData, {
+                        keypair : args.data.sshkeypair
+                });
             }
 
             var displayname = args.data.displayname;
