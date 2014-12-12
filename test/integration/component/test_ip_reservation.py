@@ -305,7 +305,7 @@ class TestIpReservation(cloudstackTestCase):
         return
 
     @data(NAT_RULE, STATIC_NAT_RULE)
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_nat_rules(self, value):
         """ Test NAT rules working with IP reservation
         # steps
