@@ -190,7 +190,7 @@ class TestProjectsVolumeLimits(cloudstackTestCase):
             host = hosts[0]
             self.vm.migrate(self.apiclient, host.id)
         except Exception as e:
-            self.fail("Exception occured" % e)
+            self.fail("Exception occured: %s" % e)
 
         expectedCount = self.initialResourceCount
         response = matchResourceCount(
