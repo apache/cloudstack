@@ -153,7 +153,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         if (grp != null) {
             throw new InvalidParameterValueException(
                     "Unable to create acl group with name " + iamGroupName
-                            + " already exisits for path " + path);
+                            + " already exists for path " + path);
         }
         IAMGroupVO rvo = new IAMGroupVO(iamGroupName, description);
         rvo.setPath(path);
@@ -372,7 +372,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         if (ro != null) {
             throw new InvalidParameterValueException(
                     "Unable to create acl policy with name " + iamPolicyName
-                            + " already exisits");
+                            + " already exists");
         }
 
         IAMPolicy role = Transaction.execute(new TransactionCallback<IAMPolicy>() {
