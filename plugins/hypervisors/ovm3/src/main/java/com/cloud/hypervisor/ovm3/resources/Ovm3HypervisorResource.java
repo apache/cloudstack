@@ -37,7 +37,7 @@ import com.cloud.hypervisor.ovm3.objects.Network;
 import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
 import com.cloud.hypervisor.ovm3.objects.OvmObject;
 import com.cloud.hypervisor.ovm3.objects.Xen;
-import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3Helper;
+import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3VmGuestTypes;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3HypervisorSupport;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ResourceManager;
@@ -99,7 +99,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         s_stateMaps.put("Migrating", State.Migrating);
     }
     @Inject
-    private ResourceManager resourceMgr;
+    
     private VirtualRoutingResource vrResource;
     private Map<String, Network.Interface> agentInterfaces = null;
     private final Map<String, Map<String, String>> vmStats = new ConcurrentHashMap<String, Map<String, String>>();
@@ -420,7 +420,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             vm.setVmUuid(UUID.nameUUIDFromBytes(vmSpec.getName().getBytes())
                     .toString());
             vm.setVmName(vmName);
-            String domType = Ovm3Helper.getOvm3GuestType(vmSpec.getOs());
+            String domType = Ovm3VmGuestTypes.getOvm3GuestType(vmSpec.getOs());
             if (domType == null || domType.isEmpty()) {
                 domType = "default";
                 LOGGER.debug("VM Virt type missing setting to: " + domType);

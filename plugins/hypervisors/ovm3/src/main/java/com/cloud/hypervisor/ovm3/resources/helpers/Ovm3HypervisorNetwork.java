@@ -2,12 +2,15 @@ package com.cloud.hypervisor.ovm3.resources.helpers;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.hypervisor.ovm3.objects.CloudStackPlugin;
+import com.cloud.hypervisor.ovm3.objects.Connection;
 import com.cloud.hypervisor.ovm3.objects.Network;
 import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
 import com.cloud.network.PhysicalNetworkSetupInfo;
@@ -16,6 +19,13 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Ovm3HypervisorNetwork {
+    private static final Logger LOGGER = Logger
+            .getLogger(Ovm3HypervisorNetwork.class);
+    Connection c;
+    public Ovm3HypervisorNetwork(Connection conn) {
+        c = conn;
+    }
+
     private boolean isNetworkSetupByName(String nameTag) {
         if (nameTag != null) {
             LOGGER.debug("Looking for network setup by name " + nameTag);
@@ -35,16 +45,15 @@ public class Ovm3HypervisorNetwork {
         LOGGER.debug("No bridge with name: " + nameTag);
         return false;
     }
+
     /* TODO: check getPhysicalNetworkInfoList */
     /*
      * need to refactor this bit, networksetupbyname makes no sense, and neither
      * does the physical bit
      */
     private CheckNetworkAnswer execute(CheckNetworkCommand cmd) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Checking if network name setup is done on "
-                    + agentHostname);
-        }
+        LOGGER.debug("Checking if network name setup is done on "
+                    + c.getHostname());
 
         List<PhysicalNetworkSetupInfo> infoList = cmd
                 .getPhysicalNetworkInfoList();
@@ -94,6 +103,7 @@ public class Ovm3HypervisorNetwork {
                 "Network Setup check by names is done");
 
     }
+
     private Answer execute(PingTestCommand cmd) {
         try {
             if (cmd.getComputingHostIp() != null) {
@@ -110,6 +120,7 @@ public class Ovm3HypervisorNetwork {
             return new Answer(cmd, false, e.getMessage());
         }
     }
+
     private String createVlanBridge(String networkName, Integer vlanId)
             throws Ovm3ResourceException {
         if (vlanId < 1 || vlanId > 4094) {
@@ -137,7 +148,7 @@ public class Ovm3HypervisorNetwork {
         return brName;
     }
 
-    private String getNetwork(NicTO nic) throws Ovm3ResourceException {
+    public String getNetwork(NicTO nic) throws Ovm3ResourceException {
         String vlanId = null;
         String bridgeName = null;
         if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {

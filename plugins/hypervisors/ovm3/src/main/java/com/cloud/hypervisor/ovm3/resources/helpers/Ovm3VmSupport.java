@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.AttachVolumeAnswer;
@@ -22,12 +23,25 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.ovm3.objects.CloudStackPlugin;
+import com.cloud.hypervisor.ovm3.objects.Connection;
 import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
+import com.cloud.hypervisor.ovm3.objects.OvmObject;
 import com.cloud.hypervisor.ovm3.objects.Xen;
+import com.cloud.resource.ResourceManager;
 import com.cloud.vm.VirtualMachine.State;
 
 public class Ovm3VmSupport {
-    private Boolean createVifs(Xen.Vm vm, VirtualMachineTO spec)
+    private static final Logger LOGGER = Logger.getLogger(Ovm3VmSupport.class);
+    private OvmObject ovmObject = new OvmObject();
+    private ResourceManager resourceMgr;
+    private Connection c;
+    private Ovm3HypervisorNetwork ovm3hvn;
+    public Ovm3VmSupport(Connection conn) {
+        c = conn;
+        ovm3hvn = new Ovm3HypervisorNetwork(c);
+    }
+
+    public Boolean createVifs(Xen.Vm vm, VirtualMachineTO spec)
             throws Ovm3ResourceException {
         NicTO[] nics = spec.getNics();
         return createVifs(vm, nics);
@@ -44,14 +58,14 @@ public class Ovm3VmSupport {
     }
 
     /* should add bitrates and latency... */
-    private Boolean createVif(Xen.Vm vm, NicTO nic)
+    public Boolean createVif(Xen.Vm vm, NicTO nic)
             throws Ovm3ResourceException {
         try {
-            if (getNetwork(nic) != null) {
+            if (ovm3hvn.getNetwork(nic) != null) {
                 LOGGER.debug("Adding vif " + nic.getDeviceId() + " " + " "
-                        + nic.getMac() + " " + getNetwork(nic) + " to "
+                        + nic.getMac() + " " + ovm3hvn.getNetwork(nic) + " to "
                         + vm.getVmName());
-                vm.addVif(nic.getDeviceId(), getNetwork(nic), nic.getMac());
+                vm.addVif(nic.getDeviceId(), ovm3hvn.getNetwork(nic), nic.getMac());
             } else {
                 LOGGER.debug("Unable to add vif " + nic.getDeviceId()
                         + " no network for " + vm.getVmName());
@@ -66,7 +80,7 @@ public class Ovm3VmSupport {
         return true;
     }
     /* TODO: Hot plugging harddisks... */
-    private AttachVolumeAnswer execute(AttachVolumeCommand cmd) {
+    public AttachVolumeAnswer execute(AttachVolumeCommand cmd) {
         return new AttachVolumeAnswer(cmd, "You must stop " + cmd.getVmName()
                 + " first, Ovm3 doesn't support hotplug datadisk");
     }
@@ -74,7 +88,7 @@ public class Ovm3VmSupport {
 
 
     /* Migration should make sure both HVs are the same ? */
-    private PrepareForMigrationAnswer execute(PrepareForMigrationCommand cmd) {
+    public PrepareForMigrationAnswer execute(PrepareForMigrationCommand cmd) {
         VirtualMachineTO vm = cmd.getVirtualMachine();
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Preparing host for migrating " + vm.getName());
@@ -82,7 +96,7 @@ public class Ovm3VmSupport {
         NicTO[] nics = vm.getNics();
         try {
             for (NicTO nic : nics) {
-                getNetwork(nic);
+                ovm3hvn.getNetwork(nic);
             }
             synchronized (vmStateMap) {
                 vmStateMap.put(vm.getName(), State.Migrating);
@@ -142,7 +156,7 @@ public class Ovm3VmSupport {
                 Xen.Vm vm = xen.getRunningVmConfig(vmName);
                 if (vm == null) {
                     state = State.Stopped;
-                    msg = vmName + " is no running on " + agentHostname;
+                    msg = vmName + " is no running on " + c.getHostname();
                     return new MigrateAnswer(cmd, false, msg, null);
                 }
                 /* not a storage migration!!! */
@@ -174,7 +188,7 @@ public class Ovm3VmSupport {
             Xen.Vm vm = host.getRunningVmConfig(cmd.getName());
             Integer vncPort = vm.getVncPort();
             LOGGER.debug("get vnc port for " + cmd.getName() + ": " + vncPort);
-            return new GetVncPortAnswer(cmd, agentIp, vncPort);
+            return new GetVncPortAnswer(cmd, c.getIp(), vncPort);
         } catch (Ovm3ResourceException e) {
             LOGGER.debug("get vnc port for " + cmd.getName() + " failed", e);
             return new GetVncPortAnswer(cmd, e.getMessage());

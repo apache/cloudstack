@@ -1,5 +1,7 @@
 package com.cloud.hypervisor.ovm3.resources.helpers;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
@@ -7,11 +9,22 @@ import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.hypervisor.ovm3.objects.CloudStackPlugin;
+import com.cloud.hypervisor.ovm3.objects.Connection;
+import com.cloud.hypervisor.ovm3.resources.Ovm3VirtualRoutingResource;
 import com.cloud.utils.ExecutionResult;
 
 public class Ovm3VirtualRoutingSupport {
+    private static final Logger LOGGER = Logger
+            .getLogger(Ovm3VirtualRoutingSupport.class);
+    private Connection c;
+    private Ovm3VirtualRoutingResource ovm3vrr;
+    public Ovm3VirtualRoutingSupport(Connection conn) {
+        c = conn;
+        ovm3vrr = new Ovm3VirtualRoutingResource(c);
+    }
+
     /* copy paste, why isn't this just generic in the VirtualRoutingResource ? */
-    private Answer execute(NetworkUsageCommand cmd) {
+    public Answer execute(NetworkUsageCommand cmd) {
         if (cmd.isForVpc()) {
             return vpcNetworkUsage(cmd);
         }
@@ -28,7 +41,7 @@ public class Ovm3VirtualRoutingSupport {
     }
 
     /* copy paste, why isn't this just generic in the VirtualRoutingResource ? */
-    private String networkUsage(final String privateIpAddress,
+    public String networkUsage(final String privateIpAddress,
             final String option, final String ethName) {
         String args = null;
         if ("get".equals(option)) {
@@ -44,7 +57,7 @@ public class Ovm3VirtualRoutingSupport {
             args = "-d";
             args += ethName;
         }
-        ExecutionResult result = executeInVR(privateIpAddress, "netusage.sh",
+        ExecutionResult result = ovm3vrr.executeInVR(privateIpAddress, "netusage.sh",
                 args);
 
         if (result == null || !result.isSuccess()) {
@@ -55,7 +68,7 @@ public class Ovm3VirtualRoutingSupport {
     }
 
     /* copy paste, why isn't this just generic in the VirtualRoutingResource ? */
-    private long[] getNetworkStats(String privateIP) {
+    public long[] getNetworkStats(String privateIP) {
         String result = networkUsage(privateIP, "get", null);
         long[] stats = new long[2];
         if (result != null) {
@@ -76,7 +89,7 @@ public class Ovm3VirtualRoutingSupport {
     }
 
     /* copy paste, why isn't this just generic in the VirtualRoutingResource ? */
-    private NetworkUsageAnswer vpcNetworkUsage(NetworkUsageCommand cmd) {
+    public NetworkUsageAnswer vpcNetworkUsage(NetworkUsageCommand cmd) {
         String privateIp = cmd.getPrivateIP();
         String option = cmd.getOption();
         String publicIp = cmd.getGatewayIP();
@@ -98,7 +111,7 @@ public class Ovm3VirtualRoutingSupport {
             return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
         }
 
-        ExecutionResult callResult = executeInVR(privateIp, "vpc_netusage.sh",
+        ExecutionResult callResult = ovm3vrr.executeInVR(privateIp, "vpc_netusage.sh",
                 args);
 
         if (!callResult.isSuccess()) {
@@ -131,12 +144,12 @@ public class Ovm3VirtualRoutingSupport {
     /*
      * we don't for now, gave an error on migration though....
      */
-    private Answer execute(NetworkRulesSystemVmCommand cmd) {
+    public Answer execute(NetworkRulesSystemVmCommand cmd) {
         boolean success = true;
         return new Answer(cmd, success, "");
     }
 
-    private CheckSshAnswer execute(CheckSshCommand cmd) {
+    public CheckSshAnswer execute(CheckSshCommand cmd) {
         String vmName = cmd.getName();
         String privateIp = cmd.getIp();
         int cmdPort = cmd.getPort();
@@ -147,19 +160,20 @@ public class Ovm3VirtualRoutingSupport {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
             if (!cSp.domrCheckPort(privateIp, cmdPort, retries, interval)) {
                 String msg = "Port " + cmdPort + " not reachable for " + vmName
-                        + " via " + agentName;
+                        + " via " + c.getHostname();
                 LOGGER.info(msg);
                 return new CheckSshAnswer(cmd, msg);
             }
         } catch (Exception e) {
             String msg = "Can not reach port " + cmdPort + " on System vm "
-                    + vmName + " via " + agentName + " due to exception: " + e;
+                    + vmName + " via " + c.getHostname()
+                    + " due to exception: " + e;
             LOGGER.error(msg);
             return new CheckSshAnswer(cmd, msg);
         }
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Ping " + cmdPort + " succeeded for vm " + vmName
-                    + " via " + agentName + cmd);
+                    + " via " + c.getHostname() + cmd);
         }
         return new CheckSshAnswer(cmd);
     }

@@ -19,7 +19,7 @@ package com.cloud.hypervisor.ovm3.resources.helpers;
 import java.util.HashMap;
 import java.util.Map;
 
-class Ovm3Helper {
+public class Ovm3VmGuestTypes {
     /* /usr/lib64/python2.4/site-packages/agent/lib/assembly */
     private static final Map<String, String> OVMHELPERMAP = new HashMap<String, String>();
     private static final String HVM = "hvm";
@@ -74,7 +74,7 @@ class Ovm3Helper {
         OVMHELPERMAP.put("Sun Solaris Sparc (64-bit)", DOMSOL);
     }
 
-    private Ovm3Helper() {
+    private Ovm3VmGuestTypes() {
 
     }
 

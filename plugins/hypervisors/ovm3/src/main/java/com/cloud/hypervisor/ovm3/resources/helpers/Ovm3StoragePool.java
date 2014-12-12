@@ -29,16 +29,16 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.hypervisor.ovm3.object.Connection;
-import com.cloud.hypervisor.ovm3.object.Linux;
-import com.cloud.hypervisor.ovm3.object.Ovm3ResourceException;
-import com.cloud.hypervisor.ovm3.object.Pool;
-import com.cloud.hypervisor.ovm3.object.PoolOCFS2;
-import com.cloud.hypervisor.ovm3.object.Repository;
-import com.cloud.hypervisor.ovm3.object.StoragePlugin;
-import com.cloud.hypervisor.ovm3.object.Xen;
-import com.cloud.hypervisor.ovm3.object.StoragePlugin.FileProperties;
-import com.cloud.hypervisor.ovm3.object.StoragePlugin.StorageDetails;
+import com.cloud.hypervisor.ovm3.objects.Connection;
+import com.cloud.hypervisor.ovm3.objects.Linux;
+import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
+import com.cloud.hypervisor.ovm3.objects.Pool;
+import com.cloud.hypervisor.ovm3.objects.PoolOCFS2;
+import com.cloud.hypervisor.ovm3.objects.Repository;
+import com.cloud.hypervisor.ovm3.objects.StoragePlugin;
+import com.cloud.hypervisor.ovm3.objects.Xen;
+import com.cloud.hypervisor.ovm3.objects.StoragePlugin.FileProperties;
+import com.cloud.hypervisor.ovm3.objects.StoragePlugin.StorageDetails;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.template.TemplateProp;
@@ -50,7 +50,7 @@ import com.cloud.utils.ssh.SshHelper;
 public class Ovm3StoragePool {
     private static final Logger LOGGER = Logger
             .getLogger(Ovm3StoragePool.class);
-    Connection c;
+    private Connection c;
     public Ovm3StoragePool(Connection conn) {
         c = conn;
     }
