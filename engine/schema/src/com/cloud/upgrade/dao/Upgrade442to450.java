@@ -18,6 +18,7 @@
 package com.cloud.upgrade.dao;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -68,8 +70,31 @@ public class Upgrade442to450 implements DbUpgrade {
         updateSystemVmTemplates(conn);
         dropInvalidKeyFromStoragePoolTable(conn);
         dropDuplicatedForeignKeyFromAsyncJobTable(conn);
+        updateMaxRouterSizeConfig(conn);
         upgradeMemoryOfVirtualRoutervmOffering(conn);
         upgradeMemoryOfInternalLoadBalancervmOffering(conn);
+    }
+
+    private void updateMaxRouterSizeConfig(Connection conn) {
+        PreparedStatement updatePstmt = null;
+        try {
+            String encryptedValue = DBEncryptionUtil.encrypt("256");
+            updatePstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value=? WHERE name='router.ram.size' AND category='Hidden'");
+            updatePstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
+            updatePstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to upgrade max ram size of router in config.", e);
+        } catch (UnsupportedEncodingException e) {
+            throw new CloudRuntimeException("Unable encrypt configuration values ", e);
+        } finally {
+            try {
+                if (updatePstmt != null) {
+                    updatePstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Done updating router.ram.size config to 256");
     }
 
     private void upgradeMemoryOfVirtualRoutervmOffering(Connection conn) {
