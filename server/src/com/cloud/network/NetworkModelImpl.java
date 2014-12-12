@@ -421,14 +421,14 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
         // We only support one provider for one service now
         Map<Service, Set<Provider>> serviceToProviders = getServiceProvidersMap(networkId);
-        Set<Provider> oldProviders = serviceToProviders.get(services.toArray()[0]);
-        Provider oldProvider = (Provider)oldProviders.toArray()[0];
         // Since IP already has service to bind with, the oldProvider can't be null
         Set<Provider> newProviders = serviceToProviders.get(service);
         if (newProviders == null || newProviders.isEmpty()) {
             throw new InvalidParameterException("There is no new provider for IP " + publicIp.getAddress() + " of service " + service.getName() + "!");
         }
         Provider newProvider = (Provider)newProviders.toArray()[0];
+        Set<Provider> oldProviders = serviceToProviders.get(services.toArray()[0]);
+        Provider oldProvider = (Provider)oldProviders.toArray()[0];
         Network network = _networksDao.findById(networkId);
         NetworkElement oldElement = getElementImplementingProvider(oldProvider.getName());
         NetworkElement newElement = getElementImplementingProvider(newProvider.getName());
