@@ -1,4 +1,4 @@
-package com.cloud.hypervisor.ovm3.object;
+package com.cloud.hypervisor.ovm3.objects;
 import org.junit.Test;
 
 import com.cloud.hypervisor.ovm3.objects.Common;

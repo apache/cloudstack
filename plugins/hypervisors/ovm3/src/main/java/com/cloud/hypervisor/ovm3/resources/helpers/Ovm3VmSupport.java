@@ -1,10 +1,13 @@
 package com.cloud.hypervisor.ovm3.resources.helpers;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
@@ -19,6 +22,10 @@ import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.HostVO;
@@ -28,6 +35,8 @@ import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
 import com.cloud.hypervisor.ovm3.objects.OvmObject;
 import com.cloud.hypervisor.ovm3.objects.Xen;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.Volume;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
 
 public class Ovm3VmSupport {
@@ -294,6 +303,56 @@ public class Ovm3VmSupport {
         /* should become a single entity */
         vmStats.remove(vmName);
     }
+
+    /*
+     * Add rootdisk, datadisk and iso's
+     */
+    private Boolean createVbds(Xen.Vm vm, VirtualMachineTO spec) {
+        for (DiskTO volume : spec.getDisks()) {
+            try {
+                if (volume.getType() == Volume.Type.ROOT) {
+                    VolumeObjectTO vol = (VolumeObjectTO) volume.getData();
+                    DataStoreTO ds = vol.getDataStore();
+                    String dsk = vol.getPath() + "/" + vol.getUuid() + ".raw";
+                    vm.addRootDisk(dsk);
+                    /* TODO: needs to be replaced by rootdiskuuid? */
+                    vm.setPrimaryPoolUuid(ds.getUuid());
+                    LOGGER.debug("Adding root disk: " + dsk);
+                } else if (volume.getType() == Volume.Type.ISO) {
+                    DataTO isoTO = volume.getData();
+                    if (isoTO.getPath() != null) {
+                        TemplateObjectTO template = (TemplateObjectTO) isoTO;
+                        DataStoreTO store = template.getDataStore();
+                        if (!(store instanceof NfsTO)) {
+                            throw new CloudRuntimeException(
+                                    "unsupported protocol");
+                        }
+                        NfsTO nfsStore = (NfsTO) store;
+                        String secPoolUuid = setupSecondaryStorage(nfsStore
+                                .getUrl());
+                        String isoPath = agentSecStoragePath + File.separator
+                                + secPoolUuid + File.separator
+                                + template.getPath();
+                        vm.addIso(isoPath);
+                        /* check if secondary storage is mounted */
+                        LOGGER.debug("Adding ISO: " + isoPath);
+                    }
+                } else if (volume.getType() == Volume.Type.DATADISK) {
+                    vm.addDataDisk(volume.getData().getPath());
+                    LOGGER.debug("Adding data disk: "
+                            + volume.getData().getPath());
+                } else {
+                    throw new CloudRuntimeException("Unknown volume type: "
+                            + volume.getType());
+                }
+            } catch (Exception e) {
+                LOGGER.debug("CreateVbds failed", e);
+                throw new CloudRuntimeException("Exception" + e.getMessage(), e);
+            }
+        }
+        return true;
+    }
+}
 
 
 }

@@ -34,9 +34,9 @@ public class StoragePlugin extends OvmObject {
     private final String unknown = EMPTY_STRING; /* empty */
     private final Boolean active = true;
     private final List<String> someList = new ArrayList<String>(); /* empty */
-    FileProperties fileProperties = new FileProperties();
-    StorageDetails storageDetails = new StorageDetails();
-    StorageServer storageServer = new StorageServer();
+    private FileProperties fileProperties = new FileProperties();
+    private StorageDetails storageDetails = new StorageDetails();
+    private StorageServer storageServer = new StorageServer();
 
     public StoragePlugin(Connection c) {
         setClient(c);
@@ -702,6 +702,24 @@ public class StoragePlugin extends OvmObject {
                 ss.getDetails(), sd.getDetails()));
         // System.out.println(sd.getDetails());
         return sd;
+    }
+    public StorageDetails getStorageDetails() {
+        return storageDetails;
+    }
+    public void setStorageDetails(StorageDetails storageDetails) {
+        this.storageDetails = storageDetails;
+    }
+    public StorageServer getStorageServer() {
+        return storageServer;
+    }
+    public void setStorageServer(StorageServer storageServer) {
+        this.storageServer = storageServer;
+    }
+    public FileProperties getFileProperties() {
+        return fileProperties;
+    }
+    public void setFileProperties(FileProperties fileProperties) {
+        this.fileProperties = fileProperties;
     }
 
     /*

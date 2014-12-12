@@ -1,4 +1,4 @@
-package com.cloud.hypervisor.ovm3.object;
+package com.cloud.hypervisor.ovm3.objects;
 import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;

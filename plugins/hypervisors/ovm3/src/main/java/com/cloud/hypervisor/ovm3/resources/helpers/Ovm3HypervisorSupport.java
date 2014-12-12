@@ -133,7 +133,7 @@ public class Ovm3HypervisorSupport {
      * fillHostInfo: Startup the routing for the host.
      * @param cmd
      */
-    static void fillHostInfo(StartupRoutingCommand cmd) {
+    public static void fillHostInfo(StartupRoutingCommand cmd) {
         try {
             /* get data we need from parts */
             Linux host = new Linux(c);
@@ -163,16 +163,16 @@ public class Ovm3HypervisorSupport {
             cmd.setHypervisorType(HypervisorType.Ovm3);
             cmd.setCaps(host.getCapabilities());
             // TODO: Control ip, for now cheat ?
-            cmd.setPrivateIpAddress(agentIp);
-            cmd.setStorageIpAddress(agentIp);
+            cmd.setPrivateIpAddress(c.getIp());
+            cmd.setStorageIpAddress(c.getIp());
             /* do we need the state report here now ? */
             // cmd.setHostVmStateReport(hostVmStateReport());
 
             Network net = new Network(c);
-            String defaultBridge = net.getBridgeByIp(agentIp).getName();
+            String defaultBridge = net.getBridgeByIp(c.getIp()).getName();
             if (defaultBridge == null) {
                 throw new CloudRuntimeException(
-                        "Unable to obtain valid bridge with " + agentIp);
+                        "Unable to obtain valid bridge with " + c.getIp());
             }
 
             if (agentPublicNetworkName == null) {
@@ -195,7 +195,7 @@ public class Ovm3HypervisorSupport {
             d.put("ismaster", agentIsMaster.toString());
             d.put("hasmaster", agentHasMaster.toString());
             cmd.setHostDetails(d);
-            LOGGER.debug("Add an Ovm3 host " + agentName + ":"
+            LOGGER.debug("Add an Ovm3 host " + c.getHostname() + ":"
                     + cmd.getHostDetails());
         } catch (Ovm3ResourceException e) {
             throw new CloudRuntimeException("Ovm3ResourceException: "
@@ -523,7 +523,7 @@ public class Ovm3HypervisorSupport {
      * @return
      */
     /* TODO: move the connection elsewhere.... */
-    private boolean masterCheck() {
+    public boolean masterCheck() {
         if ("".equals(ovm3PoolVip)) {
             LOGGER.debug("No cluster vip, not checking for master");
             return false;

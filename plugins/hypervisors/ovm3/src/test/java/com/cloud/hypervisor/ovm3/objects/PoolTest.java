@@ -1,4 +1,4 @@
-package com.cloud.hypervisor.ovm3.object;
+package com.cloud.hypervisor.ovm3.objects;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.cloud.hypervisor.ovm3.hypervisor;
+package com.cloud.hypervisor.ovm3.resources;
 
 import org.junit.Test;
 

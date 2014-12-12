@@ -38,9 +38,9 @@ import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
 import com.cloud.hypervisor.ovm3.objects.OvmObject;
 import com.cloud.hypervisor.ovm3.objects.Xen;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3VmGuestTypes;
+import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3VmSupport;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3HypervisorSupport;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.resource.hypervisor.HypervisorResource;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
@@ -99,7 +99,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         s_stateMaps.put("Migrating", State.Migrating);
     }
     @Inject
-    
+
     private VirtualRoutingResource vrResource;
     private Map<String, Network.Interface> agentInterfaces = null;
     private final Map<String, Map<String, String>> vmStats = new ConcurrentHashMap<String, Map<String, String>>();
@@ -121,7 +121,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         LOGGER.debug("Ovm3 resource intializing");
         try {
             StartupRoutingCommand srCmd = new StartupRoutingCommand();
-
             StartupStorageCommand ssCmd = new StartupStorageCommand();
             Ovm3HypervisorSupport.fillHostInfo(srCmd);
             LOGGER.debug("Ovm3 pool " + ssCmd + " " + srCmd);

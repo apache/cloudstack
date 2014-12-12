@@ -1,4 +1,4 @@
-package com.cloud.hypervisor.ovm3.object;
+package com.cloud.hypervisor.ovm3.objects;
 
 import java.io.File;
 
@@ -209,18 +209,18 @@ public class StoragePluginTest {
 
     @Test(expected = Ovm3ResourceException.class)
     public void testStoragePluginIncorrectSsUuid() throws Ovm3ResourceException {
-        sPt.storageDetails.setDetailsRelationalUuid(FSMNTUUID);
+        sPt.getStorageDetails().setDetailsRelationalUuid(FSMNTUUID);
     }
 
     @Test(expected = Ovm3ResourceException.class)
     public void testStoragePluginIncorrectMntUuid()
             throws Ovm3ResourceException {
-        sPt.storageDetails.setUuid(FSPROPUUID);
+        sPt.getStorageDetails().setUuid(FSPROPUUID);
     }
 
     @Test(expected = Ovm3ResourceException.class)
     public void testStoragePluginIncorrectUuid() throws Ovm3ResourceException {
-        sPt.storageServer.setUuid(FSMNTUUID);
+        sPt.getStorageServer().setUuid(FSMNTUUID);
     }
 
     @Test(expected = Ovm3ResourceException.class)
