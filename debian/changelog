@@ -1,3 +1,9 @@
+cloudstack (4.3.2) unstable; urgency=low
+
+  * Update the version to 4.3.2
+
+ -- Rohit Yadav <bhaisaab@apache.org>  Fri, 12 Dec 2014 05:30:00 +0530
+
 cloudstack (4.3.2-snapshot) unstable; urgency=low
 
   * Update the version to 4.3.2.snapshot
