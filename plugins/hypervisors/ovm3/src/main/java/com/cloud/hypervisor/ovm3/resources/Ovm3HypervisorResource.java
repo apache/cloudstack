@@ -3,7 +3,6 @@ package com.cloud.hypervisor.ovm3.resources;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -101,20 +100,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     private Ovm3Configuration ovm3config;
     private OvmObject ovmObject = new OvmObject();
 
-    private Map<String, State> vmStateMap = new HashMap<String, State>();
-    private static Map<String, State> s_stateMaps;
-    static {
-        s_stateMaps = new HashMap<String, State>();
-        s_stateMaps.put("Stopping", State.Stopping);
-        s_stateMaps.put("Running", State.Running);
-        s_stateMaps.put("Stopped", State.Stopped);
-        s_stateMaps.put("Error", State.Error);
-        s_stateMaps.put("Suspended", State.Running);
-        s_stateMaps.put("Paused", State.Running);
-        s_stateMaps.put("Migrating", State.Migrating);
-    }
-    private final Map<String, Map<String, String>> vmStats = new ConcurrentHashMap<String, Map<String, String>>();
-
     /*
      * TODO: Add a network map, so we know which tagged interfaces we can remove
      * and switch to ConcurrentHashMap
@@ -137,22 +122,15 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         try {
             StartupRoutingCommand srCmd = new StartupRoutingCommand();
             StartupStorageCommand ssCmd = new StartupStorageCommand();
-            /* enhhance the configuration here, and give that along to
-             * fill the hostinfo later
-             */
-
-            ovm3vs = new Ovm3VmSupport(c, ovm3config);
-            ovm3vrr = new Ovm3VirtualRoutingResource(c);
-            ovm3vrs = new Ovm3VirtualRoutingSupport(c);
 
             /* here stuff gets completed, but where should state live ? */
             ovm3hs.fillHostInfo(srCmd);
-            LOGGER.debug("Ovm3 pool " + ssCmd + " " + srCmd);
+            ovm3hs.vmStateMapClear();
+            ovm3vs = new Ovm3VmSupport(c, ovm3config, ovm3hs, ovm3sp);
+            ovm3vrr = new Ovm3VirtualRoutingResource(c);
+            ovm3vrs = new Ovm3VirtualRoutingSupport(c);
 
-            synchronized (vmStateMap) {
-                vmStateMap.clear();
-                ovm3hs.syncState(this.vmStateMap);
-            }
+            LOGGER.debug("Ovm3 pool " + ssCmd + " " + srCmd);
             // srCmd.setStateChanges(changes);
             return new StartupCommand[] { srCmd, ssCmd };
         } catch (Exception e) {
@@ -169,7 +147,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             String ping = "put";
             String pong = test.echo(ping);
             if (pong.contains(ping)) {
-                ovm3hs.syncState(this.vmStateMap);
+                ovm3hs.syncState();
                 return new PingRoutingCommand(getType(), id,
                         ovm3hs.hostVmStateReport());
             } else {
@@ -193,9 +171,9 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         } else if (clazz == NetworkUsageCommand.class) {
             return ovm3vrs.execute((NetworkUsageCommand) cmd);
         } else if (clazz == PlugNicCommand.class) {
-            return ovm3hs.execute((PlugNicCommand) cmd);
+            return ovm3vs.execute((PlugNicCommand) cmd);
         } else if (clazz == UnPlugNicCommand.class) {
-            return ovm3hs.execute((UnPlugNicCommand) cmd);
+            return ovm3vs.execute((UnPlugNicCommand) cmd);
         } else if (clazz == ReadyCommand.class) {
             return ovm3hs.execute((ReadyCommand) cmd);
         } else if (clazz == CopyCommand.class) {
@@ -367,9 +345,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         Xen xen = new Xen(c);
 
         try {
-            synchronized (vmStateMap) {
-                vmStateMap.put(vmName, State.Starting);
-            }
+            ovm3hs.setVmStateStarting(vmName);
             Xen.Vm vm = xen.getVmConfig();
             /* max and min ? */
             vm.setVmCpus(vmSpec.getCpus());
@@ -433,7 +409,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
                 for (int count = 0; count < 60; count++) {
                     Thread.sleep(5000);
                     CloudStackPlugin cSp = new CloudStackPlugin(c);
-                    if (vmStateMap.get(vmName) == null) {
+                    if (ovm3hs.getVmState(vmName) == null) {
                         String msg = "VM " + vmName + " went missing on "
                                 + c.getHostname() + ", returning stopped";
                         LOGGER.debug(msg);
@@ -471,9 +447,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             state = State.Stopped;
             return new StartAnswer(cmd, e.getMessage());
         } finally {
-            synchronized (vmStateMap) {
-                vmStateMap.put(vmName, state);
-            }
+            ovm3hs.setVmState(vmName, state);
         }
     }
 
@@ -482,10 +456,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     public StopAnswer execute(StopCommand cmd) {
         String vmName = cmd.getVmName();
         State state = State.Error;
-        synchronized (vmStateMap) {
-            state = vmStateMap.get(vmName);
-            vmStateMap.put(vmName, State.Stopping);
-        }
+        ovm3hs.setVmState(vmName, State.Stopping);
 
         try {
             Xen vms = new Xen(c);
@@ -524,12 +495,10 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             LOGGER.debug("Stop " + vmName + " failed ", e);
             return new StopAnswer(cmd, e.getMessage(), false);
         } finally {
-            synchronized (vmStateMap) {
-                if (state != null) {
-                    vmStateMap.put(vmName, state);
-                } else {
-                    vmStateMap.remove(vmName);
-                }
+            if (state != null) {
+                ovm3hs.setVmState(vmName, state);
+            } else {
+                ovm3hs.revmoveVmState(vmName);
             }
         }
     }
@@ -537,10 +506,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     @Override
     public RebootAnswer execute(RebootCommand cmd) {
         String vmName = cmd.getVmName();
-
-        synchronized (vmStateMap) {
-            vmStateMap.put(vmName, State.Starting);
-        }
+        ovm3hs.setVmStateStarting(vmName);
 
         try {
             Xen xen = new Xen(c);
@@ -554,9 +520,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             LOGGER.debug("Reboot " + vmName + " failed", e);
             return new RebootAnswer(cmd, e.getMessage(), false);
         } finally {
-            synchronized (vmStateMap) {
-                vmStateMap.put(cmd.getVmName(), State.Running);
-            }
+            ovm3hs.setVmState(vmName, State.Running);
         }
     }
 

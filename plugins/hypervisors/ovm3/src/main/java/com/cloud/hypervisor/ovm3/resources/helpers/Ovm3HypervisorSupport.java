@@ -6,12 +6,9 @@ import java.math.BigInteger;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.naming.ConfigurationException;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
@@ -25,14 +22,9 @@ import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
-import com.cloud.agent.api.PlugNicAnswer;
-import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.api.UnPlugNicAnswer;
-import com.cloud.agent.api.UnPlugNicCommand;
-import com.cloud.agent.api.to.NicTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.ovm3.objects.CloudStackPlugin;
 import com.cloud.hypervisor.ovm3.objects.Common;
@@ -71,6 +63,62 @@ public class Ovm3HypervisorSupport {
         powerStateMaps.put("Paused", PowerState.PowerOn);
         /* unknown ? */
         powerStateMaps.put("Migrating", PowerState.PowerOn);
+    }
+    private Map<String, State> vmStateMap = new HashMap<String, State>();
+    private static Map<String, State> stateMaps;
+    static {
+        stateMaps = new HashMap<String, State>();
+        stateMaps.put("Stopping", State.Stopping);
+        stateMaps.put("Running", State.Running);
+        stateMaps.put("Stopped", State.Stopped);
+        stateMaps.put("Error", State.Error);
+        stateMaps.put("Suspended", State.Running);
+        stateMaps.put("Paused", State.Running);
+        stateMaps.put("Migrating", State.Migrating);
+    }
+
+    /**
+     * removeVmState: get rid of the state of a VM
+     * @param vmName
+     */
+    public void revmoveVmState(String vmName) {
+        vmStateMap.remove(vmName);
+    }
+    /**
+     * vmStateMapClear: clear out the statemap and repopulate it.
+     * @throws Ovm3ResourceException
+     */
+    public void vmStateMapClear() throws Ovm3ResourceException {
+        synchronized (vmStateMap) {
+            vmStateMap.clear();
+            syncState(this.vmStateMap);
+        }
+    }
+    /**
+     * vmStateStarting: set the state of a vm to starting
+     * @param vmName
+     */
+    public void setVmStateStarting(String vmName) {
+        setVmState(vmName, State.Starting);
+    }
+    /**
+     * getVmState: get the state for a vm
+     * @param vmName
+     * @return
+     */
+    public State getVmState(String vmName) {
+        return vmStateMap.get(vmName);
+    }
+
+    /**
+     * vmStateChange: set the state of a vm to state
+     * @param vmName
+     * @param state
+     */
+    public void setVmState(String vmName, State state) {
+        synchronized (vmStateMap) {
+            vmStateMap.put(vmName, state);
+        }
     }
 
     /**
@@ -290,6 +338,9 @@ public class Ovm3HypervisorSupport {
      * @return
      * @throws Ovm3ResourceException
      */
+    public Map<String, State> syncState() throws Ovm3ResourceException {
+        return syncState(this.vmStateMap);
+    }
     public Map<String, State> syncState(Map<String, State> vmStateMap) throws Ovm3ResourceException {
         Map<String, State> newStates;
         Map<String, State> oldStates = null;
@@ -425,44 +476,7 @@ public class Ovm3HypervisorSupport {
         }
         return vmStates;
     }
-    /**
-     * PlugNicAnswer: plug a network interface into a VM
-     * @param cmd
-     * @return
-     */
-    public PlugNicAnswer execute(PlugNicCommand cmd) {
-        String vmName = cmd.getVmName();
-        NicTO nic = cmd.getNic();
-        try {
-            Xen xen = new Xen(c);
-            Xen.Vm vm = xen.getVmConfig(vmName);
-            /* check running */
-            if (vm == null) {
-                return new PlugNicAnswer(cmd, false,
-                        "Unable to execute PlugNicCommand due to missing VM");
-            }
-            // setup the NIC in the VM config.
-            createVif(vm, nic);
-            vm.setupVifs();
 
-            // execute the change
-            xen.configureVm(ovmObject.deDash(vm.getPrimaryPoolUuid()),
-                    vm.getVmUuid());
-        } catch (Ovm3ResourceException e) {
-            return new PlugNicAnswer(cmd, false,
-                    "Unable to execute PlugNicCommand due to " + e.toString());
-        }
-        return new PlugNicAnswer(cmd, true, "success");
-    }
-
-    /**
-     * UnPlugNicAnswer: remove a nic from a VM
-     * @param cmd
-     * @return
-     */
-    public UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
-        return new UnPlugNicAnswer(cmd, true, "");
-    }
     /**
      * CheckHealthAnwer: Check the health of an agent on the hypervisor.
      * @param cmd
@@ -562,7 +576,7 @@ public class Ovm3HypervisorSupport {
                 LOGGER.warn("No VNC port for " + vmName);
             }
             /* we already have the state ftw */
-            Map<String, State> states = getAllVmStates();
+            Map<String, State> states = getAllVmStates(vmStateMap);
             State vmState = states.get(vmName);
             if (vmState == null) {
                 LOGGER.warn("Check state of " + vmName

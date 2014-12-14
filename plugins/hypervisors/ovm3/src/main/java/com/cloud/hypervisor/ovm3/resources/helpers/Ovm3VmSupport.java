@@ -19,8 +19,12 @@ import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.PlugNicAnswer;
+import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.UnPlugNicAnswer;
+import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
@@ -46,12 +50,16 @@ public class Ovm3VmSupport {
     private Connection c;
     private Ovm3HypervisorNetwork ovm3hvn;
     private Ovm3Configuration config;
-    public Ovm3VmSupport(Connection conn, Ovm3Configuration ovm3config) {
+    private Ovm3HypervisorSupport hypervisor;
+    private Ovm3StoragePool pool;
+    private final Map<String, Map<String, String>> vmStats = new ConcurrentHashMap<String, Map<String, String>>();
+    public Ovm3VmSupport(Connection conn, Ovm3Configuration ovm3config, Ovm3HypervisorSupport ovm3hyper, Ovm3StoragePool ovm3sp) {
         c = conn;
         config = ovm3config;
-        ovm3hvn = new Ovm3HypervisorNetwork(c);
+        hypervisor = ovm3hyper;
+        /* fixit */
+        pool = ovm3sp;
     }
-
     public Boolean createVifs(Xen.Vm vm, VirtualMachineTO spec)
             throws Ovm3ResourceException {
         NicTO[] nics = spec.getNics();
@@ -109,9 +117,7 @@ public class Ovm3VmSupport {
             for (NicTO nic : nics) {
                 ovm3hvn.getNetwork(nic);
             }
-            synchronized (vmStateMap) {
-                vmStateMap.put(vm.getName(), State.Migrating);
-            }
+            hypervisor.setVmState(vm.getName(), State.Migrating);
             LOGGER.debug("VM " + vm.getName() + " is in Migrating state");
             return new PrepareForMigrationAnswer(cmd);
         } catch (Ovm3ResourceException e) {
@@ -157,9 +163,7 @@ public class Ovm3VmSupport {
                 return new MigrateAnswer(cmd, false, msg, null);
             } finally {
                 /* shouldn't we just reinitialize completely as a last resort ? */
-                synchronized (vmStateMap) {
-                    vmStateMap.put(vmName, state);
-                }
+                hypervisor.setVmState(vmName, state);
             }
         } else {
             try {
@@ -182,9 +186,7 @@ public class Ovm3VmSupport {
                 LOGGER.debug(msg, e);
                 return new MigrateAnswer(cmd, false, msg, null);
             } finally {
-                synchronized (vmStateMap) {
-                    vmStateMap.put(vmName, state);
-                }
+                hypervisor.setVmState(vmName, state);
             }
         }
     }
@@ -330,7 +332,7 @@ public class Ovm3VmSupport {
                                     "unsupported protocol");
                         }
                         NfsTO nfsStore = (NfsTO) store;
-                        String secPoolUuid = setupSecondaryStorage(nfsStore
+                        String secPoolUuid = pool.setupSecondaryStorage(nfsStore
                                 .getUrl());
                         String isoPath = config.getAgentSecStoragePath() + File.separator
                                 + secPoolUuid + File.separator
@@ -353,5 +355,44 @@ public class Ovm3VmSupport {
             }
         }
         return true;
+    }
+
+    /**
+     * PlugNicAnswer: plug a network interface into a VM
+     * @param cmd
+     * @return
+     */
+    public PlugNicAnswer execute(PlugNicCommand cmd) {
+        String vmName = cmd.getVmName();
+        NicTO nic = cmd.getNic();
+        try {
+            Xen xen = new Xen(c);
+            Xen.Vm vm = xen.getVmConfig(vmName);
+            /* check running */
+            if (vm == null) {
+                return new PlugNicAnswer(cmd, false,
+                        "Unable to execute PlugNicCommand due to missing VM");
+            }
+            // setup the NIC in the VM config.
+            createVif(vm, nic);
+            vm.setupVifs();
+
+            // execute the change
+            xen.configureVm(ovmObject.deDash(vm.getPrimaryPoolUuid()),
+                    vm.getVmUuid());
+        } catch (Ovm3ResourceException e) {
+            return new PlugNicAnswer(cmd, false,
+                    "Unable to execute PlugNicCommand due to " + e.toString());
+        }
+        return new PlugNicAnswer(cmd, true, "success");
+    }
+
+    /**
+     * UnPlugNicAnswer: remove a nic from a VM
+     * @param cmd
+     * @return
+     */
+    public UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
+        return new UnPlugNicAnswer(cmd, true, "");
     }
 }
