@@ -44,7 +44,6 @@ import com.cloud.hypervisor.ovm3.objects.OvmObject;
 import com.cloud.hypervisor.ovm3.objects.Pool;
 import com.cloud.hypervisor.ovm3.objects.Xen;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.vm.VirtualMachine.PowerState;
@@ -56,8 +55,10 @@ public class Ovm3HypervisorSupport {
             .getLogger(Ovm3HypervisorSupport.class);
     private static Connection c;
     private OvmObject ovmObject = new OvmObject();
-    public Ovm3HypervisorSupport(Connection conn) {
+    private Ovm3Configuration config;
+    public Ovm3HypervisorSupport(Connection conn, Ovm3Configuration ovm3config) {
         c = conn;
+        config = ovm3config;
     }
     private static Map<String, PowerState> powerStateMaps;
     static {
@@ -72,38 +73,6 @@ public class Ovm3HypervisorSupport {
         powerStateMaps.put("Migrating", PowerState.PowerOn);
     }
 
-    /**
-     * ValidateParam: Validate the input for configure
-     * @param name
-     * @param param
-     * @return param
-     * @throws ConfigurationException
-     */
-    public static String validateParam(String name, String param) throws ConfigurationException {
-        if (param == null) {
-            String msg = "Unable to get " + name + " param is:" + param;
-            LOGGER.debug(msg);
-            throw new ConfigurationException(msg);
-        }
-        return param;
-    }
-    /**
-     * validatePoolAndCluster:
-     * A cluster is impossible with a  pool.
-     * A pool is impossible without a vip.
-     */
-    public static void validatePoolAndCluster() {
-        if (agentInOvm3Cluster) {
-            LOGGER.debug("Clustering requires a pool, setting pool to true");
-            agentInOvm3Pool = true;
-        }
-        if (!NetUtils.isValidIp(ovm3PoolVip)) {
-            LOGGER.debug("No VIP, Setting ovm3pool and ovm3cluster to false");
-            agentInOvm3Pool = false;
-            agentInOvm3Cluster = false;
-            ovm3PoolVip = "";
-        }
-    }
     /**
      * getSystemVMKeyFile:
      * Figure out where the cloud  keyfile lives for access to the systemvm.
@@ -133,7 +102,7 @@ public class Ovm3HypervisorSupport {
      * fillHostInfo: Startup the routing for the host.
      * @param cmd
      */
-    public static void fillHostInfo(StartupRoutingCommand cmd) {
+    public void fillHostInfo(StartupRoutingCommand cmd) {
         try {
             /* get data we need from parts */
             Linux host = new Linux(c);
@@ -153,11 +122,11 @@ public class Ovm3HypervisorSupport {
                     .longValue());
             cmd.setDom0MinMemory(totalmem.subtract(freemem).longValue());
             // setPoolSync and setCaps.
-            cmd.setGuid(csGuid);
-            cmd.setDataCenter(agentZoneId.toString());
-            cmd.setPod(agentPodId.toString());
+            cmd.setGuid(config.getCsGuid());
+            cmd.setDataCenter(config.getAgentZoneId().toString());
+            cmd.setPod(config.getAgentPodId().toString());
             /* TODO: cmd.setOwner(host.getManagerUuid()); */
-            cmd.setCluster(agentClusterId.toString());
+            cmd.setCluster(config.getAgentClusterId().toString());
             cmd.setHypervisorVersion(host.getOvmVersion());
             cmd.setVersion(host.getAgentVersion());
             cmd.setHypervisorType(HypervisorType.Ovm3);
@@ -175,25 +144,25 @@ public class Ovm3HypervisorSupport {
                         "Unable to obtain valid bridge with " + c.getIp());
             }
 
-            if (agentPublicNetworkName == null) {
-                agentPublicNetworkName = defaultBridge;
+            if (config.getAgentPublicNetworkName() == null) {
+                config.setAgentPublicNetworkName(defaultBridge);
             }
-            if (agentPrivateNetworkName == null) {
-                agentPrivateNetworkName = agentPublicNetworkName;
+            if (config.getAgentPrivateNetworkName() == null) {
+                config.setAgentPrivateNetworkName(config.getAgentPublicNetworkName());
             }
-            if (agentGuestNetworkName == null) {
-                agentGuestNetworkName = agentPublicNetworkName;
+            if (config.getAgentGuestNetworkName() == null) {
+                config.setAgentGuestNetworkName(config.getAgentPublicNetworkName());
             }
-            if (agentStorageNetworkName == null) {
-                agentStorageNetworkName = agentPrivateNetworkName;
+            if (config.getAgentStorageNetworkName() == null) {
+                config.setAgentStorageNetworkName(config.getAgentPrivateNetworkName());
             }
             Map<String, String> d = cmd.getHostDetails();
-            d.put("public.network.device", agentPublicNetworkName);
-            d.put("private.network.device", agentPrivateNetworkName);
-            d.put("guest.network.device", agentGuestNetworkName);
-            d.put("storage.network.device", agentStorageNetworkName);
-            d.put("ismaster", agentIsMaster.toString());
-            d.put("hasmaster", agentHasMaster.toString());
+            d.put("public.network.device", config.getAgentPublicNetworkName());
+            d.put("private.network.device", config.getAgentPrivateNetworkName());
+            d.put("guest.network.device", config.getAgentGuestNetworkName());
+            d.put("storage.network.device", config.getAgentStorageNetworkName());
+            d.put("ismaster", config.getAgentIsMaster().toString());
+            d.put("hasmaster", config.getAgentHasMaster().toString());
             cmd.setHostDetails(d);
             LOGGER.debug("Add an Ovm3 host " + c.getHostname() + ":"
                     + cmd.getHostDetails());
@@ -321,7 +290,7 @@ public class Ovm3HypervisorSupport {
      * @return
      * @throws Ovm3ResourceException
      */
-    public static Map<String, State> syncState(Map<String, State> vmStateMap) throws Ovm3ResourceException {
+    public Map<String, State> syncState(Map<String, State> vmStateMap) throws Ovm3ResourceException {
         Map<String, State> newStates;
         Map<String, State> oldStates = null;
         final Map<String, State> changes = new HashMap<String, State>();
@@ -461,7 +430,7 @@ public class Ovm3HypervisorSupport {
      * @param cmd
      * @return
      */
-    private PlugNicAnswer execute(PlugNicCommand cmd) {
+    public PlugNicAnswer execute(PlugNicCommand cmd) {
         String vmName = cmd.getVmName();
         NicTO nic = cmd.getNic();
         try {
@@ -491,7 +460,7 @@ public class Ovm3HypervisorSupport {
      * @param cmd
      * @return
      */
-    private UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
+    public UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
         return new UnPlugNicAnswer(cmd, true, "");
     }
     /**
@@ -499,7 +468,7 @@ public class Ovm3HypervisorSupport {
      * @param cmd
      * @return
      */
-    private CheckHealthAnswer execute(CheckHealthCommand cmd) {
+    public CheckHealthAnswer execute(CheckHealthCommand cmd) {
         Common test = new Common(c);
         String ping = "put";
         String pong;
@@ -524,41 +493,41 @@ public class Ovm3HypervisorSupport {
      */
     /* TODO: move the connection elsewhere.... */
     public boolean masterCheck() {
-        if ("".equals(ovm3PoolVip)) {
+        if ("".equals(config.getOvm3PoolVip())) {
             LOGGER.debug("No cluster vip, not checking for master");
             return false;
         }
 
         try {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
-            if (cSp.dom0HasIp(ovm3PoolVip)) {
+            if (cSp.dom0HasIp(config.getOvm3PoolVip())) {
                 LOGGER.debug("Host " + c.getHostname()
-                        + " is a master, already has vip " + ovm3PoolVip);
-                agentIsMaster = true;
-            } else if (cSp.ping(ovm3PoolVip)) {
+                        + " is a master, already has vip " + config.getOvm3PoolVip());
+                config.setAgentIsMaster(true);
+            } else if (cSp.ping(config.getOvm3PoolVip())) {
                 LOGGER.debug("Host " + c.getHostname()
-                        + " has a master, someone has vip " + ovm3PoolVip);
-                agentHasMaster = true;
+                        + " has a master, someone has vip " + config.getOvm3PoolVip());
+                config.setAgentHasMaster(true);
             } else {
                 LOGGER.debug("Host " + c.getHostname()
-                        + " becomes a master, no one has vip " + ovm3PoolVip);
-                agentIsMaster = true;
+                        + " becomes a master, no one has vip " + config.getOvm3PoolVip());
+                config.setAgentIsMaster(true);
             }
         } catch (Ovm3ResourceException e) {
             LOGGER.debug("Host " + c.getHostname() + " can't reach master: "
                     + e.getMessage());
-            agentHasMaster = false;
+            config.setAgentHasMaster(false);
         }
-        return agentIsMaster;
+        return config.getAgentIsMaster();
     }
     /* Check if the host is in ready state for CS */
-    private ReadyAnswer execute(ReadyCommand cmd) {
+    public ReadyAnswer execute(ReadyCommand cmd) {
         try {
             Linux host = new Linux(c);
             Pool pool = new Pool(c);
 
             /* only interesting when doing cluster */
-            if (!host.getIsMaster() && agentInOvm3Cluster) {
+            if (!host.getIsMaster() && config.getAgentInOvm3Cluster()) {
                 if (pool.getPoolMasterVip().equalsIgnoreCase(c.getIp())) {
                     /* check pool state here */
                     return new ReadyAnswer(cmd);
@@ -583,7 +552,7 @@ public class Ovm3HypervisorSupport {
 
     }
     /* hHeck "the" virtual machine */
-    private CheckVirtualMachineAnswer execute(
+    public CheckVirtualMachineAnswer execute(
             final CheckVirtualMachineCommand cmd) {
         String vmName = cmd.getVmName();
         try {
@@ -612,24 +581,24 @@ public class Ovm3HypervisorSupport {
         }
     }
 
-    private MaintainAnswer execute(MaintainCommand cmd) {
+    public MaintainAnswer execute(MaintainCommand cmd) {
         /*
          * TODO: leave cluster, leave pool, release ownership, cleanout and
          * start over ?
          */
         try {
             Network net = new Network(c);
-            net.stopOvsLocalConfig(agentControlNetworkName);
+            net.stopOvsLocalConfig(config.getAgentControlNetworkName());
         } catch (Ovm3ResourceException e) {
-            LOGGER.debug("unable to disable " + agentControlNetworkName, e);
+            LOGGER.debug("unable to disable " + config.getAgentControlNetworkName(), e);
         }
         return new MaintainAnswer(cmd);
     }
-    private Answer execute(GetHostStatsCommand cmd) {
+    public Answer execute(GetHostStatsCommand cmd) {
         try {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
             Map<String, String> stats = cSp
-                    .ovsDom0Stats(agentPublicNetworkName);
+                    .ovsDom0Stats(config.getAgentPublicNetworkName());
             Double cpuUtil = Double.parseDouble(stats.get("cpu"));
             Double rxBytes = Double.parseDouble(stats.get("rx"));
             Double txBytes = Double.parseDouble(stats.get("tx"));
@@ -652,7 +621,7 @@ public class Ovm3HypervisorSupport {
      * /hypervisors/ovm/scripts/vm/hypervisor/ovm/OvmHostModule.py contains
      * fence
      */
-    private FenceAnswer execute(FenceCommand cmd) {
+    public FenceAnswer execute(FenceCommand cmd) {
         try {
             Boolean res = false;
             return new FenceAnswer(cmd, res, res.toString());

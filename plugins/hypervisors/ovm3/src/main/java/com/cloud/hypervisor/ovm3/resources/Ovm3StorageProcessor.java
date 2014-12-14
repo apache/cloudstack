@@ -42,13 +42,16 @@ import com.cloud.hypervisor.ovm3.objects.OvmObject;
 import com.cloud.hypervisor.ovm3.objects.StoragePlugin;
 import com.cloud.hypervisor.ovm3.objects.Xen;
 import com.cloud.hypervisor.ovm3.objects.StoragePlugin.FileProperties;
+import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3Configuration;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.resource.StorageProcessor;
 import com.cloud.vm.DiskProfile;
 
-/* This should only contain stuff that @Override(s) */
+/* TODO: This should only contain stuff that @Override(s)
+ * the rest should move
+ */
 public class Ovm3StorageProcessor implements StorageProcessor {
     private static final Logger LOGGER = Logger
             .getLogger(Ovm3StorageProcessor.class);
@@ -56,16 +59,24 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     private String agentOvmRepoPath = "/OVS/Repositories";
     private String agentSecStoragePath = "/nfsmnt";
     private OvmObject ovmObject = new OvmObject();
-    private Ovm3StoragePool ovm3ResourceBase;
-    public Ovm3StorageProcessor(Connection conn) {
+    private Ovm3StoragePool pool;
+    private Ovm3Configuration config;
+    public Ovm3StorageProcessor(Connection conn, Ovm3Configuration ovm3config, Ovm3StoragePool ovm3pool) {
         c = conn;
-        Ovm3StoragePool ovm3pool = new Ovm3StoragePool(c);
+        config = ovm3config;
+        pool = ovm3pool;
+    }
+    /* circulair dependency!!!! */
+    public Ovm3StorageProcessor(Connection conn, Ovm3Configuration ovm3config) {
+        c = conn;
+        config = ovm3config;
+        pool = new Ovm3StoragePool(c, ovm3config);
     }
     /*
      * TODO: Split out in Sec to prim and prim to prim and types ? Storage mount
      * also goes in here for secstorage
      */
-    private final Answer execute(final CopyCommand cmd) {
+    public final Answer execute(final CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
         DataStoreTO srcStore = srcData.getDataStore();
         DataTO destData = cmd.getDestTO();
@@ -80,7 +91,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 TemplateObjectTO srcTemplate = (TemplateObjectTO) srcData;
                 String storeUrl = srcImageStore.getUrl();
 
-                String secPoolUuid = ovm3ResourceBase.setupSecondaryStorage(storeUrl);
+                String secPoolUuid = pool.setupSecondaryStorage(storeUrl);
                 String primaryPoolUuid = destData.getDataStore().getUuid();
                 String destPath = agentOvmRepoPath + "/"
                         + ovmObject.deDash(primaryPoolUuid) + "/" + "Templates";
@@ -152,7 +163,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         return new CopyCmdAnswer("not implemented yet");
     }
 
-    private Answer execute(DeleteCommand cmd) {
+    public Answer execute(DeleteCommand cmd) {
         DataTO data = cmd.getData();
         LOGGER.debug("Deleting object: " + data.getObjectType());
         if (data.getObjectType() == DataObjectType.VOLUME) {
@@ -168,7 +179,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         return new Answer(cmd);
     }
     /* TODO: Create a Disk from a template needs cleaning */
-    private CreateAnswer execute(CreateCommand cmd) {
+    public CreateAnswer execute(CreateCommand cmd) {
         StorageFilerTO primaryStorage = cmd.getPool();
         DiskProfile disk = cmd.getDiskCharacteristics();
 
@@ -244,7 +255,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         return new Answer(cmd);
     }
 
-    private Answer execute(CreateObjectCommand cmd) {
+    public Answer execute(CreateObjectCommand cmd) {
         DataTO data = cmd.getData();
         if (data.getObjectType() == DataObjectType.VOLUME) {
             return createVolume(cmd);
@@ -291,7 +302,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         return new Answer(cmd, success, answer);
     }
 
-    private String isoAttachDetach(String vmName, DiskTO disk, boolean isAttach) {
+    public String isoAttachDetach(String vmName, DiskTO disk, boolean isAttach) {
         Xen xen = new Xen(c);
         String doThis = (isAttach) ? "AttachIso" : "DettachIso";
         String msg = null;
@@ -309,7 +320,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 return msg;
             }
             NfsTO nfsStore = (NfsTO) store;
-            String secPoolUuid = ovm3ResourceBase.setupSecondaryStorage(nfsStore.getUrl());
+            String secPoolUuid = pool.setupSecondaryStorage(nfsStore.getUrl());
             String isoPath = agentSecStoragePath + File.separator + secPoolUuid
                     + File.separator + isoTO.getPath();
             if (isAttach) {
@@ -403,7 +414,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     /*
      * Might have some logic errors that's what debugging is for...
      */
-    private CopyVolumeAnswer execute(CopyVolumeCommand cmd) {
+    public CopyVolumeAnswer execute(CopyVolumeCommand cmd) {
         String volumePath = cmd.getVolumePath();
         /* is a repository */
         String secondaryStorageURL = cmd.getSecondaryStorageURL();
@@ -435,7 +446,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         }
     }
     /* Destroy a volume (image) */
-    private Answer execute(DestroyCommand cmd) {
+    public Answer execute(DestroyCommand cmd) {
         VolumeTO vol = cmd.getVolume();
         String vmName = cmd.getVmName();
         try {
@@ -449,7 +460,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         }
     }
     /* check if a VM is running should be added */
-    private CreatePrivateTemplateAnswer execute(
+    public CreatePrivateTemplateAnswer execute(
             final CreatePrivateTemplateFromVolumeCommand cmd) {
         String volumePath = cmd.getVolumePath();
         Long accountId = cmd.getAccountId();

@@ -9,14 +9,38 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.lang.BooleanUtils;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.CreateObjectCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.AttachIsoCommand;
+import com.cloud.agent.api.AttachVolumeCommand;
+import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckNetworkCommand;
+import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
+import com.cloud.agent.api.CreateStoragePoolCommand;
+import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.FenceCommand;
+import com.cloud.agent.api.GetHostStatsCommand;
+import com.cloud.agent.api.GetStorageStatsCommand;
+import com.cloud.agent.api.GetVmStatsCommand;
+import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.MaintainCommand;
+import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.NetworkRulesSystemVmCommand;
+import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
+import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.PlugNicCommand;
+import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.StartAnswer;
@@ -26,6 +50,13 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.UnPlugNicCommand;
+import com.cloud.agent.api.check.CheckSshCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.CreateCommand;
+import com.cloud.agent.api.storage.DestroyCommand;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
@@ -33,12 +64,13 @@ import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.ovm3.objects.CloudStackPlugin;
 import com.cloud.hypervisor.ovm3.objects.Common;
 import com.cloud.hypervisor.ovm3.objects.Connection;
-import com.cloud.hypervisor.ovm3.objects.Network;
 import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
 import com.cloud.hypervisor.ovm3.objects.OvmObject;
 import com.cloud.hypervisor.ovm3.objects.Xen;
+import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3Configuration;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3HypervisorNetwork;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3StoragePool;
+import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3VirtualRoutingSupport;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3VmGuestTypes;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3VmSupport;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3HypervisorSupport;
@@ -47,7 +79,6 @@ import com.cloud.resource.ServerResourceBase;
 import com.cloud.resource.hypervisor.HypervisorResource;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
@@ -56,42 +87,19 @@ import com.cloud.vm.VirtualMachine.State;
 public class Ovm3HypervisorResource extends ServerResourceBase implements HypervisorResource {
     private static final Logger LOGGER = Logger
             .getLogger(Ovm3HypervisorResource.class);
+    @Inject
+    private VirtualRoutingResource vrResource;
+
     private Connection c;
     private Ovm3StoragePool ovm3sp;
+    private Ovm3StorageProcessor ovm3spr;
     private Ovm3HypervisorSupport ovm3hs;
     private Ovm3VmSupport ovm3vs;
     private Ovm3HypervisorNetwork ovm3hn;
     private Ovm3VirtualRoutingResource ovm3vrr;
-    private String agentName;
-    private String agentIp;
-    private Long agentZoneId;
-    private Long agentPodId;
-    private String agentPoolId;
-    private Long agentClusterId;
-    private String agentHostname;
-    private String csGuid;
-    private String agentSshUserName = "root";
-    private String agentSshPassword;
-    private String agentOvsAgentUser = "oracle";
-    private String agentOvsAgentPassword;
-    private Integer agentOvsAgentPort = 8899;
-    private Boolean agentOvsAgentSsl = false;
-    private String agentSshKey = "id_rsa.cloud";
-    private String agentOwnedByUuid = "d1a749d4295041fb99854f52ea4dea97";
-    private Boolean agentIsMaster = false;
-    private Boolean agentHasMaster = false;
-    private Boolean agentInOvm3Pool = false;
-    private Boolean agentInOvm3Cluster = false;
-    private String ovm3PoolVip = "";
-    private String agentPrivateNetworkName;
-    private String agentPublicNetworkName;
-    private String agentGuestNetworkName;
-    private String agentStorageNetworkName;
-    private String agentControlNetworkName = "control0";
-    private String agentOvmRepoPath = "/OVS/Repositories";
-    private String agentSecStoragePath = "/nfsmnt";
+    private Ovm3VirtualRoutingSupport ovm3vrs;
+    private Ovm3Configuration ovm3config;
     private OvmObject ovmObject = new OvmObject();
-    private int domRSshPort = 3922;
 
     private Map<String, State> vmStateMap = new HashMap<String, State>();
     private static Map<String, State> s_stateMaps;
@@ -105,10 +113,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         s_stateMaps.put("Paused", State.Running);
         s_stateMaps.put("Migrating", State.Migrating);
     }
-    @Inject
-
-    private VirtualRoutingResource vrResource;
-    private Map<String, Network.Interface> agentInterfaces = null;
     private final Map<String, Map<String, String>> vmStats = new ConcurrentHashMap<String, Map<String, String>>();
 
     /*
@@ -123,18 +127,25 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         return Type.Routing;
     }
 
+    /* configure is called before this, does setup of the connection and
+     * gets the params.
+     * @see com.cloud.resource.ServerResource#initialize()
+     */
     @Override
     public StartupCommand[] initialize() {
         LOGGER.debug("Ovm3 resource intializing");
         try {
             StartupRoutingCommand srCmd = new StartupRoutingCommand();
             StartupStorageCommand ssCmd = new StartupStorageCommand();
-            ovm3hs = new Ovm3HypervisorSupport(c);
-            ovm3sp = new Ovm3StoragePool(c);
-            ovm3vs = new Ovm3VmSupport(c);
-            ovm3hn = new Ovm3HypervisorNetwork(c);
-            ovm3vrr = new Ovm3VirtualRoutingResource(c);
+            /* enhhance the configuration here, and give that along to
+             * fill the hostinfo later
+             */
 
+            ovm3vs = new Ovm3VmSupport(c, ovm3config);
+            ovm3vrr = new Ovm3VirtualRoutingResource(c);
+            ovm3vrs = new Ovm3VirtualRoutingSupport(c);
+
+            /* here stuff gets completed, but where should state live ? */
             ovm3hs.fillHostInfo(srCmd);
             LOGGER.debug("Ovm3 pool " + ssCmd + " " + srCmd);
 
@@ -178,80 +189,81 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         if (cmd instanceof NetworkElementCommand) {
             return vrResource.executeRequest((NetworkElementCommand) cmd);
         } else if (clazz == CheckHealthCommand.class) {
-            return execute((CheckHealthCommand) cmd);
+            return ovm3hs.execute((CheckHealthCommand) cmd);
         } else if (clazz == NetworkUsageCommand.class) {
-            return execute((NetworkUsageCommand) cmd);
+            return ovm3vrs.execute((NetworkUsageCommand) cmd);
         } else if (clazz == PlugNicCommand.class) {
-            return execute((PlugNicCommand) cmd);
+            return ovm3hs.execute((PlugNicCommand) cmd);
         } else if (clazz == UnPlugNicCommand.class) {
-            return execute((UnPlugNicCommand) cmd);
+            return ovm3hs.execute((UnPlugNicCommand) cmd);
         } else if (clazz == ReadyCommand.class) {
-            return execute((ReadyCommand) cmd);
+            return ovm3hs.execute((ReadyCommand) cmd);
         } else if (clazz == CopyCommand.class) {
-            return execute((CopyCommand) cmd);
+            return ovm3spr.execute((CopyCommand) cmd);
         } else if (clazz == DeleteCommand.class) {
-            return execute((DeleteCommand) cmd);
+            return ovm3spr.execute((DeleteCommand) cmd);
         } else if (clazz == CreateStoragePoolCommand.class) {
-            return execute((CreateStoragePoolCommand) cmd);
+            return ovm3sp.execute((CreateStoragePoolCommand) cmd);
         } else if (clazz == ModifyStoragePoolCommand.class) {
-            return execute((ModifyStoragePoolCommand) cmd);
+            return ovm3sp.execute((ModifyStoragePoolCommand) cmd);
         } else if (clazz == PrimaryStorageDownloadCommand.class) {
-            return execute((PrimaryStorageDownloadCommand) cmd);
+            return ovm3sp.execute((PrimaryStorageDownloadCommand) cmd);
         } else if (clazz == CreateCommand.class) {
-            return execute((CreateCommand) cmd);
+            return ovm3spr.execute((CreateCommand) cmd);
         } else if (clazz == GetHostStatsCommand.class) {
-            return execute((GetHostStatsCommand) cmd);
+            return ovm3hs.execute((GetHostStatsCommand) cmd);
         } else if (clazz == StopCommand.class) {
             return execute((StopCommand) cmd);
         } else if (clazz == RebootCommand.class) {
             return execute((RebootCommand) cmd);
         } else if (clazz == GetStorageStatsCommand.class) {
-            return execute((GetStorageStatsCommand) cmd);
+            return ovm3sp.execute((GetStorageStatsCommand) cmd);
         } else if (clazz == GetVmStatsCommand.class) {
-            return execute((GetVmStatsCommand) cmd);
+            return ovm3vs.execute((GetVmStatsCommand) cmd);
         } else if (clazz == AttachVolumeCommand.class) {
-            return execute((AttachVolumeCommand) cmd);
+            return ovm3vs.execute((AttachVolumeCommand) cmd);
         } else if (clazz == DestroyCommand.class) {
-            return execute((DestroyCommand) cmd);
+            return ovm3spr.execute((DestroyCommand) cmd);
         } else if (clazz == PrepareForMigrationCommand.class) {
-            return execute((PrepareForMigrationCommand) cmd);
+            return ovm3vs.execute((PrepareForMigrationCommand) cmd);
         } else if (clazz == MigrateCommand.class) {
-            return execute((MigrateCommand) cmd);
+            return ovm3vs.execute((MigrateCommand) cmd);
         } else if (clazz == CheckVirtualMachineCommand.class) {
-            return execute((CheckVirtualMachineCommand) cmd);
+            return ovm3hs.execute((CheckVirtualMachineCommand) cmd);
         } else if (clazz == MaintainCommand.class) {
-            return execute((MaintainCommand) cmd);
+            return ovm3hs.execute((MaintainCommand) cmd);
         } else if (clazz == StartCommand.class) {
             return execute((StartCommand) cmd);
         } else if (clazz == GetVncPortCommand.class) {
-            return execute((GetVncPortCommand) cmd);
+            return ovm3vs.execute((GetVncPortCommand) cmd);
         } else if (clazz == PingTestCommand.class) {
-            return execute((PingTestCommand) cmd);
+            return ovm3hn.execute((PingTestCommand) cmd);
         } else if (clazz == FenceCommand.class) {
-            return execute((FenceCommand) cmd);
+            return ovm3hs.execute((FenceCommand) cmd);
         } else if (clazz == AttachIsoCommand.class) {
-            return execute((AttachIsoCommand) cmd);
+            /*
+            return ovm3spr.execute((attachIso) cmd);
         } else if (clazz == DettachCommand.class) {
-            return execute((DettachCommand) cmd);
+            return ovm3spr.execute((DettachCommand) cmd);
         } else if (clazz == AttachCommand.class) {
-            return execute((AttachCommand) cmd);
+            return ovm3spr.execute((AttachCommand) cmd);
+            */
         } else if (clazz == NetworkRulesSystemVmCommand.class) {
-            return execute((NetworkRulesSystemVmCommand) cmd);
+            return ovm3vrs.execute((NetworkRulesSystemVmCommand) cmd);
         } else if (clazz == CreatePrivateTemplateFromVolumeCommand.class) {
-            return execute((CreatePrivateTemplateFromVolumeCommand) cmd);
+            return ovm3spr.execute((CreatePrivateTemplateFromVolumeCommand) cmd);
         } else if (clazz == CopyVolumeCommand.class) {
-            return execute((CopyVolumeCommand) cmd);
+            return ovm3spr.execute((CopyVolumeCommand) cmd);
         } else if (clazz == DeleteStoragePoolCommand.class) {
-            return execute((DeleteStoragePoolCommand) cmd);
+            return ovm3sp.execute((DeleteStoragePoolCommand) cmd);
         } else if (clazz == CheckNetworkCommand.class) {
-            return execute((CheckNetworkCommand) cmd);
+            return ovm3hn.execute((CheckNetworkCommand) cmd);
         } else if (clazz == CheckSshCommand.class) {
-            return execute((CheckSshCommand) cmd);
+            return ovm3vrs.execute((CheckSshCommand) cmd);
         } else if (clazz == CreateObjectCommand.class) {
-            return execute((CreateObjectCommand) cmd);
-        } else {
-            return Answer.createUnsupportedCommandAnswer(cmd);
+            return ovm3spr.execute((CreateObjectCommand) cmd);
         }
+        return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
     @Override
@@ -274,12 +286,12 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
 
     @Override
     public String getName() {
-        return agentName;
+        return ovm3config.getAgentName();
     }
 
     @Override
     public void setName(String name) {
-        this.agentName = name;
+        ovm3config.setAgentName(name);
     }
 
     @Override
@@ -305,93 +317,28 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         // TODO Auto-generated method stub
     }
 
+    /* TODO: fix this: Configure is the first thing called, later fillHostinfo */
     @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
-        String agentName = name;
         LOGGER.debug("configure " + name + " with params: " + params);
-        agentZoneId = Long.parseLong((String) params.get("zone"));
-        agentPodId = Long.parseLong(ovm3hs.validateParam("PodId", (String) params.get("pod")));
-        agentClusterId = Long.parseLong((String) params.get("cluster"));
-        ovm3PoolVip = String.valueOf(params.get("ovm3vip"));
-        agentInOvm3Pool = BooleanUtils.toBoolean((String) params
-                .get("ovm3pool"));
-        agentInOvm3Cluster = BooleanUtils.toBoolean((String) params
-                .get("ovm3cluster"));
-        agentHostname = ovm3hs.validateParam("Hostname", (String) params.get("host"));
-        agentIp = (String) params.get("ip");
-        agentSshUserName = ovm3hs.validateParam("Username", (String) params.get("username"));
-        agentSshPassword = ovm3hs.validateParam("Password", (String) params.get("password"));
-        csGuid = ovm3hs.validateParam("Cloudstack GUID", (String) params.get("guid"));
-        agentOvsAgentUser = ovm3hs.validateParam("OVS Username", (String) params.get("agentusername"));
-        agentOvsAgentPassword = ovm3hs.validateParam("OVS Password", (String) params.get("agentpassword"));
-        agentPrivateNetworkName = (String) params.get("private.network.device");
-        agentPublicNetworkName = (String) params.get("public.network.device");
-        agentGuestNetworkName = (String) params.get("guest.network.device");
-        agentStorageNetworkName = (String) params
-                .get("storage.network.device1");
-
-        if (params.get("agentport") != null) {
-            agentOvsAgentPort = Integer.parseInt((String) params
-                    .get("agentport"));
-        }
-        /* TODO: the agentssl parameter */
-        ovm3hs.validatePoolAndCluster();
-
+        ovm3config = new Ovm3Configuration(params);
         /* check if we're master or not and if we can connect */
         try {
-            c = new Connection(agentHostname, agentOvsAgentPort,
-                    agentOvsAgentUser, agentOvsAgentPassword);
+            c = new Connection(ovm3config.getAgentHostname(),
+                    ovm3config.getAgentOvsAgentPort(),
+                    ovm3config.getAgentOvsAgentUser(),
+                    ovm3config.getAgentOvsAgentPassword());
             ovm3hs.masterCheck();
         } catch (Exception e) {
             throw new CloudRuntimeException("Base checks failed for "
-                    + agentHostname, e);
+                    + ovm3config.getAgentHostname(), e);
         }
         /* setup ovm3 agent plugin for cloudstack, our minion */
+        ovm3hn = new Ovm3HypervisorNetwork(c, ovm3config);
+        ovm3hn.configureNetworking();
 
-
-        try {
-            /*
-             * TODO: setup meta tags for the management interface (probably
-             * required with multiple interfaces)?
-             */
-            Network net = new Network(c);
-            agentInterfaces = net.getInterfaceList();
-            if (agentControlNetworkName != null
-                    && !agentInterfaces.containsKey(agentControlNetworkName)) {
-                net.startOvsLocalConfig(agentControlNetworkName);
-                /* ovs replies too "fast" so the bridge can be "busy" */
-                int contCount = 0;
-                while (!agentInterfaces.containsKey(agentControlNetworkName)) {
-                    LOGGER.debug("waiting for " + agentControlNetworkName);
-                    agentInterfaces = net.getInterfaceList();
-                    Thread.sleep(1 * 1000);
-                    if (contCount > 9) {
-                        throw new ConfigurationException("Unable to configure "
-                                + agentControlNetworkName + " on host "
-                                + agentHostname);
-                    }
-                    contCount++;
-                }
-            }
-            /*
-             * The bridge is remembered upon reboot, but not the IP or the
-             * config. Zeroconf also adds the route again by default.
-             */
-            net.ovsIpConfig(agentControlNetworkName, "static",
-                    NetUtils.getLinkLocalGateway(),
-                    NetUtils.getLinkLocalNetMask());
-            CloudStackPlugin cSp = new CloudStackPlugin(c);
-            cSp.ovsControlInterface(agentControlNetworkName,
-                    NetUtils.getLinkLocalCIDR());
-
-        } catch (InterruptedException e) {
-            LOGGER.error("interrupted?", e);
-        } catch (Ovm3ResourceException e) {
-            String msg = "Basic configuration failed on " + agentHostname;
-            LOGGER.error(msg, e);
-            throw new ConfigurationException(msg + ", " + e.getMessage());
-        }
+        ovm3sp = new Ovm3StoragePool(c, ovm3config);
         ovm3sp.prepareForPool();
 
         vrResource = new VirtualRoutingResource(ovm3vrr);
@@ -455,7 +402,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             ovm3vs.createVbds(vm, vmSpec);
 
             if (vmSpec.getType() != VirtualMachine.Type.User) {
-                String svmPath = agentOvmRepoPath + "/"
+                String svmPath = ovm3config.getAgentOvmRepoPath() + "/"
                         + ovmObject.deDash(vm.getPrimaryPoolUuid()) + "/ISOs";
                 String svmIso = svmPath + "/"
                         + ovm3sp.getSystemVMPatchIsoFile().getName();
@@ -488,7 +435,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
                     CloudStackPlugin cSp = new CloudStackPlugin(c);
                     if (vmStateMap.get(vmName) == null) {
                         String msg = "VM " + vmName + " went missing on "
-                                + agentHostname + ", returning stopped";
+                                + c.getHostname() + ", returning stopped";
                         LOGGER.debug(msg);
                         state = State.Stopped;
                         return new StartAnswer(cmd, msg);
@@ -512,7 +459,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             /*
              * TODO: Can't remember if HA worked if we were only a pool ?
              */
-            if (agentInOvm3Pool && agentInOvm3Cluster) {
+            if (ovm3config.getAgentInOvm3Pool() && ovm3config.getAgentInOvm3Cluster()) {
                 xen.configureVmHa(ovmObject.deDash(vm.getPrimaryPoolUuid()),
                         vm.getVmUuid(), true);
             }

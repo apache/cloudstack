@@ -2,6 +2,8 @@ package com.cloud.hypervisor.ovm3.resources.helpers;
 
 import java.util.List;
 
+import javax.naming.ConfigurationException;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -17,15 +19,64 @@ import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 
 public class Ovm3HypervisorNetwork {
     private static final Logger LOGGER = Logger
             .getLogger(Ovm3HypervisorNetwork.class);
     Connection c;
-    public Ovm3HypervisorNetwork(Connection conn) {
+    private Ovm3Configuration config;
+    public Ovm3HypervisorNetwork(Connection conn, Ovm3Configuration ovm3config) {
         c = conn;
+        config = ovm3config;
     }
 
+    /* Configure the control network for system VMs */
+    public void configureNetworking() throws ConfigurationException {
+        /* TODO: setup meta tags for the management interface (probably
+        * required with multiple interfaces)?
+        */
+        try {
+           Network net = new Network(c);
+           config.setAgentInterfaces(net.getInterfaceList());
+           String controlIface = config.getAgentControlNetworkName();
+           if (controlIface != null
+                   && !config.getAgentInterfaces().containsKey(controlIface)) {
+               net.startOvsLocalConfig(controlIface);
+               /* ovs replies too "fast" so the bridge can be "busy" */
+               int contCount = 0;
+               while (!config.getAgentInterfaces().containsKey(controlIface)) {
+                   LOGGER.debug("waiting for " + controlIface);
+                   config.setAgentInterfaces(net.getInterfaceList());
+                   Thread.sleep(1 * 1000);
+                   if (contCount > 9) {
+                       throw new ConfigurationException("Unable to configure "
+                               + controlIface + " on host "
+                               + c.getHostname());
+                   }
+                   contCount++;
+               }
+           }
+           /*
+            * The bridge is remembered upon reboot, but not the IP or the
+            * config. Zeroconf also adds the route again by default.
+            */
+           net.ovsIpConfig(controlIface, "static",
+                   NetUtils.getLinkLocalGateway(),
+                   NetUtils.getLinkLocalNetMask());
+           CloudStackPlugin cSp = new CloudStackPlugin(c);
+           cSp.ovsControlInterface(controlIface,
+                   NetUtils.getLinkLocalCIDR());
+        } catch (InterruptedException e) {
+            LOGGER.error("interrupted?", e);
+        } catch (Ovm3ResourceException e) {
+            String msg = "Basic configuration failed on " + c.getHostname();
+            LOGGER.error(msg, e);
+            throw new ConfigurationException(msg + ", " + e.getMessage());
+        }
+    }
+
+    /**/
     private boolean isNetworkSetupByName(String nameTag) {
         if (nameTag != null) {
             LOGGER.debug("Looking for network setup by name " + nameTag);
@@ -51,7 +102,7 @@ public class Ovm3HypervisorNetwork {
      * need to refactor this bit, networksetupbyname makes no sense, and neither
      * does the physical bit
      */
-    private CheckNetworkAnswer execute(CheckNetworkCommand cmd) {
+    public CheckNetworkAnswer execute(CheckNetworkCommand cmd) {
         LOGGER.debug("Checking if network name setup is done on "
                     + c.getHostname());
 
@@ -60,16 +111,16 @@ public class Ovm3HypervisorNetwork {
         /* here we assume all networks are set */
         for (PhysicalNetworkSetupInfo info : infoList) {
             if (info.getGuestNetworkName() == null) {
-                info.setGuestNetworkName(agentGuestNetworkName);
+                info.setGuestNetworkName(config.getAgentGuestNetworkName());
             }
             if (info.getPublicNetworkName() == null) {
-                info.setPublicNetworkName(agentPublicNetworkName);
+                info.setPublicNetworkName(config.getAgentPublicNetworkName());
             }
             if (info.getPrivateNetworkName() == null) {
-                info.setPrivateNetworkName(agentPrivateNetworkName);
+                info.setPrivateNetworkName(config.getAgentPrivateNetworkName());
             }
             if (info.getStorageNetworkName() == null) {
-                info.setStorageNetworkName(agentStorageNetworkName);
+                info.setStorageNetworkName(config.getAgentStorageNetworkName());
             }
 
             if (!isNetworkSetupByName(info.getGuestNetworkName())) {
@@ -104,7 +155,7 @@ public class Ovm3HypervisorNetwork {
 
     }
 
-    private Answer execute(PingTestCommand cmd) {
+    public Answer execute(PingTestCommand cmd) {
         try {
             if (cmd.getComputingHostIp() != null) {
                 CloudStackPlugin cSp = new CloudStackPlugin(c);
@@ -158,22 +209,22 @@ public class Ovm3HypervisorNetwork {
         if (nic.getType() == TrafficType.Guest) {
             if (nic.getBroadcastType() == BroadcastDomainType.Vlan
                     && !"untagged".equalsIgnoreCase(vlanId)) {
-                bridgeName = createVlanBridge(agentGuestNetworkName,
+                bridgeName = createVlanBridge(config.getAgentGuestNetworkName(),
                         Integer.valueOf(vlanId));
             } else {
-                bridgeName = agentGuestNetworkName;
+                bridgeName = config.getAgentGuestNetworkName();
             }
 
             /* VLANs for other mgmt traffic ? */
         } else if (nic.getType() == TrafficType.Control) {
-            bridgeName = agentControlNetworkName;
+            bridgeName = config.getAgentControlNetworkName();
         } else if (nic.getType() == TrafficType.Public) {
-            bridgeName = agentPublicNetworkName;
+            bridgeName = config.getAgentPublicNetworkName();
         } else if (nic.getType() == TrafficType.Management) {
-            bridgeName = agentPrivateNetworkName;
+            bridgeName = config.getAgentPrivateNetworkName();
         } else if (nic.getType() == TrafficType.Storage) {
             /* TODO: Add storage network */
-            bridgeName = agentStorageNetworkName;
+            bridgeName = config.getAgentStorageNetworkName();
         } else {
             throw new CloudRuntimeException("Unknown network traffic type:"
                     + nic.getType());

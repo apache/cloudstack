@@ -45,8 +45,10 @@ public class Ovm3VmSupport {
     private ResourceManager resourceMgr;
     private Connection c;
     private Ovm3HypervisorNetwork ovm3hvn;
-    public Ovm3VmSupport(Connection conn) {
+    private Ovm3Configuration config;
+    public Ovm3VmSupport(Connection conn, Ovm3Configuration ovm3config) {
         c = conn;
+        config = ovm3config;
         ovm3hvn = new Ovm3HypervisorNetwork(c);
     }
 
@@ -120,7 +122,7 @@ public class Ovm3VmSupport {
     }
 
     /* do migrations of VMs in a simple way just inside a cluster for now */
-    private MigrateAnswer execute(final MigrateCommand cmd) {
+    public MigrateAnswer execute(final MigrateCommand cmd) {
         final String vmName = cmd.getVmName();
         String destUuid = cmd.getHostGuid();
         String destIp = cmd.getDestinationIp();
@@ -132,7 +134,7 @@ public class Ovm3VmSupport {
          */
         String msg = "Migrating " + vmName + " to " + destIp;
         LOGGER.info(msg);
-        if (!agentInOvm3Cluster && !agentInOvm3Pool) {
+        if (!config.getAgentInOvm3Cluster() && !config.getAgentInOvm3Pool()) {
             try {
                 Xen xen = new Xen(c);
                 Xen.Vm vm = xen.getRunningVmConfig(vmName);
@@ -191,7 +193,7 @@ public class Ovm3VmSupport {
 
     /*
      */
-    private GetVncPortAnswer execute(GetVncPortCommand cmd) {
+    public GetVncPortAnswer execute(GetVncPortCommand cmd) {
         try {
             Xen host = new Xen(c);
             Xen.Vm vm = host.getRunningVmConfig(cmd.getName());
@@ -255,7 +257,7 @@ public class Ovm3VmSupport {
         return stats;
     }
 
-    private GetVmStatsAnswer execute(GetVmStatsCommand cmd) {
+    public GetVmStatsAnswer execute(GetVmStatsCommand cmd) {
         List<String> vmNames = cmd.getVmNames();
         Map<String, VmStatsEntry> vmStatsNameMap = new HashMap<String, VmStatsEntry>();
         for (String vmName : vmNames) {
@@ -330,7 +332,7 @@ public class Ovm3VmSupport {
                         NfsTO nfsStore = (NfsTO) store;
                         String secPoolUuid = setupSecondaryStorage(nfsStore
                                 .getUrl());
-                        String isoPath = agentSecStoragePath + File.separator
+                        String isoPath = config.getAgentSecStoragePath() + File.separator
                                 + secPoolUuid + File.separator
                                 + template.getPath();
                         vm.addIso(isoPath);
@@ -352,7 +354,4 @@ public class Ovm3VmSupport {
         }
         return true;
     }
-}
-
-
 }
