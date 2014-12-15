@@ -612,13 +612,14 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
             Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
 
+            if((aclItem.getAclId() == NetworkACL.DEFAULT_ALLOW) || (aclItem.getAclId() == NetworkACL.DEFAULT_DENY)){
+                throw new InvalidParameterValueException("ACL Items in default ACL cannot be deleted");
+            }
+
             Account caller = CallContext.current().getCallingAccount();
 
             _accountMgr.checkAccess(caller, null, true, vpc);
 
-            if((aclItem.getAclId() == NetworkACL.DEFAULT_ALLOW) || (aclItem.getAclId() == NetworkACL.DEFAULT_DENY)){
-                throw new InvalidParameterValueException("ACL Items in default ACL cannot be deleted");
-            }
         }
         return _networkAclMgr.revokeNetworkACLItem(ruleId);
     }
