@@ -90,7 +90,7 @@ def paramikoOpts(con, keyfile=domrKeyFile):
     return key
 
 # execute something on domr
-def domrExec(host, cmd, timeout=10, username=domrRoot, port=domrport, keyfile=domrKeyFile):
+def domrExec(host, cmd, timeout=10, username=domrRoot, port=domrPort, keyfile=domrKeyFile):
     ssh = paramiko.SSHClient()
     pkey = paramikoOpts(ssh, keyfile)
     ssh.connect(host, port, username, pkey=pkey, timeout=timeout)
