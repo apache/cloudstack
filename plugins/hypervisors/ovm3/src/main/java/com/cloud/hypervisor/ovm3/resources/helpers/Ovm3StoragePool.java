@@ -43,6 +43,7 @@ public class Ovm3StoragePool {
     private Connection c;
     private Ovm3Configuration config;
     private OvmObject ovmObject = new OvmObject();
+
     public Ovm3StoragePool(Connection conn, Ovm3Configuration ovm3config) {
         c = conn;
         config = ovm3config;
@@ -58,8 +59,8 @@ public class Ovm3StoragePool {
             /* setup pool and role, needs utility to be able to do things */
             if (host.getServerRoles().contentEquals(
                     pool.getValidRoles().toString())) {
-                LOGGER.debug("Server role for host " + config.getAgentHostname()
-                        + " is ok");
+                LOGGER.debug("Server role for host "
+                        + config.getAgentHostname() + " is ok");
             } else {
                 try {
                     pool.setServerRoles(pool.getValidRoles());
@@ -74,7 +75,8 @@ public class Ovm3StoragePool {
             }
             if (host.getMembershipState().contentEquals("Unowned")) {
                 try {
-                    LOGGER.debug("Take ownership of host " + config.getAgentHostname());
+                    LOGGER.debug("Take ownership of host "
+                            + config.getAgentHostname());
                     pool.takeOwnership(config.getAgentOwnedByUuid(), "");
                 } catch (Ovm3ResourceException e) {
                     String msg = "Failed to take ownership of host "
@@ -84,7 +86,8 @@ public class Ovm3StoragePool {
             } else {
                 /* TODO: check if it's part of our pool, give ok if it is */
                 if (host.getManagerUuid().equals(config.getAgentOwnedByUuid())) {
-                    String msg = "Host " + config.getAgentHostname() + " owned by us";
+                    String msg = "Host " + config.getAgentHostname()
+                            + " owned by us";
                     LOGGER.debug(msg);
                     return true;
                 } else {
@@ -95,7 +98,8 @@ public class Ovm3StoragePool {
                 }
             }
         } catch (ConfigurationException | Ovm3ResourceException es) {
-            String msg = "Failed to prepare " + config.getAgentHostname() + " for pool";
+            String msg = "Failed to prepare " + config.getAgentHostname()
+                    + " for pool";
             throw new ConfigurationException(msg + ": " + es.getMessage());
         }
         return true;
@@ -131,15 +135,17 @@ public class Ovm3StoragePool {
                 throw e;
             }
             try {
-                poolHost.createServerPool(poolAlias, primUuid, config.getOvm3PoolVip(),
-                        poolSize + 1, config.getAgentHostname(), c.getIp());
+                poolHost.createServerPool(poolAlias, primUuid,
+                        config.getOvm3PoolVip(), poolSize + 1,
+                        config.getAgentHostname(), c.getIp());
             } catch (Ovm3ResourceException e) {
                 throw e;
             }
         } else if (config.getAgentHasMaster()) {
             try {
-                poolHost.joinServerPool(poolAlias, primUuid, config.getOvm3PoolVip(),
-                        poolSize + 1, config.getAgentHostname(), c.getIp());
+                poolHost.joinServerPool(poolAlias, primUuid,
+                        config.getOvm3PoolVip(), poolSize + 1,
+                        config.getAgentHostname(), c.getIp());
             } catch (Ovm3ResourceException e) {
                 throw e;
             }
@@ -167,8 +173,8 @@ public class Ovm3StoragePool {
                     members.add(c.getIp());
                 }
             } else {
-                LOGGER.warn(c.getIp() + " noticed master " + config.getOvm3PoolVip()
-                        + " is not part of pool");
+                LOGGER.warn(c.getIp() + " noticed master "
+                        + config.getOvm3PoolVip() + " is not part of pool");
                 return false;
             }
             for (String member : members) {
@@ -235,8 +241,8 @@ public class Ovm3StoragePool {
                 repo.mountRepoFs(mountPoint, ovsRepo);
             } catch (Ovm3ResourceException e) {
                 LOGGER.debug("Unable to mount NFS repository " + mountPoint
-                        + " on " + ovsRepo + " requested for " + config.getAgentHostname()
-                        + ": " + e.getMessage());
+                        + " on " + ovsRepo + " requested for "
+                        + config.getAgentHostname() + ": " + e.getMessage());
             }
             try {
                 repo.addRepo(mountPoint, ovsRepo);
@@ -265,13 +271,15 @@ public class Ovm3StoragePool {
             /* add base pooling first */
             if (config.getAgentInOvm3Pool()) {
                 try {
-                    msg = "Configuring host for pool";
+                    msg = "Configuring " + config.getAgentHostname() + "("
+                            + config.getAgentIp() + ") for pool";
                     LOGGER.debug(msg);
                     setupPool(cmd);
                     msg = "Configured host for pool";
                     /* add clustering after pooling */
                     if (config.getAgentInOvm3Cluster()) {
-                        msg = "Configuring host for cluster";
+                        msg = "Configuring " + config.getAgentHostname() + "("
+                                + config.getAgentIp() + ")  for cluster";
                         LOGGER.debug(msg);
                         /* setup cluster */
                         /*
@@ -280,10 +288,13 @@ public class Ovm3StoragePool {
                          * fsuuid, poolfsbaseuuid)
                          */
                         /* create_cluster(poolfsuuid,) */
-                        msg = "Configuring host for cluster";
+                        msg = "Configuring " + config.getAgentHostname() + "("
+                                + config.getAgentIp() + ") for cluster";
                     }
                 } catch (Ovm3ResourceException e) {
-                    msg = "Unable to setup pool on " + ovsRepo;
+                    msg = "Unable to setup pool on  "
+                            + config.getAgentHostname() + "("
+                            + config.getAgentIp() + ") for " + ovsRepo;
                     throw new CloudRuntimeException(msg + " " + e.getMessage(),
                             e);
                 }
@@ -300,8 +311,9 @@ public class Ovm3StoragePool {
                         + +cmd.getPort() + cmd.getPath() + "/VirtualMachines");
                 setupNfsStorage(uri, cmd.getUuid());
             } catch (Exception e) {
-                msg = "NFS mount " + mountPoint + " on " + config.getAgentSecStoragePath()
-                        + "/" + cmd.getUuid() + " create failed!";
+                msg = "NFS mount " + mountPoint + " on "
+                        + config.getAgentSecStoragePath() + "/" + cmd.getUuid()
+                        + " create failed!";
                 throw new CloudRuntimeException(msg + " " + e.getMessage(), e);
             }
         } else {
@@ -359,10 +371,12 @@ public class Ovm3StoragePool {
                                 + destPath);
                         try {
                             /* Perhaps use a key instead ? */
-                            SshHelper.scpTo(c.getIp(), 22,
-                                    config.getAgentSshUserName(), null, config.getAgentSshPassword(),
-                                    destPath, srcIso.getAbsolutePath()
-                                            .toString(), "0644");
+                            SshHelper
+                                    .scpTo(c.getIp(), 22, config
+                                            .getAgentSshUserName(), null,
+                                            config.getAgentSshPassword(),
+                                            destPath, srcIso.getAbsolutePath()
+                                                    .toString(), "0644");
                         } catch (Exception es) {
                             LOGGER.error("Unexpected exception ", es);
                             String msg = "Unable to copy systemvm ISO on secondary storage. src location: "
@@ -552,8 +566,8 @@ public class Ovm3StoragePool {
         } catch (Exception e) {
             String msg = "Catch Exception " + e.getClass().getName()
                     + ", create StoragePool failed due to " + e.toString()
-                    + " on host:" + config.getAgentHostname() + " pool: " + pool.getHost()
-                    + pool.getPath();
+                    + " on host:" + config.getAgentHostname() + " pool: "
+                    + pool.getHost() + pool.getPath();
             LOGGER.warn(msg, e);
             return new Answer(cmd, false, msg);
         }
