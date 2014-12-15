@@ -139,7 +139,7 @@ def domrScp(host, localfile, remotefile, timeout=10, username=domrRoot, port=dom
     return False
 
 # check a port on domr
-def domrPort(ip, port=domrPort, timeout=3):
+def domrCheckPort(ip, port=domrPort, timeout=3):
     return domrCheckPort(ip, port, timeout=timeout)
 
 # check a port on domr
