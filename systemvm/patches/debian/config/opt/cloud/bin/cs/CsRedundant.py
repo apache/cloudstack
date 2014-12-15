@@ -146,7 +146,7 @@ class CsRedundant(object):
         if not self.cl.is_redundant():
             logging.error("Set backup called on non-redundant router")
             return
-        """ 
+        """
         if not self.cl.is_master():
             logging.error("Set backup called on node that is already backup")
             return
