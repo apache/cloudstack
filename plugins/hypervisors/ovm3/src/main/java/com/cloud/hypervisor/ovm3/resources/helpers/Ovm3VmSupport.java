@@ -48,17 +48,21 @@ public class Ovm3VmSupport {
     private OvmObject ovmObject = new OvmObject();
     private ResourceManager resourceMgr;
     private Connection c;
-    private Ovm3HypervisorNetwork ovm3hvn;
+    private Ovm3HypervisorNetwork network;
     private Ovm3Configuration config;
     private Ovm3HypervisorSupport hypervisor;
     private Ovm3StoragePool pool;
     private final Map<String, Map<String, String>> vmStats = new ConcurrentHashMap<String, Map<String, String>>();
-    public Ovm3VmSupport(Connection conn, Ovm3Configuration ovm3config, Ovm3HypervisorSupport ovm3hyper, Ovm3StoragePool ovm3sp) {
+    public Ovm3VmSupport(Connection conn,
+            Ovm3Configuration ovm3config,
+            Ovm3HypervisorSupport ovm3hyper,
+            Ovm3StoragePool ovm3sp,
+            Ovm3HypervisorNetwork ovm3hvn) {
         c = conn;
         config = ovm3config;
         hypervisor = ovm3hyper;
-        /* fixit */
         pool = ovm3sp;
+        network = ovm3hvn;
     }
     public Boolean createVifs(Xen.Vm vm, VirtualMachineTO spec)
             throws Ovm3ResourceException {
@@ -80,11 +84,11 @@ public class Ovm3VmSupport {
     public Boolean createVif(Xen.Vm vm, NicTO nic)
             throws Ovm3ResourceException {
         try {
-            if (ovm3hvn.getNetwork(nic) != null) {
+            if (network.getNetwork(nic) != null) {
                 LOGGER.debug("Adding vif " + nic.getDeviceId() + " " + " "
-                        + nic.getMac() + " " + ovm3hvn.getNetwork(nic) + " to "
+                        + nic.getMac() + " " + network.getNetwork(nic) + " to "
                         + vm.getVmName());
-                vm.addVif(nic.getDeviceId(), ovm3hvn.getNetwork(nic), nic.getMac());
+                vm.addVif(nic.getDeviceId(), network.getNetwork(nic), nic.getMac());
             } else {
                 LOGGER.debug("Unable to add vif " + nic.getDeviceId()
                         + " no network for " + vm.getVmName());
@@ -115,7 +119,7 @@ public class Ovm3VmSupport {
         NicTO[] nics = vm.getNics();
         try {
             for (NicTO nic : nics) {
-                ovm3hvn.getNetwork(nic);
+                network.getNetwork(nic);
             }
             hypervisor.setVmState(vm.getName(), State.Migrating);
             LOGGER.debug("VM " + vm.getName() + " is in Migrating state");

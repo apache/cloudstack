@@ -130,7 +130,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             /* here stuff gets completed, but where should state live ? */
             ovm3hs.fillHostInfo(srCmd);
             ovm3hs.vmStateMapClear();
-            ovm3vs = new Ovm3VmSupport(c, ovm3config, ovm3hs, ovm3sp);
+            ovm3vs = new Ovm3VmSupport(c, ovm3config, ovm3hs, ovm3sp, ovm3hn);
             ovm3vrs = new Ovm3VirtualRoutingSupport(c, ovm3config, ovm3vrr);
             ovm3spr = new Ovm3StorageProcessor(c, ovm3config);
 
