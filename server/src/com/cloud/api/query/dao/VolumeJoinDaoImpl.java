@@ -91,7 +91,11 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
             volResponse.setVirtualMachineId(volume.getVmUuid());
             volResponse.setVirtualMachineName(volume.getVmName());
             volResponse.setVirtualMachineState(volume.getVmState().toString());
-            volResponse.setVirtualMachineDisplayName(volume.getVmDisplayName());
+            if (volume.getVmDisplayName() != null) {
+                volResponse.setVirtualMachineDisplayName(volume.getVmDisplayName());
+            } else {
+                volResponse.setVirtualMachineDisplayName(volume.getVmName());
+            }
         }
 
         volResponse.setProvisioningType(volume.getProvisioningType().toString());
