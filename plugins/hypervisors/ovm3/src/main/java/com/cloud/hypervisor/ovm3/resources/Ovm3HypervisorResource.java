@@ -82,6 +82,10 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
 /* This should only contain stuff that @Override(s) */
+/*
+ * update host set resource = 'com.cloud.hypervisor.ovm3.resources.Ovm3HypervisorResource'
+ * where resource = 'com.cloud.hypervisor.ovm3.hypervisor.Ovm3ResourceBase';
+ */
 @Local(value = HypervisorResource.class)
 public class Ovm3HypervisorResource extends ServerResourceBase implements HypervisorResource {
     private static final Logger LOGGER = Logger
