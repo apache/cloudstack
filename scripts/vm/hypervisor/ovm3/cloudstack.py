@@ -70,7 +70,7 @@ class CloudStack(Agent):
         return self.__class__.__name__
 
 domrPort=3922
-domrKeyFile="~/.ssh/id_rsa.cloud"
+domrKeyFile=os.path.expanduser("~/.ssh/id_rsa.cloud")
 domrRoot="root"
 domrTimeout=10
 
@@ -82,7 +82,7 @@ def getModuleVersion():
 def call(msg):
     return msg
 
-def paramikoOpts(con, keyfile="~/.ssh/id_rsa.cloud"):
+def paramikoOpts(con, keyfile=domrKeyFile):
     con.load_system_host_keys()
     con.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     privatekeyfile = os.path.expanduser(keyfile)
@@ -90,7 +90,7 @@ def paramikoOpts(con, keyfile="~/.ssh/id_rsa.cloud"):
     return key
 
 # execute something on domr
-def domrExec(host, cmd, timeout=10, username="root", port=3922, keyfile="~/.ssh/id_rsa.cloud"):
+def domrExec(host, cmd, timeout=10, username=domrRoot, port=domrport, keyfile=domrKeyFile):
     ssh = paramiko.SSHClient()
     pkey = paramikoOpts(ssh, keyfile)
     ssh.connect(host, port, username, pkey=pkey, timeout=timeout)
@@ -107,7 +107,7 @@ def domrExec(host, cmd, timeout=10, username="root", port=3922, keyfile="~/.ssh/
 # root@s-1-VM:/var/cache/cloud# find / -name sftp-server -type f
 # /usr/lib/openssh/sftp-server
 #
-def domrSftp(host, localfile, remotefile, timeout=10, username="root", port=3922, keyfile="~/.ssh/id_rsa.cloud"):
+def domrSftp(host, localfile, remotefile, timeout=10, username=domrRoot, port=domrPort, keyfile=domrKeyFile):
     try:
         paramiko.common.logging.basicConfig(level=paramiko.common.DEBUG)
         ssh = paramiko.SSHClient()
@@ -127,7 +127,7 @@ def domrSftp(host, localfile, remotefile, timeout=10, username="root", port=3922
         raise e
     return True
 
-def domrScp(host, localfile, remotefile, timeout=10, username="root", port=3922, keyfile="~/.ssh/id_rsa.cloud"):
+def domrScp(host, localfile, remotefile, timeout=10, username=domrRoot, port=domrPort, keyfile=domrKeyFile):
     try:
         target = "%s@%s:%s" % (username, host, remotefile)
         cmd = ['scp', '-P', str(port), '-q', '-o', 'StrictHostKeyChecking=no','-i', os.path.expanduser(keyfile), localfile, target]
@@ -139,11 +139,11 @@ def domrScp(host, localfile, remotefile, timeout=10, username="root", port=3922,
     return False
 
 # check a port on domr
-def domrPort(ip, port=3922, timeout=3):
+def domrPort(ip, port=domrPort, timeout=3):
     return domrCheckPort(ip, port, timeout=timeout)
 
 # check a port on domr
-def domrCheckPort(ip, port=3922, timeout=3):
+def domrCheckPort(ip, port=domrPort, timeout=3):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(timeout)
@@ -154,7 +154,7 @@ def domrCheckPort(ip, port=3922, timeout=3):
     return True
 
 # check ssh
-def domrCheckSsh(ip, port=3922, timeout=10):
+def domrCheckSsh(ip, port=domrPort, timeout=10):
     x = domrExec(ip, "", port=port, timeout=timeout)
     if (x.get("rc") == 0):
         return True
