@@ -128,7 +128,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             ovm3hs.vmStateMapClear();
             ovm3vs = new Ovm3VmSupport(c, ovm3config, ovm3hs, ovm3sp);
             ovm3vrr = new Ovm3VirtualRoutingResource(c);
-            ovm3vrs = new Ovm3VirtualRoutingSupport(c);
+            ovm3vrs = new Ovm3VirtualRoutingSupport(c, ovm3vrr);
 
             LOGGER.debug("Ovm3 pool " + ssCmd + " " + srCmd);
             // srCmd.setStateChanges(changes);

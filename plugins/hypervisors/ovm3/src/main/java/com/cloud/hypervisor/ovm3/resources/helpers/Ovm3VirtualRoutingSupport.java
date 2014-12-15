@@ -17,10 +17,10 @@ public class Ovm3VirtualRoutingSupport {
     private static final Logger LOGGER = Logger
             .getLogger(Ovm3VirtualRoutingSupport.class);
     private Connection c;
-    private Ovm3VirtualRoutingResource ovm3vrr;
-    public Ovm3VirtualRoutingSupport(Connection conn) {
+    private Ovm3VirtualRoutingResource vrr;
+    public Ovm3VirtualRoutingSupport(Connection conn, Ovm3VirtualRoutingResource ovm3vrr) {
         c = conn;
-        ovm3vrr = new Ovm3VirtualRoutingResource(c);
+        vrr = ovm3vrr;
     }
 
     /* copy paste, why isn't this just generic in the VirtualRoutingResource ? */
@@ -57,7 +57,7 @@ public class Ovm3VirtualRoutingSupport {
             args = "-d";
             args += ethName;
         }
-        ExecutionResult result = ovm3vrr.executeInVR(privateIpAddress, "netusage.sh",
+        ExecutionResult result = vrr.executeInVR(privateIpAddress, "netusage.sh",
                 args);
 
         if (result == null || !result.isSuccess()) {
@@ -111,7 +111,7 @@ public class Ovm3VirtualRoutingSupport {
             return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
         }
 
-        ExecutionResult callResult = ovm3vrr.executeInVR(privateIp, "vpc_netusage.sh",
+        ExecutionResult callResult = vrr.executeInVR(privateIp, "vpc_netusage.sh",
                 args);
 
         if (!callResult.isSuccess()) {

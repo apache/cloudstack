@@ -74,10 +74,6 @@ public class Ovm3VmGuestTypes {
         OVMHELPERMAP.put("Sun Solaris Sparc (64-bit)", DOMSOL);
     }
 
-    private Ovm3VmGuestTypes() {
-
-    }
-
     public static String getOvm3GuestType(String stdType) {
         return OVMHELPERMAP.get(stdType);
     }
