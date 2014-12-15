@@ -235,13 +235,15 @@ public class Ovm3HypervisorSupport {
              * agent and restart if possible
              */
             com.trilead.ssh2.Connection sshConnection = SSHCmdHelper
-                    .acquireAuthorizedConnection(c.getIp(), c.getSshUser(),
-                            c.getSshPassword());
+                    .acquireAuthorizedConnection(config.getAgentIp(),
+                            config.getAgentSshUserName(),
+                            config.getAgentSshPassword());
             if (sshConnection == null) {
                 throw new ConfigurationException(String.format("Unable to "
                         + "connect to server(IP=%1$s, username=%2$s, "
-                        + "password=%3$s", c.getIp(), c.getSshUser(),
-                        c.getSshPassword()));
+                        + "password=%3$s", config.getAgentIp(),
+                        config.getAgentSshUserName(),
+                        config.getAgentSshPassword()));
             }
             SCPClient scp = new SCPClient(sshConnection);
             String userDataScript = "scripts/vm/hypervisor/ovm3/cloudstack.py";
@@ -258,7 +260,7 @@ public class Ovm3HypervisorSupport {
                         + config.getAgentHostname() + " failed");
             }
             CloudStackPlugin cSp = new CloudStackPlugin(c);
-            cSp.ovsUploadSshKey(c.getSshUser(),
+            cSp.ovsUploadSshKey(config.getAgentSshUserName(),
                     FileUtils.readFileToString(getSystemVMKeyFile(key)));
         } catch (Exception es) {
             LOGGER.error("Unexpected exception ", es);

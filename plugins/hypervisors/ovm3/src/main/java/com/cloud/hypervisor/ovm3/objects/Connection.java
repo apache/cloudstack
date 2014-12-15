@@ -32,9 +32,7 @@ public class Connection extends XmlRpcClient {
     private String hostUser = null;
     private String hostPass = null;
     private String hostIp;
-    private String sshUser = "";
-    private String sshPassword = "";
-    private String sshKey = "";
+    private String hostName;
     private Integer hostPort = 8898;
     private Boolean hostUseSsl = false;
     private String cert = "";
@@ -111,7 +109,10 @@ public class Connection extends XmlRpcClient {
              * some parameters including hostUser password should not be printed
              * in log
              */
-            LOGGER.debug("Call Ovm3 agent " + hostIp + ": " + method + " with "
+            if ("".equals(hostName)) {
+                hostName = hostIp;
+            }
+            LOGGER.debug("Call Ovm3 agent " + hostName + ": " + method + " with "
                     + params);
         }
         long startTime = System.currentTimeMillis();
@@ -175,27 +176,11 @@ public class Connection extends XmlRpcClient {
         return key;
     }
 
-    public String getSshKey() {
-        return sshKey;
+    public String getHostName() {
+        return hostName;
     }
 
-    public void setSshKey(String sshKey) {
-        this.sshKey = sshKey;
-    }
-
-    public String getSshPassword() {
-        return sshPassword;
-    }
-
-    public void setSshPassword(String sshPassword) {
-        this.sshPassword = sshPassword;
-    }
-
-    public String getSshUser() {
-        return sshUser;
-    }
-
-    public void setSshUser(String sshUser) {
-        this.sshUser = sshUser;
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
     }
 }

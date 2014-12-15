@@ -360,7 +360,7 @@ public class Ovm3StoragePool {
                         try {
                             /* Perhaps use a key instead ? */
                             SshHelper.scpTo(c.getIp(), 22,
-                                    c.getSshUser(), null, c.getSshPassword(),
+                                    config.getAgentSshUserName(), null, config.getAgentSshPassword(),
                                     destPath, srcIso.getAbsolutePath()
                                             .toString(), "0644");
                         } catch (Exception es) {

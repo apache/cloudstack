@@ -310,6 +310,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
                     ovm3config.getAgentOvsAgentPort(),
                     ovm3config.getAgentOvsAgentUser(),
                     ovm3config.getAgentOvsAgentPassword());
+            c.setHostName(ovm3config.getAgentHostname());
             ovm3hs = new Ovm3HypervisorSupport(c, ovm3config);
             ovm3hs.masterCheck();
         } catch (Exception e) {
