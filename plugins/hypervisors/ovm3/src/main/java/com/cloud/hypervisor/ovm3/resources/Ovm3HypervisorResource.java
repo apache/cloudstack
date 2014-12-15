@@ -131,7 +131,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             ovm3hs.fillHostInfo(srCmd);
             ovm3hs.vmStateMapClear();
             ovm3vs = new Ovm3VmSupport(c, ovm3config, ovm3hs, ovm3sp);
-            ovm3vrr = new Ovm3VirtualRoutingResource(c);
             ovm3vrs = new Ovm3VirtualRoutingSupport(c, ovm3vrr);
 
             LOGGER.debug("Ovm3 pool " + ssCmd + " " + srCmd);
@@ -307,27 +306,26 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         ovm3config = new Ovm3Configuration(params);
         /* check if we're master or not and if we can connect */
         try {
-            c = new Connection(ovm3config.getAgentHostname(),
+            c = new Connection(ovm3config.getAgentIp(),
                     ovm3config.getAgentOvsAgentPort(),
                     ovm3config.getAgentOvsAgentUser(),
                     ovm3config.getAgentOvsAgentPassword());
+            ovm3hs = new Ovm3HypervisorSupport(c, ovm3config);
             ovm3hs.masterCheck();
         } catch (Exception e) {
             throw new CloudRuntimeException("Base checks failed for "
                     + ovm3config.getAgentHostname(), e);
         }
-        /* setup ovm3 agent plugin for cloudstack, our minion */
         ovm3hn = new Ovm3HypervisorNetwork(c, ovm3config);
         ovm3hn.configureNetworking();
-
-        ovm3sp = new Ovm3StoragePool(c, ovm3config);
-        ovm3sp.prepareForPool();
-
+        ovm3vrr = new Ovm3VirtualRoutingResource(c);
         vrResource = new VirtualRoutingResource(ovm3vrr);
         if (!vrResource.configure(name, params)) {
             throw new ConfigurationException(
                     "Unable to configure VirtualRoutingResource");
         }
+        ovm3sp = new Ovm3StoragePool(c, ovm3config);
+        ovm3sp.prepareForPool();
         return true;
     }
 

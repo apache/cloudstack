@@ -9,7 +9,7 @@ public class Ovm3GuestTypesTest {
     String ora = "Oracle Enterprise Linux 6.0 (64-bit)";
 
     @Test
-    public void test() {
+    public void testGetPvByOs() {
         results.basicStringTest(Ovm3VmGuestTypes.getOvm3GuestType(ora), "xen_pvm");
     }
 }

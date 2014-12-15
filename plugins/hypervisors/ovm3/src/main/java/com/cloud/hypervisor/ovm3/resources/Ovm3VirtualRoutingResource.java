@@ -1,5 +1,7 @@
 package com.cloud.hypervisor.ovm3.resources;
 
+import javax.ejb.Local;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.SetupGuestNetworkCommand;
@@ -14,6 +16,7 @@ import com.cloud.hypervisor.ovm3.objects.Connection;
 import com.cloud.hypervisor.ovm3.objects.Xen;
 import com.cloud.utils.ExecutionResult;
 
+@Local(value = VirtualRouterDeployer.class)
 public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
     private static final Logger LOGGER = Logger
             .getLogger(Ovm3VirtualRoutingResource.class);
@@ -21,11 +24,15 @@ public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
     private static final int VRTIMEOUT = 600;
     private Connection c;
     private String agentName;
+    public Ovm3VirtualRoutingResource() {
+    }
     public Ovm3VirtualRoutingResource(Connection conn) {
         c = conn;
         agentName=c.getIp();
     }
-
+    public void setConnection(Connection conn) {
+        c = conn;
+    }
     @Override
     public ExecutionResult executeInVR(String routerIp, String script,
             String args) {
