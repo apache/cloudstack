@@ -2,9 +2,6 @@ package com.cloud.hypervisor.ovm3.objects;
 
 import org.junit.Test;
 
-import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
-import com.cloud.hypervisor.ovm3.objects.Repository;
-
 public class RepositoryTest {
     ConnectionTest con = new ConnectionTest();
     Repository repo = new Repository(con);

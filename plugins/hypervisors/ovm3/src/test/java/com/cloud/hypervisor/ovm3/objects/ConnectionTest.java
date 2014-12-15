@@ -15,9 +15,6 @@ import org.junit.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 
-import com.cloud.hypervisor.ovm3.objects.Connection;
-import com.cloud.hypervisor.ovm3.objects.RpcTypeFactory;
-
 /* This is a stub for XML parsing into result sets, it also contains test for Connection */
 public class ConnectionTest extends Connection {
     XmlTestResultTest results = new XmlTestResultTest();

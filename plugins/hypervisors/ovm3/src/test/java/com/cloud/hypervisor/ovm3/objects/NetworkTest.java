@@ -2,9 +2,6 @@ package com.cloud.hypervisor.ovm3.objects;
 
 import org.junit.Test;
 
-import com.cloud.hypervisor.ovm3.objects.Network;
-import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
-
 public class NetworkTest {
     ConnectionTest con = new ConnectionTest();
     Network net = new Network(con);

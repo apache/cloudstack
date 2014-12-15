@@ -2,9 +2,6 @@ package com.cloud.hypervisor.ovm3.objects;
 
 import org.junit.Test;
 
-import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
-import com.cloud.hypervisor.ovm3.objects.PoolOCFS2;
-
 public class PoolOCFS2Test {
     ConnectionTest con = new ConnectionTest();
     PoolOCFS2 poolfs = new PoolOCFS2(con);

@@ -2,9 +2,6 @@ package com.cloud.hypervisor.ovm3.objects;
 
 import org.junit.Test;
 
-import com.cloud.hypervisor.ovm3.objects.Linux;
-import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
-
 public class LinuxTest {
     ConnectionTest con = new ConnectionTest();
     Linux lin = new Linux(con);
