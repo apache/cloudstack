@@ -6,9 +6,12 @@ import java.math.BigInteger;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.naming.ConfigurationException;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
@@ -32,7 +35,6 @@ import com.cloud.hypervisor.ovm3.objects.Connection;
 import com.cloud.hypervisor.ovm3.objects.Linux;
 import com.cloud.hypervisor.ovm3.objects.Network;
 import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
-import com.cloud.hypervisor.ovm3.objects.OvmObject;
 import com.cloud.hypervisor.ovm3.objects.Pool;
 import com.cloud.hypervisor.ovm3.objects.Xen;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -46,7 +48,6 @@ public class Ovm3HypervisorSupport {
     private static final Logger LOGGER = Logger
             .getLogger(Ovm3HypervisorSupport.class);
     private static Connection c;
-    private OvmObject ovmObject = new OvmObject();
     private Ovm3Configuration config;
     public Ovm3HypervisorSupport(Connection conn, Ovm3Configuration ovm3config) {
         c = conn;
@@ -128,21 +129,30 @@ public class Ovm3HypervisorSupport {
      * @return keyfileURI
      */
     public File getSystemVMKeyFile(String filename) {
-        URL url = this.getClass().getClassLoader()
-                .getResource("scripts/vm/systemvm/" + filename);
+        String keyPath =  Script.findScript("", "scripts/vm/systemvm/" + filename);
         File keyFile = null;
-        if (url != null) {
-            keyFile = new File(url.getPath());
+        if (keyPath != null) {
+            LOGGER.debug("found SshKey " + keyPath);
+            keyFile = new File(keyPath);
         }
         if (keyFile == null || !keyFile.exists()) {
-            keyFile = new File(
-                    "/usr/share/cloudstack-common/scripts/vm/systemvm/"
-                            + filename);
+            String key = "client/target/generated-webapp/WEB-INF/classes/scripts/vm/systemvm/"
+                    + filename;
+            LOGGER.warn("findScript failed, going for generated " + key);
+            keyFile = new File(key);
         }
-        assert keyFile != null;
+        if (keyFile == null || !keyFile.exists()) {
+            String key = "/usr/share/cloudstack-common/scripts/vm/systemvm/"
+                    + filename;
+            LOGGER.warn("generated key retrieval failed " + key);
+            keyFile = new File(key);
+        }
         if (!keyFile.exists()) {
+            URL url = this.getClass().getClassLoader()
+                    .getResource("scripts/vm/systemvm/" + filename);
+            keyFile = new File(url.getPath());
             LOGGER.error("Unable to locate " + filename
-                    + " in your setup at " + keyFile.toString());
+                    + " last resort: " + keyFile.toString());
         }
         return keyFile;
     }
@@ -184,7 +194,6 @@ public class Ovm3HypervisorSupport {
             cmd.setStorageIpAddress(c.getIp());
             /* do we need the state report here now ? */
             // cmd.setHostVmStateReport(hostVmStateReport());
-
             Network net = new Network(c);
             String defaultBridge = net.getBridgeByIp(c.getIp()).getName();
             if (defaultBridge == null) {
@@ -260,7 +269,7 @@ public class Ovm3HypervisorSupport {
                         + config.getAgentHostname() + " failed");
             }
             CloudStackPlugin cSp = new CloudStackPlugin(c);
-            cSp.ovsUploadSshKey(config.getAgentSshUserName(),
+            cSp.ovsUploadSshKey(config.getAgentSshKey(),
                     FileUtils.readFileToString(getSystemVMKeyFile(key)));
         } catch (Exception es) {
             LOGGER.error("Unexpected exception ", es);
