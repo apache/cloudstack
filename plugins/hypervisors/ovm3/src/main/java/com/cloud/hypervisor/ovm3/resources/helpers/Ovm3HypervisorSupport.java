@@ -212,7 +212,7 @@ public class Ovm3HypervisorSupport {
             d.put("ismaster", config.getAgentIsMaster().toString());
             d.put("hasmaster", config.getAgentHasMaster().toString());
             cmd.setHostDetails(d);
-            LOGGER.debug("Add an Ovm3 host " + c.getHostname() + ":"
+            LOGGER.debug("Add an Ovm3 host " + config.getAgentHostname() + ":"
                     + cmd.getHostDetails());
         } catch (Ovm3ResourceException e) {
             throw new CloudRuntimeException("Ovm3ResourceException: "
@@ -255,7 +255,7 @@ public class Ovm3HypervisorSupport {
                     + c.getUseSsl() + " " + "--port=" + c.getPort());
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, prepareCmd)) {
                 throw new ConfigurationException("Module insertion at "
-                        + c.getHostname() + " failed");
+                        + config.getAgentHostname() + " failed");
             }
             CloudStackPlugin cSp = new CloudStackPlugin(c);
             cSp.ovsUploadSshKey(c.getSshUser(),
@@ -271,14 +271,14 @@ public class Ovm3HypervisorSupport {
     * @return
     * @throws Ovm3ResourceException
     */
-    private static Map<String, Xen.Vm> getAllVms() throws Ovm3ResourceException {
+    private Map<String, Xen.Vm> getAllVms() throws Ovm3ResourceException {
         try {
             Xen vms = new Xen(c);
             return vms.getRunningVmConfigs();
         } catch (Exception e) {
-            LOGGER.debug("getting VM list from " + c.getHostname() + " failed", e);
+            LOGGER.debug("getting VM list from " + config.getAgentHostname() + " failed", e);
             throw new CloudRuntimeException("Exception on getting VMs from "
-                    + c.getHostname() + ":" + e.getMessage(), e);
+                    + config.getAgentHostname() + ":" + e.getMessage(), e);
         }
     }
 
@@ -287,7 +287,7 @@ public class Ovm3HypervisorSupport {
      * @return
      * @throws Ovm3ResourceException
      */
-    private static Map<String, State> getAllVmStates(Map<String, State> vmStateMap) throws Ovm3ResourceException {
+    private Map<String, State> getAllVmStates(Map<String, State> vmStateMap) throws Ovm3ResourceException {
         Map<String, Xen.Vm> vms = getAllVms();
         final Map<String, State> states = new HashMap<String, State>();
         for (final Map.Entry<String, Xen.Vm> entry : vms.entrySet()) {
@@ -490,7 +490,7 @@ public class Ovm3HypervisorSupport {
             pong = test.echo(ping);
         } catch (Ovm3ResourceException e) {
             LOGGER.debug(
-                    "CheckHealth went wrong: " + c.getHostname() + ", "
+                    "CheckHealth went wrong: " + config.getAgentHostname() + ", "
                             + e.getMessage(), e);
             return new CheckHealthAnswer(cmd, false);
         }
@@ -498,7 +498,7 @@ public class Ovm3HypervisorSupport {
             return new CheckHealthAnswer(cmd, true);
         }
         LOGGER.debug("CheckHealth did not receive " + ping + " but got " + pong
-                + " from " + c.getHostname());
+                + " from " + config.getAgentHostname());
         return new CheckHealthAnswer(cmd, false);
     }
     /**
@@ -515,20 +515,20 @@ public class Ovm3HypervisorSupport {
         try {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
             if (cSp.dom0HasIp(config.getOvm3PoolVip())) {
-                LOGGER.debug("Host " + c.getHostname()
+                LOGGER.debug("Host " + config.getAgentHostname()
                         + " is a master, already has vip " + config.getOvm3PoolVip());
                 config.setAgentIsMaster(true);
             } else if (cSp.ping(config.getOvm3PoolVip())) {
-                LOGGER.debug("Host " + c.getHostname()
+                LOGGER.debug("Host " + config.getAgentHostname()
                         + " has a master, someone has vip " + config.getOvm3PoolVip());
                 config.setAgentHasMaster(true);
             } else {
-                LOGGER.debug("Host " + c.getHostname()
+                LOGGER.debug("Host " + config.getAgentHostname()
                         + " becomes a master, no one has vip " + config.getOvm3PoolVip());
                 config.setAgentIsMaster(true);
             }
         } catch (Ovm3ResourceException e) {
-            LOGGER.debug("Host " + c.getHostname() + " can't reach master: "
+            LOGGER.debug("Host " + config.getAgentHostname() + " can't reach master: "
                     + e.getMessage());
             config.setAgentHasMaster(false);
         }
@@ -552,10 +552,10 @@ public class Ovm3HypervisorSupport {
                     return new ReadyAnswer(cmd, "I am not the master server");
                 }
             } else if (host.getIsMaster()) {
-                LOGGER.debug("Master, not clustered " + c.getHostname());
+                LOGGER.debug("Master, not clustered " + config.getAgentHostname());
                 return new ReadyAnswer(cmd);
             } else {
-                LOGGER.debug("No master, not clustered " + c.getHostname());
+                LOGGER.debug("No master, not clustered " + config.getAgentHostname());
                 return new ReadyAnswer(cmd);
             }
         } catch (CloudRuntimeException | Ovm3ResourceException e) {

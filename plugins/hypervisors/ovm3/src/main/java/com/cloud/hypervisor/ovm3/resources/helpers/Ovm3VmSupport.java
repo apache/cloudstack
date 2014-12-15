@@ -171,7 +171,7 @@ public class Ovm3VmSupport {
                 Xen.Vm vm = xen.getRunningVmConfig(vmName);
                 if (vm == null) {
                     state = State.Stopped;
-                    msg = vmName + " is no running on " + c.getHostname();
+                    msg = vmName + " is no running on " + config.getAgentHostname();
                     return new MigrateAnswer(cmd, false, msg, null);
                 }
                 /* not a storage migration!!! */

@@ -52,7 +52,7 @@ public class Ovm3HypervisorNetwork {
                    if (contCount > 9) {
                        throw new ConfigurationException("Unable to configure "
                                + controlIface + " on host "
-                               + c.getHostname());
+                               + config.getAgentHostname());
                    }
                    contCount++;
                }
@@ -70,7 +70,7 @@ public class Ovm3HypervisorNetwork {
         } catch (InterruptedException e) {
             LOGGER.error("interrupted?", e);
         } catch (Ovm3ResourceException e) {
-            String msg = "Basic configuration failed on " + c.getHostname();
+            String msg = "Basic configuration failed on " + config.getAgentHostname();
             LOGGER.error(msg, e);
             throw new ConfigurationException(msg + ", " + e.getMessage());
         }
@@ -104,7 +104,7 @@ public class Ovm3HypervisorNetwork {
      */
     public CheckNetworkAnswer execute(CheckNetworkCommand cmd) {
         LOGGER.debug("Checking if network name setup is done on "
-                    + c.getHostname());
+                    + config.getAgentHostname());
 
         List<PhysicalNetworkSetupInfo> infoList = cmd
                 .getPhysicalNetworkInfoList();

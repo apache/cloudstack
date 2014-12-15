@@ -18,9 +18,11 @@ public class Ovm3VirtualRoutingSupport {
             .getLogger(Ovm3VirtualRoutingSupport.class);
     private Connection c;
     private Ovm3VirtualRoutingResource vrr;
-    public Ovm3VirtualRoutingSupport(Connection conn, Ovm3VirtualRoutingResource ovm3vrr) {
+    private Ovm3Configuration config;
+    public Ovm3VirtualRoutingSupport(Connection conn, Ovm3Configuration ovm3config, Ovm3VirtualRoutingResource ovm3vrr) {
         c = conn;
         vrr = ovm3vrr;
+        config = ovm3config;
     }
 
     /* copy paste, why isn't this just generic in the VirtualRoutingResource ? */
@@ -160,20 +162,20 @@ public class Ovm3VirtualRoutingSupport {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
             if (!cSp.domrCheckPort(privateIp, cmdPort, retries, interval)) {
                 String msg = "Port " + cmdPort + " not reachable for " + vmName
-                        + " via " + c.getHostname();
+                        + " via " + config.getAgentHostname();
                 LOGGER.info(msg);
                 return new CheckSshAnswer(cmd, msg);
             }
         } catch (Exception e) {
             String msg = "Can not reach port " + cmdPort + " on System vm "
-                    + vmName + " via " + c.getHostname()
+                    + vmName + " via " + config.getAgentHostname()
                     + " due to exception: " + e;
             LOGGER.error(msg);
             return new CheckSshAnswer(cmd, msg);
         }
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Ping " + cmdPort + " succeeded for vm " + vmName
-                    + " via " + c.getHostname() + cmd);
+                    + " via " + config.getAgentHostname() + cmd);
         }
         return new CheckSshAnswer(cmd);
     }

@@ -34,7 +34,6 @@ public class Connection extends XmlRpcClient {
     private String hostIp;
     private String sshUser = "";
     private String sshPassword = "";
-    private String hostname = "";
     private String sshKey = "";
     private Integer hostPort = 8898;
     private Boolean hostUseSsl = false;
@@ -198,13 +197,5 @@ public class Connection extends XmlRpcClient {
 
     public void setSshUser(String sshUser) {
         this.sshUser = sshUser;
-    }
-
-    public String getHostname() {
-        return hostname;
-    }
-
-    public void setHostname(String hostname) {
-        this.hostname = hostname;
     }
 }

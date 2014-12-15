@@ -131,7 +131,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             ovm3hs.fillHostInfo(srCmd);
             ovm3hs.vmStateMapClear();
             ovm3vs = new Ovm3VmSupport(c, ovm3config, ovm3hs, ovm3sp);
-            ovm3vrs = new Ovm3VirtualRoutingSupport(c, ovm3vrr);
+            ovm3vrs = new Ovm3VirtualRoutingSupport(c, ovm3config, ovm3vrr);
 
             LOGGER.debug("Ovm3 pool " + ssCmd + " " + srCmd);
             // srCmd.setStateChanges(changes);
@@ -413,7 +413,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
                     CloudStackPlugin cSp = new CloudStackPlugin(c);
                     if (ovm3hs.getVmState(vmName) == null) {
                         String msg = "VM " + vmName + " went missing on "
-                                + c.getHostname() + ", returning stopped";
+                                + ovm3config.getAgentHostname() + ", returning stopped";
                         LOGGER.debug(msg);
                         state = State.Stopped;
                         return new StartAnswer(cmd, msg);
