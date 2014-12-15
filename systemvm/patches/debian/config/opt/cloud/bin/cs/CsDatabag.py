@@ -105,7 +105,7 @@ class CsCmdLine(CsDataBag):
             return "unknown"
 
     def get_domain(self):
-        if "domain" in self.idata();
+        if "domain" in self.idata():
             return self.idata()['domain']
         else:
             return "cloudnine.internal"
