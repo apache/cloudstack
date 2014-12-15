@@ -201,6 +201,7 @@ import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.NetworkACLItemCidrsDao;
 import com.cloud.network.vpc.StaticRouteVO;
 import com.cloud.network.vpc.VpcGatewayVO;
 import com.cloud.network.vpc.VpcManager;
@@ -357,6 +358,7 @@ public class ApiDBUtils {
     static ConfigurationDao s_configDao;
     static ConsoleProxyDao s_consoleProxyDao;
     static FirewallRulesCidrsDao s_firewallCidrsDao;
+    static NetworkACLItemCidrsDao s_networkACLItemCidrsDao;
     static VMInstanceDao s_vmDao;
     static ResourceLimitService s_resourceLimitMgr;
     static ProjectService s_projectMgr;
@@ -523,6 +525,8 @@ public class ApiDBUtils {
     private ConsoleProxyDao consoleProxyDao;
     @Inject
     private FirewallRulesCidrsDao firewallCidrsDao;
+    @Inject
+    private NetworkACLItemCidrsDao networkACLItemCidrsDao;
     @Inject
     private VMInstanceDao vmDao;
     @Inject
@@ -692,6 +696,7 @@ public class ApiDBUtils {
         s_configDao = configDao;
         s_consoleProxyDao = consoleProxyDao;
         s_firewallCidrsDao = firewallCidrsDao;
+        s_networkACLItemCidrsDao = networkACLItemCidrsDao;
         s_vmDao = vmDao;
         s_resourceLimitMgr = resourceLimitMgr;
         s_projectMgr = projectMgr;
@@ -1239,6 +1244,10 @@ public class ApiDBUtils {
 
     public static List<String> findFirewallSourceCidrs(long id) {
         return s_firewallCidrsDao.getSourceCidrs(id);
+    }
+
+    public static List<String> findNetworkAclItemSourceCidrs(long id) {
+        return s_networkACLItemCidrsDao.getCidrs(id);
     }
 
     public static Account getProjectOwner(long projectId) {

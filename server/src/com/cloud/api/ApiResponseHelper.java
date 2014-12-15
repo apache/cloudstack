@@ -2349,7 +2349,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setEndPort(Integer.toString(aclItem.getSourcePortEnd()));
         }
 
-        response.setCidrList(StringUtils.join(aclItem.getSourceCidrList(), ","));
+        List<String> cidrs = ApiDBUtils.findNetworkAclItemSourceCidrs(aclItem.getId());
+        response.setCidrList(StringUtils.join(cidrs, ","));
 
         response.setTrafficType(aclItem.getTrafficType().toString());
 
