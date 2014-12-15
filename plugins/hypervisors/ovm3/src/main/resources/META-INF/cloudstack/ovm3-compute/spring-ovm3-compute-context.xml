@@ -27,11 +27,11 @@
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd"
                       >
 
-    <bean id="Ovm3Fencer" class="com.cloud.hypervisor.ovm3.hypervisor.Ovm3Fencer">
+    <bean id="Ovm3Fencer" class="com.cloud.hypervisor.ovm3.hypervisor.resources.Ovm3FencerBuilder">
         <property name="name" value="Ovm3FenceBuilder" />
     </bean>
 
-    <bean id="Ovm3Guru" class="com.cloud.hypervisor.ovm3.hypervisor.Ovm3Guru">
+    <bean id="Ovm3Guru" class="com.cloud.hypervisor.ovm3.hypervisor.resources.Ovm3HypervisorGuru">
         <property name="name" value="Ovm3Guru" />
     </bean>
 
