@@ -21,7 +21,7 @@ public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
     private final Logger LOGGER = Logger
             .getLogger(Ovm3VirtualRoutingResource.class);
     private String domRCloudPath = "/opt/cloud/bin/";
-    private final int VRTIMEOUT = 600;
+    private int VRTIMEOUT = 600;
     private Connection c;
     private String agentName;
     public Ovm3VirtualRoutingResource() {

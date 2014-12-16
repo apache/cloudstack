@@ -23,8 +23,6 @@ import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.HostVmStateReportEntry;
-import com.cloud.agent.api.MaintainAnswer;
-import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -607,11 +605,11 @@ public class Ovm3HypervisorSupport {
         }
     }
 
-    public MaintainAnswer execute(MaintainCommand cmd) {
-        /*
-         * TODO: leave cluster, leave pool, release ownership, cleanout and
-         * start over ?
-         */
+    /*
+     * TODO: leave cluster, leave pool, release ownership, cleanout and
+     * start over ?
+     */
+    /* public MaintainAnswer execute(MaintainCommand cmd) {
         try {
             Network net = new Network(c);
             net.stopOvsLocalConfig(config.getAgentControlNetworkName());
@@ -620,6 +618,7 @@ public class Ovm3HypervisorSupport {
         }
         return new MaintainAnswer(cmd);
     }
+    */
     public Answer execute(GetHostStatsCommand cmd) {
         try {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
