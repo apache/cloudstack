@@ -148,7 +148,8 @@
                                     <ul>
                                         <li class="first"><a href="#instance-wizard-featured-templates"><fmt:message key="label.featured"/></a></li>
                                         <li><a href="#instance-wizard-community-templates"><fmt:message key="label.community"/></a></li>
-                                        <li class="last"><a href="#instance-wizard-my-templates"><fmt:message key="label.my.templates"/></a></li>
+                                        <li><a href="#instance-wizard-my-templates"><fmt:message key="label.my.templates"/></a></li>
+                                        <li class="last"><a href="#instance-wizard-shared-templates"><fmt:message key="label.shared"/></a></li>
                                     </ul>
 
                                     <!-- Used for Select Template only -->
@@ -163,6 +164,10 @@
                                         </div>
                                     </div>
                                     <div id="instance-wizard-my-templates">
+                                        <div class="select-container">
+                                        </div>
+                                    </div>
+                                    <div id="instance-wizard-shared-templates">
                                         <div class="select-container">
                                         </div>
                                     </div>
@@ -184,7 +189,8 @@
                                     <ul>
                                         <li class="first"><a href="#instance-wizard-featured-isos"><fmt:message key="label.featured"/></a></li>
                                         <li><a href="#instance-wizard-community-isos"><fmt:message key="label.community"/></a></li>
-                                        <li class="last"><a href="#instance-wizard-my-isos"><fmt:message key="label.menu.my.isos"/></a></li>
+                                        <li><a href="#instance-wizard-my-isos"><fmt:message key="label.menu.my.isos"/></a></li>
+                                        <li class="last"><a href="#instance-wizard-shared-isos"><fmt:message key="label.shared"/></a></li>
                                     </ul>
                                     <div id="instance-wizard-featured-isos">
                                         <div class="select-container">
@@ -195,6 +201,10 @@
                                         </div>
                                     </div>
                                     <div id="instance-wizard-my-isos">
+                                        <div class="select-container">
+                                        </div>
+                                    </div>
+                                    <div id="instance-wizard-shared-isos">
                                         <div class="select-container">
                                         </div>
                                     </div>

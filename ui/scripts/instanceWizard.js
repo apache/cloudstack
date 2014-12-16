@@ -231,14 +231,16 @@
                     templatesObj = {
                         featuredtemplates: featuredTemplateObjs,
                         communitytemplates: communityTemplateObjs,
-                        mytemplates: myTemplateObjs
-                    }
+                        mytemplates: myTemplateObjs,
+                        sharedtemplates: [] // ** Needs implementation **
+                    };
                 } else if (selectedTemplateOrIso == 'select-iso') {
                     templatesObj = {
                         featuredisos: featuredIsoObjs,
                         communityisos: communityIsoObjs,
-                        myisos: myIsoObjs
-                    }
+                        myisos: myIsoObjs,
+                        sharedisos: [] // ** Needs implementation **
+                    };
                 }
                 args.response.success({
                     hypervisor: {
