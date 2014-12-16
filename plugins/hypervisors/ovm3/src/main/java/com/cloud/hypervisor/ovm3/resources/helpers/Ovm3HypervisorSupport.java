@@ -23,6 +23,8 @@ import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.HostVmStateReportEntry;
+import com.cloud.agent.api.MaintainAnswer;
+import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -489,6 +491,7 @@ public class Ovm3HypervisorSupport {
 
     /**
      * CheckHealthAnwer: Check the health of an agent on the hypervisor.
+     * TODO: should elaborate here with checks...
      * @param cmd
      * @return
      */
@@ -609,16 +612,18 @@ public class Ovm3HypervisorSupport {
      * TODO: leave cluster, leave pool, release ownership, cleanout and
      * start over ?
      */
-    /* public MaintainAnswer execute(MaintainCommand cmd) {
+    public MaintainAnswer execute(MaintainCommand cmd) {
+        /*
         try {
             Network net = new Network(c);
             net.stopOvsLocalConfig(config.getAgentControlNetworkName());
         } catch (Ovm3ResourceException e) {
             LOGGER.debug("unable to disable " + config.getAgentControlNetworkName(), e);
         }
+        */
         return new MaintainAnswer(cmd);
     }
-    */
+
     public Answer execute(GetHostStatsCommand cmd) {
         try {
             CloudStackPlugin cSp = new CloudStackPlugin(c);

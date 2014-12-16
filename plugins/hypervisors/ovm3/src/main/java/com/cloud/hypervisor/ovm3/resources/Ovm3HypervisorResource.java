@@ -29,6 +29,7 @@ import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
@@ -213,9 +214,8 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             return ovm3vs.execute((MigrateCommand) cmd);
         } else if (clazz == CheckVirtualMachineCommand.class) {
             return ovm3hs.execute((CheckVirtualMachineCommand) cmd);
-        /* } else if (clazz == MaintainCommand.class) {
+        } else if (clazz == MaintainCommand.class) {
             return ovm3hs.execute((MaintainCommand) cmd);
-            */
         } else if (clazz == StartCommand.class) {
             return execute((StartCommand) cmd);
         } else if (clazz == GetVncPortCommand.class) {
