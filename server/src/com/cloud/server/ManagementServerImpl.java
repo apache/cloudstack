@@ -3611,11 +3611,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         String name = cmd.getName();
         String key = cmd.getPublicKey();
         try {
-            if (key != null) {
-                key = URLDecoder.decode(key, "UTF-8");
-            }
+            key = URLDecoder.decode(key, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-        } finally {
         }
         String publicKey = SSHKeysHelper.getPublicKeyFromKeyMaterial(key);
 

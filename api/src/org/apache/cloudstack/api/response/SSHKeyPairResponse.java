@@ -66,12 +66,24 @@ public class SSHKeyPairResponse extends BaseResponse {
         this.fingerprint = fingerprint;
     }
 
+    public String getAccountName() {
+        return accountName;
+    }
+
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
 
+    public String getDomainId() {
+        return domainId;
+    }
+
     public void setDomainId(String domainId) {
         this.domainId = domainId;
+    }
+
+    public String getDomainName() {
+        return domain;
     }
 
     public void setDomainName(String domain) {

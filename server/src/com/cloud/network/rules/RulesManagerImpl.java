@@ -1527,7 +1527,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             rule.setDisplay(forDisplay);
         }
 
-        if (rule.getSourcePortStart() != rule.getSourcePortEnd() && privatePort != null) {
+        if (!rule.getSourcePortStart().equals(rule.getSourcePortEnd()) && privatePort != null) {
             throw new InvalidParameterValueException("Unable to update the private port of port forwarding rule as  the rule has port range : " + rule.getSourcePortStart() + " to " + rule.getSourcePortEnd());
         }
         if (virtualMachineId == null && vmGuestIp != null) {
