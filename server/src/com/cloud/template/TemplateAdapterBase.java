@@ -22,7 +22,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplate;
+import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -275,7 +275,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     }
 
     @Override
-    public TemplateProfile prepare(GetUploadParamsForTemplate cmd) throws ResourceAllocationException {
+    public TemplateProfile prepare(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException {
         //check if the caller can operate with the template owner
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());

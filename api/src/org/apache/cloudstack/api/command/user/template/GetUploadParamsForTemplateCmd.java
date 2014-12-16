@@ -24,7 +24,7 @@ import java.util.Map;
 
 import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.AbstractGetUploadParamsCommand;
+import org.apache.cloudstack.api.AbstractGetUploadParamsCmd;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.Parameter;
@@ -36,8 +36,8 @@ import org.apache.log4j.Logger;
 
 @APICommand(name = "getUploadParamsForTemplate", description = "upload an existing template into the CloudStack cloud. ", responseObject = GetUploadParamsResponse.class, since =
     "4.6.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class GetUploadParamsForTemplate extends AbstractGetUploadParamsCommand {
-    public static final Logger s_logger = Logger.getLogger(GetUploadParamsForTemplate.class.getName());
+public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
+    public static final Logger s_logger = Logger.getLogger(GetUploadParamsForTemplateCmd.class.getName());
 
     private static final String s_name = "postuploadtemplateresponse";
 

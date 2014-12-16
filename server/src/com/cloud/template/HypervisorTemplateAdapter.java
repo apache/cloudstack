@@ -26,7 +26,7 @@ import java.util.concurrent.ExecutionException;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplate;
+import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
@@ -137,7 +137,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     }
 
     @Override
-    public TemplateProfile prepare(GetUploadParamsForTemplate cmd) throws ResourceAllocationException {
+    public TemplateProfile prepare(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException {
         TemplateProfile profile = super.prepare(cmd);
 
         // Check that the resource limit for secondary storage won't be exceeded

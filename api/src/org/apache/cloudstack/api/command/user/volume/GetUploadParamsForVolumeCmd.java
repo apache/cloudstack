@@ -23,7 +23,7 @@ import java.net.URL;
 import java.util.UUID;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.AbstractGetUploadParamsCommand;
+import org.apache.cloudstack.api.AbstractGetUploadParamsCmd;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.Parameter;
@@ -35,8 +35,8 @@ import org.apache.log4j.Logger;
 
 @APICommand(name = "getUploadParamsForVolume", description = "Upload a data disk to the cloudstack cloud.", responseObject = GetUploadParamsResponse.class, since = "4.6.0",
     requestHasSensitiveInfo= false, responseHasSensitiveInfo = false)
-public class GetUploadParamsForVolume extends AbstractGetUploadParamsCommand {
-    public static final Logger s_logger = Logger.getLogger(GetUploadParamsForVolume.class.getName());
+public class GetUploadParamsForVolumeCmd extends AbstractGetUploadParamsCmd {
+    public static final Logger s_logger = Logger.getLogger(GetUploadParamsForVolumeCmd.class.getName());
 
     private static final String s_name = "postuploadvolumeresponse";
 

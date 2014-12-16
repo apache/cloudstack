@@ -38,7 +38,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.google.gson.Gson;
-import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplate;
+import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.commons.codec.binary.Base64;
@@ -336,7 +336,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "creating post upload template")
-    public GetUploadParamsResponse registerTemplateForPostUpload(GetUploadParamsForTemplate cmd) throws ResourceAllocationException, MalformedURLException {
+    public GetUploadParamsResponse registerTemplateForPostUpload(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException, MalformedURLException {
         TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
         TemplateProfile profile = adapter.prepare(cmd);
         List<TemplateOrVolumePostUploadCommand> payload = adapter.createTemplateForPostUpload(profile);

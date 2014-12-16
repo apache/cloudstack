@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
-import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplate;
+import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 
 import com.cloud.exception.ResourceAllocationException;
@@ -53,7 +53,7 @@ public interface TemplateAdapter extends Adapter {
 
     public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException;
 
-    public TemplateProfile prepare(GetUploadParamsForTemplate cmd) throws ResourceAllocationException;
+    public TemplateProfile prepare(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException;
 
     public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException;
 

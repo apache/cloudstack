@@ -27,9 +27,9 @@ import org.apache.log4j.Logger;
 import java.net.URL;
 import java.util.UUID;
 
-public abstract class AbstractGetUploadParamsCommand extends BaseCmd {
+public abstract class AbstractGetUploadParamsCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(AbstractGetUploadParamsCommand.class.getName());
+    public static final Logger s_logger = Logger.getLogger(AbstractGetUploadParamsCmd.class.getName());
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the volume/template")
     private String name;
