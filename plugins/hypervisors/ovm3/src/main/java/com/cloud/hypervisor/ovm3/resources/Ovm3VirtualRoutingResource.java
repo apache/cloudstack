@@ -18,10 +18,10 @@ import com.cloud.utils.ExecutionResult;
 
 @Local(value = VirtualRouterDeployer.class)
 public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
-    private static final Logger LOGGER = Logger
+    private final Logger LOGGER = Logger
             .getLogger(Ovm3VirtualRoutingResource.class);
     private String domRCloudPath = "/opt/cloud/bin/";
-    private static final int VRTIMEOUT = 600;
+    private final int VRTIMEOUT = 600;
     private Connection c;
     private String agentName;
     public Ovm3VirtualRoutingResource() {

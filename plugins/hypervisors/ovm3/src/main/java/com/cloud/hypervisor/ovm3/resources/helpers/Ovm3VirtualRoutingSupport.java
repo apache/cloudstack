@@ -14,7 +14,7 @@ import com.cloud.hypervisor.ovm3.resources.Ovm3VirtualRoutingResource;
 import com.cloud.utils.ExecutionResult;
 
 public class Ovm3VirtualRoutingSupport {
-    private static final Logger LOGGER = Logger
+    private final Logger LOGGER = Logger
             .getLogger(Ovm3VirtualRoutingSupport.class);
     private Connection c;
     private Ovm3VirtualRoutingResource vrr;

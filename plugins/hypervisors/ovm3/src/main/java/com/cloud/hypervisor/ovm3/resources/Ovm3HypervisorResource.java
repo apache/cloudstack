@@ -88,7 +88,7 @@ import com.cloud.vm.VirtualMachine.State;
  */
 @Local(value = HypervisorResource.class)
 public class Ovm3HypervisorResource extends ServerResourceBase implements HypervisorResource {
-    private static final Logger LOGGER = Logger
+    private final Logger LOGGER = Logger
             .getLogger(Ovm3HypervisorResource.class);
     @Inject
     private VirtualRoutingResource vrResource;
@@ -102,6 +102,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     private Ovm3VirtualRoutingResource ovm3vrr;
     private Ovm3VirtualRoutingSupport ovm3vrs;
     private Ovm3Configuration ovm3config;
+    private Ovm3VmGuestTypes ovm3gt;
     private OvmObject ovmObject = new OvmObject();
 
     /*
@@ -132,7 +133,8 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             ovm3hs.vmStateMapClear();
             ovm3vs = new Ovm3VmSupport(c, ovm3config, ovm3hs, ovm3sp, ovm3hn);
             ovm3vrs = new Ovm3VirtualRoutingSupport(c, ovm3config, ovm3vrr);
-            ovm3spr = new Ovm3StorageProcessor(c, ovm3config);
+            ovm3spr = new Ovm3StorageProcessor(c, ovm3config, ovm3sp);
+            ovm3gt = new Ovm3VmGuestTypes();
             ovm3hs.setupServer(ovm3config.getAgentSshKey());
             LOGGER.debug("Ovm3 pool " + ssCmd + " " + srCmd);
             // srCmd.setStateChanges(changes);
@@ -358,7 +360,8 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             vm.setVmUuid(UUID.nameUUIDFromBytes(vmSpec.getName().getBytes())
                     .toString());
             vm.setVmName(vmName);
-            String domType = Ovm3VmGuestTypes.getOvm3GuestType(vmSpec.getOs());
+
+            String domType = ovm3gt.getOvm3GuestType(vmSpec.getOs());
             if (domType == null || domType.isEmpty()) {
                 domType = "default";
                 LOGGER.debug("VM Virt type missing setting to: " + domType);

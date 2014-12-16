@@ -44,7 +44,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
 
 public class Ovm3VmSupport {
-    private static final Logger LOGGER = Logger.getLogger(Ovm3VmSupport.class);
+    private final Logger LOGGER = Logger.getLogger(Ovm3VmSupport.class);
     private OvmObject ovmObject = new OvmObject();
     private ResourceManager resourceMgr;
     private Connection c;

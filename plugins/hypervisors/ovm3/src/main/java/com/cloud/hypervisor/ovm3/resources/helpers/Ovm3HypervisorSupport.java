@@ -45,16 +45,17 @@ import com.cloud.vm.VirtualMachine.State;
 import com.trilead.ssh2.SCPClient;
 
 public class Ovm3HypervisorSupport {
-    private static final Logger LOGGER = Logger
+    private final Logger LOGGER = Logger
             .getLogger(Ovm3HypervisorSupport.class);
-    private static Connection c;
+    private Connection c;
     private Ovm3Configuration config;
     public Ovm3HypervisorSupport(Connection conn, Ovm3Configuration ovm3config) {
         c = conn;
         config = ovm3config;
     }
-    private static Map<String, PowerState> powerStateMaps;
-    static {
+    /* statemap bounces */
+    private Map<String, PowerState> powerStateMaps;
+    {
         powerStateMaps = new HashMap<String, PowerState>();
         powerStateMaps.put("Stopping", PowerState.PowerOn);
         powerStateMaps.put("Running", PowerState.PowerOn);
@@ -66,8 +67,8 @@ public class Ovm3HypervisorSupport {
         powerStateMaps.put("Migrating", PowerState.PowerOn);
     }
     private Map<String, State> vmStateMap = new HashMap<String, State>();
-    private static Map<String, State> stateMaps;
-    static {
+    private Map<String, State> stateMaps;
+    {
         stateMaps = new HashMap<String, State>();
         stateMaps.put("Stopping", State.Stopping);
         stateMaps.put("Running", State.Running);
@@ -466,7 +467,7 @@ public class Ovm3HypervisorSupport {
      * @param powerStateMap
      * @return
      */
-    public static PowerState convertStateToPower(State s) {
+    public PowerState convertStateToPower(State s) {
         final PowerState state = powerStateMaps.get(s.toString());
         return state == null ? PowerState.PowerUnknown : state;
     }

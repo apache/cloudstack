@@ -22,7 +22,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 public class Ovm3HypervisorNetwork {
-    private static final Logger LOGGER = Logger
+    private final Logger LOGGER = Logger
             .getLogger(Ovm3HypervisorNetwork.class);
     Connection c;
     private Ovm3Configuration config;

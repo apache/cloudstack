@@ -38,7 +38,7 @@ import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 
 public class Ovm3StoragePool {
-    private static final Logger LOGGER = Logger
+    private final Logger LOGGER = Logger
             .getLogger(Ovm3StoragePool.class);
     private Connection c;
     private Ovm3Configuration config;

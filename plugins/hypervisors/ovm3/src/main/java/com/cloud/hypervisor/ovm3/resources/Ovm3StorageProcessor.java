@@ -53,7 +53,7 @@ import com.cloud.vm.DiskProfile;
  * the rest should move
  */
 public class Ovm3StorageProcessor implements StorageProcessor {
-    private static final Logger LOGGER = Logger
+    private final Logger LOGGER = Logger
             .getLogger(Ovm3StorageProcessor.class);
     private Connection c;
     private String agentOvmRepoPath = "/OVS/Repositories";
@@ -66,12 +66,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         config = ovm3config;
         pool = ovm3pool;
     }
-    /* circulair dependency!!!! */
-    public Ovm3StorageProcessor(Connection conn, Ovm3Configuration ovm3config) {
-        c = conn;
-        config = ovm3config;
-        pool = new Ovm3StoragePool(c, ovm3config);
-    }
+
     /*
      * TODO: Split out in Sec to prim and prim to prim and types ? Storage mount
      * also goes in here for secstorage

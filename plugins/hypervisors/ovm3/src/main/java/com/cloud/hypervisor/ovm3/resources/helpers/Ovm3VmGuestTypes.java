@@ -21,11 +21,11 @@ import java.util.Map;
 
 public class Ovm3VmGuestTypes {
     /* /usr/lib64/python2.4/site-packages/agent/lib/assembly */
-    private static final Map<String, String> OVMHELPERMAP = new HashMap<String, String>();
-    private static final String HVM = "hvm";
-    private static final String PV = "xen_pvm";
-    private static final String DOMSOL = "ldoms_pvm";
-    static {
+    private final Map<String, String> OVMHELPERMAP = new HashMap<String, String>();
+    private final String HVM = "hvm";
+    private final String PV = "xen_pvm";
+    private final String DOMSOL = "ldoms_pvm";
+    {
         OVMHELPERMAP.put("Oracle Enterprise Linux 6.0 (32-bit)", PV);
         OVMHELPERMAP.put("Oracle Enterprise Linux 6.0 (64-bit)", PV);
         OVMHELPERMAP.put("Oracle Enterprise Linux 5.0 (32-bit)", PV);
@@ -74,7 +74,7 @@ public class Ovm3VmGuestTypes {
         OVMHELPERMAP.put("Sun Solaris Sparc (64-bit)", DOMSOL);
     }
 
-    public static String getOvm3GuestType(String stdType) {
+    public String getOvm3GuestType(String stdType) {
         return OVMHELPERMAP.get(stdType);
     }
 }
