@@ -96,6 +96,11 @@
       <artifactId>ejb-api</artifactId>
     </dependency>
     <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>servlet-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
         <groupId>com.googlecode.java-ipv6</groupId>
         <artifactId>java-ipv6</artifactId>
     </dependency>

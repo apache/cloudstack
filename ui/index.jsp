@@ -19,11 +19,12 @@
      --%><%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ page import="com.cloud.utils.servlet.CacheControlUtil"  %>
 <c:if test="${!empty cookie.lang}">
     <fmt:setLocale value="${cookie.lang.value}" />
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
-<% long now = System.currentTimeMillis(); %>
+<% long now = CacheControlUtil.getCacheControlWorkaround(request); %>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
           "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
