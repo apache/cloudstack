@@ -183,10 +183,10 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             throw new InvalidParameterValueException("Please specify a valid zone Id. Only admins can create templates in all zones.");
         }
 
-        //TODO: commenting it for post upload to work as it doesnt have an url. Need to figure out how to resolve this
-//        if (url.toLowerCase().contains("file://")) {
-//            throw new InvalidParameterValueException("File:// type urls are currently unsupported");
-//        }
+        // check for the url format only when url is not null. url can be null incase of form based upload
+        if (url != null && url.toLowerCase().contains("file://")) {
+            throw new InvalidParameterValueException("File:// type urls are currently unsupported");
+        }
 
         // check whether owner can create public templates
         boolean allowPublicUserTemplates = TemplateManager.AllowPublicUserTemplates.valueIn(templateOwner.getId());
