@@ -43,6 +43,9 @@
                         mine: {
                             label: 'ui.listView.filters.mine'
                         },
+                        shared: {
+                            label: 'Shared'
+                        },
                         featured: {
                             label: 'label.featured'
                         },
@@ -595,6 +598,11 @@
                                     case "mine":
                                         $.extend(data, {
                                             templatefilter: 'self'
+                                        });
+                                        break;
+                                    case "shared":
+                                        $.extend(data, {
+                                            templatefilter: 'shared'
                                         });
                                         break;
                                     case "featured":
@@ -1465,6 +1473,9 @@
                         mine: {
                             label: 'ui.listView.filters.mine'
                         },
+                        shared: {
+                            label: 'Shared'
+                        },
                         featured: {
                             label: 'label.featured'
                         },
@@ -1728,6 +1739,11 @@
                                     case "mine":
                                         $.extend(data, {
                                             isofilter: 'self'
+                                        });
+                                        break;
+                                    case "shared":
+                                        $.extend(data, {
+                                        	isofilter: 'shared'
                                         });
                                         break;
                                     case "featured":
