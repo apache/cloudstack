@@ -19,11 +19,10 @@
 package org.apache.cloudstack.api.command.user.template;
 
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Collection;
 import java.util.Map;
-import java.util.UUID;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.AbstractGetUploadParamsCommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -109,27 +108,27 @@ public class GetUploadParamsForTemplate extends AbstractGetUploadParamsCommand {
         return params;
     }
 
-    public Boolean getIsDynamicallyScalable() {
+    public Boolean isDynamicallyScalable() {
         return isDynamicallyScalable;
     }
 
-    public Boolean getExtractable() {
+    public Boolean isExtractable() {
         return extractable;
     }
 
-    public Boolean getFeatured() {
+    public Boolean isFeatured() {
         return featured;
     }
 
-    public Boolean getPublicTemplate() {
+    public Boolean isPublic() {
         return publicTemplate;
     }
 
-    public Boolean getIsRoutingType() {
+    public Boolean isRoutingType() {
         return isRoutingType;
     }
 
-    public Boolean getPasswordEnabled() {
+    public Boolean isPasswordEnabled() {
         return passwordEnabled;
     }
 
@@ -137,7 +136,7 @@ public class GetUploadParamsForTemplate extends AbstractGetUploadParamsCommand {
         return requiresHvm;
     }
 
-    public Boolean getSshKeyEnabled() {
+    public Boolean isSshKeyEnabled() {
         return sshKeyEnabled;
     }
 
@@ -147,17 +146,13 @@ public class GetUploadParamsForTemplate extends AbstractGetUploadParamsCommand {
 
     @Override
     public void execute() throws ServerApiException {
-        // TODO Auto-generated method stub
         try {
-            GetUploadParamsResponse response = createGetUploadParamsResponse(
-                    UUID.fromString("C7D351D2-F167-4CC8-A9FF-3BECB0A625C4"),
-                    new URL("https://1-2-3-4.xyz.com/upload/C7D351D2-F167-4CC8-A9FF-3BECB0A625C4"),
-                    "TKPFeuz2nHmE/kcREEu24mnj1MrLdzOeJIHXR9HLIGgk56bkRJHaD0RRL2lds1rKKhrro4/PuleEh4YhRinhxaAmPpU4e55eprG8gTCX0ItyFAtlZViVdKXMew5Dfp4Qg8W9I1/IsDJd2Kas9/ftDQLiemAlPt0uS7Ou6asOCpifnBaKvhM4UGEjHSnni1KhBzjgEyDW3Y42HKJSSv58Sgmxl9LCewBX8vtn9tXKr+j4afj7Jlh7DFhyo9HOPC5ogR4hPBKqP7xF9tHxAyq6YqfBzsng3Xwe+Pb8TU1kFHg1l2DM4tY6ooW2h8lOhWUkrJu4hOAOeTeRtCjW3H452NKoeA1M8pKWuqMo5zRMti2u2hNZs0YY2yOy8oWMMG+lG0hvIlajqEU=",
-                    "2014-10-17T12:00:00+0530", "de7c9b85b8b78aa6bc8a7a36f70a90701c9db4d9");
+            GetUploadParamsResponse response = _templateService.registerTemplateForPostUpload(this);
             response.setResponseName(getCommandName());
             setResponseObject(response);
-        } catch (MalformedURLException e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "malformedurl exception: " + e.getMessage());
+        } catch (ResourceAllocationException | MalformedURLException e) {
+            s_logger.error("exception while registering template", e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "exception while registering template: " + e.getMessage());
         }
     }
 

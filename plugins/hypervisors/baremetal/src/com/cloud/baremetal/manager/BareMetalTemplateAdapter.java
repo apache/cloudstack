@@ -41,6 +41,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 
@@ -102,6 +103,12 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 
         _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
         return template;
+    }
+
+    @Override
+    public List<TemplateOrVolumePostUploadCommand> createTemplateForPostUpload(TemplateProfile profile) {
+        // TODO: support baremetal for postupload
+        return null;
     }
 
     @Override

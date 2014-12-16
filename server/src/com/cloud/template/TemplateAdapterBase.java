@@ -22,6 +22,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplate;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -182,9 +183,10 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             throw new InvalidParameterValueException("Please specify a valid zone Id. Only admins can create templates in all zones.");
         }
 
-        if (url.toLowerCase().contains("file://")) {
-            throw new InvalidParameterValueException("File:// type urls are currently unsupported");
-        }
+        //TODO: commenting it for post upload to work as it doesnt have an url. Need to figure out how to resolve this
+//        if (url.toLowerCase().contains("file://")) {
+//            throw new InvalidParameterValueException("File:// type urls are currently unsupported");
+//        }
 
         // check whether owner can create public templates
         boolean allowPublicUserTemplates = TemplateManager.AllowPublicUserTemplates.valueIn(templateOwner.getId());
@@ -269,6 +271,29 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             cmd.getRequiresHvm(), cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId,
             HypervisorType.getType(cmd.getHypervisor()), cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null,
             cmd.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER);
+
+    }
+
+    @Override
+    public TemplateProfile prepare(GetUploadParamsForTemplate cmd) throws ResourceAllocationException {
+        //check if the caller can operate with the template owner
+        Account caller = CallContext.current().getCallingAccount();
+        Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
+        _accountMgr.checkAccess(caller, null, true, owner);
+
+        boolean isRouting = (cmd.isRoutingType() == null) ? false : cmd.isRoutingType();
+
+        Long zoneId = cmd.getZoneId();
+        // ignore passed zoneId if we are using region wide image store
+        List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
+        if (stores != null && stores.size() > 0) {
+            zoneId = -1L;
+        }
+
+        return prepare(false, CallContext.current().getCallingUserId(), cmd.getName(), cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(),
+                       cmd.getRequiresHvm(), null, cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId,
+                       HypervisorType.getType(cmd.getHypervisor()), cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null,
+                       cmd.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER);
 
     }
 
