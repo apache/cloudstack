@@ -342,7 +342,7 @@
                                         var $templateHypervisor = $step.find('input[type=hidden][wizard-field=hypervisor]');
 
                                         // Get hypervisor from template
-                                        if (type == 'featuredtemplates' || type == 'communitytemplates' || type == 'mytemplates') {
+                                        if (type == 'featuredtemplates' || type == 'communitytemplates' || type == 'mytemplates' || type == 'sharedtemplates') {
                                             $selects.each(function() {
                                                 var $select = $(this);
                                                 var template = $.grep(args.data.templates[type], function(tmpl, v) {
@@ -359,7 +359,7 @@
                                             $templateHypervisor.attr('disabled', 'disabled');
                                         }
 
-                                        if (type == 'featuredisos' || type == 'communityisos' || type == 'myisos') {
+                                        if (type == 'featuredisos' || type == 'communityisos' || type == 'myisos' || type == 'sharedisos') {
                                             // Create hypervisor select
                                             $selects.find('input').bind('click', function() {
                                                 var $select = $(this).closest('.select');
@@ -368,6 +368,7 @@
                                                 $("#instance-wizard-featured-isos .select-container div.selected").removeClass('selected').find('div.hypervisor').remove();
                                                 $("#instance-wizard-community-isos .select-container div.selected").removeClass('selected').find('div.hypervisor').remove();
                                                 $("#instance-wizard-my-isos .select-container div.selected").removeClass('selected').find('div.hypervisor').remove();
+                                                $("#instance-wizard-shared-isos .select-container div.selected").removeClass('selected').find('div.hypervisor').remove();
 
                                                 $select.addClass('selected').append(
                                                     $('<div>').addClass('hypervisor')
@@ -396,13 +397,17 @@
                                     // Featured ISOs
                                     $(
                                         [
+                                            // Templates
                                             ['featuredtemplates', 'instance-wizard-featured-templates'],
                                             ['communitytemplates', 'instance-wizard-community-templates'],
                                             ['mytemplates', 'instance-wizard-my-templates'],
+                                            ['sharedtemplates', 'instance-wizard-shared-templates'],
 
+                                            // ISOs
                                             ['featuredisos', 'instance-wizard-featured-isos'],
                                             ['communityisos', 'instance-wizard-community-isos'],
-                                            ['myisos', 'instance-wizard-my-isos']
+                                            ['myisos', 'instance-wizard-my-isos'],
+                                            ['sharedisos', 'instance-wizard-shared-isos'],
                                             //['isos', 'instance-wizard-all-isos']
                                         ]
                                     ).each(function() {

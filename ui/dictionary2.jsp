@@ -24,7 +24,7 @@ under the License.
 <fmt:setBundle basename="resources/messages"/>
 <% long now = System.currentTimeMillis(); %>
 <script type="text/javascript">
-$.extend(dictionary, {
+ $.extend(dictionary, {
 'label.add.ldap.account': '<fmt:message key="label.add.ldap.account" />',
 'label.rules': '<fmt:message key="label.rules" />',
 'label.running.vms': '<fmt:message key="label.running.vms" />',

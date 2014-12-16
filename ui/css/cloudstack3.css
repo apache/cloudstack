@@ -5847,14 +5847,14 @@ label.error {
 
 .multi-wizard .ui-tabs li.ui-state-default a {
   float: left;
-  padding: 15px;
-  width: 110px;
   text-align: center;
   font-size: 11px;
   margin-right: 1px;
   color: #4E6070;
   text-decoration: none;
   background: #DEE3E5;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .multi-wizard .ui-tabs li.ui-state-active a {
