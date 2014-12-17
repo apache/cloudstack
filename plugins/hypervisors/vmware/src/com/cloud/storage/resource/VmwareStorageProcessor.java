@@ -610,7 +610,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             vmMo = hyperHost.findVmOnHyperHost(vmName);
-            if (vmMo == null) {
+            if (vmMo == null || VmwareResource.getVmState(vmMo) == PowerState.PowerOff) {
                 // create a dummy worker vm for attaching the volume
                 DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
                 workerVm = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVmName);
