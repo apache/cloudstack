@@ -1263,6 +1263,7 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
         self.debug("Creating isolated network in zone %s which is foreign to VM" %
                     foreignZoneId)
         isolated_network = Network.create(self.apiclient,self.services["isolated_network"],
+                                          self.account.name, self.account.domainid,
                                           networkofferingid=self.isolated_network_offering.id)
         self.debug("Created isolated network %s in zone %s" %
                    (isolated_network.id, foreignZoneId))
@@ -1274,7 +1275,7 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
         cmd.networkid = isolated_network.id
 
         with self.assertRaises(Exception) as e:
-            time.sleep(5) 
+            time.sleep(5)
             self.apiclient.addNicToVirtualMachine(cmd)
 	    self.debug("addNicToVirtualMachine API failed with exception: %s" % e.exception)
 
