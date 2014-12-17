@@ -3950,6 +3950,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             VmWorkStart workInfo = new VmWorkStart(callingUser.getId(), callingAccount.getId(), vm.getId(), VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER);
             workInfo.setPlan(planToDeploy);
             workInfo.setParams(params);
+            if (planner != null) {
+                workInfo.setDeploymentPlanner(planner.getName());
+            }
             workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
             _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());

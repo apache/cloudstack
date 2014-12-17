@@ -115,8 +115,8 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
         } catch(Throwable e) {
             s_logger.error("Unable to complete " + job + ", job origin:" + job.getRelated(), e);
 
-            RuntimeException ex = new RuntimeException("Job failed due to exception " + e.getMessage());
-            _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, _asyncJobMgr.marshallResultObject(ex));
+            //RuntimeException ex = new RuntimeException("Job failed due to exception " + e.getMessage());
+            _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, _asyncJobMgr.marshallResultObject(e));
         }
     }
 }
