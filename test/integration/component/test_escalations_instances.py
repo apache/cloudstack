@@ -2113,26 +2113,6 @@ class TestInstances(cloudstackTestCase):
                 cls.api_client,
                 cls.services["service_offerings"]["tiny"]
             )
-            cls.account = Account.create(
-                cls.api_client,
-                cls.services["account"],
-                domainid=cls.domain.id
-            )
-            # Getting authentication for user in newly created Account
-            cls.user = cls.account.user[0]
-            cls.userapiclient = cls.testClient.getUserApiClient(
-                cls.user.username,
-                cls.domain.name)
-            # Updating resource Limits
-            for i in range(0, 8):
-                Resources.updateLimit(
-                    cls.api_client,
-                    account=cls.account.name,
-                    domainid=cls.domain.id,
-                    max=-1,
-                    resourcetype=i
-                )
-            cls._cleanup.append(cls.account)
             cls._cleanup.append(cls.service_offering)
             cls._cleanup.append(cls.disk_offering)
         except Exception as e:
@@ -2144,12 +2124,29 @@ class TestInstances(cloudstackTestCase):
 
         self.apiClient = self.testClient.getApiClient()
         self.cleanup = []
-        self.cleanup_vm = []
+        self.account = Account.create(
+                self.apiClient,
+                self.services["account"],
+                domainid=self.domain.id
+            )
+            # Getting authentication for user in newly created Account
+        self.user = self.account.user[0]
+        self.userapiclient = self.testClient.getUserApiClient(
+                self.user.username,
+                self.domain.name)
+        # Updating resource Limits
+        for i in range(0, 8):
+            Resources.updateLimit(
+                    self.api_client,
+                    account=self.account.name,
+                    domainid=self.domain.id,
+                    max=-1,
+                    resourcetype=i
+            )
+        self.cleanup.append(self.account)
 
     def tearDown(self):
         # Clean up, terminate the created resources
-        for vm in self.cleanup_vm:
-            vm.delete(self.apiClient, expunge=True)
         cleanup_resources(self.apiClient, self.cleanup)
         return
 
@@ -2242,7 +2239,6 @@ class TestInstances(cloudstackTestCase):
             vm_created,
             "VM creation failed"
         )
-        self.cleanup.append(vm_created)
         # Listing all the VMs for a user again for matching zone
         list_vms_after = VirtualMachine.list(
             self.userapiclient,
@@ -2372,7 +2368,6 @@ class TestInstances(cloudstackTestCase):
             vm_created,
             "VM creation failed"
         )
-        self.cleanup.append(vm_created)
         # Listing all the VMs for a user again
         list_vms_after = VirtualMachine.list(
             self.userapiclient,
@@ -2535,7 +2530,6 @@ class TestInstances(cloudstackTestCase):
             vm_created,
             "VM creation failed"
         )
-        self.cleanup.append(vm_created)
         # Listing all the VMs for a user again
         list_vms_after = VirtualMachine.list(
             self.userapiclient,
@@ -2568,6 +2562,7 @@ class TestInstances(cloudstackTestCase):
         snapshot1 = VmSnapshot.create(
             self.userapiclient,
             vm_created.id,
+            snapshotmemory=True
         )
         self.assertIsNotNone(
             snapshot1,
@@ -2576,6 +2571,7 @@ class TestInstances(cloudstackTestCase):
         snapshot2 = VmSnapshot.create(
             self.userapiclient,
             vm_created.id,
+            snapshotmemory=True
         )
         self.assertIsNotNone(
             snapshot2,
@@ -2703,7 +2699,6 @@ class TestInstances(cloudstackTestCase):
             vm_created,
             "VM creation failed"
         )
-        self.cleanup.append(vm_created)
         # Listing all the VMs for a user again
         list_vms_after = VirtualMachine.list(
             self.userapiclient,
@@ -2751,7 +2746,6 @@ class TestInstances(cloudstackTestCase):
                 volume_created,
                 "Volume is not created"
             )
-            self.cleanup.append(volume_created)
             # Attaching all the volumes created to VM
             vm_created.attach_volume(
                 self.userapiclient,
@@ -2947,7 +2941,6 @@ class TestInstances(cloudstackTestCase):
                 vm_created,
                 "VM creation failed"
             )
-            self.cleanup.append(vm_created)
             # Listing details of current Service Offering
             vm_so_list = ServiceOffering.list(
                 self.userapiclient,
@@ -3078,7 +3071,6 @@ class TestInstances(cloudstackTestCase):
             vm_created,
             "VM creation failed"
         )
-        self.cleanup.append(vm_created)
         # Listing details of current Service Offering
         vm_so_list = ServiceOffering.list(
             self.userapiclient,
@@ -3202,7 +3194,6 @@ class TestInstances(cloudstackTestCase):
             vm_created,
             "VM creation failed"
         )
-        self.cleanup.append(vm_created)
         # Listing all the VMs for a user again
         list_vms_after = VirtualMachine.list(
             self.userapiclient,
@@ -3330,7 +3321,6 @@ class TestInstances(cloudstackTestCase):
             vm_created,
             "VM creation failed"
         )
-        self.cleanup.append(vm_created)
         # Verifying the displayname and group details for deployed VM
         self.assertEquals(
             self.services["virtual_machine"]["displayname"],
@@ -3429,7 +3419,6 @@ class TestInstances(cloudstackTestCase):
             vm_created,
             "VM creation failed"
         )
-        self.cleanup.append(vm_created)
         # Listing all the VMs for a user again
         list_vms_after = VirtualMachine.list(
             self.userapiclient,
@@ -3537,7 +3526,6 @@ class TestInstances(cloudstackTestCase):
                 network,
                 "Network creation failed"
             )
-            self.cleanup.append(network)
             networks_list_size = networks_list_size + 1
 
         # Listing the networks again
@@ -3577,7 +3565,6 @@ class TestInstances(cloudstackTestCase):
             vm_created,
             "VM creation failed"
         )
-        self.cleanup.insert(-2, vm_created)
         # Listing all the VMs for a user again
         list_vms_after = VirtualMachine.list(
             self.userapiclient,
@@ -3697,7 +3684,6 @@ class TestInstances(cloudstackTestCase):
             vm_created,
             "VM creation failed"
         )
-        self.cleanup_vm.append(vm_created)
         # Listing all the VMs for a user again
         list_vms_after = VirtualMachine.list(
             self.userapiclient,
@@ -3801,8 +3787,6 @@ class TestInstances(cloudstackTestCase):
             vm_created,
             "VM creation failed"
         )
-        # self.cleanup.append(vm_created)
-        self.cleanup.append(network)
         # Listing all the VMs for a user again
         vm_response = VirtualMachine.list(
             self.userapiclient,
@@ -3925,7 +3909,6 @@ class TestInstances(cloudstackTestCase):
             vm1, "VM1 creation failed with ip address %s and host name %s" %
             (vm_ip1, name1))
         # self.cleanup.append(vm_created)
-        self.cleanup.append(network)
         # Listing all the VMs for a user again
         vm_response = VirtualMachine.list(
             self.userapiclient,
