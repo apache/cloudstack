@@ -407,7 +407,7 @@ class TestListPortablePublicIpRanges(cloudstackTestCase):
                          "Listed netmask not matching with the netmask of created public ip range")
         return
 
-    @attr(tags=["advanced","swamy"], required_hardware="false")
+    @attr(tags=["advanced"], required_hardware="false")
     def test_list_portable_ip_range_non_root_admin(self):
         """Test list portable ip ranges with non admin root account
         """
@@ -1288,7 +1288,7 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced","swamy"], required_hardware="true")
+    @attr(tags=["advanced"], required_hardware="true")
     def test_list_portable_ip_range_non_root_admin(self):
         """Test list portable ip ranges with non admin root account
         """
