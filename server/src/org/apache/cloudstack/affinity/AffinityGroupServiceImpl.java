@@ -299,12 +299,13 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                     if (groupDomain != null) {
                         _affinityGroupDomainMapDao.remove(groupDomain.getId());
                     }
-                    // remove its related ACL permission
-                    Pair<Class<?>, Long> params = new Pair<Class<?>, Long>(AffinityGroup.class, affinityGroupIdFinal);
-                    _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, params);
                 }
             }
         });
+
+        // remove its related ACL permission
+        Pair<Class<?>, Long> params = new Pair<Class<?>, Long>(AffinityGroup.class, affinityGroupIdFinal);
+        _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, params);
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deleted affinity group id=" + affinityGroupId);
