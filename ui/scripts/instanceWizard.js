@@ -16,7 +16,7 @@
 // under the License.
 
 (function($, cloudStack) {
-    var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, featuredIsoObjs, serviceOfferingObjs, community, networkObjs;
+    var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, sharedTemplateObjs, featuredIsoObjs, communityIsoObjs, myIsoObjs, sharedIsoObjs, serviceOfferingObjs, community, networkObjs;
     var selectedZoneObj, selectedTemplateObj, selectedHypervisor, selectedDiskOfferingObj;
     var selectedTemplateOrIso; //'select-template', 'select-iso'
     var step6ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group', 'select-advanced-sg'(advanced sg-enabled zone)
@@ -184,7 +184,22 @@
                                 });
                             }
                         }
-                    });
+                    });     
+                    $.ajax({
+                        url: createURL("listTemplates&templatefilter=sharedexecutable&zoneid=" + args.currentData.zoneid),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {
+                            if (json.listtemplatesresponse.template == null) {
+                            	sharedTemplateObjs = null;
+                            } else {
+                            	sharedTemplateObjs = $.grep(json.listtemplatesresponse.template, function(item, index) {
+                                    if ($.inArray(item.hypervisor, hypervisorArray) > -1)
+                                        return true;
+                                });
+                            }
+                        }
+                    });      
                 } else if (selectedTemplateOrIso == 'select-iso') {
                     $.ajax({
                         url: createURL("listIsos&isofilter=featured&zoneid=" + args.currentData.zoneid + "&bootable=true"),
@@ -222,6 +237,18 @@
                             }
                         }
                     });
+                    $.ajax({
+                        url: createURL("listIsos&isofilter=sharedexecutable&zoneid=" + args.currentData.zoneid + "&bootable=true"),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {
+                            if (json.listisosresponse.iso == null) {
+                            	sharedIsoObjs = null;
+                            } else {
+                            	sharedIsoObjs = json.listisosresponse.iso;
+                            }
+                        }
+                    });                  
                 }
                 //***** get templates/ISOs (end) *****
 
@@ -232,14 +259,14 @@
                         featuredtemplates: featuredTemplateObjs,
                         communitytemplates: communityTemplateObjs,
                         mytemplates: myTemplateObjs,
-                        sharedtemplates: [] // ** Needs implementation **
+                        sharedtemplates: sharedTemplateObjs
                     };
                 } else if (selectedTemplateOrIso == 'select-iso') {
                     templatesObj = {
                         featuredisos: featuredIsoObjs,
                         communityisos: communityIsoObjs,
                         myisos: myIsoObjs,
-                        sharedisos: [] // ** Needs implementation **
+                        sharedisos: sharedIsoObjs
                     };
                 }
                 args.response.success({
