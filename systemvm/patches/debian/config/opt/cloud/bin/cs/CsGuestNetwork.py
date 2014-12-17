@@ -39,10 +39,16 @@ class CsGuestNetwork:
         return self.config.get_dns()
 
     def get_netmask(self):
-        return self.data['router_guest_netmask']
+        #We need to fix it properly. I just added the if, as Ian did in some other files, to avoid the exception.
+        if 'router_guest_netmask' in self.data:
+            return self.data['router_guest_netmask']
+        return ''
 
     def get_gateway(self):
-        return self.data['router_guest_gateway']
+        #We need to fix it properly. I just added the if, as Ian did in some other files, to avoid the exception.
+        if 'router_guest_gateway' in self.data:
+            return self.data['router_guest_gateway']
+        return ''
 
     def get_domain(self):
         domain = "cloudnine.internal"
