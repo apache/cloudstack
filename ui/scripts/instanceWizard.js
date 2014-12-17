@@ -323,11 +323,22 @@
                                 }
                             }
                         }
-                    }
-                    if (selectedTemplateObj == null)
+                    }                    
+                    if (selectedTemplateObj == null) {
+                        if (sharedTemplateObjs != null && sharedTemplateObjs.length > 0) {
+                            for (var i = 0; i < sharedTemplateObjs.length; i++) {
+                                if (sharedTemplateObjs[i].id == args.currentData.templateid) {
+                                    selectedTemplateObj = sharedTemplateObjs[i];
+                                    break;
+                                }
+                            }
+                        }
+                    }                    
+                    if (selectedTemplateObj == null) {
                         alert("unable to find matched template object");
-                    else
+                    } else {
                         selectedHypervisor = selectedTemplateObj.hypervisor;
+                    }
                 } else { //(args.currentData["select-template"] == "select-iso"
                     selectedHypervisor = args.currentData.hypervisorid;
                 }
