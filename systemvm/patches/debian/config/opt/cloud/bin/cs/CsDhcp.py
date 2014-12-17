@@ -91,6 +91,7 @@ class CsDhcp(CsDataBag):
             self.conf.search(sline, line)
 
     def delete_leases(self):
+        changed = []
         leases = []
         try:
             for line in open(LEASES):
@@ -101,6 +102,8 @@ class CsDhcp(CsDataBag):
                       "host": bits[3],
                       "del": False
                       }
+                changed.append(to)
+                
                 for v in changed:
                     if v['mac'] == to['mac'] or v['ip'] == to['ip'] or v['host'] == to['host']:
                         to['del'] = True
