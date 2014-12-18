@@ -60,7 +60,7 @@ public class Ovm3ConfigurationTest {
         ovm3config = new Ovm3Configuration(params);
         results.basicStringTest(ovm3config.getAgentHostname(), "ovm-2");
     }
- 
+
     @Test(expected = ConfigurationException.class)
     public void testFailedParams() throws ConfigurationException {
         Map<String, Object> par = new HashMap(params);
