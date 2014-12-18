@@ -3488,6 +3488,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         newServiceOffering.getSpeed(), minMemory * 1024L * 1024L, newServiceOffering.getRamSize() * 1024L * 1024L, newServiceOffering.getLimitCpuUse());
 
         Long dstHostId = vm.getHostId();
+        if(vm.getHypervisorType().equals(HypervisorType.VMware)) {
+            HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
+            Map<String, String> details = null;
+            details = hvGuru.getClusterSettings(vm.getId());
+            reconfigureCmd.getVirtualMachine().setDetails(details);
+        }
+
         ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Running, vm.getType(), vm.getId());
         work.setStep(Step.Prepare);
         work.setResourceType(ItWorkVO.ResourceType.Host);
