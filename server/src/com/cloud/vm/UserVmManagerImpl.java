@@ -1045,16 +1045,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         NicProfile guestNic = null;
+        boolean cleanUp = true;
 
         try {
             guestNic = _itMgr.addVmToNetwork(vmInstance, network, profile);
+            cleanUp = false;
         } catch (ResourceUnavailableException e) {
             throw new CloudRuntimeException("Unable to add NIC to " + vmInstance + ": " + e);
         } catch (InsufficientCapacityException e) {
             throw new CloudRuntimeException("Insufficient capacity when adding NIC to " + vmInstance + ": " + e);
         } catch (ConcurrentOperationException e) {
             throw new CloudRuntimeException("Concurrent operations on adding NIC to " + vmInstance + ": " + e);
+        } finally {
+            if(cleanUp) {
+                try {
+                    _itMgr.removeVmFromNetwork(vmInstance, network, null);
+                } catch (ResourceUnavailableException e) {
+                    throw new CloudRuntimeException("Error while cleaning up NIC " + e);
+                }
+            }
         }
+
         if (guestNic == null) {
             throw new CloudRuntimeException("Unable to add NIC to " + vmInstance);
         }
