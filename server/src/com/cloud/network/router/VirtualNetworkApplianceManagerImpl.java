@@ -1309,7 +1309,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         }
     }
 
-    protected int getUpdatedPriority(final Network guestNetwork, final List<DomainRouterVO> routers, final DomainRouterVO exclude)
+    protected int getUpdatedPriority(final Network network, final List<DomainRouterVO> routers, final DomainRouterVO exclude)
             throws InsufficientVirtualNetworkCapacityException {
         int priority;
         if (routers.size() == 0) {
@@ -1331,11 +1331,11 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             }
             if (maxPriority < 20) {
                 s_logger.error("Current maximum priority is too low!");
-                throw new InsufficientVirtualNetworkCapacityException("Current maximum priority is too low as " + maxPriority + "!", guestNetwork.getId());
+                throw new InsufficientVirtualNetworkCapacityException("Current maximum priority is too low as " + maxPriority + "!", network.getId());
             } else if (maxPriority > 200) {
                 s_logger.error("Too many times fail-over happened! Current maximum priority is too high as " + maxPriority + "!");
                 throw new InsufficientVirtualNetworkCapacityException("Too many times fail-over happened! Current maximum priority is too high as " + maxPriority + "!",
-                        guestNetwork.getId());
+                        network.getId());
             }
             priority = maxPriority - DEFAULT_DELTA + 1;
         }
@@ -1402,6 +1402,8 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 buf.append(" localgw=").append(dest.getPod().getGateway());
             } else if (nic.getTrafficType() == TrafficType.Control) {
                 controlNic = nic;
+                buf.append(createRedundantRouterArgs(controlNic, router));
+
                 // DOMR control command is sent over management server in VMware
                 if (dest.getHost().getHypervisorType() == HypervisorType.VMware || dest.getHost().getHypervisorType() == HypervisorType.Hyperv) {
                     s_logger.info("Check if we need to add management server explicit route to DomR. pod cidr: " + dest.getPod().getCidrAddress() + "/"
@@ -1529,7 +1531,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         return true;
     }
 
-    protected StringBuilder createGuestBootLoadArgs(final NicProfile guestNic, final String defaultDns1, final String defaultDns2, DomainRouterVO router) {
+    protected StringBuilder createGuestBootLoadArgs(final NicProfile guestNic, final String defaultDns1, final String defaultDns2, final DomainRouterVO router) {
         final long guestNetworkId = guestNic.getNetworkId();
         final NetworkVO guestNetwork = _networkDao.findById(guestNetworkId);
         String dhcpRange = null;
@@ -1539,16 +1541,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
         final boolean isRedundant = router.getIsRedundantRouter();
         if (isRedundant) {
-            buf.append(" redundant_router=1");
-            final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(guestNetwork.getId(), Role.VIRTUAL_ROUTER);
-            try {
-                final int priority = getUpdatedPriority(guestNetwork, routers, router);
-                router.setPriority(priority);
-                router = _routerDao.persist(router);
-            } catch (final InsufficientVirtualNetworkCapacityException e) {
-                s_logger.error("Failed to get update priority!", e);
-                throw new CloudRuntimeException("Failed to get update priority!");
-            }
+            buf.append(createRedundantRouterArgs(guestNic, router));
             final Network net = _networkModel.getNetwork(guestNic.getNetworkId());
             buf.append(" guestgw=").append(net.getGateway());
             final String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIp4Address()) | ~NetUtils.ip2Long(guestNic.getNetmask()));
@@ -1589,6 +1582,29 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             // To limit DNS to the cidr range
             buf.append(" cidrsize=" + String.valueOf(cidrSize));
             buf.append(" dhcprange=" + dhcpRange);
+        }
+
+        return buf;
+    }
+
+    protected StringBuilder createRedundantRouterArgs(final NicProfile nic, DomainRouterVO router) {
+        final StringBuilder buf = new StringBuilder();
+
+        final long networkId = nic.getNetworkId();
+        final NetworkVO network = _networkDao.findById(networkId);
+
+        final boolean isRedundant = router.getIsRedundantRouter();
+        if (isRedundant) {
+            buf.append(" redundant_router=1");
+            final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(nic.getNetworkId(), Role.VIRTUAL_ROUTER);
+            try {
+                final int priority = getUpdatedPriority(network, routers, router);
+                router.setPriority(priority);
+                router = _routerDao.persist(router);
+            } catch (final InsufficientVirtualNetworkCapacityException e) {
+                s_logger.error("Failed to get update priority!", e);
+                throw new CloudRuntimeException("Failed to get update priority!");
+            }
         }
 
         return buf;
