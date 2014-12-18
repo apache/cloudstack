@@ -16,7 +16,10 @@
 // under the License.
 package com.cloud.storage;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +29,15 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.EncryptionUtil;
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import org.apache.cloudstack.api.command.user.volume.GetUploadParamsForVolumeCmd;
+import org.apache.cloudstack.api.response.GetUploadParamsResponse;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
@@ -146,6 +158,8 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiService, VmWorkJobHandler {
     private final static Logger s_logger = Logger.getLogger(VolumeApiServiceImpl.class);
@@ -261,6 +275,70 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return volume;
     }
 
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPLOAD, eventDescription = "uploading volume for post upload", async = true)
+    public GetUploadParamsResponse uploadVolume(GetUploadParamsForVolumeCmd cmd) throws ResourceAllocationException, MalformedURLException {
+        Account caller = CallContext.current().getCallingAccount();
+        long ownerId = cmd.getEntityOwnerId();
+        Account owner = _entityMgr.findById(Account.class, ownerId);
+        Long zoneId = cmd.getZoneId();
+        String volumeName = cmd.getName();
+        String format = cmd.getFormat();
+        Long diskOfferingId = cmd.getDiskOfferingId();
+        String imageStoreUuid = cmd.getImageStoreUuid();
+        DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId);
+
+        validateVolume(caller, ownerId, zoneId, volumeName, null, format, diskOfferingId);
+
+        VolumeVO volume = persistVolume(owner, zoneId, volumeName, null, cmd.getFormat(), diskOfferingId);
+
+        VolumeInfo vol = volFactory.getVolume(volume.getId());
+
+        RegisterVolumePayload payload = new RegisterVolumePayload(null, cmd.getChecksum(), cmd.getFormat());
+        vol.addPayload(payload);
+
+        EndPoint ep = volService.registerVolumeForPostUpload(vol, store);
+
+        TemplateOrVolumePostUploadCommand command = new TemplateOrVolumePostUploadCommand(vol, ep);
+
+        GetUploadParamsResponse response = new GetUploadParamsResponse();
+        String url = "https://" + command.getEndPoint().getPublicAddr() + "/upload/" + command.getDataObject().getUuid();
+        response.setPostURL(new URL(url));
+
+        response.setId(UUID.fromString(command.getDataObject().getUuid()));
+
+        /*
+         * TODO: hardcoding the timeout to current + 60 min for now. This needs to goto the database
+         */
+        DateTime currentDateTime = new DateTime(DateTimeZone.UTC);
+        currentDateTime.plusHours(1);
+        String expires = currentDateTime.toString();
+        response.setTimeout(expires);
+
+        String key = _configDao.getValue(Config.SSVMPSK.key());
+         /*
+          * encoded metadata using the post upload config ssh key
+          */
+        final List<String> fieldExclusions = Arrays.asList("s_logger");
+        Gson gson = new GsonBuilder().setExclusionStrategies(new ExclusionStrategy() {
+            @Override public boolean shouldSkipField(FieldAttributes f) {
+                return f.getDeclaringClass() == Logger.class;
+            }
+            @Override public boolean shouldSkipClass(Class<?> clazz) {
+                return false;
+            }
+        }).create();
+        String jsonPayload = gson.toJson(command);
+        response.setMetadata(EncryptionUtil.encodeData(jsonPayload, key));
+
+        /*
+         * signature calculated on the url, expiry, metadata.
+         */
+        response.setSignature(EncryptionUtil.generateSignature(jsonPayload + url + expires, key));
+        return response;
+    }
+
     private boolean validateVolume(Account caller, long ownerId, Long zoneId, String volumeName, String url,
             String format, Long diskOfferingId) throws ResourceAllocationException {
 
@@ -282,20 +360,22 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
         }
 
-        if (url.toLowerCase().contains("file://")) {
-            throw new InvalidParameterValueException("File:// type urls are currently unsupported");
+        //validating the url only when url is not null. url can be null incase of form based post upload
+        if (url != null ) {
+            if( url.toLowerCase().contains("file://")) {
+                throw new InvalidParameterValueException("File:// type urls are currently unsupported");
+            }
+            UriUtils.validateUrl(format, url);
+            // Check that the resource limit for secondary storage won't be exceeded
+            _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
+        } else {
+            _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage);
         }
 
         ImageFormat imgfmt = ImageFormat.valueOf(format.toUpperCase());
         if (imgfmt == null) {
             throw new IllegalArgumentException("Image format is incorrect " + format + ". Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
         }
-
-        UriUtils.validateUrl(format, url);
-
-
-        // Check that the resource limit for secondary storage won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
 
         // Check that the the disk offering specified is valid
         if (diskOfferingId != null) {
@@ -357,7 +437,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 // Increment resource count during allocation; if actual creation fails,
                 // decrement it
                 _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
-                _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
+                //url can be null incase of postupload
+                if(url!=null) {
+                    _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
+                } else {
+                    _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage);
+                }
 
                 return volume;
             }

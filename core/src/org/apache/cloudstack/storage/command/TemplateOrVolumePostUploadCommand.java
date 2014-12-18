@@ -31,6 +31,9 @@ public class TemplateOrVolumePostUploadCommand {
         this.endPoint = endPoint;
     }
 
+    public TemplateOrVolumePostUploadCommand() {
+    }
+
     public DataObject getDataObject() {
         return dataObject;
     }
@@ -56,7 +59,7 @@ public class TemplateOrVolumePostUploadCommand {
             return false;
         }
 
-        TemplateOrVolumePostUploadCommand that = (TemplateOrVolumePostUploadCommand) o;
+        TemplateOrVolumePostUploadCommand that = (TemplateOrVolumePostUploadCommand)o;
 
         return dataObject.equals(that.dataObject) && endPoint.equals(that.endPoint);
 
@@ -69,10 +72,8 @@ public class TemplateOrVolumePostUploadCommand {
         return result;
     }
 
-    @Override public String toString() {
-        return "TemplateOrVolumePostUploadCommand{" +
-            "dataObject=" + dataObject +
-            ", endPoint=" + endPoint +
-            '}';
+    @Override
+    public String toString() {
+        return "TemplateOrVolumePostUploadCommand{" + "dataObject=" + dataObject + ", endPoint=" + endPoint + '}';
     }
 }

@@ -94,6 +94,8 @@ public interface VolumeService {
 
     AsyncCallFuture<VolumeApiResult> registerVolume(VolumeInfo volume, DataStore store);
 
+    public EndPoint registerVolumeForPostUpload(VolumeInfo volume, DataStore store);
+
     AsyncCallFuture<VolumeApiResult> resize(VolumeInfo volume);
 
     void resizeVolumeOnHypervisor(long volumeId, long newSize, long destHostId, String instanceName);

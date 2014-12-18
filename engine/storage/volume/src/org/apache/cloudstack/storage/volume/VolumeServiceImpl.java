@@ -1223,6 +1223,20 @@ public class VolumeServiceImpl implements VolumeService {
         return future;
     }
 
+    @Override
+    public EndPoint registerVolumeForPostUpload(VolumeInfo volume, DataStore store) {
+        DataObject volumeOnStore = store.create(volume);
+
+        volumeOnStore.processEvent(Event.CreateOnlyRequested);
+
+        EndPoint ep = _epSelector.select(store);
+        if (ep == null) {
+            s_logger.warn("There is no secondary storage VM for image store " + store.getName());
+            return null;
+        }
+        return ep;
+    }
+
     protected Void registerVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateVolumeContext<VolumeApiResult> context) {
         CreateCmdResult result = callback.getResult();
         try {

@@ -19,8 +19,6 @@ package com.cloud.template;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -31,17 +29,18 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.EncryptionUtil;
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -363,17 +362,25 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             String expires = currentDateTime.toString();
             response.setTimeout(expires);
 
+            String key = _configDao.getValue(Config.SSVMPSK.key());
             /*
              * encoded metadata using the post upload config ssh key
              */
-            Gson gson = new Gson();
+            Gson gson = new GsonBuilder().setExclusionStrategies(new ExclusionStrategy() {
+                @Override public boolean shouldSkipField(FieldAttributes f) {
+                    return f.getDeclaredType().getClass().isInstance(Logger.class);
+                }
+                @Override public boolean shouldSkipClass(Class<?> clazz) {
+                    return false;
+                }
+            }).create();
             String jsonPayload = gson.toJson(payload);
-            response.setMetadata(encodeData(jsonPayload));
+            response.setMetadata(EncryptionUtil.encodeData(jsonPayload, key));
 
             /*
              * signature calculated on the url, expiry, metadata.
              */
-            response.setSignature(encodeData(jsonPayload+url+expires));
+            response.setSignature(EncryptionUtil.generateSignature(jsonPayload + url + expires, key));
 
             return response;
         } else {
@@ -381,22 +388,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
     }
 
-    private String encodeData(String data) {
-        String key = _configDao.getValue(Config.SSVMPSK.key());
-
-        try {
-            final Mac mac = Mac.getInstance("HmacSHA1");
-            final SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(), "HmacSHA1");
-            mac.init(keySpec);
-            mac.update(data.getBytes());
-            final byte[] encryptedBytes = mac.doFinal();
-            final String computedSignature = Base64.encodeBase64String(encryptedBytes);
-            return computedSignature;
-        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            s_logger.error("exception occured which encoding the data.", e);
-            return null;
-        }
-    }
 
     @Override
     public DataStore getImageStore(String storeUuid, Long zoneId) {
