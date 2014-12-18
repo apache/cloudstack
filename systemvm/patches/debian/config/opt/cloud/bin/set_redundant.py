@@ -40,8 +40,8 @@ logging.basicConfig(filename=config.get_logger(),
 config.set_cl()
 
 if options.enable:
-    config.get_cmdline().dbag['config']['redundant_router'] = "true"
+    config.get_cmdline().set_redundant("true")
 if options.disable:
-    config.get_cmdline().dbag['config']['redundant_router'] = "false"
+    config.get_cmdline().set_redundant("false")
 
 config.get_cmdline().save()

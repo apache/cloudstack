@@ -59,7 +59,8 @@ class CsRedundant(object):
 
     def set(self):
         logging.debug("Router redundancy status is %s", self.cl.is_redundant())
-        if self.cl.is_redundant():
+        guest = self.address.get_guest_if()
+        if self.cl.is_redundant() and guest:
             self._redundant_on()
         else:
             self._redundant_off()
