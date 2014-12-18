@@ -1434,11 +1434,11 @@ test_data = {
     "configurableData":
     {
         "portableIpRange": {
-            "gateway": "",
-            "netmask": "",
-            "startip": "",
-            "endip": "",
-            "vlan": ""
+            "gateway": "10.223.59.1",
+            "netmask": "255.255.255.0",
+            "startip": "10.223.59.200",
+            "endip": "10.223.59.240",
+            "vlan": "1000"
         },
         "netscaler": {
             "ipaddress": "",
