@@ -19,4 +19,4 @@
 -- Schema upgrade from 4.4.2 to 4.4.3;
 --;
 
-INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default`, `description`) VALUES ('Advanced', 'DEFAULT', 'ManagementServer', 'xen.heartbeat.timeout' , '180', '120', 'Timeout value to send to the xenheartbeat script for guarding the self fencing functionality');
+INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'ManagementServer', 'xen.heartbeat.timeout' , '180', '120', 'Timeout value to send to the xenheartbeat script for guarding the self fencing functionality');
