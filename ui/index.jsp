@@ -101,7 +101,8 @@
                         <li><span class="number">4</span><span class="multiline"><fmt:message key="label.disk.offering"/></span><span class="arrow"></span></li>
                         <li><span class="number">5</span><span><fmt:message key="label.affinity"/></span><span class="arrow"></span></li>
                         <li><span class="number">6</span><span><fmt:message key="label.menu.network"/></span><span class="arrow"></span></li>
-                        <li class="last"><span class="number">7</span><span><fmt:message key="label.review"/></span></li>
+                        <li><span class="number">7</span><span><fmt:message key="label.menu.sshkeypair"/></span><span class="arrow"></span></li>
+                        <li class="last"><span class="number">8</span><span><fmt:message key="label.review"/></span></li>
                     </ul>
                 </div>
                 <form>
@@ -148,7 +149,8 @@
                                     <ul>
                                         <li class="first"><a href="#instance-wizard-featured-templates"><fmt:message key="label.featured"/></a></li>
                                         <li><a href="#instance-wizard-community-templates"><fmt:message key="label.community"/></a></li>
-                                        <li class="last"><a href="#instance-wizard-my-templates"><fmt:message key="label.my.templates"/></a></li>
+                                        <li><a href="#instance-wizard-my-templates"><fmt:message key="label.my.templates"/></a></li>
+                                        <li class="last"><a href="#instance-wizard-shared-templates"><fmt:message key="label.shared"/></a></li>
                                     </ul>
 
                                     <!-- Used for Select Template only -->
@@ -163,6 +165,10 @@
                                         </div>
                                     </div>
                                     <div id="instance-wizard-my-templates">
+                                        <div class="select-container">
+                                        </div>
+                                    </div>
+                                    <div id="instance-wizard-shared-templates">
                                         <div class="select-container">
                                         </div>
                                     </div>
@@ -184,7 +190,8 @@
                                     <ul>
                                         <li class="first"><a href="#instance-wizard-featured-isos"><fmt:message key="label.featured"/></a></li>
                                         <li><a href="#instance-wizard-community-isos"><fmt:message key="label.community"/></a></li>
-                                        <li class="last"><a href="#instance-wizard-my-isos"><fmt:message key="label.menu.my.isos"/></a></li>
+                                        <li><a href="#instance-wizard-my-isos"><fmt:message key="label.menu.my.isos"/></a></li>
+                                        <li class="last"><a href="#instance-wizard-shared-isos"><fmt:message key="label.shared"/></a></li>
                                     </ul>
                                     <div id="instance-wizard-featured-isos">
                                         <div class="select-container">
@@ -195,6 +202,10 @@
                                         </div>
                                     </div>
                                     <div id="instance-wizard-my-isos">
+                                        <div class="select-container">
+                                        </div>
+                                    </div>
+                                    <div id="instance-wizard-shared-isos">
                                         <div class="select-container">
                                         </div>
                                     </div>
@@ -393,7 +404,18 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- Step 7: Review -->
+                        <!-- Step 7: SSH Key pairs -->
+                        <div class="step sshkeyPairs" wizard-step-id="sshkeyPairs">
+                          <div class="content">
+                            <div class="section no-thanks">
+                              <input type="radio" name="sshkeypair" value="" />
+                              <label><fmt:message key="label.no.thanks"/></label>
+                            </div>
+                            <!-- Existing key pairs -->
+                            <div class="select-container"></div>
+                          </div>
+                        </div>
+                        <!-- Step 8: Review -->
                         <div class="step review" wizard-step-id="review">
                             <div class="main-desc">
                                 <fmt:message key="message.vm.review.launch"/>
@@ -422,15 +444,15 @@
                                     <!-- Keyboard Language -->
                                     <div class="select odd">
                                         <div class="name">
-                                            <span>Keyboard language</span>
+                                            <span><fmt:message key="label.keyboard.language" /></span>
                                         </div>
                                         <div class="value">
                                             <select name="keyboardLanguage">
                                                 <option value=""></option>
-                                                <option value="us">Standard (US) keyboard</option>
-                                                <option value="uk">UK keyboard</option>
-                                                <option value="jp">Japanese keyboard</option>
-                                                <option value="sc">Simplified Chinese keyboard</option>
+                                                <option value="us"><fmt:message key="label.standard.us.keyboard" /></option>
+                                                <option value="uk"><fmt:message key="label.uk.keyboard" /></option>
+                                                <option value="jp"><fmt:message key="label.japanese.keyboard" /></option>
+                                                <option value="sc"><fmt:message key="label.simplified.chinese.keyboard" /></option>
                                             </select>
                                         </div>
                                     </div>
@@ -532,6 +554,29 @@
                                         </div>
                                         <div class="edit">
                                             <a href="6"><fmt:message key="label.edit"/></a>
+                                        </div>
+                                    </div>
+
+                                    <!-- SSH Key Pairs -->
+                                    <div class="select">
+                                        <div class="name">
+                                            <span>SSH Key Pairs</span>
+                                        </div>
+                                        <div class="value">
+                                            <span wizard-field="sshkey-pairs"></span>
+                                        </div>
+                                        <div class="edit">
+                                            <a href="7"><fmt:message key="label.edit"/></a>
+                                        </div>
+                                    </div>
+
+                                    <!-- userdata -->
+                                    <div class="select">
+                                        <div class="select">
+                                            <span><fmt:message key="label.add.userdata"/> (<fmt:message key="label.optional"/>)</span>
+                                        </div>
+                                        <div class="value">
+                                            <textarea name="userdata" class="disallowSpecialCharacters"></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -1190,7 +1235,7 @@
                     <ul>
                         <li>
                             <div class="icon"><span>1</span></div>
-                            <div class="title">Guest</div>
+                            <div class="title"><fmt:message key="label.guest" /></div>
                             <p>Set up the network for traffic between end-user VMs.</p>
                         </li>
                         <li>
@@ -1470,7 +1515,7 @@
 
             <!-- Recurring Snapshots -->
             <div class="recurring-snapshots">
-                <p class="desc">Description</p>
+                <p class="desc"><fmt:message key="label.description" /></p>
 
                 <div class="schedule">
                     <p>Schedule:</p>
@@ -1493,7 +1538,7 @@
                                     <div class="name"></div>
                                     <div class="value">
                                         <select name="schedule"></select>
-                                        <label for="schedule">minutes(s) past the hour</label>
+                                        <label for="schedule"><fmt:message key="label.minutes.past.hour" /></label>
                                     </div>
                                 </div>
 
@@ -1508,10 +1553,10 @@
 
                                 <!-- Max snapshots -->
                                 <div class="field maxsnaps">
-                                    <div class="name">Keep</div>
+                                    <div class="name"><fmt:message key="label.keep" /></div>
                                     <div class="value">
                                         <input type="text" name="maxsnaps" class="required" />
-                                        <label for="maxsnaps">snapshot(s)</label>
+                                        <label for="maxsnaps"><fmt:message key="label.snapshots" /></label>
                                     </div>
                                 </div>
                             </form>
@@ -1524,7 +1569,7 @@
 
                                 <!-- Time -->
                                 <div class="field time">
-                                    <div class="name">Time</div>
+                                    <div class="name"><fmt:message key="label.time" /></div>
                                     <div class="value">
                                         <select name="time-hour"></select>
                                         <select name="time-minute"></select>
@@ -1534,7 +1579,7 @@
 
                                 <!-- Timezone -->
                                 <div class="field timezone">
-                                    <div class="name">Timezone</div>
+                                    <div class="name"><fmt:message key="label.time.zone" /></div>
                                     <div class="value">
                                         <select name="timezone"></select>
                                     </div>
@@ -1542,10 +1587,10 @@
 
                                 <!-- Max snapshots -->
                                 <div class="field maxsnaps">
-                                    <div class="name">Keep</div>
+                                    <div class="name"><fmt:message key="label.keep" /></div>
                                     <div class="value">
                                         <input type="text" name="maxsnaps" class="required" />
-                                        <label for="maxsnaps">snapshot(s)</label>
+                                        <label for="maxsnaps"><fmt:message key="label.snapshots" /></label>
                                     </div>
                                 </div>
                             </form>
@@ -1558,7 +1603,7 @@
 
                                 <!-- Time -->
                                 <div class="field time">
-                                    <div class="name">Time</div>
+                                    <div class="name"><fmt:message key="label.time" /></div>
                                     <div class="value">
                                         <select name="time-hour"></select>
                                         <select name="time-minute"></select>
@@ -1568,7 +1613,7 @@
 
                                 <!-- Day of week -->
                                 <div class="field day-of-week">
-                                    <div class="name">Day of week</div>
+                                    <div class="name"><fmt:message key="label.day.of.week" /></div>
                                     <div class="value">
                                         <select name="day-of-week"></select>
                                     </div>
@@ -1576,7 +1621,7 @@
 
                                 <!-- Timezone -->
                                 <div class="field timezone">
-                                    <div class="name">Timezone</div>
+                                    <div class="name"><fmt:message key="label.time.zone" /></div>
                                     <div class="value">
                                         <select name="timezone"></select>
                                     </div>
@@ -1584,10 +1629,10 @@
 
                                 <!-- Max snapshots -->
                                 <div class="field maxsnaps">
-                                    <div class="name">Keep</div>
+                                    <div class="name"><fmt:message key="label.keep" /></div>
                                     <div class="value">
                                         <input type="text" name="maxsnaps" class="required" />
-                                        <label for="maxsnaps">snapshot(s)</label>
+                                        <label for="maxsnaps"><fmt:message key="label.snapshots" /></label>
                                     </div>
                                 </div>
                             </form>
@@ -1600,7 +1645,7 @@
 
                                 <!-- Time -->
                                 <div class="field time">
-                                    <div class="name">Time</div>
+                                    <div class="name"><fmt:message key="label.time" /></div>
                                     <div class="value">
                                         <select name="time-hour"></select>
                                         <select name="time-minute"></select>
@@ -1610,7 +1655,7 @@
 
                                 <!-- Day of week -->
                                 <div class="field day-of-month">
-                                    <div class="name">Day of month</div>
+                                    <div class="name"><fmt:message key="label.day.of.month" /></div>
                                     <div class="value">
                                         <select name="day-of-month"></select>
                                     </div>
@@ -1618,7 +1663,7 @@
 
                                 <!-- Timezone -->
                                 <div class="field timezone">
-                                    <div class="name">Timezone</div>
+                                    <div class="name"><fmt:message key="label.time.zone" /></div>
                                     <div class="value">
                                         <select name="timezone"></select>
                                     </div>
@@ -1626,10 +1671,10 @@
 
                                 <!-- Max snapshots -->
                                 <div class="field maxsnaps">
-                                    <div class="name">Keep</div>
+                                    <div class="name"><fmt:message key="label.keep" /></div>
                                     <div class="value">
                                         <input type="text" name="maxsnaps" class="required" />
-                                        <label for="maxsnaps">snapshot(s)</label>
+                                        <label for="maxsnaps"><fmt:message key="label.snapshots" /></label>
                                     </div>
                                 </div>
                             </form>
@@ -1647,34 +1692,34 @@
                         <tbody>
                             <!-- Hourly -->
                             <tr class="hourly">
-                                <td class="time">Time: <span></span> min past the hr</td>
+                                <td class="time"><fmt:message key="label.time.colon" /> <span></span> <fmt:message key="label.min.past.the.hr" /></td>
                                 <td class="day-of-week"><span></span></td>
-                                <td class="timezone">Timezone:<br/><span></span></td>
-                                <td class="keep">Keep: <span></span></td>
+                                <td class="timezone"><fmt:message key="label.timezone.colon" /><br/><span></span></td>
+                                <td class="keep"><fmt:message key="label.keep.colon" /> <span></span></td>
                                 <td class="actions"><div class="action destroy"><span class="icon">&nbsp;</span></div></td>
                             </tr>
                             <!-- Daily -->
                             <tr class="daily">
-                                <td class="time">Time: <span></span></td>
+                                <td class="time"><fmt:message key="label.time.colon" /> <span></span></td>
                                 <td class="day-of-week"><span></span></td>
-                                <td class="timezone">Timezone:<br/><span></span></td>
-                                <td class="keep">Keep: <span></span></td>
+                                <td class="timezone"><fmt:message key="label.timezone.colon" /><br/><span></span></td>
+                                <td class="keep"><fmt:message key="label.keep.colon" /> <span></span></td>
                                 <td class="actions"><div class="action destroy"><span class="icon">&nbsp;</span></div></td>
                             </tr>
                             <!-- Weekly -->
                             <tr class="weekly">
-                                <td class="time">Time: <span></span></td>
-                                <td class="day-of-week">Every <span></span></td>
-                                <td class="timezone">Timezone:<br/><span></span></td>
-                                <td class="keep">Keep: <span></span></td>
+                                <td class="time"><fmt:message key="label.time.colon" /> <span></span></td>
+                                <td class="day-of-week"><fmt:message key="label.every" /> <span></span></td>
+                                <td class="timezone"><fmt:message key="label.timezone.colon" /><br/><span></span></td>
+                                <td class="keep"><fmt:message key="label.keep.colon" /> <span></span></td>
                                 <td class="actions"><div class="action destroy"><span class="icon">&nbsp;</span></div></td>
                             </tr>
                             <!-- Monthly -->
                             <tr class="monthly">
-                                <td class="time">Time: <span></span></td>
-                                <td class="day-of-week">Day <span></span> of month</td>
-                                <td class="timezone">Timezone:<br/><span></span></td>
-                                <td class="keep">Keep: <span></span></td>
+                                <td class="time"><fmt:message key="label.time.colon" /> <span></span></td>
+                                <td class="day-of-week"><fmt:message key="label.day" /> <span></span> <fmt:message key="label.of.month" /></td>
+                                <td class="timezone"><fmt:message key="label.timezone.colon" /><br/><span></span></td>
+                                <td class="keep"><fmt:message key="label.keep.colon" /> <span></span></td>
                                 <td class="actions"><div class="action destroy"><span class="icon">&nbsp;</span></div></td>
                             </tr>
                         </tbody>

@@ -1918,7 +1918,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
 
         // construct rule when egress policy is true. In true case for VR we default allow rule need to be added
-        if (defaultEgressPolicy) {
+        if (!defaultEgressPolicy) {
             systemRule = String.valueOf(FirewallRule.FirewallRuleType.System);
 
             List<String> sourceCidr = new ArrayList<String>();
@@ -1928,6 +1928,9 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     null, null, null, FirewallRule.TrafficType.Egress, FirewallRule.FirewallRuleType.System);
 
             rules.add(rule);
+        } else {
+            s_logger.debug(" Egress policy for the Network "+ networkId +" is "+defaultEgressPolicy + " So no need"+
+                    " of default rule is needed. ");
         }
     }
 
@@ -2576,15 +2579,22 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         final VirtualMachine.Event event = transition.getEvent();
         if (event == VirtualMachine.Event.FollowAgentPowerOnReport && newState == State.Running) {
             if (vo.getType() == VirtualMachine.Type.DomainRouter) {
+                // opaque -> <hostId, powerHostId>
                 if (opaque != null && opaque instanceof Pair<?, ?>) {
                     Pair<?, ?> pair = (Pair<?, ?>)opaque;
                     Object first = pair.first();
                     Object second = pair.second();
-                    if (first != null && second != null && first instanceof Long && second instanceof Long) {
-                        Long hostId = (Long)first;
+                    // powerHostId cannot be null in case of out-of-band VM movement
+                    if (second != null && second instanceof Long) {
                         Long powerHostId = (Long)second;
-                        // If VM host known to CS is different from 'PowerOn' report host, then it is out-of-band movement
-                        if (hostId.longValue() != powerHostId.longValue()) {
+                        Long hostId = null;
+                        if (first != null && first instanceof Long) {
+                            hostId = (Long)first;
+                        }
+                        // The following scenarios are due to out-of-band VM movement
+                        // 1. If VM is in stopped state in CS due to 'PowerMissing' report from old host (hostId is null) and then there is a 'PowerOn' report from new host
+                        // 2. If VM is in running state in CS and there is a 'PowerOn' report from new host
+                        if (hostId == null || (hostId.longValue() != powerHostId.longValue())) {
                             s_logger.info("Schedule a router reboot task as router " + vo.getId() + " is powered-on out-of-band, need to reboot to refresh network rules");
                             _executor.schedule(new RebootTask(vo.getId()), 1000, TimeUnit.MICROSECONDS);
                         }

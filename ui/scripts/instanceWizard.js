@@ -16,7 +16,7 @@
 // under the License.
 
 (function($, cloudStack) {
-    var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, featuredIsoObjs, serviceOfferingObjs, community, networkObjs;
+    var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, sharedTemplateObjs, featuredIsoObjs, communityIsoObjs, myIsoObjs, sharedIsoObjs, serviceOfferingObjs, community, networkObjs;
     var selectedZoneObj, selectedTemplateObj, selectedHypervisor, selectedDiskOfferingObj;
     var selectedTemplateOrIso; //'select-template', 'select-iso'
     var step6ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group', 'select-advanced-sg'(advanced sg-enabled zone)
@@ -184,7 +184,22 @@
                                 });
                             }
                         }
-                    });
+                    });     
+                    $.ajax({
+                        url: createURL("listTemplates&templatefilter=sharedexecutable&zoneid=" + args.currentData.zoneid),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {
+                            if (json.listtemplatesresponse.template == null) {
+                            	sharedTemplateObjs = null;
+                            } else {
+                            	sharedTemplateObjs = $.grep(json.listtemplatesresponse.template, function(item, index) {
+                                    if ($.inArray(item.hypervisor, hypervisorArray) > -1)
+                                        return true;
+                                });
+                            }
+                        }
+                    });      
                 } else if (selectedTemplateOrIso == 'select-iso') {
                     $.ajax({
                         url: createURL("listIsos&isofilter=featured&zoneid=" + args.currentData.zoneid + "&bootable=true"),
@@ -222,6 +237,18 @@
                             }
                         }
                     });
+                    $.ajax({
+                        url: createURL("listIsos&isofilter=sharedexecutable&zoneid=" + args.currentData.zoneid + "&bootable=true"),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {
+                            if (json.listisosresponse.iso == null) {
+                            	sharedIsoObjs = null;
+                            } else {
+                            	sharedIsoObjs = json.listisosresponse.iso;
+                            }
+                        }
+                    });                  
                 }
                 //***** get templates/ISOs (end) *****
 
@@ -231,14 +258,16 @@
                     templatesObj = {
                         featuredtemplates: featuredTemplateObjs,
                         communitytemplates: communityTemplateObjs,
-                        mytemplates: myTemplateObjs
-                    }
+                        mytemplates: myTemplateObjs,
+                        sharedtemplates: sharedTemplateObjs
+                    };
                 } else if (selectedTemplateOrIso == 'select-iso') {
                     templatesObj = {
                         featuredisos: featuredIsoObjs,
                         communityisos: communityIsoObjs,
-                        myisos: myIsoObjs
-                    }
+                        myisos: myIsoObjs,
+                        sharedisos: sharedIsoObjs
+                    };
                 }
                 args.response.success({
                     hypervisor: {
@@ -294,11 +323,22 @@
                                 }
                             }
                         }
-                    }
-                    if (selectedTemplateObj == null)
+                    }                    
+                    if (selectedTemplateObj == null) {
+                        if (sharedTemplateObjs != null && sharedTemplateObjs.length > 0) {
+                            for (var i = 0; i < sharedTemplateObjs.length; i++) {
+                                if (sharedTemplateObjs[i].id == args.currentData.templateid) {
+                                    selectedTemplateObj = sharedTemplateObjs[i];
+                                    break;
+                                }
+                            }
+                        }
+                    }                    
+                    if (selectedTemplateObj == null) {
                         alert("unable to find matched template object");
-                    else
+                    } else {
                         selectedHypervisor = selectedTemplateObj.hypervisor;
+                    }
                 } else { //(args.currentData["select-template"] == "select-iso"
                     selectedHypervisor = args.currentData.hypervisorid;
                 }
@@ -306,23 +346,36 @@
                 // if the user is leveraging a template, then we can show custom IOPS, if applicable
                 var canShowCustomIopsForServiceOffering = (args.currentData["select-template"] != "select-iso" ? true : false);
 
-                $.ajax({
-                    url: createURL("listServiceOfferings&issystem=false"),
-                    dataType: "json",
-                    async: true,
-                    success: function(json) {
-                        serviceOfferingObjs = json.listserviceofferingsresponse.serviceoffering;
-                        args.response.success({
-                            canShowCustomIops: canShowCustomIopsForServiceOffering,
-                            customFlag: 'iscustomized',
-                        	//customFlag: 'offerha', //for testing only
-                        	customIopsFlag: 'iscustomizediops',
-                            data: {
-                                serviceOfferings: serviceOfferingObjs
-                            }
-                        });
+                
+                // get serviceOfferingObjs
+                $(window).removeData("cloudStack.module.instanceWizard.serviceOfferingObjs");                 
+                $(window).trigger("cloudStack.module.instanceWizard.serviceOffering.dataProvider", {
+                	context: args.context,
+                	currentData: args.currentData
+                });     
+                if ($(window).data("cloudStack.module.instanceWizard.serviceOfferingObjs") == undefined) {                	
+	                $.ajax({
+	                    url: createURL("listServiceOfferings&issystem=false"),
+	                    dataType: "json",
+	                    async: false,
+	                    success: function(json) {	                    	
+	                        serviceOfferingObjs = json.listserviceofferingsresponse.serviceoffering;
+	                    }
+	                });	                
+                } else {                	
+                	serviceOfferingObjs = $(window).data("cloudStack.module.instanceWizard.serviceOfferingObjs");                	
+                }
+                
+                                
+                args.response.success({
+                    canShowCustomIops: canShowCustomIopsForServiceOffering,
+                    customFlag: 'iscustomized',
+                	//customFlag: 'offerha', //for testing only
+                	customIopsFlag: 'iscustomizediops',
+                    data: {
+                        serviceOfferings: serviceOfferingObjs
                     }
-                });
+                });                
             },
 
             // Step 4: Data disk offering
@@ -555,6 +608,21 @@
                         }
                     }
 
+                                                        
+                    // get networkObjsToPopulate
+                    $(window).removeData("cloudStack.module.instanceWizard.networkObjs");                 
+                    $(window).trigger("cloudStack.module.instanceWizard.network.dataProvider", {
+                    	context: args.context,
+                    	currentData: args.currentData,
+                    	networkObjsToPopulate: networkObjsToPopulate
+                    });                     
+                    if ($(window).data("cloudStack.module.instanceWizard.networkObjs") == undefined) {  
+    	                //do nothing         
+                    } else {                      	
+                    	networkObjsToPopulate = $(window).data("cloudStack.module.instanceWizard.networkObjs"); //override networkObjsToPopulate           	
+                    }                    
+                    
+                    
                     $.ajax({
                         url: createURL("listNetworkOfferings"),
                         dataType: "json",
@@ -637,7 +705,22 @@
 
             },
 
-            // Step 7: Review
+            // Step 7: SSH Key Pairs
+            function(args) {
+                $.ajax({
+                    url: createURL('listSSHKeyPairs'),
+                    success: function(json) {
+                        var sshkeypair = json.listsshkeypairsresponse.sshkeypair;
+                        args.response.success({
+                            data: {
+                                sshkeyPairs: sshkeypair
+                            }
+                        });
+                    }
+                });
+            },
+
+            // Step 8: Review
             function(args) {
                 return false;
             }
@@ -924,6 +1007,13 @@
                 }
             }
 
+            //step 4: select ssh key pair
+            if (args.data.sshkeypair != null && args.data.sshkeypair.length > 0) {
+                $.extend(deployVmData, {
+                        keypair : args.data.sshkeypair
+                });
+            }
+
             var displayname = args.data.displayname;
             if (displayname != null && displayname.length > 0) {                
             	$.extend(deployVmData, {
@@ -951,6 +1041,13 @@
             if (g_hostid != null) {
                 $.extend(deployVmData, {
                     hostid : g_hostid
+                });
+            }
+
+            var userdata = args.data.userdata;
+            if (userdata != null && userdata.length > 0) {
+                $.extend(deployVmData, {
+                    userdata : todb(btoa(userdata))
                 });
             }
  

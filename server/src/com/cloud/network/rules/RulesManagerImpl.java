@@ -55,6 +55,7 @@ import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.LoadBalancerVMMapVO;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcService;
@@ -647,8 +648,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         if (oldIP != null) {
             // If elasticIP functionality is supported in the network, we always have to disable static nat on the old
-// ip in order to re-enable it on the new one
+            // ip in order to re-enable it on the new one
             Long networkId = oldIP.getAssociatedWithNetworkId();
+            VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+
             boolean reassignStaticNat = false;
             if (networkId != null) {
                 Network guestNetwork = _networkModel.getNetwork(networkId);
@@ -660,13 +663,16 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
             // If there is public ip address already associated with the vm, throw an exception
             if (!reassignStaticNat) {
-                throw new InvalidParameterValueException("Failed to enable static nat for the ip address id=" + ipAddress.getId() + " as vm id=" + vmId +
-                    " is already associated with ip id=" + oldIP.getId());
+                throw new InvalidParameterValueException("Failed to enable static nat on the  ip " +
+                          ipAddress.getAddress()+" with Id " +ipAddress.getUuid()+" as the vm " +vm.getInstanceName() + " with Id " +
+                        vm.getUuid() +" is already associated with another public ip " + oldIP.getAddress() +" with id "+
+                        oldIP.getUuid());
             }
         // unassign old static nat rule
         s_logger.debug("Disassociating static nat for ip " + oldIP);
         if (!disableStaticNat(oldIP.getId(), caller, callerUserId, true)) {
-                throw new CloudRuntimeException("Failed to disable old static nat rule for vm id=" + vmId + " and ip " + oldIP);
+                throw new CloudRuntimeException("Failed to disable old static nat rule for vm "+ vm.getInstanceName() +
+                        " with id "+vm.getUuid() +"  and public ip " + oldIP);
             }
         }
     }
@@ -1374,7 +1380,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             throw new CloudRuntimeException("Ip address is not associated with any network");
         }
 
-        VMInstanceVO vm = _vmInstanceDao.findById(sourceIp.getAssociatedWithVmId());
+        VMInstanceVO vm = _vmInstanceDao.findByIdIncludingRemoved(sourceIp.getAssociatedWithVmId());
         Network network = _networkModel.getNetwork(networkId);
         if (network == null) {
             CloudRuntimeException ex = new CloudRuntimeException("Unable to find an ip address to map to specified vm id");
@@ -1505,7 +1511,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_MODIFY, eventDescription = "updating forwarding rule", async = true)
-    public PortForwardingRule updatePortForwardingRule(long id, String customId, Boolean forDisplay) {
+    public PortForwardingRule updatePortForwardingRule(long id, Integer privatePort, Long virtualMachineId, Ip vmGuestIp, String customId, Boolean forDisplay) {
         Account caller = CallContext.current().getCallingAccount();
         PortForwardingRuleVO rule = _portForwardingDao.findById(id);
         if (rule == null) {
@@ -1521,7 +1527,66 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             rule.setDisplay(forDisplay);
         }
 
+        if (!rule.getSourcePortStart().equals(rule.getSourcePortEnd()) && privatePort != null) {
+            throw new InvalidParameterValueException("Unable to update the private port of port forwarding rule as  the rule has port range : " + rule.getSourcePortStart() + " to " + rule.getSourcePortEnd());
+        }
+        if (virtualMachineId == null && vmGuestIp != null) {
+            throw new InvalidParameterValueException("vmguestip should be set along with virtualmachineid");
+        }
+        Ip dstIp = rule.getDestinationIpAddress();
+        if (virtualMachineId != null) {
+            // Verify that vm has nic in the network
+            Nic guestNic = _networkModel.getNicInNetwork(virtualMachineId, rule.getNetworkId());
+            if (guestNic == null || guestNic.getIp4Address() == null) {
+                throw new InvalidParameterValueException("Vm doesn't belong to network associated with ipAddress");
+            } else {
+                dstIp = new Ip(guestNic.getIp4Address());
+            }
+
+            if (vmGuestIp != null) {
+                //vm ip is passed so it can be primary or secondary ip addreess.
+                if (!dstIp.equals(vmGuestIp)) {
+                    //the vm ip is secondary ip to the nic.
+                    // is vmIp is secondary ip or not
+                    NicSecondaryIp secondaryIp = _nicSecondaryDao.findByIp4AddressAndNicId(vmGuestIp.toString(), guestNic.getId());
+                    if (secondaryIp == null) {
+                        throw new InvalidParameterValueException("IP Address is not in the VM nic's network ");
+                    }
+                    dstIp = vmGuestIp;
+                }
+            }
+        }
+
+        // revoke old rules at first
+        List<PortForwardingRuleVO> rules = new ArrayList<PortForwardingRuleVO>();
+        rule.setState(State.Revoke);
         _portForwardingDao.update(id, rule);
+        rules.add(rule);
+        try {
+            if (!_firewallMgr.applyRules(rules, true, false)) {
+                throw new CloudRuntimeException("Failed to revoke the existing port forwarding rule:" + id);
+            }
+        } catch (ResourceUnavailableException ex) {
+            throw new CloudRuntimeException("Failed to revoke the existing port forwarding rule:" + id + " due to ", ex);
+        }
+
+        rule = _portForwardingDao.findById(id);
+        rule.setState(State.Add);
+        if (privatePort != null) {
+            rule.setDestinationPortStart(privatePort.intValue());
+            rule.setDestinationPortEnd(privatePort.intValue());
+        }
+        if (virtualMachineId != null) {
+            rule.setVirtualMachineId(virtualMachineId);
+            rule.setDestinationIpAddress(dstIp);
+        }
+        _portForwardingDao.update(id, rule);
+
+        //apply new rules
+        if (!applyPortForwardingRules(rule.getSourceIpAddressId(), false, caller)) {
+            throw new CloudRuntimeException("Failed to apply the new port forwarding rule:" + id);
+        }
+
         return _portForwardingDao.findById(id);
     }
 }

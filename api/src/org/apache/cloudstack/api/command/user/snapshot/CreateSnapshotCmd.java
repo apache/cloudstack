@@ -74,6 +74,9 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.SNAPSHOT_QUIESCEVM, type = CommandType.BOOLEAN, required = false, description = "quiesce vm if true")
     private Boolean quiescevm;
 
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the snapshot")
+    private String snapshotName;
+
     private String syncObjectType = BaseAsyncCmd.snapshotHostSyncObject;
 
     // ///////////////////////////////////////////////////
@@ -98,6 +101,10 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     public Long getVolumeId() {
         return volumeId;
+    }
+
+    public String getSnapshotName() {
+        return snapshotName;
     }
 
     public Long getPolicyId() {
@@ -169,7 +176,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        Snapshot snapshot = _volumeService.allocSnapshot(getVolumeId(), getPolicyId());
+        Snapshot snapshot = _volumeService.allocSnapshot(getVolumeId(), getPolicyId(), getSnapshotName());
         if (snapshot != null) {
             setEntityId(snapshot.getId());
             setEntityUuid(snapshot.getUuid());

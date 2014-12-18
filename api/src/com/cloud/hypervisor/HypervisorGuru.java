@@ -17,6 +17,7 @@
 package com.cloud.hypervisor;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 
@@ -81,4 +82,6 @@ public interface HypervisorGuru extends Adapter {
     List<Command> finalizeExpungeNics(VirtualMachine vm, List<NicProfile> nics);
 
     List<Command> finalizeExpungeVolumes(VirtualMachine vm);
+
+    Map<String, String> getClusterSettings(long vmId);
 }

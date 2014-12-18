@@ -43,6 +43,9 @@
                         mine: {
                             label: 'ui.listView.filters.mine'
                         },
+                        shared: {
+                            label: 'Shared'
+                        },
                         featured: {
                             label: 'label.featured'
                         },
@@ -322,11 +325,19 @@
                                             });
                                             items.push({
                                                 id: "us",
-                                                description: "US"
+                                                description: "US Keboard"
+                                            });
+                                            items.push({
+                                                id: "uk",
+                                                description: "UK Keyboard"
                                             });
                                             items.push({
                                                 id: "jp",
-                                                description: "Japanese"
+                                                description: "Japanese Keyboard"
+                                            });
+                                            items.push({
+                                                id: "sc",
+                                                description: "Simplified Chinese"
                                             });
                                             args.response.success({
                                                 data: items
@@ -414,20 +425,18 @@
                                     osTypeId: {
                                         label: 'label.os.type',
                                         docID: 'helpRegisterTemplateOSType',
-                                        select: function(args) {                                        	
-                                        	if (ostypeObjs == undefined) {
-	                                            $.ajax({
-	                                                url: createURL("listOsTypes"),
-	                                                dataType: "json",
-	                                                async: false,
-	                                                success: function(json) {	                                                	
-	                                                	ostypeObjs = json.listostypesresponse.ostype;	                                                    
-	                                                }
-	                                            });
-                                        	}                                        	
-                                        	args.response.success({
-                                                data: ostypeObjs
-                                            });
+                                        select: function(args) {    
+                                            $.ajax({
+                                                url: createURL("listOsTypes"),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {	                                                	
+                                                	var ostypeObjs = json.listostypesresponse.ostype;
+                                                	args.response.success({
+                                                        data: ostypeObjs
+                                                    });
+                                                }
+                                            });                                        	    
                                         }
                                     },
 
@@ -595,6 +604,11 @@
                                     case "mine":
                                         $.extend(data, {
                                             templatefilter: 'self'
+                                        });
+                                        break;
+                                    case "shared":
+                                        $.extend(data, {
+                                            templatefilter: 'shared'
                                         });
                                         break;
                                     case "featured":
@@ -855,16 +869,16 @@
                                     }
                                                                       
                                     if ('templates' in args.context && args.context.templates[0].ostypeid != undefined) {
-                                    	if (ostypeObjs == undefined) {
-        	                            	$.ajax({
-        	                                    url: createURL("listOsTypes"),
-        	                                    dataType: "json",
-        	                                    async: false,
-        	                                    success: function(json) {	                                    	
-        	                                    	ostypeObjs = json.listostypesresponse.ostype;		                                    	
-        	                                    }
-        	                                });
-                                    	}                            	
+                                    	var ostypeObjs;
+    	                            	$.ajax({
+    	                                    url: createURL("listOsTypes"),
+    	                                    dataType: "json",
+    	                                    async: false,
+    	                                    success: function(json) {	                                    	
+    	                                    	var ostypeObjs = json.listostypesresponse.ostype;		                                    	
+    	                                    }
+    	                                });
+                                    	                           	
                                     	if (ostypeObjs != undefined) {
                                     		var ostypeName;
                                     		for (var i = 0; i < ostypeObjs.length; i++) {
@@ -969,16 +983,16 @@
                                         label: 'label.os.type',
                                         isEditable: true,
                                         select: function(args) {
-                                        	if (ostypeObjs == undefined) {
-	                                            $.ajax({
-	                                                url: createURL("listOsTypes"),
-	                                                dataType: "json",
-	                                                async: false,
-	                                                success: function(json) {	                                                	
-	                                                	ostypeObjs = json.listostypesresponse.ostype;	                                                   
-	                                                }
-	                                            });
-                                        	}                                        	
+                                        	var ostypeObjs;
+                                            $.ajax({
+                                                url: createURL("listOsTypes"),
+                                                dataType: "json",
+                                                async: false,
+                                                success: function(json) {	                                                	
+                                                	ostypeObjs = json.listostypesresponse.ostype;	                                                   
+                                                }
+                                            });
+                                        	                                        	
                                         	var items = [];
                                             $(ostypeObjs).each(function() {
                                                 items.push({
@@ -1068,7 +1082,7 @@
                                             label: 'label.status'
                                         },
                                         isready: {
-                                            label: 'state.ready',
+                                            label: 'state.Ready',
                                             converter: cloudStack.converters.toBooleanText
                                         }
                                     },
@@ -1237,16 +1251,16 @@
                                                 }
                                                                                                
                                                 if ('templates' in args.context && args.context.templates[0].ostypeid != undefined) {
-                                                	if (ostypeObjs == undefined) {
-                    	                            	$.ajax({
-                    	                                    url: createURL("listOsTypes"),
-                    	                                    dataType: "json",
-                    	                                    async: false,
-                    	                                    success: function(json) {	                                    	
-                    	                                    	ostypeObjs = json.listostypesresponse.ostype;		                                    	
-                    	                                    }
-                    	                                });
-                                                	}                            	
+                                                	var ostypeObjs;
+                	                            	$.ajax({
+                	                                    url: createURL("listOsTypes"),
+                	                                    dataType: "json",
+                	                                    async: false,
+                	                                    success: function(json) {	                                    	
+                	                                    	ostypeObjs = json.listostypesresponse.ostype;		                                    	
+                	                                    }
+                	                                });
+                                                	                           	
                                                 	if (ostypeObjs != undefined) {
                                                 		var ostypeName;
                                                 		for (var i = 0; i < ostypeObjs.length; i++) {
@@ -1283,7 +1297,7 @@
                                                     label: 'label.zone.id'
                                                 },
                                             	isready: {
-                                                    label: 'state.ready',
+                                                    label: 'state.Ready',
                                                     converter: cloudStack.converters.toBooleanText
                                                 },
                                                 status: {
@@ -1368,16 +1382,16 @@
                                                     label: 'label.os.type',
                                                     isEditable: true,
                                                     select: function(args) {                                                    
-                                                    	if (ostypeObjs == undefined) {      
-	                                                        $.ajax({
-	                                                            url: createURL("listOsTypes"),
-	                                                            dataType: "json",
-	                                                            async: false,
-	                                                            success: function(json) {
-	                                                            	ostypeObjs = json.listostypesresponse.ostype;	                                                                
-	                                                            }
-	                                                        });
-                                                    	}                                                    
+                                                    	var ostypeObjs;
+                                                        $.ajax({
+                                                            url: createURL("listOsTypes"),
+                                                            dataType: "json",
+                                                            async: false,
+                                                            success: function(json) {
+                                                            	ostypeObjs = json.listostypesresponse.ostype;	                                                                
+                                                            }
+                                                        });
+                                                    	                                                    
                                                     	var items = [];
                                                         $(ostypeObjs).each(function() {
                                                             items.push({
@@ -1464,6 +1478,9 @@
                         },
                         mine: {
                             label: 'ui.listView.filters.mine'
+                        },
+                        shared: {
+                            label: 'Shared'
                         },
                         featured: {
                             label: 'label.featured'
@@ -1571,27 +1588,25 @@
                                             required: true
                                         },
                                         select: function(args) {
-                                        	if (ostypeObjs == undefined) {   
-	                                            $.ajax({
-	                                                url: createURL("listOsTypes"),
-	                                                dataType: "json",
-	                                                async: false,
-	                                                success: function(json) {
-	                                                    ostypeObjs = json.listostypesresponse.ostype;	                                                    
-	                                                }
-	                                            });
-                                        	}
-                                        	var items = [];
-                                            //items.push({id: "", description: "None"}); //shouldn't have None option when bootable is checked
-                                            $(ostypeObjs).each(function() {
-                                                items.push({
-                                                    id: this.id,
-                                                    description: this.description
-                                                });
-                                            });
-                                            args.response.success({
-                                                data: items
-                                            });
+                                        	$.ajax({
+                                                url: createURL("listOsTypes"),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var ostypeObjs = json.listostypesresponse.ostype;	
+                                                    var items = [];
+                                                    //items.push({id: "", description: "None"}); //shouldn't have None option when bootable is checked
+                                                    $(ostypeObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.description
+                                                        });
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });                                        	                                        	
                                         }
                                     },
 
@@ -1730,6 +1745,11 @@
                                     case "mine":
                                         $.extend(data, {
                                             isofilter: 'self'
+                                        });
+                                        break;
+                                    case "shared":
+                                        $.extend(data, {
+                                        	isofilter: 'shared'
                                         });
                                         break;
                                     case "featured":
@@ -2069,7 +2089,7 @@
                                             label: 'label.status'
                                         },
                                         isready: {
-                                            label: 'state.ready',
+                                            label: 'state.Ready',
                                             converter: cloudStack.converters.toBooleanText
                                         }
                                     },
@@ -2292,16 +2312,16 @@
                                                     label: 'label.os.type',
                                                     isEditable: true,
                                                     select: function(args) {
-                                                    	if (ostypeObjs == undefined) {  
-	                                                        $.ajax({
-	                                                            url: createURL("listOsTypes"),
-	                                                            dataType: "json",
-	                                                            async: false,
-	                                                            success: function(json) {
-	                                                            	ostypeObjs = json.listostypesresponse.ostype;	                                                                
-	                                                            }
-	                                                        });
-                                                    	}
+                                                    	var ostypeObjs;
+                                                        $.ajax({
+                                                            url: createURL("listOsTypes"),
+                                                            dataType: "json",
+                                                            async: false,
+                                                            success: function(json) {
+                                                            	ostypeObjs = json.listostypesresponse.ostype;	                                                                
+                                                            }
+                                                        });
+                                                	
                                                     	var items = [];
                                                         $(ostypeObjs).each(function() {
                                                             items.push({

@@ -64,7 +64,19 @@ INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
 
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',
-            'system.vm.use.local.storage', 'true');
+            'cluster.cpu.allocated.capacity.disablethreshold', '0.95');
+
+INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
+            VALUES ('Advanced', 'DEFAULT', 'management-server',
+            'cluster.memory.allocated.capacity.disablethreshold ', '0.95');
+
+INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
+            VALUES ('Advanced', 'DEFAULT', 'management-server',
+            'pool.storage.allocated.capacity.disablethreshold ', '0.95');
+
+INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
+            VALUES ('Advanced', 'DEFAULT', 'management-server',
+            'pool.storage.capacity.disablethreshold ', '0.95');
 
 -- Add developer configuration entry; allows management server to be run as a user other than "cloud"
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)

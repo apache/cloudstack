@@ -956,7 +956,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                     List<SnapshotVO> activeSnapshots =
                         _snapshotDao.listByInstanceId(volume.getInstanceId(), Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp);
                     if (activeSnapshots.size() > 0) {
-                        throw new CloudRuntimeException("There is other active snapshot tasks on the instance to which the volume is attached, please try again later");
+                        throw new InvalidParameterValueException("There is other active snapshot tasks on the instance to which the volume is attached, please try again later");
                     }
                 }
 
@@ -1092,7 +1092,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
     }
 
     @Override
-    public Snapshot allocSnapshot(Long volumeId, Long policyId) throws ResourceAllocationException {
+    public Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
         VolumeInfo volume = volFactory.getVolume(volumeId);
         supportedByHypervisor(volume);
@@ -1125,7 +1125,8 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         if (vmInstance != null) {
             vmDisplayName = vmInstance.getHostName();
         }
-        String snapshotName = vmDisplayName + "_" + volume.getName() + "_" + timeString;
+        if (snapshotName == null)
+            snapshotName = vmDisplayName + "_" + volume.getName() + "_" + timeString;
 
         HypervisorType hypervisorType = HypervisorType.None;
         StoragePoolVO storagePool = _storagePoolDao.findById(volume.getDataStore().getId());

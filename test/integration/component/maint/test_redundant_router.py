@@ -16,126 +16,34 @@
 # under the License.
 
 from nose.plugins.attrib import attr
-from marvin.lib.base import *
-from marvin.lib.utils import *
-from marvin.lib.common import *
+from marvin.lib.base import (Account,
+                             Router,
+                             NetworkOffering,
+                             Network,
+                             VirtualMachine,
+                             ServiceOffering,
+                             Host)
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.common import (get_domain,
+                               get_template,
+                               get_zone,
+                               get_process_status)
+import time
 
-#Import Local Modules
+# Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import *
-
-class Services:
-    """Test Services for customer defects
-    """
-
-    def __init__(self):
-        self.services = {
-                        "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    # Random characters are appended for unique
-                                    # username
-                                    "password": "password",
-                         },
-                        "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100,
-                                    "memory": 128,
-                        },
-                        "disk_offering": {
-                                    "displaytext": "Small",
-                                    "name": "Small",
-                                    "disksize": 1
-                        },
-                        "virtual_machine": {
-                                    "displayname": "Test VM",
-                                    "username": "root",
-                                    "password": "password",
-                                    "ssh_port": 22,
-                                    "hypervisor": 'XenServer',
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "protocol": 'TCP',
-                        },
-                        "static_nat": {
-                                    "startport": 22,
-                                    "endport": 22,
-                                    "protocol": "TCP"
-                        },
-                        "network_offering": {
-                                    "name": 'Network offering-RVR services',
-                                    "displaytext": 'Network off-RVR services',
-                                    "guestiptype": 'Isolated',
-                                    "supportedservices": 'Vpn,Dhcp,Dns,SourceNat,PortForwarding,Firewall,Lb,UserData,StaticNat',
-                                    "traffictype": 'GUEST',
-                                    "availability": 'Optional',
-                                    "serviceProviderList": {
-                                            "Vpn": 'VirtualRouter',
-                                            "Dhcp": 'VirtualRouter',
-                                            "Dns": 'VirtualRouter',
-                                            "SourceNat": 'VirtualRouter',
-                                            "PortForwarding": 'VirtualRouter',
-                                            "Firewall": 'VirtualRouter',
-                                            "Lb": 'VirtualRouter',
-                                            "UserData": 'VirtualRouter',
-                                            "StaticNat": 'VirtualRouter',
-                                        },
-                                    "serviceCapabilityList": {
-                                        "SourceNat": {
-                                            "SupportedSourceNatTypes": "peraccount",
-                                            "RedundantRouter": "true",
-                                        },
-                                        "lb": {
-                                               "SupportedLbIsolation": "dedicated"
-                                        },
-                                    },
-                        },
-                        "network": {
-                                  "name": "Test Network",
-                                  "displaytext": "Test Network",
-                                },
-                        "lbrule": {
-                                    "name": "SSH",
-                                    "alg": "roundrobin",
-                                    # Algorithm used for load balancing
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "openfirewall": True,
-                                },
-                        "natrule": {
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "protocol": "TCP"
-                                },
-                        "natrule_221": {
-                                    "privateport": 22,
-                                    "publicport": 221,
-                                    "protocol": "TCP"
-                                },
-                        "fw_rule": {
-                                    "startport": 1,
-                                    "endport": 6000,
-                                    "cidr": '55.55.0.0/11',
-                                    # Any network (For creating FW rule)
-                                    "protocol": 'TCP',
-                                },
-                        "ostype": 'CentOS 5.3 (64-bit)',
-                        "sleep": 60,
-            }
 
 
 class TestCreateRvRNetworkOffering(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.testClient = super(TestCreateRvRNetworkOffering, cls).getClsTestClient()
+        cls.testClient = super(
+            TestCreateRvRNetworkOffering,
+            cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -145,7 +53,7 @@ class TestCreateRvRNetworkOffering(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            #Cleanup resources used
+            # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -182,10 +90,10 @@ class TestCreateRvRNetworkOffering(cloudstackTestCase):
         self.debug("Creating network offering with redundant VR capability")
         try:
             network_offering = NetworkOffering.create(
-                                            self.apiclient,
-                                            self.services["network_offering"],
-                                            conservemode=True
-                                            )
+                self.apiclient,
+                self.testdata["nw_off_isolated_RVR"],
+                conservemode=True
+            )
         except Exception as e:
             self.fail("Create network offering failed! - %s" % e)
 
@@ -196,26 +104,26 @@ class TestCreateRvRNetworkOffering(cloudstackTestCase):
 
         self.debug("Checking if the network offering created successfully?")
         network_offs = NetworkOffering.list(
-                                            self.apiclient,
-                                            id=network_offering.id,
-                                            listall=True
-                                            )
+            self.apiclient,
+            id=network_offering.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(network_offs, list),
-                    True,
-                    "List network offering should not return empty response"
-                 )
+            isinstance(network_offs, list),
+            True,
+            "List network offering should not return empty response"
+        )
         self.assertEqual(
-                     len(network_offs),
-                     1,
-                    "List network off should have newly created network off"
-                     )
+            len(network_offs),
+            1,
+            "List network off should have newly created network off"
+        )
         for service in network_offs[0].service:
             if service.name == 'SourceNat':
                 self.debug("Verifying SourceNat capabilites")
                 for capability in service.capability:
                     if capability.name == 'RedundantRouter':
-                        self.assertTrue(capability.value=='true')
+                        self.assertTrue(capability.value == 'true')
                         self.debug("RedundantRouter is enabled")
 
         return
@@ -228,29 +136,29 @@ class TestCreateRvRNetwork(cloudstackTestCase):
         cls.testClient = super(TestCreateRvRNetwork, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
+            cls.api_client,
+            cls.zone.id,
+            cls.testdata["ostype"]
+        )
+        cls.testdata["small"]["zoneid"] = cls.zone.id
+        cls.testdata["small"]["template"] = cls.template.id
 
         cls._cleanup = []
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
+            cls.api_client,
+            cls.testdata["service_offering"]
+        )
         cls._cleanup.append(cls.service_offering)
         cls.network_offering = NetworkOffering.create(
-                                            cls.api_client,
-                                            cls.services["network_offering"],
-                                            conservemode=True
-                                            )
+            cls.api_client,
+            cls.testdata["nw_off_isolated_RVR"],
+            conservemode=True
+        )
         cls._cleanup.append(cls.network_offering)
 
         # Enable Network offering
@@ -261,7 +169,7 @@ class TestCreateRvRNetwork(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            #Cleanup resources used
+            # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -271,11 +179,11 @@ class TestCreateRvRNetwork(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.account = Account.create(
-                                     self.apiclient,
-                                     self.services["account"],
-                                     admin=True,
-                                     domainid=self.domain.id
-                                     )
+            self.apiclient,
+            self.testdata["account"],
+            admin=True,
+            domainid=self.domain.id
+        )
         self.cleanup = []
         self.cleanup.insert(0, self.account)
         return
@@ -307,80 +215,80 @@ class TestCreateRvRNetwork(cloudstackTestCase):
 
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
-                                                    self.network_offering.id)
+                   self.network_offering.id)
         network = Network.create(
-                                self.apiclient,
-                                self.services["network"],
-                                accountid=self.account.name,
-                                domainid=self.account.domainid,
-                                networkofferingid=self.network_offering.id,
-                                zoneid=self.zone.id
-                                )
+            self.apiclient,
+            self.testdata["network"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkofferingid=self.network_offering.id,
+            zoneid=self.zone.id
+        )
         self.debug("Created network with ID: %s" % network.id)
 
         networks = Network.list(
-                                self.apiclient,
-                                id=network.id,
-                                listall=True
-                                )
+            self.apiclient,
+            id=network.id,
+            listall=True
+        )
         self.assertEqual(
             isinstance(networks, list),
             True,
             "List networks should return a valid response for created network"
-             )
+        )
         nw_response = networks[0]
 
         self.debug("Network state: %s" % nw_response.state)
         self.assertEqual(
-                    nw_response.state,
-                    "Allocated",
-                    "The network should be in allocated state after creation"
-                    )
+            nw_response.state,
+            "Allocated",
+            "The network should be in allocated state after creation"
+        )
 
         self.debug("Listing routers for network: %s" % network.name)
         routers = Router.list(
-                              self.apiclient,
-                              networkid=network.id,
-                              listall=True
-                              )
+            self.apiclient,
+            networkid=network.id,
+            listall=True
+        )
         self.assertEqual(
             routers,
             None,
             "Routers should not be spawned when network is in allocated state"
-            )
+        )
 
         self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
-        virtual_machine = VirtualMachine.create(
-                                  self.apiclient,
-                                  self.services["virtual_machine"],
-                                  accountid=self.account.name,
-                                  domainid=self.account.domainid,
-                                  serviceofferingid=self.service_offering.id,
-                                  networkids=[str(network.id)]
-                                  )
+        VirtualMachine.create(
+            self.apiclient,
+            self.testdata["small"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            networkids=[str(network.id)]
+        )
         self.debug("Deployed VM in network: %s" % network.id)
 
         # wait for VR to update state
-        time.sleep(self.services["sleep"])
+        time.sleep(self.testdata["sleep"])
 
         self.debug("Listing routers for network: %s" % network.name)
         routers = Router.list(
-                              self.apiclient,
-                              networkid=network.id,
-                              listall=True
-                              )
+            self.apiclient,
+            networkid=network.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Master and backup routers"
-                    )
+            isinstance(routers, list),
+            True,
+            "list router should return Master and backup routers"
+        )
         self.assertEqual(
-                    len(routers),
-                    2,
-                    "Length of the list router should be 2 (Backup & master)"
-                    )
+            len(routers),
+            2,
+            "Length of the list router should be 2 (Backup & master)"
+        )
 
         if routers[0].redundantstate == 'MASTER':
             master_router = routers[0]
@@ -390,35 +298,35 @@ class TestCreateRvRNetwork(cloudstackTestCase):
             backup_router = routers[0]
 
         self.debug("Redundant states: %s, %s" % (
-                                                master_router.redundantstate,
-                                                backup_router.redundantstate
-                                                ))
+            master_router.redundantstate,
+            backup_router.redundantstate
+        ))
         self.assertEqual(
-                         master_router.publicip,
-                         backup_router.publicip,
-                         "Public Ip should be same for both(MASTER & BACKUP)"
-                         )
+            master_router.publicip,
+            backup_router.publicip,
+            "Public Ip should be same for both(MASTER & BACKUP)"
+        )
         self.assertEqual(
-                      master_router.redundantstate,
-                      "MASTER",
-                      "Redundant state of router should be MASTER"
-                      )
+            master_router.redundantstate,
+            "MASTER",
+            "Redundant state of router should be MASTER"
+        )
         self.assertEqual(
-                      backup_router.redundantstate,
-                      "BACKUP",
-                      "Redundant state of router should be BACKUP"
-                      )
+            backup_router.redundantstate,
+            "BACKUP",
+            "Redundant state of router should be BACKUP"
+        )
         self.assertNotEqual(
-                master_router.guestipaddress,
-                backup_router.guestipaddress,
-                "Both (MASTER & BACKUP) routers should not have same guest IP"
-                )
+            master_router.guestipaddress,
+            backup_router.guestipaddress,
+            "Both (MASTER & BACKUP) routers should not have same guest IP"
+        )
 
         self.assertNotEqual(
-                master_router.guestmacaddress,
-                backup_router.guestmacaddress,
-                "Both (MASTER & BACKUP) routers should not have same guestMAC"
-                )
+            master_router.guestmacaddress,
+            backup_router.guestmacaddress,
+            "Both (MASTER & BACKUP) routers should not have same guestMAC"
+        )
         return
 
 
@@ -426,32 +334,34 @@ class TestCreateRvRNetworkNonDefaultGuestCidr(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.testClient = super(TestCreateRvRNetworkNonDefaultGuestCidr, cls).getClsTestClient()
+        cls.testClient = super(
+            TestCreateRvRNetworkNonDefaultGuestCidr,
+            cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
+            cls.api_client,
+            cls.zone.id,
+            cls.testdata["ostype"]
+        )
+        cls.testdata["small"]["zoneid"] = cls.zone.id
+        cls.testdata["small"]["template"] = cls.template.id
 
         cls._cleanup = []
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
+            cls.api_client,
+            cls.testdata["service_offering"]
+        )
         cls._cleanup.append(cls.service_offering)
         cls.network_offering = NetworkOffering.create(
-                                            cls.api_client,
-                                            cls.services["network_offering"],
-                                            conservemode=True
-                                            )
+            cls.api_client,
+            cls.testdata["nw_off_isolated_RVR"],
+            conservemode=True
+        )
         cls._cleanup.append(cls.network_offering)
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
@@ -460,7 +370,7 @@ class TestCreateRvRNetworkNonDefaultGuestCidr(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            #Cleanup resources used
+            # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -470,11 +380,11 @@ class TestCreateRvRNetworkNonDefaultGuestCidr(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.account = Account.create(
-                                     self.apiclient,
-                                     self.services["account"],
-                                     admin=True,
-                                     domainid=self.domain.id
-                                     )
+            self.apiclient,
+            self.testdata["account"],
+            admin=True,
+            domainid=self.domain.id
+        )
         self.cleanup = []
         self.cleanup.insert(0, self.account)
         return
@@ -507,92 +417,92 @@ class TestCreateRvRNetworkNonDefaultGuestCidr(cloudstackTestCase):
 
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
-                                                    self.network_offering.id)
+                   self.network_offering.id)
         network = Network.create(
-                                self.apiclient,
-                                self.services["network"],
-                                accountid=self.account.name,
-                                domainid=self.account.domainid,
-                                networkofferingid=self.network_offering.id,
-                                zoneid=self.zone.id,
-                                netmask='255.255.254.0',
-                                gateway='192.168.2.1'
-                                )
+            self.apiclient,
+            self.testdata["network"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkofferingid=self.network_offering.id,
+            zoneid=self.zone.id,
+            netmask='255.255.254.0',
+            gateway='192.168.2.1'
+        )
         self.debug("Created network with ID: %s" % network.id)
 
         networks = Network.list(
-                                self.apiclient,
-                                id=network.id,
-                                listall=True
-                                )
+            self.apiclient,
+            id=network.id,
+            listall=True
+        )
         self.assertEqual(
             isinstance(networks, list),
             True,
             "List networks should return a valid response for created network"
-             )
+        )
         nw_response = networks[0]
 
         self.debug("Network state: %s" % nw_response.state)
         self.assertEqual(
-                    nw_response.state,
-                    "Allocated",
-                    "The network should be in allocated state after creation"
-                    )
+            nw_response.state,
+            "Allocated",
+            "The network should be in allocated state after creation"
+        )
         self.assertEqual(
-                         nw_response.gateway,
-                         '192.168.2.1',
-                         "The gateway should be 192.168.2.1"
-                         )
+            nw_response.gateway,
+            '192.168.2.1',
+            "The gateway should be 192.168.2.1"
+        )
         self.assertEqual(
-                         nw_response.cidr,
-                         '192.168.2.0/23',
-                         "Guest cidr should be 192.168.2.0/23 but is %s" % nw_response.cidr
-                         )
+            nw_response.cidr,
+            '192.168.2.0/23',
+            "Guest cidr should be 192.168.2.0/23 but is %s" % nw_response.cidr
+        )
 
         self.debug("Listing routers for network: %s" % network.name)
         routers = Router.list(
-                              self.apiclient,
-                              networkid=network.id,
-                              listall=True
-                              )
+            self.apiclient,
+            networkid=network.id,
+            listall=True
+        )
         self.assertEqual(
             routers,
             None,
             "Routers should not be spawned when network is in allocated state"
-            )
+        )
 
         self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
-        virtual_machine = VirtualMachine.create(
-                                  self.apiclient,
-                                  self.services["virtual_machine"],
-                                  accountid=self.account.name,
-                                  domainid=self.account.domainid,
-                                  serviceofferingid=self.service_offering.id,
-                                  networkids=[str(network.id)]
-                                  )
+        VirtualMachine.create(
+            self.apiclient,
+            self.testdata["small"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            networkids=[str(network.id)]
+        )
         self.debug("Deployed VM in network: %s" % network.id)
 
         # wait for VR to update state
-        time.sleep(self.services["sleep"])
+        time.sleep(self.testdata["sleep"])
 
         self.debug("Listing routers for network: %s" % network.name)
         routers = Router.list(
-                              self.apiclient,
-                              networkid=network.id,
-                              listall=True
-                              )
+            self.apiclient,
+            networkid=network.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Master and backup routers"
-                    )
+            isinstance(routers, list),
+            True,
+            "list router should return Master and backup routers"
+        )
         self.assertEqual(
-                    len(routers),
-                    2,
-                    "Length of the list router should be 2 (Backup & master)"
-                    )
+            len(routers),
+            2,
+            "Length of the list router should be 2 (Backup & master)"
+        )
 
         if routers[0].redundantstate == 'MASTER':
             master_router = routers[0]
@@ -602,31 +512,31 @@ class TestCreateRvRNetworkNonDefaultGuestCidr(cloudstackTestCase):
             backup_router = routers[0]
 
         self.assertEqual(
-                         master_router.publicip,
-                         backup_router.publicip,
-                         "Public Ip should be same for both(MASTER & BACKUP)"
-                         )
+            master_router.publicip,
+            backup_router.publicip,
+            "Public Ip should be same for both(MASTER & BACKUP)"
+        )
         self.assertEqual(
-                      master_router.redundantstate,
-                      "MASTER",
-                      "Redundant state of router should be MASTER"
-                      )
+            master_router.redundantstate,
+            "MASTER",
+            "Redundant state of router should be MASTER"
+        )
         self.assertEqual(
-                      backup_router.redundantstate,
-                      "BACKUP",
-                      "Redundant state of router should be BACKUP"
-                      )
+            backup_router.redundantstate,
+            "BACKUP",
+            "Redundant state of router should be BACKUP"
+        )
         self.assertNotEqual(
-                master_router.guestipaddress,
-                backup_router.guestipaddress,
-                "Both (MASTER & BACKUP) routers should not have same guest IP"
-                )
+            master_router.guestipaddress,
+            backup_router.guestipaddress,
+            "Both (MASTER & BACKUP) routers should not have same guest IP"
+        )
 
         self.assertNotEqual(
-                master_router.guestmacaddress,
-                backup_router.guestmacaddress,
-                "Both (MASTER & BACKUP) routers should not have same guestMAC"
-                )
+            master_router.guestmacaddress,
+            backup_router.guestmacaddress,
+            "Both (MASTER & BACKUP) routers should not have same guestMAC"
+        )
         return
 
 
@@ -637,29 +547,29 @@ class TestRVRInternals(cloudstackTestCase):
         cls.testClient = super(TestRVRInternals, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
+            cls.api_client,
+            cls.zone.id,
+            cls.testdata["ostype"]
+        )
+        cls.testdata["small"]["zoneid"] = cls.zone.id
+        cls.testdata["small"]["template"] = cls.template.id
 
         cls._cleanup = []
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
+            cls.api_client,
+            cls.testdata["service_offering"]
+        )
         cls._cleanup.append(cls.service_offering)
         cls.network_offering = NetworkOffering.create(
-                                            cls.api_client,
-                                            cls.services["network_offering"],
-                                            conservemode=True
-                                            )
+            cls.api_client,
+            cls.testdata["nw_off_isolated_RVR"],
+            conservemode=True
+        )
         cls._cleanup.append(cls.network_offering)
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
@@ -668,7 +578,7 @@ class TestRVRInternals(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            #Cleanup resources used
+            # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -679,11 +589,11 @@ class TestRVRInternals(cloudstackTestCase):
         self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
         self.account = Account.create(
-                                     self.apiclient,
-                                     self.services["account"],
-                                     admin=True,
-                                     domainid=self.domain.id
-                                     )
+            self.apiclient,
+            self.testdata["account"],
+            admin=True,
+            domainid=self.domain.id
+        )
         self.cleanup = []
         self.cleanup.insert(0, self.account)
         return
@@ -724,80 +634,80 @@ class TestRVRInternals(cloudstackTestCase):
 
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
-                                                    self.network_offering.id)
+                   self.network_offering.id)
         network = Network.create(
-                                self.apiclient,
-                                self.services["network"],
-                                accountid=self.account.name,
-                                domainid=self.account.domainid,
-                                networkofferingid=self.network_offering.id,
-                                zoneid=self.zone.id
-                                )
+            self.apiclient,
+            self.testdata["network"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkofferingid=self.network_offering.id,
+            zoneid=self.zone.id
+        )
         self.debug("Created network with ID: %s" % network.id)
 
         networks = Network.list(
-                                self.apiclient,
-                                id=network.id,
-                                listall=True
-                                )
+            self.apiclient,
+            id=network.id,
+            listall=True
+        )
         self.assertEqual(
             isinstance(networks, list),
             True,
             "List networks should return a valid response for created network"
-             )
+        )
         nw_response = networks[0]
 
         self.debug("Network state: %s" % nw_response.state)
         self.assertEqual(
-                    nw_response.state,
-                    "Allocated",
-                    "The network should be in allocated state after creation"
-                    )
+            nw_response.state,
+            "Allocated",
+            "The network should be in allocated state after creation"
+        )
 
         self.debug("Listing routers for network: %s" % network.name)
         routers = Router.list(
-                              self.apiclient,
-                              networkid=network.id,
-                              listall=True
-                              )
+            self.apiclient,
+            networkid=network.id,
+            listall=True
+        )
         self.assertEqual(
             routers,
             None,
             "Routers should not be spawned when network is in allocated state"
-            )
+        )
 
         self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         virtual_machine = VirtualMachine.create(
-                                  self.apiclient,
-                                  self.services["virtual_machine"],
-                                  accountid=self.account.name,
-                                  domainid=self.account.domainid,
-                                  serviceofferingid=self.service_offering.id,
-                                  networkids=[str(network.id)]
-                                  )
+            self.apiclient,
+            self.testdata["small"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            networkids=[str(network.id)]
+        )
         self.debug("Deployed VM in network: %s" % network.id)
 
         # wait for VR to update state
-        time.sleep(self.services["sleep"])
+        time.sleep(self.testdata["sleep"])
 
         self.debug("Listing routers for network: %s" % network.name)
         routers = Router.list(
-                              self.apiclient,
-                              networkid=network.id,
-                              listall=True
-                              )
+            self.apiclient,
+            networkid=network.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Master and backup routers"
-                    )
+            isinstance(routers, list),
+            True,
+            "list router should return Master and backup routers"
+        )
         self.assertEqual(
-                    len(routers),
-                    2,
-                    "Length of the list router should be 2 (Backup & master)"
-                    )
+            len(routers),
+            2,
+            "Length of the list router should be 2 (Backup & master)"
+        )
 
         if routers[0].redundantstate == 'MASTER':
             master_router = routers[0]
@@ -809,29 +719,27 @@ class TestRVRInternals(cloudstackTestCase):
         self.debug("Fetching the host details for double hop into router")
 
         hosts = Host.list(
-                          self.apiclient,
-                          id=master_router.hostid,
-                          listall=True
-                          )
+            self.apiclient,
+            id=master_router.hostid
+        )
         self.assertEqual(
-                         isinstance(hosts, list),
-                         True,
-                         "List hosts should return a valid list"
-                         )
+            isinstance(hosts, list),
+            True,
+            "List hosts should return a valid list"
+        )
         master_host = hosts[0]
         self.debug("Host for master router: %s" % master_host.name)
         self.debug("Host for master router: %s" % master_host.ipaddress)
 
         hosts = Host.list(
-                          self.apiclient,
-                          id=backup_router.hostid,
-                          listall=True
-                          )
+            self.apiclient,
+            id=backup_router.hostid
+        )
         self.assertEqual(
-                         isinstance(hosts, list),
-                         True,
-                         "List hosts should return a valid list"
-                         )
+            isinstance(hosts, list),
+            True,
+            "List hosts should return a valid list"
+        )
         backup_host = hosts[0]
         self.debug("Host for backup router: %s" % backup_host.name)
         self.debug("Host for backup router: %s" % backup_host.ipaddress)
@@ -840,108 +748,96 @@ class TestRVRInternals(cloudstackTestCase):
         # Check eth2 port for master router
         if self.hypervisor.lower() in ('vmware', 'hyperv'):
             result = get_process_status(
-                                self.apiclient.connection.mgtSvr,
-                                22,
-                                self.apiclient.connection.user,
-                                self.apiclient.connection.passwd,
-                                master_router.linklocalip,
-                                'ip addr show eth2',
-                                hypervisor=self.hypervisor
-                                )
+                self.apiclient.connection.mgtSvr,
+                22,
+                self.apiclient.connection.user,
+                self.apiclient.connection.passwd,
+                master_router.linklocalip,
+                'ip addr show eth2',
+                hypervisor=self.hypervisor
+            )
         else:
-            try:
-                host = {}
-                host.user, host.passwd = get_host_credentials(self.config, master_host.ipaddress)
-                result = get_process_status(
-                                    master_host.ipaddress,
-                                    22,
-                                    host.user,
-                                    host.passwd,
-                                    master_router.linklocalip,
-                                    "ip addr show eth2"
-                                )
-
-            except KeyError:
-                self.skipTest("Marvin configuration has no host credentials to check router services")
+            result = get_process_status(
+                master_host.ipaddress,
+                22,
+                self.testdata['configurableData']['host']["username"],
+                self.testdata['configurableData']['host']["password"],
+                master_router.linklocalip,
+                "ip addr show eth2"
+            )
 
         res = str(result)
 
         self.debug("Command 'ip addr show eth2': %s" % result)
         self.debug("Router's public Ip: %s" % master_router.publicip)
         self.assertEqual(
-                         res.count("state UP"),
-                         1,
-                         "MASTER router's public interface should be UP"
-                         )
+            res.count("state UP"),
+            1,
+            "MASTER router's public interface should be UP"
+        )
         self.assertEqual(
-                         result.count('brd 0.0.0.0'),
-                         0,
-                         "Broadcast address of eth2 should not be 0.0.0.0"
-                         )
+            result.count('brd 0.0.0.0'),
+            0,
+            "Broadcast address of eth2 should not be 0.0.0.0"
+        )
 
         # Check eth2 port for backup router
         if self.hypervisor.lower() in ('vmware', 'hyperv'):
             result = get_process_status(
-                                self.apiclient.connection.mgtSvr,
-                                22,
-                                self.apiclient.connection.user,
-                                self.apiclient.connction.passwd,
-                                backup_router.linklocalip,
-                                'ip addr show eth2',
-                                hypervisor=self.hypervisor
-                                )
+                self.apiclient.connection.mgtSvr,
+                22,
+                self.apiclient.connection.user,
+                self.apiclient.connction.passwd,
+                backup_router.linklocalip,
+                'ip addr show eth2',
+                hypervisor=self.hypervisor
+            )
         else:
-            try:
-                host = {}
-                host.user, host.passwd = get_host_credentials(self.config, backup_host.ipaddress)
-                result = get_process_status(
-                                    master_host.ipaddress,
-                                    22,
-                                    host.user,
-                                    host.passwd,
-                                    backup_router.linklocalip,
-                                    "ip addr show eth2"
-                                )
-
-            except KeyError:
-                self.skipTest("Marvin configuration has no host credentials to check router services")
+            result = get_process_status(
+                backup_host.ipaddress,
+                22,
+                self.testdata['configurableData']['host']["username"],
+                self.testdata['configurableData']['host']["password"],
+                backup_router.linklocalip,
+                "ip addr show eth2"
+            )
 
         res = str(result)
 
         self.debug("Command 'ip addr show eth2': %s" % result)
         self.assertEqual(
-                         res.count("state DOWN"),
-                         1,
-                         "BACKUP router's public interface should be DOWN"
-                         )
+            res.count("state DOWN"),
+            1,
+            "BACKUP router's public interface should be DOWN"
+        )
         self.assertEqual(
-                         result.count('brd 0.0.0.0'),
-                         0,
-                         "Broadcast address of eth2 should not be 0.0.0.0"
-                         )
+            result.count('brd 0.0.0.0'),
+            0,
+            "Broadcast address of eth2 should not be 0.0.0.0"
+        )
         vms = VirtualMachine.list(
-                             self.apiclient,
-                             id=virtual_machine.id,
-                             listall=True
-                             )
+            self.apiclient,
+            id=virtual_machine.id,
+            listall=True
+        )
         self.assertEqual(
-                         isinstance(vms, list),
-                         True,
-                         "List VMs should not return empty response"
-                         )
+            isinstance(vms, list),
+            True,
+            "List VMs should not return empty response"
+        )
         vm = vms[0]
 
         self.assertNotEqual(
-                    vm.nic[0].gateway,
-                    master_router.publicip,
-                    "The gateway of user VM should be same as master router"
-                 )
+            vm.nic[0].gateway,
+            master_router.publicip,
+            "The gateway of user VM should be same as master router"
+        )
 
         self.assertNotEqual(
-                    vm.nic[0].gateway,
-                    backup_router.publicip,
-                    "The gateway of user VM should be same as backup router"
-                 )
+            vm.nic[0].gateway,
+            backup_router.publicip,
+            "The gateway of user VM should be same as backup router"
+        )
 
         return
 
@@ -953,29 +849,29 @@ class TestRvRRedundancy(cloudstackTestCase):
         cls.testClient = super(TestRvRRedundancy, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
+            cls.api_client,
+            cls.zone.id,
+            cls.testdata["ostype"]
+        )
+        cls.testdata["small"]["zoneid"] = cls.zone.id
+        cls.testdata["small"]["template"] = cls.template.id
 
         cls._cleanup = []
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
+            cls.api_client,
+            cls.testdata["service_offering"]
+        )
         cls._cleanup.append(cls.service_offering)
         cls.network_offering = NetworkOffering.create(
-                                            cls.api_client,
-                                            cls.services["network_offering"],
-                                            conservemode=True
-                                            )
+            cls.api_client,
+            cls.testdata["nw_off_isolated_RVR"],
+            conservemode=True
+        )
         cls._cleanup.append(cls.network_offering)
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
@@ -984,7 +880,7 @@ class TestRvRRedundancy(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            #Cleanup resources used
+            # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -995,39 +891,39 @@ class TestRvRRedundancy(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
         self.account = Account.create(
-                                     self.apiclient,
-                                     self.services["account"],
-                                     admin=True,
-                                     domainid=self.domain.id
-                                     )
+            self.apiclient,
+            self.testdata["account"],
+            admin=True,
+            domainid=self.domain.id
+        )
         self.cleanup.insert(0, self.account)
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
-                                                    self.network_offering.id)
+                   self.network_offering.id)
         self.network = Network.create(
-                                self.apiclient,
-                                self.services["network"],
-                                accountid=self.account.name,
-                                domainid=self.account.domainid,
-                                networkofferingid=self.network_offering.id,
-                                zoneid=self.zone.id
-                                )
+            self.apiclient,
+            self.testdata["network"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkofferingid=self.network_offering.id,
+            zoneid=self.zone.id
+        )
         self.debug("Created network with ID: %s" % self.network.id)
         self.debug("Deploying VM in account: %s" % self.account.name)
 
         # Spawn an instance in that network
         self.virtual_machine = VirtualMachine.create(
-                                  self.apiclient,
-                                  self.services["virtual_machine"],
-                                  accountid=self.account.name,
-                                  domainid=self.account.domainid,
-                                  serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network.id)]
-                                  )
+            self.apiclient,
+            self.testdata["small"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            networkids=[str(self.network.id)]
+        )
         self.debug("Deployed VM in network: %s" % self.network.id)
 
         # wait for VR to update state
-        time.sleep(self.services["sleep"])
+        time.sleep(self.testdata["sleep"])
         return
 
     def tearDown(self):
@@ -1066,20 +962,20 @@ class TestRvRRedundancy(cloudstackTestCase):
 
         self.debug("Listing routers for network: %s" % self.network.name)
         routers = Router.list(
-                              self.apiclient,
-                              networkid=self.network.id,
-                              listall=True
-                              )
+            self.apiclient,
+            networkid=self.network.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Master and backup routers"
-                    )
+            isinstance(routers, list),
+            True,
+            "list router should return Master and backup routers"
+        )
         self.assertEqual(
-                    len(routers),
-                    2,
-                    "Length of the list router should be 2 (Backup & master)"
-                    )
+            len(routers),
+            2,
+            "Length of the list router should be 2 (Backup & master)"
+        )
 
         if routers[0].redundantstate == 'MASTER':
             master_router = routers[0]
@@ -1095,41 +991,43 @@ class TestRvRRedundancy(cloudstackTestCase):
             self.fail("Failed to stop master router: %s" % e)
 
         # wait for VR to update state
-        time.sleep(self.services["sleep"])
+        time.sleep(self.testdata["sleep"])
 
         self.debug("Listing routers for network: %s" % self.network.name)
         routers = Router.list(
-                              self.apiclient,
-                              id=master_router.id,
-                              listall=True
-                              )
-        self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Master and backup routers"
-                    )
-        self.assertIn(
-            routers[0].redundantstate,
-            ['UNKNOWN', 'FAULT'],
-            "Redundant state of the master router should be UNKNOWN/FAULT but is %s" % routers[0].redundantstate
+            self.apiclient,
+            id=master_router.id,
+            listall=True
         )
+        self.assertEqual(
+            isinstance(routers, list),
+            True,
+            "list router should return Master and backup routers"
+        )
+        self.assertIn(
+            routers[0].redundantstate, [
+                'UNKNOWN', 'FAULT'], "Redundant state of the master router\
+                        should be UNKNOWN/FAULT but is %s" %
+            routers[0].redundantstate)
 
-        self.debug("Checking state of the backup router in %s" % self.network.name)
+        self.debug(
+            "Checking state of the backup router in %s" %
+            self.network.name)
         routers = Router.list(
-                              self.apiclient,
-                              id=backup_router.id,
-                              listall=True
-                              )
+            self.apiclient,
+            id=backup_router.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return backup router"
-                    )
+            isinstance(routers, list),
+            True,
+            "list router should return backup router"
+        )
         self.assertEqual(
-                    routers[0].redundantstate,
-                    'MASTER',
-                    "Redundant state of the router should be MASTER but is %s" % routers[0].redundantstate
-                    )
+            routers[0].redundantstate,
+            'MASTER',
+            "Redundant state of the router should be MASTER but is %s" %
+            routers[0].redundantstate)
 
         self.debug("Starting the old MASTER router")
         try:
@@ -1139,29 +1037,31 @@ class TestRvRRedundancy(cloudstackTestCase):
             self.fail("Failed to start master router: %s" % e)
 
         # wait for VR to update state
-        time.sleep(self.services["sleep"])
+        time.sleep(self.testdata["sleep"])
 
-        self.debug("Checking state of the master router in %s" % self.network.name)
+        self.debug(
+            "Checking state of the master router in %s" %
+            self.network.name)
         routers = Router.list(
-                              self.apiclient,
-                              id=master_router.id,
-                              listall=True
-                              )
+            self.apiclient,
+            id=master_router.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return backup router"
-                    )
+            isinstance(routers, list),
+            True,
+            "list router should return backup router"
+        )
         self.assertEqual(
-                    routers[0].redundantstate,
-                    'BACKUP',
-                    "Redundant state of the router should be BACKUP but is %s" % routers[0].redundantstate
-                    )
+            routers[0].redundantstate,
+            'BACKUP',
+            "Redundant state of the router should be BACKUP but is %s" %
+            routers[0].redundantstate)
         self.assertEqual(
-                         master_router.publicip,
-                         routers[0].publicip,
-                         "Public IP should be same after reboot"
-                         )
+            master_router.publicip,
+            routers[0].publicip,
+            "Public IP should be same after reboot"
+        )
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -1192,20 +1092,20 @@ class TestRvRRedundancy(cloudstackTestCase):
 
         self.debug("Listing routers for network: %s" % self.network.name)
         routers = Router.list(
-                              self.apiclient,
-                              networkid=self.network.id,
-                              listall=True
-                              )
+            self.apiclient,
+            networkid=self.network.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Master and backup routers"
-                    )
+            isinstance(routers, list),
+            True,
+            "list router should return Master and backup routers"
+        )
         self.assertEqual(
-                    len(routers),
-                    2,
-                    "Length of the list router should be 2 (Backup & master)"
-                    )
+            len(routers),
+            2,
+            "Length of the list router should be 2 (Backup & master)"
+        )
 
         if routers[0].redundantstate == 'MASTER':
             master_router = routers[0]
@@ -1221,41 +1121,45 @@ class TestRvRRedundancy(cloudstackTestCase):
             self.fail("Failed to stop backup router: %s" % e)
 
         # wait for VR update state
-        time.sleep(self.services["sleep"])
+        time.sleep(self.testdata["sleep"])
 
-        self.debug("Checking state of the backup router in %s" % self.network.name)
+        self.debug(
+            "Checking state of the backup router in %s" %
+            self.network.name)
         routers = Router.list(
-                              self.apiclient,
-                              id=backup_router.id,
-                              listall=True
-                              )
-        self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Master and backup routers"
-                    )
-        self.assertIn(
-            routers[0].redundantstate,
-            ['UNKNOWN', 'FAULT'],
-            "Redundant state of the backup router should be UNKNOWN/FAULT but is %s" % routers[0].redundantstate
+            self.apiclient,
+            id=backup_router.id,
+            listall=True
         )
+        self.assertEqual(
+            isinstance(routers, list),
+            True,
+            "list router should return Master and backup routers"
+        )
+        self.assertIn(
+            routers[0].redundantstate, [
+                'UNKNOWN', 'FAULT'], "Redundant state of the backup router\
+                        should be UNKNOWN/FAULT but is %s" %
+            routers[0].redundantstate)
 
-        self.debug("Checking state of the master router in %s" % self.network.name)
+        self.debug(
+            "Checking state of the master router in %s" %
+            self.network.name)
         routers = Router.list(
-                              self.apiclient,
-                              id=master_router.id,
-                              listall=True
-                              )
+            self.apiclient,
+            id=master_router.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Master and backup routers"
-                    )
+            isinstance(routers, list),
+            True,
+            "list router should return Master and backup routers"
+        )
         self.assertEqual(
-                    routers[0].redundantstate,
-                    'MASTER',
-                    "Redundant state of the router should be MASTER but is %s" % routers[0].redundantstate
-                    )
+            routers[0].redundantstate,
+            'MASTER',
+            "Redundant state of the router should be MASTER but is %s" %
+            routers[0].redundantstate)
 
         self.debug("Starting the old BACKUP router")
         try:
@@ -1265,29 +1169,31 @@ class TestRvRRedundancy(cloudstackTestCase):
             self.fail("Failed to stop master router: %s" % e)
 
         # wait for VR to start and update state
-        time.sleep(self.services["sleep"])
+        time.sleep(self.testdata["sleep"])
 
-        self.debug("Checking state of the backup router in %s" % self.network.name)
+        self.debug(
+            "Checking state of the backup router in %s" %
+            self.network.name)
         routers = Router.list(
-                              self.apiclient,
-                              id=backup_router.id,
-                              listall=True
-                              )
+            self.apiclient,
+            id=backup_router.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return backup router"
-                    )
+            isinstance(routers, list),
+            True,
+            "list router should return backup router"
+        )
         self.assertEqual(
-                    routers[0].redundantstate,
-                    'BACKUP',
-                    "Redundant state of the router should be BACKUP but is %s" % routers[0].redundantstate
-                    )
+            routers[0].redundantstate,
+            'BACKUP',
+            "Redundant state of the router should be BACKUP but is %s" %
+            routers[0].redundantstate)
         self.assertEqual(
-                         backup_router.publicip,
-                         routers[0].publicip,
-                         "Public IP should be same after reboot"
-                         )
+            backup_router.publicip,
+            routers[0].publicip,
+            "Public IP should be same after reboot"
+        )
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -1312,20 +1218,20 @@ class TestRvRRedundancy(cloudstackTestCase):
 
         self.debug("Listing routers for network: %s" % self.network.name)
         routers = Router.list(
-                              self.apiclient,
-                              networkid=self.network.id,
-                              listall=True
-                              )
+            self.apiclient,
+            networkid=self.network.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Master and backup routers"
-                    )
+            isinstance(routers, list),
+            True,
+            "list router should return Master and backup routers"
+        )
         self.assertEqual(
-                    len(routers),
-                    2,
-                    "Length of the list router should be 2 (Backup & master)"
-                    )
+            len(routers),
+            2,
+            "Length of the list router should be 2 (Backup & master)"
+        )
 
         if routers[0].redundantstate == 'MASTER':
             master_router = routers[0]
@@ -1341,46 +1247,50 @@ class TestRvRRedundancy(cloudstackTestCase):
             self.fail("Failed to reboot MASTER router: %s" % e)
 
         # wait for VR to update state
-        time.sleep(self.services["sleep"])
+        time.sleep(self.testdata["sleep"])
 
-        self.debug("Checking state of the master router in %s" % self.network.name)
+        self.debug(
+            "Checking state of the master router in %s" %
+            self.network.name)
         routers = Router.list(
-                              self.apiclient,
-                              id=master_router.id,
-                              listall=True
-                              )
+            self.apiclient,
+            id=master_router.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Master and backup routers"
-                    )
+            isinstance(routers, list),
+            True,
+            "list router should return Master and backup routers"
+        )
         self.assertEqual(
-                    routers[0].redundantstate,
-                    'BACKUP',
-                    "Redundant state of the router should be BACKUP but is %s" % routers[0].redundantstate
-                    )
+            routers[0].redundantstate,
+            'BACKUP',
+            "Redundant state of the router should be BACKUP but is %s" %
+            routers[0].redundantstate)
 
-        self.debug("Checking state of the backup router in %s" % self.network.name)
+        self.debug(
+            "Checking state of the backup router in %s" %
+            self.network.name)
         routers = Router.list(
-                              self.apiclient,
-                              id=backup_router.id,
-                              listall=True
-                              )
+            self.apiclient,
+            id=backup_router.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Master and backup routers"
-                    )
+            isinstance(routers, list),
+            True,
+            "list router should return Master and backup routers"
+        )
         self.assertEqual(
-                    routers[0].redundantstate,
-                    'MASTER',
-                    "Redundant state of the router should be MASTER but is %s" % routers[0].redundantstate
-                    )
+            routers[0].redundantstate,
+            'MASTER',
+            "Redundant state of the router should be MASTER but is %s" %
+            routers[0].redundantstate)
         self.assertEqual(
-                         master_router.publicip,
-                         routers[0].publicip,
-                         "Public IP should be same after reboot"
-                         )
+            master_router.publicip,
+            routers[0].publicip,
+            "Public IP should be same after reboot"
+        )
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -1405,20 +1315,20 @@ class TestRvRRedundancy(cloudstackTestCase):
 
         self.debug("Listing routers for network: %s" % self.network.name)
         routers = Router.list(
-                              self.apiclient,
-                              networkid=self.network.id,
-                              listall=True
-                              )
+            self.apiclient,
+            networkid=self.network.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Master and backup routers"
-                    )
+            isinstance(routers, list),
+            True,
+            "list router should return Master and backup routers"
+        )
         self.assertEqual(
-                    len(routers),
-                    2,
-                    "Length of the list router should be 2 (Backup & master)"
-                    )
+            len(routers),
+            2,
+            "Length of the list router should be 2 (Backup & master)"
+        )
 
         if routers[0].redundantstate == 'MASTER':
             master_router = routers[0]
@@ -1434,46 +1344,50 @@ class TestRvRRedundancy(cloudstackTestCase):
             self.fail("Failed to reboot BACKUP router: %s" % e)
 
         # wait for VR to update state
-        time.sleep(self.services["sleep"])
+        time.sleep(self.testdata["sleep"])
 
-        self.debug("Checking state of the backup router in %s" % self.network.name)
+        self.debug(
+            "Checking state of the backup router in %s" %
+            self.network.name)
         routers = Router.list(
-                              self.apiclient,
-                              id=backup_router.id,
-                              listall=True
-                              )
+            self.apiclient,
+            id=backup_router.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Master and backup routers"
-                    )
+            isinstance(routers, list),
+            True,
+            "list router should return Master and backup routers"
+        )
         self.assertEqual(
-                    routers[0].redundantstate,
-                    'BACKUP',
-                    "Redundant state of the router should be BACKUP but is %s" % routers[0].redundantstate
-                    )
+            routers[0].redundantstate,
+            'BACKUP',
+            "Redundant state of the router should be BACKUP but is %s" %
+            routers[0].redundantstate)
 
-        self.debug("Checking state of the master router in %s" % self.network.name)
+        self.debug(
+            "Checking state of the master router in %s" %
+            self.network.name)
         routers = Router.list(
-                              self.apiclient,
-                              id=master_router.id,
-                              listall=True
-                              )
+            self.apiclient,
+            id=master_router.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Master and backup routers"
-                    )
+            isinstance(routers, list),
+            True,
+            "list router should return Master and backup routers"
+        )
         self.assertEqual(
-                    routers[0].redundantstate,
-                    'MASTER',
-                    "Redundant state of the router should be MASTER but is %s" % routers[0].redundantstate
-                    )
+            routers[0].redundantstate,
+            'MASTER',
+            "Redundant state of the router should be MASTER but is %s" %
+            routers[0].redundantstate)
         self.assertEqual(
-                         master_router.publicip,
-                         routers[0].publicip,
-                         "Public IP should be same after reboot"
-                         )
+            master_router.publicip,
+            routers[0].publicip,
+            "Public IP should be same after reboot"
+        )
         return
 
     @attr(tags=["advanced", "advancedns", "ssh"])
@@ -1498,26 +1412,24 @@ class TestRvRRedundancy(cloudstackTestCase):
 
         self.debug("Listing routers for network: %s" % self.network.name)
         routers = Router.list(
-                              self.apiclient,
-                              networkid=self.network.id,
-                              listall=True
-                              )
+            self.apiclient,
+            networkid=self.network.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Master and backup routers"
-                    )
+            isinstance(routers, list),
+            True,
+            "list router should return Master and backup routers"
+        )
         self.assertEqual(
-                    len(routers),
-                    2,
-                    "Length of the list router should be 2 (Backup & master)"
-                    )
+            len(routers),
+            2,
+            "Length of the list router should be 2 (Backup & master)"
+        )
 
         if routers[0].redundantstate == 'MASTER':
-            master_router = routers[0]
             backup_router = routers[1]
         else:
-            master_router = routers[1]
             backup_router = routers[0]
 
         self.debug("Stopping the backup router")
@@ -1527,70 +1439,75 @@ class TestRvRRedundancy(cloudstackTestCase):
             self.fail("Failed to stop BACKUP router: %s" % e)
 
         # wait for VR to update state
-        time.sleep(self.services["sleep"])
+        time.sleep(self.testdata["sleep"])
 
-        self.debug("Checking state of the backup router in %s" % self.network.name)
+        self.debug(
+            "Checking state of the backup router in %s" %
+            self.network.name)
         routers = Router.list(
-                              self.apiclient,
-                              id=backup_router.id,
-                              listall=True
-                              )
+            self.apiclient,
+            id=backup_router.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Master and backup routers"
-                    )
+            isinstance(routers, list),
+            True,
+            "list router should return Master and backup routers"
+        )
         self.assertIn(
             routers[0].redundantstate,
             'UNKNOWN',
-            "Redundant state of the backup router should be UNKNOWN but is %s" % routers[0].redundantstate
-        )
+            "Redundant state of the backup router\
+                    should be UNKNOWN but is %s" %
+            routers[0].redundantstate)
 
         # Spawn an instance in that network
         vm_2 = VirtualMachine.create(
-                                  self.apiclient,
-                                  self.services["virtual_machine"],
-                                  accountid=self.account.name,
-                                  domainid=self.account.domainid,
-                                  serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network.id)]
-                                  )
+            self.apiclient,
+            self.testdata["small"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            networkids=[str(self.network.id)]
+        )
         self.debug("Deployed VM in network: %s" % self.network.id)
 
         vms = VirtualMachine.list(
-                                  self.apiclient,
-                                  id=vm_2.id,
-                                  listall=True
-                                  )
+            self.apiclient,
+            id=vm_2.id,
+            listall=True
+        )
         self.assertEqual(
-                         isinstance(vms, list),
-                         True,
-                         "List Vms should return a valid list"
-                         )
+            isinstance(vms, list),
+            True,
+            "List Vms should return a valid list"
+        )
         vm = vms[0]
         self.assertEqual(
-                         vm.state,
-                         "Running",
-                         "Vm should be in running state after deployment"
-                         )
+            vm.state,
+            "Running",
+            "Vm should be in running state after deployment"
+        )
 
         # wait for VR to update state
-        time.sleep(self.services["sleep"])
+        time.sleep(self.testdata["sleep"])
 
-        self.debug("Checking state of the backup router in %s" % self.network.name)
+        self.debug(
+            "Checking state of the backup router in %s" %
+            self.network.name)
         routers = Router.list(
-                              self.apiclient,
-                              id=backup_router.id,
-                              listall=True
-                              )
+            self.apiclient,
+            id=backup_router.id,
+            listall=True
+        )
         self.assertEqual(
-                    isinstance(routers, list),
-                    True,
-                    "list router should return Master and backup routers"
-                    )
+            isinstance(routers, list),
+            True,
+            "list router should return Master and backup routers"
+        )
         self.assertEqual(
-                    routers[0].redundantstate,
-                    'BACKUP',
-                    "Redundant state of the router should be BACKUP but is %s" % routers[0].redundantstate
-                    )
+            routers[0].redundantstate,
+            'BACKUP',
+            "Redundant state of the router should be BACKUP but is %s" %
+            routers[0].redundantstate)
         return

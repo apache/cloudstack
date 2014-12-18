@@ -37,6 +37,12 @@ case "$1" in
         if [ -f "/etc/cloud/usage/log4j-cloud.xml" ]; then
             cp -a /etc/cloud/usage/log4j-cloud.xml /etc/cloudstack/usage/log4j-cloud.xml
         fi
+
+        # Replacing key with management server key
+        if [ -f "/etc/cloudstack/management/key" ]; then
+            rm -rf /etc/cloudstack/usage/key
+            ln -s /etc/cloudstack/management/key /etc/cloudstack/usage/key
+        fi
         ;;
 esac
 

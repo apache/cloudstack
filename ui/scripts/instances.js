@@ -362,6 +362,14 @@
                     });
                 }
 
+                if ("sshkeypairs" in args.context) {
+                    $.extend(data, {
+                        domainid: args.context.sshkeypairs[0].domainid,
+                        account: args.context.sshkeypairs[0].account,
+                        keypair: args.context.sshkeypairs[0].name
+                    });
+                }
+
                 $.ajax({
                     url: createURL('listVirtualMachines'),
                     data: data,
@@ -1624,7 +1632,99 @@
                             poll: pollAsyncJobResult
                         }
                     },
-                   
+                  
+                    resetSSHKeyForVirtualMachine: {
+                        label: 'Reset SSH Key Pair',
+                        createForm: {
+                            title: 'Reset SSH Key Pair on VM',
+                            desc: 'Please specify a ssh key pair that you would like to add to this VM. Please note the root password will be changed by this operation if password is enabled.',
+                            fields: {
+                                sshkeypair: {
+                                    label: 'New SSH Key Pair',
+                                    validation: {
+                                        required: true
+                                    },
+                                    select: function(args) {
+                                        var data = {
+                                            domainid: args.context.instances[0].domainid,
+                                            account: args.context.instances[0].account,
+                                            listAll: true
+                                        };
+
+                                        $.ajax({
+                                            url: createURL("listSSHKeyPairs"),
+                                            data: data,
+                                            async: false,
+                                            success: function(json) {
+                                                var items = [];
+                                                var sshkeypairs = json.listsshkeypairsresponse.sshkeypair;
+                                                if (sshkeypairs == null) {
+                                                } else {
+                                                    for (var i = 0; i < sshkeypairs.length; i++) {
+                                                        var sshkeypair = sshkeypairs[i];
+                                                        if (sshkeypair.name != args.context.instances[0].keypair) {
+                                                            items.push({
+                                                                id: sshkeypair.name,
+                                                                description: sshkeypair.name
+                                                            });
+                                                        }
+                                                    }
+                                                }
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        },
+
+                        action: function(args) {
+                            var data = {
+                                domainid: args.context.instances[0].domainid,
+                                account: args.context.instances[0].account,
+                                id: args.context.instances[0].id,
+                                keypair: args.data.sshkeypair
+                            };
+
+                            $.ajax({
+                                url: createURL("resetSSHKeyForVirtualMachine"),
+                                data: data,
+                                async: true,
+                                success: function(json) {
+                                    var jid = json.resetSSHKeyforvirtualmachineresponse.jobid;
+                                    args.response.success({
+                                        _custom: {
+                                            jobId: jid,
+                                            getUpdatedItem: function(json) {
+                                                return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                            },
+                                            getActionFilter: function() {
+                                                return vmActionfilter;
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        },
+                        messages: {
+                            notification: function(args) {
+                                return 'Reset SSH Key Pair on VM';
+                            },
+                            complete: function(args) {
+                                if (args.password != null) {
+                                    return 'Password of the VM has been reset to ' + args.password;
+                                }
+
+                                return false;
+                            }
+                        },
+                        notification: {
+                            poll: pollAsyncJobResult
+                        }
+                    },
+ 
                     assignVmToAnotherAccount: {
                         label: 'label.assign.instance.another',
                         createForm: {
@@ -1899,6 +1999,9 @@
                             publicip: {
                                 label: 'label.public.ip'
                             },
+                            keypair: {
+                                label: 'SSH Key Pair'
+                            },
                             domain: {
                                 label: 'label.domain'
                             },
@@ -2002,13 +2105,30 @@
                                                     url: createURL('listNetworks'),
                                                     data: data1,
                                                     success: function(json) {
+                                                        var networkObjs = json.listnetworksresponse.network;
+                                                        var nicObjs = args.context.instances[0].nic;
+                                                        var items = [];
+
+                                                        for (var i = 0; i < networkObjs.length; i++) {
+                                                            var networkObj = networkObjs[i];
+                                                            var isNetworkExists = false;
+
+                                                            for (var j = 0; j < nicObjs.length; j++) {
+                                                                if (nicObjs[j].networkid == networkObj.id) {
+                                                                    isNetworkExists = true;
+                                                                    break;
+                                                               }
+                                                            }
+
+                                                            if (!isNetworkExists) {
+                                                                items.push({
+                                                                    id: networkObj.id,
+                                                                    description: networkObj.name
+                                                                });
+                                                            }
+                                                        }
                                                         args.response.success({
-                                                            data: $.map(json.listnetworksresponse.network, function(network) {
-                                                                return {
-                                                                    id: network.id,
-                                                                    description: network.name
-                                                                };
-                                                            })
+                                                            data: items
                                                         });
                                                     }
                                                 });
@@ -2026,7 +2146,10 @@
                                         success: function(json) {
                                             args.response.success({
                                                 _custom: {
-                                                    jobId: json.addnictovirtualmachineresponse.jobid
+                                                    jobId: json.addnictovirtualmachineresponse.jobid,
+                                                    getUpdatedItem: function(json) {
+                                                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                                    }
                                                 }
                                             });
                                         }
@@ -2092,7 +2215,10 @@
                                         success: function(json) {
                                             args.response.success({
                                                 _custom: {
-                                                    jobId: json.removenicfromvirtualmachineresponse.jobid
+                                                    jobId: json.removenicfromvirtualmachineresponse.jobid,
+                                                    getUpdatedItem: function(json) {
+                                                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                                    }
                                                 }
                                             })
                                         }
@@ -2120,6 +2246,9 @@
                             ipaddress: {
                                 label: 'label.ip.address'
                             },
+                            secondaryips: {
+                                label: 'label.secondary.ips'
+                            },
                             gateway: {
                                 label: 'label.gateway'
                             },
@@ -2146,8 +2275,8 @@
                         }],
                         viewAll: {
                             path: 'network.secondaryNicIps',
-                            attachTo: 'ipaddress',
-                            label: 'label.view.secondary.ips',
+                            attachTo: 'secondaryips',
+                            label: 'label.edit.secondary.ips',
                             title: function(args) {
                                 var title = _l('label.menu.ipaddresses') + ' - ' + args.context.nics[0].name;
 
@@ -2170,6 +2299,19 @@
                                             }
                                         },
                                         data: $.map(json.listvirtualmachinesresponse.virtualmachine[0].nic, function(nic, index) {
+                                            if (nic.secondaryip != null) {
+                                                var secondaryips = "";
+                                                for (var i = 0; i < nic.secondaryip.length; i++) {
+                                                    if (i == 0)
+                                                        secondaryips = nic.secondaryip[i].ipaddress;
+                                                    else
+                                                        secondaryips = secondaryips + " , " + nic.secondaryip[i].ipaddress;
+                                                }
+                                                $.extend(nic, {
+                                                    secondaryips: secondaryips
+                                                })
+                                            }
+                                                
                                             var name = 'NIC ' + (index + 1);
                                             if (nic.isdefault) {
                                                 name += ' (' + _l('label.default') + ')';
@@ -2348,7 +2490,7 @@
             if (isAdmin() || isDomainAdmin()) {
                 allowedActions.push("assignVmToAnotherAccount");
             }
-            
+            allowedActions.push("resetSSHKeyForVirtualMachine");
         } else if (jsonObj.state == 'Starting') {
             //  allowedActions.push("stop");
         } else if (jsonObj.state == 'Error') {

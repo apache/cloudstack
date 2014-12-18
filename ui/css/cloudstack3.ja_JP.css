@@ -74,3 +74,10 @@ table thead th.quick-view {
   font-size: 10px;
 }
 
+.quick-view-tooltip .detail-view .detail-group.actions .action.text .label {
+  font-size: 8px;
+}
+
+.detail-view .multi-edit table tr th, .detail-view .multi-edit table tr td {
+  font-size: 8px;
+}

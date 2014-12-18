@@ -86,6 +86,10 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @Param(description = "the state of the snapshot. BackedUp means that snapshot is ready to be used; Creating - the snapshot is being allocated on the primary storage; BackingUp - the snapshot is being backed up on secondary storage")
     private Snapshot.State state;
 
+    @SerializedName(ApiConstants.PHYSICAL_SIZE)
+    @Param(description = "physical size of backedup snapshot on image store")
+    private long physicalSize;
+
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "id of the availability zone")
     private String zoneId;
@@ -164,6 +168,10 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
 
     public void setState(Snapshot.State state) {
         this.state = state;
+    }
+
+    public void setPhysicaSize(long physicalSize) {
+        this.physicalSize = physicalSize;
     }
 
     @Override

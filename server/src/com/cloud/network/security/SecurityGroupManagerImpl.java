@@ -870,7 +870,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
 
         if (_securityGroupDao.isNameInUse(owner.getId(), owner.getDomainId(), cmd.getSecurityGroupName())) {
-            throw new InvalidParameterValueException("Unable to create security group, a group with name " + name + " already exisits.");
+            throw new InvalidParameterValueException("Unable to create security group, a group with name " + name + " already exists.");
         }
 
         return createSecurityGroup(cmd.getSecurityGroupName(), cmd.getDescription(), owner.getDomainId(), owner.getAccountId(), owner.getAccountName());

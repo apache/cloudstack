@@ -18,6 +18,7 @@ package com.cloud.hypervisor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -109,6 +110,11 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru 
     @Override
     public boolean trackVmHostChange() {
         return true;
+    }
+
+    @Override
+    public Map<String, String> getClusterSettings(long vmId) {
+        return null;
     }
 
     @Override

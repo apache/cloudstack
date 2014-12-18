@@ -99,7 +99,7 @@ public class RegisterSSHKeyPairCmd extends BaseCmd {
     @Override
     public void execute() {
         SSHKeyPair result = _mgr.registerSSHKeyPair(this);
-        SSHKeyPairResponse response = new SSHKeyPairResponse(result.getName(), result.getFingerprint());
+        SSHKeyPairResponse response = _responseGenerator.createSSHKeyPairResponse(result, false);
         response.setResponseName(getCommandName());
         response.setObjectName("keypair");
         setResponseObject(response);

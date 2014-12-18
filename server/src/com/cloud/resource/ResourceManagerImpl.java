@@ -32,6 +32,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.capacity.CapacityState;
 import com.cloud.vm.VirtualMachine;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -93,7 +94,9 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.PlannerHostReservationVO;
 import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.event.ActionEvent;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -1189,6 +1192,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new CloudRuntimeException(err + e.getMessage());
         }
 
+        ActionEventUtils.onStartedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(), EventTypes.EVENT_MAINTENANCE_PREPARE, "starting maintenance for host " + hostId, true, 0);
         _agentMgr.pullAgentToMaintenance(hostId);
 
         /* TODO: move below to listener */
@@ -1271,6 +1275,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 if (vos.isEmpty() && vosMigrating.isEmpty()) {
                     resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _nodeId);
                     hostInMaintenance = true;
+                    ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_MAINTENANCE_PREPARE, "completed maintenance for host " + hostId, 0);
                 }
             }
         } catch (NoTransitionException e) {

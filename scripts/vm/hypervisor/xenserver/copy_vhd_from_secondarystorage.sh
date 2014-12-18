@@ -104,7 +104,7 @@ copyvhd()
     exit 0
   fi
   if [ "${parent##*vhd has}" = " no parent" ]; then
-    dd if=$srcvhd of=$desvhd bs=2M     
+    dd if=$srcvhd of=$desvhd bs=2M oflag=direct iflag=direct
     if [ $? -ne 0 ]; then
       echo "31#failed to dd $srcvhd to $desvhd"
       cleanup

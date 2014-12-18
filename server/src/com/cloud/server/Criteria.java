@@ -86,6 +86,7 @@ public class Criteria {
     public static final String AFFINITY_GROUP_ID = "affinitygroupid";
     public static final String SERVICE_OFFERING_ID = "serviceofferingid";
     public static final String DISPLAY = "display";
+    public static final String SSH_KEYPAIR = "keypair";
 
     public Criteria(String orderBy, Boolean ascending, Long offset, Long limit) {
         this.offset = offset;
