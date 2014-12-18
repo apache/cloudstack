@@ -303,7 +303,9 @@ class TestCreateSnapshot(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestCreateSnapshot, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['hyperv']:
+            raise unittest.SkipTest("Snapshots feature is not supported on Hyper-V")
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -345,13 +347,17 @@ class TestCreateSnapshot(cloudstackTestCase):
                             self.services["account"],
                             domainid=self.domain.id
                             )
+
+        self.apiclient = self.testClient.getUserApiClient(
+                                UserName=self.account.name,
+                                DomainName=self.account.domain)
         self.cleanup = [self.account, ]
         return
 
     def tearDown(self):
         try:
             # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.api_client, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -615,13 +621,8 @@ class TestCreateSnapshot(cloudstackTestCase):
             self.debug("Create a template from snapshot: %s" % snapshot.name)
             jobs.append(self.create_Template_from_Snapshot(snapshot))
 
-
-        userapiclient = self.testClient.getUserApiClient(
-                                UserName=self.account.name,
-                                DomainName=self.account.domain)
-
         # Verify IO usage by submitting the concurrent jobs
-        self.testClient.submitCmdsAndWait(jobs, apiclient=userapiclient)
+        self.testClient.submitCmdsAndWait(jobs)
 
         self.debug("Verifying if templates are created properly or not?")
         templates = Template.list(

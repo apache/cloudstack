@@ -10098,9 +10098,9 @@
                                     label: 'label.upgrade.required',
                                     converter: function (args) {
                                         if (args > 0) {
-                                            return 'label.yes';
+                                            return _l('label.yes');
                                         } else {
-                                            return 'label.no';
+                                            return _l('label.no');
                                         }
                                     }
                                 }
@@ -10189,9 +10189,9 @@
                                                 label: 'label.upgrade.required',
                                                 converter: function (args) {
                                                     if (args > 0) {
-                                                        return 'label.yes';
+                                                        return _l('label.yes');
                                                     } else {
-                                                        return 'label.no';
+                                                        return _l('label.no');
                                                     }
                                                 }
                                             },                                            
@@ -10229,9 +10229,9 @@
                                     label: 'label.upgrade.required',
                                     converter: function (args) {
                                         if (args > 0) {
-                                            return 'label.yes';
+                                            return _l('label.yes');
                                         } else {
-                                            return 'label.no';
+                                            return _l('label.no');
                                         }
                                     }
                                 }
@@ -10320,9 +10320,9 @@
                                                 label: 'label.upgrade.required',
                                                 converter: function (args) {
                                                     if (args > 0) {
-                                                        return 'label.yes';
+                                                        return _l('label.yes');
                                                     } else {
-                                                        return 'label.no';
+                                                        return _l('label.no');
                                                     }
                                                 }
                                             },
@@ -10363,9 +10363,9 @@
                                     label: 'label.upgrade.required',
                                     converter: function (args) {
                                         if (args > 0) {
-                                            return 'label.yes';
+                                            return _l('label.yes');
                                         } else {
-                                            return 'label.no';
+                                            return _l('label.no');
                                         }
                                     }
                                 }
@@ -10454,14 +10454,14 @@
                                                 label: 'label.upgrade.required',
                                                 converter: function (args) {
                                                     if (args > 0) {
-                                                        return 'label.yes';
+                                                        return _l('label.yes');
                                                     } else {
-                                                        return 'label.no';
+                                                        return _l('label.no');
                                                     }
                                                 }
                                             },
                                             numberOfRouterRequiresUpgrade: {
-                                            	label: 'label.total.virtual.routers that require upgrade'
+                                            	label: 'label.total.virtual.routers.upgrade'
                                             },
                                             podname: {
                                                 label: 'label.pod'
@@ -10485,7 +10485,7 @@
                     routerGroupByAccount: {
                         id: 'routerGroupByAccount',
                         type: 'select',
-                        title: 'group by account',
+                        title: 'label.group.by.account',
                         listView: {
                             id: 'routerGroupByAccount',
                             label: 'label.virtual.appliances',
@@ -10503,9 +10503,9 @@
                                     label: 'label.upgrade.required',
                                     converter: function (args) {
                                         if (args > 0) {
-                                            return 'label.yes';
+                                            return _l('label.yes');
                                         } else {
-                                            return 'label.no';
+                                            return _l('label.no');
                                         }
                                     }
                                 }
@@ -10659,14 +10659,14 @@
                                                 label: 'label.upgrade.required',
                                                 converter: function (args) {
                                                     if (args > 0) {
-                                                        return 'label.yes';
+                                                        return _l('label.yes');
                                                     } else {
-                                                        return 'label.no';
+                                                        return _l('label.no');
                                                     }
                                                 }
                                             },                                            
                                             numberOfRouterRequiresUpgrade: {
-                                            	label: 'label.total.virtual.routers that require upgrade'
+                                            	label: 'label.total.virtual.routers.upgrade'
                                             }
                                         }],
                                         dataProvider: function (args) {
@@ -16210,8 +16210,9 @@
                                                     if (json.listdedicatedhostsresponse.dedicatedhost != undefined) {
                                                         var hostItem = json.listdedicatedhostsresponse.dedicatedhost[0];
                                                         if (hostItem.domainid != null) {
-                                                            $.extend(item, hostItem, {
-                                                                isdedicated: _l('label.yes')
+                                                            $.extend(item, {
+                                                                isdedicated: _l('label.yes'),
+                                                                domainid: hostItem.domainid
                                                             });
                                                         }
                                                     } else
@@ -20665,8 +20666,8 @@
         if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
                         
-            //when router is Running, only XenServer, VMware support scaleUp(change service offering)
-            if (jsonObj.hypervisor == 'XenServer' || jsonObj.hypervisor == "VMware") {
+            //when router is Running, only VMware support scaleUp(change service offering)
+            if (jsonObj.hypervisor == "VMware") {
                 allowedActions.push("scaleUp");
             }                         
             
@@ -20711,8 +20712,8 @@
             allowedActions.push("restart");
             allowedActions.push("remove");
             
-            //when systemvm is Running, only XenServer, VMware support scaleUp(change service offering)
-            if (jsonObj.hypervisor == 'XenServer' ||jsonObj.hypervisor == "VMware") {
+            //when systemvm is Running, only VMware support scaleUp(change service offering)
+            if (jsonObj.hypervisor == "VMware") {
                 allowedActions.push("scaleUp");
             }
             

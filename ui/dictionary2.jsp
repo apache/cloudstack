@@ -24,7 +24,7 @@ under the License.
 <fmt:setBundle basename="resources/messages"/>
 <% long now = System.currentTimeMillis(); %>
 <script type="text/javascript">
-$.extend(dictionary, {
+ $.extend(dictionary, {
 'label.add.ldap.account': '<fmt:message key="label.add.ldap.account" />',
 'label.rules': '<fmt:message key="label.rules" />',
 'label.running.vms': '<fmt:message key="label.running.vms" />',
@@ -671,7 +671,6 @@ $.extend(dictionary, {
 'state.Expunging': '<fmt:message key="state.Expunging" />',
 'state.Migrating': '<fmt:message key="state.Migrating" />',
 'state.Pending': '<fmt:message key="state.Pending" />',
-'state.ready': '<fmt:message key="state.ready" />',
 'state.Ready': '<fmt:message key="state.Ready" />',
 'state.Running': '<fmt:message key="state.Running" />',
 'state.Starting': '<fmt:message key="state.Starting" />',
@@ -822,7 +821,8 @@ $.extend(dictionary, {
 'label.autoscale': '<fmt:message key="label.autoscale" />',
 'label.health.check': '<fmt:message key="label.health.check" />',
 'label.public.load.balancer.provider': '<fmt:message key="label.public.load.balancer.provider" />',
-'label.add.isolated.network': '<fmt:message key="label.add.isolated.network" />',
+ 'label.add.isolated.network': '<fmt:message key="label.add.isolated.network" />',
+ 'label.add.isolated.guest.network': '<fmt:message key="label.add.isolated.guest.network" />',
 'label.secondary.isolated.vlan.id': '<fmt:message key="label.secondary.isolated.vlan.id" />',
 'label.ipv4.netmask': '<fmt:message key="label.ipv4.netmask" />',
 'label.custom': '<fmt:message key="label.custom" />',
@@ -1035,5 +1035,21 @@ $.extend(dictionary, {
 'message.confirm.delete.baremetal.rack.configuration': '<fmt:message key="message.confirm.delete.baremetal.rack.configuration" />',
 'message.added.new.nuage.vsp.controller': '<fmt:message key="message.added.new.nuage.vsp.controller" />',
 'message.added.vpc.offering': '<fmt:message key="message.added.vpc.offering" />',
+'label.group.by.account': '<fmt:message key="label.group.by.account" />',
+'label.keyboard.language': '<fmt:message key="label.keyboard.language" />',
+'label.standard.us.keyboard': '<fmt:message key="label.standard.us.keyboard" />',
+'label.uk.keyboard': '<fmt:message key="label.uk.keyboard" />',
+'label.japanese.keyboard': '<fmt:message key="label.japanese.keyboard" />',
+'label.simplified.chinese.keyboard': '<fmt:message key="label.simplified.chinese.keyboard" />',
+'label.time.colon': '<fmt:message key="label.time.colon" />',
+'label.min.past.the.hr': '<fmt:message key="label.min.past.the.hr" />',
+'label.timezone.colon': '<fmt:message key="label.timezone.colon" />',
+'label.keep.colon': '<fmt:message key="label.keep.colon" />',
+'label.every': '<fmt:message key="label.every" />',
+'label.day': '<fmt:message key="label.day" />',
+'label.of.month': '<fmt:message key="label.of.month" />',
+'label.minutes.past.hour': '<fmt:message key="label.minutes.past.hour" />',
+'label.snapshots': '<fmt:message key="label.snapshots" />',
+'label.add.private.gateway': '<fmt:message key="label.add.private.gateway" />'
 });
 </script>

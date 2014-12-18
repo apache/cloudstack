@@ -107,6 +107,15 @@ def wait_vm_start(apiclient, vmid, timeout, sleep):
 
     return timeout
 
+def SetPublicIpForVM(apiclient, vm):
+    """ List VM and set the publicip (if available) of VM
+    to ssh_ip attribute"""
+
+    vms = VirtualMachine.list(apiclient, id=vm.id, listall=True)
+    virtual_machine = vms[0]
+    if hasattr(vm, "publicip"):
+        vm.ssh_ip = virtual_machine.publicip
+    return vm
 
 class TestResetSSHKeypair(cloudstackTestCase):
 
@@ -353,6 +362,12 @@ class TestResetSSHKeypair(cloudstackTestCase):
                    % (virtual_machine.name, self.services["timeout"]))
 
         self.debug("SSH key path: %s" % str(keyPairFilePath))
+
+        # In case of EIP setup, public IP changes after VM start operation
+        # Assign the new publicip of the VM to its ssh_ip attribute
+        # so that correct IP address is used for getting the ssh client of VM
+        virtual_machine = SetPublicIpForVM(self.apiclient, virtual_machine)
+
         try:
             virtual_machine.get_ssh_client(keyPairFileLocation=str(keyPairFilePath))
         except Exception as e:
@@ -461,6 +476,11 @@ class TestResetSSHKeypair(cloudstackTestCase):
         if timeout == 0:
             self.fail("The virtual machine %s failed to start even after %s minutes"
                    % (virtual_machine.name, self.services["timeout"]))
+
+        # In case of EIP setup, public IP changes after VM start operation
+        # Assign the new publicip of the VM to its ssh_ip attribute
+        # so that correct IP address is used for getting the ssh client of VM
+        virtual_machine = SetPublicIpForVM(self.apiclient, virtual_machine)
 
         self.debug("SSHing with new keypair")
         try:
@@ -572,6 +592,11 @@ class TestResetSSHKeypair(cloudstackTestCase):
             self.fail("The virtual machine %s failed to start even after %s minutes"
                    % (virtual_machine.name, self.services["timeout"]))
 
+        # In case of EIP setup, public IP changes after VM start operation
+        # Assign the new publicip of the VM to its ssh_ip attribute
+        # so that correct IP address is used for getting the ssh client of VM
+        virtual_machine = SetPublicIpForVM(self.apiclient, virtual_machine)
+
         self.debug("SSHing with new keypair")
         try:
             virtual_machine.get_ssh_client(
@@ -682,6 +707,11 @@ class TestResetSSHKeypair(cloudstackTestCase):
         if timeout == 0:
             self.fail("The virtual machine %s failed to start even after %s minutes"
                    % (virtual_machine.name, self.services["timeout"]))
+
+        # In case of EIP setup, public IP changes after VM start operation
+        # Assign the new publicip of the VM to its ssh_ip attribute
+        # so that correct IP address is used for getting the ssh client of VM
+        virtual_machine = SetPublicIpForVM(self.apiclient, virtual_machine)
 
         self.debug("SSHing with new keypair")
         try:
@@ -1172,6 +1202,11 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
             self.fail("The virtual machine %s failed to start even after %s minutes"
                    % (vms[0].name, self.services["timeout"]))
 
+        # In case of EIP setup, public IP changes after VM start operation
+        # Assign the new publicip of the VM to its ssh_ip attribute
+        # so that correct IP address is used for getting the ssh client of VM
+        virtual_machine = SetPublicIpForVM(self.apiclient, virtual_machine)
+
         self.debug("SSHing with new keypair")
         try:
             virtual_machine.get_ssh_client(
@@ -1310,6 +1345,11 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
         if timeout == 0:
             self.fail("The virtual machine %s failed to start even after %s minutes"
                    % (virtual_machine.name, self.services["timeout"]))
+
+        # In case of EIP setup, public IP changes after VM start operation
+        # Assign the new publicip of the VM to its ssh_ip attribute
+        # so that correct IP address is used for getting the ssh client of VM
+        virtual_machine = SetPublicIpForVM(self.apiclient, virtual_machine)
 
         self.debug("SSHing with new keypair")
         try:
@@ -1450,6 +1490,11 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
         if timeout == 0:
             self.fail("The virtual machine %s failed to start even after %s minutes"
                    % (virtual_machine.name, self.services["timeout"]))
+
+        # In case of EIP setup, public IP changes after VM start operation
+        # Assign the new publicip of the VM to its ssh_ip attribute
+        # so that correct IP address is used for getting the ssh client of VM
+        virtual_machine = SetPublicIpForVM(self.apiclient, virtual_machine)
 
         self.debug("SSHing with new keypair")
         try:

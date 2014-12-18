@@ -86,7 +86,7 @@ public interface SnapshotApiService {
 
     boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd);
 
-    Snapshot allocSnapshot(Long volumeId, Long policyId) throws ResourceAllocationException;
+    Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName) throws ResourceAllocationException;
 
     /**
      * Create a snapshot of a volume

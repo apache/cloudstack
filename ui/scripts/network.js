@@ -99,7 +99,7 @@
 	
 	                // Add primary IP as default
 	                ipSelection.push({
-	                    id: -1,
+	                    id: primaryIp,
 	                    description: primaryIp + ' (Primary)'
 	                });
 	
@@ -921,7 +921,7 @@
 
                                     var oldcidr;
                                     $.ajax({
-                                        url: createURL("listNetworks&id=" + args.context.networks[0].id),
+                                        url: createURL("listNetworks&id=" + args.context.networks[0].id + "&listAll=true"),
                                         dataType: "json",
                                         async: false,
                                         success: function(json) {
@@ -1864,6 +1864,7 @@
                                     ipaddress: {
                                         label: 'label.ip.address',
                                         validation: {
+                                            required: false,
                                             ipv4: true
                                         }
                                     }
@@ -2363,7 +2364,7 @@
                                                     	}                                                    	
                                                     	                                                    	
                                                         return {
-                                                            vpn: json.queryasyncjobresultresponse.jobresult.remoteaccessvpn,
+                                                            remoteaccessvpn: json.queryasyncjobresultresponse.jobresult.remoteaccessvpn,
                                                             vpnenabled: vpnenabledAndRunning
                                                         };
                                                     },
@@ -2388,8 +2389,8 @@
                                     },
                                     complete: function(args) {
                                     	var msg;
-                                    	if (args.vpn.state == "Running") {
-                                    	    msg = _l('message.enabled.vpn') + ' ' + args.vpn.publicip + '.' + '<br/>' + _l('message.enabled.vpn.ip.sec') + '<br/>' + args.vpn.presharedkey;                                	
+                                    	if (args.remoteaccessvpn.state == "Running") {
+                                    	    msg = _l('message.enabled.vpn') + ' ' + args.remoteaccessvpn.publicip + '.' + '<br/>' + _l('message.enabled.vpn.ip.sec') + '<br/>' + args.remoteaccessvpn.presharedkey;                                	
                                     	} else {
                                     		msg = "Remote Access VPN configuration has been generated, but it failed to apply. Please check connectivity of the network element, then re-try.";
                                     	}   

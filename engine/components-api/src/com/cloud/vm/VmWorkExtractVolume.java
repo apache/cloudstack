@@ -14,28 +14,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package com.cloud.vm;
 
-import com.cloud.storage.Snapshot;
+public class VmWorkExtractVolume extends VmWork {
+    private static final long serialVersionUID = -565778516928408602L;
 
-public interface SnapshotInfo extends DataObject, Snapshot {
-    SnapshotInfo getParent();
+    private long volumeId;
+    private long zoneId;
 
-    String getPath();
+    public VmWorkExtractVolume(long userId, long accountId, long vmId, String handlerName, long volumeId, long zoneId) {
+        super(userId, accountId, vmId, handlerName);
+        this.volumeId = volumeId;
+        this.zoneId = zoneId;
+    }
 
-    SnapshotInfo getChild();
+    public long getVolumeId() {
+        return volumeId;
+    }
 
-    VolumeInfo getBaseVolume();
-
-    void addPayload(Object data);
-
-    Object getPayload();
-
-    Long getDataCenterId();
-
-    ObjectInDataStoreStateMachine.State getStatus();
-
-    boolean isRevertable();
-
-    long getPhysicalSize();
+    public long getZoneId() {
+        return zoneId;
+    }
 }

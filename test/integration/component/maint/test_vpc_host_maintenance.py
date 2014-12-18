@@ -221,6 +221,7 @@ class TestVMLifeCycleHostmaintenance(cloudstackTestCase):
             cls.hosts = Host.list(cls.api_client, clusterid=cluster.id)
             if len(cls.hosts) >= 2:
                 clusterWithSufficientHosts = cluster
+                break
 
         if clusterWithSufficientHosts is None:
             raise unittest.SkipTest("No Cluster with 2 hosts found")

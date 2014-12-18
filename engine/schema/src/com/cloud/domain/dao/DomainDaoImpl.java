@@ -154,8 +154,8 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
 
         DomainVO domain = findById(id);
         if (domain == null) {
-            s_logger.error("Unable to remove domain as domain " + id + " no longer exists");
-            return false;
+            s_logger.info("Unable to remove domain as domain " + id + " no longer exists");
+            return true;
         }
 
         if (domain.getParent() == null) {

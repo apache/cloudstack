@@ -342,7 +342,7 @@
                                         var $templateHypervisor = $step.find('input[type=hidden][wizard-field=hypervisor]');
 
                                         // Get hypervisor from template
-                                        if (type == 'featuredtemplates' || type == 'communitytemplates' || type == 'mytemplates') {
+                                        if (type == 'featuredtemplates' || type == 'communitytemplates' || type == 'mytemplates' || type == 'sharedtemplates') {
                                             $selects.each(function() {
                                                 var $select = $(this);
                                                 var template = $.grep(args.data.templates[type], function(tmpl, v) {
@@ -359,7 +359,7 @@
                                             $templateHypervisor.attr('disabled', 'disabled');
                                         }
 
-                                        if (type == 'featuredisos' || type == 'communityisos' || type == 'myisos') {
+                                        if (type == 'featuredisos' || type == 'communityisos' || type == 'myisos' || type == 'sharedisos') {
                                             // Create hypervisor select
                                             $selects.find('input').bind('click', function() {
                                                 var $select = $(this).closest('.select');
@@ -368,6 +368,7 @@
                                                 $("#instance-wizard-featured-isos .select-container div.selected").removeClass('selected').find('div.hypervisor').remove();
                                                 $("#instance-wizard-community-isos .select-container div.selected").removeClass('selected').find('div.hypervisor').remove();
                                                 $("#instance-wizard-my-isos .select-container div.selected").removeClass('selected').find('div.hypervisor').remove();
+                                                $("#instance-wizard-shared-isos .select-container div.selected").removeClass('selected').find('div.hypervisor').remove();
 
                                                 $select.addClass('selected').append(
                                                     $('<div>').addClass('hypervisor')
@@ -396,13 +397,17 @@
                                     // Featured ISOs
                                     $(
                                         [
+                                            // Templates
                                             ['featuredtemplates', 'instance-wizard-featured-templates'],
                                             ['communitytemplates', 'instance-wizard-community-templates'],
                                             ['mytemplates', 'instance-wizard-my-templates'],
+                                            ['sharedtemplates', 'instance-wizard-shared-templates'],
 
+                                            // ISOs
                                             ['featuredisos', 'instance-wizard-featured-isos'],
                                             ['communityisos', 'instance-wizard-community-isos'],
-                                            ['myisos', 'instance-wizard-my-isos']
+                                            ['myisos', 'instance-wizard-my-isos'],
+                                            ['sharedisos', 'instance-wizard-shared-isos'],
                                             //['isos', 'instance-wizard-all-isos']
                                         ]
                                     ).each(function() {
@@ -708,6 +713,51 @@
                                     } else {
                                         $step.find('.select-container').append(
                                             $('<p>').addClass('no-affinity-groups').html(_l('message.no.affinity.groups'))
+                                        );
+                                    }
+                                }
+                            }
+                        };
+                    },
+
+                    'sshkeyPairs': function($step, formData) {
+                        var originalValues = function(formData) {
+                            if (formData.sshkeypair) {
+                                $step.find('input[type=radio]').filter(function() {
+                                    return $(this).val() == formData.sshkeypair;
+                                }).click();
+                            } else {
+                                $step.find('input[type=radio]:first').click();
+                            }
+                        };
+                        return {
+                            response: {
+                                success: function(args) {
+                                    $step.find('.main-desc, p.no-sshkey-pairs').remove();
+
+                                    if (args.data.sshkeyPairs && args.data.sshkeyPairs.length) {
+                                        $step.prepend(
+                                            $('<div>').addClass('main-desc').append(
+                                                $('<p>').html(_l('Please select a ssh key pair you want this VM to use:'))
+                                            )
+                                        );
+                                        $step.find('.section.no-thanks').show();
+                                        $step.find('.select-container').append(
+                                            makeSelects(
+                                                'sshkeypair',
+                                                args.data.sshkeyPairs, {
+                                                    name: 'name',
+                                                    id: 'name'
+                                                }, {
+                                                    'wizard-field': 'sshkey-pairs'
+                                                }
+                                            )
+                                        );
+                                        originalValues(formData); // if we can select only one.
+                                    } else {
+                                        $step.find('.section.no-thanks').hide();
+                                        $step.find('.select-container').append(
+                                            $('<p>').addClass('no-sshkey-pairs').html(_l('You do not have any ssh key pairs. Please continue to the next step.'))
                                         );
                                     }
                                 }
@@ -1086,15 +1136,21 @@
 
                     // Next button
                     if ($target.closest('div.button.next').size()) {
-                        // Make sure ISO or template is selected
-                        if ($activeStep.hasClass('select-iso') && !$activeStep.find('.content:visible input:checked').size()) {
-                            cloudStack.dialog.notice({
-                                message: 'message.step.1.continue'
-                            });
-                            return false;
-                        }
-
-                        //step 5 - select network
+                        //step 2 - select template/ISO
+                    	if($activeStep.hasClass('select-iso')) {	                        
+                    		if ($activeStep.find('.content:visible input:checked').size() == 0) {
+	                            cloudStack.dialog.notice({
+	                                message: 'message.step.1.continue'
+	                            });
+	                            return false;
+	                        }	
+	                        $(window).trigger("cloudStack.module.instanceWizard.clickNextButton", {
+	                        	$form: $form,
+                            	currentStep: 2
+                            });   	                       
+                    	}                    	
+                        
+                        //step 6 - select network
                         if ($activeStep.find('.wizard-step-conditional.select-network:visible').size() > 0) {
                             var data = $activeStep.data('my-networks');
 
@@ -1247,7 +1303,7 @@
 
                 return $wizard.dialog({
                     title: _l('label.vm.add'),
-                    width: 800,
+                    width: 896,
                     height: 570,
                     closeOnEscape: false,
                     zIndex: 5000

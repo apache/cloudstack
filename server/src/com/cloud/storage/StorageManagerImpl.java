@@ -583,8 +583,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
             }
 
-            HostScope scope = new HostScope(host.getId(), host.getClusterId(), host.getDataCenterId());
-            lifeCycle.attachHost(store, scope, pInfo);
+            pool = _storagePoolDao.findById(store.getId());
+            if (pool.getStatus() != StoragePoolStatus.Maintenance && pool.getStatus() != StoragePoolStatus.Removed) {
+                HostScope scope = new HostScope(host.getId(), host.getClusterId(), host.getDataCenterId());
+                lifeCycle.attachHost(store, scope, pInfo);
+            }
+
         } catch (Exception e) {
             s_logger.warn("Unable to setup the local storage pool for " + host, e);
             throw new ConnectionException(true, "Unable to setup the local storage pool for " + host, e);
@@ -1576,8 +1580,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         long totalAskingSize = 0;
         for (Volume volume : volumes) {
             if (volume.getTemplateId() != null) {
-                VMTemplateVO tmpl = _templateDao.findById(volume.getTemplateId());
-                if (tmpl.getFormat() != ImageFormat.ISO) {
+                VMTemplateVO tmpl = _templateDao.findByIdIncludingRemoved(volume.getTemplateId());
+                if (tmpl != null && tmpl.getFormat() != ImageFormat.ISO) {
                     allocatedSizeWithtemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, tmpl);
                 }
             }

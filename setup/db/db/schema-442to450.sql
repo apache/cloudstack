@@ -36,6 +36,15 @@ CREATE VIEW `cloud`.`storage_tag_view` AS
 ALTER TABLE `cloud`.`volumes` ADD COLUMN `provisioning_type` VARCHAR(32) NOT NULL DEFAULT 'thin' COMMENT 'pre allocation setting of the volume';
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `provisioning_type` VARCHAR(32) NOT NULL DEFAULT 'thin' COMMENT 'pre allocation setting of the volume';
 
+-- Have primary keys of following table AUTO_INCREMENT
+ALTER TABLE `cloud`.`region` MODIFY `id` int unsigned AUTO_INCREMENT UNIQUE NOT NULL;
+ALTER TABLE `cloud`.`vm_instance` MODIFY `id` bigint unsigned AUTO_INCREMENT UNIQUE NOT NULL;
+ALTER TABLE `cloud`.`user_vm` MODIFY `id` bigint unsigned AUTO_INCREMENT UNIQUE NOT NULL;
+ALTER TABLE `cloud`.`domain_router` MODIFY `id` bigint unsigned AUTO_INCREMENT UNIQUE NOT NULL;
+ALTER TABLE `cloud`.`service_offering` MODIFY `id` bigint unsigned AUTO_INCREMENT NOT NULL;
+ALTER TABLE `cloud`.`load_balancing_rules` MODIFY `id` bigint unsigned AUTO_INCREMENT NOT NULL;
+ALTER TABLE `cloud`.`port_forwarding_rules` MODIFY `id` bigint unsigned AUTO_INCREMENT NOT NULL;
+
 DROP VIEW IF EXISTS `cloud`.`disk_offering_view`;
 CREATE VIEW `cloud`.`disk_offering_view` AS
     select
@@ -438,8 +447,6 @@ CREATE VIEW `cloud`.`template_view` AS
 UPDATE configuration SET value='KVM,XenServer,VMware,BareMetal,Ovm,LXC,Hyperv' WHERE name='hypervisor.list';
 UPDATE `cloud`.`configuration` SET description="If set to true, will set guest VM's name as it appears on the hypervisor, to its hostname. The flag is supported for VMware hypervisor only" WHERE name='vm.instancename.flag';
 INSERT IGNORE INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Advanced', 'DEFAULT', 'management-server', 'implicit.host.tags', 'GPU', 'Tag hosts at the time of host disovery based on the host properties/capabilities ', 'GPU');
-
-UPDATE `cloud`.`configuration` SET value='256' WHERE name='router.ram.size';
 
 DROP VIEW IF EXISTS `cloud`.`domain_router_view`;
 CREATE VIEW `cloud`.`domain_router_view` AS
@@ -995,4 +1002,6 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'KVM', 'default', 'Debian GNU/Linux 7(64-bit)', 184, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'LXC', 'default', 'Debian GNU/Linux 7(32-bit)', 183, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'LXC', 'default', 'Debian GNU/Linux 7(64-bit)', 184, utc_timestamp(), 0);
+
+INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'ManagementServer', 'xen.heartbeat.timeout' , '180', '120', 'Timeout value to send to the xenheartbeat script for guarding the self fencing functionality');
 

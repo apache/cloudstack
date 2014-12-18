@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -194,4 +195,10 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
     public final boolean trackVmHostChange() {
         return false;
     }
+
+    @Override
+    public Map<String, String> getClusterSettings(long vmId) {
+        return null;
+    }
+
 }

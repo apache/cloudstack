@@ -5500,7 +5500,7 @@ label.error {
 }
 
 .multi-wizard .progress ul {
-  width: 780px;
+  width: 900px;
   height: 40px;
   float: left;
   clear: both;
@@ -5847,14 +5847,14 @@ label.error {
 
 .multi-wizard .ui-tabs li.ui-state-default a {
   float: left;
-  padding: 15px;
-  width: 110px;
   text-align: center;
   font-size: 11px;
   margin-right: 1px;
   color: #4E6070;
   text-decoration: none;
   background: #DEE3E5;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .multi-wizard .ui-tabs li.ui-state-active a {
@@ -6072,7 +6072,7 @@ label.error {
 }
 
 /*** Data disk offering*/
-.multi-wizard.instance-wizard .data-disk-offering .content .section {
+.multi-wizard.instance-wizard .content .section {
   padding: 9px 0 16px;
   margin: 12px 0 15px 8px;
 }
@@ -8499,7 +8499,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 
 .security-rules .multi-edit .range input {
   width: 44px;
-  margin: 0 0 0 8px;
+  margin: 0;
 }
 
 /*Recurring snapshots*/
@@ -12445,6 +12445,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 .resetPassword:hover .icon,
 .changePassword:hover .icon {
   background-position: -68px -612px;
+}
+
+.resetSSHKeyForVirtualMachine .icon {
+  background-position: -196px -3px;
+}
+
+.resetSSHKeyForVirtualMachine:hover .icon {
+  background-position: -195px -586px;
 }
 
 .changeService .icon {

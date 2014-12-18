@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor;
 
+import java.util.Map;
+
 import javax.ejb.Local;
 import javax.inject.Inject;
 
@@ -72,5 +74,10 @@ public class LXCGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Override
     public boolean trackVmHostChange() {
         return false;
+    }
+
+    @Override
+    public Map<String, String> getClusterSettings(long vmId) {
+        return null;
     }
 }

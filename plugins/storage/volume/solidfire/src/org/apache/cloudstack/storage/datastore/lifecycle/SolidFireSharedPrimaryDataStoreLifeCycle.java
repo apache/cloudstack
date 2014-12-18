@@ -52,6 +52,7 @@ import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -491,6 +492,8 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             _tmpltMgr.evictTemplateFromStoragePool(templatePoolVO);
         }
 
+        Long clusterId = null;
+
         for (StoragePoolHostVO host : hostPoolRecords) {
             DeleteStoragePoolCommand deleteCmd = new DeleteStoragePoolCommand(storagePool);
 
@@ -523,6 +526,12 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             if (answer != null && answer.getResult()) {
                 s_logger.info("Successfully deleted storage pool using Host ID " + host.getHostId());
 
+                HostVO hostVO = this._hostDao.findById(host.getHostId());
+
+                if (hostVO != null) {
+                    clusterId = hostVO.getClusterId();
+                }
+
                 break;
             }
             else {
@@ -530,9 +539,33 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             }
         }
 
+        if (clusterId != null) {
+            removeVolumeFromVag(storagePool.getId(), clusterId);
+        }
+
         deleteSolidFireVolume(storagePool.getId());
 
         return _primaryDataStoreHelper.deletePrimaryDataStore(dataStore);
+    }
+
+    private void removeVolumeFromVag(long storagePoolId, long clusterId) {
+        long sfVolumeId = getVolumeId(storagePoolId);
+        ClusterDetailsVO clusterDetail = _clusterDetailsDao.findDetail(clusterId, SolidFireUtil.getVagKey(storagePoolId));
+
+        String vagId = clusterDetail != null ? clusterDetail.getValue() : null;
+
+        if (vagId != null) {
+            List<HostVO> hosts = _hostDao.findByClusterId(clusterId);
+
+            SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, _storagePoolDetailsDao);
+
+            SolidFireUtil.SolidFireVag sfVag = SolidFireUtil.getSolidFireVag(sfConnection, Long.parseLong(vagId));
+
+            String[] hostIqns = SolidFireUtil.getNewHostIqns(sfVag.getInitiators(), SolidFireUtil.getIqnsFromHosts(hosts));
+            long[] volumeIds = SolidFireUtil.getNewVolumeIds(sfVag.getVolumeIds(), sfVolumeId, false);
+
+            SolidFireUtil.modifySolidFireVag(sfConnection, sfVag.getId(), hostIqns, volumeIds);
+        }
     }
 
     private void deleteSolidFireVolume(long storagePoolId) {

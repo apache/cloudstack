@@ -199,13 +199,12 @@ class TestVMPasswordEnabled(cloudstackTestCase):
                 cls.virtual_machine.id)
 
         cls.services["template"]["ostype"] = cls.services["ostype"]
+        cls.services["template"]["ispublic"] = True
         #Create templates for Edit, Delete & update permissions testcases
         cls.pw_enabled_template = Template.create(
             cls.api_client,
             cls.services["template"],
             cls.volume.id,
-            account=cls.account.name,
-            domainid=cls.account.domainid
         )
         # Delete the VM - No longer needed
         cls.virtual_machine.delete(cls.api_client, expunge=True)

@@ -76,8 +76,8 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
             cls.testdata["ostype"]
         )
         cls.testdata["domainid"] = cls.domain.id
-        cls.testdata["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.testdata["virtual_machine"]["template"] = template.id
+        cls.testdata["virtual_machine_userdata"]["zoneid"] = cls.zone.id
+        cls.testdata["virtual_machine_userdata"]["template"] = template.id
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
@@ -122,7 +122,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
 
         self.virtual_machine = VirtualMachine.create(
             self.apiclient,
-            self.testdata["virtual_machine"],
+            self.testdata["virtual_machine_userdata"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id
@@ -235,7 +235,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
 
         self.virtual_machine = VirtualMachine.create(
             self.apiclient,
-            self.testdata["virtual_machine"],
+            self.testdata["virtual_machine_userdata"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id
@@ -352,8 +352,8 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
             cls.testdata["ostype"]
         )
         cls.testdata["domainid"] = cls.domain.id
-        cls.testdata["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.testdata["virtual_machine"]["template"] = template.id
+        cls.testdata["virtual_machine_userdata"]["zoneid"] = cls.zone.id
+        cls.testdata["virtual_machine_userdata"]["template"] = template.id
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
@@ -437,7 +437,7 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
             security_group.id)
         self.virtual_machine = VirtualMachine.create(
             self.apiclient,
-            self.testdata["virtual_machine"],
+            self.testdata["virtual_machine_userdata"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -492,8 +492,8 @@ class TestRevokeIngressRule(cloudstackTestCase):
             cls.testdata["ostype"]
         )
         cls.testdata["domainid"] = cls.domain.id
-        cls.testdata["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.testdata["virtual_machine"]["template"] = template.id
+        cls.testdata["virtual_machine_userdata"]["zoneid"] = cls.zone.id
+        cls.testdata["virtual_machine_userdata"]["template"] = template.id
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
@@ -581,7 +581,7 @@ class TestRevokeIngressRule(cloudstackTestCase):
         ssh_rule = (ingress_rule["ingressrule"][0]).__dict__
         self.virtual_machine = VirtualMachine.create(
             self.apiclient,
-            self.testdata["virtual_machine"],
+            self.testdata["virtual_machine_userdata"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -655,8 +655,8 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
         )
 
         cls.testdata["domainid"] = cls.domain.id
-        cls.testdata["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.testdata["virtual_machine"]["template"] = template.id
+        cls.testdata["virtual_machine_userdata"]["zoneid"] = cls.zone.id
+        cls.testdata["virtual_machine_userdata"]["template"] = template.id
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
@@ -669,7 +669,7 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
         )
         cls.virtual_machine = VirtualMachine.create(
             cls.api_client,
-            cls.testdata["virtual_machine"],
+            cls.testdata["virtual_machine_userdata"],
             accountid=cls.account.name,
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id,
@@ -797,8 +797,8 @@ class TestdeployVMWithUserData(cloudstackTestCase):
         )
 
         cls.testdata["domainid"] = cls.domain.id
-        cls.testdata["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.testdata["virtual_machine"]["template"] = template.id
+        cls.testdata["virtual_machine_userdata"]["zoneid"] = cls.zone.id
+        cls.testdata["virtual_machine_userdata"]["template"] = template.id
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
@@ -900,7 +900,7 @@ class TestdeployVMWithUserData(cloudstackTestCase):
         )
         self.virtual_machine = VirtualMachine.create(
             self.apiclient,
-            self.testdata["virtual_machine"],
+            self.testdata["virtual_machine_userdata"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -931,7 +931,7 @@ class TestdeployVMWithUserData(cloudstackTestCase):
 
         res = str(result)
         self.assertEqual(
-            res.count(self.testdata["virtual_machine"]["userdata"]),
+            res.count(self.testdata["virtual_machine_userdata"]["userdata"]),
             1,
             "Verify user data"
         )
@@ -957,8 +957,8 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
         )
 
         self.testdata["domainid"] = self.domain.id
-        self.testdata["virtual_machine"]["zoneid"] = self.zone.id
-        self.testdata["virtual_machine"]["template"] = template.id
+        self.testdata["virtual_machine_userdata"]["zoneid"] = self.zone.id
+        self.testdata["virtual_machine_userdata"]["template"] = template.id
 
         self.service_offering = ServiceOffering.create(
             self.apiclient,
@@ -1064,7 +1064,7 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
 
         self.virtual_machine = VirtualMachine.create(
             self.apiclient,
-            self.testdata["virtual_machine"],
+            self.testdata["virtual_machine_userdata"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -1147,7 +1147,7 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
 
         self.virtual_machine = VirtualMachine.create(
             self.apiclient,
-            self.testdata["virtual_machine"],
+            self.testdata["virtual_machine_userdata"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -1188,8 +1188,8 @@ class TestIngressRule(cloudstackTestCase):
         )
 
         self.testdata["domainid"] = self.domain.id
-        self.testdata["virtual_machine"]["zoneid"] = self.zone.id
-        self.testdata["virtual_machine"]["template"] = template.id
+        self.testdata["virtual_machine_userdata"]["zoneid"] = self.zone.id
+        self.testdata["virtual_machine_userdata"]["template"] = template.id
 
         self.service_offering = ServiceOffering.create(
             self.apiclient,
@@ -1293,7 +1293,7 @@ class TestIngressRule(cloudstackTestCase):
         )
         self.virtual_machine = VirtualMachine.create(
             self.apiclient,
-            self.testdata["virtual_machine"],
+            self.testdata["virtual_machine_userdata"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -1412,7 +1412,7 @@ class TestIngressRule(cloudstackTestCase):
         )
         self.virtual_machine = VirtualMachine.create(
             self.apiclient,
-            self.testdata["virtual_machine"],
+            self.testdata["virtual_machine_userdata"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
@@ -1567,7 +1567,7 @@ class TestIngressRule(cloudstackTestCase):
 
         self.virtual_machine = VirtualMachine.create(
             self.apiclient,
-            self.testdata["virtual_machine"],
+            self.testdata["virtual_machine_userdata"],
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,

@@ -552,4 +552,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
         return commands;
     }
+
+    @Override
+    public Map<String, String> getClusterSettings(long vmId) {
+        Map<String, String> details = new HashMap<String, String>();
+        long clusterId = getClusterId(vmId);
+        details.put(VmwareReserveCpu.key(), VmwareReserveCpu.valueIn(clusterId).toString());
+        details.put(VmwareReserveMemory.key(), VmwareReserveMemory.valueIn(clusterId).toString());
+        return details;
+    }
 }

@@ -23,7 +23,6 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
-import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.log4j.Logger;
 
@@ -32,6 +31,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.Account;
+import com.cloud.utils.net.Ip;
 
 @APICommand(name = "updatePortForwardingRule",
             responseObject = FirewallRuleResponse.class,
@@ -47,31 +47,17 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the port forwarding rule", since = "4.4")
     private Long id;
 
-    @Parameter(name = ApiConstants.PRIVATE_IP, type = CommandType.STRING, description = "the private IP address of the port forwarding rule")
-    private String privateIp;
-
-    @Parameter(name = ApiConstants.PRIVATE_PORT, type = CommandType.STRING, description = "the private port of the port forwarding rule")
-    private String privatePort;
-
-    @Parameter(name = ApiConstants.PROTOCOL,
-               type = CommandType.STRING,
-               description = "the protocol for the port fowarding rule. Valid values are TCP or UDP.")
-    private String protocol;
-
-    @Parameter(name = ApiConstants.IP_ADDRESS_ID,
-               type = CommandType.UUID,
-               entityType = IPAddressResponse.class,
-               description = "the IP address id of the port forwarding rule")
-    private Long publicIpId;
-
-    @Parameter(name = ApiConstants.PUBLIC_PORT, type = CommandType.STRING, description = "the public port of the port forwarding rule")
-    private String publicPort;
+    @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.INTEGER, description="the private port of the port forwarding rule")
+    private Integer privatePort;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
                type = CommandType.UUID,
                entityType = UserVmResponse.class,
                description = "the ID of the virtual machine for the port forwarding rule")
     private Long virtualMachineId;
+
+    @Parameter(name = ApiConstants.VM_GUEST_IP, type = CommandType.STRING, required = false, description = "VM guest nic Secondary ip address for the port forwarding rule", since = "4.5")
+    private String vmGuestIp;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
@@ -80,31 +66,27 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getPrivateIp() {
-        return privateIp;
+    public Long getId() {
+        return id;
     }
 
-    public String getPrivatePort() {
+    public Integer getPrivatePort() {
         return privatePort;
-    }
-
-    public String getProtocol() {
-        return protocol;
-    }
-
-    public String getPublicPort() {
-        return publicPort;
     }
 
     public Long getVirtualMachineId() {
         return virtualMachineId;
     }
 
+    public Ip getVmGuestIp() {
+        if (vmGuestIp == null) {
+            return null;
+        }
+        return new Ip(vmGuestIp);
+    }
+
     public Boolean getDisplay() {
         return display;
-    }
-    public Long getId() {
-        return id;
     }
 
     /////////////////////////////////////////////////////
@@ -148,21 +130,13 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() {
-        PortForwardingRule rule = _rulesService.updatePortForwardingRule(id, getCustomId(), getDisplay());
+        PortForwardingRule rule = _rulesService.updatePortForwardingRule(id, getPrivatePort(), getVirtualMachineId(), getVmGuestIp(), getCustomId(), getDisplay());
         FirewallRuleResponse fwResponse = new FirewallRuleResponse();
         if (rule != null) {
             fwResponse = _responseGenerator.createPortForwardingRuleResponse(rule);
             setResponseObject(fwResponse);
         }
         fwResponse.setResponseName(getCommandName());
-//FIXME:        PortForwardingRule result = _mgr.updatePortForwardingRule(this);
-//        if (result != null) {
-//            FirewallRuleResponse response = _responseGenerator.createFirewallRuleResponse(result);
-//            response.setResponseName(getName());
-//            this.setResponseObject(response);
-//        } else {
-//            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update port forwarding rule");
-//        }
     }
 
     @Override

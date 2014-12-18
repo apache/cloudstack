@@ -190,4 +190,10 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     public List<Command> finalizeExpungeVolumes(VirtualMachine vm) {
         return null;
     }
+
+    @Override
+    public Map<String, String> getClusterSettings(long vmId) {
+        return null;
+    }
+
 }

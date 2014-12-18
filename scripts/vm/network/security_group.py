@@ -25,7 +25,6 @@ import os
 import xml.dom.minidom
 from optparse import OptionParser, OptionGroup, OptParseError, BadOptionError, OptionError, OptionConflictError, OptionValueError
 import re
-import traceback
 import libvirt
 
 logpath = "/var/run/cloud/"        # FIXME: Logs should reside in /var/log/cloud
@@ -678,7 +677,7 @@ def get_rule_logs_for_vms():
                 log = get_rule_log_for_vm(name)
                 result.append(log)
     except:
-        logging.debug("Failed to get rule logs, better luck next time!")
+        logging.exception("Failed to get rule logs, better luck next time!")
 
     print ";".join(result)
 
@@ -883,8 +882,7 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
 
     return 'true'
   except:
-    exceptionText = traceback.format_exc()
-    logging.debug("Failed to network rule !: " + exceptionText)
+    logging.exception("Failed to network rule !")
 
 def getVifs(vmName):
     vifs = []

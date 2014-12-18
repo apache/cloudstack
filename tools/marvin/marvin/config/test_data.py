@@ -322,6 +322,19 @@ test_data = {
         "affinity": {
             "name": "webvms",
             "type": "host anti-affinity",
+        }
+    },
+    "virtual_machine_userdata": {
+        "displayname": "Test VM",
+        "username": "root",
+        "password": "password",
+        "ssh_port": 22,
+        "privateport": 22,
+        "publicport": 22,
+        "protocol": "TCP",
+        "affinity": {
+            "name": "webvms",
+            "type": "host anti-affinity",
         },
         "userdata": "This is sample data"
     },
@@ -824,13 +837,20 @@ test_data = {
             "epslifetime": "3600",
             "dpd": "false"
     },
+    "vlan_ip_range": {
+                "startip": "",
+                "endip": "",
+                "netmask": "",
+                "gateway": "",
+                "forvirtualnetwork": "false",
+                "vlan": "untagged",
+    },
     "ostype": "CentOS 5.6 (64-bit)",
     "sleep": 90,
     "timeout": 10,
     "page": 1,
     "pagesize": 2,
     "listall": 'true',
-    "host_password": "password",
     "advanced_sg": {
         "zone": {
             "name": "",
@@ -920,13 +940,6 @@ test_data = {
     "forvirtualnetwork": "true",
     "customdisksize": 1,
     "diskname": "Test Volume",
-    "portableIpRange": {
-        "gateway": "10.223.252.195",
-        "netmask": "255.255.255.192",
-        "startip": "10.223.252.196",
-        "endip": "10.223.252.197",
-        "vlan": "1001"
-    },
     "sparse": {
         "name": "Sparse Type Disk offering",
         "displaytext":

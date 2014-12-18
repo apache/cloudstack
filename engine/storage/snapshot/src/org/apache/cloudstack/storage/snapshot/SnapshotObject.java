@@ -139,6 +139,16 @@ public class SnapshotObject implements SnapshotInfo {
     }
 
     @Override
+    public long getPhysicalSize() {
+        long physicalSize = 0;
+        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Image);
+        if (snapshotStore != null) {
+            physicalSize = snapshotStore.getPhysicalSize();
+        }
+        return physicalSize;
+    }
+
+    @Override
     public VolumeInfo getBaseVolume() {
         return volFactory.getVolume(snapshot.getVolumeId());
     }
