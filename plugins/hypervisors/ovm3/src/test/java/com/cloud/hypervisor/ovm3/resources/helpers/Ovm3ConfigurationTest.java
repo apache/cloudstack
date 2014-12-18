@@ -56,7 +56,33 @@ public class Ovm3ConfigurationTest {
 
     @Test
     public void testConfigLoad() throws ConfigurationException {
+        params.put("pod", "1");
         ovm3config = new Ovm3Configuration(params);
         results.basicStringTest(ovm3config.getAgentHostname(), "ovm-2");
+    }
+ 
+    @Test(expected = ConfigurationException.class)
+    public void testFailedParams() throws ConfigurationException {
+        Map<String, Object> par = new HashMap(params);
+        par.put("pod", null);
+        ovm3config = new Ovm3Configuration(par);
+    }
+    @Test
+    public void testValidatePool() throws ConfigurationException {
+        Map<String, Object> par = new HashMap(params);
+        par.put("cluster", "1");
+        par.put("ovm3vip", "this is not an IP!");
+        ovm3config = new Ovm3Configuration(par);
+        results.basicBooleanTest(ovm3config.getAgentInOvm3Pool(), false);
+        results.basicBooleanTest(ovm3config.getAgentInOvm3Cluster(), false);
+        results.basicStringTest(ovm3config.getOvm3PoolVip(), "");
+    }
+    @Test
+    public void testAgentPort() throws ConfigurationException {
+        Map<String, Object> par = new HashMap(params);
+        String altPort="6333";
+        par.put("agentport", altPort);
+        ovm3config = new Ovm3Configuration(par);
+        results.basicIntTest(Integer.parseInt(altPort), ovm3config.getAgentOvsAgentPort());
     }
 }
