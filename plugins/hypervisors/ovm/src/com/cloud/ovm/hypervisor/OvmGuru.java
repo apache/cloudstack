@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.ovm.hypervisor;
 
+import java.util.Map;
+
 import javax.ejb.Local;
 import javax.inject.Inject;
 
@@ -57,5 +59,11 @@ public class OvmGuru extends HypervisorGuruBase implements HypervisorGuru {
     public boolean trackVmHostChange() {
         return true;
     }
+
+    @Override
+    public Map<String, String> getClusterSettings(long vmId) {
+        return null;
+    }
+
 
 }

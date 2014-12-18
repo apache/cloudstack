@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.simulator;
 
+import java.util.Map;
+
 import javax.ejb.Local;
 import javax.inject.Inject;
 
@@ -56,4 +58,10 @@ public class SimulatorGuru extends HypervisorGuruBase implements HypervisorGuru 
     public boolean trackVmHostChange() {
         return false;
     }
+
+    @Override
+    public Map<String, String> getClusterSettings(long vmId) {
+        return null;
+    }
+
 }
