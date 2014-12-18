@@ -21,6 +21,7 @@ package com.cloud.agent.api;
 
 public class UnregisterVMCommand extends Command {
     String vmName;
+    boolean cleanupVmFiles = false;
 
     public UnregisterVMCommand(String vmName) {
         this.vmName = vmName;
@@ -33,5 +34,13 @@ public class UnregisterVMCommand extends Command {
 
     public String getVmName() {
         return vmName;
+    }
+
+    public void setCleanupVmFiles(boolean cleanupVmFiles) {
+        this.cleanupVmFiles = cleanupVmFiles;
+    }
+
+    public boolean getCleanupVmFiles() {
+        return this.cleanupVmFiles;
     }
 }

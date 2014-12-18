@@ -79,6 +79,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -221,6 +222,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     AsyncJobManager _jobMgr;
     @Inject
     VmWorkJobDao _workJobDao;
+    @Inject
+    ClusterDetailsDao _clusterDetailsDao;
 
     private List<StoragePoolAllocator> _storagePoolAllocators;
 
@@ -1762,6 +1765,22 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (liveMigrateVolume && destPool.getClusterId() != null && srcClusterId != null) {
                     if (!srcClusterId.equals(destPool.getClusterId())) {
                         throw new InvalidParameterValueException("Cannot migrate a volume of a virtual machine to a storage pool in a different cluster");
+                    }
+                }
+                // In case of VMware, if ROOT volume is being cold-migrated, then ensure destination storage pool is in the same Datacenter as the VM.
+                if (vm != null && vm.getHypervisorType().equals(HypervisorType.VMware)) {
+                    if (!liveMigrateVolume && vol.volumeType.equals(Volume.Type.ROOT)) {
+                        Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+                        HostVO host = _hostDao.findById(hostId);
+                        if (host != null)
+                            srcClusterId = host.getClusterId();
+                        if (srcClusterId != null && destPool.getClusterId() != null && !srcClusterId.equals(destPool.getClusterId())) {
+                            String srcDcName = _clusterDetailsDao.getVmwareDcName(srcClusterId);
+                            String destDcName = _clusterDetailsDao.getVmwareDcName(destPool.getClusterId());
+                            if (srcDcName != null && destDcName != null && !srcDcName.equals(destDcName)) {
+                                throw new InvalidParameterValueException("Cannot migrate ROOT volume of a stopped VM to a storage pool in a different VMware datacenter");
+                            }
+                        }
                     }
                 }
             }
