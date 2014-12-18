@@ -3015,8 +3015,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
             // if template is not public, perform permission check here
             if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-                Account owner = _accountMgr.getAccount(template.getAccountId());
-                _accountMgr.checkAccess(caller, null, true, owner);
+                _accountMgr.checkAccess(caller, null, false, template);
             }
 
             // if templateId is specified, then we will just use the id to
