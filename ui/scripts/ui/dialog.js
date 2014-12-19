@@ -827,7 +827,7 @@
                     _l(args.message)
                 )
             ).dialog({
-                title: _l('label.confirmation'),
+                title: args.isWarning ? _l('label.warning') : _l('label.confirmation'),
                 dialogClass: args.isWarning ? 'confirm warning': 'confirm',
                 closeOnEscape: false,
                 zIndex: 5000,

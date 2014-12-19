@@ -256,6 +256,7 @@ under the License.
 'label.vsphere.managed': '<fmt:message key="label.vsphere.managed" />',
 'label.waiting': '<fmt:message key="label.waiting" />',
 'label.warn': '<fmt:message key="label.warn" />',
+'label.warning': '<fmt:message key="label.warning" />',
 'label.wednesday': '<fmt:message key="label.wednesday" />',
 'label.weekly': '<fmt:message key="label.weekly" />',
 'label.welcome.cloud.console': '<fmt:message key="label.welcome.cloud.console" />',

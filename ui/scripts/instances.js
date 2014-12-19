@@ -675,6 +675,7 @@
                             confirm: function(args) {
                                 return 'message.action.expunge.instance';
                             },
+                            isWarning: true,
                             notification: function(args) {
                                 return 'label.action.expunge.instance';
                             }
@@ -741,6 +742,7 @@
                             confirm: function(args) {
                                 return 'message.reinstall.vm';
                             },
+                            isWarning: true,
                             notification: function(args) {
                                 return 'label.reinstall.vm';
                             },
