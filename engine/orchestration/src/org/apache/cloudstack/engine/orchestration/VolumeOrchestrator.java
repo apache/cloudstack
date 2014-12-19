@@ -58,6 +58,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -96,6 +97,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.template.TemplateManager;
@@ -141,6 +143,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     protected TemplateDataStoreDao _vmTemplateStoreDao = null;
     @Inject
     protected VolumeDao _volumeDao;
+    @Inject
+    protected SnapshotDao _snapshotDao;
+    @Inject
+    protected SnapshotDataStoreDao _snapshotDataStoreDao;
     @Inject
     protected ResourceLimitService _resourceLimitMgr;
     @Inject
@@ -919,8 +925,14 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         try {
             VolumeApiResult result = future.get();
             if (result.isFailed()) {
-                s_logger.error("migrate volume failed:" + result.getResult());
-                throw new StorageUnavailableException("migrate volume failed: " + result.getResult(), destPool.getId());
+                s_logger.error("Migrate volume failed:" + result.getResult());
+                throw new StorageUnavailableException("Migrate volume failed: " + result.getResult(), destPool.getId());
+            } else {
+                // update the volumeId for snapshots on secondary
+                if (!_snapshotDao.listByVolumeId(vol.getId()).isEmpty()) {
+                    _snapshotDao.updateVolumeIds(vol.getId(), result.getVolume().getId());
+                    _snapshotDataStoreDao.updateVolumeIds(vol.getId(), result.getVolume().getId());
+                }
             }
             return result.getVolume();
         } catch (InterruptedException e) {
