@@ -4120,18 +4120,18 @@
                                                     dataProvider: singleVmSecondaryIPSubselect
                                                 },
                                                 dataProvider: function(args) {
-                                                    var networkid;
-                                                    if ('vpc' in args.context)
+                                                	var data = {};
+                                                    listViewDataProvider(args, data);
+                                                	
+                                                	var networkid;
+                                                    if ('vpc' in args.context) {
                                                         networkid = args.context.multiData.tier;
-                                                    else
+                                                    } else {
                                                         networkid = args.context.ipAddresses[0].associatednetworkid;
-
-                                                    var data = {
-                                                        page: args.page,
-                                                        pageSize: pageSize,
-                                                        listAll: true,
-                                                        networkid: networkid
-                                                    };
+                                                    }                                                    
+                                                    $.extend(data, {
+                                                    	networkid: networkid
+                                                    });    
 
                                                     if (!args.context.projects) {
                                                         $.extend(data, {
