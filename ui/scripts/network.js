@@ -3347,18 +3347,18 @@
                                                 dataProvider: function(args) {
                                                 	var itemData = $.isArray(args.context.multiRule) && args.context.subItemData ? args.context.subItemData : [];
 
+                                                	var data = {};
+                                                    listViewDataProvider(args, data);
+                                                	
                                                     var networkid;
-                                                    if ('vpc' in args.context)
+                                                    if ('vpc' in args.context) {
                                                         networkid = args.context.multiData.tier;
-                                                    else
+                                                    } else {
                                                         networkid = args.context.ipAddresses[0].associatednetworkid;
-
-                                                    var data = {
-                                                        page: args.page,
-                                                        pageSize: pageSize,
-                                                        networkid: networkid,
-                                                        listAll: true
-                                                    };
+                                                    }
+                                                    $.extend(data, {                                                       
+                                                        networkid: networkid                                                        
+                                                    });
 
                                                     if (!args.context.projects) {
                                                         $.extend(data, {
