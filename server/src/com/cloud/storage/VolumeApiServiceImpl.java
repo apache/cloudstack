@@ -19,7 +19,6 @@ package com.cloud.storage;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -320,10 +319,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
          /*
           * encoded metadata using the post upload config ssh key
           */
-        final List<String> fieldExclusions = Arrays.asList("s_logger");
         Gson gson = new GsonBuilder().setExclusionStrategies(new ExclusionStrategy() {
             @Override public boolean shouldSkipField(FieldAttributes f) {
-                return f.getDeclaringClass() == Logger.class;
+                return f.getDeclaredType().getClass().isInstance(Logger.class);
             }
             @Override public boolean shouldSkipClass(Class<?> clazz) {
                 return false;
