@@ -597,7 +597,7 @@
                                         });
 
                                         if (thisNetworkOffering.havingEIP == true && thisNetworkOffering.havingELB == true) { //EIP ELB
-                                            if (args.hypervisor == "VMware" || args.hypervisor == "BareMetal") { //VMware, BareMetal don't support EIP ELB
+                                            if (args.hypervisor == "VMware") { //VMware does not support EIP ELB
                                                 return true; //move to next item in $.each() loop
                                             }
                                             if (args.context.zones[0]["network-model"] == "Advanced" && args.context.zones[0]["zone-advanced-sg-enabled"] == "on") { // Advanced SG-enabled zone doesn't support EIP ELB
