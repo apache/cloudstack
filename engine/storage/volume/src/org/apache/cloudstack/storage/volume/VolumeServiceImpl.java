@@ -79,6 +79,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
@@ -1404,7 +1405,7 @@ public class VolumeServiceImpl implements VolumeService {
                                 volumeStore.setDownloadState(Status.DOWNLOAD_ERROR);
                                 String msg = "Volume " + volume.getUuid() + " is corrupted on image store ";
                                 volumeStore.setErrorString(msg);
-                                s_logger.info("msg");
+                                s_logger.info(msg);
                                 if (volumeStore.getDownloadUrl() == null) {
                                     msg =
                                             "Volume (" + volume.getUuid() + ") with install path " + volInfo.getInstallPath() +
@@ -1453,7 +1454,6 @@ public class VolumeServiceImpl implements VolumeService {
                         if (volumeStore.getDownloadState() != Status.DOWNLOADED) {
                             s_logger.info("Volume Sync did not find " + volume.getName() + " ready on image store " + storeId +
                                     ", will request download to start/resume shortly");
-                            toBeDownloaded.add(volumeStore);
                         }
                     }
 
@@ -1476,8 +1476,15 @@ public class VolumeServiceImpl implements VolumeService {
                             }
 
                             s_logger.debug("Volume " + volumeHost.getVolumeId() + " needs to be downloaded to " + store.getName());
-                            // TODO: pass a callback later
-                            VolumeInfo vol = volFactory.getVolume(volumeHost.getVolumeId());
+                            // reset volume status back to Allocated
+                            VolumeObject vol = (VolumeObject)volFactory.getVolume(volumeHost.getVolumeId());
+                            vol.processEvent(Event.OperationFailed); // reset back volume status
+                            // remove leftover volume_store_ref entry since re-download will create it again
+                            _volumeStoreDao.remove(volumeHost.getId());
+                            // get an updated volumeVO
+                            vol = (VolumeObject)volFactory.getVolume(volumeHost.getVolumeId());
+                            RegisterVolumePayload payload = new RegisterVolumePayload(volumeHost.getDownloadUrl(), volumeHost.getChecksum(), vol.getFormat().toString());
+                            vol.addPayload(payload);
                             createVolumeAsync(vol, store);
                         }
                     }
