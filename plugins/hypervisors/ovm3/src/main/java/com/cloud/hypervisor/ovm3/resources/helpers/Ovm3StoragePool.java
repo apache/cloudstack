@@ -169,7 +169,8 @@ public class Ovm3StoragePool {
             Pool poolMaster = new Pool(m);
             if (poolMaster.isInAPool()) {
                 members.addAll(poolMaster.getPoolMemberList());
-                if (!poolMaster.getPoolMemberList().contains(c.getIp())) {
+                if (!poolMaster.getPoolMemberList().contains(c.getIp())
+                        && c.getIp().equals(config.getOvm3PoolVip())) {
                     members.add(c.getIp());
                 }
             } else {
@@ -177,6 +178,7 @@ public class Ovm3StoragePool {
                         + config.getOvm3PoolVip() + " is not part of pool");
                 return false;
             }
+            /* a cluster shares usernames and passwords */
             for (String member : members) {
                 Connection x = new Connection(member, c.getPort(),
                         c.getUserName(), c.getPassword());
@@ -507,32 +509,29 @@ public class Ovm3StoragePool {
         StorageFilerTO pool = cmd.getPool();
         LOGGER.debug("modifying pool " + pool);
         try {
-            if (pool.getType() == StoragePoolType.NetworkFilesystem) {
-                /* TODO: this should actually not be here */
-                createRepo(pool);
-            } else if (pool.getType() == StoragePoolType.OCFS2) {
-                createOCFS2Sr(pool);
-            } else {
-                return new Answer(cmd, false, "The pool type: "
-                        + pool.getType().name() + " is not supported.");
-            }
-
             if (config.getAgentInOvm3Cluster()) {
                 /* TODO: What extras do we need here ? HB? */
             }
-            /* TODO: needs to be in network fs above */
-            StoragePlugin store = new StoragePlugin(c);
-            String propUuid = store.deDash(pool.getUuid());
-            String mntUuid = pool.getUuid();
-            String nfsHost = pool.getHost();
-            String nfsPath = pool.getPath();
-            StorageDetails ss = store.storagePluginGetFileSystemInfo(propUuid,
-                    mntUuid, nfsHost, nfsPath);
+            if (pool.getType() == StoragePoolType.NetworkFilesystem) {
+                /* TODO: this should actually not be here */
+                createRepo(pool);
+                StoragePlugin store = new StoragePlugin(c);
+                String propUuid = store.deDash(pool.getUuid());
+                String mntUuid = pool.getUuid();
+                String nfsHost = pool.getHost();
+                String nfsPath = pool.getPath();
+                StorageDetails ss = store.storagePluginGetFileSystemInfo(propUuid,
+                        mntUuid, nfsHost, nfsPath);
 
-            Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
-            return new ModifyStoragePoolAnswer(cmd,
-                    Long.parseLong(ss.getSize()), Long.parseLong(ss
-                            .getFreeSize()), tInfo);
+                Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
+                return new ModifyStoragePoolAnswer(cmd,
+                        Long.parseLong(ss.getSize()), Long.parseLong(ss
+                                .getFreeSize()), tInfo);
+            } else if (pool.getType() == StoragePoolType.OCFS2) {
+                createOCFS2Sr(pool);
+            }
+            return new Answer(cmd, false, "The pool type: "
+                   + pool.getType().name() + " is not supported.");
         } catch (Exception e) {
             LOGGER.debug("ModifyStoragePoolCommand failed", e);
             return new Answer(cmd, false, e.getMessage());
