@@ -1382,8 +1382,8 @@ public class VolumeServiceImpl implements VolumeService {
                         return;
                     }
 
-                    // we can only resume those uploaded volume with a URL specified
-                    List<VolumeDataStoreVO> dbVolumes = _volumeStoreDao.listUploadedVolumesByStoreId(storeId);
+                    // find all the db volumes including those with NULL url column to avoid accidentally deleting volumes on image store later.
+                    List<VolumeDataStoreVO> dbVolumes = _volumeStoreDao.listByStoreId(storeId);
                     List<VolumeDataStoreVO> toBeDownloaded = new ArrayList<VolumeDataStoreVO>(dbVolumes);
                     for (VolumeDataStoreVO volumeStore : dbVolumes) {
                         VolumeVO volume = volDao.findById(volumeStore.getVolumeId());
