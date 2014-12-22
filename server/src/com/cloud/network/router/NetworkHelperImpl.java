@@ -199,17 +199,17 @@ public class NetworkHelperImpl implements NetworkHelper {
         if (connectedRouters.isEmpty() || disconnectedRouters.isEmpty()) {
             return;
         }
-        if (connectedRouters.size() != 1 || disconnectedRouters.size() != 1) {
-            s_logger.warn("How many redundant routers do we have?? ");
-            return;
+
+        for (final VirtualRouter virtualRouter : connectedRouters) {
+            if (!virtualRouter.getIsRedundantRouter()) {
+                throw new ResourceUnavailableException("Who is calling this with non-redundant router or non-domain router?", DataCenter.class, virtualRouter.getDataCenterId());
+            }
         }
-        if (!connectedRouters.get(0).getIsRedundantRouter()) {
-            throw new ResourceUnavailableException("Who is calling this with non-redundant router or non-domain router?", DataCenter.class, connectedRouters.get(0)
-                    .getDataCenterId());
-        }
-        if (!disconnectedRouters.get(0).getIsRedundantRouter()) {
-            throw new ResourceUnavailableException("Who is calling this with non-redundant router or non-domain router?", DataCenter.class, disconnectedRouters.get(0)
-                    .getDataCenterId());
+
+        for (final VirtualRouter virtualRouter : disconnectedRouters) {
+            if (!virtualRouter.getIsRedundantRouter()) {
+                throw new ResourceUnavailableException("Who is calling this with non-redundant router or non-domain router?", DataCenter.class, virtualRouter.getDataCenterId());
+            }
         }
 
         final DomainRouterVO connectedRouter = (DomainRouterVO) connectedRouters.get(0);
