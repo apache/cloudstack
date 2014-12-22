@@ -3688,7 +3688,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             VirtualMachineGuru vmGuru = getVmGuru(vm);
             VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-            sendStop(vmGuru, profile, true, true);
+            if (!sendStop(vmGuru, profile, true, true)) {
+                // In case StopCommand fails, don't proceed further
+                return;
+            }
 
             try {
                 stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOffReport, null);
