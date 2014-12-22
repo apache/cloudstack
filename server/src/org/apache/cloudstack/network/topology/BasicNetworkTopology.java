@@ -133,7 +133,7 @@ public class BasicNetworkTopology implements NetworkTopology {
             throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
         }
 
-        DhcpSubNetRules subNetRules = new DhcpSubNetRules(network, nic, profile);
+        final DhcpSubNetRules subNetRules = new DhcpSubNetRules(network, nic, profile);
 
         return subNetRules.accept(_basicVisitor, router);
     }
@@ -158,7 +158,7 @@ public class BasicNetworkTopology implements NetworkTopology {
 
         final boolean failWhenDisconnect = false;
 
-        DhcpEntryRules dhcpRules = new DhcpEntryRules(network, nic, profile, dest);
+        final DhcpEntryRules dhcpRules = new DhcpEntryRules(network, nic, profile, dest);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(dhcpRules));
     }
@@ -180,7 +180,7 @@ public class BasicNetworkTopology implements NetworkTopology {
 
         final boolean failWhenDisconnect = false;
 
-        UserdataPwdRules pwdRules = new UserdataPwdRules(network, nic, profile, dest);
+        final UserdataPwdRules pwdRules = new UserdataPwdRules(network, nic, profile, dest);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(pwdRules));
     }
@@ -201,7 +201,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        LoadBalancingRules loadBalancingRules = new LoadBalancingRules(network, rules);
+        final LoadBalancingRules loadBalancingRules = new LoadBalancingRules(network, rules);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(loadBalancingRules));
     }
@@ -221,7 +221,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        FirewallRules firewallRules = new FirewallRules(network, rules);
+        final FirewallRules firewallRules = new FirewallRules(network, rules);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(firewallRules));
     }
@@ -240,7 +240,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        StaticNatRules natRules = new StaticNatRules(network, rules);
+        final StaticNatRules natRules = new StaticNatRules(network, rules);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(natRules));
     }
@@ -260,7 +260,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        IpAssociationRules ipAddresses = new IpAssociationRules(network, ipAddress);
+        final IpAssociationRules ipAddresses = new IpAssociationRules(network, ipAddress);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(ipAddresses));
     }
@@ -274,7 +274,7 @@ public class BasicNetworkTopology implements NetworkTopology {
 
         s_logger.debug("APPLYING BASIC VPN RULES");
 
-        BasicVpnRules vpnRules = new BasicVpnRules(network, users);
+        final BasicVpnRules vpnRules = new BasicVpnRules(network, users);
         boolean agentResults = true;
 
         for (final DomainRouterVO router : routers) {
@@ -314,7 +314,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        PasswordToRouterRules routerRules = new PasswordToRouterRules(network, nic, profile);
+        final PasswordToRouterRules routerRules = new PasswordToRouterRules(network, nic, profile);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(routerRules));
     }
@@ -329,7 +329,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        SshKeyToRouterRules keyToRouterRules = new SshKeyToRouterRules(network, nic, profile, sshPublicKey);
+        final SshKeyToRouterRules keyToRouterRules = new SshKeyToRouterRules(network, nic, profile, sshPublicKey);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(keyToRouterRules));
     }
@@ -344,7 +344,7 @@ public class BasicNetworkTopology implements NetworkTopology {
         final boolean failWhenDisconnect = false;
         final Long podId = null;
 
-        UserdataToRouterRules userdataToRouterRules = new UserdataToRouterRules(network, nic, profile);
+        final UserdataToRouterRules userdataToRouterRules = new UserdataToRouterRules(network, nic, profile);
 
         return applyRules(network, routers, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(userdataToRouterRules));
     }
@@ -358,7 +358,7 @@ public class BasicNetworkTopology implements NetworkTopology {
             throw new ResourceUnavailableException("Unable to apply " + typeString, DataCenter.class, network.getDataCenterId());
         }
 
-        RuleApplier ruleApplier = ruleApplierWrapper.getRuleType();
+        final RuleApplier ruleApplier = ruleApplierWrapper.getRuleType();
 
         final DataCenter dc = _dcDao.findById(network.getDataCenterId());
         final boolean isZoneBasic = dc.getNetworkType() == NetworkType.Basic;
@@ -414,10 +414,16 @@ public class BasicNetworkTopology implements NetworkTopology {
 
         if (!connectedRouters.isEmpty()) {
             // Shouldn't we include this check inside the method?
-            if (!isZoneBasic && !disconnectedRouters.isEmpty() && disconnectedRouters.get(0).getIsRedundantRouter()) {
+            if (!isZoneBasic && !disconnectedRouters.isEmpty()) {
                 // These disconnected redundant virtual routers are out of sync
                 // now, stop them for synchronization
-                _networkHelper.handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
+                for (final VirtualRouter virtualRouter : disconnectedRouters) {
+                    // If we have at least 1 disconnected redundant router, callhandleSingleWorkingRedundantRouter().
+                    if (virtualRouter.getIsRedundantRouter()) {
+                        _networkHelper.handleSingleWorkingRedundantRouter(connectedRouters, disconnectedRouters, msg);
+                        break;
+                    }
+                }
             }
         } else if (!disconnectedRouters.isEmpty()) {
             for (final VirtualRouter router : disconnectedRouters) {
