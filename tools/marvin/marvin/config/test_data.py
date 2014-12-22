@@ -1468,6 +1468,7 @@ test_data = {
                  "publicport": 22,
                  "username": "root",
                  "password": "password",
-        }
+        },
+        "systemVmDelay": 120
     }
 }
