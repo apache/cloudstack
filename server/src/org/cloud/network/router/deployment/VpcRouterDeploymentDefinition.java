@@ -16,6 +16,12 @@
 // under the License.
 package org.cloud.network.router.deployment;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
@@ -35,11 +41,6 @@ import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachineProfile.Param;
-import org.apache.log4j.Logger;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     private static final Logger logger = Logger.getLogger(VpcRouterDeploymentDefinition.class);
@@ -77,7 +78,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
 
     @Override
     protected void lock() {
-        Vpc vpcLock = vpcDao.acquireInLockTable(vpc.getId());
+        final Vpc vpcLock = vpcDao.acquireInLockTable(vpc.getId());
         if (vpcLock == null) {
             throw new ConcurrentOperationException("Unable to lock vpc " + vpc.getId());
         }
@@ -136,11 +137,26 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     }
 
     @Override
-    protected void findVirtualProvider() {
-        List<? extends PhysicalNetwork> pNtwks = pNtwkDao.listByZone(vpc.getZoneId());
+    protected void findOrDeployVirtualRouter() throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        final Vpc vpc = getVpc();
+        if (vpc != null) {
+            // This call will associate any existing router to the "routers" attribute.
+            // It's needed in order to continue with the VMs deployment.
+            planDeploymentRouters();
+            if (!routers.isEmpty()) {
+                // If routers are found, just return: nothing need to be done here.
+                return;
+            }
+        }
+        super.findOrDeployVirtualRouter();
+    }
 
-        for (PhysicalNetwork pNtwk : pNtwks) {
-            PhysicalNetworkServiceProvider provider = physicalProviderDao.findByServiceProvider(pNtwk.getId(), Type.VPCVirtualRouter.toString());
+    @Override
+    protected void findVirtualProvider() {
+        final List<? extends PhysicalNetwork> pNtwks = pNtwkDao.listByZone(vpc.getZoneId());
+
+        for (final PhysicalNetwork pNtwk : pNtwks) {
+            final PhysicalNetworkServiceProvider provider = physicalProviderDao.findByServiceProvider(pNtwk.getId(), Type.VPCVirtualRouter.toString());
             if (provider == null) {
                 throw new CloudRuntimeException("Cannot find service provider " + Type.VPCVirtualRouter.toString() + " in physical network " + pNtwk.getId());
             }
@@ -153,7 +169,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
 
     @Override
     protected void findServiceOfferingId() {
-        Long vpcOfferingId = vpcOffDao.findById(vpc.getVpcOfferingId()).getServiceOfferingId();
+        final Long vpcOfferingId = vpcOffDao.findById(vpc.getVpcOfferingId()).getServiceOfferingId();
         if (vpcOfferingId != null) {
             serviceOfferingId = vpcOfferingId;
         }
@@ -161,17 +177,17 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
 
     @Override
     protected void deployAllVirtualRouters() throws ConcurrentOperationException, InsufficientCapacityException,
-            ResourceUnavailableException {
+    ResourceUnavailableException {
 
         // Implement Redundant Vpc
-        int routersToDeploy = this.getNumberOfRoutersToDeploy();
+        final int routersToDeploy = getNumberOfRoutersToDeploy();
         for(int i = 0; i < routersToDeploy; i++) {
             // Don't start the router as we are holding the network lock that needs to be released at the end of router allocation
-            DomainRouterVO router = this.nwHelper.deployRouter(this, false);
+            final DomainRouterVO router = nwHelper.deployRouter(this, false);
 
             if (router != null) {
                 // TODO this.routerDao.addRouterToGuestNetwork(router, this.guestNetwork);
-                this.routers.add(router);
+                routers.add(router);
             }
         }
     }
@@ -188,6 +204,6 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
 
     @Override
     public boolean isRedundant() {
-        return this.vpc.isRedundant();
+        return vpc.isRedundant();
     }
 }

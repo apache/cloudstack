@@ -20,9 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.HostPodVO;
@@ -197,6 +196,7 @@ public class RouterDeploymentDefinition {
         try {
             lock();
             checkPreconditions();
+
             // dest has pod=null, for Basic Zone findOrDeployVRs for all Pods
             final List<DeployDestination> destinations = findDestinations();
 
@@ -353,7 +353,7 @@ public class RouterDeploymentDefinition {
     }
 
     protected void findServiceOfferingId() {
-        Long networkOfferingId = networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
+        final Long networkOfferingId = networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
         if (networkOfferingId != null) {
             serviceOfferingId = networkOfferingId;
         }
@@ -376,11 +376,11 @@ public class RouterDeploymentDefinition {
     }
 
     protected void deployAllVirtualRouters() throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        int routersToDeploy = getNumberOfRoutersToDeploy();
+        final int routersToDeploy = getNumberOfRoutersToDeploy();
         for (int i = 0; i < routersToDeploy; i++) {
             // Don't start the router as we are holding the network lock that
             // needs to be released at the end of router allocation
-            DomainRouterVO router = nwHelper.deployRouter(this, false);
+            final DomainRouterVO router = nwHelper.deployRouter(this, false);
 
             if (router != null) {
                 routerDao.addRouterToGuestNetwork(router, guestNetwork);
