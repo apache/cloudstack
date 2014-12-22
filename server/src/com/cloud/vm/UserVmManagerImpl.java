@@ -3221,6 +3221,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         try {
             vmParamPair = startVirtualMachine(vmId, hostId, additonalParams, deploymentPlannerToUse);
             vm = vmParamPair.first();
+
+            // At this point VM should be in "Running" state
+            UserVmVO tmpVm = _vmDao.findById(vm.getId());
+            if (!tmpVm.getState().equals(State.Running)) {
+                // Some other thread changed state of VM, possibly vmsync
+                throw new ConcurrentOperationException("VM " + tmpVm + " unexpectedly went to " + tmpVm.getState() + " state");
+            }
         } finally {
             updateVmStateForFailedVmCreation(vm.getId(), hostId);
         }
