@@ -244,6 +244,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         GarbageCollectedSearch = createSearchBuilder(Long.class);
         GarbageCollectedSearch.selectFields(GarbageCollectedSearch.entity().getId());
         SearchBuilder<NetworkOpVO> join7 = _ntwkOpDao.createSearchBuilder();
+        join7.and("activenics", join7.entity().getActiveNicsCount(), Op.EQ);
         join7.and("gc", join7.entity().isGarbageCollected(), Op.EQ);
         join7.and("check", join7.entity().isCheckForGc(), Op.EQ);
         GarbageCollectedSearch.join("ntwkOpGC", join7, GarbageCollectedSearch.entity().getId(), join7.entity().getId(), JoinBuilder.JoinType.INNER);
@@ -437,6 +438,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     public List<Long> findNetworksToGarbageCollect() {
         SearchCriteria<Long> sc = GarbageCollectedSearch.create();
         sc.setJoinParameters("ntwkOffGC", "isPersistent", false);
+        sc.setJoinParameters("ntwkOpGC", "activenics", 0);
         sc.setJoinParameters("ntwkOpGC", "gc", true);
         sc.setJoinParameters("ntwkOpGC", "check", true);
         return customSearch(sc, null);
