@@ -152,6 +152,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         if (routers == null || routers.isEmpty()) {
             return true;
         }
+
         boolean result = true;
         for (final DomainRouterVO router : routers) {
             result = result && _routerMgr.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId()) != null;
@@ -549,12 +550,16 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         }
 
         final List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(ip.getVpcId());
-        if (routers == null || routers.size() != 1) {
+        if (routers == null) {
             throw new ResourceUnavailableException("Cannot enable site-to-site VPN on the backend; virtual router doesn't exist in the vpc " + ip.getVpcId(), DataCenter.class,
                     vpc.getZoneId());
         }
 
-        return _vpcRouterMgr.startSite2SiteVpn(conn, routers.get(0));
+        boolean result = true;
+        for (final DomainRouterVO domainRouterVO : routers) {
+            result = result && _vpcRouterMgr.startSite2SiteVpn(conn, domainRouterVO);
+        }
+        return result;
     }
 
     @Override
@@ -576,12 +581,17 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         }
 
         final List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(ip.getVpcId());
-        if (routers == null || routers.size() != 1) {
+        if (routers == null) {
             throw new ResourceUnavailableException("Cannot enable site-to-site VPN on the backend; virtual router doesn't exist in the vpc " + ip.getVpcId(), DataCenter.class,
                     vpc.getZoneId());
         }
 
-        return _vpcRouterMgr.stopSite2SiteVpn(conn, routers.get(0));
+        boolean result = true;
+        for (final DomainRouterVO domainRouterVO : routers) {
+            result = result && _vpcRouterMgr.stopSite2SiteVpn(conn, domainRouterVO);
+        }
+
+        return result;
     }
 
     @Override
@@ -591,7 +601,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         }
 
         final List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(vpn.getVpcId());
-        if (routers == null || routers.size() != 1) {
+        if (routers == null) {
             s_logger.debug("Cannot apply vpn users on the backend; virtual router doesn't exist in the network " + vpn.getVpcId());
             return null;
         }
@@ -600,7 +610,11 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         final DataCenterVO dcVO = _dcDao.findById(vpc.getZoneId());
         final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
-        return networkTopology.applyVpnUsers(vpn, users, routers.get(0));
+        String[] result = null;
+        for (final DomainRouterVO domainRouterVO : routers) {
+            result = networkTopology.applyVpnUsers(vpn, users, domainRouterVO);
+        }
+        return result;
     }
 
     @Override
@@ -610,11 +624,16 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         }
 
         final List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(vpn.getVpcId());
-        if (routers == null || routers.size() != 1) {
+        if (routers == null) {
             s_logger.debug("Cannot apply vpn users on the backend; virtual router doesn't exist in the network " + vpn.getVpcId());
-            return true;
+            return false;
         }
-        return _vpcRouterMgr.startRemoteAccessVpn(vpn, routers.get(0));
+
+        boolean result = true;
+        for (final DomainRouterVO domainRouterVO : routers) {
+            result = result && _vpcRouterMgr.startRemoteAccessVpn(vpn, domainRouterVO);
+        }
+        return result;
     }
 
     @Override
@@ -624,11 +643,15 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         }
 
         final List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(vpn.getVpcId());
-        if (routers == null || routers.size() != 1) {
+        if (routers == null) {
             s_logger.debug("Cannot apply vpn users on the backend; virtual router doesn't exist in the network " + vpn.getVpcId());
-            return true;
+            return false;
         }
-        return _vpcRouterMgr.stopRemoteAccessVpn(vpn, routers.get(0));
-    }
 
+        boolean result = true;
+        for (final DomainRouterVO domainRouterVO : routers) {
+            result = result && _vpcRouterMgr.stopRemoteAccessVpn(vpn, domainRouterVO);
+        }
+        return result;
+    }
 }
