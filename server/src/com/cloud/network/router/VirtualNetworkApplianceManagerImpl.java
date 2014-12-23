@@ -368,6 +368,9 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     protected NetworkHelper _nwHelper;
 
     @Inject
+    protected RouterControlHelper _routerControlHelper;
+
+    @Inject
     protected CommandSetupHelper _commandSetupHelper;
     @Inject
     protected RouterDeploymentDefinitionBuilder _routerDeploymentManagerBuilder;
@@ -924,7 +927,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 continue;
             } else if (privateIP != null) {
                 final CheckS2SVpnConnectionsCommand command = new CheckS2SVpnConnectionsCommand(ipList);
-                command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
+                command.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
                 command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
                 command.setWait(30);
                 final Answer origAnswer = _agentMgr.easySend(router.getHostId(), command);
@@ -972,7 +975,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     }
 
     protected void updateRoutersRedundantState(final List<DomainRouterVO> routers) {
-        boolean updated = false;
+        boolean updated;
         for (final DomainRouterVO router : routers) {
             updated = false;
             if (!router.getIsRedundantRouter()) {
@@ -991,7 +994,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     updated = true;
                 } else if (privateIP != null) {
                     final CheckRouterCommand command = new CheckRouterCommand();
-                    command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
+                    command.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
                     command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
                     command.setWait(30);
                     final Answer origAnswer = _agentMgr.easySend(router.getHostId(), command);
@@ -1054,9 +1057,6 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     }
 
     protected class RvRStatusUpdateTask extends ManagedContextRunnable {
-
-        public RvRStatusUpdateTask() {
-        }
 
         /*
          * In order to make fail-over works well at any time, we have to ensure:
@@ -1662,7 +1662,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
         final List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
         for (final Long guestNetworkId : routerGuestNtwkIds) {
-            final AggregationControlCommand startCmd = new AggregationControlCommand(Action.Start, router.getInstanceName(), controlNic.getIp4Address(), getRouterIpInNetwork(
+            final AggregationControlCommand startCmd = new AggregationControlCommand(Action.Start, router.getInstanceName(), controlNic.getIp4Address(), _routerControlHelper.getRouterIpInNetwork(
                     guestNetworkId, router.getId()));
             cmds.addCommand(startCmd);
 
@@ -1686,7 +1686,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
             finalizeUserDataAndDhcpOnStart(cmds, router, provider, guestNetworkId);
 
-            final AggregationControlCommand finishCmd = new AggregationControlCommand(Action.Finish, router.getInstanceName(), controlNic.getIp4Address(), getRouterIpInNetwork(
+            final AggregationControlCommand finishCmd = new AggregationControlCommand(Action.Finish, router.getInstanceName(), controlNic.getIp4Address(), _routerControlHelper.getRouterIpInNetwork(
                     guestNetworkId, router.getId()));
             cmds.addCommand(finishCmd);
         }
@@ -1738,7 +1738,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         }
         final SetMonitorServiceCommand command = new SetMonitorServiceCommand(servicesTO);
         command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlNic.getIp4Address());
-        command.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(networkId, router.getId()));
+        command.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(networkId, router.getId()));
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
         if (!add) {
@@ -2373,31 +2373,6 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         return false;
     }
 
-    protected String getRouterControlIp(final long routerId) {
-        String routerControlIpAddress = null;
-        final List<NicVO> nics = _nicDao.listByVmId(routerId);
-        for (final NicVO n : nics) {
-            final NetworkVO nc = _networkDao.findById(n.getNetworkId());
-            if (nc != null && nc.getTrafficType() == TrafficType.Control) {
-                routerControlIpAddress = n.getIp4Address();
-                // router will have only one control ip
-                break;
-            }
-        }
-
-        if (routerControlIpAddress == null) {
-            s_logger.warn("Unable to find router's control ip in its attached NICs!. routerId: " + routerId);
-            final DomainRouterVO router = _routerDao.findById(routerId);
-            return router.getPrivateIpAddress();
-        }
-
-        return routerControlIpAddress;
-    }
-
-    protected String getRouterIpInNetwork(final long networkId, final long instanceId) {
-        return _nicDao.getIpAddress(networkId, instanceId);
-    }
-
     @Override
     public void prepareStop(final VirtualMachineProfile profile) {
         // Collect network usage before stopping Vm
@@ -2657,7 +2632,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     protected boolean aggregationExecution(final AggregationControlCommand.Action action, final Network network, final List<DomainRouterVO> routers)
             throws AgentUnavailableException, ResourceUnavailableException {
         for (final DomainRouterVO router : routers) {
-            final AggregationControlCommand cmd = new AggregationControlCommand(action, router.getInstanceName(), getRouterControlIp(router.getId()), getRouterIpInNetwork(
+            final AggregationControlCommand cmd = new AggregationControlCommand(action, router.getInstanceName(), _routerControlHelper.getRouterControlIp(router.getId()), _routerControlHelper.getRouterIpInNetwork(
                     network.getId(), router.getId()));
             final Commands cmds = new Commands(cmd);
             if (!_nwHelper.sendCommandsToRouter(router, cmds)) {
