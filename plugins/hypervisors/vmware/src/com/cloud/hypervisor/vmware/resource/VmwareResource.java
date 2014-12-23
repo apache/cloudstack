@@ -3057,6 +3057,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.debug("Successfully migrated storage of VM " + vmName + " to target datastore(s)");
             }
 
+            // Consolidate VM disks.
+            // In case of a linked clone VM, if VM's disks are not consolidated,
+            // further VM operations such as volume snapshot, VM snapshot etc. will result in DB inconsistencies.
+            String apiVersion = HypervisorHostHelper.getVcenterApiVersion(vmMo.getContext());
+            if (apiVersion.compareTo("5.0") >= 0) {
+                if (!vmMo.consolidateVmDisks()) {
+                    s_logger.warn("VM disk consolidation failed after storage migration. Yet proceeding with VM migration.");
+                } else {
+                    s_logger.debug("Successfully consolidated disks of VM " + vmName + ".");
+                }
+            }
+
             // Update and return volume path for every disk because that could have changed after migration
             for (Entry<VolumeTO, StorageFilerTO> entry : volToFiler.entrySet()) {
                 volume = entry.getKey();
@@ -3164,6 +3176,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception("Change datastore operation failed during volume migration");
             } else {
                 s_logger.debug("Successfully migrated volume " + volumePath + " to target datastore " + tgtDsName);
+            }
+
+            // Consolidate VM disks.
+            // In case of a linked clone VM, if VM's disks are not consolidated,
+            // further volume operations on the ROOT volume such as volume snapshot etc. will result in DB inconsistencies.
+            String apiVersion = HypervisorHostHelper.getVcenterApiVersion(vmMo.getContext());
+            if (apiVersion.compareTo("5.0") >= 0) {
+                if (!vmMo.consolidateVmDisks()) {
+                    s_logger.warn("VM disk consolidation failed after storage migration.");
+                } else {
+                    s_logger.debug("Successfully consolidated disks of VM " + vmName + ".");
+                }
             }
 
             // Update and return volume path because that could have changed after migration
