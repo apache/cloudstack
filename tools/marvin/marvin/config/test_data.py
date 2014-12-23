@@ -1391,24 +1391,6 @@ test_data = {
                 },
                 "ostype": 'CentOS 5.6 (64-bit)',
         },
-        "ldap_account": {
-            "email": "rmurphy@cloudstack.org",
-            "firstname": "Ryan",
-            "lastname": "Murphy",
-            "username": "rmurphy",
-            "password": "internalcloudstackpassword",
-            },
-        "ldapConfiguration_1": {
-            "basedn": "dc=cloudstack,dc=org",
-            "emailAttribute": "mail",
-            "userObject": "inetOrgPerson",
-            "usernameAttribute": "uid",
-            "hostname": "localhost",
-            "port": "10389",
-            "ldapUsername": "rmurphy",
-            "ldapPassword": "password"
-            },
-
       "test_34_DeployVM_in_SecondSGNetwork": {
           "zone": "advsg",
           "config": "D:\ACS-Repo\setup\dev\\advancedsg.cfg",#Absolute path to cfg file
@@ -1468,6 +1450,23 @@ test_data = {
                  "publicport": 22,
                  "username": "root",
                  "password": "password",
+        },
+       "ldap_account": {
+            "email": "",
+            "firstname": "",
+            "lastname": "",
+            "username": "",
+            "password": "",
+        },
+        "ldap_configuration": {
+            "basedn": "",
+            "emailAttribute": "",
+            "userObject": "",
+            "usernameAttribute": "",
+            "hostname": "",
+            "port": "",
+            "ldapUsername": "",
+            "ldapPassword": ""
         },
         "systemVmDelay": 120
     }
