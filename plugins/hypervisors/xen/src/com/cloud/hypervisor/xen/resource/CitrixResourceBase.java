@@ -1090,6 +1090,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating VIF for " + vmName + " on nic " + nic);
         }
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Creating VIF on nic [" + nic.getDeviceId() + ", " + nic.getUuid() + "] on net " + nic.getNetworkUuid());
+        }
         VIF.Record vifr = new VIF.Record();
         vifr.VM = vm;
         vifr.device = Integer.toString(nic.getDeviceId());

@@ -92,7 +92,7 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
                 String peerName = synchronous.getPeer();
                 if (peerName != null) {
                     if (s_clusteredAgentMgr != null) {
-                        s_logger.debug(log(seq, "Forwarding to peer to cancel due to timeout"));
+                        s_logger.debug(generateLogString(seq, "Forwarding to peer to cancel due to timeout"));
                         s_clusteredAgentMgr.cancel(peerName, _id, seq, "Timed Out");
                     } else {
                         s_logger.error("Unable to forward cancel, ClusteredAgentAttache is not properly initialized");
@@ -108,12 +108,12 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
     @Override
     public void routeToAgent(final byte[] data) throws AgentUnavailableException {
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug(log(Request.getSequence(data), "Routing from " + Request.getManagementServerId(data)));
+            s_logger.debug(generateLogString(Request.getSequence(data), "Routing from " + Request.getManagementServerId(data)));
         }
 
         if (_link == null) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(log(Request.getSequence(data), "Link is closed"));
+                s_logger.debug(generateLogString(Request.getSequence(data), "Link is closed"));
             }
             throw new AgentUnavailableException("Link is closed", _id);
         }
@@ -122,13 +122,13 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
             _link.send(data);
         } catch (ClosedChannelException e) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(log(Request.getSequence(data), "Channel is closed"));
+                s_logger.debug(generateLogString(Request.getSequence(data), "Channel is closed"));
             }
 
             throw new AgentUnavailableException("Channel to agent is closed", _id);
         } catch (NullPointerException e) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(log(Request.getSequence(data), "Link is closed"));
+                s_logger.debug(generateLogString(Request.getSequence(data), "Link is closed"));
             }
             // Note: since this block is not in synchronized.  It is possible for _link to become null.
             throw new AgentUnavailableException("Channel to agent is null", _id);
@@ -151,7 +151,7 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
         if (_transferMode) {
 
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(log(seq, "Holding request as the corresponding agent is in transfer mode: "));
+                s_logger.debug(generateLogString(seq, "Holding request as the corresponding agent is in transfer mode: "));
             }
 
             synchronized (this) {
@@ -177,7 +177,7 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
                 ch = s_clusteredAgentMgr.connectToPeer(peerName, ch);
                 if (ch == null) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(log(seq, "Unable to forward " + req.toString()));
+                        s_logger.debug(generateLogString(seq, "Unable to forward " + req.toString()));
                     }
                     continue;
                 }
@@ -189,7 +189,7 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
 
                 try {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(log(seq, "Forwarding " + req.toString() + " to " + peerName));
+                        s_logger.debug(generateLogString(seq, "Forwarding " + req.toString() + " to " + peerName));
                     }
                     if (req.executeInSequence() && listener != null && listener instanceof SynchronousListener) {
                         SynchronousListener synchronous = (SynchronousListener)listener;
@@ -200,7 +200,7 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
                     return;
                 } catch (IOException e) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(log(seq, "Error on connecting to management node: " + req.toString() + " try = " + i));
+                        s_logger.debug(generateLogString(seq, "Error on connecting to management node: " + req.toString() + " try = " + i));
                     }
 
                     if (s_logger.isInfoEnabled()) {

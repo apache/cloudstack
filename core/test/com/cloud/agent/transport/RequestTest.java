@@ -73,7 +73,7 @@ public class RequestTest extends TestCase {
         Level level = logger.getLevel();
 
         logger.setLevel(Level.DEBUG);
-        String log = sreq.log("Debug", true, Level.DEBUG);
+        String log = sreq.generateLogString("Debug", true, Level.DEBUG);
         assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
         assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
         assert (!log.contains(GetHostStatsCommand.class.getSimpleName()));
@@ -81,7 +81,7 @@ public class RequestTest extends TestCase {
         assert (!log.contains("password"));
 
         logger.setLevel(Level.TRACE);
-        log = sreq.log("Trace", true, Level.TRACE);
+        log = sreq.generateLogString("Trace", true, Level.TRACE);
         assert (log.contains(UpdateHostPasswordCommand.class.getSimpleName()));
         assert (log.contains(SecStorageFirewallCfgCommand.class.getSimpleName()));
         assert (log.contains(GetHostStatsCommand.class.getSimpleName()));
@@ -89,7 +89,7 @@ public class RequestTest extends TestCase {
         assert (!log.contains("password"));
 
         logger.setLevel(Level.INFO);
-        log = sreq.log("Info", true, Level.INFO);
+        log = sreq.generateLogString("Info", true, Level.INFO);
         assert (log == null);
 
         logger.setLevel(level);
@@ -216,14 +216,14 @@ public class RequestTest extends TestCase {
         Level level = logger.getLevel();
 
         logger.setLevel(Level.DEBUG);
-        String log = sreq.log("Debug", true, Level.DEBUG);
+        String log = sreq.generateLogString("Debug", true, Level.DEBUG);
         assert (log == null);
 
-        log = sreq.log("Debug", false, Level.DEBUG);
+        log = sreq.generateLogString("Debug", false, Level.DEBUG);
         assert (log != null);
 
         logger.setLevel(Level.TRACE);
-        log = sreq.log("Trace", true, Level.TRACE);
+        log = sreq.generateLogString("Trace", true, Level.TRACE);
         assert (log.contains(GetHostStatsCommand.class.getSimpleName()));
         s_logger.debug(log);
 

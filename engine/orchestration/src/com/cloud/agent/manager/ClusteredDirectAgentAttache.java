@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.exception.AgentUnavailableException;
@@ -24,6 +26,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ClusteredDirectAgentAttache extends DirectAgentAttache implements Routable {
+    private final static Logger s_logger = Logger.getLogger(ClusteredDirectAgentAttache.class);
     private final ClusteredAgentManagerImpl _mgr;
     private final long _nodeId;
 
@@ -40,14 +43,17 @@ public class ClusteredDirectAgentAttache extends DirectAgentAttache implements R
         try {
             req = Request.parse(data);
         } catch (ClassNotFoundException e) {
-            throw new CloudRuntimeException("Unable to rout to an agent ", e);
+            throw new CloudRuntimeException("Unable to route to an agent; no implementation found ", e);
         } catch (UnsupportedVersionException e) {
-            throw new CloudRuntimeException("Unable to rout to an agent ", e);
+            throw new CloudRuntimeException("Unable to route to an agent; protocol not supported ", e);
         }
 
         if (req instanceof Response) {
             super.process(((Response)req).getAnswers());
         } else {
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("sending request " + req.getSequence() + ", command: " + req.getCommand());
+            }
             super.send(req);
         }
     }
@@ -58,6 +64,9 @@ public class ClusteredDirectAgentAttache extends DirectAgentAttache implements R
         if (mgmtId != -1 && mgmtId != _nodeId) {
             _mgr.routeToPeer(Long.toString(mgmtId), response.getBytes());
             if (response.executeInSequence()) {
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("sending response " + response.getSequence());
+                }
                 sendNext(response.getSequence());
             }
             return true;

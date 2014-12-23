@@ -115,7 +115,7 @@ import com.cloud.utils.time.InaccurateClock;
  **/
 @Local(value = {AgentManager.class})
 public class AgentManagerImpl extends ManagerBase implements AgentManager, HandlerFactory, Configurable {
-    protected static final Logger s_logger = Logger.getLogger(AgentManagerImpl.class);
+    private static final Logger s_logger = Logger.getLogger(AgentManagerImpl.class);
     protected static final Logger status_logger = Logger.getLogger(Status.class);
 
     /**

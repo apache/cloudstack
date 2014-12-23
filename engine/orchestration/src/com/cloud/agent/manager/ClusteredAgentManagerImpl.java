@@ -79,6 +79,7 @@ import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -96,7 +97,7 @@ import com.cloud.utils.nio.Task;
 
 @Local(value = {AgentManager.class, ClusteredAgentRebalanceService.class})
 public class ClusteredAgentManagerImpl extends AgentManagerImpl implements ClusterManagerListener, ClusteredAgentRebalanceService {
-    final static Logger s_logger = Logger.getLogger(ClusteredAgentManagerImpl.class);
+    private final static Logger s_logger = Logger.getLogger(ClusteredAgentManagerImpl.class);
     private static final ScheduledExecutorService s_transferExecutor = Executors.newScheduledThreadPool(2, new NamedThreadFactory("Cluster-AgentRebalancingExecutor"));
     private final long rebalanceTimeOut = 300000; // 5 mins - after this time remove the agent from the transfer list
 
@@ -389,13 +390,17 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     protected static void logT(byte[] bytes, final String msg) {
-        s_logger.trace("Seq " + Request.getAgentId(bytes) + "-" + Request.getSequence(bytes) + ": MgmtId " + Request.getManagementServerId(bytes) + ": " +
-            (Request.isRequest(bytes) ? "Req: " : "Resp: ") + msg);
+        if(s_logger.isTraceEnabled()) {
+            s_logger.trace("Seq " + Request.getAgentId(bytes) + "-" + Request.getSequence(bytes) + ": MgmtId " + Request.getManagementServerId(bytes) + ": " +
+                (Request.isRequest(bytes) ? "Req: " : "Resp: ") + msg);
+        }
     }
 
     protected static void logD(byte[] bytes, final String msg) {
-        s_logger.debug("Seq " + Request.getAgentId(bytes) + "-" + Request.getSequence(bytes) + ": MgmtId " + Request.getManagementServerId(bytes) + ": " +
-            (Request.isRequest(bytes) ? "Req: " : "Resp: ") + msg);
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Seq " + Request.getAgentId(bytes) + "-" + Request.getSequence(bytes) + ": MgmtId " + Request.getManagementServerId(bytes) + ": " +
+                (Request.isRequest(bytes) ? "Req: " : "Resp: ") + msg);
+        }
     }
 
     protected static void logI(byte[] bytes, final String msg) {
@@ -408,12 +413,15 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         SocketChannel ch = null;
         SSLEngine sslEngine = null;
         while (i++ < 5) {
+            String msg = null;
+            try {
+                msg = Request.parse(bytes).toString();
+            } catch (ClassNotFoundException | UnsupportedVersionException e1) {
+                s_logger.debug("can't parse bytes to message: " + bytes);
+            }
             ch = connectToPeer(peer, ch);
             if (ch == null) {
-                try {
-                    logD(bytes, "Unable to route to peer: " + Request.parse(bytes).toString());
-                } catch (Exception e) {
-                }
+                logD(bytes, "Unable to route to peer: " + msg);
                 return false;
             }
             sslEngine = getSSLEngine(peer);
@@ -422,16 +430,11 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 return false;
             }
             try {
-                if (s_logger.isDebugEnabled()) {
-                    logD(bytes, "Routing to peer");
-                }
+                logD(bytes, "Routing to peer");
                 Link.write(ch, new ByteBuffer[] {ByteBuffer.wrap(bytes)}, sslEngine);
                 return true;
             } catch (IOException e) {
-                try {
-                    logI(bytes, "Unable to route to peer: " + Request.parse(bytes).toString() + " due to " + e.getMessage());
-                } catch (Exception ex) {
-                }
+                logI(bytes, "Unable to route to peer: " + msg + " due to " + e.getMessage());
             }
         }
         return false;

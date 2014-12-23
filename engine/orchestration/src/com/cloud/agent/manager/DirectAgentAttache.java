@@ -94,9 +94,9 @@ public class DirectAgentAttache extends AgentAttache {
 
     @Override
     public void send(Request req) throws AgentUnavailableException {
-        req.logD("Executing: ", true);
         if (req instanceof Response) {
             Response resp = (Response)req;
+            resp.logD("Received: ", true);
             Answer[] answers = resp.getAnswers();
             if (answers != null && answers[0] instanceof StartupAnswer) {
                 StartupAnswer startup = (StartupAnswer)answers[0];
@@ -104,6 +104,7 @@ public class DirectAgentAttache extends AgentAttache {
                 _futures.add(_agentMgr.getCronJobPool().scheduleAtFixedRate(producePingTask(), interval, interval, TimeUnit.SECONDS));
             }
         } else {
+            req.logD("Executing: ", true);
             Command[] cmds = req.getCommands();
             if (cmds.length > 0 && !(cmds[0] instanceof CronCommand)) {
                 queueTask(new Task(req));
@@ -117,7 +118,7 @@ public class DirectAgentAttache extends AgentAttache {
 
     @Override
     public void process(Answer[] answers) {
-        if (answers != null && answers[0] instanceof StartupAnswer) {
+        if (answers != null && answers.length > 0 && answers[0] instanceof StartupAnswer) {
             StartupAnswer startup = (StartupAnswer)answers[0];
             int interval = startup.getPingInterval();
             s_logger.info("StartupAnswer received " + startup.getHostId() + " Interval = " + interval);
@@ -220,7 +221,7 @@ public class DirectAgentAttache extends AgentAttache {
                 Response resp = new Response(_req, answers.toArray(new Answer[answers.size()]));
                 processAnswers(seq, resp);
             } catch (Exception e) {
-                s_logger.warn(log(seq, "Exception caught in bailout "), e);
+                s_logger.warn(generateLogString(seq, "Exception caught in bailout "), e);
             }
         }
 
@@ -239,7 +240,7 @@ public class DirectAgentAttache extends AgentAttache {
                 boolean stopOnError = _req.stopOnError();
 
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(log(seq, "Executing request"));
+                    s_logger.debug(generateLogString(seq, "Executing request"));
                 }
                 ArrayList<Answer> answers = new ArrayList<Answer>(cmds.length);
                 for (int i = 0; i < cmds.length; i++) {
@@ -255,13 +256,13 @@ public class DirectAgentAttache extends AgentAttache {
                             answer = new Answer(cmds[i], false, "Agent is disconnected");
                         }
                     } catch (Exception e) {
-                        s_logger.warn(log(seq, "Exception Caught while executing command"), e);
+                        s_logger.warn(generateLogString(seq, "Exception Caught while executing command"), e);
                         answer = new Answer(cmds[i], false, e.toString());
                     }
                     answers.add(answer);
                     if (!answer.getResult() && stopOnError) {
                         if (i < cmds.length - 1 && s_logger.isDebugEnabled()) {
-                            s_logger.debug(log(seq, "Cancelling because one of the answers is false and it is stop on error."));
+                            s_logger.debug(generateLogString(seq, "Cancelling because one of the answers is false and it is stop on error."));
                         }
                         break;
                     }
@@ -269,12 +270,12 @@ public class DirectAgentAttache extends AgentAttache {
 
                 Response resp = new Response(_req, answers.toArray(new Answer[answers.size()]));
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(log(seq, "Response Received: "));
+                    s_logger.debug(generateLogString(seq, "Response Received: "));
                 }
 
                 processAnswers(seq, resp);
             } catch (Exception e) {
-                s_logger.warn(log(seq, "Exception caught "), e);
+                s_logger.warn(generateLogString(seq, "Exception caught "), e);
             } finally {
                 _outstandingCronTaskCount.decrementAndGet();
             }
@@ -297,7 +298,7 @@ public class DirectAgentAttache extends AgentAttache {
                 boolean stopOnError = _req.stopOnError();
 
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(log(seq, "Executing request"));
+                    s_logger.debug(generateLogString(seq, "Executing request"));
                 }
                 ArrayList<Answer> answers = new ArrayList<Answer>(cmds.length);
                 for (int i = 0; i < cmds.length; i++) {
@@ -313,13 +314,13 @@ public class DirectAgentAttache extends AgentAttache {
                             answer = new Answer(cmds[i], false, "Agent is disconnected");
                         }
                     } catch (Exception e) {
-                        s_logger.warn(log(seq, "Exception Caught while executing command"), e);
+                        s_logger.warn(generateLogString(seq, "Exception Caught while executing command"), e);
                         answer = new Answer(cmds[i], false, e.toString());
                     }
                     answers.add(answer);
                     if (!answer.getResult() && stopOnError) {
                         if (i < cmds.length - 1 && s_logger.isDebugEnabled()) {
-                            s_logger.debug(log(seq, "Cancelling because one of the answers is false and it is stop on error."));
+                            s_logger.debug(generateLogString(seq, "Cancelling because one of the answers is false and it is stop on error."));
                         }
                         break;
                     }
@@ -327,12 +328,12 @@ public class DirectAgentAttache extends AgentAttache {
 
                 Response resp = new Response(_req, answers.toArray(new Answer[answers.size()]));
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(log(seq, "Response Received: "));
+                    s_logger.debug(generateLogString(seq, "Response Received: "));
                 }
 
                 processAnswers(seq, resp);
             } catch (Exception e) {
-                s_logger.warn(log(seq, "Exception caught "), e);
+                s_logger.warn(generateLogString(seq, "Exception caught "), e);
             } finally {
                 _outstandingTaskCount.decrementAndGet();
                 scheduleFromQueue();

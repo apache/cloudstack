@@ -37,12 +37,13 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonIOException;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
@@ -362,7 +363,7 @@ public class Request {
 
     public void logD(String msg, boolean logContent) {
         if (s_logger.isDebugEnabled()) {
-            String log = log(msg, logContent, Level.DEBUG);
+            String log = generateLogString(msg, logContent, Level.DEBUG);
             if (log != null) {
                 s_logger.debug(log);
             }
@@ -371,12 +372,12 @@ public class Request {
 
     public void logT(String msg, boolean logD) {
         if (s_logger.isTraceEnabled()) {
-            String log = log(msg, true, Level.TRACE);
+            String log = generateLogString(msg, true, Level.TRACE);
             if (log != null) {
                 s_logger.trace(log);
             }
         } else if (logD && s_logger.isDebugEnabled()) {
-            String log = log(msg, false, Level.DEBUG);
+            String log = generateLogString(msg, false, Level.DEBUG);
             if (log != null) {
                 s_logger.debug(log);
             }
@@ -385,15 +386,18 @@ public class Request {
 
     @Override
     public String toString() {
-        return log("", true, Level.DEBUG);
+        return generateLogString("", true, Level.DEBUG);
     }
 
-    protected String log(String msg, boolean logContent, Level level) {
+    protected String generateLogString(String msg, boolean logContent, Level level) {
         StringBuilder content = new StringBuilder();
         if (logContent) {
             if (_cmds == null) {
                 try {
                     _cmds = s_gson.fromJson(_content, this instanceof Response ? Answer[].class : Command[].class);
+                } catch (JsonSyntaxException e) {
+                    s_logger.error("Unable to convert to json due to syntax error: " + _content);
+                    throw e;
                 } catch (RuntimeException e) {
                     s_logger.error("Unable to convert to json: " + _content);
                     throw e;
@@ -401,7 +405,7 @@ public class Request {
             }
             try {
                 s_gogger.toJson(_cmds, content);
-            } catch (Throwable e) {
+            } catch (JsonIOException e) {
                 StringBuilder buff = new StringBuilder();
                 for (Command cmd : _cmds) {
                     buff.append(cmd.getClass().getSimpleName()).append("/");
@@ -411,6 +415,7 @@ public class Request {
                 return "";
             }
             if (content.length() <= (1 + _cmds.length * 3)) {
+                s_logger.info("not building log message for '" + content + "', _cmds.length == " + _cmds.length);
                 return null;
             }
         } else {

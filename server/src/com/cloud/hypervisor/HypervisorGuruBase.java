@@ -17,10 +17,13 @@
 package com.cloud.hypervisor;
 
 import com.cloud.network.dao.NetworkVO;
+
 import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DiskTO;
@@ -48,6 +51,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru {
+    private static final Logger s_logger = Logger.getLogger(HypervisorGuruBase.class);
 
     @Inject
     VMTemplateDetailsDao _templateDetailsDao;
@@ -92,10 +96,16 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setSecurityGroupEnabled(profile.isSecurityGroupEnabled());
 
         NetworkVO network = _networkDao.findById(profile.getNetworkId());
+        if(s_logger.isTraceEnabled()) {
+            s_logger.trace(profile.getNetworkId() + " resulted in net id " + network.getUuid());
+        }
         to.setNetworkUuid(network.getUuid());
 
-        // Workaround to make sure the TO has the UUID we need for Niciri integration
+        // Workaround to make sure the TO has the UUID we need for Nicira integration
         NicVO nicVO = _nicDao.findById(profile.getId());
+        if(s_logger.isTraceEnabled()) {
+            s_logger.trace(profile.getId() + " resulted in nic id " + nicVO.getUuid());
+        }
         to.setUuid(nicVO.getUuid());
         //check whether the this nic has secondary ip addresses set
         //set nic secondary ip address in NicTO which are used for security group
