@@ -58,6 +58,7 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         cloudstackTestClient = super(TestSecondaryStorageLimits,
                                cls).getClsTestClient()
         cls.api_client = cloudstackTestClient.getApiClient()
+        cls.hypervisor = cloudstackTestClient.getHypervisorInfo()
         # Fill services from the external config file
         cls.services = cloudstackTestClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
@@ -204,6 +205,9 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         4. Create template from the snapshot
         5. Verify that the secondary storage count of the account equals
            the size of the template"""
+
+        if self.hypervisor.lower() in ['hyperv']:
+            self.skipTest("Snapshots feature is not supported on Hyper-V")
 
         response = self.setupAccount(value)
         self.assertEqual(response[0], PASS, response[1])
