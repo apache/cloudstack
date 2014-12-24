@@ -18,7 +18,7 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackTestCase import cloudstackTestCase,unittest
 from marvin.lib.base import (VirtualMachine,
                                          Snapshot,
                                          Template,
@@ -129,7 +129,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestResourceLimitsAccount, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -448,6 +448,8 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         # 5. Create 2 snapshot in account 2. Verify account 2 should be able to
         #    create snapshots without any warning
 
+        if self.hypervisor.lower() in ['hyperv']:
+            self.skipTest("Snapshots feature is not supported on Hyper-V")
         self.debug(
             "Updating public IP resource limit for account: %s" %
                                                 self.account_1.name)
@@ -914,7 +916,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestResourceLimitsDomain, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services = Services().services
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
@@ -1132,7 +1134,8 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         #    created
         # 5. Try to create another snapshot in this domain. It should give the
         #    user an appropriate error and an alert should be generated.
-
+        if self.hypervisor.lower() in ['hyperv']:
+            self.skipTest("Snapshots feature is not supported on Hyper-V")
         self.debug(
             "Updating snapshot resource limits for domain: %s" %
                                         self.account.domainid)

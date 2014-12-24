@@ -284,7 +284,7 @@ class TestTemplates(cloudstackTestCase):
 
         cls.testClient = super(TestTemplates, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -494,6 +494,9 @@ class TestTemplates(cloudstackTestCase):
         # 3. Create Template from snapshot
         # 4. Deploy Virtual machine using this template
         # 5. VM should be in running state
+
+        if self.hypervisor.lower() in ['hyperv']:
+            self.skipTest("Snapshots feature is not supported on Hyper-V")
 
         userapiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,
