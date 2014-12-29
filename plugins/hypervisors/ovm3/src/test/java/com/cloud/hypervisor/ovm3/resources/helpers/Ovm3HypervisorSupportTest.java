@@ -18,8 +18,6 @@ import com.cloud.hypervisor.ovm3.objects.NetworkTest;
 import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
 import com.cloud.hypervisor.ovm3.objects.XmlTestResultTest;
 import com.cloud.hypervisor.ovm3.objects.XenTest;
-import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3Configuration;
-import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3HypervisorSupport;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
 
@@ -118,7 +116,7 @@ public class Ovm3HypervisorSupportTest {
 
     /**
      * Sets the state, original, of the fake VM to replace.
-     * 
+     *
      * @param hypervisor
      * @param original
      * @param replace
