@@ -111,7 +111,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
      */
     private Map<String, Xen.Vm> vmMap = new HashMap<String, Xen.Vm>();
 
-
     @Override
     public Type getType() {
         return Type.Routing;
@@ -135,7 +134,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             ovm3vrs = new Ovm3VirtualRoutingSupport(c, ovm3config, ovm3vrr);
             ovm3spr = new Ovm3StorageProcessor(c, ovm3config, ovm3sp);
             ovm3gt = new Ovm3VmGuestTypes();
-            ovm3hs.setupServer(ovm3config.getAgentSshKey());
+            ovm3hs.setupServer(ovm3config.getAgentSshKeyFileName());
             LOGGER.debug("Ovm3 pool " + ssCmd + " " + srCmd);
             // srCmd.setStateChanges(changes);
             return new StartupCommand[] { srCmd, ssCmd };
@@ -253,7 +252,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     @Override
     public void disconnected() {
         // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -309,11 +307,14 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         ovm3config = new Ovm3Configuration(params);
         /* check if we're master or not and if we can connect */
         try {
-            c = new Connection(ovm3config.getAgentIp(),
-                    ovm3config.getAgentOvsAgentPort(),
-                    ovm3config.getAgentOvsAgentUser(),
-                    ovm3config.getAgentOvsAgentPassword());
-            c.setHostName(ovm3config.getAgentHostname());
+            if (!c.getBogus()) {
+                c = new Connection(ovm3config.getAgentIp(),
+                        ovm3config.getAgentOvsAgentPort(),
+                        ovm3config.getAgentOvsAgentUser(),
+                        ovm3config.getAgentOvsAgentPassword());
+                c.setHostName(ovm3config.getAgentHostname());
+            }
+
             ovm3hs = new Ovm3HypervisorSupport(c, ovm3config);
             ovm3hs.masterCheck();
         } catch (Exception e) {
@@ -331,6 +332,11 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         ovm3sp = new Ovm3StoragePool(c, ovm3config);
         ovm3sp.prepareForPool();
         return true;
+    }
+
+    public void setConnection(Connection con) {
+        LOGGER.debug("override connection: " + con.getIp());
+        c = con;
     }
 
     @Override
@@ -536,5 +542,4 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         // TODO Auto-generated method stub
         return null;
     }
-
 }

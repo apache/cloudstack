@@ -212,6 +212,10 @@ public class NetworkTest {
                     + "  </Network>"
                     + "</Discover_Network_Result>");
 
+    public String getDiscoverNetwork() {
+        return DISCOVERNETWORK;
+    }
+
     @Test
     public void testDiscoverNetwork() throws Ovm3ResourceException {
         con.setResult(results.getNil());

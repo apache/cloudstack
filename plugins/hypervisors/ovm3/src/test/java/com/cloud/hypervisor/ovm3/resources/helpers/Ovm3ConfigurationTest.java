@@ -23,7 +23,7 @@ public class Ovm3ConfigurationTest {
         params.put("secondary.storage.vm", "false");
         params.put("Hypervisor.Version", "4.1.3OVM");
         params.put("Host.OS", "Oracle VM Server");
-        params.put("ipaddress", "192.168.1.65");
+        params.put("ipaddress", "192.168.1.64");
         params.put("ovm3pool", "true");
         params.put("password", "unknown");
         params.put("username", "root");
@@ -36,7 +36,7 @@ public class Ovm3ConfigurationTest {
         params.put("router.aggregation.command.each.timeout", "3");
         params.put("pod", "1");
         params.put("max.template.iso.size", "50");
-        params.put("host", "ovm-2");
+        params.put("host", "ovm-1");
         params.put("com.cloud.network.Networks.RouterPrivateIpStrategy",
                 "DcGlobal");
         params.put("agentport", "8899");
@@ -44,7 +44,7 @@ public class Ovm3ConfigurationTest {
         params.put("migratewait", "3600");
         params.put("storage.network.device1", "xenbr0");
         params.put("ovm3cluster", "false");
-        params.put("ip", "192.168.1.65");
+        params.put("ip", "192.168.1.64");
         params.put("guid", "19e5f1e7-22f4-3b6d-8d41-c82f89c65295");
         params.put("ovm3vip", "192.168.1.230");
         params.put("hasmaster", "true");
@@ -58,7 +58,7 @@ public class Ovm3ConfigurationTest {
     public void testConfigLoad() throws ConfigurationException {
         params.put("pod", "1");
         ovm3config = new Ovm3Configuration(params);
-        results.basicStringTest(ovm3config.getAgentHostname(), "ovm-2");
+        results.basicStringTest(ovm3config.getAgentHostname(), "ovm-1");
     }
 
     @Test(expected = ConfigurationException.class)
@@ -84,5 +84,8 @@ public class Ovm3ConfigurationTest {
         par.put("agentport", altPort);
         ovm3config = new Ovm3Configuration(par);
         results.basicIntTest(Integer.parseInt(altPort), ovm3config.getAgentOvsAgentPort());
+    }
+    public Map<String, Object> getParams() {
+        return params;
     }
 }

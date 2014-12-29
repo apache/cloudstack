@@ -5,6 +5,8 @@ import java.util.UUID;
 import org.junit.Test;
 
 public class XenTest {
+    public XenTest() {
+    }
     ConnectionTest con = new ConnectionTest();
     Xen xEn = new Xen(con);
     XmlTestResultTest results = new XmlTestResultTest();
@@ -1426,5 +1428,12 @@ public class XenTest {
     public void testPauseVm() throws Ovm3ResourceException {
         con.setResult(results.getNil());
         results.basicBooleanTest(xEn.pauseVm(REPOID, VMID));
+    }
+
+    public String getVmListXML() {
+        return VMSLISTXML;
+    }
+    public String getVmName() {
+        return VMNAME;
     }
 }

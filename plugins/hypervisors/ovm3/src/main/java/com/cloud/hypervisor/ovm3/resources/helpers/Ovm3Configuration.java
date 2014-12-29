@@ -28,7 +28,7 @@ public class Ovm3Configuration {
     private String agentOvsAgentPassword;
     private Integer agentOvsAgentPort = 8899;
     private Boolean agentOvsAgentSsl = false;
-    private String agentSshKey = "id_rsa.cloud";
+    private String agentSshKeyFile = "id_rsa.cloud";
     private String agentOwnedByUuid = "d1a749d4295041fb99854f52ea4dea97";
     private Boolean agentIsMaster = false;
     private Boolean agentHasMaster = false;
@@ -204,12 +204,12 @@ public class Ovm3Configuration {
         this.agentOvsAgentSsl = agentOvsAgentSsl;
     }
 
-    public String getAgentSshKey() {
-        return agentSshKey;
+    public String getAgentSshKeyFileName() {
+        return agentSshKeyFile;
     }
 
-    public void setAgentSshKey(String agentSshKey) {
-        this.agentSshKey = agentSshKey;
+    public void setAgentSshKeyFileName(String agentSshFile) {
+        this.agentSshKeyFile = agentSshFile;
     }
 
     public String getAgentOwnedByUuid() {

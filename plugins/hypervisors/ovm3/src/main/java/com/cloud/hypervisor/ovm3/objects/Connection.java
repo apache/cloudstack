@@ -33,6 +33,7 @@ public class Connection extends XmlRpcClient {
     private String hostPass = null;
     private String hostIp;
     private String hostName;
+    private Boolean bogus = false;
     private Integer hostPort = 8898;
     private Boolean hostUseSsl = false;
     private String cert = "";
@@ -159,6 +160,9 @@ public class Connection extends XmlRpcClient {
     public String getUserName() {
         return hostUser;
     }
+    public void setUserName(String s) {
+        hostUser = s;
+    }
 
     public String getPassword() {
         return hostPass;
@@ -182,5 +186,11 @@ public class Connection extends XmlRpcClient {
 
     public void setHostName(String hostName) {
         this.hostName = hostName;
+    }
+    public Boolean getBogus() {
+        return bogus;
+    }
+    public void setBogus(Boolean b) {
+        bogus = b;
     }
 }

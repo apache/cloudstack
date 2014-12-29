@@ -12,7 +12,7 @@ import com.cloud.hypervisor.ovm3.objects.CloudStackPlugin.ReturnCode;
 public class CloudStackPluginTest {
     private static final String VMNAME = "test";
     String domrIp = "169.254.3.2";
-    String dom0Ip = "192.168.1.100";
+    String dom0Ip = "192.168.1.64";
     Integer domrPort = 3922;
     String host = "ovm-1";
     String path = "/tmp";

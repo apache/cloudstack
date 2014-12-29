@@ -3,11 +3,13 @@ package com.cloud.hypervisor.ovm3.objects;
 import org.junit.Test;
 
 public class LinuxTest {
+    public LinuxTest() {
+    }
     ConnectionTest con = new ConnectionTest();
     Linux lin = new Linux(con);
     XmlTestResultTest results = new XmlTestResultTest();
 
-    private static final String DISCOVERSERVER = "&lt;?xml version=\"1.0\" ?&gt;"
+    private final String DISCOVERSERVER = "&lt;?xml version=\"1.0\" ?&gt;"
             + "&lt;Discover_Server_Result&gt;"
             + "&lt;Server&gt;"
             + "&lt;Unique_Id&gt;1d:d5:e8:91:d9:d0:ed:bd:81:c2:a6:9a:b3:d1:b7:ea&lt;/Unique_Id&gt;"
@@ -87,8 +89,17 @@ public class LinuxTest {
             + "&lt;YUM_PACKAGE_MANAGEMENT&gt;True&lt;/YUM_PACKAGE_MANAGEMENT&gt;"
             + "&lt;/Capabilities&gt;" + "&lt;/Server&gt;"
             + "&lt;/Discover_Server_Result&gt;";
-    public static String getDISCOVERSERVER() {
+
+    public String getDiscoverserver() {
         return DISCOVERSERVER;
+    }
+
+    public String getDiscoverHw() {
+        return DISCOVERHW;
+    }
+
+    public String getDiscoverFs() {
+        return DISCOVERFS;
     }
 
     private final String DISCOVERHW = "&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;"

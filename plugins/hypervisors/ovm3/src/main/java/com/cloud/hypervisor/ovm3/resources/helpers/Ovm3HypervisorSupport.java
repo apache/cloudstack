@@ -270,7 +270,7 @@ public class Ovm3HypervisorSupport {
                         + config.getAgentHostname() + " failed");
             }
             CloudStackPlugin cSp = new CloudStackPlugin(c);
-            cSp.ovsUploadSshKey(config.getAgentSshKey(),
+            cSp.ovsUploadSshKey(config.getAgentSshKeyFileName(),
                     FileUtils.readFileToString(getSystemVMKeyFile(key)));
         } catch (Exception es) {
             LOGGER.error("Unexpected exception ", es);
@@ -394,18 +394,18 @@ public class Ovm3HypervisorSupport {
 
                 if (oldState == null) {
                     vmStateMap.put(vmName, newState);
-                    LOGGER.trace("New state without old state: " + vmName);
+                    LOGGER.debug("New state without old state: " + vmName);
                     changes.put(vmName, newState);
                 } else if (oldState == State.Starting) {
                     if (newState == State.Running) {
                         vmStateMap.put(vmName, newState);
                     } else if (newState == State.Stopped) {
-                        LOGGER.trace("Ignoring vm " + vmName
+                        LOGGER.debug("Ignoring vm " + vmName
                                 + " because of a lag in starting the vm.");
                     }
                 } else if (oldState == State.Migrating) {
                     if (newState == State.Running) {
-                        LOGGER.trace("Detected that a migrating VM is now running: "
+                        LOGGER.debug("Detected that a migrating VM is now running: "
                                 + vmName);
                         vmStateMap.put(vmName, newState);
                     }
@@ -413,7 +413,7 @@ public class Ovm3HypervisorSupport {
                     if (newState == State.Stopped) {
                         vmStateMap.put(vmName, newState);
                     } else if (newState == State.Running) {
-                        LOGGER.trace("Ignoring vm " + vmName
+                        LOGGER.debug("Ignoring vm " + vmName
                                 + " because of a lag in stopping the vm. ");
                     }
                 } else if (oldState != newState) {
@@ -430,15 +430,15 @@ public class Ovm3HypervisorSupport {
                 final State oldState = entry.getValue();
 
                 if (oldState == State.Stopping) {
-                    LOGGER.trace("Removing VM " + vmName
+                    LOGGER.debug("Removing VM " + vmName
                             + " in transition state stopping.");
                     vmStateMap.remove(vmName);
                 } else if (oldState == State.Starting) {
-                    LOGGER.trace("Removing VM " + vmName
+                    LOGGER.debug("Removing VM " + vmName
                             + " in transition state starting.");
                     vmStateMap.remove(vmName);
                 } else if (oldState == State.Stopped) {
-                    LOGGER.trace("Stopped VM " + vmName + " removing.");
+                    LOGGER.debug("Stopped VM " + vmName + " removing.");
                     vmStateMap.remove(vmName);
                 } else if (oldState == State.Migrating) {
                     /*
@@ -450,7 +450,7 @@ public class Ovm3HypervisorSupport {
                 } else {
                     /* if it's not there name it stopping */
                     State state = State.Stopping;
-                    LOGGER.trace("VM " + vmName
+                    LOGGER.debug("VM " + vmName
                             + " is now missing from ovm3 server so removing it");
                     changes.put(vmName, state);
                     vmStateMap.remove(vmName);
@@ -578,7 +578,7 @@ public class Ovm3HypervisorSupport {
         }
 
     }
-    /* hHeck "the" virtual machine */
+    /* check "the" virtual machine */
     public CheckVirtualMachineAnswer execute(
             final CheckVirtualMachineCommand cmd) {
         String vmName = cmd.getVmName();
