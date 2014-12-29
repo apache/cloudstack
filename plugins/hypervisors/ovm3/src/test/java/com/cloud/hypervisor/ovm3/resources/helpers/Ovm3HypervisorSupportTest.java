@@ -63,11 +63,11 @@ public class Ovm3HypervisorSupportTest {
         State vmState = hypervisor.getVmState(vmName);
         results.basicStringTest(vmState.toString(), State.Running.toString());
         hypervisor.setVmStateStarting(vmName);
-        results.basicStringTest(hypervisor.getVmState(vmName)
-                .toString(), State.Starting.toString());
+        results.basicStringTest(hypervisor.getVmState(vmName).toString(),
+                State.Starting.toString());
         hypervisor.setVmState(vmName, State.Running);
-        results.basicStringTest(hypervisor.getVmState(vmName)
-                .toString(), State.Running.toString());
+        results.basicStringTest(hypervisor.getVmState(vmName).toString(),
+                State.Running.toString());
         hypervisor.revmoveVmState(vmName);
         assertNull(hypervisor.getVmState(vmName));
     }
@@ -92,7 +92,8 @@ public class Ovm3HypervisorSupportTest {
     }
 
     @Test
-    public void CombinedVmStateTest() throws ConfigurationException, Ovm3ResourceException {
+    public void CombinedVmStateTest() throws ConfigurationException,
+            Ovm3ResourceException {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
         con.setResult(xenTest.getVmListXML());
         Ovm3HypervisorSupport hypervisor = new Ovm3HypervisorSupport(con,
@@ -103,9 +104,9 @@ public class Ovm3HypervisorSupportTest {
         // System.out.println(hypervisor.getVmState(vmName));
         hypervisor.syncState();
         // System.out.println(hypervisor.getVmState(vmName));
-        
+
         // setHypervisorVmState(hypervisor, blocked, paused, State.Stopped);
-        
+
         hypervisor.setVmState(vmName, State.Stopping);
         hypervisor.setVmState(vmName, State.Migrating);
         // setHypervisorVmState(hypervisor, blocked, running, State.Running);
@@ -117,19 +118,21 @@ public class Ovm3HypervisorSupportTest {
 
     /**
      * Sets the state, original, of the fake VM to replace.
+     * 
      * @param hypervisor
      * @param original
      * @param replace
      * @param state
      * @throws Ovm3ResourceException
      */
-    public void setHypervisorVmState(Ovm3HypervisorSupport hypervisor, String original,
-            String replace, State state) throws Ovm3ResourceException {
+    public void setHypervisorVmState(Ovm3HypervisorSupport hypervisor,
+            String original, String replace, State state)
+            throws Ovm3ResourceException {
         String x = xenTest.getVmListXML().replaceAll(original, replace);
         con.setResult(x);
         hypervisor.syncState();
-        results.basicStringTest(hypervisor.getVmState(vmName)
-                .toString(), state.toString());
+        results.basicStringTest(hypervisor.getVmState(vmName).toString(),
+                state.toString());
     }
 
     @Test
@@ -191,7 +194,7 @@ public class Ovm3HypervisorSupportTest {
         Ovm3HypervisorSupport hypervisor = new Ovm3HypervisorSupport(con,
                 config);
     }
-    
+
     @Test
     public void fillHostinfoTest() throws ConfigurationException {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
@@ -202,12 +205,15 @@ public class Ovm3HypervisorSupportTest {
         LinuxTest linuxTest = new LinuxTest();
         NetworkTest networkTest = new NetworkTest();
         StartupRoutingCommand srCmd = new StartupRoutingCommand();
-        con.setResult(results.simpleResponseWrapWrapper(linuxTest.getDiscoverHw()));
-        con.addResult(results.simpleResponseWrapWrapper(linuxTest.getDiscoverserver()));
-        con.addResult(results.simpleResponseWrapWrapper(networkTest.getDiscoverNetwork()));
+        con.setResult(results.simpleResponseWrapWrapper(linuxTest
+                .getDiscoverHw()));
+        con.addResult(results.simpleResponseWrapWrapper(linuxTest
+                .getDiscoverserver()));
+        con.addResult(results.simpleResponseWrapWrapper(networkTest
+                .getDiscoverNetwork()));
         hypervisor.fillHostInfo(srCmd);
     }
-    
+
     @Test(expected = CloudRuntimeException.class)
     public void setupServerTest() throws ConfigurationException, IOException {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());

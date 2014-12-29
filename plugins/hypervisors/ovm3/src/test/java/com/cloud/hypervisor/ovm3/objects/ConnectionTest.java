@@ -16,12 +16,12 @@ import org.junit.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 
-import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3HypervisorNetwork;
-
-/* This is a stub for XML parsing into result sets, it also contains test for Connection */
+/*
+ * This is a stub for XML parsing into result sets, it also contains test for
+ * Connection
+ */
 public class ConnectionTest extends Connection {
-    private final Logger LOGGER = Logger
-            .getLogger(ConnectionTest.class);
+    private final Logger LOGGER = Logger.getLogger(ConnectionTest.class);
     XmlTestResultTest results = new XmlTestResultTest();
     String result;
     List<String> multiRes = new ArrayList<String>();
@@ -29,36 +29,38 @@ public class ConnectionTest extends Connection {
 
     public ConnectionTest() {
     }
-    
+
     @Override
     public String getIp() {
         return hostIp;
     }
-    
+
     public void setIp(String s) {
         hostIp = s;
     }
 
     @Override
-    public Object callTimeoutInSec(String method, List<?> params, int timeout, boolean debug) throws XmlRpcException {
+    public Object callTimeoutInSec(String method, List<?> params, int timeout,
+            boolean debug) throws XmlRpcException {
         XmlRpcStreamConfig config = new XmlRpcHttpRequestConfigImpl();
         XmlRpcClient client = new XmlRpcClient();
-        // XmlRpcRequestParser parser = new XmlRpcRequestParser(config, client.getTypeFactory());
+        // XmlRpcRequestParser parser = new XmlRpcRequestParser(config,
+        // client.getTypeFactory());
         client.setTypeFactory(new RpcTypeFactory(client));
-        XmlRpcResponseParser parser = new XmlRpcResponseParser((XmlRpcStreamRequestConfig) config, client.getTypeFactory());
+        XmlRpcResponseParser parser = new XmlRpcResponseParser(
+                (XmlRpcStreamRequestConfig) config, client.getTypeFactory());
         XMLReader xr = SAXParsers.newXMLReader();
         xr.setContentHandler(parser);
         try {
             String result = getResult();
-            LOGGER.debug("call: "+ method);
+            LOGGER.debug("call: " + method);
             LOGGER.trace("reply: " + result);
             xr.parse(new InputSource(new StringReader(result)));
         } catch (Exception e) {
             throw new XmlRpcException("Exception: " + e.getMessage(), e);
         }
         if (parser.getErrorCode() != 0) {
-            throw new XmlRpcException("Fault received["
-                    + parser.getErrorCode()
+            throw new XmlRpcException("Fault received[" + parser.getErrorCode()
                     + "]: " + parser.getErrorMessage());
         }
         return parser.getResult();
@@ -69,6 +71,7 @@ public class ConnectionTest extends Connection {
         multiRes.add(0, res);
         // result = res;
     }
+
     public String getResult() {
         // System.out.println(popResult().length() + " - " + result.length());
         return popResult();
@@ -78,18 +81,22 @@ public class ConnectionTest extends Connection {
     public void addResult(String e) {
         multiRes.add(e);
     }
+
     public void addResult(List<String> l) {
         multiRes.addAll(l);
     }
+
     public String popResult() {
         String res = multiRes.get(0);
         if (multiRes.size() > 1)
             multiRes.remove(0);
         return res;
     }
+
     public void removeResult() {
 
     }
+
     @Test
     public void testConnection() {
         String host = "ovm-1";
@@ -104,7 +111,7 @@ public class ConnectionTest extends Connection {
         results.basicIntTest(con.getPort(), port);
         try {
             con.callTimeoutInSec("ping", emptyParams, 1);
-            //            con.call("ping", emptyParams, 1, false);
+            // con.call("ping", emptyParams, 1, false);
         } catch (XmlRpcException e) {
             // TODO Auto-generated catch block
             System.out.println();
@@ -112,4 +119,3 @@ public class ConnectionTest extends Connection {
         new Connection(host, user, pass);
     }
 }
-
