@@ -130,7 +130,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             /* here stuff gets completed, but where should state live ? */
             ovm3hs.fillHostInfo(srCmd);
             ovm3hs.vmStateMapClear();
-            ovm3vs = new Ovm3VmSupport(c, ovm3config, ovm3hs, ovm3sp, ovm3hn);
             ovm3vrs = new Ovm3VirtualRoutingSupport(c, ovm3config, ovm3vrr);
             ovm3spr = new Ovm3StorageProcessor(c, ovm3config, ovm3sp);
             ovm3gt = new Ovm3VmGuestTypes();
@@ -159,7 +158,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
                 LOGGER.debug("Agent did not respond correctly: " + ping
                         + " but got " + pong);
             }
-        } catch (Ovm3ResourceException e) {
+        } catch (Ovm3ResourceException|NullPointerException e) {
             LOGGER.debug("Check agent status failed", e);
             return null;
         }
@@ -279,7 +278,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     @Override
     public void setConfigParams(Map<String, Object> params) {
         // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -324,6 +322,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         ovm3hn = new Ovm3HypervisorNetwork(c, ovm3config);
         ovm3hn.configureNetworking();
         ovm3vrr = new Ovm3VirtualRoutingResource(c);
+        ovm3vs = new Ovm3VmSupport(c, ovm3config, ovm3hs, ovm3sp, ovm3hn);
         vrResource = new VirtualRoutingResource(ovm3vrr);
         if (!vrResource.configure(name, params)) {
             throw new ConfigurationException(

@@ -2,9 +2,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * http://www.apache.org/licenses/LICENSE-2.0
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -113,8 +111,8 @@ public class Connection extends XmlRpcClient {
             if ("".equals(hostName)) {
                 hostName = hostIp;
             }
-            LOGGER.debug("Call Ovm3 agent " + hostName + ": " + method + " with "
-                    + params);
+            LOGGER.debug("Call Ovm3 agent " + hostName + ": " + method
+                    + " with " + params);
         }
         long startTime = System.currentTimeMillis();
         try {
@@ -129,6 +127,9 @@ public class Connection extends XmlRpcClient {
         } catch (XmlRpcException e) {
             LOGGER.info("XML RPC Exception occured: ", e);
             throw e;
+        /* } catch (NullPointerException e) {
+            LOGGER.info("Nullpointer occured: ", e);
+            throw new XmlRpcException(e.getMessage()); */
         } catch (RuntimeException e) {
             LOGGER.info("Runtime Exception: ", e);
             throw new XmlRpcException(e.getMessage());
@@ -160,6 +161,7 @@ public class Connection extends XmlRpcClient {
     public String getUserName() {
         return hostUser;
     }
+
     public void setUserName(String s) {
         hostUser = s;
     }
@@ -187,10 +189,20 @@ public class Connection extends XmlRpcClient {
     public void setHostName(String hostName) {
         this.hostName = hostName;
     }
+
     public Boolean getBogus() {
         return bogus;
     }
+
     public void setBogus(Boolean b) {
         bogus = b;
+    }
+
+    public void setIp(String agentIp) {
+        hostIp = agentIp;
+    }
+
+    public void setPassword(String agentPassword) {
+        hostPass = agentPassword;
     }
 }

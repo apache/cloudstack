@@ -181,7 +181,7 @@ public class Ovm3HypervisorSupportTest {
         /* fake */
         GetHostStatsCommand cmd = new GetHostStatsCommand(config.getCsGuid(),
                 config.getAgentName(), 1L);
-        con.setResult(null);
+        con.setNull();
         Answer x = hypervisor.execute((GetHostStatsCommand) cmd);
         results.basicBooleanTest(x.getResult(), false);
     }

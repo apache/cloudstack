@@ -57,7 +57,7 @@ public class CloudStackPluginTest {
         con.setResult(results.getBoolean(true));
         results.basicBooleanTest(cSp.domrCheckPort(host, port, retries, interval));
         /* test nothing */
-        con.setResult(null);
+        con.setNull();
         results.basicBooleanTest(
                 cSp.domrCheckPort(host, port, retries, interval), false);
         /* for the last test we need to fake the timeout... */

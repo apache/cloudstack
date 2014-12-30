@@ -28,8 +28,17 @@ public class ConnectionTest extends Connection {
     String hostIp;
 
     public ConnectionTest() {
+        this.setBogus(true);
     }
-
+    /*
+    public ConnectionTest(String agentIp, String agentOvsAgentUser,
+            String agentOvsAgentPassword) {
+        super.setIp(agentIp);
+        super.setUserName(agentOvsAgentUser);
+        super.setPassword(agentOvsAgentPassword);
+        this.setBogus(true);
+    }
+    */
     @Override
     public String getIp() {
         return hostIp;
@@ -42,6 +51,9 @@ public class ConnectionTest extends Connection {
     @Override
     public Object callTimeoutInSec(String method, List<?> params, int timeout,
             boolean debug) throws XmlRpcException {
+        if (this.getBogus() == false) {
+            return super.callTimeoutInSec(method, params, timeout, debug);
+        }
         XmlRpcStreamConfig config = new XmlRpcHttpRequestConfigImpl();
         XmlRpcClient client = new XmlRpcClient();
         // XmlRpcRequestParser parser = new XmlRpcRequestParser(config,
@@ -69,34 +81,36 @@ public class ConnectionTest extends Connection {
     public void setResult(String res) {
         multiRes = new ArrayList<String>();
         multiRes.add(0, res);
-        // result = res;
     }
 
-    public String getResult() {
-        // System.out.println(popResult().length() + " - " + result.length());
-        return popResult();
+    public void setResult(List<String> l) {
+        multiRes = new ArrayList<String>();
+        multiRes.addAll(l);
+    }
+    public void setNull() {
+        multiRes = new ArrayList<String>();
+        multiRes.add(0, null);   
     }
 
     /* result chainsing */
     public void addResult(String e) {
         multiRes.add(e);
     }
-
-    public void addResult(List<String> l) {
-        multiRes.addAll(l);
+    public void addNull() {
+        multiRes.add(null);   
     }
-
+    public String getResult() {
+        return popResult();
+    }
     public String popResult() {
         String res = multiRes.get(0);
         if (multiRes.size() > 1)
             multiRes.remove(0);
         return res;
     }
-
-    public void removeResult() {
-
+    public List<String> resultList() {
+        return multiRes;
     }
-
     @Test
     public void testConnection() {
         String host = "ovm-1";
