@@ -2238,7 +2238,6 @@ class TestInstances(cloudstackTestCase):
             vm_created,
             "VM creation failed"
         )
-        self.cleanup.append(vm_created)
         # Listing all the VMs for a user again for matching zone
         list_vms_after = VirtualMachine.list(
             self.userapiclient,
