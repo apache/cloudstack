@@ -3652,7 +3652,6 @@ class TestInstances(cloudstackTestCase):
                 security_group,
                 "Security Group creation failed"
             )
-            self.cleanup.append(security_group)
             security_groups_list_size = security_groups_list_size + 1
 
         # Listing the networks again
