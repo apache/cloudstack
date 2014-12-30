@@ -37,6 +37,7 @@ import com.vmware.vim25.HostDatastoreBrowserSearchResults;
 import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.TaskInfo;
+import com.vmware.vim25.TaskInfoState;
 import com.vmware.vim25.VirtualDisk;
 
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -1181,8 +1182,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 TaskInfo info = (TaskInfo)(context.getVimClient().getDynamicProperty(taskMor, "info"));
 
                 if (info.getEntityName().equals(cmd.getVmName()) && info.getName().equalsIgnoreCase("CreateSnapshot_Task")) {
-                    s_logger.debug("There is already a VM snapshot task running, wait for it");
-                    context.getVimClient().waitForTask(taskMor);
+                    if (!(info.getState().equals(TaskInfoState.SUCCESS) || info.getState().equals(TaskInfoState.ERROR))) {
+                        s_logger.debug("There is already a VM snapshot task running, wait for it");
+                        context.getVimClient().waitForTask(taskMor);
+                    }
                 }
             }
 
