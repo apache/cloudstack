@@ -2622,9 +2622,6 @@ class TestInstances(cloudstackTestCase):
             "Latest snapshot taken is not marked as current"
         )
 
-        # Stop Virtual machine befor reverting VM to a snapshot taken without memory
-        vm_created.stop(self.userapiclient)
-
         # Reverting the VM to Snapshot 1
         VmSnapshot.revertToSnapshot(
             self.userapiclient,
