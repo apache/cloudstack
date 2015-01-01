@@ -339,42 +339,10 @@
                                             });
                                         }
                                     },
-                                    hostTags: {
-                                        label: 'label.host.tags',
-                                        docID: 'helpComputeOfferingHostTags',
-                                        isTokenInput: true,
-                                        dataProvider: function(args) {
-                                            $.ajax({
-                                                url: createURL("listHostTags"),
-                                                dataType: "json",
-                                                success: function(json) {
-                                                    var item = json.listhosttagsresponse.hosttag;
-                                                    var tags = [];
-
-                                                    if (item != null)
-                                                    {
-                                                        tags = $.map(item, function(tag) {
-                                                            return {
-                                                                       id: tag.name,
-                                                                       name: tag.name
-                                                                   };
-                                                        });
-                                                    }
-
-                                                    args.response.success({
-                                                        data: tags,
-                                                        hintText: "Type in part of a host tag",
-                                                        noResultsText: "No host tags found"
-                                                    });
-                                                },
-                                                error: function(XMLHttpResponse) {
-                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-
-                                                    args.response.error(errorMsg);
-                                                }
-                                            });
-                                        }
-                                    },
+                                    hostTags: { //Only one single host tag is supported at server-side. Multiple host tags are NOT supported at server-side.
+                                        label: 'Host Tag',
+                                        docID: 'helpComputeOfferingHostTags'                                        
+                                   },
                                     cpuCap: {
                                         label: 'label.CPU.cap',
                                         isBoolean: true,
@@ -958,7 +926,7 @@
                                         label: 'label.storage.tags'
                                     },
                                     hosttags: {
-                                        label: 'label.host.tags'
+                                        label: 'Host Tag'
                                     },
                                     domain: {
                                         label: 'label.domain'
