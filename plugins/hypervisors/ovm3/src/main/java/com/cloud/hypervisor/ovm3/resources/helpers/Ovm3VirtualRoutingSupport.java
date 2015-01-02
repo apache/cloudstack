@@ -43,7 +43,7 @@ public class Ovm3VirtualRoutingSupport {
     }
 
     /* copy paste, why isn't this just generic in the VirtualRoutingResource ? */
-    public String networkUsage(final String privateIpAddress,
+    private String networkUsage(final String privateIpAddress,
             final String option, final String ethName) {
         String args = null;
         if ("get".equals(option)) {
@@ -70,7 +70,7 @@ public class Ovm3VirtualRoutingSupport {
     }
 
     /* copy paste, why isn't this just generic in the VirtualRoutingResource ? */
-    public long[] getNetworkStats(String privateIP) {
+    private long[] getNetworkStats(String privateIP) {
         String result = networkUsage(privateIP, "get", null);
         long[] stats = new long[2];
         if (result != null) {
@@ -91,7 +91,7 @@ public class Ovm3VirtualRoutingSupport {
     }
 
     /* copy paste, why isn't this just generic in the VirtualRoutingResource ? */
-    public NetworkUsageAnswer vpcNetworkUsage(NetworkUsageCommand cmd) {
+    private NetworkUsageAnswer vpcNetworkUsage(NetworkUsageCommand cmd) {
         String privateIp = cmd.getPrivateIP();
         String option = cmd.getOption();
         String publicIp = cmd.getGatewayIP();

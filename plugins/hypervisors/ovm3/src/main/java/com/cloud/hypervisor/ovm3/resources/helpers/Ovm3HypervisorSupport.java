@@ -236,7 +236,7 @@ public class Ovm3HypervisorSupport {
      * @param c
      * @throws IOException
      */
-    public void setupServer(String key) throws IOException {
+    public Boolean setupServer(String key) throws IOException {
         /* ssh-copy-id anyone ? */
         /* version dependent patching ? */
         try {
@@ -277,6 +277,7 @@ public class Ovm3HypervisorSupport {
             String msg = "Unable to install module in agent";
             throw new CloudRuntimeException(msg);
         }
+        return true;
     }
    /**
     * Get all the VMs
@@ -353,7 +354,7 @@ public class Ovm3HypervisorSupport {
     public Map<String, State> syncState() throws Ovm3ResourceException {
         return syncState(this.vmStateMap);
     }
-    public Map<String, State> syncState(Map<String, State> vmStateMap) throws Ovm3ResourceException {
+    private Map<String, State> syncState(Map<String, State> vmStateMap) throws Ovm3ResourceException {
         Map<String, State> newStates;
         Map<String, State> oldStates = null;
         final Map<String, State> changes = new HashMap<String, State>();
@@ -467,7 +468,7 @@ public class Ovm3HypervisorSupport {
      * @param powerStateMap
      * @return
      */
-    public PowerState convertStateToPower(State s) {
+    private PowerState convertStateToPower(State s) {
         final PowerState state = powerStateMaps.get(s.toString());
         return state == null ? PowerState.PowerUnknown : state;
     }

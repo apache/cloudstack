@@ -12,6 +12,18 @@ import com.cloud.hypervisor.ovm3.objects.CloudStackPlugin.ReturnCode;
 public class CloudStackPluginTest {
     private static final String VMNAME = "test";
     String domrIp = "169.254.3.2";
+    public String getDomrIp() {
+        return domrIp;
+    }
+
+    public String getDom0Ip() {
+        return dom0Ip;
+    }
+
+    public Integer getDomrPort() {
+        return domrPort;
+    }
+
     String dom0Ip = "192.168.1.64";
     Integer domrPort = 3922;
     String host = "ovm-1";
@@ -27,6 +39,116 @@ public class CloudStackPluginTest {
     ConnectionTest con = new ConnectionTest();
     CloudStackPlugin cSp = new CloudStackPlugin(con);
     XmlTestResultTest results = new XmlTestResultTest();
+
+    String domrExecXml = "<?xml version='1.0'?>"
+            + "<methodResponse>"
+            + "<params>"
+            + "<param>"
+            + "<value><struct>"
+            + "<member>"
+            + "<name>out</name>"
+            + "<value><string>clearUsageRules.sh func.sh hv-kvp-daemon_3.1_amd64.deb monitorServices.py reconfigLB.sh redundant_router</string></value>"
+            + "</member>"
+            + "<member>"
+            + "<name>err</name>"
+            + "<value><string></string></value>"
+            + "</member>"
+            + "<member>"
+            + "<name>rc</name>"
+            + "<value><i8>0</i8></value>"
+            + "</member>"
+            + "</struct></value>"
+            + "</param>"
+            + "</params>"
+            + "</methodResponse>";
+    String dom0StatsXml = "<?xml version='1.0'?>\n" +
+            "<methodResponse>\n" +
+            "<params>\n" +
+            "<param>\n" +
+            "<value><struct>\n" +
+            "<member>\n" +
+            "<name>rx</name>\n" +
+            "<value><string>11631523\n" +
+            "</string></value>\n" +
+            "</member>\n" +
+            "<member>\n" +
+            "<name>total</name>\n" +
+            "<value><string>4293918720</string></value>\n" +
+            "</member>\n" +
+            "<member>\n" +
+            "<name>tx</name>\n" +
+            "<value><string>16927399\n" +
+            "</string></value>\n" +
+            "</member>\n" +
+            "<member>\n" +
+            "<name>cpu</name>\n" +
+            "<value><string>1.5</string></value>\n" +
+            "</member>\n" +
+            "<member>\n" +
+            "<name>free</name>\n" +
+            "<value><string>3162505216</string></value>\n" +
+            "</member>\n" +
+            "</struct></value>\n" +
+            "</param>\n" +
+            "</params>\n" +
+            "</methodResponse>";
+    String domuStatsXml = "<?xml version='1.0'?>"
+            + "<methodResponse>"
+            + "<params>"
+            + "<param>"
+            + "<value><struct>"
+            + "<member>"
+            + "<name>uptime</name>"
+            + "<value><string>862195495455</string></value>"
+            + "</member>"
+            + "<member>"
+            + "<name>rx_bytes</name>"
+            + "<value><string>52654010</string></value>"
+            + "</member>"
+            + "<member>"
+            + "<name>wr_ops</name>"
+            + "<value><string>521674</string></value>"
+            + "</member>"
+            + "<member>"
+            + "<name>vcpus</name>"
+            + "<value><string>1</string></value>"
+            + "</member>"
+            + "<member>"
+            + "<name>cputime</name>"
+            + "<value><string>295303661496</string></value>"
+            + "</member>"
+            + "<member>"
+            + "<name>rd_ops</name>"
+            + "<value><string>14790</string></value>"
+            + "</member>"
+            + "<member>"
+            + "<name>rd_bytes</name>"
+            + "<value><string>250168320</string></value>"
+            + "</member>"
+            + "<member>"
+            + "<name>tx_bytes</name>"
+            + "<value><string>161389183</string></value>"
+            + "</member>"
+            + "<member>"
+            + "<name>wr_bytes</name>"
+            + "<value><string>1604468736</string></value>"
+            + "</member>"
+            + "</struct></value>"
+            + "</param>"
+            + "</params>"
+            + "</methodResponse>";
+
+    public String getDomrExecXml() {
+        return domrExecXml;
+    }
+
+    public String getDom0StatsXml() {
+        return dom0StatsXml;
+    }
+
+    public String getDomuStatsXml() {
+        return domuStatsXml;
+    }
 
     @Test
     public void testOvsUploadFile() throws Ovm3ResourceException {
@@ -73,28 +195,7 @@ public class CloudStackPluginTest {
 
     @Test
     public void testDomrExec() throws Ovm3ResourceException {
-        String xml = "<?xml version='1.0'?>"
-                + "<methodResponse>"
-                + "<params>"
-                + "<param>"
-                + "<value><struct>"
-                + "<member>"
-                + "<name>out</name>"
-                + "<value><string>clearUsageRules.sh func.sh hv-kvp-daemon_3.1_amd64.deb monitorServices.py reconfigLB.sh redundant_router</string></value>"
-                + "</member>"
-                + "<member>"
-                + "<name>err</name>"
-                + "<value><string></string></value>"
-                + "</member>"
-                + "<member>"
-                + "<name>rc</name>"
-                + "<value><i8>0</i8></value>"
-                + "</member>"
-                + "</struct></value>"
-                + "</param>"
-                + "</params>"
-                + "</methodResponse>";
-        con.setResult(xml);
+        con.setResult(domrExecXml);
         ReturnCode x = cSp.domrExec(domrIp, "ls");
         assertNotNull(x);
         assertEquals(x.getExit(), (Integer) 0);
@@ -103,9 +204,9 @@ public class CloudStackPluginTest {
         assertNotNull(x.getStdOut());
 
         /* failed */
-        xml = xml.replace("<i8>0</i8>", "<i8>1</i8>");
-        xml = xml.replace("<value><string></string></value>", "<value><string>Something went wrong!</string></value>");
-        con.setResult(xml);
+        domrExecXml = domrExecXml.replace("<i8>0</i8>", "<i8>1</i8>");
+        domrExecXml = domrExecXml.replace("<value><string></string></value>", "<value><string>Something went wrong!</string></value>");
+        con.setResult(domrExecXml);
         ReturnCode y = cSp.domrExec(domrIp, "ls");
         assertNotNull(y);
         assertEquals(y.getRc(), false);
@@ -115,90 +216,14 @@ public class CloudStackPluginTest {
 
     @Test
     public void testOvsDom0Stats() throws Ovm3ResourceException {
-        String xml = "<?xml version='1.0'?>\n" +
-                "<methodResponse>\n" +
-                "<params>\n" +
-                "<param>\n" +
-                "<value><struct>\n" +
-                "<member>\n" +
-                "<name>rx</name>\n" +
-                "<value><string>11631523\n" +
-                "</string></value>\n" +
-                "</member>\n" +
-                "<member>\n" +
-                "<name>total</name>\n" +
-                "<value><string>4293918720</string></value>\n" +
-                "</member>\n" +
-                "<member>\n" +
-                "<name>tx</name>\n" +
-                "<value><string>16927399\n" +
-                "</string></value>\n" +
-                "</member>\n" +
-                "<member>\n" +
-                "<name>cpu</name>\n" +
-                "<value><string>1.5</string></value>\n" +
-                "</member>\n" +
-                "<member>\n" +
-                "<name>free</name>\n" +
-                "<value><string>3162505216</string></value>\n" +
-                "</member>\n" +
-                "</struct></value>\n" +
-                "</param>\n" +
-                "</params>\n" +
-                "</methodResponse>";
-        con.setResult(xml);
+        con.setResult(dom0StatsXml);
         Map<String, String> stats = cSp.ovsDom0Stats(bridge);
         results.basicStringTest(stats.get("cpu"), "1.5");
     }
 
     @Test
     public void TestOvsDomUStats() throws Ovm3ResourceException {
-        String xml = "<?xml version='1.0'?>"
-                + "<methodResponse>"
-                + "<params>"
-                + "<param>"
-                + "<value><struct>"
-                + "<member>"
-                + "<name>uptime</name>"
-                + "<value><string>862195495455</string></value>"
-                + "</member>"
-                + "<member>"
-                + "<name>rx_bytes</name>"
-                + "<value><string>52654010</string></value>"
-                + "</member>"
-                + "<member>"
-                + "<name>wr_ops</name>"
-                + "<value><string>521674</string></value>"
-                + "</member>"
-                + "<member>"
-                + "<name>vcpus</name>"
-                + "<value><string>1</string></value>"
-                + "</member>"
-                + "<member>"
-                + "<name>cputime</name>"
-                + "<value><string>295303661496</string></value>"
-                + "</member>"
-                + "<member>"
-                + "<name>rd_ops</name>"
-                + "<value><string>14790</string></value>"
-                + "</member>"
-                + "<member>"
-                + "<name>rd_bytes</name>"
-                + "<value><string>250168320</string></value>"
-                + "</member>"
-                + "<member>"
-                + "<name>tx_bytes</name>"
-                + "<value><string>161389183</string></value>"
-                + "</member>"
-                + "<member>"
-                + "<name>wr_bytes</name>"
-                + "<value><string>1604468736</string></value>"
-                + "</member>"
-                + "</struct></value>"
-                + "</param>"
-                + "</params>"
-                + "</methodResponse>";
-        con.setResult(xml);
+        con.setResult(domuStatsXml);
         Map<String, String> stats = cSp.ovsDomUStats(VMNAME);
         results.basicStringTest(stats.get("cputime"), "295303661496");
     }

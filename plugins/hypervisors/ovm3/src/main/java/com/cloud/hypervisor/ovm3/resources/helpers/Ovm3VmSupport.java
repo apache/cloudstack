@@ -66,8 +66,13 @@ public class Ovm3VmSupport {
     }
     public Boolean createVifs(Xen.Vm vm, VirtualMachineTO spec)
             throws Ovm3ResourceException {
-        NicTO[] nics = spec.getNics();
-        return createVifs(vm, nics);
+        if (spec.getNics() != null) {
+            NicTO[] nics = spec.getNics();
+            return createVifs(vm, nics);
+        } else {
+            LOGGER.info("No nics for vm " + spec.getName());
+            return false;
+        }
     }
 
     private Boolean createVifs(Xen.Vm vm, NicTO[] nics)
@@ -81,7 +86,7 @@ public class Ovm3VmSupport {
     }
 
     /* should add bitrates and latency... */
-    public Boolean createVif(Xen.Vm vm, NicTO nic)
+    private Boolean createVif(Xen.Vm vm, NicTO nic)
             throws Ovm3ResourceException {
         try {
             if (network.getNetwork(nic) != null) {
@@ -274,7 +279,7 @@ public class Ovm3VmSupport {
                 (HashMap<String, VmStatsEntry>) vmStatsNameMap);
     }
     /* This is not create for us, but really start */
-    public boolean startVm(String repoId, String vmId) throws XmlRpcException {
+    public boolean xstartVm(String repoId, String vmId) throws XmlRpcException {
         Xen host = new Xen(c);
         try {
             if (host.getRunningVmConfig(vmId) == null) {
@@ -316,18 +321,22 @@ public class Ovm3VmSupport {
      * Add rootdisk, datadisk and iso's
      */
     public Boolean createVbds(Xen.Vm vm, VirtualMachineTO spec) {
-        for (DiskTO volume : spec.getDisks()) {
+        if (spec.getDisks() == null) {
+            LOGGER.info("No disks defined for " + vm.getVmName());
+            return false;
+        }
+        for (DiskTO disk : spec.getDisks()) {
             try {
-                if (volume.getType() == Volume.Type.ROOT) {
-                    VolumeObjectTO vol = (VolumeObjectTO) volume.getData();
+                if (disk.getType() == Volume.Type.ROOT) {
+                    VolumeObjectTO vol = (VolumeObjectTO) disk.getData();
                     DataStoreTO ds = vol.getDataStore();
                     String dsk = vol.getPath() + "/" + vol.getUuid() + ".raw";
                     vm.addRootDisk(dsk);
                     /* TODO: needs to be replaced by rootdiskuuid? */
                     vm.setPrimaryPoolUuid(ds.getUuid());
                     LOGGER.debug("Adding root disk: " + dsk);
-                } else if (volume.getType() == Volume.Type.ISO) {
-                    DataTO isoTO = volume.getData();
+                } else if (disk.getType() == Volume.Type.ISO) {
+                    DataTO isoTO = disk.getData();
                     if (isoTO.getPath() != null) {
                         TemplateObjectTO template = (TemplateObjectTO) isoTO;
                         DataStoreTO store = template.getDataStore();
@@ -345,13 +354,13 @@ public class Ovm3VmSupport {
                         /* check if secondary storage is mounted */
                         LOGGER.debug("Adding ISO: " + isoPath);
                     }
-                } else if (volume.getType() == Volume.Type.DATADISK) {
-                    vm.addDataDisk(volume.getData().getPath());
+                } else if (disk.getType() == Volume.Type.DATADISK) {
+                    vm.addDataDisk(disk.getData().getPath());
                     LOGGER.debug("Adding data disk: "
-                            + volume.getData().getPath());
+                            + disk.getData().getPath());
                 } else {
-                    throw new CloudRuntimeException("Unknown volume type: "
-                            + volume.getType());
+                    throw new CloudRuntimeException("Unknown disk type: "
+                            + disk.getType());
                 }
             } catch (Exception e) {
                 LOGGER.debug("CreateVbds failed", e);

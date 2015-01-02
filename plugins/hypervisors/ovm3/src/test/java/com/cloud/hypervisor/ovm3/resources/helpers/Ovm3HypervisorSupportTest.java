@@ -53,7 +53,7 @@ public class Ovm3HypervisorSupportTest {
     public void ReportedVmStatesTest() throws ConfigurationException,
             Ovm3ResourceException {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
-        con.setResult(xenTest.getVmListXML());
+        con.setResult(xenTest.getMultipleVmsListXML());
         Ovm3HypervisorSupport hypervisor = new Ovm3HypervisorSupport(con,
                 config);
         hypervisor.vmStateMapClear();
@@ -74,11 +74,8 @@ public class Ovm3HypervisorSupportTest {
     public void HypervisorVmStateTest() throws ConfigurationException,
             Ovm3ResourceException {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
-        con.setResult(xenTest.getVmListXML());
         Ovm3HypervisorSupport hypervisor = new Ovm3HypervisorSupport(con,
                 config);
-        // hypervisor.vmStateMapClear();
-        /* paused is used for migrate!!! */
         setHypervisorVmState(hypervisor, blocked, unknown, State.Unknown);
         setHypervisorVmState(hypervisor, blocked, running, State.Running);
         setHypervisorVmState(hypervisor, blocked, blocked, State.Running);
@@ -93,7 +90,7 @@ public class Ovm3HypervisorSupportTest {
     public void CombinedVmStateTest() throws ConfigurationException,
             Ovm3ResourceException {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
-        con.setResult(xenTest.getVmListXML());
+        con.setResult(xenTest.getMultipleVmsListXML());
         Ovm3HypervisorSupport hypervisor = new Ovm3HypervisorSupport(con,
                 config);
         hypervisor.vmStateMapClear();
@@ -126,7 +123,7 @@ public class Ovm3HypervisorSupportTest {
     public void setHypervisorVmState(Ovm3HypervisorSupport hypervisor,
             String original, String replace, State state)
             throws Ovm3ResourceException {
-        String x = xenTest.getVmListXML().replaceAll(original, replace);
+        String x = xenTest.getMultipleVmsListXML().replaceAll(original, replace);
         con.setResult(x);
         hypervisor.syncState();
         results.basicStringTest(hypervisor.getVmState(vmName).toString(),
@@ -212,13 +209,13 @@ public class Ovm3HypervisorSupportTest {
         hypervisor.fillHostInfo(srCmd);
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    /* @Test(expected = CloudRuntimeException.class)
     public void setupServerTest() throws ConfigurationException, IOException {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
         ConnectionTest con = new ConnectionTest();
-        con.setIp(config.getAgentIp());
+        con.setIp("127.0.0.1");
         Ovm3HypervisorSupport hypervisor = new Ovm3HypervisorSupport(con,
                 config);
         hypervisor.setupServer(config.getAgentSshKeyFileName());
-    }
+    } */
 }

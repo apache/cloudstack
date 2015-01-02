@@ -108,7 +108,7 @@ public class Ovm3StoragePool {
     /*
      * TODO: redo this, it's a mess now.
      */
-    public Boolean setupPool(StorageFilerTO cmd) throws Ovm3ResourceException {
+    private Boolean setupPool(StorageFilerTO cmd) throws Ovm3ResourceException {
         String primUuid = cmd.getUuid();
         String ssUuid = ovmObject.deDash(primUuid);
         String fsType = "nfs";
@@ -161,7 +161,7 @@ public class Ovm3StoragePool {
     }
 
     /* TODO: Fix member addition */
-    public Boolean addMembers() throws Ovm3ResourceException {
+    private Boolean addMembers() throws Ovm3ResourceException {
         List<String> members = new ArrayList<String>();
         try {
             Connection m = new Connection(config.getOvm3PoolVip(), c.getPort(),
@@ -225,7 +225,7 @@ public class Ovm3StoragePool {
      * Primary storage, will throw an error if ownership does not match! Pooling
      * is a part of this, for now
      */
-    public boolean createRepo(StorageFilerTO cmd) throws XmlRpcException {
+    private boolean createRepo(StorageFilerTO cmd) throws XmlRpcException {
         String basePath = config.getAgentOvmRepoPath();
         Repository repo = new Repository(c);
         String primUuid = repo.deDash(cmd.getUuid());
@@ -408,7 +408,7 @@ public class Ovm3StoragePool {
     }
 
     /* NFS only for now, matches FileSys */
-    public String setupNfsStorage(URI uri, String uuid)
+    private String setupNfsStorage(URI uri, String uuid)
             throws Ovm3ResourceException {
         String fsUri = "nfs";
         String msg = "";
@@ -499,7 +499,7 @@ public class Ovm3StoragePool {
     /*
      * TODO: local OCFS2? or iSCSI OCFS2
      */
-    public Boolean createOCFS2Sr(StorageFilerTO pool) throws XmlRpcException {
+    private Boolean createOCFS2Sr(StorageFilerTO pool) throws XmlRpcException {
         LOGGER.debug("OCFS2 Not implemented yet");
         return false;
     }

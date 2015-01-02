@@ -104,6 +104,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     private Ovm3Configuration ovm3config;
     private Ovm3VmGuestTypes ovm3gt;
     private OvmObject ovmObject = new OvmObject();
+    private Boolean skipSetup = false;
 
     /*
      * TODO: Add a network map, so we know which tagged interfaces we can remove
@@ -132,8 +133,9 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             ovm3hs.vmStateMapClear();
             ovm3vrs = new Ovm3VirtualRoutingSupport(c, ovm3config, ovm3vrr);
             ovm3spr = new Ovm3StorageProcessor(c, ovm3config, ovm3sp);
-            ovm3gt = new Ovm3VmGuestTypes();
-            ovm3hs.setupServer(ovm3config.getAgentSshKeyFileName());
+            if (skipSetup == false) {
+                ovm3hs.setupServer(ovm3config.getAgentSshKeyFileName());
+            }
             LOGGER.debug("Ovm3 pool " + ssCmd + " " + srCmd);
             // srCmd.setStateChanges(changes);
             return new StartupCommand[] { srCmd, ssCmd };
@@ -214,8 +216,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             return ovm3hs.execute((CheckVirtualMachineCommand) cmd);
         } else if (clazz == MaintainCommand.class) {
             return ovm3hs.execute((MaintainCommand) cmd);
-        } else if (clazz == StartCommand.class) {
-            return execute((StartCommand) cmd);
         } else if (clazz == GetVncPortCommand.class) {
             return ovm3vs.execute((GetVncPortCommand) cmd);
         } else if (clazz == PingTestCommand.class) {
@@ -244,6 +244,8 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             return ovm3vrs.execute((CheckSshCommand) cmd);
         } else if (clazz == CreateObjectCommand.class) {
             return ovm3spr.execute((CreateObjectCommand) cmd);
+        } else if (clazz == StartCommand.class) {
+            return execute((StartCommand) cmd);
         }
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
@@ -330,6 +332,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         }
         ovm3sp = new Ovm3StoragePool(c, ovm3config);
         ovm3sp.prepareForPool();
+        ovm3gt = new Ovm3VmGuestTypes();
         return true;
     }
 
@@ -404,6 +407,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             vm.setVnc("0.0.0.0", vmSpec.getVncPassword());
 
             /* this should be getVmRootDiskPoolId ? */
+            // System.out.println(vm.getPrimaryPoolUuid());
             xen.createVm(ovmObject.deDash(vm.getPrimaryPoolUuid()),
                     vm.getVmUuid());
             xen.startVm(ovmObject.deDash(vm.getPrimaryPoolUuid()),
@@ -419,7 +423,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
                 }
                 /* fix is in cloudstack.py for xend restart timer */
                 for (int count = 0; count < 60; count++) {
-                    Thread.sleep(5000);
                     CloudStackPlugin cSp = new CloudStackPlugin(c);
                     if (ovm3hs.getVmState(vmName) == null) {
                         String msg = "VM " + vmName + " went missing on "
@@ -442,6 +445,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
                                         + " on attempt " + count + " "
                                         + x.getMessage(), x);
                     }
+                    Thread.sleep(5000);
                 }
             }
             /*
@@ -523,6 +527,9 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         try {
             Xen xen = new Xen(c);
             Xen.Vm vm = xen.getRunningVmConfig(vmName);
+            if (vm == null) {
+                return new RebootAnswer(cmd, vmName + " not present", false);
+            }
             xen.rebootVm(ovmObject.deDash(vm.getVmRootDiskPoolId()),
                     vm.getVmUuid());
             vm = xen.getRunningVmConfig(vmName);
@@ -540,5 +547,9 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     protected String getDefaultScriptsDir() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    public void setSkipSetup(boolean b) {
+        skipSetup = b;
     }
 }

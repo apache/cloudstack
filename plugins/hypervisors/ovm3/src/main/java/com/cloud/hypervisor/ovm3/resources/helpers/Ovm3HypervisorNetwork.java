@@ -24,7 +24,7 @@ import com.cloud.utils.net.NetUtils;
 public class Ovm3HypervisorNetwork {
     private final Logger LOGGER = Logger
             .getLogger(Ovm3HypervisorNetwork.class);
-    Connection c;
+    private Connection c;
     private Ovm3Configuration config;
     public Ovm3HypervisorNetwork(Connection conn, Ovm3Configuration ovm3config) {
         c = conn;
@@ -42,6 +42,7 @@ public class Ovm3HypervisorNetwork {
            String controlIface = config.getAgentControlNetworkName();
            if (controlIface != null
                    && !config.getAgentInterfaces().containsKey(controlIface)) {
+               LOGGER.debug("starting " + controlIface);
                net.startOvsLocalConfig(controlIface);
                /* ovs replies too "fast" so the bridge can be "busy" */
                int contCount = 0;
@@ -56,6 +57,8 @@ public class Ovm3HypervisorNetwork {
                    }
                    contCount++;
                }
+           } else {
+               LOGGER.debug("already have " + controlIface);
            }
            /*
             * The bridge is remembered upon reboot, but not the IP or the

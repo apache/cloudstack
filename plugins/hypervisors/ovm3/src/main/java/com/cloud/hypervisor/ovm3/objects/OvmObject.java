@@ -73,7 +73,7 @@ public class OvmObject {
     }
 
     /* capture most of the calls here */
-    public  Object callWrapper(String call) throws Ovm3ResourceException {
+    public Object callWrapper(String call) throws Ovm3ResourceException {
         try {
             return client.call(call, emptyParams);
         } catch (XmlRpcException e) {

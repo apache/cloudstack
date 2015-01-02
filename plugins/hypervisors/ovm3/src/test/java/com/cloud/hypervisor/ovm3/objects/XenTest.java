@@ -4,6 +4,8 @@ import java.util.UUID;
 
 import org.junit.Test;
 
+import com.cloud.hypervisor.ovm3.objects.Xen.Vm;
+
 public class XenTest {
     public XenTest() {
     }
@@ -13,13 +15,28 @@ public class XenTest {
     String DOM0VMNAME = "Domain-0";
     String VMNAME = "i-2-3-VM";
     String REPOID = "f12842ebf5ed3fe78da1eb0e17f5ede8";
+    public String getRepoId() {
+        return REPOID;
+    }
+
+    public void setRepoId(String r) {
+        REPOID = r;
+    }
+
+    public String getVmId() {
+        return VMID;
+    }
+
+    public void setVmId(String v) {
+        VMID = v;
+    }
     String VMID = "868a6627-c3b0-3d9b-aea4-f279cbaa253b";
     String VMROOTDISK = "722eb520-dcf5-4113-8f45-22d67c9a2f3c.raw";
     String VMISO = "xentools.iso";
     String REPOPATH = "/OVS/Repositories";
     String VMROOTDISKPATH = REPOPATH + "/" + REPOID + "/Disks/" + VMROOTDISK;
     String VMISOPATH = REPOPATH + "/" + REPOID + "/ISOs/" + VMISO;
-    String VMSLISTXML = results
+    String MULTIPLEVMSLISTXML = results
             .simpleResponseWrapWrapper("<array><data>\n"
                     + "<value><struct>\n"
                     + "<member>\n"
@@ -848,7 +865,10 @@ public class XenTest {
                     + "</string></value>\n"
                     + "</member>\n" + "</struct></value>\n" + "</data></array>");
 
-    String VMLISTXML = results
+    public String getSingleVmListXML() {
+        return SINGLEVMLISTXML;
+    }
+    String SINGLEVMLISTXML = results
             .simpleResponseWrapWrapper("<struct>"
                     + "<member>"
                     + "<name>on_xend_stop</name>"
@@ -1190,7 +1210,10 @@ public class XenTest {
                     + "<value><string>"
                     + "</string></value>" + "</member>" + "</struct>");
 
-    String VMCONFIGXML = results
+    public String getSingleVmConfigXML() {
+        return this.SINGLEVMCONFIGXML;
+    }
+    String SINGLEVMCONFIGXML = results
             .simpleResponseWrapWrapper("<struct>"
                     + "<member>"
                     + "<name>vif</name>"
@@ -1297,7 +1320,7 @@ public class XenTest {
     /* fix */
     @Test
     public void testListVm() throws Ovm3ResourceException {
-        con.setResult(this.VMLISTXML);
+        con.setResult(this.SINGLEVMLISTXML);
         results.basicBooleanTest(xEn.listVm(REPOID, VMID));
         con.setResult(results.getNil());
         results.basicBooleanTest(xEn.listVm(REPOID, VMID), false);
@@ -1305,7 +1328,7 @@ public class XenTest {
 
     @Test
     public void testGetRunningVmConfig() throws Ovm3ResourceException {
-        con.setResult(this.VMSLISTXML);
+        con.setResult(this.MULTIPLEVMSLISTXML);
         Xen.Vm domU = xEn.getRunningVmConfig(VMNAME);
 
         /* only works from a live configuration */
@@ -1316,7 +1339,7 @@ public class XenTest {
 
     @Test
     public void testGetVmConfig() throws Ovm3ResourceException {
-        con.setResult(this.VMCONFIGXML);
+        con.setResult(this.SINGLEVMCONFIGXML);
         Xen.Vm domU = xEn.getVmConfig(REPOID, VMID);
         /* getVncPort doesn't work with live config due to a bug in the agent */
         // results.basicIntTest(domU.getVncPort(), 5900);
@@ -1328,7 +1351,6 @@ public class XenTest {
         xEn.getVmConfig(REPOID, VMID);
 
         con.setResult(results.getNil());
-        xEn.getVmConfig(REPOID, VMID);
     }
 
     @Test
@@ -1340,7 +1362,7 @@ public class XenTest {
 
     @Test
     public void testControlDomain() throws Ovm3ResourceException {
-        con.setResult(this.VMSLISTXML);
+        con.setResult(this.MULTIPLEVMSLISTXML);
         Xen.Vm dom0 = xEn.getRunningVmConfig(DOM0VMNAME);
         results.basicBooleanTest(dom0.isControlDomain(), true);
         Xen.Vm domU = xEn.getRunningVmConfig(VMNAME);
@@ -1430,8 +1452,8 @@ public class XenTest {
         results.basicBooleanTest(xEn.pauseVm(REPOID, VMID));
     }
 
-    public String getVmListXML() {
-        return VMSLISTXML;
+    public String getMultipleVmsListXML() {
+        return MULTIPLEVMSLISTXML;
     }
     public String getVmName() {
         return VMNAME;

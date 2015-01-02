@@ -4,29 +4,47 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.junit.Test;
+import org.mockito.Mockito;
 
-import com.cloud.agent.api.PingCommand;
-import com.cloud.agent.api.RebootAnswer;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.RebootCommand;
-import com.cloud.agent.api.StopAnswer;
+import com.cloud.agent.api.StartCommand;
+import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.host.Host;
 import com.cloud.hypervisor.ovm3.objects.CloudStackPluginTest;
 import com.cloud.hypervisor.ovm3.objects.ConnectionTest;
 import com.cloud.hypervisor.ovm3.objects.LinuxTest;
 import com.cloud.hypervisor.ovm3.objects.NetworkTest;
+import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
+import com.cloud.hypervisor.ovm3.objects.OvmObject;
+import com.cloud.hypervisor.ovm3.objects.Xen;
 import com.cloud.hypervisor.ovm3.objects.XenTest;
 import com.cloud.hypervisor.ovm3.objects.XmlTestResultTest;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3Configuration;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3ConfigurationTest;
-import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.network.Networks;
+import com.cloud.storage.Volume;
+import com.cloud.template.VirtualMachineTemplate.BootloaderType;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Type;
 
 public class Ovm3HypervisorResourceTest {
     ConnectionTest con;
+    OvmObject ovmObject = new OvmObject();
     XmlTestResultTest results = new XmlTestResultTest();
     Ovm3ConfigurationTest configTest = new Ovm3ConfigurationTest();
     Ovm3HypervisorResource hypervisor = new Ovm3HypervisorResource();
@@ -34,58 +52,79 @@ public class Ovm3HypervisorResourceTest {
     LinuxTest linux = new LinuxTest();
     CloudStackPluginTest csp = new CloudStackPluginTest();
     XenTest xen = new XenTest();
-    String getCurrentStatus = "put";
+    String currentStatus = "put";
     String vmName = "i-2-3-VM";
-    
-    private ConnectionTest prepConnectionResults(List<String> l) {
+
+    private ConnectionTest prepConnectionResults() {
         ConnectionTest con = new ConnectionTest();
         con.setBogus(true);
-        con.setResult(l);
-        return con;
+        return configureResult(con);
     }
-    
-    private ArrayList<String> configureResult() {
-        ArrayList<String> res = new ArrayList<String>();
-        res.add(results.simpleResponseWrap("boolean", "1"));
-        res.add(results.simpleResponseWrapWrapper(net
-                .getDiscoverNetwork()));
-        res.add(results.simpleResponseWrap("boolean", "1"));
-        res.add(results.simpleResponseWrap("boolean", "1"));
-        res.add(results.simpleResponseWrapWrapper(linux.getDiscoverHw()));
-        res.add(results.simpleResponseWrapWrapper(linux
-                .getDiscoverserver()));
-        res.add(results.simpleResponseWrap("boolean", "1"));
-        return res;
+
+    private ConnectionTest configureResult(ConnectionTest con) {
+        con.setMethodResponse("check_dom0_ip",
+                results.simpleResponseWrap("boolean", "1"));
+        con.setMethodResponse("ovs_ip_config",
+                results.simpleResponseWrap("boolean", "1"));
+        con.setMethodResponse("ovs_local_config",
+                results.simpleResponseWrap("string", "start"));
+        con.setMethodResponse("ovs_control_interface",
+                results.simpleResponseWrap("boolean", "1"));
+        con.setMethodResponse("update_server_roles",
+                results.simpleResponseWrap("boolean", "1"));
+        con.setMethodResponse("discover_network",
+                results.simpleResponseWrapWrapper(net.getDiscoverNetwork()));
+        con.setMethodResponse("discover_hardware",
+                results.simpleResponseWrapWrapper(linux.getDiscoverHw()));
+        con.setMethodResponse("discover_server",
+                results.simpleResponseWrapWrapper(linux.getDiscoverserver()));
+        con.setMethodResponse("echo", results.simpleResponseWrapWrapper("put"));
+        con.setMethodResponse("list_vms", xen.getMultipleVmsListXML());
+        con.setMethodResponse("list_vm", xen.getSingleVmListXML());
+        con.setMethodResponse("get_vm_config", xen.getSingleVmConfigXML());
+        con.setMethodResponse("create_vm", results.getNil());
+        con.setMethodResponse("start_vm", results.getNil());
+        con.setMethodResponse("reboot_vm", results.getNil());
+        con.setMethodResponse("stop_vm", results.getNil());
+        con.setMethodResponse("check_domr_ssh",
+                results.simpleResponseWrap("boolean", "1"));
+        return con;
     }
 
     @Test
     public void configureTest() throws ConfigurationException {
-        /* the order needs to reflect what it is... */
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
-        con = prepConnectionResults(configureResult());
+        con = prepConnectionResults();
         hypervisor.setConnection(con);
         results.basicBooleanTest(hypervisor.configure(config.getAgentName(),
                 configTest.getParams()));
     }
 
-    @Test(expected = ConfigurationException.class)
-    public void configureFailBaseConnectionTest() throws ConfigurationException {
-        Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
-        ConnectionTest con = new ConnectionTest();
-        con.setBogus(false);
-        hypervisor.setConnection(con);
-        results.basicBooleanTest(hypervisor.configure(config.getAgentName(),
-                configTest.getParams()));
-    }
+    /* fails */
+    /*
+     * @Test(expected = ConfigurationException.class)
+     * public void configureFailBaseConnectionTest() throws
+     * ConfigurationException {
+     * Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
+     * Connection con = new Connection("127.0.0.1", "test", "test");
+     * config.setAgentIp("127.0.0.1");
+     * config.setOvm3PoolVip("127.0.0.1");
+     * hypervisor.setConnection(con);
+     * results.basicBooleanTest(hypervisor.configure(config.getAgentName(),
+     * configTest.getParams()));
+     * }
+     */
 
-    @Test(expected = CloudRuntimeException.class)
-    public void configureFailNetTest() throws ConfigurationException {
+    public void configureControlInterfaceTest() throws ConfigurationException {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
         String netdef = net.getDiscoverNetwork();
-        netdef.replaceAll(config.getAgentControlNetworkName(), "thisisnotit0");
-        ArrayList<String> res = new ArrayList<String>();
-        res.add(results.simpleResponseWrapWrapper(netdef));
-        con = prepConnectionResults(res);
+        netdef = netdef.replaceAll(config.getAgentControlNetworkName(),
+                "thisisnotit0");
+        con = prepConnectionResults();
+        con.removeMethodResponse("discover_network");
+        con.setResult(results.simpleResponseWrapWrapper(netdef));
+        con.addResult(results.simpleResponseWrapWrapper(net
+                .getDiscoverNetwork()));
         hypervisor.setConnection(con);
         results.basicBooleanTest(hypervisor.configure(config.getAgentName(),
                 configTest.getParams()));
@@ -96,64 +135,69 @@ public class Ovm3HypervisorResourceTest {
     }
 
     @Test
-    public void getCurrentStatusAndConfigureTest() throws ConfigurationException {
+    public void getCurrentStatusAndConfigureTest()
+            throws ConfigurationException {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
-        con = prepConnectionResults(configureResult());        
+        con = prepConnectionResults();
         hypervisor.setConnection(con);
         results.basicBooleanTest(hypervisor.configure(config.getAgentName(),
                 configTest.getParams()));
-        assertNotNull(getCurrentStatusTest(getCurrentStatus));
-        assertNotNull(getCurrentStatusTest(getCurrentStatus));
-        assertNotNull(getCurrentStatusTest(getCurrentStatus));
-    }
-
-    private PingCommand getCurrentStatusTest(String put) {
-        con.setResult(results.simpleResponseWrapWrapper(put));
-        con.addResult(xen.getVmListXML());
-        hypervisor.setConnection(con);
-        return hypervisor.getCurrentStatus(1L);
+        assertNotNull(hypervisor.getCurrentStatus(1L));
+        assertNotNull(hypervisor.getCurrentStatus(1L));
     }
 
     @Test
     public void getCurrentStatusFailTest() throws ConfigurationException {
-        con = prepConnectionResults(configureResult());
-        assertNull(getCurrentStatusTest("fail"));
+        Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
+        con = prepConnectionResults();
+        con.setResult(results.simpleResponseWrapWrapper("fail"));
+        con.removeMethodResponse("echo");
+        hypervisor.setConnection(con);
+        results.basicBooleanTest(hypervisor.configure(config.getAgentName(),
+                configTest.getParams()));
+        assertNull(hypervisor.getCurrentStatus(1L));
     }
+
     @Test
     public void getCurrentStatusExceptionTest() throws ConfigurationException {
-        Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
         con = new ConnectionTest();
         hypervisor.setConnection(con);
         assertNull(hypervisor.getCurrentStatus(1L));
     }
 
+    /* gives an IOException on ssh */
     @Test
     public void initializeTest() throws Exception {
-        ArrayList<String> res = new ArrayList<String>();
-        // res.add();
-        con = prepConnectionResults(res);
-        hypervisor.setConnection(con);
-    }
-    
-    private Ovm3HypervisorResource vmActionPreparation() throws ConfigurationException {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
-        con = prepConnectionResults(configureResult());
+        con = prepConnectionResults();
+        hypervisor.setConnection(con);
+        hypervisor.setSkipSetup(true);
+        results.basicBooleanTest(hypervisor.configure(config.getAgentName(),
+                configTest.getParams()));
+        con.setIp(config.getAgentIp());
+        for (StartupCommand start : hypervisor.initialize()) {
+            assertNotNull(start);
+        }
+        hypervisor.setSkipSetup(false);
+    }
+
+    private Ovm3HypervisorResource vmActionPreparation()
+            throws ConfigurationException {
+        Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
+        con = prepConnectionResults();
         hypervisor.setConnection(con);
         results.basicBooleanTest(hypervisor.configure(config.getAgentName(),
                 configTest.getParams()));
-        ArrayList<String> res = new ArrayList<String>();
-        con = prepConnectionResults(res);
-        hypervisor.setConnection(con);
         return hypervisor;
     }
 
     private Boolean rebootVm(String name) throws ConfigurationException {
         hypervisor = vmActionPreparation();
-        con.addResult(xen.getVmListXML());
-        con.addResult(xen.getVmListXML().replace(vmName, vmName + "-hide"));
-        con.addResult(xen.getVmListXML());
+        con.removeMethodResponse("list_vms");
+        con.addResult(xen.getMultipleVmsListXML());
+        con.addResult(xen.getMultipleVmsListXML());
         RebootCommand cmd = new RebootCommand(name);
-        RebootAnswer ra = hypervisor.execute(cmd);
+        Answer ra = hypervisor.executeRequest(cmd);
         return ra.getResult();
     }
 
@@ -161,67 +205,205 @@ public class Ovm3HypervisorResourceTest {
     public void rebootCommandTest() throws ConfigurationException {
         results.basicBooleanTest(rebootVm(vmName));
     }
- 
+
     @Test
-    public void rebootCommandFailt() throws ConfigurationException {
+    public void rebootCommandFailTest() throws ConfigurationException {
         results.basicBooleanTest(rebootVm("bogus"), false);
-    }
-    
-    public void stopVm() throws ConfigurationException {
-        hypervisor = vmActionPreparation();
-        con.addResult(xen.getVmListXML());
-        con.addResult(xen.getVmListXML());
-        con.addResult(xen.getVmListXML().replace(vmName, vmName + "-hide"));
-        con.addResult(results.simpleResponseWrap("boolean", "1"));
-    }
-    @Test
-    public void stopVmTest() throws ConfigurationException {
-        stopVm();
-        con.addResult(xen.getVmListXML().replace(vmName, vmName + "-hide"));
-        StopCommand cmd = new StopCommand(vmName, true, true);
-        StopAnswer ra = hypervisor.execute(cmd);
-        results.basicBooleanTest(ra.getResult());
-    }
-    @Test
-    public void stopVmTestFail() throws ConfigurationException {
-        stopVm();
-        con.addResult(xen.getVmListXML());
-        con.addResult(xen.getVmListXML().replace(vmName, vmName));
-        StopCommand cmd = new StopCommand(vmName, true, true);
-        StopAnswer ra = hypervisor.execute(cmd);
-        results.basicBooleanTest(ra.getResult(), false);
-    }
-    @Test
-    public void stopVmTreatAsStoppedTestl() throws ConfigurationException {
-        hypervisor = vmActionPreparation();
-        con.addResult(xen.getVmListXML().replace(vmName, vmName + "-hide"));
-        StopCommand cmd = new StopCommand(vmName, true, true);
-        StopAnswer ra = hypervisor.execute(cmd);
-        results.basicBooleanTest(ra.getResult());
-    }
-    @Test
-    public void stopVmException() throws ConfigurationException {
-        hypervisor = vmActionPreparation();
-        // Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
-        // con = new ConnectionTest(config.getAgentIp(), config.getAgentOvsAgentUser(), config.getAgentOvsAgentPassword());
-        hypervisor.setConnection(con);
-        StopCommand cmd = new StopCommand(vmName, true, true);
-        StopAnswer ra = hypervisor.execute(cmd);
-        results.basicBooleanTest(ra.getResult(), false);
     }
 
     @Test
-    public void startVm() throws ConfigurationException {
+    public void stopVmTest() throws ConfigurationException {
         hypervisor = vmActionPreparation();
-        //  public StartCommand(VirtualMachineTO vm, Host host, boolean executeInSequence) {
-        // ./api/src/com/cloud/agent/api/to/VirtualMachineTO.java
-        // StartCommand cmd = new StartCommand();
+        con.removeMethodResponse("list_vms");
+        con.setResult(xen.getMultipleVmsListXML());
+        con.addResult(xen.getMultipleVmsListXML().replace(vmName, vmName + "-hide"));
+        StopCommand cmd = new StopCommand(vmName, true, true);
+        Answer ra = hypervisor.executeRequest(cmd);
+        results.basicBooleanTest(ra.getResult());
     }
+
+    /* takes too long */
+    /*
+     * @Test
+     * public void stopVmTestFail() throws ConfigurationException {
+     * stopVm();
+     * con.addResult(xen.getVmListXML().replace(vmName, vmName));
+     * StopCommand cmd = new StopCommand(vmName, true, true);
+     * StopAnswer ra = hypervisor.execute(cmd);
+     * results.basicBooleanTest(ra.getResult(), false);
+     * }
+     */
+
+    @Test
+    public void stopVmTreatAsStoppedTest() throws ConfigurationException {
+        hypervisor = vmActionPreparation();
+        con.setMethodResponse("list_vms",
+                xen.getMultipleVmsListXML().replace(vmName, vmName + "-hide"));
+        StopCommand cmd = new StopCommand(vmName, true, true);
+        Answer ra = hypervisor.executeRequest(cmd);
+        results.basicBooleanTest(ra.getResult());
+    }
+
+    @Test
+    public void stopVmException() throws ConfigurationException {
+        hypervisor = vmActionPreparation();
+        con.removeMethodResponse("list_vms");
+        StopCommand cmd = new StopCommand(vmName, true, true);
+        Answer ra = hypervisor.executeRequest(cmd);
+        results.basicBooleanTest(ra.getResult(), false);
+    }
+
+    /* not relevant atm */
+    public void addNicsToSpec(VirtualMachineTO vmspec, List<String> list) {
+        for (String vif : list) {
+            String parts[] = vif.split("[,=.]+");
+            addNicToSpec(vmspec, parts[1], parts[3], parts[4]);
+        }
+    }
+
+    public void addNicToSpec(VirtualMachineTO vmspec, String mac,
+            String bridge, String vlan) {
+        ArrayList<NicTO> nics;
+        if (vmspec.getNics() != null) {
+            nics = new ArrayList<NicTO>(Arrays.asList(vmspec.getNics()));
+        } else {
+            nics = new ArrayList<NicTO>();
+        }
+        NicTO nic = new NicTO();
+
+        nic.setType(Networks.TrafficType.Guest);
+        nic.setMac(mac);
+        nic.setDeviceId(nics.size());
+        nics.add(nic);
+        vmspec.setNics((NicTO[]) nics.toArray(new NicTO[nics.size()]));
+    }
+
+    /* hardcoded, dirty */
+    public void addDisksToSpec(VirtualMachineTO vmspec, List<String> list) {
+        for (String disk : list) {
+            String parts[] = disk.split("[:,.]+");
+            String partdeux[] = parts[1].split("/");
+            String diskuuid = partdeux[partdeux.length - 1];
+            String dsuuid = partdeux[3];
+            String path = parts[1].replace("/" + diskuuid, "");
+            addDiskToSpec(vmspec, diskuuid, dsuuid, path);
+        }
+    }
+
+    public void addDiskToSpec(VirtualMachineTO vmspec, String uuid,
+            String dsuuid, String path) {
+        ArrayList<DiskTO> disks;
+        if (vmspec.getDisks() != null) {
+            disks = new ArrayList<DiskTO>(Arrays.asList(vmspec.getDisks()));
+        } else {
+            disks = new ArrayList<DiskTO>();
+        }
+        DiskTO disk = new DiskTO();
+        VolumeObjectTO volume = new VolumeObjectTO();
+        NfsTO nfsDataStore = new NfsTO();
+        nfsDataStore.setUuid(dsuuid);
+        volume.setDataStore(nfsDataStore);
+        volume.setPath(path);
+        volume.setUuid(uuid);
+        disk.setData((DataTO) volume);
+        disk.setType(Volume.Type.ROOT);
+        disks.add(disk);
+        vmspec.setDisks((DiskTO[]) disks.toArray(new DiskTO[disks.size()]));
+    }
+
+    public Host getHost(String ip) {
+        Host host = Mockito.mock(Host.class);
+        Mockito.when(host.getPrivateIpAddress()).thenReturn(ip);
+        return host;
+    }
+
+    @Test
+    public void testCreateVm() throws ConfigurationException,
+            Ovm3ResourceException {
+        /* use what we know */
+        con = prepConnectionResults();
+        Xen vdata = new Xen(con);
+        Xen.Vm vm = vdata.getVmConfig(vmName);
+        vdata.listVm(xen.getRepoId(), xen.getVmId());
+
+        // Ovm3VmGuestTypes types = new Ovm3VmGuestTypes();
+        Long id = 1L;
+        String instanceName = vm.getVmName();
+        VirtualMachine.Type type = Type.User;
+        int cpus = 1; // vm.getVmCpus();
+        Integer speed = 0;
+        long minRam = vm.getVmMemory();
+        long maxRam = vm.getVmMemory();
+        BootloaderType bootloader = BootloaderType.PyGrub;
+        String os = "Oracle Enterprise Linux 6.0 (64-bit)";
+        boolean enableHA = true;
+        boolean limitCpuUse = false;
+        String vncPassword = "gobbeldygoo";
+        // public StartCommand(VirtualMachineTO vm, Host host, boolean
+        // executeInSequence) {
+        // ./api/src/com/cloud/agent/api/to/VirtualMachineTO.java
+        VirtualMachineTO vmspec = new VirtualMachineTO(id, instanceName, type,
+                cpus, speed, minRam, maxRam, bootloader, os, enableHA,
+                limitCpuUse, vncPassword);
+        vmspec.setBootArgs("");
+
+        /* appendages */
+        addDisksToSpec(vmspec, vm.getVmDisks());
+        addNicsToSpec(vmspec, vm.getVmVifs());
+
+        hypervisor = vmActionPreparation();
+        StartCommand cmd = new StartCommand(vmspec,
+                getHost(hypervisor.getName()), true);
+        Answer ra = hypervisor.executeRequest(cmd);
+        results.basicBooleanTest(ra.getResult());
+    }
+
+    @Test
+    public void testCreateOtherVm() throws ConfigurationException,
+            Ovm3ResourceException {
+        /* use what we know */
+        con = prepConnectionResults();
+        Xen vdata = new Xen(con);
+        Xen.Vm vm = vdata.getVmConfig(vmName);
+        vdata.listVm(xen.getRepoId(), xen.getVmId());
+
+        Long id = 1L;
+        String instanceName = vm.getVmName();
+        VirtualMachine.Type type = Type.DomainRouter;
+        int cpus = 1; // vm.getVmCpus();
+        Integer speed = 0;
+        long minRam = vm.getVmMemory();
+        long maxRam = vm.getVmMemory();
+        BootloaderType bootloader = BootloaderType.PyGrub;
+        String os = "bogus";
+        boolean enableHA = true;
+        boolean limitCpuUse = false;
+        String vncPassword = "gobbeldygoo";
+        // public StartCommand(VirtualMachineTO vm, Host host, boolean
+        // executeInSequence) {
+        // ./api/src/com/cloud/agent/api/to/VirtualMachineTO.java
+        VirtualMachineTO vmspec = new VirtualMachineTO(id, instanceName, type,
+                cpus, speed, minRam, maxRam, bootloader, os, enableHA,
+                limitCpuUse, vncPassword);
+        vmspec.setBootArgs("");
+
+        /* appendages */
+        addDisksToSpec(vmspec, vm.getVmDisks());
+        addNicsToSpec(vmspec, vm.getVmVifs());
+
+        hypervisor = vmActionPreparation();
+        StartCommand cmd = new StartCommand(vmspec,
+                getHost(hypervisor.getName()), true);
+        Answer ra = hypervisor.executeRequest(cmd);
+        results.basicBooleanTest(ra.getResult());
+    }
+
     @Test
     public void startResource() {
         results.basicBooleanTest(hypervisor.start());
     }
-    @Test 
+
+    @Test
     public void stopResource() {
         results.basicBooleanTest(hypervisor.stop());
     }

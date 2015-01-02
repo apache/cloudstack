@@ -2,7 +2,9 @@ package com.cloud.hypervisor.ovm3.objects;
 
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
@@ -26,10 +28,12 @@ public class ConnectionTest extends Connection {
     String result;
     List<String> multiRes = new ArrayList<String>();
     String hostIp;
-
+    private Map<String, String> methodResponse = new HashMap<String, String>();
+    
     public ConnectionTest() {
         this.setBogus(true);
     }
+     
     /*
     public ConnectionTest(String agentIp, String agentOvsAgentUser,
             String agentOvsAgentPassword) {
@@ -64,9 +68,17 @@ public class ConnectionTest extends Connection {
         XMLReader xr = SAXParsers.newXMLReader();
         xr.setContentHandler(parser);
         try {
-            String result = getResult();
-            LOGGER.debug("call: " + method);
-            LOGGER.trace("reply: " + result);
+            String result = null;
+            if (getMethodResponse(method) != null) {
+                result = getMethodResponse(method);
+                LOGGER.debug("methodresponse call: " + method + " - " + params);
+                LOGGER.trace("methodresponse reply: " + result);
+            }
+            if (result == null && multiRes.size() >= 0) {
+                result = getResult();
+                LOGGER.debug("getresult call: " + method + " - " + params);
+                LOGGER.trace("getresult reply: " + result);
+            }
             xr.parse(new InputSource(new StringReader(result)));
         } catch (Exception e) {
             throw new XmlRpcException("Exception: " + e.getMessage(), e);
@@ -77,7 +89,21 @@ public class ConnectionTest extends Connection {
         }
         return parser.getResult();
     }
-
+    public void setMethodResponse(String method, String response) {
+        methodResponse.put(method, response);
+    }
+    public String getMethodResponse(String method) {
+        if (methodResponse.containsKey(method)) {
+            return methodResponse.get(method);
+        }
+        return null;
+    }
+    public void removeMethodResponse(String method) {
+        if (methodResponse.containsKey(method)) {
+            methodResponse.remove(method);
+        }
+    }
+    
     public void setResult(String res) {
         multiRes = new ArrayList<String>();
         multiRes.add(0, res);

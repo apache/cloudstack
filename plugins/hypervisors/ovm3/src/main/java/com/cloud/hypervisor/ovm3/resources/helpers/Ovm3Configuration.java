@@ -79,7 +79,7 @@ public class Ovm3Configuration {
      * A cluster is impossible with a  pool.
      * A pool is impossible without a vip.
      */
-    public void validatePoolAndCluster() {
+    private void validatePoolAndCluster() {
         if (agentInOvm3Cluster) {
             LOGGER.debug("Clustering requires a pool, setting pool to true");
             agentInOvm3Pool = true;
@@ -347,7 +347,7 @@ public class Ovm3Configuration {
      * @return param
      * @throws ConfigurationException
      */
-    public String validateParam(String name, String param) throws ConfigurationException {
+    private String validateParam(String name, String param) throws ConfigurationException {
         if (param == null) {
             String msg = "Unable to get " + name + " param is:" + param;
             LOGGER.debug(msg);

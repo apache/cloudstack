@@ -202,7 +202,8 @@ public class Xen extends OvmObject {
         }
 
         public long getVmMemory() {
-            return Long.parseLong((String) vmParams.get("memory"));
+            // return (Integer) vmParams.get("memory");
+            return Integer.parseInt((String) vmParams.get("memory"));
         }
 
         public Boolean setVmDomainType(String domtype) {
@@ -359,6 +360,7 @@ public class Xen extends OvmObject {
         private Boolean addDiskToDisks(String image, String devName, String mode) {
             for (String disk : vmDisks) {
                 if (disk.contains(image)) {
+                    LOGGER.debug(this.vmName + " already has disk " +image+ ":" + devName + ":" + mode);
                     return true;
                 }
             }
@@ -401,6 +403,7 @@ public class Xen extends OvmObject {
             Map<String, Object[]> o = (Map<String, Object[]>) vmParams
                     .get("device");
             if (o == null) {
+                LOGGER.info("No devices found" + this.vmName);
                 return null;
             }
             vmDisk = (Map<String, String>) o.get("vbd")[disk];
@@ -529,6 +532,7 @@ public class Xen extends OvmObject {
     public Map<String, Vm> listVms() throws Ovm3ResourceException {
         Object[] result = (Object[]) callWrapper("list_vms");
         if (result == null) {
+            LOGGER.debug("no vm results on list_vms");
             return null;
         }
 
@@ -605,6 +609,7 @@ public class Xen extends OvmObject {
         defVm.setVmParams((Map<String, Object>) callWrapper("list_vm", repoId,
                 vmId));
         if (defVm.getVmParams() == null) {
+            LOGGER.debug("no vm results on list_vm");
             return false;
         }
         return true;
@@ -888,6 +893,7 @@ public class Xen extends OvmObject {
             Map<String, Object[]> x = (Map<String, Object[]>) callWrapper(
                     "get_vm_config", repoId, vmId);
             if (x == null) {
+                LOGGER.debug("Unable to find vm with id:" + vmId + " on repoId:" + repoId);
                 return nVm;
             }
             nVm.setVmVifs(Arrays.asList(Arrays.copyOf(x.get("vif"),
