@@ -2435,7 +2435,7 @@
             allowedActions.push("restart");
             
             if ((jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true) 
-            		|| (jsonObj.hypervisor != 'LXC')) {
+            		&& (jsonObj.hypervisor != 'LXC')) {
                 allowedActions.push("snapshot");
             }
             
@@ -2469,7 +2469,7 @@
             allowedActions.push("reinstall");
             
             if ((jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true) 
-            		|| (jsonObj.hypervisor != 'LXC')) {
+            		&& (jsonObj.hypervisor != 'LXC')) {
                 allowedActions.push("snapshot");
             }
             
