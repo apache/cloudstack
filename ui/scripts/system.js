@@ -601,7 +601,9 @@
                                 
                                 dataProvider: function (args) {
                                     $.ajax({
-                                        url: createURL("listNetworks&listAll=true&trafficType=Public&isSystem=true&zoneId=" + selectedZoneObj.id),
+                                        url: createURL("listNetworks&listAll=true&trafficType=Public&isSystem=true&zoneId=" + selectedZoneObj.id, {
+                                            ignoreProject: true
+                                        }),
                                         dataType: "json",
                                         async: false,
                                         success: function (json) {
