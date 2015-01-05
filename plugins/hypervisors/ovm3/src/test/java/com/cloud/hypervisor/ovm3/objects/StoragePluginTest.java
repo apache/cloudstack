@@ -190,6 +190,25 @@ public class StoragePluginTest {
             + "<value><string>nfs:"
             + NFSPATH
             + "</string></value>" + "</member>" + "</struct>";
+    public String getNfsMountResponseXml() {
+        return NFSMOUNTRESPONSEXML;
+    }
+
+    public String getNfsFileSystemInfo() {
+        return NFSFILESYSTEMINFO;
+    }
+    public String getFileCreateXml() {
+        return FILECREATEXML;
+    }
+    public Long getFileSize() {
+        return SIZE;
+    }
+    public String getPoolUuid() {
+        return POOLUUID;
+    }
+    public String getFileName() {
+        return FILE;
+    }
     String NFSFILESYSTEMINFO = NFSMOUNTRESPONSEXML;
     String FILECREATEXML = "<struct>" + "<member>" + "<name>fr_type</name>"
             + "<value><string>File</string></value>" + "</member>" + "<member>"

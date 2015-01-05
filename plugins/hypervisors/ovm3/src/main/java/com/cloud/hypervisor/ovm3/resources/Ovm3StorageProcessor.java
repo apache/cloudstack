@@ -94,7 +94,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         DataStoreTO srcStore = srcData.getDataStore();
         DataTO destData = cmd.getDestTO();
         DataStoreTO destStore = destData.getDataStore();
-
+        String msg = "Not implemented yet";
         try {
             /* target and source are NFS and TEMPLATE */
             if ((srcStore instanceof NfsTO)
@@ -103,7 +103,6 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 NfsTO srcImageStore = (NfsTO) srcStore;
                 TemplateObjectTO srcTemplate = (TemplateObjectTO) srcData;
                 String storeUrl = srcImageStore.getUrl();
-
                 String secPoolUuid = pool.setupSecondaryStorage(storeUrl);
                 String primaryPoolUuid = destData.getDataStore().getUuid();
                 String destPath = agentOvmRepoPath + "/"
@@ -159,37 +158,42 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                     newVol.setFormat(ImageFormat.RAW);
                     return new CopyCmdAnswer(newVol);
                 } else {
-                    LOGGER.debug("Primary to Primary doesn't match");
+                    msg = "Primary to Primary doesn't match";
+                    LOGGER.debug(msg);
                 }
             } else {
-                String msg = "Unable to do stuff for " + srcStore.getClass()
+                msg = "Unable to do stuff for " + srcStore.getClass()
                         + ":" + srcData.getObjectType() + " to "
                         + destStore.getClass() + ":" + destData.getObjectType();
                 LOGGER.debug(msg);
             }
         } catch (Exception e) {
-            String msg = "Catch Exception " + e.getClass().getName()
+            msg = "Catch Exception " + e.getClass().getName()
                     + " for template due to " + e.toString();
             LOGGER.warn(msg, e);
             return new CopyCmdAnswer(msg);
         }
-        return new CopyCmdAnswer("not implemented yet");
+        return new CopyCmdAnswer(msg);
     }
 
     public Answer execute(DeleteCommand cmd) {
         DataTO data = cmd.getData();
+        String msg;
         LOGGER.debug("Deleting object: " + data.getObjectType());
         if (data.getObjectType() == DataObjectType.VOLUME) {
             return deleteVolume(cmd);
         } else if (data.getObjectType() == DataObjectType.SNAPSHOT) {
-            LOGGER.info("Snapshot deletion is not implemented yet.");
+            msg = "Snapshot deletion is not implemented yet.";
+            LOGGER.info(msg);
         } else if (data.getObjectType() == DataObjectType.TEMPLATE) {
-            LOGGER.info("Template deletion is not implemented yet.");
+            msg = "Template deletion is not implemented yet.";
+            LOGGER.info(msg);
         } else {
-            LOGGER.info(data.getObjectType()
-                    + " deletion is not implemented yet.");
+            msg = data.getObjectType()
+                    + " deletion is not implemented yet.";
+            LOGGER.info(msg);
         }
-        return new Answer(cmd);
+        return new Answer(cmd, false, msg);
     }
     /* TODO: Create a Disk from a template needs cleaning */
     public CreateAnswer execute(CreateCommand cmd) {
@@ -197,7 +201,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         DiskProfile disk = cmd.getDiskCharacteristics();
 
         /* disk should have a uuid */
-        String fileName = UUID.randomUUID().toString() + ".img";
+        String fileName = UUID.randomUUID().toString() + ".raw";
         String dst = primaryStorage.getPath() + "/" + primaryStorage.getUuid()
                 + "/" + fileName;
 
@@ -369,6 +373,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     public Answer createVolume(CreateObjectCommand cmd) {
         DataTO data = cmd.getData();
         VolumeObjectTO volume = (VolumeObjectTO) data;
+        System.out.println(volume);
         try {
             /*
              * public Boolean storagePluginCreate(String uuid, String ssuuid,

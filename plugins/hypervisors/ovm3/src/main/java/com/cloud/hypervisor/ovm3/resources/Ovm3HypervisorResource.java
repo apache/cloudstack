@@ -112,15 +112,15 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     private VirtualRoutingResource vrResource;
 
     private Connection c;
-    private Ovm3StoragePool ovm3sp;
-    private Ovm3StorageProcessor ovm3spr;
-    private Ovm3HypervisorSupport ovm3hs;
-    private Ovm3VmSupport ovm3vs;
-    private Ovm3HypervisorNetwork ovm3hn;
-    private Ovm3VirtualRoutingResource ovm3vrr;
-    private Ovm3VirtualRoutingSupport ovm3vrs;
-    private Ovm3Configuration ovm3config;
-    private Ovm3VmGuestTypes ovm3gt;
+    private Ovm3StoragePool storagepool;
+    private Ovm3StorageProcessor storageprocessor;
+    private Ovm3HypervisorSupport hypervisorsupport;
+    private Ovm3VmSupport vmsupport;
+    private Ovm3HypervisorNetwork hypervisornetwork;
+    private Ovm3VirtualRoutingResource virtualroutingresource;
+    private Ovm3VirtualRoutingSupport virtualroutingsupport;
+    private Ovm3Configuration configuration;
+    private Ovm3VmGuestTypes guesttypes;
     private OvmObject ovmObject = new OvmObject();
     private Boolean skipSetup = false;
 
@@ -147,12 +147,11 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             StartupStorageCommand ssCmd = new StartupStorageCommand();
 
             /* here stuff gets completed, but where should state live ? */
-            ovm3hs.fillHostInfo(srCmd);
-            ovm3hs.vmStateMapClear();
-            ovm3vrs = new Ovm3VirtualRoutingSupport(c, ovm3config, ovm3vrr);
-            ovm3spr = new Ovm3StorageProcessor(c, ovm3config, ovm3sp);
+            hypervisorsupport.fillHostInfo(srCmd);
+            hypervisorsupport.vmStateMapClear();
+            virtualroutingsupport = new Ovm3VirtualRoutingSupport(c, configuration, virtualroutingresource);
             if (skipSetup == false) {
-                ovm3hs.setupServer(ovm3config.getAgentSshKeyFileName());
+                hypervisorsupport.setupServer(configuration.getAgentSshKeyFileName());
             }
             LOGGER.debug("Ovm3 pool " + ssCmd + " " + srCmd);
             // srCmd.setStateChanges(changes);
@@ -171,9 +170,9 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             String ping = "put";
             String pong = test.echo(ping);
             if (pong.contains(ping)) {
-                ovm3hs.syncState();
+                hypervisorsupport.syncState();
                 return new PingRoutingCommand(getType(), id,
-                        ovm3hs.hostVmStateReport());
+                        hypervisorsupport.hostVmStateReport());
             } else {
                 LOGGER.debug("Agent did not respond correctly: " + ping
                         + " but got " + pong);
@@ -191,55 +190,55 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         if (cmd instanceof NetworkElementCommand) {
             return vrResource.executeRequest((NetworkElementCommand) cmd);
         } else if (clazz == CheckHealthCommand.class) {
-            return ovm3hs.execute((CheckHealthCommand) cmd);
+            return hypervisorsupport.execute((CheckHealthCommand) cmd);
         } else if (clazz == NetworkUsageCommand.class) {
-            return ovm3vrs.execute((NetworkUsageCommand) cmd);
+            return virtualroutingsupport.execute((NetworkUsageCommand) cmd);
         } else if (clazz == PlugNicCommand.class) {
-            return ovm3vs.execute((PlugNicCommand) cmd);
+            return vmsupport.execute((PlugNicCommand) cmd);
         } else if (clazz == UnPlugNicCommand.class) {
-            return ovm3vs.execute((UnPlugNicCommand) cmd);
+            return vmsupport.execute((UnPlugNicCommand) cmd);
         } else if (clazz == ReadyCommand.class) {
-            return ovm3hs.execute((ReadyCommand) cmd);
+            return hypervisorsupport.execute((ReadyCommand) cmd);
         } else if (clazz == CopyCommand.class) {
-            return ovm3spr.execute((CopyCommand) cmd);
+            return storageprocessor.execute((CopyCommand) cmd);
         } else if (clazz == DeleteCommand.class) {
-            return ovm3spr.execute((DeleteCommand) cmd);
+            return storageprocessor.execute((DeleteCommand) cmd);
         } else if (clazz == CreateStoragePoolCommand.class) {
-            return ovm3sp.execute((CreateStoragePoolCommand) cmd);
+            return storagepool.execute((CreateStoragePoolCommand) cmd);
         } else if (clazz == ModifyStoragePoolCommand.class) {
-            return ovm3sp.execute((ModifyStoragePoolCommand) cmd);
+            return storagepool.execute((ModifyStoragePoolCommand) cmd);
         } else if (clazz == PrimaryStorageDownloadCommand.class) {
-            return ovm3sp.execute((PrimaryStorageDownloadCommand) cmd);
+            return storagepool.execute((PrimaryStorageDownloadCommand) cmd);
         } else if (clazz == CreateCommand.class) {
-            return ovm3spr.execute((CreateCommand) cmd);
+            return storageprocessor.execute((CreateCommand) cmd);
         } else if (clazz == GetHostStatsCommand.class) {
-            return ovm3hs.execute((GetHostStatsCommand) cmd);
+            return hypervisorsupport.execute((GetHostStatsCommand) cmd);
         } else if (clazz == StopCommand.class) {
             return execute((StopCommand) cmd);
         } else if (clazz == RebootCommand.class) {
             return execute((RebootCommand) cmd);
         } else if (clazz == GetStorageStatsCommand.class) {
-            return ovm3sp.execute((GetStorageStatsCommand) cmd);
+            return storagepool.execute((GetStorageStatsCommand) cmd);
         } else if (clazz == GetVmStatsCommand.class) {
-            return ovm3vs.execute((GetVmStatsCommand) cmd);
+            return vmsupport.execute((GetVmStatsCommand) cmd);
         } else if (clazz == AttachVolumeCommand.class) {
-            return ovm3vs.execute((AttachVolumeCommand) cmd);
+            return vmsupport.execute((AttachVolumeCommand) cmd);
         } else if (clazz == DestroyCommand.class) {
-            return ovm3spr.execute((DestroyCommand) cmd);
+            return storageprocessor.execute((DestroyCommand) cmd);
         } else if (clazz == PrepareForMigrationCommand.class) {
-            return ovm3vs.execute((PrepareForMigrationCommand) cmd);
+            return vmsupport.execute((PrepareForMigrationCommand) cmd);
         } else if (clazz == MigrateCommand.class) {
-            return ovm3vs.execute((MigrateCommand) cmd);
+            return vmsupport.execute((MigrateCommand) cmd);
         } else if (clazz == CheckVirtualMachineCommand.class) {
-            return ovm3hs.execute((CheckVirtualMachineCommand) cmd);
+            return hypervisorsupport.execute((CheckVirtualMachineCommand) cmd);
         } else if (clazz == MaintainCommand.class) {
-            return ovm3hs.execute((MaintainCommand) cmd);
+            return hypervisorsupport.execute((MaintainCommand) cmd);
         } else if (clazz == GetVncPortCommand.class) {
-            return ovm3vs.execute((GetVncPortCommand) cmd);
+            return vmsupport.execute((GetVncPortCommand) cmd);
         } else if (clazz == PingTestCommand.class) {
-            return ovm3hn.execute((PingTestCommand) cmd);
+            return hypervisornetwork.execute((PingTestCommand) cmd);
         } else if (clazz == FenceCommand.class) {
-            return ovm3hs.execute((FenceCommand) cmd);
+            return hypervisorsupport.execute((FenceCommand) cmd);
         } else if (clazz == AttachIsoCommand.class) {
             /*
             return ovm3spr.execute((attachIso) cmd);
@@ -249,19 +248,19 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             return ovm3spr.execute((AttachCommand) cmd);
             */
         } else if (clazz == NetworkRulesSystemVmCommand.class) {
-            return ovm3vrs.execute((NetworkRulesSystemVmCommand) cmd);
+            return virtualroutingsupport.execute((NetworkRulesSystemVmCommand) cmd);
         } else if (clazz == CreatePrivateTemplateFromVolumeCommand.class) {
-            return ovm3spr.execute((CreatePrivateTemplateFromVolumeCommand) cmd);
+            return storageprocessor.execute((CreatePrivateTemplateFromVolumeCommand) cmd);
         } else if (clazz == CopyVolumeCommand.class) {
-            return ovm3spr.execute((CopyVolumeCommand) cmd);
+            return storageprocessor.execute((CopyVolumeCommand) cmd);
         } else if (clazz == DeleteStoragePoolCommand.class) {
-            return ovm3sp.execute((DeleteStoragePoolCommand) cmd);
+            return storagepool.execute((DeleteStoragePoolCommand) cmd);
         } else if (clazz == CheckNetworkCommand.class) {
-            return ovm3hn.execute((CheckNetworkCommand) cmd);
+            return hypervisornetwork.execute((CheckNetworkCommand) cmd);
         } else if (clazz == CheckSshCommand.class) {
-            return ovm3vrs.execute((CheckSshCommand) cmd);
+            return virtualroutingsupport.execute((CheckSshCommand) cmd);
         } else if (clazz == CreateObjectCommand.class) {
-            return ovm3spr.execute((CreateObjectCommand) cmd);
+            return storageprocessor.execute((CreateObjectCommand) cmd);
         } else if (clazz == StartCommand.class) {
             return execute((StartCommand) cmd);
         }
@@ -287,12 +286,12 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
 
     @Override
     public String getName() {
-        return ovm3config.getAgentName();
+        return configuration.getAgentName();
     }
 
     @Override
     public void setName(String name) {
-        ovm3config.setAgentName(name);
+        configuration.setAgentName(name);
     }
 
     @Override
@@ -322,35 +321,36 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
         LOGGER.debug("configure " + name + " with params: " + params);
-        ovm3config = new Ovm3Configuration(params);
+        configuration = new Ovm3Configuration(params);
         /* check if we're master or not and if we can connect */
         try {
             if (!c.getBogus()) {
-                c = new Connection(ovm3config.getAgentIp(),
-                        ovm3config.getAgentOvsAgentPort(),
-                        ovm3config.getAgentOvsAgentUser(),
-                        ovm3config.getAgentOvsAgentPassword());
-                c.setHostName(ovm3config.getAgentHostname());
+                c = new Connection(configuration.getAgentIp(),
+                        configuration.getAgentOvsAgentPort(),
+                        configuration.getAgentOvsAgentUser(),
+                        configuration.getAgentOvsAgentPassword());
+                c.setHostName(configuration.getAgentHostname());
             }
 
-            ovm3hs = new Ovm3HypervisorSupport(c, ovm3config);
-            ovm3hs.masterCheck();
+            hypervisorsupport = new Ovm3HypervisorSupport(c, configuration);
+            hypervisorsupport.masterCheck();
         } catch (Exception e) {
             throw new CloudRuntimeException("Base checks failed for "
-                    + ovm3config.getAgentHostname(), e);
+                    + configuration.getAgentHostname(), e);
         }
-        ovm3hn = new Ovm3HypervisorNetwork(c, ovm3config);
-        ovm3hn.configureNetworking();
-        ovm3vrr = new Ovm3VirtualRoutingResource(c);
-        ovm3vs = new Ovm3VmSupport(c, ovm3config, ovm3hs, ovm3sp, ovm3hn);
-        vrResource = new VirtualRoutingResource(ovm3vrr);
+        hypervisornetwork = new Ovm3HypervisorNetwork(c, configuration);
+        hypervisornetwork.configureNetworking();
+        virtualroutingresource = new Ovm3VirtualRoutingResource(c);
+        vmsupport = new Ovm3VmSupport(c, configuration, hypervisorsupport, storagepool, hypervisornetwork);
+        vrResource = new VirtualRoutingResource(virtualroutingresource);
         if (!vrResource.configure(name, params)) {
             throw new ConfigurationException(
                     "Unable to configure VirtualRoutingResource");
         }
-        ovm3sp = new Ovm3StoragePool(c, ovm3config);
-        ovm3sp.prepareForPool();
-        ovm3gt = new Ovm3VmGuestTypes();
+        storagepool = new Ovm3StoragePool(c, configuration);
+        storagepool.prepareForPool();
+        storageprocessor = new Ovm3StorageProcessor(c, configuration, storagepool);
+        guesttypes = new Ovm3VmGuestTypes();
         return true;
     }
 
@@ -377,7 +377,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         Xen xen = new Xen(c);
 
         try {
-            ovm3hs.setVmStateStarting(vmName);
+            hypervisorsupport.setVmStateStarting(vmName);
             Xen.Vm vm = xen.getVmConfig();
             /* max and min ? */
             vm.setVmCpus(vmSpec.getCpus());
@@ -387,7 +387,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
                     .toString());
             vm.setVmName(vmName);
 
-            String domType = ovm3gt.getOvm3GuestType(vmSpec.getOs());
+            String domType = guesttypes.getOvm3GuestType(vmSpec.getOs());
             if (domType == null || domType.isEmpty()) {
                 domType = "default";
                 LOGGER.debug("VM Virt type missing setting to: " + domType);
@@ -408,17 +408,17 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
              * simple way around it..
              */
             /* TODO: pool uuid now comes from here should change! */
-            ovm3vs.createVbds(vm, vmSpec);
+            vmsupport.createVbds(vm, vmSpec);
 
             if (vmSpec.getType() != VirtualMachine.Type.User) {
-                String svmPath = ovm3config.getAgentOvmRepoPath() + "/"
+                String svmPath = configuration.getAgentOvmRepoPath() + "/"
                         + ovmObject.deDash(vm.getPrimaryPoolUuid()) + "/ISOs";
                 String svmIso = svmPath + "/"
-                        + ovm3sp.getSystemVMPatchIsoFile().getName();
+                        + storagepool.getSystemVMPatchIsoFile().getName();
                 vm.addIso(svmIso);
             }
             /* TODO: OVS should go here! */
-            ovm3vs.createVifs(vm, vmSpec);
+            vmsupport.createVifs(vm, vmSpec);
             vm.setupVifs();
 
             /* vm migration requires a 0.0.0.0 bind */
@@ -442,9 +442,9 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
                 /* fix is in cloudstack.py for xend restart timer */
                 for (int count = 0; count < 60; count++) {
                     CloudStackPlugin cSp = new CloudStackPlugin(c);
-                    if (ovm3hs.getVmState(vmName) == null) {
+                    if (hypervisorsupport.getVmState(vmName) == null) {
                         String msg = "VM " + vmName + " went missing on "
-                                + ovm3config.getAgentHostname() + ", returning stopped";
+                                + configuration.getAgentHostname() + ", returning stopped";
                         LOGGER.debug(msg);
                         state = State.Stopped;
                         return new StartAnswer(cmd, msg);
@@ -469,7 +469,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             /*
              * TODO: Can't remember if HA worked if we were only a pool ?
              */
-            if (ovm3config.getAgentInOvm3Pool() && ovm3config.getAgentInOvm3Cluster()) {
+            if (configuration.getAgentInOvm3Pool() && configuration.getAgentInOvm3Cluster()) {
                 xen.configureVmHa(ovmObject.deDash(vm.getPrimaryPoolUuid()),
                         vm.getVmUuid(), true);
             }
@@ -481,7 +481,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             state = State.Stopped;
             return new StartAnswer(cmd, e.getMessage());
         } finally {
-            ovm3hs.setVmState(vmName, state);
+            hypervisorsupport.setVmState(vmName, state);
         }
     }
 
@@ -490,7 +490,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     public StopAnswer execute(StopCommand cmd) {
         String vmName = cmd.getVmName();
         State state = State.Error;
-        ovm3hs.setVmState(vmName, State.Stopping);
+        hypervisorsupport.setVmState(vmName, State.Stopping);
 
         try {
             Xen vms = new Xen(c);
@@ -516,7 +516,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
                 Thread.sleep(10 * 1000);
             }
             vms.deleteVm(repoId, vmId);
-            ovm3vs.cleanup(vm);
+            vmsupport.cleanup(vm);
 
             if (vms.getRunningVmConfig(vmName) != null) {
                 String msg = "Stop " + vmName + " failed ";
@@ -530,9 +530,9 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             return new StopAnswer(cmd, e.getMessage(), false);
         } finally {
             if (state != null) {
-                ovm3hs.setVmState(vmName, state);
+                hypervisorsupport.setVmState(vmName, state);
             } else {
-                ovm3hs.revmoveVmState(vmName);
+                hypervisorsupport.revmoveVmState(vmName);
             }
         }
     }
@@ -540,7 +540,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     @Override
     public RebootAnswer execute(RebootCommand cmd) {
         String vmName = cmd.getVmName();
-        ovm3hs.setVmStateStarting(vmName);
+        hypervisorsupport.setVmStateStarting(vmName);
 
         try {
             Xen xen = new Xen(c);
@@ -557,7 +557,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             LOGGER.debug("Reboot " + vmName + " failed", e);
             return new RebootAnswer(cmd, e.getMessage(), false);
         } finally {
-            ovm3hs.setVmState(vmName, State.Running);
+            hypervisorsupport.setVmState(vmName, State.Running);
         }
     }
 

@@ -54,6 +54,8 @@ public class Ovm3SupportTest {
                 results.simpleResponseWrapWrapper(linux.getDiscoverHw()));
         con.setMethodResponse("discover_server",
                 results.simpleResponseWrapWrapper(linux.getDiscoverserver()));
+        con.setMethodResponse("discover_mounted_file_systems", 
+                results.simpleResponseWrapWrapper(linux.getDiscoverFs()));
         con.setMethodResponse("echo", results.simpleResponseWrapWrapper("put"));
         con.setMethodResponse("list_vms", xen.getMultipleVmsListXML());
         con.setMethodResponse("list_vm", xen.getSingleVmListXML());
@@ -62,6 +64,8 @@ public class Ovm3SupportTest {
         con.setMethodResponse("start_vm", results.getNil());
         con.setMethodResponse("reboot_vm", results.getNil());
         con.setMethodResponse("stop_vm", results.getNil());
+        con.setMethodResponse("copy_file", results.getNil());
+        con.setMethodResponse("storage_plugin_destroy", results.getNil());
         con.setMethodResponse("check_domr_ssh",
                 results.simpleResponseWrap("boolean", "1"));
         con.setMethodResponse("exec_domr", csp.getDomrExecXml());

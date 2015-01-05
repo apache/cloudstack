@@ -510,6 +510,35 @@ public class LinuxTest {
     private final String FSTYPE = "nfs";
     private final String REMOTEHOST = "cs-mgmt";
     private final String REMOTEDIR = "/volumes/cs-data/primary/ovm";
+    public String getFsType() {
+        return FSTYPE;
+    }
+
+    public String getRemoteHost() {
+        return REMOTEHOST;
+    }
+
+    public String getRemoteDir() {
+        return REMOTEDIR;
+    }
+
+    public String getRemote() {
+        return REMOTE;
+    }
+
+    public String getRepoId() {
+        return REPOID;
+    }
+
+    public String getRepoMnt() {
+        return REPOMNT;
+    }
+    public String getVirtualDisksDir() {
+        return REPOMNT + "/VirtualDisks";
+    }
+    public String getTemplatesDir() {
+        return REPOMNT + "/Templates";
+    }
     private final String REMOTE = REMOTEHOST + ":" + REMOTEDIR;
     private final String REPOID = "f12842eb-f5ed-3fe7-8da1-eb0e17f5ede8";
     private final String DDREPOID = lin.deDash(REPOID);
