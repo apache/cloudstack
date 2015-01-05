@@ -4244,6 +4244,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (cpuInfo.get("socket_count") != null) {
                 _host.cpuSockets = Integer.parseInt(cpuInfo.get("socket_count"));
             }
+            // would hcs be null we would have thrown an exception on condition (_host.cpus <= 0) by now
             for (final HostCpu hc : hcs) {
                 _host.speed = hc.getSpeed(conn).intValue();
                 break;
