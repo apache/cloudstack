@@ -161,7 +161,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 PoolPatch poolPatch = PoolPatch.getByUuid(conn, hotFixUuid);
                 for(HostPatch patch : patches) {
                     PoolPatch pp = patch.getPoolPatch(conn);
-                    if (pp.equals(poolPatch) && patch.getApplied(conn)) {
+                    if (pp != null && pp.equals(poolPatch) && patch.getApplied(conn)) {
                         s_logger.debug("host " + hostIp + " does have " + hotFixUuid +" Hotfix.");
                         return true;
                     }
