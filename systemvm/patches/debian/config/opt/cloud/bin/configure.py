@@ -71,7 +71,7 @@ class CsAcl(CsDataBag):
         """ For type Virtual Router """
 
         def __init__(self, obj, fw):
-            self.fw = fw
+            self.fw = fw.get_fw()
             self.direction = 'egress'
             if obj['traffic_type'] == 'Ingress':
                 self.direction = 'ingress'
@@ -173,6 +173,7 @@ class CsAcl(CsDataBag):
             def init_vpc(self, direction, acl, rule, config):
                 self.table = ""
                 self.device = acl.device
+                # acl is an object of the AclDevice type. So, its fw attribute is already a list.
                 self.fw = acl.fw
                 self.chain = config.get_ingress_chain(self.device, acl.ip)
                 self.dest = "-s %s" % rule['cidr']
