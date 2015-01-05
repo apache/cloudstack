@@ -150,6 +150,11 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
         if (id != null && id.longValue() == Domain.ROOT_DOMAIN) {
             s_logger.error("Can not remove domain " + id + " as it is ROOT domain");
             return false;
+        } else {
+            if(id == null) {
+                s_logger.error("Can not remove domain without id.");
+                return false;
+            }
         }
 
         DomainVO domain = findById(id);
