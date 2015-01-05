@@ -1,10 +1,26 @@
+/*******************************************************************************
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http:www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ ******************************************************************************/
 package com.cloud.hypervisor.ovm3.objects;
 
 import java.util.UUID;
 
 import org.junit.Test;
-
-import com.cloud.hypervisor.ovm3.objects.Xen.Vm;
 
 public class XenTest {
     public XenTest() {
@@ -14,22 +30,28 @@ public class XenTest {
     XmlTestResultTest results = new XmlTestResultTest();
     String DOM0VMNAME = "Domain-0";
     String VMNAME = "i-2-3-VM";
+    public String getVMNAME() {
+        return VMNAME;
+    }
     String REPOID = "f12842ebf5ed3fe78da1eb0e17f5ede8";
     public String getRepoId() {
         return REPOID;
     }
-
-    public void setRepoId(String r) {
-        REPOID = r;
-    }
-
     public String getVmId() {
         return VMID;
     }
-
-    public void setVmId(String v) {
-        VMID = v;
+    String VMNICMAC = "02:00:50:9a:00:01";
+    public String getVmNicMac() {
+        return VMNICMAC;
     }
+    public String getVmNicBridge() {
+        return VMNICBR;
+    }
+    public String getVmNicUuid() {
+        return VMNICUUID;
+    }
+    String VMNICBR = "xenbr0.160";
+    String VMNICUUID = "2ad52371-af7d-32d1-ebe1-2b6a811e66c4";
     String VMID = "868a6627-c3b0-3d9b-aea4-f279cbaa253b";
     String VMROOTDISK = "722eb520-dcf5-4113-8f45-22d67c9a2f3c.raw";
     String VMISO = "xentools.iso";
@@ -680,11 +702,11 @@ public class XenTest {
                     + "<value><struct>\n"
                     + "<member>\n"
                     + "<name>bridge</name>\n"
-                    + "<value><string>xenbr0.160</string></value>\n"
+                    + "<value><string>"+VMNICBR+"</string></value>\n"
                     + "</member>\n"
                     + "<member>\n"
                     + "<name>mac</name>\n"
-                    + "<value><string>02:00:50:9a:00:01</string></value>\n"
+                    + "<value><string>" + VMNICMAC + "</string></value>\n"
                     + "</member>\n"
                     + "<member>\n"
                     + "<name>script</name>\n"
@@ -692,7 +714,7 @@ public class XenTest {
                     + "</member>\n"
                     + "<member>\n"
                     + "<name>uuid</name>\n"
-                    + "<value><string>2ad52371-af7d-32d1-ebe1-2b6a811e66c4</string></value>\n"
+                    + "<value><string>"+VMNICUUID+"</string></value>\n"
                     + "</member>\n"
                     + "<member>\n"
                     + "<name>backend</name>\n"
@@ -1026,11 +1048,11 @@ public class XenTest {
                     + "<value><struct>"
                     + "<member>"
                     + "<name>bridge</name>"
-                    + "<value><string>xenbr0.160</string></value>"
+                    + "<value><string>"+VMNICBR+"</string></value>"
                     + "</member>"
                     + "<member>"
                     + "<name>mac</name>"
-                    + "<value><string>02:00:50:9a:00:01</string></value>"
+                    + "<value><string>"+VMNICMAC+"</string></value>"
                     + "</member>"
                     + "<member>"
                     + "<name>script</name>"
@@ -1038,7 +1060,7 @@ public class XenTest {
                     + "</member>"
                     + "<member>"
                     + "<name>uuid</name>"
-                    + "<value><string>2ad52371-af7d-32d1-ebe1-2b6a811e66c4</string></value>"
+                    + "<value><string>"+VMNICUUID+"</string></value>"
                     + "</member>"
                     + "<member>"
                     + "<name>backend</name>"
@@ -1218,7 +1240,7 @@ public class XenTest {
                     + "<member>"
                     + "<name>vif</name>"
                     + "<value><array><data>"
-                    + "<value><string>mac=02:00:50:9a:00:01,bridge=xenbr0.160</string></value>"
+                    + "<value><string>mac="+VMNICMAC+",bridge="+VMNICBR+"</string></value>"
                     + "<value><string>mac=02:00:50:9a:00:02,bridge=xenbr0.240</string></value>"
                     + "</data></array></value>" + "</member>" + "<member>"
                     + "<name>extra</name>" + "<value><string></string></value>"
@@ -1344,7 +1366,7 @@ public class XenTest {
         /* getVncPort doesn't work with live config due to a bug in the agent */
         // results.basicIntTest(domU.getVncPort(), 5900);
         results.basicStringTest(domU.getVmName(), VMNAME);
-        results.basicIntTest(domU.getVifIdByMac("02:00:50:9a:00:01"), 0);
+        results.basicIntTest(domU.getVifIdByMac(VMNICMAC), 0);
         results.basicIntTest(domU.getVifIdByMac("02:00:50:9a:00:02"), 1);
         results.basicIntTest(domU.getVifIdByMac("02:00:50:9a:00:03"), -1);
         con.setResult(results.getNil());
@@ -1381,7 +1403,7 @@ public class XenTest {
         domU.addRootDisk(VMROOTDISK);
         domU.setPrimaryPoolUuid(REPOID);
 
-        domU.addVif(0, "xenbr0.160", "02:00:50:9a:00:01");
+        domU.addVif(0, VMNICBR, VMNICMAC);
         domU.addVif(0, "xenbr0.240", "02:00:50:9a:00:02");
         domU.removeVif("xenbr0.240", "02:00:50:9a:00:02");
         domU.setVnc("0.0.0.0", "gobbeldygoo");

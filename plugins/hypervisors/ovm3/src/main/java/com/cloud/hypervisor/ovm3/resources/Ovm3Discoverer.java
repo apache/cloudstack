@@ -1,19 +1,21 @@
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements. See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership. The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License. You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied. See the License for the
-// specific language governing permissions and limitations
-// under the License.
+/*******************************************************************************
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http:www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ ******************************************************************************/
 package com.cloud.hypervisor.ovm3.resources;
 
 import java.io.IOException;
@@ -66,9 +68,8 @@ import com.cloud.utils.ssh.SSHCmdHelper;
 
 @Local(value = Discoverer.class)
 public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
-Listener, ResourceStateAdapter {
-    private static final Logger LOGGER = Logger
-            .getLogger(Ovm3Discoverer.class);
+        Listener, ResourceStateAdapter {
+    private static final Logger LOGGER = Logger.getLogger(Ovm3Discoverer.class);
     protected String publicNetworkDevice;
     protected String privateNetworkDevice;
     protected String guestNetworkDevice;
@@ -124,8 +125,7 @@ Listener, ResourceStateAdapter {
 
     private boolean CheckUrl(URI url) throws DiscoveryException {
         if ("http".equals(url.getScheme()) || "https".equals(url.getScheme())) {
-            String msg = "Discovering " + url
-                    + ": " + _params;
+            String msg = "Discovering " + url + ": " + _params;
             LOGGER.debug(msg);
         } else {
             String msg = "urlString is not http(s) so we're not taking care of the discovery for this: "
@@ -139,8 +139,7 @@ Listener, ResourceStateAdapter {
     @Override
     public Map<? extends ServerResource, Map<String, String>> find(long dcId,
             Long podId, Long clusterId, URI url, String username,
-            String password, List<String> hostTags)
-                    throws DiscoveryException {
+            String password, List<String> hostTags) throws DiscoveryException {
         Connection c = null;
 
         CheckUrl(url);
@@ -225,8 +224,9 @@ Listener, ResourceStateAdapter {
             sshConnection = SSHCmdHelper.acquireAuthorizedConnection(hostIp,
                     username, password);
             if (sshConnection == null) {
-                String msg = "Cannot Ssh to Ovm3 host(IP=" + hostIp + ", username=" + username +
-                        ", password=*******), discovery failed";
+                String msg = "Cannot Ssh to Ovm3 host(IP=" + hostIp
+                        + ", username=" + username
+                        + ", password=*******), discovery failed";
                 LOGGER.warn(msg);
                 throw new DiscoveryException(msg);
             }
@@ -267,7 +267,8 @@ Listener, ResourceStateAdapter {
             ovmResource.configure(hostname, params);
             ovmResource.start();
 
-            c = new Connection(hostIp, Integer.parseInt(agentPort), agentUsername, agentPassword);
+            c = new Connection(hostIp, Integer.parseInt(agentPort),
+                    agentUsername, agentPassword);
 
             /* After resource start, we are able to execute our agent api */
             Linux host = new Linux(c);
@@ -289,8 +290,8 @@ Listener, ResourceStateAdapter {
             return null;
         } catch (ConfigurationException e) {
             LOGGER.error(
-                    "Configure resource failed, Unable to discover Ovm3 host: " + url.getHost(),
-                    e);
+                    "Configure resource failed, Unable to discover Ovm3 host: "
+                            + url.getHost(), e);
             return null;
         } catch (IOException | Ovm3ResourceException e) {
             LOGGER.error("Unable to discover Ovm3 host: " + url.getHost(), e);

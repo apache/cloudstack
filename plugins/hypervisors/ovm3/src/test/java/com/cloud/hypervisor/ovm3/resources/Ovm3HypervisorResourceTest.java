@@ -1,3 +1,21 @@
+/*******************************************************************************
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http:www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ ******************************************************************************/
 package com.cloud.hypervisor.ovm3.resources;
 
 import static org.junit.Assert.assertNull;
@@ -14,7 +32,6 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -27,7 +44,6 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.ovm3.objects.CloudStackPluginTest;
 import com.cloud.hypervisor.ovm3.objects.ConnectionTest;
-import com.cloud.hypervisor.ovm3.objects.LinuxTest;
 import com.cloud.hypervisor.ovm3.objects.NetworkTest;
 import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
 import com.cloud.hypervisor.ovm3.objects.OvmObject;
@@ -36,6 +52,7 @@ import com.cloud.hypervisor.ovm3.objects.XenTest;
 import com.cloud.hypervisor.ovm3.objects.XmlTestResultTest;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3Configuration;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3ConfigurationTest;
+import com.cloud.hypervisor.ovm3.support.Ovm3SupportTest;
 import com.cloud.network.Networks;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
@@ -48,53 +65,18 @@ public class Ovm3HypervisorResourceTest {
     XmlTestResultTest results = new XmlTestResultTest();
     Ovm3ConfigurationTest configTest = new Ovm3ConfigurationTest();
     Ovm3HypervisorResource hypervisor = new Ovm3HypervisorResource();
+    Ovm3SupportTest support = new Ovm3SupportTest();
     NetworkTest net = new NetworkTest();
-    LinuxTest linux = new LinuxTest();
+    // LinuxTest linux = new LinuxTest();
     CloudStackPluginTest csp = new CloudStackPluginTest();
     XenTest xen = new XenTest();
     String currentStatus = "put";
     String vmName = "i-2-3-VM";
 
-    private ConnectionTest prepConnectionResults() {
-        ConnectionTest con = new ConnectionTest();
-        con.setBogus(true);
-        return configureResult(con);
-    }
-
-    private ConnectionTest configureResult(ConnectionTest con) {
-        con.setMethodResponse("check_dom0_ip",
-                results.simpleResponseWrap("boolean", "1"));
-        con.setMethodResponse("ovs_ip_config",
-                results.simpleResponseWrap("boolean", "1"));
-        con.setMethodResponse("ovs_local_config",
-                results.simpleResponseWrap("string", "start"));
-        con.setMethodResponse("ovs_control_interface",
-                results.simpleResponseWrap("boolean", "1"));
-        con.setMethodResponse("update_server_roles",
-                results.simpleResponseWrap("boolean", "1"));
-        con.setMethodResponse("discover_network",
-                results.simpleResponseWrapWrapper(net.getDiscoverNetwork()));
-        con.setMethodResponse("discover_hardware",
-                results.simpleResponseWrapWrapper(linux.getDiscoverHw()));
-        con.setMethodResponse("discover_server",
-                results.simpleResponseWrapWrapper(linux.getDiscoverserver()));
-        con.setMethodResponse("echo", results.simpleResponseWrapWrapper("put"));
-        con.setMethodResponse("list_vms", xen.getMultipleVmsListXML());
-        con.setMethodResponse("list_vm", xen.getSingleVmListXML());
-        con.setMethodResponse("get_vm_config", xen.getSingleVmConfigXML());
-        con.setMethodResponse("create_vm", results.getNil());
-        con.setMethodResponse("start_vm", results.getNil());
-        con.setMethodResponse("reboot_vm", results.getNil());
-        con.setMethodResponse("stop_vm", results.getNil());
-        con.setMethodResponse("check_domr_ssh",
-                results.simpleResponseWrap("boolean", "1"));
-        return con;
-    }
-
     @Test
     public void configureTest() throws ConfigurationException {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
-        con = prepConnectionResults();
+        con = support.prepConnectionResults();
         hypervisor.setConnection(con);
         results.basicBooleanTest(hypervisor.configure(config.getAgentName(),
                 configTest.getParams()));
@@ -115,12 +97,13 @@ public class Ovm3HypervisorResourceTest {
      * }
      */
 
+    @Test
     public void configureControlInterfaceTest() throws ConfigurationException {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
         String netdef = net.getDiscoverNetwork();
         netdef = netdef.replaceAll(config.getAgentControlNetworkName(),
                 "thisisnotit0");
-        con = prepConnectionResults();
+        con = support.prepConnectionResults();
         con.removeMethodResponse("discover_network");
         con.setResult(results.simpleResponseWrapWrapper(netdef));
         con.addResult(results.simpleResponseWrapWrapper(net
@@ -138,7 +121,7 @@ public class Ovm3HypervisorResourceTest {
     public void getCurrentStatusAndConfigureTest()
             throws ConfigurationException {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
-        con = prepConnectionResults();
+        con = support.prepConnectionResults();
         hypervisor.setConnection(con);
         results.basicBooleanTest(hypervisor.configure(config.getAgentName(),
                 configTest.getParams()));
@@ -149,7 +132,7 @@ public class Ovm3HypervisorResourceTest {
     @Test
     public void getCurrentStatusFailTest() throws ConfigurationException {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
-        con = prepConnectionResults();
+        con = support.prepConnectionResults();
         con.setResult(results.simpleResponseWrapWrapper("fail"));
         con.removeMethodResponse("echo");
         hypervisor.setConnection(con);
@@ -169,7 +152,7 @@ public class Ovm3HypervisorResourceTest {
     @Test
     public void initializeTest() throws Exception {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
-        con = prepConnectionResults();
+        con = support.prepConnectionResults();
         hypervisor.setConnection(con);
         hypervisor.setSkipSetup(true);
         results.basicBooleanTest(hypervisor.configure(config.getAgentName(),
@@ -184,7 +167,7 @@ public class Ovm3HypervisorResourceTest {
     private Ovm3HypervisorResource vmActionPreparation()
             throws ConfigurationException {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
-        con = prepConnectionResults();
+        con = support.prepConnectionResults();
         hypervisor.setConnection(con);
         results.basicBooleanTest(hypervisor.configure(config.getAgentName(),
                 configTest.getParams()));
@@ -321,7 +304,7 @@ public class Ovm3HypervisorResourceTest {
     public void testCreateVm() throws ConfigurationException,
             Ovm3ResourceException {
         /* use what we know */
-        con = prepConnectionResults();
+        con = support.prepConnectionResults();
         Xen vdata = new Xen(con);
         Xen.Vm vm = vdata.getVmConfig(vmName);
         vdata.listVm(xen.getRepoId(), xen.getVmId());
@@ -362,7 +345,7 @@ public class Ovm3HypervisorResourceTest {
     public void testCreateOtherVm() throws ConfigurationException,
             Ovm3ResourceException {
         /* use what we know */
-        con = prepConnectionResults();
+        con = support.prepConnectionResults();
         Xen vdata = new Xen(con);
         Xen.Vm vm = vdata.getVmConfig(vmName);
         vdata.listVm(xen.getRepoId(), xen.getVmId());
