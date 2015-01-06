@@ -324,7 +324,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         /* check if we're master or not and if we can connect */
         try {
             configuration = new Ovm3Configuration(params);
-            if (configuration.getIsTest() == true) {
+            if (configuration.getIsTest() == false) {
                 c = new Connection(configuration.getAgentIp(),
                         configuration.getAgentOvsAgentPort(),
                         configuration.getAgentOvsAgentUser(),

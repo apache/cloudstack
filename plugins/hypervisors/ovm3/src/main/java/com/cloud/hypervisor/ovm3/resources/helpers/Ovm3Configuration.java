@@ -91,6 +91,9 @@ public class Ovm3Configuration {
         setAgentStorageNetworkName((String) params
                 .get("storage.network.device1"));
         validatePoolAndCluster();
+        if (params.containsKey("istest")) {
+            setIsTest((Boolean) params.get("istest"));
+        }
     }
 
     /**
