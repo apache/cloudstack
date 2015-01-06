@@ -18,8 +18,8 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.resources;
 
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,7 +36,6 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StopCommand;
-import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
@@ -199,7 +198,8 @@ public class Ovm3HypervisorResourceTest {
         hypervisor = vmActionPreparation();
         con.removeMethodResponse("list_vms");
         con.setResult(xen.getMultipleVmsListXML());
-        con.addResult(xen.getMultipleVmsListXML().replace(vmName, vmName + "-hide"));
+        con.addResult(xen.getMultipleVmsListXML().replace(vmName,
+                vmName + "-hide"));
         StopCommand cmd = new StopCommand(vmName, true, true);
         Answer ra = hypervisor.executeRequest(cmd);
         results.basicBooleanTest(ra.getResult());
@@ -258,7 +258,7 @@ public class Ovm3HypervisorResourceTest {
         nic.setMac(mac);
         nic.setDeviceId(nics.size());
         nics.add(nic);
-        vmspec.setNics((NicTO[]) nics.toArray(new NicTO[nics.size()]));
+        vmspec.setNics(nics.toArray(new NicTO[nics.size()]));
     }
 
     /* hardcoded, dirty */
@@ -288,10 +288,10 @@ public class Ovm3HypervisorResourceTest {
         volume.setDataStore(nfsDataStore);
         volume.setPath(path);
         volume.setUuid(uuid);
-        disk.setData((DataTO) volume);
+        disk.setData(volume);
         disk.setType(Volume.Type.ROOT);
         disks.add(disk);
-        vmspec.setDisks((DiskTO[]) disks.toArray(new DiskTO[disks.size()]));
+        vmspec.setDisks(disks.toArray(new DiskTO[disks.size()]));
     }
 
     public Host getHost(String ip) {
@@ -302,7 +302,7 @@ public class Ovm3HypervisorResourceTest {
 
     @Test
     public void testCreateVm() throws ConfigurationException,
-            Ovm3ResourceException {
+    Ovm3ResourceException {
         /* use what we know */
         con = support.prepConnectionResults();
         Xen vdata = new Xen(con);
@@ -343,7 +343,7 @@ public class Ovm3HypervisorResourceTest {
 
     @Test
     public void testCreateOtherVm() throws ConfigurationException,
-            Ovm3ResourceException {
+    Ovm3ResourceException {
         /* use what we know */
         con = support.prepConnectionResults();
         Xen vdata = new Xen(con);

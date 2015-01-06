@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
- * 
+ *
  * http:www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -32,7 +32,6 @@ import org.junit.Test;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.hypervisor.ovm3.objects.ConnectionTest;
@@ -219,26 +218,30 @@ public class Ovm3StorageProcessorTest {
     }
 
     public DiskProfile diskProfile() {
-        DiskProfile dp = new DiskProfile(1L, Volume.Type.ROOT, xen.getVmRootDiskName(), 1,
-                storageplugin.getFileSize(), new String[0], false, false, 1L);
+        DiskProfile dp = new DiskProfile(1L, Volume.Type.ROOT,
+                xen.getVmRootDiskName(), 1, storageplugin.getFileSize(),
+                new String[0], false, false, 1L);
         return dp;
     }
-      
-    /* unused ?
-    @Test
-    public void createCommandTest() throws ConfigurationException {
-       con = prepare();
-       DiskProfile disk = diskProfile();
-       String templateUrl = null;
-       StoragePoolVO poolio = new StoragePoolVO();
-       poolio.setPath(linux.getTemplatesDir());
-       poolio.setHostAddress(linux.getRemoteHost());
-       
-       CreateCommand create = new CreateCommand(disk, templateUrl, poolio , false);
-       Answer ra = hypervisor.executeRequest(create);
-       results.basicBooleanTest(ra.getResult());
-    }
-    */
+
+    /*
+     * unused ?
+     * 
+     * @Test
+     * public void createCommandTest() throws ConfigurationException {
+     * con = prepare();
+     * DiskProfile disk = diskProfile();
+     * String templateUrl = null;
+     * StoragePoolVO poolio = new StoragePoolVO();
+     * poolio.setPath(linux.getTemplatesDir());
+     * poolio.setHostAddress(linux.getRemoteHost());
+     * 
+     * CreateCommand create = new CreateCommand(disk, templateUrl, poolio ,
+     * false);
+     * Answer ra = hypervisor.executeRequest(create);
+     * results.basicBooleanTest(ra.getResult());
+     * }
+     */
     @Test
     public void createTemplateObjectCommandTest() throws ConfigurationException {
         con = prepare();
@@ -292,7 +295,9 @@ public class Ovm3StorageProcessorTest {
         results.basicBooleanTest(ra.getResult(), false);
     }
 
-    /* used ?
+    /*
+     * used ?
+     * 
      * @Test
      * public void isoAttachTest() throws ConfigurationException {
      * con = prepare();
@@ -320,8 +325,8 @@ public class Ovm3StorageProcessorTest {
         String src = linux.getVirtualDisksDir() + ovmObject.newUuid() + ".raw";
         String dst = linux.getVirtualDisksDir() + ovmObject.newUuid() + ".raw";
         StoragePoolVO poolio = new StoragePoolVO();
-        CopyVolumeCommand copy = new CopyVolumeCommand(0, src, poolio,
-                dst, true, 0, false);
+        CopyVolumeCommand copy = new CopyVolumeCommand(0, src, poolio, dst,
+                true, 0, false);
         Answer ra = hypervisor.executeRequest(copy);
         results.basicBooleanTest(ra.getResult());
         copy = new CopyVolumeCommand(0, src, poolio, dst, false, 0, false);
@@ -329,14 +334,16 @@ public class Ovm3StorageProcessorTest {
         results.basicBooleanTest(ra.getResult());
     }
 
-    /* unused ?
-    @Test
-    public void destroyCommandTest() throws ConfigurationException {
-        con = prepare();
-        DestroyCommand destroy = new DestroyCommand(support.pool, 
-                (Volume) volume(xen.getVmRootDiskUuid(), linux.getRepoId(), "",
-                        linux.getVirtualDisksDir()), 
-                xen.getVmName());
-    }
-    */
+    /*
+     * unused ?
+     * 
+     * @Test
+     * public void destroyCommandTest() throws ConfigurationException {
+     * con = prepare();
+     * DestroyCommand destroy = new DestroyCommand(support.pool,
+     * (Volume) volume(xen.getVmRootDiskUuid(), linux.getRepoId(), "",
+     * linux.getVirtualDisksDir()),
+     * xen.getVmName());
+     * }
+     */
 }

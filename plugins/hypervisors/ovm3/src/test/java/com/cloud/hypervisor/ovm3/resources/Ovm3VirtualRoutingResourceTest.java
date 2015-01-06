@@ -64,31 +64,37 @@ public class Ovm3VirtualRoutingResourceTest {
         con = support.prepConnectionResults();
         cmd = "/opt/cloud/bin/" + cmd;
         virtualrouting.setConnection(con);
-        ExecutionResult result = virtualrouting.executeInVR(domrIp, cmd,  args);
+        ExecutionResult result = virtualrouting.executeInVR(domrIp, cmd, args);
         results.basicBooleanTest(result.isSuccess());
     }
+
     @Test
     public void executeInVRFailTest() {
         ConnectionTest con = new ConnectionTest();
         virtualrouting.setConnection(con);
-        ExecutionResult result = virtualrouting.executeInVR(domrIp, cmd,  args);
-        results.basicBooleanTest(result.isSuccess(), false);    }
+        ExecutionResult result = virtualrouting.executeInVR(domrIp, cmd, args);
+        results.basicBooleanTest(result.isSuccess(), false);
+    }
+
     @Test
     public void createFileInVRTest() {
         con = support.prepConnectionResults();
         virtualrouting.setConnection(con);
-        ExecutionResult result = virtualrouting.createFileInVR(domrIp, "/tmp",  "test", "1 2 3");
+        ExecutionResult result = virtualrouting.createFileInVR(domrIp, "/tmp",
+                "test", "1 2 3");
         results.basicBooleanTest(result.isSuccess());
     }
+
     @Test
     public void createFileInVRFailTest() {
         ConnectionTest con = new ConnectionTest();
         virtualrouting.setConnection(con);
-        ExecutionResult result = virtualrouting.createFileInVR(domrIp, "/tmp",  "test", "1 2 3");
+        ExecutionResult result = virtualrouting.createFileInVR(domrIp, "/tmp",
+                "test", "1 2 3");
         results.basicBooleanTest(result.isSuccess(), false);
     }
-    
-    private ConnectionTest prepare() throws ConfigurationException {  
+
+    private ConnectionTest prepare() throws ConfigurationException {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
         con = support.prepConnectionResults();
         hypervisor.setConnection(con);
@@ -97,62 +103,82 @@ public class Ovm3VirtualRoutingResourceTest {
         virtualrouting.setConnection(con);
         return con;
     }
+
     @Test
-    public void prepareVpcCommandTest() throws ConfigurationException {  
+    public void prepareVpcCommandTest() throws ConfigurationException {
         prepare();
         IpAssocVpcCommand vpc = generateIpAssocVpcCommand(xen.getVmNicMac());
         results.basicBooleanTest(hypervisor.executeRequest(vpc).getResult());
     }
+
     @Test
-    public void prepareVpcCommandFailTest() throws ConfigurationException {  
+    public void prepareVpcCommandFailTest() throws ConfigurationException {
         prepare();
-        IpAssocVpcCommand vpc = generateIpAssocVpcCommand(xen.getVmNicMac().replace("0", "A"));
-        results.basicBooleanTest(hypervisor.executeRequest(vpc).getResult(), false);
+        IpAssocVpcCommand vpc = generateIpAssocVpcCommand(xen.getVmNicMac()
+                .replace("0", "A"));
+        results.basicBooleanTest(hypervisor.executeRequest(vpc).getResult(),
+                false);
     }
+
     @Test
-    public void prepareVpcCommandFailHeavierTest() throws ConfigurationException {  
+    public void prepareVpcCommandFailHeavierTest()
+            throws ConfigurationException {
         prepare();
         con.removeMethodResponse("list_vms");
-        IpAssocVpcCommand vpc = generateIpAssocVpcCommand(xen.getVmNicMac().replace("0", "F"));
-        results.basicBooleanTest(hypervisor.executeRequest(vpc).getResult(), false);
+        IpAssocVpcCommand vpc = generateIpAssocVpcCommand(xen.getVmNicMac()
+                .replace("0", "F"));
+        results.basicBooleanTest(hypervisor.executeRequest(vpc).getResult(),
+                false);
     }
+
     @Test
-    public void prepareCommandTest() throws ConfigurationException {  
+    public void prepareCommandTest() throws ConfigurationException {
         prepare();
         IpAssocCommand rvm = generateIpAssocCommand(xen.getVmNicMac());
         results.basicBooleanTest(hypervisor.executeRequest(rvm).getResult());
     }
+
     @Test
-    public void prepareCommandFailTest() throws ConfigurationException {  
+    public void prepareCommandFailTest() throws ConfigurationException {
         prepare();
-        IpAssocCommand rvm = generateIpAssocCommand(xen.getVmNicMac().replace("0", "F"));
-        results.basicBooleanTest(hypervisor.executeRequest(rvm).getResult(), false);
+        IpAssocCommand rvm = generateIpAssocCommand(xen.getVmNicMac().replace(
+                "0", "F"));
+        results.basicBooleanTest(hypervisor.executeRequest(rvm).getResult(),
+                false);
     }
+
     @Test
-    public void prepareCommandFailHeavierTest() throws ConfigurationException {  
+    public void prepareCommandFailHeavierTest() throws ConfigurationException {
         prepare();
         con.removeMethodResponse("list_vms");
-        IpAssocCommand rvm = generateIpAssocCommand(xen.getVmNicMac().replace("0", "F"));
-        results.basicBooleanTest(hypervisor.executeRequest(rvm).getResult(), false);
+        IpAssocCommand rvm = generateIpAssocCommand(xen.getVmNicMac().replace(
+                "0", "F"));
+        results.basicBooleanTest(hypervisor.executeRequest(rvm).getResult(),
+                false);
     }
-    
+
     private IpAddressTO[] getIp(String mac) {
         String br[] = xen.getVmNicBridge().split("[.]");
         List<IpAddressTO> ips = new ArrayList<IpAddressTO>();
-        ips.add(new IpAddressTO(1, "64.1.1.10", true, true, true, "vlan://" + br[1], "64.1.1.1", "255.255.255.0", mac, 1000, false));
+        ips.add(new IpAddressTO(1, "64.1.1.10", true, true, true, "vlan://"
+                + br[1], "64.1.1.1", "255.255.255.0", mac, 1000, false));
         IpAddressTO[] ipArray = ips.toArray(new IpAddressTO[ips.size()]);
         return ipArray;
     }
+
     private IpAssocVpcCommand generateIpAssocVpcCommand(String mac) {
         IpAssocVpcCommand cmd = new IpAssocVpcCommand(getIp(mac));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, xen.getVmName());
-        // assertEquals(6, cmd.getAnswersCount()); // AnswersCount is clearly wrong as it doesn't know enough to tell
+        // assertEquals(6, cmd.getAnswersCount()); // AnswersCount is clearly
+        // wrong as it doesn't know enough to tell
         return cmd;
     }
+
     private IpAssocCommand generateIpAssocCommand(String mac) {
         IpAssocCommand cmd = new IpAssocCommand(getIp(mac));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, xen.getVmName());
-        // assertEquals(6, cmd.getAnswersCount()); // AnswersCount is clearly wrong as it doesn't know enough to tell
+        // assertEquals(6, cmd.getAnswersCount()); // AnswersCount is clearly
+        // wrong as it doesn't know enough to tell
         return cmd;
     }
 }

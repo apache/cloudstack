@@ -47,20 +47,20 @@ public class ConnectionTest extends Connection {
     List<String> multiRes = new ArrayList<String>();
     String hostIp;
     private Map<String, String> methodResponse = new HashMap<String, String>();
-    
+
     public ConnectionTest() {
         this.setBogus(true);
     }
-     
+
     /*
-    public ConnectionTest(String agentIp, String agentOvsAgentUser,
-            String agentOvsAgentPassword) {
-        super.setIp(agentIp);
-        super.setUserName(agentOvsAgentUser);
-        super.setPassword(agentOvsAgentPassword);
-        this.setBogus(true);
-    }
-    */
+     * public ConnectionTest(String agentIp, String agentOvsAgentUser,
+     * String agentOvsAgentPassword) {
+     * super.setIp(agentIp);
+     * super.setUserName(agentOvsAgentUser);
+     * super.setPassword(agentOvsAgentPassword);
+     * this.setBogus(true);
+     * }
+     */
     @Override
     public String getIp() {
         return hostIp;
@@ -107,21 +107,24 @@ public class ConnectionTest extends Connection {
         }
         return parser.getResult();
     }
+
     public void setMethodResponse(String method, String response) {
         methodResponse.put(method, response);
     }
+
     public String getMethodResponse(String method) {
         if (methodResponse.containsKey(method)) {
             return methodResponse.get(method);
         }
         return null;
     }
+
     public void removeMethodResponse(String method) {
         if (methodResponse.containsKey(method)) {
             methodResponse.remove(method);
         }
     }
-    
+
     public void setResult(String res) {
         multiRes = new ArrayList<String>();
         multiRes.add(0, res);
@@ -131,30 +134,36 @@ public class ConnectionTest extends Connection {
         multiRes = new ArrayList<String>();
         multiRes.addAll(l);
     }
+
     public void setNull() {
         multiRes = new ArrayList<String>();
-        multiRes.add(0, null);   
+        multiRes.add(0, null);
     }
 
     /* result chainsing */
     public void addResult(String e) {
         multiRes.add(e);
     }
+
     public void addNull() {
-        multiRes.add(null);   
+        multiRes.add(null);
     }
+
     public String getResult() {
         return popResult();
     }
+
     public String popResult() {
         String res = multiRes.get(0);
         if (multiRes.size() > 1)
             multiRes.remove(0);
         return res;
     }
+
     public List<String> resultList() {
         return multiRes;
     }
+
     @Test
     public void testConnection() {
         String host = "ovm-1";
