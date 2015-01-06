@@ -266,9 +266,6 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         Integer pskLength = _pskLength;
         if (pskLength != null && (pskLength < 8 || pskLength > 256)) {
             throw new ConfigurationException("Remote Access VPN: IPSec preshared key length should be between 8 and 256");
-        } else if (pskLength == null) {
-            s_logger.warn("Remote Access VPN configuration missing Preshared Key Length -- ignoring");
-            return;
         }
 
         String[] range = ipRange.split("-");
