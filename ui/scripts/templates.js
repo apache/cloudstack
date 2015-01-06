@@ -110,6 +110,27 @@
                                 title: 'label.action.register.template',
                                 docID: 'helpNetworkOfferingName',
                                 preFilter: cloudStack.preFilter.createTemplate,
+                                fileUpload: {
+                                    action: function(args) {
+                                        var fileData = args.fileData;
+
+                                        $.ajax({
+                                            url: '/test-upload.php',
+                                            type: 'POST',
+                                            data: fileData,
+                                            cache: false,
+                                            dataType: 'json',
+                                            processData: false, // Don't process the files
+                                            contentType: false, // Set content type to false as jQuery will tell the server its a query string request
+                                            success: function(uploadData, textStatus, jqXHR) {
+                                                args.response.succes();
+                                            },
+                                            error: function(error) {
+                                                args.response.error('Error uploading files');
+                                            }
+                                        });
+                                    }
+                                },
                                 fields: {
                                     name: {
                                         label: 'label.name',

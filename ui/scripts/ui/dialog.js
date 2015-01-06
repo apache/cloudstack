@@ -683,48 +683,44 @@
                 }
 
                 var uploadFiles = function() {
-                    // START A LOADING SPINNER HERE
+                    var formData = new FormData();
 
-                    // Create a formdata object and add the files
-                    var data = new FormData();
-                    $.each($form.data('files'), function(key, value)
-                           {
-                               data.append(key, value);
-                           });
+                    $form.prepend($('<div>').addClass('loading-overlay').text('Uploading files...'));
+                    $.each($form.data('files'), function(key, value) {
+                        formData.append(key, value);
+                    });
+                    args.form.fileUpload({
+                        context: args.context,
+                        uploadData: formData,
+                        response: {
+                            success: function() {
+                                $form.find('.loading-overlay').remove();
+                                $form.data('files', null);
 
-                    $.ajax({
-                        url: '/client/upload.json',
-                        type: 'POST',
-                        data: data,
-                        cache: false,
-                        dataType: 'json',
-                        processData: false, // Don't process the files
-                        contentType: false, // Set content type to false as jQuery will tell the server its a query string request
-                        success: function(data, textStatus, jqXHR)
-                        {
-                            if(typeof data.error === 'undefined')
-                            {
-                                // Success so call function to process the form
-                                debugger;
-                                //submitForm(event, data);
+                                args.after({
+                                    data: $.extend(data, { uploadData: uploadData }),
+                                    ref: args.ref, // For backwards compatibility; use context
+                                    context: args.context,
+                                    $form: $form
+                                });
+
+                                $('div.overlay').remove();
+                                $('.tooltip-box').remove();
+                                $formContainer.remove();
+                                $(this).dialog('destroy');
+                                $('.hovered-elem').hide();
+                            },
+                            error: function(msg) {
+                                cloudStack.dialog.error({ message: msg });
                             }
-                            else
-                            {
-                                // Handle errors here
-                                console.log('ERRORS: ' + data.error);
-                            }
-                        },
-                        error: function(jqXHR, textStatus, errorThrown)
-                        {
-                            // Handle errors here
-                            console.log('ERRORS: ' + textStatus);
-                            // STOP LOADING SPINNER
                         }
                     });
                 };
 
                 if ($form.data('files')) {
                     uploadFiles();
+
+                    return false;
                 } else {
                     args.after({
                         data: data,
