@@ -190,7 +190,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                     // for template, we want to leave it on cache for performance reason
                     if ((answer == null || !answer.getResult()) && srcForCopy.getRefCount() < 2) {
                         // cache object created by this copy, not already there
-                        s_logger.warn("Copy may not be handled correctly by agent(id: " + ep.getId() + ")." +
+                        s_logger.warn("Copy may not be handled correctly by agent(id: " + (ep != null ? ep.getId() : "\"unspecified\"") + ")." +
                                       " Delete " + cacheType + " cache(id: " + cacheId +
                                       ", uuid: " + cacheUuid + ")");
                         cacheMgr.deleteCacheObject(srcForCopy);

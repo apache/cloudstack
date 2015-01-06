@@ -209,23 +209,20 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
             _resource.ensureOutgoingRuleForAddress(vCenterAddress);
 
             VmwareContext context = currentContext.get();
-            if (context != null) {
-                if(!context.validate()) {
-                    invalidateServiceContext(context);
-                    context = null;
-                } else {
-                    context.registerStockObject("serviceconsole", cmd.getContextParam("serviceconsole"));
-                    context.registerStockObject("manageportgroup", cmd.getContextParam("manageportgroup"));
-                    context.registerStockObject("noderuninfo", cmd.getContextParam("noderuninfo"));
-                }
+            if (context != null && !context.validate()) {
+                invalidateServiceContext(context);
+                context = null;
             }
-            if(context == null) {
-                s_logger.info("Open new VmwareContext. vCenter: " + vCenterAddress + ", user: " + username + ", password: " +
-                        StringUtils.getMaskedPasswordForDisplay(password));
+            if (context == null) {
+                s_logger.info("Open new VmwareContext. vCenter: " + vCenterAddress + ", user: " + username + ", password: " + StringUtils.getMaskedPasswordForDisplay(password));
                 VmwareSecondaryStorageContextFactory.setVcenterSessionTimeout(vCenterSessionTimeout);
                 context = VmwareSecondaryStorageContextFactory.getContext(vCenterAddress, username, password);
             }
-
+            if (context != null) {
+                context.registerStockObject("serviceconsole", cmd.getContextParam("serviceconsole"));
+                context.registerStockObject("manageportgroup", cmd.getContextParam("manageportgroup"));
+                context.registerStockObject("noderuninfo", cmd.getContextParam("noderuninfo"));
+            }
             currentContext.set(context);
             return context;
         } catch (Exception e) {

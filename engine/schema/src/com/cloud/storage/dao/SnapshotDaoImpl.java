@@ -41,6 +41,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -326,4 +327,13 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         return true;
     }
 
+    @Override
+    public void updateVolumeIds(long oldVolId, long newVolId) {
+        SearchCriteria<SnapshotVO> sc = VolumeIdSearch.create();
+        sc.setParameters("volumeId", oldVolId);
+        SnapshotVO snapshot = createForUpdate();
+        snapshot.setVolumeId(newVolId);
+        UpdateBuilder ub = getUpdateBuilder(snapshot);
+        update(ub, sc, null);
+    }
 }

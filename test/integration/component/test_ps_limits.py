@@ -56,6 +56,7 @@ class TestVolumeLimits(cloudstackTestCase):
         cloudstackTestClient = super(TestVolumeLimits,
                                cls).getClsTestClient()
         cls.api_client = cloudstackTestClient.getApiClient()
+        cls.hypervisor = cloudstackTestClient.getHypervisorInfo()
         # Fill services from the external config file
         cls.services = cloudstackTestClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
@@ -505,7 +506,8 @@ class TestVolumeLimits(cloudstackTestCase):
         # 3. Create volume againt from this snapshto and attach to VM
         # 4. Verify that primary storage count increases by the volume size
         # 5. Detach and delete volume, verify primary storage count decreaes by volume size"""
-
+        if self.hypervisor.lower() in ['hyperv']:
+            self.skipTest("Snapshots feature is not supported on Hyper-V")
         response = self.setupAccount(value)
         self.debug(response[0])
         self.debug(response[1])

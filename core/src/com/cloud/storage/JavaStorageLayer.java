@@ -143,6 +143,20 @@ public class JavaStorageLayer implements StorageLayer {
     }
 
     @Override
+    public List<String> listMountPointsByMsHost(String path, long msHostId) {
+        List<String> mountPaths = new ArrayList<String>();
+        File[] files = new File(path).listFiles();
+        if (files == null) {
+            return mountPaths;
+        }
+        for (File file : files) {
+            if (file.getName().startsWith(String.valueOf(msHostId) + "."))
+                mountPaths.add(file.getAbsolutePath());
+        }
+        return mountPaths;
+    }
+
+    @Override
     public boolean mkdir(String path) {
         synchronized (path.intern()) {
             File file = new File(path);

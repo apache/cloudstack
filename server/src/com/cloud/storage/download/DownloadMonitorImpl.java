@@ -219,6 +219,11 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
             _volumeStoreDao.persist(volumeHost);
         } else if ((volumeHost.getJobId() != null) && (volumeHost.getJobId().length() > 2)) {
             downloadJobExists = true;
+        } else {
+            // persit url and checksum
+            volumeHost.setDownloadUrl(url);
+            volumeHost.setChecksum(checkSum);
+            _volumeStoreDao.update(volumeHost.getId(), volumeHost);
         }
 
         Long maxVolumeSizeInBytes = getMaxVolumeSizeInBytes();

@@ -18,7 +18,7 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackTestCase import cloudstackTestCase,unittest
 #from marvin.cloudstackAPI import *
 from marvin.lib.utils import (cleanup_resources,
                               validateList)
@@ -522,7 +522,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestResourceLimitsProject, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services = Services().services
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
@@ -758,6 +758,8 @@ class TestResourceLimitsProject(cloudstackTestCase):
         # 5. Try to create another snapshot in this project. It should give
         #    user an appropriate error and an alert should be generated.
 
+        if self.hypervisor.lower() in ['hyperv']:
+            raise self.skipTest("Snapshots feature is not supported on Hyper-V")
         self.debug(
             "Updating snapshot resource limits for project: %s" %
                                         self.project.id)

@@ -19,7 +19,6 @@
 from marvin.codes import FAILED, KVM
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.cloudstackAPI import startVirtualMachine
 from marvin.lib.utils import random_gen, cleanup_resources
 from marvin.lib.base import (Account,
                              ServiceOffering,
@@ -27,9 +26,9 @@ from marvin.lib.base import (Account,
                              VmSnapshot)
 from marvin.lib.common import (get_zone,
                                get_domain,
-                               get_template,
-                               list_virtual_machines)
+                               get_template)
 import time
+
 
 class TestVmSnapshot(cloudstackTestCase):
 
@@ -39,7 +38,8 @@ class TestVmSnapshot(cloudstackTestCase):
 
         hypervisor = testClient.getHypervisorInfo()
         if hypervisor.lower() in (KVM.lower(), "hyperv", "lxc"):
-            raise unittest.SkipTest("VM snapshot feature is not supported on KVM, Hyper-V or LXC")
+            raise unittest.SkipTest(
+                "VM snapshot feature is not supported on KVM, Hyper-V or LXC")
 
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
@@ -48,12 +48,13 @@ class TestVmSnapshot(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
 
         template = get_template(
-                    cls.apiclient,
-                    cls.zone.id,
-                    cls.services["ostype"]
-                    )
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
         if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template\
+                    with description %s" % cls.services["ostype"]
 
         cls.services["domainid"] = cls.domain.id
         cls.services["server"]["zoneid"] = cls.zone.id
@@ -62,31 +63,31 @@ class TestVmSnapshot(cloudstackTestCase):
 
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
-                    cls.apiclient,
-                    cls.services["account"],
-                    domainid=cls.domain.id
-                    )
+            cls.apiclient,
+            cls.services["account"],
+            domainid=cls.domain.id
+        )
 
         cls.service_offering = ServiceOffering.create(
-                            cls.apiclient,
-                            cls.services["service_offerings"]
-                            )
+            cls.apiclient,
+            cls.services["service_offerings"]
+        )
         cls.virtual_machine = VirtualMachine.create(
-                    cls.apiclient,
-                    cls.services["server"],
-                    templateid=template.id,
-                    accountid=cls.account.name,
-                    domainid=cls.account.domainid,
-                    serviceofferingid=cls.service_offering.id,
-                    mode=cls.zone.networktype
-                    )
+            cls.apiclient,
+            cls.services["server"],
+            templateid=template.id,
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.service_offering.id,
+            mode=cls.zone.networktype
+        )
         cls.random_data_0 = random_gen(size=100)
         cls.test_dir = "/tmp"
         cls.random_data = "random.data"
         cls._cleanup = [
-                cls.service_offering,
-                cls.account,
-                ]
+            cls.service_offering,
+            cls.account,
+        ]
         return
 
     @classmethod
@@ -122,9 +123,10 @@ class TestVmSnapshot(cloudstackTestCase):
             ssh_client = self.virtual_machine.get_ssh_client()
 
             cmds = [
-                "echo %s > %s/%s" % (self.random_data_0, self.test_dir, self.random_data),
-                "cat %s/%s" % (self.test_dir, self.random_data)
-            ]
+                "echo %s > %s/%s" %
+                (self.random_data_0, self.test_dir, self.random_data),
+                "cat %s/%s" %
+                (self.test_dir, self.random_data)]
 
             for c in cmds:
                 self.debug(c)
@@ -183,7 +185,10 @@ class TestVmSnapshot(cloudstackTestCase):
 
         time.sleep(self.services["sleep"])
 
-        list_snapshot_response = VmSnapshot.list(self.apiclient, vmid=self.virtual_machine.id, listall=True)
+        list_snapshot_response = VmSnapshot.list(
+            self.apiclient,
+            vmid=self.virtual_machine.id,
+            listall=True)
 
         self.assertEqual(
             isinstance(list_snapshot_response, list),
@@ -202,27 +207,13 @@ class TestVmSnapshot(cloudstackTestCase):
             "Check the snapshot of vm is ready!"
         )
 
-	# Stop Virtual machine befor reverting VM to a snapshot taken without memory  	
-	self.virtual_machine.stop(self.apiclient)
+        self.virtual_machine.stop(self.apiclient)
 
-        VmSnapshot.revertToSnapshot(self.apiclient, list_snapshot_response[0].id)
-
-        list_vm_response = list_virtual_machines(
+        VmSnapshot.revertToSnapshot(
             self.apiclient,
-            id=self.virtual_machine.id
-        )
+            list_snapshot_response[0].id)
 
-        self.assertEqual(
-            list_vm_response[0].state,
-            "Stopped",
-            "Check the state of vm is Stopped!"
-        )
-
-        cmd = startVirtualMachine.startVirtualMachineCmd()
-        cmd.id = list_vm_response[0].id
-        self.apiclient.startVirtualMachine(cmd)
-
-        time.sleep(self.services["sleep"])
+        self.virtual_machine.start(self.apiclient)
 
         try:
             ssh_client = self.virtual_machine.get_ssh_client(reconnect=True)
@@ -251,7 +242,10 @@ class TestVmSnapshot(cloudstackTestCase):
         """Test to delete vm snapshots
         """
 
-        list_snapshot_response = VmSnapshot.list(self.apiclient, vmid=self.virtual_machine.id, listall=True)
+        list_snapshot_response = VmSnapshot.list(
+            self.apiclient,
+            vmid=self.virtual_machine.id,
+            listall=True)
 
         self.assertEqual(
             isinstance(list_snapshot_response, list),
@@ -263,11 +257,16 @@ class TestVmSnapshot(cloudstackTestCase):
             None,
             "Check if snapshot exists in ListSnapshot"
         )
-        VmSnapshot.deleteVMSnapshot(self.apiclient, list_snapshot_response[0].id)
+        VmSnapshot.deleteVMSnapshot(
+            self.apiclient,
+            list_snapshot_response[0].id)
 
         time.sleep(self.services["sleep"] * 3)
 
-        list_snapshot_response = VmSnapshot.list(self.apiclient, vmid=self.virtual_machine.id, listall=True)
+        list_snapshot_response = VmSnapshot.list(
+            self.apiclient,
+            vmid=self.virtual_machine.id,
+            listall=True)
 
         self.assertEqual(
             list_snapshot_response,

@@ -84,6 +84,9 @@ import com.vmware.vim25.VirtualEthernetCard;
 import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
 import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
 import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualMachineFileInfo;
+import com.vmware.vim25.VirtualMachineFileLayoutEx;
+import com.vmware.vim25.VirtualMachineFileLayoutExFileInfo;
 import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualMachinePowerState;
 import com.vmware.vim25.VirtualMachineRelocateSpec;
@@ -1324,6 +1327,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
+        boolean vmAlreadyExistsInVcenter = false;
+
+        String existingVmName = null;
+        VirtualMachineFileInfo existingVmFileInfo = null;
+        VirtualMachineFileLayoutEx existingVmFileLayout = null;
 
         Pair<String, String> names = composeVmNames(vmSpec);
         String vmInternalCSName = names.first();
@@ -1331,10 +1339,22 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         // Thus, vmInternalCSName always holds i-x-y, the cloudstack generated internal VM name.
         VmwareContext context = getServiceContext();
+        DatacenterMO dcMo = null;
         try {
             VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
             VmwareHypervisorHost hyperHost = getHyperHost(context);
+            dcMo = new DatacenterMO(hyperHost.getContext(), hyperHost.getHyperHostDatacenter());
+
+            // Validate VM name is unique in Datacenter
+            VirtualMachineMO vmInVcenter = dcMo.checkIfVmAlreadyExistsInVcenter(vmNameOnVcenter, vmInternalCSName);
+            if(vmInVcenter != null) {
+                vmAlreadyExistsInVcenter = true;
+                String msg = "VM with name: " + vmNameOnVcenter +" already exists in vCenter.";
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
             DiskTO[] disks = validateDisks(vmSpec.getDisks());
             assert (disks.length > 0);
             NicTO[] nics = vmSpec.getNics();
@@ -1353,7 +1373,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception(msg);
             }
 
-            DatacenterMO dcMo = new DatacenterMO(hyperHost.getContext(), hyperHost.getHyperHostDatacenter());
             VirtualMachineDiskInfoBuilder diskInfoBuilder = null;
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
             boolean hasSnapshot = false;
@@ -1393,6 +1412,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         vmMo.tearDownDevices(new Class<?>[] {VirtualEthernetCard.class});
                     vmMo.ensureScsiDeviceController();
                 } else {
+                    // If a VM with the same name is found in a different cluster in the DC, unregister the old VM and configure a new VM (cold-migration).
+                    VirtualMachineMO existingVmInDc = dcMo.findVm(vmInternalCSName);
+                    if (existingVmInDc != null) {
+                        s_logger.debug("Found VM: " + vmInternalCSName + " on a host in a different cluster. Unregistering the exisitng VM.");
+                        existingVmName = existingVmInDc.getName();
+                        existingVmFileInfo = existingVmInDc.getFileInfo();
+                        existingVmFileLayout = existingVmInDc.getFileLayout();
+                        existingVmInDc.unregisterVm();
+                    }
                     Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
                     for (DiskTO vol : disks) {
                         if (vol.getType() == Volume.Type.ROOT) {
@@ -1418,7 +1446,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     assert (vmSpec.getMinSpeed() != null) && (rootDiskDataStoreDetails != null);
 
-                    if (rootDiskDataStoreDetails.second().folderExists(String.format("[%s]", rootDiskDataStoreDetails.second().getName()), vmNameOnVcenter)) {
+                    boolean vmFolderExists = rootDiskDataStoreDetails.second().folderExists(String.format("[%s]", rootDiskDataStoreDetails.second().getName()), vmNameOnVcenter);
+                    String vmxFileFullPath = dsRootVolumeIsOn.searchFileInSubFolders(vmNameOnVcenter + ".vmx", false);
+                    if (vmFolderExists && vmxFileFullPath != null) { // VM can be registered only if .vmx is present.
                         registerVm(vmNameOnVcenter, dsRootVolumeIsOn);
                         vmMo = hyperHost.findVmOnHyperHost(vmInternalCSName);
                         tearDownVm(vmMo);
@@ -1729,6 +1759,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             startAnswer.setIqnToPath(iqnToPath);
 
+            // Since VM was successfully powered-on, if there was an existing VM in a different cluster that was unregistered, delete all the files associated with it.
+            if (existingVmName != null && existingVmFileLayout != null) {
+                deleteUnregisteredVmFiles(existingVmFileLayout, dcMo, true);
+            }
+
             return startAnswer;
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
@@ -1738,7 +1773,25 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             String msg = "StartCommand failed due to " + VmwareHelper.getExceptionMessage(e);
             s_logger.warn(msg, e);
-            return new StartAnswer(cmd, msg);
+            StartAnswer startAnswer = new StartAnswer(cmd, msg);
+            if(vmAlreadyExistsInVcenter) {
+                startAnswer.setContextParam("stopRetry", "true");
+            }
+
+            // Since VM start failed, if there was an existing VM in a different cluster that was unregistered, register it back.
+            if (existingVmName != null && existingVmFileInfo != null) {
+                s_logger.debug("Since VM start failed, registering back an existing VM: " + existingVmName + " that was unregistered");
+                try {
+                    DatastoreFile fileInDatastore = new DatastoreFile(existingVmFileInfo.getVmPathName());
+                    DatastoreMO existingVmDsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(fileInDatastore.getDatastoreName()));
+                    registerVm(existingVmName, existingVmDsMo);
+                } catch (Exception ex){
+                    String message = "Failed to register an existing VM: " + existingVmName + " due to " + VmwareHelper.getExceptionMessage(ex);
+                    s_logger.warn(message, ex);
+                }
+            }
+
+            return startAnswer;
         } finally {
         }
     }
@@ -1834,10 +1887,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private Pair<String, String> composeVmNames(VirtualMachineTO vmSpec) {
         String vmInternalCSName = vmSpec.getName();
         String vmNameOnVcenter = vmSpec.getName();
-        if (vmSpec.getType() == VirtualMachine.Type.User && _instanceNameFlag && vmSpec.getHostName() != null) {
-            String[] tokens = vmInternalCSName.split("-");
-            assert (tokens.length >= 3); // vmInternalCSName has format i-x-y-<instance.name>
-            vmNameOnVcenter = String.format("%s-%s-%s-%s", tokens[0], tokens[1], tokens[2], vmSpec.getHostName());
+        if (_instanceNameFlag && vmSpec.getHostName() != null) {
+            vmNameOnVcenter = vmSpec.getHostName();
         }
         return new Pair<String, String>(vmInternalCSName, vmNameOnVcenter);
     }
@@ -2185,6 +2236,43 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
                 volInSpec.setChainInfo(_gson.toJson(diskInfo));
             }
+        }
+    }
+
+    private void deleteUnregisteredVmFiles(VirtualMachineFileLayoutEx vmFileLayout, DatacenterMO dcMo, boolean deleteDisks) throws Exception {
+        s_logger.debug("Deleting files associated with an existing VM that was unregistered");
+        DatastoreFile vmFolder = null;
+        try {
+            List<VirtualMachineFileLayoutExFileInfo> fileInfo = vmFileLayout.getFile();
+            for (VirtualMachineFileLayoutExFileInfo file : fileInfo) {
+                DatastoreFile fileInDatastore = new DatastoreFile(file.getName());
+                // In case of linked clones, VM file layout includes the base disk so don't delete all disk files.
+                if (file.getType().startsWith("disk") || file.getType().startsWith("digest"))
+                    continue;
+                else if (file.getType().equals("config"))
+                    vmFolder = new DatastoreFile(fileInDatastore.getDatastoreName(), fileInDatastore.getDir());
+                DatastoreMO dsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(fileInDatastore.getDatastoreName()));
+                s_logger.debug("Deleting file: " + file.getName());
+                dsMo.deleteFile(file.getName(), dcMo.getMor(), true);
+            }
+            // Delete files that are present in the VM folder - this will take care of the VM disks as well.
+            DatastoreMO vmFolderDsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(vmFolder.getDatastoreName()));
+            String[] files = vmFolderDsMo.listDirContent(vmFolder.getPath());
+            if (deleteDisks) {
+                for (String file : files) {
+                    String vmDiskFileFullPath = String.format("%s/%s", vmFolder.getPath(), file);
+                    s_logger.debug("Deleting file: " + vmDiskFileFullPath);
+                    vmFolderDsMo.deleteFile(vmDiskFileFullPath, dcMo.getMor(), true);
+                }
+            }
+            // Delete VM folder
+            if (deleteDisks || files.length == 0) {
+                s_logger.debug("Deleting folder: " + vmFolder.getPath());
+                vmFolderDsMo.deleteFolder(vmFolder.getPath(), dcMo.getMor());
+            }
+        } catch (Exception e) {
+            String message = "Failed to delete files associated with an existing VM that was unregistered due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.warn(message, e);
         }
     }
 
@@ -2679,6 +2767,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                 try {
                     vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, "0");
+                    vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_VM_INTERNAL_NAME, cmd.getVmName());
 
                     if (getVmPowerState(vmMo) != PowerState.PowerOff) {
                         if (vmMo.safePowerOff(_shutdownWaitMs)) {
@@ -3041,6 +3130,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.debug("Successfully migrated storage of VM " + vmName + " to target datastore(s)");
             }
 
+            // Consolidate VM disks.
+            // In case of a linked clone VM, if VM's disks are not consolidated,
+            // further VM operations such as volume snapshot, VM snapshot etc. will result in DB inconsistencies.
+            String apiVersion = HypervisorHostHelper.getVcenterApiVersion(vmMo.getContext());
+            if (apiVersion.compareTo("5.0") >= 0) {
+                if (!vmMo.consolidateVmDisks()) {
+                    s_logger.warn("VM disk consolidation failed after storage migration. Yet proceeding with VM migration.");
+                } else {
+                    s_logger.debug("Successfully consolidated disks of VM " + vmName + ".");
+                }
+            }
+
             // Update and return volume path for every disk because that could have changed after migration
             for (Entry<VolumeTO, StorageFilerTO> entry : volToFiler.entrySet()) {
                 volume = entry.getKey();
@@ -3150,6 +3251,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.debug("Successfully migrated volume " + volumePath + " to target datastore " + tgtDsName);
             }
 
+            // Consolidate VM disks.
+            // In case of a linked clone VM, if VM's disks are not consolidated,
+            // further volume operations on the ROOT volume such as volume snapshot etc. will result in DB inconsistencies.
+            String apiVersion = HypervisorHostHelper.getVcenterApiVersion(vmMo.getContext());
+            if (apiVersion.compareTo("5.0") >= 0) {
+                if (!vmMo.consolidateVmDisks()) {
+                    s_logger.warn("VM disk consolidation failed after storage migration.");
+                } else {
+                    s_logger.debug("Successfully consolidated disks of VM " + vmName + ".");
+                }
+            }
+
             // Update and return volume path because that could have changed after migration
             if (!targetDsMo.fileExists(fullVolumePath)) {
                 VirtualDisk[] disks = vmMo.getAllDiskDevice();
@@ -3168,7 +3281,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private int getVirtualDiskInfo(VirtualMachineMO vmMo, String srcDiskName) throws Exception {
-        Pair<VirtualDisk, String> deviceInfo = vmMo.getDiskDevice(srcDiskName, true);
+        Pair<VirtualDisk, String> deviceInfo = vmMo.getDiskDevice(srcDiskName, false);
         if (deviceInfo == null) {
             throw new Exception("No such disk device: " + srcDiskName);
         }
@@ -3785,10 +3898,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
         try {
+            DatacenterMO dataCenterMo = new DatacenterMO(getServiceContext(), hyperHost.getHyperHostDatacenter());
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
             if (vmMo != null) {
                 try {
+                    VirtualMachineFileLayoutEx vmFileLayout = vmMo.getFileLayout();
                     context.getService().unregisterVM(vmMo.getMor());
+                    if (cmd.getCleanupVmFiles()) {
+                        deleteUnregisteredVmFiles(vmFileLayout, dataCenterMo, false);
+                    }
                     return new Answer(cmd, true, "unregister succeeded");
                 } catch (Exception e) {
                     s_logger.warn("We are not able to unregister VM " + VmwareHelper.getExceptionMessage(e));

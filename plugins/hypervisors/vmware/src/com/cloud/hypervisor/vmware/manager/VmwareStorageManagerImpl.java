@@ -37,6 +37,7 @@ import com.vmware.vim25.HostDatastoreBrowserSearchResults;
 import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.TaskInfo;
+import com.vmware.vim25.TaskInfoState;
 import com.vmware.vim25.VirtualDisk;
 
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -148,37 +149,32 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     public String createOvaForTemplate(TemplateObjectTO template) {
         DataStoreTO storeTO = template.getDataStore();
         if (!(storeTO instanceof NfsTO)) {
-            s_logger.debug("can only handle nfs storage, when create ova from volume");
+            s_logger.debug("Can only handle NFS storage, while creating OVA from template");
             return null;
         }
         NfsTO nfsStore = (NfsTO)storeTO;
         String secStorageUrl = nfsStore.getUrl();
         assert (secStorageUrl != null);
         String installPath = template.getPath();
-        String ovafileName = "";
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
         String installFullPath = secondaryMountPoint + "/" + installPath;
-
-        String templateName = installFullPath;   // should be a file ending .ova;
         try {
-            if (templateName.endsWith(".ova")) {
-                if (new File(templateName).exists()) {
-                    s_logger.debug("OVA files exists. succeed. ");
-                    return installPath;
+            if (installFullPath.endsWith(".ova")) {
+                if (new File(installFullPath).exists()) {
+                    s_logger.debug("OVA file found at: " + installFullPath);
                 } else {
-                    if (new File(templateName + ".meta").exists()) {
-                        ovafileName = getOVAFromMetafile(templateName + ".meta");
-                        s_logger.debug("OVA file in meta file is " + ovafileName);
-                        return ovafileName;
+                    if (new File(installFullPath + ".meta").exists()) {
+                        createOVAFromMetafile(installFullPath + ".meta");
                     } else {
-                        String msg = "Unable to find ova meta or ova file to prepare template (vmware)";
+                        String msg = "Unable to find OVA or OVA MetaFile to prepare template.";
                         s_logger.error(msg);
                         throw new Exception(msg);
                     }
                 }
+                return installPath;
             }
         } catch (Throwable e) {
-            s_logger.debug("Failed to create ova: " + e.toString());
+            s_logger.debug("Failed to create OVA: " + e.toString());
         }
         return null;
     }
@@ -1042,12 +1038,12 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
     // here we use a method to return the ovf and vmdk file names; Another way to do it:
     // create a new class, and like TemplateLocation.java and create templateOvfInfo.java to handle it;
-    private String getOVAFromMetafile(String metafileName) throws Exception {
+    private String createOVAFromMetafile(String metafileName) throws Exception {
         File ova_metafile = new File(metafileName);
         Properties props = null;
         FileInputStream strm = null;
         String ovaFileName = "";
-        s_logger.info("getOVAfromMetaFile: " + metafileName);
+        s_logger.info("Creating OVA using MetaFile: " + metafileName);
         try {
             strm = new FileInputStream(ova_metafile);
 
@@ -1088,18 +1084,17 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             command.execute();
             s_logger.info("Package OVA for template in dir: " + exportDir + "cmd: " + command.toString());
             // to be safe, physically test existence of the target OVA file
-            if ((new File(exportDir + ovaFileName)).exists()) {
-                s_logger.info("ova file is created and ready to extract ");
-                return (ovaFileName);
+            if ((new File(exportDir + File.separator + ovaFileName)).exists()) {
+                s_logger.info("OVA file: " + ovaFileName +" is created and ready to extract.");
+                return ovaFileName;
             } else {
-                String msg = exportDir + File.separator + ovaFileName + ".ova is not created as expected";
+                String msg = exportDir + File.separator + ovaFileName + " is not created as expected";
                 s_logger.error(msg);
                 throw new Exception(msg);
             }
         } catch (Exception e) {
-            s_logger.error("Exception in getOVAFromMetafile", e);
-            return null;
-            // Do something, re-throw the exception
+            s_logger.error("Exception while creating OVA using Metafile", e);
+            throw e;
         } finally {
             if (strm != null) {
                 try {
@@ -1165,36 +1160,6 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return size;
     }
 
-    private String extractSnapshotBaseFileName(String input) {
-        if (input == null) {
-            return null;
-        }
-
-        String result = input;
-
-        final String fileType = ".vmdk";
-
-        if (result.endsWith(fileType)) {
-            // get rid of fileType
-            result = result.substring(0, result.length() - (fileType).length());
-        }
-
-        final String token = "-";
-
-        String[] str = result.split(token);
-        int length = str.length;
-
-        if (length == 1 || length == 2) {
-            return result;
-        }
-
-        if (length > 2) {
-            return str[0] + token + str[1];
-        }
-
-        return result;
-    }
-
     @Override
     public CreateVMSnapshotAnswer execute(VmwareHostService hostService, CreateVMSnapshotCommand cmd) {
         List<VolumeObjectTO> volumeTOs = cmd.getVolumeTOs();
@@ -1217,8 +1182,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 TaskInfo info = (TaskInfo)(context.getVimClient().getDynamicProperty(taskMor, "info"));
 
                 if (info.getEntityName().equals(cmd.getVmName()) && info.getName().equalsIgnoreCase("CreateSnapshot_Task")) {
-                    s_logger.debug("There is already a VM snapshot task running, wait for it");
-                    context.getVimClient().waitForTask(taskMor);
+                    if (!(info.getState().equals(TaskInfoState.SUCCESS) || info.getState().equals(TaskInfoState.ERROR))) {
+                        s_logger.debug("There is already a VM snapshot task running, wait for it");
+                        context.getVimClient().waitForTask(taskMor);
+                    }
                 }
             }
 
@@ -1297,7 +1264,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                         vmdkName = vmdkName.substring(vmdkName.indexOf(token) + token.length());
                     }
 
-                    baseName = extractSnapshotBaseFileName(vmdkName);
+                    baseName = VmwareHelper.trimSnapshotDeltaPostfix(vmdkName);
                 }
 
                 mapNewDisk.put(baseName, vmdkName);
@@ -1322,7 +1289,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 baseName = oldPath.substring(1, oldPath.length() - 1);
             }
             else {
-                baseName = extractSnapshotBaseFileName(volumeTO.getPath());
+                baseName = VmwareHelper.trimSnapshotDeltaPostfix(volumeTO.getPath());
             }
 
             String newPath = mapNewDisk.get(baseName);

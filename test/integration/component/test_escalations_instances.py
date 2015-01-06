@@ -1577,8 +1577,7 @@ class TestListInstances(cloudstackTestCase):
         new_keypair = SSHKeyPair.register(
             self.userapiclient,
             name="keypair1",
-            publickey="ssh-rsa: e6:9a:1e:b5:98:75:88:5d:56:bc:92:7b:43:48:05:b2"
-            )
+            publickey="ssh-rsa: e6:9a:1e:b5:98:75:88:5d:56:bc:92:7b:43:48:05:b2")
         self.assertIsNotNone(
             new_keypair,
             "New Key pair generation failed"
@@ -2042,27 +2041,27 @@ class TestListInstances(cloudstackTestCase):
             )
             status = validateList(list_vms_after)
             self.assertEquals(
-            PASS,
-            status[0],
-            "Listing of VM failed"
+                PASS,
+                status[0],
+                "Listing of VM failed"
             )
             vm = list_vms_after[0]
             # Verifying that VM nics size is 1 now
             vm_nics_after = vm.nic
             self.assertIsNotNone(
-            vm_nics_after,
-            "Nic not found for the deployed VM"
+                vm_nics_after,
+                "Nic not found for the deployed VM"
             )
             self.assertEquals(
-            1,
-            len(vm_nics_after),
-            "VM NIC's count is not matching"
+                1,
+                len(vm_nics_after),
+                "VM NIC's count is not matching"
             )
             # Verifying the nic network is same as the default nic network
             self.assertEquals(
-            network2.id,
-            vm_nics_after[0].networkid,
-            "VM NIC is not same as expected"
+                network2.id,
+                vm_nics_after[0].networkid,
+                "VM NIC is not same as expected"
             )
         return
 
@@ -2125,23 +2124,23 @@ class TestInstances(cloudstackTestCase):
         self.apiClient = self.testClient.getApiClient()
         self.cleanup = []
         self.account = Account.create(
-                self.apiClient,
-                self.services["account"],
-                domainid=self.domain.id
-            )
-            # Getting authentication for user in newly created Account
+            self.apiClient,
+            self.services["account"],
+            domainid=self.domain.id
+        )
+        # Getting authentication for user in newly created Account
         self.user = self.account.user[0]
         self.userapiclient = self.testClient.getUserApiClient(
-                self.user.username,
-                self.domain.name)
+            self.user.username,
+            self.domain.name)
         # Updating resource Limits
         for i in range(0, 8):
             Resources.updateLimit(
-                    self.api_client,
-                    account=self.account.name,
-                    domainid=self.domain.id,
-                    max=-1,
-                    resourcetype=i
+                self.api_client,
+                account=self.account.name,
+                domainid=self.domain.id,
+                max=-1,
+                resourcetype=i
             )
         self.cleanup.append(self.account)
 
@@ -2268,60 +2267,70 @@ class TestInstances(cloudstackTestCase):
             isofilter="executable",
             zoneid=self.zone.id
         )
-        # Verifying if size of the list is >= 1
-        if isos_list is not None:
-            iso_toattach = isos_list[0]
-            # Attaching ISO listed to VM deployed
-            VirtualMachine.attach_iso(
-                vm_created,
-                self.userapiclient,
-                iso_toattach
-            )
-            list_vm = VirtualMachine.list(
-                self.userapiclient,
-                id=vm_created.id
-            )
-            status = validateList(list_vm)
-            self.assertEquals(
-                PASS,
-                status[0],
-                "VM listing by Id failed"
-            )
-            # Verifying that attached ISO details are present in VM
-            self.assertEquals(
-                iso_toattach.name,
-                list_vm[0].isoname,
-                "Attached ISO name is not matching"
-            )
-            self.assertEquals(
-                iso_toattach.displaytext,
-                list_vm[0].isodisplaytext,
-                "Attached ISO display is not matching"
-            )
-            # Detaching ISO from VM
-            VirtualMachine.detach_iso(
-                vm_created,
-                self.userapiclient
-            )
-            list_vm = VirtualMachine.list(
-                self.userapiclient,
-                id=vm_created.id
-            )
-            status = validateList(list_vm)
-            self.assertEquals(
-                PASS,
-                status[0],
-                "VM listing by Id failed"
-            )
-            # Verifying that ISO details are NOT present in VM
-            self.assertIsNone(
-                list_vm[0].isoname,
-                "ISO not detached from VM"
-            )
-        else:
-            self.fail(
-                "Executable ISO in Ready is not found in the given setup")
 
+        self.assertEqual(validateList(isos_list)[0],
+                         PASS,
+                         "isos list validation failed")
+
+        if self.hypervisor.lower() == "xenserver":
+            isoDesc = "xen"
+        else:
+            isoDesc = "vmware"
+
+        validIsosToAttach = [iso for iso in isos_list
+                             if isoDesc in iso.displaytext.lower()]
+        if not validIsosToAttach:
+            self.skipTest(
+                "Valid ISO not present in setup suitable to attach to VM")
+
+        iso_toattach = validIsosToAttach[0]
+        # Attaching ISO listed to VM deployed
+        VirtualMachine.attach_iso(
+            vm_created,
+            self.userapiclient,
+            iso_toattach
+        )
+        list_vm = VirtualMachine.list(
+            self.userapiclient,
+            id=vm_created.id
+        )
+        status = validateList(list_vm)
+        self.assertEquals(
+            PASS,
+            status[0],
+            "VM listing by Id failed"
+        )
+        # Verifying that attached ISO details are present in VM
+        self.assertEquals(
+            iso_toattach.name,
+            list_vm[0].isoname,
+            "Attached ISO name is not matching"
+        )
+        self.assertEquals(
+            iso_toattach.displaytext,
+            list_vm[0].isodisplaytext,
+            "Attached ISO display is not matching"
+        )
+        # Detaching ISO from VM
+        VirtualMachine.detach_iso(
+            vm_created,
+            self.userapiclient
+        )
+        list_vm = VirtualMachine.list(
+            self.userapiclient,
+            id=vm_created.id
+        )
+        status = validateList(list_vm)
+        self.assertEquals(
+            PASS,
+            status[0],
+            "VM listing by Id failed"
+        )
+        # Verifying that ISO details are NOT present in VM
+        self.assertIsNone(
+            list_vm[0].isoname,
+            "ISO not detached from VM"
+        )
         return
 
     @attr(tags=["advanced", "basic"], required_hardware="true")
@@ -2613,9 +2622,6 @@ class TestInstances(cloudstackTestCase):
             "Latest snapshot taken is not marked as current"
         )
 
-        # Stop Virtual machine befor reverting VM to a snapshot taken without memory
-        vm_created.stop(self.userapiclient)
-
         # Reverting the VM to Snapshot 1
         VmSnapshot.revertToSnapshot(
             self.userapiclient,
@@ -2870,9 +2876,9 @@ class TestInstances(cloudstackTestCase):
         )
 
         self.assertEqual(
-                len(volumes),
-                len(list_volumes_page1) - len(list_data_disks),
-                "The volumes number should match with (volumes initially\
+            len(volumes),
+            len(list_volumes_page1) - len(list_data_disks),
+            "The volumes number should match with (volumes initially\
                         present minus volumes detached")
 
         return
@@ -2980,11 +2986,11 @@ class TestInstances(cloudstackTestCase):
             if service_offerings_list is not None:
                 for i in range(0, len(service_offerings_list)):
                     if not ((current_so.cpunumber >
-                            service_offerings_list[i].cpunumber or
+                             service_offerings_list[i].cpunumber or
                              current_so.cpuspeed >
-                            service_offerings_list[i].cpuspeed or
+                             service_offerings_list[i].cpuspeed or
                              current_so.memory >
-                            service_offerings_list[i].memory) or
+                             service_offerings_list[i].memory) or
                             (current_so.cpunumber ==
                                 service_offerings_list[i].cpunumber and
                              current_so.cpuspeed ==
@@ -2993,9 +2999,9 @@ class TestInstances(cloudstackTestCase):
                                 service_offerings_list[i].memory)):
                         if(current_so.storagetype ==
                                 service_offerings_list[i].storagetype):
-                                so_exists = True
-                                new_so = service_offerings_list[i]
-                                break
+                            so_exists = True
+                            new_so = service_offerings_list[i]
+                            break
             # If service offering does not exists, then creating one service
             # offering for scale up
             if not so_exists:
@@ -3643,7 +3649,6 @@ class TestInstances(cloudstackTestCase):
                 security_group,
                 "Security Group creation failed"
             )
-            self.cleanup.append(security_group)
             security_groups_list_size = security_groups_list_size + 1
 
         # Listing the networks again

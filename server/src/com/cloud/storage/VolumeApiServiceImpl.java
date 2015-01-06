@@ -79,6 +79,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -221,6 +222,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     AsyncJobManager _jobMgr;
     @Inject
     VmWorkJobDao _workJobDao;
+    @Inject
+    ClusterDetailsDao _clusterDetailsDao;
 
     private List<StoragePoolAllocator> _storagePoolAllocators;
 
@@ -1378,6 +1381,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     throw (ConcurrentOperationException)jobResult;
                 else if (jobResult instanceof InvalidParameterValueException)
                     throw (InvalidParameterValueException)jobResult;
+                else if (jobResult instanceof RuntimeException)
+                    throw (RuntimeException)jobResult;
                 else if (jobResult instanceof Throwable)
                     throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
                 else if (jobResult instanceof Long) {
@@ -1580,6 +1585,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (jobResult != null) {
                 if (jobResult instanceof ConcurrentOperationException)
                     throw (ConcurrentOperationException)jobResult;
+                else if (jobResult instanceof RuntimeException)
+                    throw (RuntimeException)jobResult;
                 else if (jobResult instanceof Throwable)
                     throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
                 else if (jobResult instanceof Long) {
@@ -1757,6 +1764,22 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                         throw new InvalidParameterValueException("Cannot migrate a volume of a virtual machine to a storage pool in a different cluster");
                     }
                 }
+                // In case of VMware, if ROOT volume is being cold-migrated, then ensure destination storage pool is in the same Datacenter as the VM.
+                if (vm != null && vm.getHypervisorType().equals(HypervisorType.VMware)) {
+                    if (!liveMigrateVolume && vol.volumeType.equals(Volume.Type.ROOT)) {
+                        Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+                        HostVO host = _hostDao.findById(hostId);
+                        if (host != null)
+                            srcClusterId = host.getClusterId();
+                        if (srcClusterId != null && destPool.getClusterId() != null && !srcClusterId.equals(destPool.getClusterId())) {
+                            String srcDcName = _clusterDetailsDao.getVmwareDcName(srcClusterId);
+                            String destDcName = _clusterDetailsDao.getVmwareDcName(destPool.getClusterId());
+                            if (srcDcName != null && destDcName != null && !srcDcName.equals(destDcName)) {
+                                throw new InvalidParameterValueException("Cannot migrate ROOT volume of a stopped VM to a storage pool in a different VMware datacenter");
+                            }
+                        }
+                    }
+                }
             }
         } else {
             throw new InvalidParameterValueException("Migration of volume from local storage pool is not supported");
@@ -1791,6 +1814,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (jobResult != null) {
                     if (jobResult instanceof ConcurrentOperationException)
                         throw (ConcurrentOperationException)jobResult;
+                    else if (jobResult instanceof RuntimeException)
+                        throw (RuntimeException)jobResult;
                     else if (jobResult instanceof Throwable)
                         throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
                 }
@@ -1813,35 +1838,39 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         assert (destPool != null);
 
         Volume newVol = null;
-        if (liveMigrateVolume) {
-            newVol = liveMigrateVolume(vol, destPool);
-        } else {
-            try {
+        try {
+            if (liveMigrateVolume) {
+                newVol = liveMigrateVolume(vol, destPool);
+            } else {
                 newVol = _volumeMgr.migrateVolume(vol, destPool);
-            } catch (StorageUnavailableException e) {
-                s_logger.debug("Failed to migrate volume", e);
             }
+        } catch (StorageUnavailableException e) {
+            s_logger.debug("Failed to migrate volume", e);
+            throw new CloudRuntimeException(e.getMessage());
+        }  catch (Exception e) {
+            s_logger.debug("Failed to migrate volume", e);
+            throw new CloudRuntimeException(e.getMessage());
         }
         return newVol;
     }
 
     @DB
-    protected Volume liveMigrateVolume(Volume volume, StoragePool destPool) {
+    protected Volume liveMigrateVolume(Volume volume, StoragePool destPool) throws StorageUnavailableException {
         VolumeInfo vol = volFactory.getVolume(volume.getId());
         AsyncCallFuture<VolumeApiResult> future = volService.migrateVolume(vol, (DataStore)destPool);
         try {
             VolumeApiResult result = future.get();
             if (result.isFailed()) {
                 s_logger.debug("migrate volume failed:" + result.getResult());
-                return null;
+                throw new StorageUnavailableException("Migrate volume failed: " + result.getResult(), destPool.getId());
             }
             return result.getVolume();
         } catch (InterruptedException e) {
             s_logger.debug("migrate volume failed", e);
-            return null;
+            throw new CloudRuntimeException(e.getMessage());
         } catch (ExecutionException e) {
             s_logger.debug("migrate volume failed", e);
-            return null;
+            throw new CloudRuntimeException(e.getMessage());
         }
     }
 

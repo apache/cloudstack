@@ -46,25 +46,29 @@ from marvin.codes import (PASS,
                           FAILED,
                           RESOURCE_PRIMARY_STORAGE)
 
+
 class TestMultipleChildDomain(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
         cloudstackTestClient = super(TestMultipleChildDomain,
-                               cls).getClsTestClient()
+                                     cls).getClsTestClient()
         cls.api_client = cloudstackTestClient.getApiClient()
+        cls.hypervisor = cloudstackTestClient.getHypervisorInfo()
         # Fill services from the external config file
         cls.services = cloudstackTestClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
-        cls.zone = get_zone(cls.api_client, cloudstackTestClient.getZoneForTests())
+        cls.zone = get_zone(
+            cls.api_client,
+            cloudstackTestClient.getZoneForTests())
         cls.services["mode"] = cls.zone.networktype
 
         cls.template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
+            cls.api_client,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
@@ -72,8 +76,9 @@ class TestMultipleChildDomain(cloudstackTestCase):
 
         cls._cleanup = []
         try:
-            cls.service_offering = ServiceOffering.create(cls.api_client,
-                    cls.services["service_offering"])
+            cls.service_offering = ServiceOffering.create(
+                cls.api_client,
+                cls.services["service_offering"])
             cls._cleanup.append(cls.service_offering)
         except Exception as e:
             cls.tearDownClass()
@@ -96,11 +101,11 @@ class TestMultipleChildDomain(cloudstackTestCase):
         self.services["disk_offering"]["disksize"] = 5
         try:
             self.disk_offering = DiskOffering.create(
-                                    self.apiclient,
-                                    self.services["disk_offering"]
-                                    )
-            self.assertNotEqual(self.disk_offering, None, \
-                    "Disk offering is None")
+                self.apiclient,
+                self.services["disk_offering"]
+            )
+            self.assertNotEqual(self.disk_offering, None,
+                                "Disk offering is None")
             self.cleanup.append(self.disk_offering)
         except Exception as e:
             self.tearDown()
@@ -121,44 +126,56 @@ class TestMultipleChildDomain(cloudstackTestCase):
         child domains"""
 
         try:
-            #Update resource limit for domain
+            # Update resource limit for domain
             Resources.updateLimit(self.apiclient, resourcetype=10,
-                              max=parentdomainlimit,
-                              domainid=self.parent_domain.id)
+                                  max=parentdomainlimit,
+                                  domainid=self.parent_domain.id)
 
             # Update Resource limit for sub-domains
             Resources.updateLimit(self.apiclient, resourcetype=10,
-                              max=subdomainlimit,
-                              domainid=self.cadmin_1.domainid)
+                                  max=subdomainlimit,
+                                  domainid=self.cadmin_1.domainid)
 
             Resources.updateLimit(self.apiclient, resourcetype=10,
-                              max=subdomainlimit,
-                              domainid=self.cadmin_2.domainid)
+                                  max=subdomainlimit,
+                                  domainid=self.cadmin_2.domainid)
         except Exception as e:
             return [FAIL, e]
         return [PASS, None]
 
     def setupAccounts(self):
         try:
-            self.parent_domain = Domain.create(self.apiclient,
-                                        services=self.services["domain"],
-                                        parentdomainid=self.domain.id)
-            self.parentd_admin = Account.create(self.apiclient, self.services["account"],
-                                            admin=True, domainid=self.parent_domain.id)
+            self.parent_domain = Domain.create(
+                self.apiclient,
+                services=self.services["domain"],
+                parentdomainid=self.domain.id)
+            self.parentd_admin = Account.create(
+                self.apiclient,
+                self.services["account"],
+                admin=True,
+                domainid=self.parent_domain.id)
 
             # Create sub-domains and their admin accounts
-            self.cdomain_1 = Domain.create(self.apiclient,
-                                       services=self.services["domain"],
-                                       parentdomainid=self.parent_domain.id)
-            self.cdomain_2 = Domain.create(self.apiclient,
-                                        services=self.services["domain"],
-                                        parentdomainid=self.parent_domain.id)
+            self.cdomain_1 = Domain.create(
+                self.apiclient,
+                services=self.services["domain"],
+                parentdomainid=self.parent_domain.id)
+            self.cdomain_2 = Domain.create(
+                self.apiclient,
+                services=self.services["domain"],
+                parentdomainid=self.parent_domain.id)
 
-            self.cadmin_1 = Account.create(self.apiclient, self.services["account"],
-                                       admin=True, domainid=self.cdomain_1.id)
+            self.cadmin_1 = Account.create(
+                self.apiclient,
+                self.services["account"],
+                admin=True,
+                domainid=self.cdomain_1.id)
 
-            self.cadmin_2 = Account.create(self.apiclient, self.services["account"],
-                                       admin=True, domainid=self.cdomain_2.id)
+            self.cadmin_2 = Account.create(
+                self.apiclient,
+                self.services["account"],
+                admin=True,
+                domainid=self.cdomain_2.id)
 
             # Cleanup the resources created at end of test
             self.cleanup.append(self.cadmin_1)
@@ -169,14 +186,14 @@ class TestMultipleChildDomain(cloudstackTestCase):
             self.cleanup.append(self.parent_domain)
 
             users = {
-                 self.cdomain_1: self.cadmin_1,
-                 self.cdomain_2: self.cadmin_2
-                 }
+                self.cdomain_1: self.cadmin_1,
+                self.cdomain_2: self.cadmin_2
+            }
         except Exception as e:
             return [FAIL, e, None]
         return [PASS, None, users]
 
-    @attr(tags=["advanced","selfservice"])
+    @attr(tags=["advanced", "selfservice"])
     def test_01_multiple_domains_primary_storage_limits(self):
         """Test primary storage limit of domain and its sub-domains
 
@@ -204,73 +221,97 @@ class TestMultipleChildDomain(cloudstackTestCase):
 
         # Setting up account and domain hierarchy
         result = self.setupAccounts()
-        self.assertEqual(result[0], PASS,\
-            "Failure while setting up accounts and domains: %s" % result[1])
+        self.assertEqual(
+            result[0],
+            PASS,
+            "Failure while setting up accounts and domains: %s" %
+            result[1])
 
-        templatesize = (self.template.size / (1024**3))
+        templatesize = (self.template.size / (1024 ** 3))
         disksize = 10
         subdomainlimit = (templatesize + disksize)
 
-        result = self.updateDomainResourceLimits(((subdomainlimit*3)- 1), subdomainlimit)
-        self.assertEqual(result[0], PASS,\
-            "Failure while updating resource limits: %s" % result[1])
+        result = self.updateDomainResourceLimits(
+            ((subdomainlimit * 3) - 1),
+            subdomainlimit)
+        self.assertEqual(
+            result[0],
+            PASS,
+            "Failure while updating resource limits: %s" %
+            result[1])
 
         try:
             self.services["disk_offering"]["disksize"] = disksize
-            disk_offering_custom = DiskOffering.create(self.apiclient,
-                                    services=self.services["disk_offering"])
+            disk_offering_custom = DiskOffering.create(
+                self.apiclient,
+                services=self.services["disk_offering"])
             self.cleanup.append(disk_offering_custom)
         except Exception as e:
             self.fail("Failed to create disk offering")
 
         # Get API clients of parent and child domain admin accounts
         api_client_admin = self.testClient.getUserApiClient(
-                        UserName=self.parentd_admin.name,
-                        DomainName=self.parentd_admin.domain)
-        self.assertNotEqual(api_client_admin, FAILED,\
-            "Failed to create api client for account: %s" % self.parentd_admin.name)
+            UserName=self.parentd_admin.name,
+            DomainName=self.parentd_admin.domain)
+        self.assertNotEqual(
+            api_client_admin,
+            FAILED,
+            "Failed to create api client for account: %s" %
+            self.parentd_admin.name)
 
         api_client_cadmin_1 = self.testClient.getUserApiClient(
-                                UserName=self.cadmin_1.name,
-                                DomainName=self.cadmin_1.domain)
-        self.assertNotEqual(api_client_cadmin_1, FAILED,\
-            "Failed to create api client for account: %s" % self.cadmin_1.name)
+            UserName=self.cadmin_1.name,
+            DomainName=self.cadmin_1.domain)
+        self.assertNotEqual(
+            api_client_cadmin_1,
+            FAILED,
+            "Failed to create api client for account: %s" %
+            self.cadmin_1.name)
 
         api_client_cadmin_2 = self.testClient.getUserApiClient(
-                                UserName=self.cadmin_2.name,
-                                DomainName=self.cadmin_2.domain)
-        self.assertNotEqual(api_client_cadmin_2, FAILED,\
-            "Failed to create api client for account: %s" % self.cadmin_2.name)
+            UserName=self.cadmin_2.name,
+            DomainName=self.cadmin_2.domain)
+        self.assertNotEqual(
+            api_client_cadmin_2,
+            FAILED,
+            "Failed to create api client for account: %s" %
+            self.cadmin_2.name)
 
         VirtualMachine.create(
-                api_client_cadmin_1, self.services["virtual_machine"],
-                accountid=self.cadmin_1.name, domainid=self.cadmin_1.domainid,
-                diskofferingid=disk_offering_custom.id, serviceofferingid=self.service_offering.id
-                )
+            api_client_cadmin_1,
+            self.services["virtual_machine"],
+            accountid=self.cadmin_1.name,
+            domainid=self.cadmin_1.domainid,
+            diskofferingid=disk_offering_custom.id,
+            serviceofferingid=self.service_offering.id)
 
         self.initialResourceCount = (templatesize + disksize)
         result = isDomainResourceCountEqualToExpectedCount(
-                        self.apiclient, self.parent_domain.id,
-                        self.initialResourceCount, RESOURCE_PRIMARY_STORAGE)
+            self.apiclient, self.parent_domain.id,
+            self.initialResourceCount, RESOURCE_PRIMARY_STORAGE)
         self.assertFalse(result[0], result[1])
         self.assertTrue(result[2], "Resource count does not match")
 
         # Create VM in second child domain
         vm_2 = VirtualMachine.create(
-                api_client_cadmin_2, self.services["virtual_machine"],
-                accountid=self.cadmin_2.name, domainid=self.cadmin_2.domainid,
-                diskofferingid=disk_offering_custom.id, serviceofferingid=self.service_offering.id
-                )
+            api_client_cadmin_2,
+            self.services["virtual_machine"],
+            accountid=self.cadmin_2.name,
+            domainid=self.cadmin_2.domainid,
+            diskofferingid=disk_offering_custom.id,
+            serviceofferingid=self.service_offering.id)
 
         # Now the VMs in two child domains have exhausted the primary storage limit
         # of parent domain, hence VM creation in parent domain with custom disk offering
         # should fail
         with self.assertRaises(Exception):
             VirtualMachine.create(
-                    api_client_admin, self.services["virtual_machine"],
-                    accountid=self.parentd_admin.name, domainid=self.parentd_admin.domainid,
-                    diskofferingid=disk_offering_custom.id, serviceofferingid=self.service_offering.id
-                    )
+                api_client_admin,
+                self.services["virtual_machine"],
+                accountid=self.parentd_admin.name,
+                domainid=self.parentd_admin.domainid,
+                diskofferingid=disk_offering_custom.id,
+                serviceofferingid=self.service_offering.id)
 
         # Deleting user account
         self.cadmin_1.delete(self.apiclient)
@@ -278,8 +319,8 @@ class TestMultipleChildDomain(cloudstackTestCase):
 
         expectedCount = self.initialResourceCount
         result = isDomainResourceCountEqualToExpectedCount(
-                        self.apiclient, self.parent_domain.id,
-                        expectedCount, RESOURCE_PRIMARY_STORAGE)
+            self.apiclient, self.parent_domain.id,
+            expectedCount, RESOURCE_PRIMARY_STORAGE)
         self.assertFalse(result[0], result[1])
         self.assertTrue(result[2], "Resource count does not match")
 
@@ -293,8 +334,8 @@ class TestMultipleChildDomain(cloudstackTestCase):
 
         expectedCount = 0
         result = isDomainResourceCountEqualToExpectedCount(
-                    self.apiclient, self.parent_domain.id,
-                    expectedCount, RESOURCE_PRIMARY_STORAGE)
+            self.apiclient, self.parent_domain.id,
+            expectedCount, RESOURCE_PRIMARY_STORAGE)
         self.assertFalse(result[0], result[1])
         self.assertTrue(result[2], "Resource count does not match")
         return
@@ -315,68 +356,79 @@ class TestMultipleChildDomain(cloudstackTestCase):
 
         # Setting up account and domain hierarchy
         result = self.setupAccounts()
-        self.assertEqual(result[0], PASS,\
-            "Failure while setting up accounts and domains: %s" % result[1])
+        self.assertEqual(
+            result[0],
+            PASS,
+            "Failure while setting up accounts and domains: %s" %
+            result[1])
         users = result[2]
 
-        templatesize = (self.template.size / (1024**3))
+        templatesize = (self.template.size / (1024 ** 3))
 
         for domain, admin in users.items():
             self.account = admin
             self.domain = domain
 
             apiclient = self.testClient.getUserApiClient(
-                                UserName=self.account.name,
-                                DomainName=self.account.domain)
-            self.assertNotEqual(apiclient, FAILED,\
-            "Failed to create api client for account: %s" % self.account.name)
+                UserName=self.account.name,
+                DomainName=self.account.domain)
+            self.assertNotEqual(
+                apiclient,
+                FAILED,
+                "Failed to create api client for account: %s" %
+                self.account.name)
             try:
                 vm = VirtualMachine.create(
-                        apiclient, self.services["virtual_machine"],
-                        accountid=self.account.name, domainid=self.account.domainid,
-                        diskofferingid=self.disk_offering.id, serviceofferingid=self.service_offering.id
-                        )
+                    apiclient,
+                    self.services["virtual_machine"],
+                    accountid=self.account.name,
+                    domainid=self.account.domainid,
+                    diskofferingid=self.disk_offering.id,
+                    serviceofferingid=self.service_offering.id)
 
                 expectedCount = templatesize + self.disk_offering.disksize
                 result = isDomainResourceCountEqualToExpectedCount(
-                            self.apiclient, self.domain.id,
-                            expectedCount, RESOURCE_PRIMARY_STORAGE)
+                    self.apiclient, self.domain.id,
+                    expectedCount, RESOURCE_PRIMARY_STORAGE)
                 self.assertFalse(result[0], result[1])
                 self.assertTrue(result[2], "Resource count does not match")
 
                 # Creating service offering with 10 GB volume
                 self.services["disk_offering"]["disksize"] = 10
-                disk_offering_10_GB = DiskOffering.create(self.apiclient,
-                                    services=self.services["disk_offering"])
+                disk_offering_10_GB = DiskOffering.create(
+                    self.apiclient,
+                    services=self.services["disk_offering"])
 
                 self.cleanup.append(disk_offering_10_GB)
 
                 volume = Volume.create(
-                            apiclient, self.services["volume"],
-                            zoneid=self.zone.id, account=self.account.name,
-                            domainid=self.account.domainid, diskofferingid=disk_offering_10_GB.id
-                            )
+                    apiclient,
+                    self.services["volume"],
+                    zoneid=self.zone.id,
+                    account=self.account.name,
+                    domainid=self.account.domainid,
+                    diskofferingid=disk_offering_10_GB.id)
 
-                volumeSize = (volume.size / (1024**3))
+                volumeSize = (volume.size / (1024 ** 3))
                 expectedCount += volumeSize
 
-       	        vm.attach_volume(apiclient, volume=volume)
+                vm.attach_volume(apiclient, volume=volume)
                 result = isDomainResourceCountEqualToExpectedCount(
-                            self.apiclient, self.domain.id,
-                            expectedCount, RESOURCE_PRIMARY_STORAGE)
+                    self.apiclient, self.domain.id,
+                    expectedCount, RESOURCE_PRIMARY_STORAGE)
                 self.assertFalse(result[0], result[1])
                 self.assertTrue(result[2], "Resource count does not match")
 
                 expectedCount -= volumeSize
                 vm.detach_volume(apiclient, volume=volume)
                 result = isDomainResourceCountEqualToExpectedCount(
-                            self.apiclient, self.domain.id,
-                            expectedCount, RESOURCE_PRIMARY_STORAGE)
+                    self.apiclient, self.domain.id,
+                    expectedCount, RESOURCE_PRIMARY_STORAGE)
                 self.assertFalse(result[0], result[1])
                 self.assertTrue(result[2], "Resource count does not match")
             except Exception as e:
                 self.fail("Failure: %s" % e)
-	    return
+            return
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_03_multiple_domains_multiple_volumes(self):
@@ -397,67 +449,80 @@ class TestMultipleChildDomain(cloudstackTestCase):
         # Setting up account and domain hierarchy
         result = self.setupAccounts()
         if result[0] == FAIL:
-            self.fail("Failure while setting up accounts and domains: %s" % result[1])
+            self.fail(
+                "Failure while setting up accounts and domains: %s" %
+                result[1])
         else:
             users = result[2]
 
-        templatesize = (self.template.size / (1024**3))
+        templatesize = (self.template.size / (1024 ** 3))
 
         for domain, admin in users.items():
             self.account = admin
             self.domain = domain
 
             apiclient = self.testClient.getUserApiClient(
-                                UserName=self.account.name,
-                                DomainName=self.account.domain)
-            self.assertNotEqual(apiclient, FAILED,\
-            "Failed to create api client for account: %s" % self.account.name)
+                UserName=self.account.name,
+                DomainName=self.account.domain)
+            self.assertNotEqual(
+                apiclient,
+                FAILED,
+                "Failed to create api client for account: %s" %
+                self.account.name)
 
             try:
                 vm = VirtualMachine.create(
-                        apiclient, self.services["virtual_machine"],
-                        accountid=self.account.name, domainid=self.account.domainid,
-                        diskofferingid=self.disk_offering.id, serviceofferingid=self.service_offering.id
-                        )
+                    apiclient,
+                    self.services["virtual_machine"],
+                    accountid=self.account.name,
+                    domainid=self.account.domainid,
+                    diskofferingid=self.disk_offering.id,
+                    serviceofferingid=self.service_offering.id)
 
                 expectedCount = templatesize + self.disk_offering.disksize
                 result = isDomainResourceCountEqualToExpectedCount(
-                            self.apiclient, self.domain.id,
-                            expectedCount, RESOURCE_PRIMARY_STORAGE)
+                    self.apiclient, self.domain.id,
+                    expectedCount, RESOURCE_PRIMARY_STORAGE)
                 self.assertFalse(result[0], result[1])
                 self.assertTrue(result[2], "Resource count does not match")
 
                 volume1size = self.services["disk_offering"]["disksize"] = 15
-                disk_offering_15_GB = DiskOffering.create(self.apiclient,
-                                    services=self.services["disk_offering"])
+                disk_offering_15_GB = DiskOffering.create(
+                    self.apiclient,
+                    services=self.services["disk_offering"])
 
                 self.cleanup.append(disk_offering_15_GB)
 
                 volume2size = self.services["disk_offering"]["disksize"] = 20
-                disk_offering_20_GB = DiskOffering.create(self.apiclient,
-                                    services=self.services["disk_offering"])
+                disk_offering_20_GB = DiskOffering.create(
+                    self.apiclient,
+                    services=self.services["disk_offering"])
 
                 self.cleanup.append(disk_offering_20_GB)
 
                 volume_1 = Volume.create(
-                            apiclient, self.services["volume"],
-                            zoneid=self.zone.id, account=self.account.name,
-                            domainid=self.account.domainid, diskofferingid=disk_offering_15_GB.id
-                            )
+                    apiclient,
+                    self.services["volume"],
+                    zoneid=self.zone.id,
+                    account=self.account.name,
+                    domainid=self.account.domainid,
+                    diskofferingid=disk_offering_15_GB.id)
 
                 volume_2 = Volume.create(
-                            apiclient, self.services["volume"],
-                            zoneid=self.zone.id, account=self.account.name,
-                            domainid=self.account.domainid, diskofferingid=disk_offering_20_GB.id
-                            )
+                    apiclient,
+                    self.services["volume"],
+                    zoneid=self.zone.id,
+                    account=self.account.name,
+                    domainid=self.account.domainid,
+                    diskofferingid=disk_offering_20_GB.id)
 
                 vm.attach_volume(apiclient, volume=volume_1)
                 vm.attach_volume(apiclient, volume=volume_2)
 
                 expectedCount += volume1size + volume2size
                 result = isDomainResourceCountEqualToExpectedCount(
-                            self.apiclient, self.domain.id,
-                            expectedCount, RESOURCE_PRIMARY_STORAGE)
+                    self.apiclient, self.domain.id,
+                    expectedCount, RESOURCE_PRIMARY_STORAGE)
                 self.assertFalse(result[0], result[1])
                 self.assertTrue(result[2], "Resource count does not match")
 
@@ -466,16 +531,16 @@ class TestMultipleChildDomain(cloudstackTestCase):
 
                 expectedCount -= volume1size
                 result = isDomainResourceCountEqualToExpectedCount(
-                            self.apiclient, self.domain.id,
-                            expectedCount, RESOURCE_PRIMARY_STORAGE)
+                    self.apiclient, self.domain.id,
+                    expectedCount, RESOURCE_PRIMARY_STORAGE)
                 self.assertFalse(result[0], result[1])
                 self.assertTrue(result[2], "Resource count does not match")
 
                 expectedCount -= volume2size
                 vm.detach_volume(apiclient, volume=volume_2)
                 result = isDomainResourceCountEqualToExpectedCount(
-                            self.apiclient, self.domain.id,
-                            expectedCount, RESOURCE_PRIMARY_STORAGE)
+                    self.apiclient, self.domain.id,
+                    expectedCount, RESOURCE_PRIMARY_STORAGE)
                 self.assertFalse(result[0], result[1])
                 self.assertTrue(result[2], "Resource count does not match")
             except Exception as e:
@@ -498,9 +563,14 @@ class TestMultipleChildDomain(cloudstackTestCase):
         # 5. Delete volume which was created from snapshot and verify primary storage
              resource count"""
 
+        if self.hypervisor.lower() in ['hyperv']:
+            self.skipTest("Snapshots feature is not supported on Hyper-V")
+
         result = self.setupAccounts()
         if result[0] == FAIL:
-            self.fail("Failure while setting up accounts and domains: %s" % result[1])
+            self.fail(
+                "Failure while setting up accounts and domains: %s" %
+                result[1])
         users = result[2]
 
         for domain, admin in users.items():
@@ -509,62 +579,75 @@ class TestMultipleChildDomain(cloudstackTestCase):
 
             try:
                 apiclient = self.testClient.getUserApiClient(
-                                UserName=self.account.name,
-                                DomainName=self.account.domain)
-                self.assertNotEqual(apiclient, FAILED,\
-                 "Failed to create api client for account: %s" % self.account.name)
+                    UserName=self.account.name,
+                    DomainName=self.account.domain)
+                self.assertNotEqual(
+                    apiclient,
+                    FAILED,
+                    "Failed to create api client for account: %s" %
+                    self.account.name)
 
                 vm = VirtualMachine.create(
-                            apiclient, self.services["virtual_machine"],
-                            accountid=self.account.name, domainid=self.account.domainid,
-                            diskofferingid=self.disk_offering.id, serviceofferingid=self.service_offering.id
-                            )
+                    apiclient,
+                    self.services["virtual_machine"],
+                    accountid=self.account.name,
+                    domainid=self.account.domainid,
+                    diskofferingid=self.disk_offering.id,
+                    serviceofferingid=self.service_offering.id)
 
-                templatesize = (self.template.size / (1024**3))
+                templatesize = (self.template.size / (1024 ** 3))
 
-                initialResourceCount = expectedCount = templatesize + self.disk_offering.disksize
+                initialResourceCount = expectedCount = templatesize + \
+                    self.disk_offering.disksize
                 result = isDomainResourceCountEqualToExpectedCount(
-                            self.apiclient, self.domain.id,
-                            initialResourceCount, RESOURCE_PRIMARY_STORAGE)
+                    self.apiclient, self.domain.id,
+                    initialResourceCount, RESOURCE_PRIMARY_STORAGE)
                 self.assertFalse(result[0], result[1])
                 self.assertTrue(result[2], "Resource count does not match")
 
                 vm.stop(self.apiclient)
 
-                response = createSnapshotFromVirtualMachineVolume(apiclient, self.account, vm.id)
+                response = createSnapshotFromVirtualMachineVolume(
+                    apiclient,
+                    self.account,
+                    vm.id)
                 self.assertEqual(response[0], PASS, response[1])
                 snapshot = response[1]
 
-                response = snapshot.validateState(apiclient, Snapshot.BACKED_UP)
+                response = snapshot.validateState(
+                    apiclient,
+                    Snapshot.BACKED_UP)
                 self.assertEqual(response[0], PASS, response[1])
 
-                self.services["volume"]["size"] = self.services["disk_offering"]["disksize"]
-                volume = Volume.create_from_snapshot(apiclient,
-                                        snapshot_id=snapshot.id,
-                                        services=self.services["volume"],
-                                        account=self.account.name,
-                                        domainid=self.account.domainid)
-                volumeSize = (volume.size / (1024**3))
+                self.services["volume"]["size"] = self.services[
+                    "disk_offering"]["disksize"]
+                volume = Volume.create_from_snapshot(
+                    apiclient,
+                    snapshot_id=snapshot.id,
+                    services=self.services["volume"],
+                    account=self.account.name,
+                    domainid=self.account.domainid)
+                volumeSize = (volume.size / (1024 ** 3))
                 vm.attach_volume(apiclient, volume)
                 expectedCount = initialResourceCount + (volumeSize)
                 result = isDomainResourceCountEqualToExpectedCount(
-                            self.apiclient, self.domain.id,
-                            expectedCount, RESOURCE_PRIMARY_STORAGE)
+                    self.apiclient, self.domain.id,
+                    expectedCount, RESOURCE_PRIMARY_STORAGE)
                 self.assertFalse(result[0], result[1])
                 self.assertTrue(result[2], "Resource count does not match")
 
                 expectedCount -= volumeSize
                 vm.detach_volume(apiclient, volume)
                 result = isDomainResourceCountEqualToExpectedCount(
-                            self.apiclient, self.domain.id,
-                            expectedCount, RESOURCE_PRIMARY_STORAGE)
+                    self.apiclient, self.domain.id,
+                    expectedCount, RESOURCE_PRIMARY_STORAGE)
                 self.assertFalse(result[0], result[1])
                 self.assertTrue(result[2], "Resource count does not match")
 
                 volume.delete(apiclient)
                 result = isDomainResourceCountEqualToExpectedCount(
-                            self.apiclient, self.domain.id,
-                            expectedCount, RESOURCE_PRIMARY_STORAGE)
+                    self.apiclient, self.domain.id,
+                    expectedCount, RESOURCE_PRIMARY_STORAGE)
                 self.assertFalse(result[0], result[1])
                 self.assertTrue(result[2], "Resource count does not match")
             except Exception as e:
@@ -573,7 +656,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_05_assign_virtual_machine_different_domain(self):
-	"""Test assign virtual machine to account belonging to different domain
+        """Test assign virtual machine to account belonging to different domain
 
         # Steps
         1. Create a parent domain and two sub-domains in it (also admin accounts
@@ -590,41 +673,48 @@ class TestMultipleChildDomain(cloudstackTestCase):
         self.assertEqual(result[0], PASS, result[1])
 
         apiclient = self.testClient.getUserApiClient(
-                                UserName=self.cadmin_1.name,
-                                DomainName=self.cadmin_1.domain)
-        self.assertNotEqual(apiclient, FAILED,\
-                 "Failed to create api client for account: %s" % self.cadmin_1.name)
+            UserName=self.cadmin_1.name,
+            DomainName=self.cadmin_1.domain)
+        self.assertNotEqual(
+            apiclient,
+            FAILED,
+            "Failed to create api client for account: %s" %
+            self.cadmin_1.name)
 
         try:
             vm_1 = VirtualMachine.create(
-                    apiclient, self.services["virtual_machine"],
-                    accountid=self.cadmin_1.name, domainid=self.cadmin_1.domainid,
-                    diskofferingid=self.disk_offering.id, serviceofferingid=self.service_offering.id
-                    )
+                apiclient,
+                self.services["virtual_machine"],
+                accountid=self.cadmin_1.name,
+                domainid=self.cadmin_1.domainid,
+                diskofferingid=self.disk_offering.id,
+                serviceofferingid=self.service_offering.id)
 
-            templatesize = (self.template.size / (1024**3))
+            templatesize = (self.template.size / (1024 ** 3))
 
             expectedCount = templatesize + self.disk_offering.disksize
             result = isDomainResourceCountEqualToExpectedCount(
-                            self.apiclient, self.cadmin_1.domainid,
-                            expectedCount, RESOURCE_PRIMARY_STORAGE)
+                self.apiclient, self.cadmin_1.domainid,
+                expectedCount, RESOURCE_PRIMARY_STORAGE)
             self.assertFalse(result[0], result[1])
             self.assertTrue(result[2], "Resource count does not match")
 
             vm_1.stop(apiclient)
-            vm_1.assign_virtual_machine(self.apiclient, account=self.cadmin_2.name,
-				    domainid=self.cadmin_2.domainid)
+            vm_1.assign_virtual_machine(
+                self.apiclient,
+                account=self.cadmin_2.name,
+                domainid=self.cadmin_2.domainid)
 
             result = isDomainResourceCountEqualToExpectedCount(
-                            self.apiclient, self.cadmin_2.domainid,
-                            expectedCount, RESOURCE_PRIMARY_STORAGE)
+                self.apiclient, self.cadmin_2.domainid,
+                expectedCount, RESOURCE_PRIMARY_STORAGE)
             self.assertFalse(result[0], result[1])
             self.assertTrue(result[2], "Resource count does not match")
 
             expectedCount = 0
             result = isDomainResourceCountEqualToExpectedCount(
-                            self.apiclient, self.cadmin_1.domainid,
-                            expectedCount, RESOURCE_PRIMARY_STORAGE)
+                self.apiclient, self.cadmin_1.domainid,
+                expectedCount, RESOURCE_PRIMARY_STORAGE)
             self.assertFalse(result[0], result[1])
             self.assertTrue(result[2], "Resource count does not match")
         except Exception as e:
@@ -633,7 +723,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_06_destroy_recover_vm(self):
-	"""Test primary storage counts while destroying and recovering VM
+        """Test primary storage counts while destroying and recovering VM
         # Steps
         1. Create a parent domain and two sub-domains in it (also admin accounts
            of each domain)
@@ -656,33 +746,35 @@ class TestMultipleChildDomain(cloudstackTestCase):
             self.domain = domain
             try:
                 vm_1 = VirtualMachine.create(
-                    self.apiclient, self.services["virtual_machine"],
-                    accountid=self.account.name, domainid=self.account.domainid,
-                    diskofferingid=self.disk_offering.id, serviceofferingid=self.service_offering.id
-                    )
+                    self.apiclient,
+                    self.services["virtual_machine"],
+                    accountid=self.account.name,
+                    domainid=self.account.domainid,
+                    diskofferingid=self.disk_offering.id,
+                    serviceofferingid=self.service_offering.id)
 
-                templatesize = (self.template.size / (1024**3))
+                templatesize = (self.template.size / (1024 ** 3))
 
                 expectedCount = templatesize + self.disk_offering.disksize
                 result = isDomainResourceCountEqualToExpectedCount(
-                            self.apiclient, self.account.domainid,
-                            expectedCount, RESOURCE_PRIMARY_STORAGE)
+                    self.apiclient, self.account.domainid,
+                    expectedCount, RESOURCE_PRIMARY_STORAGE)
                 self.assertFalse(result[0], result[1])
                 self.assertTrue(result[2], "Resource count does not match")
 
                 vm_1.delete(self.apiclient, expunge=False)
 
                 result = isDomainResourceCountEqualToExpectedCount(
-                            self.apiclient, self.account.domainid,
-                            expectedCount, RESOURCE_PRIMARY_STORAGE)
+                    self.apiclient, self.account.domainid,
+                    expectedCount, RESOURCE_PRIMARY_STORAGE)
                 self.assertFalse(result[0], result[1])
                 self.assertTrue(result[2], "Resource count does not match")
 
                 vm_1.recover(self.apiclient)
 
                 result = isDomainResourceCountEqualToExpectedCount(
-                            self.apiclient, self.account.domainid,
-                            expectedCount, RESOURCE_PRIMARY_STORAGE)
+                    self.apiclient, self.account.domainid,
+                    expectedCount, RESOURCE_PRIMARY_STORAGE)
                 self.assertFalse(result[0], result[1])
                 self.assertTrue(result[2], "Resource count does not match")
             except Exception as e:
