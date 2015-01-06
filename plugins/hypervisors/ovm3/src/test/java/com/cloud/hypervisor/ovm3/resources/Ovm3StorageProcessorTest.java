@@ -122,7 +122,7 @@ public class Ovm3StorageProcessorTest {
 
     /**
      * Copy template from primary to primary volume
-     * 
+     *
      * @throws ConfigurationException
      */
     @Test
@@ -143,7 +143,7 @@ public class Ovm3StorageProcessorTest {
 
     /**
      * Copy template from secondary to primary template
-     * 
+     *
      * @throws ConfigurationException
      */
     @Test
@@ -175,7 +175,7 @@ public class Ovm3StorageProcessorTest {
 
     /**
      * Copy template from secondary to primary template
-     * 
+     *
      * @throws ConfigurationException
      */
     @Test
@@ -192,7 +192,7 @@ public class Ovm3StorageProcessorTest {
 
     /**
      * Delete an object
-     * 
+     *
      * @throws ConfigurationException
      */
     @Test
@@ -226,7 +226,7 @@ public class Ovm3StorageProcessorTest {
 
     /*
      * unused ?
-     * 
+     *
      * @Test
      * public void createCommandTest() throws ConfigurationException {
      * con = prepare();
@@ -235,7 +235,7 @@ public class Ovm3StorageProcessorTest {
      * StoragePoolVO poolio = new StoragePoolVO();
      * poolio.setPath(linux.getTemplatesDir());
      * poolio.setHostAddress(linux.getRemoteHost());
-     * 
+     *
      * CreateCommand create = new CreateCommand(disk, templateUrl, poolio ,
      * false);
      * Answer ra = hypervisor.executeRequest(create);
@@ -297,7 +297,7 @@ public class Ovm3StorageProcessorTest {
 
     /*
      * used ?
-     * 
+     *
      * @Test
      * public void isoAttachTest() throws ConfigurationException {
      * con = prepare();
@@ -336,7 +336,7 @@ public class Ovm3StorageProcessorTest {
 
     /*
      * unused ?
-     * 
+     *
      * @Test
      * public void destroyCommandTest() throws ConfigurationException {
      * con = prepare();
