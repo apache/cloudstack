@@ -118,6 +118,10 @@
                                             required: true
                                         }
                                     },
+                                    templateFileUpload: {
+                                        label: 'Select a file',
+                                        isFileUpload: true
+                                    },
                                     description: {
                                         label: 'label.description',
                                         docID: 'helpRegisterTemplateDescription',

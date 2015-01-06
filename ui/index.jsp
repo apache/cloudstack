@@ -1737,6 +1737,12 @@
         <script src="lib/date.js" type="text/javascript"></script>
         <script src="lib/jquery.cookies.js" type="text/javascript"></script>
         <script src="lib/jquery.md5.js" type="text/javascript" ></script>
+        
+        <!-- File uploader -->
+        <script src="lib/jquery.iframe-transport.js"></script>
+        <script src="lib/jquery.fileupload.js"></script>
+
+        <!-- require.js -- for plugin framework -->
         <script src="lib/require.js" type="text/javascript"></script>
 
         <!-- localized messages -->
@@ -1758,6 +1764,7 @@
         <script src="lib/flot/jquery.flot.threshold.js" type="text/javascript"></script>
         <!-- jquery.tokeninput.js -->
         <script src="lib/jquery.tokeninput.js" type="text/javascript"></script>
+        
         <!-- CloudStack -->
         <script type="text/javascript" src="scripts/ui/core.js?t=<%=now%>"></script>
         <script type="text/javascript" src="scripts/ui/utils.js?t=<%=now%>"></script>
