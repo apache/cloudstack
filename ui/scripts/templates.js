@@ -116,8 +116,18 @@
                                 fileUpload: {
                                     action: function(args) {
                                         var fileData = args.fileData;
+                                        var ajax = $.ajax({
+                                            xhr: function() {
+                                                var xhr = jQuery.ajaxSettings.xhr();
 
-                                        $.ajax({
+                                                if (xhr instanceof window.XMLHttpRequest) {
+                                                    xhr.upload.addEventListener('progress', function(e) {
+                                                        console.log('progress -> ', e);
+                                                    });
+                                                }
+
+                                                return xhr;
+                                            },
                                             url: '/test-upload.php',
                                             type: 'POST',
                                             data: fileData,
@@ -133,6 +143,8 @@
                                                 args.response.error('Error uploading files');
                                             }
                                         });
+
+                                        debugger;
                                     }
                                 },
                                 fields: {
