@@ -153,14 +153,12 @@ public class Ovm3HypervisorResourceTest {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
         con = support.prepConnectionResults();
         hypervisor.setConnection(con);
-        hypervisor.setSkipSetup(true);
         results.basicBooleanTest(hypervisor.configure(config.getAgentName(),
                 configTest.getParams()));
         con.setIp(config.getAgentIp());
         for (StartupCommand start : hypervisor.initialize()) {
             assertNotNull(start);
         }
-        hypervisor.setSkipSetup(false);
     }
 
     private Ovm3HypervisorResource vmActionPreparation()

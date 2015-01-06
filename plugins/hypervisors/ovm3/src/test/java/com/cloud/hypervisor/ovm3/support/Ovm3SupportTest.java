@@ -34,7 +34,6 @@ public class Ovm3SupportTest {
 
     public ConnectionTest prepConnectionResults() {
         ConnectionTest con = new ConnectionTest();
-        con.setBogus(true);
         return configureResult(con);
     }
 

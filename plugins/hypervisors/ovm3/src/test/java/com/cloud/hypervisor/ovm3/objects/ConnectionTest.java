@@ -49,9 +49,8 @@ public class ConnectionTest extends Connection {
     private Map<String, String> methodResponse = new HashMap<String, String>();
 
     public ConnectionTest() {
-        this.setBogus(true);
     }
-
+    
     /*
      * public ConnectionTest(String agentIp, String agentOvsAgentUser,
      * String agentOvsAgentPassword) {
@@ -73,9 +72,6 @@ public class ConnectionTest extends Connection {
     @Override
     public Object callTimeoutInSec(String method, List<?> params, int timeout,
             boolean debug) throws XmlRpcException {
-        if (this.getBogus() == false) {
-            return super.callTimeoutInSec(method, params, timeout, debug);
-        }
         XmlRpcStreamConfig config = new XmlRpcHttpRequestConfigImpl();
         XmlRpcClient client = new XmlRpcClient();
         // XmlRpcRequestParser parser = new XmlRpcRequestParser(config,

@@ -63,6 +63,7 @@ public class Ovm3Configuration {
     private int domRSshPort = 3922;
     private String domRCloudPath = "/opt/cloud/bin/";
     private Map<String, Network.Interface> agentInterfaces = null;
+    private Boolean istest = false;
 
     public Ovm3Configuration(Map<String, Object> params) throws ConfigurationException {
         setAgentZoneId(Long.parseLong((String) params.get("zone")));
@@ -348,6 +349,12 @@ public class Ovm3Configuration {
 
     public void setDomRCloudPath(String domRCloudPath) {
         this.domRCloudPath = domRCloudPath;
+    }
+    public Boolean getIsTest() {
+        return istest;
+    }
+    public void setIsTest(Boolean t) {
+        istest = t;
     }
 
     public Map<String, Network.Interface> getAgentInterfaces() {

@@ -121,7 +121,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     private Ovm3Configuration configuration;
     private Ovm3VmGuestTypes guesttypes;
     private OvmObject ovmObject = new OvmObject();
-    private Boolean skipSetup = false;
 
     /*
      * TODO: Add a network map, so we know which tagged interfaces we can remove
@@ -149,7 +148,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             hypervisorsupport.fillHostInfo(srCmd);
             hypervisorsupport.vmStateMapClear();
             virtualroutingsupport = new Ovm3VirtualRoutingSupport(c, configuration, virtualroutingresource);
-            if (skipSetup == false) {
+            if (configuration.getIsTest() == false) {
                 hypervisorsupport.setupServer(configuration.getAgentSshKeyFileName());
             }
             LOGGER.debug("Ovm3 pool " + ssCmd + " " + srCmd);
@@ -322,10 +321,10 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
         LOGGER.debug("configure " + name + " with params: " + params);
-        configuration = new Ovm3Configuration(params);
         /* check if we're master or not and if we can connect */
         try {
-            if (!c.getBogus()) {
+            configuration = new Ovm3Configuration(params);
+            if (configuration.getIsTest() == true) {
                 c = new Connection(configuration.getAgentIp(),
                         configuration.getAgentOvsAgentPort(),
                         configuration.getAgentOvsAgentUser(),
@@ -566,9 +565,5 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     protected String getDefaultScriptsDir() {
         // TODO Auto-generated method stub
         return null;
-    }
-
-    public void setSkipSetup(boolean b) {
-        skipSetup = b;
     }
 }

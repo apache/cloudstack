@@ -39,7 +39,7 @@ public class Connection extends XmlRpcClient {
     private String hostIp;
     private String hostName;
     private Boolean bogus = false;
-    private Integer hostPort = 8898;
+    private Integer hostPort = 8899;
     private Boolean hostUseSsl = false;
     private String cert = "";
     private String key = "";
@@ -86,6 +86,7 @@ public class Connection extends XmlRpcClient {
             /* reply time is 5 mins */
             xmlClientConfig.setReplyTimeout(60 * 15000);
             if (hostUser != null && hostPass != null) {
+                LOGGER.debug("setting username " + hostUser);
                 xmlClientConfig.setBasicUserName(hostUser);
                 xmlClientConfig.setBasicPassword(hostPass);
             }
@@ -195,14 +196,6 @@ public class Connection extends XmlRpcClient {
 
     public void setHostName(String hostName) {
         this.hostName = hostName;
-    }
-
-    public Boolean getBogus() {
-        return bogus;
-    }
-
-    public void setBogus(Boolean b) {
-        bogus = b;
     }
 
     public void setIp(String agentIp) {
