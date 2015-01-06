@@ -147,7 +147,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             /* here stuff gets completed, but where should state live ? */
             hypervisorsupport.fillHostInfo(srCmd);
             hypervisorsupport.vmStateMapClear();
-            virtualroutingsupport = new Ovm3VirtualRoutingSupport(c, configuration, virtualroutingresource);
             if (configuration.getIsTest() == false) {
                 hypervisorsupport.setupServer(configuration.getAgentSshKeyFileName());
             }
@@ -182,6 +181,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         return null;
     }
 
+    /* order sometime, or just get rid of... */
     @Override
     public Answer executeRequest(Command cmd) {
         Class<? extends Command> clazz = cmd.getClass();
@@ -351,6 +351,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         storagepool.prepareForPool();
         storageprocessor = new Ovm3StorageProcessor(c, configuration, storagepool);
         guesttypes = new Ovm3VmGuestTypes();
+        virtualroutingsupport = new Ovm3VirtualRoutingSupport(c, configuration, virtualroutingresource);
         return true;
     }
 

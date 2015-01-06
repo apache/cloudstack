@@ -53,9 +53,6 @@ public class Ovm3StorageProcessorTest {
     XmlTestResultTest results = new XmlTestResultTest();
     Ovm3ConfigurationTest configTest = new Ovm3ConfigurationTest();
     Ovm3HypervisorResource hypervisor = new Ovm3HypervisorResource();
-    Ovm3VirtualRoutingResource virtualrouting = new Ovm3VirtualRoutingResource();
-    Ovm3StorageProcessor storage;
-    Ovm3StoragePool pool;
     Ovm3SupportTest support = new Ovm3SupportTest();
     LinuxTest linux = new LinuxTest();
     XenTest xen = new XenTest();
@@ -64,12 +61,9 @@ public class Ovm3StorageProcessorTest {
     private ConnectionTest prepare() throws ConfigurationException {
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
         con = support.prepConnectionResults();
-        pool = new Ovm3StoragePool(con, config);
-        storage = new Ovm3StorageProcessor(con, config, pool);
         hypervisor.setConnection(con);
         results.basicBooleanTest(hypervisor.configure(config.getAgentName(),
                 configTest.getParams()));
-        virtualrouting.setConnection(con);
         return con;
     }
 

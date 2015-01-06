@@ -18,6 +18,9 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.objects;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 import java.io.File;
 
 import org.junit.Test;
@@ -239,7 +242,7 @@ public class StoragePluginTest {
     @Test
     public void testNFSStorageUnmount() throws Ovm3ResourceException {
         con.setResult(results.getNil());
-        sPt.storagePluginUnmountNFS(NFSHOST, NFSPATH, FSMNTUUID, NFSMNT);
+        results.basicBooleanTest(sPt.storagePluginUnmountNFS(NFSHOST, NFSPATH, FSMNTUUID, NFSMNT));
     }
 
     @Test(expected = Ovm3ResourceException.class)
@@ -264,7 +267,7 @@ public class StoragePluginTest {
         NFSMOUNTRESPONSEXML = NFSMOUNTRESPONSEXML.replaceAll(FSPROPUUID,
                 sPt.deDash(FSMNTUUID));
         con.setResult(results.simpleResponseWrapWrapper(NFSMOUNTRESPONSEXML));
-        System.out.println(sPt.storagePluginMountNFS(NFSHOST, NFSPATH,
+        assertNotNull(sPt.storagePluginMountNFS(NFSHOST, NFSPATH,
                 FSPROPUUID, NFSMNT));
     }
 

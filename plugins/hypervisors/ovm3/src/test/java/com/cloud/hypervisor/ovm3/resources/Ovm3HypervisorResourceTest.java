@@ -42,6 +42,7 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.ovm3.objects.CloudStackPluginTest;
+import com.cloud.hypervisor.ovm3.objects.Connection;
 import com.cloud.hypervisor.ovm3.objects.ConnectionTest;
 import com.cloud.hypervisor.ovm3.objects.NetworkTest;
 import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
@@ -55,6 +56,7 @@ import com.cloud.hypervisor.ovm3.support.Ovm3SupportTest;
 import com.cloud.network.Networks;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 
@@ -83,18 +85,14 @@ public class Ovm3HypervisorResourceTest {
 
     /* fails */
     /*
-     * @Test(expected = ConfigurationException.class)
-     * public void configureFailBaseConnectionTest() throws
-     * ConfigurationException {
-     * Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
-     * Connection con = new Connection("127.0.0.1", "test", "test");
-     * config.setAgentIp("127.0.0.1");
-     * config.setOvm3PoolVip("127.0.0.1");
-     * hypervisor.setConnection(con);
-     * results.basicBooleanTest(hypervisor.configure(config.getAgentName(),
-     * configTest.getParams()));
-     * }
-     */
+     @Test(expected = CloudRuntimeException.class)
+     public void configureFailBaseConnectionTest() throws
+         ConfigurationException {
+         hypervisor = support.prepare(configTest.getParams());
+         results.basicBooleanTest(hypervisor.configure(con.getHostName(),
+                 configTest.getParams()));
+     }
+    */
 
     @Test
     public void configureControlInterfaceTest() throws ConfigurationException {

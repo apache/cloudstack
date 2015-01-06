@@ -18,23 +18,49 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.support;
 
+import java.util.Map;
+
+import javax.naming.ConfigurationException;
+
 import com.cloud.hypervisor.ovm3.objects.CloudStackPluginTest;
 import com.cloud.hypervisor.ovm3.objects.ConnectionTest;
 import com.cloud.hypervisor.ovm3.objects.LinuxTest;
 import com.cloud.hypervisor.ovm3.objects.NetworkTest;
 import com.cloud.hypervisor.ovm3.objects.XenTest;
 import com.cloud.hypervisor.ovm3.objects.XmlTestResultTest;
+import com.cloud.hypervisor.ovm3.resources.Ovm3HypervisorResource;
+import com.cloud.hypervisor.ovm3.resources.Ovm3StorageProcessor;
+import com.cloud.hypervisor.ovm3.resources.Ovm3VirtualRoutingResource;
+import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3Configuration;
+import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3ConfigurationTest;
+import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3StoragePool;
 
 public class Ovm3SupportTest {
+    ConnectionTest con = new ConnectionTest();
     XmlTestResultTest results = new XmlTestResultTest();
     NetworkTest net = new NetworkTest();
     LinuxTest linux = new LinuxTest();
     XenTest xen = new XenTest();
     CloudStackPluginTest csp = new CloudStackPluginTest();
+    Ovm3HypervisorResource hypervisor = new Ovm3HypervisorResource();
+    Ovm3VirtualRoutingResource virtualrouting = new Ovm3VirtualRoutingResource();
+    Ovm3ConfigurationTest configTest = new Ovm3ConfigurationTest();
+    Ovm3StoragePool pool;
+    Ovm3StorageProcessor storage;
 
     public ConnectionTest prepConnectionResults() {
         ConnectionTest con = new ConnectionTest();
+        con.setIp(con.getHostName());
         return configureResult(con);
+    }
+
+    public Ovm3HypervisorResource prepare(Map<String, Object> params) throws ConfigurationException {
+        Ovm3Configuration config = new Ovm3Configuration(params);
+        con = prepConnectionResults();
+        hypervisor.setConnection(con);
+        results.basicBooleanTest(hypervisor.configure(config.getAgentName(),
+                configTest.getParams()));
+        return hypervisor;
     }
 
     public ConnectionTest configureResult(ConnectionTest con) {
@@ -56,6 +82,7 @@ public class Ovm3SupportTest {
                 results.simpleResponseWrapWrapper(linux.getDiscoverserver()));
         con.setMethodResponse("discover_mounted_file_systems",
                 results.simpleResponseWrapWrapper(linux.getDiscoverFs()));
+        con.setMethodResponse("get_vncport", results.simpleResponseWrapWrapper("5900"));
         con.setMethodResponse("echo", results.simpleResponseWrapWrapper("put"));
         con.setMethodResponse("list_vms", xen.getMultipleVmsListXML());
         con.setMethodResponse("list_vm", xen.getSingleVmListXML());

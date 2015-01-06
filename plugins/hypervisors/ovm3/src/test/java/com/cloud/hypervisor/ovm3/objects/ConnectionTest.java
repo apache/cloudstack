@@ -51,31 +51,11 @@ public class ConnectionTest extends Connection {
     public ConnectionTest() {
     }
 
-    /*
-     * public ConnectionTest(String agentIp, String agentOvsAgentUser,
-     * String agentOvsAgentPassword) {
-     * super.setIp(agentIp);
-     * super.setUserName(agentOvsAgentUser);
-     * super.setPassword(agentOvsAgentPassword);
-     * this.setBogus(true);
-     * }
-     */
-    @Override
-    public String getIp() {
-        return hostIp;
-    }
-
-    public void setIp(String s) {
-        hostIp = s;
-    }
-
     @Override
     public Object callTimeoutInSec(String method, List<?> params, int timeout,
             boolean debug) throws XmlRpcException {
         XmlRpcStreamConfig config = new XmlRpcHttpRequestConfigImpl();
         XmlRpcClient client = new XmlRpcClient();
-        // XmlRpcRequestParser parser = new XmlRpcRequestParser(config,
-        // client.getTypeFactory());
         client.setTypeFactory(new RpcTypeFactory(client));
         XmlRpcResponseParser parser = new XmlRpcResponseParser(
                 (XmlRpcStreamRequestConfig) config, client.getTypeFactory());
@@ -177,7 +157,7 @@ public class ConnectionTest extends Connection {
             // con.call("ping", emptyParams, 1, false);
         } catch (XmlRpcException e) {
             // TODO Auto-generated catch block
-            System.out.println();
+            System.out.println("Exception: " + e);
         }
         new Connection(host, user, pass);
     }
