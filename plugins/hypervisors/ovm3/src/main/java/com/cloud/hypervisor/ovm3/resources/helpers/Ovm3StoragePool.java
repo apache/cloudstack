@@ -420,6 +420,9 @@ public class Ovm3StoragePool {
     public String setupSecondaryStorage(String url)
             throws Ovm3ResourceException {
         URI uri = URI.create(url);
+        if (uri.getHost() == null) {
+            throw new Ovm3ResourceException("Secondary storage host can not be empty!");
+        }
         String uuid = ovmObject.newUuid(uri.getHost() + ":" + uri.getPath());
         LOGGER.info("Secondary storage with uuid: " + uuid);
         return setupNfsStorage(uri, uuid);

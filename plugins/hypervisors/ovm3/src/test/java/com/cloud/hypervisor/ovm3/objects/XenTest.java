@@ -30,6 +30,7 @@ public class XenTest {
     XmlTestResultTest results = new XmlTestResultTest();
     String DOM0VMNAME = "Domain-0";
     String VMNAME = "i-2-3-VM";
+    String VMROOTDISKNAME = "ROOT-3";
     public String getVMNAME() {
         return VMNAME;
     }
@@ -53,7 +54,14 @@ public class XenTest {
     String VMNICBR = "xenbr0.160";
     String VMNICUUID = "2ad52371-af7d-32d1-ebe1-2b6a811e66c4";
     String VMID = "868a6627-c3b0-3d9b-aea4-f279cbaa253b";
-    String VMROOTDISK = "722eb520-dcf5-4113-8f45-22d67c9a2f3c.raw";
+    String VMROOTDISKUUID = "722eb520-dcf5-4113-8f45-22d67c9a2f3c";
+    public String getVmRootDiskUuid() {
+        return VMROOTDISKUUID;
+    }
+    public String getVmRootDiskName() {
+        return VMROOTDISKNAME;
+    }
+    String VMROOTDISK = VMROOTDISKUUID + ".raw";
     String VMISO = "xentools.iso";
     String REPOPATH = "/OVS/Repositories";
     String VMROOTDISKPATH = REPOPATH + "/" + REPOID + "/Disks/" + VMROOTDISK;

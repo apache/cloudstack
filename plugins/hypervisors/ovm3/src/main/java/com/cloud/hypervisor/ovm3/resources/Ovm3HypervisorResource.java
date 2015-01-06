@@ -33,7 +33,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
@@ -239,14 +238,15 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             return hypervisornetwork.execute((PingTestCommand) cmd);
         } else if (clazz == FenceCommand.class) {
             return hypervisorsupport.execute((FenceCommand) cmd);
+        /*
         } else if (clazz == AttachIsoCommand.class) {
-            /*
+
             return ovm3spr.execute((attachIso) cmd);
         } else if (clazz == DettachCommand.class) {
             return ovm3spr.execute((DettachCommand) cmd);
         } else if (clazz == AttachCommand.class) {
             return ovm3spr.execute((AttachCommand) cmd);
-            */
+        */
         } else if (clazz == NetworkRulesSystemVmCommand.class) {
             return virtualroutingsupport.execute((NetworkRulesSystemVmCommand) cmd);
         } else if (clazz == CreatePrivateTemplateFromVolumeCommand.class) {
@@ -264,6 +264,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         } else if (clazz == StartCommand.class) {
             return execute((StartCommand) cmd);
         }
+        LOGGER.debug("Can't find class for executeRequest, is your direct call missing?");
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
 

@@ -327,12 +327,14 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             /* check running */
             if (vm == null) {
                 msg = doThis + " can't find VM " + vmName;
+                LOGGER.debug(msg);
                 return msg;
             }
             TemplateObjectTO isoTO = (TemplateObjectTO) disk.getData();
             DataStoreTO store = isoTO.getDataStore();
             if (!(store instanceof NfsTO)) {
                 msg = doThis + " only NFS is supported at the moment.";
+                LOGGER.debug(msg);
                 return msg;
             }
             NfsTO nfsStore = (NfsTO) store;
@@ -346,6 +348,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 if (!vm.removeDisk(isoPath)) {
                     msg = doThis + " failed for " + vmName
                             + " iso was not attached " + isoPath;
+                    LOGGER.debug(msg);
                     return msg;
                 }
             }
@@ -354,7 +357,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             return msg;
         } catch (Ovm3ResourceException e) {
             msg = doThis + " failed for " + vmName + " " + e.getMessage();
-            LOGGER.info(msg, e);
+            LOGGER.warn(msg, e);
             return msg;
         }
     }
@@ -373,7 +376,6 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     public Answer createVolume(CreateObjectCommand cmd) {
         DataTO data = cmd.getData();
         VolumeObjectTO volume = (VolumeObjectTO) data;
-        System.out.println(volume);
         try {
             /*
              * public Boolean storagePluginCreate(String uuid, String ssuuid,
@@ -389,6 +391,9 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             StoragePlugin sp = new StoragePlugin(c);
             FileProperties fp = sp.storagePluginCreate(poolUuid, host, file,
                     size);
+            if (!fp.getName().equals(file)) {
+                return new CreateObjectAnswer("Filename mismatch: " + fp.getName() + " != " + file);
+            }
             // sp.storagePluginGetFileInfo(file);
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setName(volume.getName());
@@ -429,7 +434,8 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     }
 
     /*
-     * Might have some logic errors that's what debugging is for...
+     * CopyVolumeCommand gets the storage_pool should use that for
+     * bumper bowling.
      */
     public CopyVolumeAnswer execute(CopyVolumeCommand cmd) {
         String volumePath = cmd.getVolumePath();
@@ -440,7 +446,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             wait = 7200;
         }
 
-        /* TODO: we need to figure out what sec and prim really is */
+        /* TODO: we need to figure out what sec and prim really is for checks and balances */
         try {
             Linux host = new Linux(c);
 

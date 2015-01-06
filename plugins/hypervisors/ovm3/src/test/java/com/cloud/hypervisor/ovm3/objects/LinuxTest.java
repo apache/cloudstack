@@ -539,6 +539,9 @@ public class LinuxTest {
     public String getTemplatesDir() {
         return REPOMNT + "/Templates";
     }
+    public String getIsoDir() {
+        return REPOMNT + "/ISOs";
+    }
     private final String REMOTE = REMOTEHOST + ":" + REMOTEDIR;
     private final String REPOID = "f12842eb-f5ed-3fe7-8da1-eb0e17f5ede8";
     private final String DDREPOID = lin.deDash(REPOID);

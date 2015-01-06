@@ -285,7 +285,7 @@ public class StoragePlugin extends OvmObject {
             fileProperties.put("file_sz", t);
         }
         public Long getSize() {
-            return Long.getLong((String) fileProperties.get("file_sz"));
+            return Long.parseLong((String) fileProperties.get("file_sz"));
         }
         public String setOnDiskSize(String t) {
             return (String) fileProperties.put("ondisk_sz", t);
