@@ -689,9 +689,9 @@
                     $.each($form.data('files'), function(key, value) {
                         formData.append(key, value);
                     });
-                    args.form.fileUpload({
+                    args.form.fileUpload.action({
                         context: args.context,
-                        uploadData: formData,
+                        fileData: formData,
                         response: {
                             success: function(successArgs) {
                                 $form.find('.loading-overlay').remove();

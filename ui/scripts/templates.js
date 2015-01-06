@@ -127,7 +127,7 @@
                                             contentType: false, // jQuery will tell the server this is a query string request
                                             success: function(uploadData, textStatus, jqXHR) {
                                                 // Files uploaded successfully; proceed to handle rest of action
-                                                args.response.succes({ data: uploadData });
+                                                args.response.success({ data: uploadData });
                                             },
                                             error: function(error) {
                                                 args.response.error('Error uploading files');
