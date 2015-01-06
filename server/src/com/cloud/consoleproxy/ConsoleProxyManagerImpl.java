@@ -91,7 +91,6 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.RulesManager;
-import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -105,7 +104,6 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -195,8 +193,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private AccountManager _accountMgr;
     @Inject
     private ServiceOfferingDao _offeringDao;
-    @Inject
-    private DiskOfferingDao _diskOfferingDao;
     @Inject
     private NetworkOfferingDao _networkOfferingDao;
     @Inject
@@ -1254,13 +1250,15 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         //check if there is a default service offering configured
         String cpvmSrvcOffIdStr = configs.get(Config.ConsoleProxyServiceOffering.key());
         if (cpvmSrvcOffIdStr != null) {
-            DiskOffering diskOffering = _diskOfferingDao.findByUuid(cpvmSrvcOffIdStr);
-            if (diskOffering == null) {
-                diskOffering = _diskOfferingDao.findById(Long.parseLong(cpvmSrvcOffIdStr));
+            _serviceOffering = _offeringDao.findByUuid(cpvmSrvcOffIdStr);
+            if (_serviceOffering == null) {
+                try {
+                    _serviceOffering = _offeringDao.findById(Long.parseLong(cpvmSrvcOffIdStr));
+                } catch (NumberFormatException ex) {
+                    s_logger.debug("The system service offering specified by global config is not id, but uuid=" + cpvmSrvcOffIdStr + " for console proxy vm");
+                }
             }
-            if (diskOffering != null) {
-                _serviceOffering = _offeringDao.findById(diskOffering.getId());
-            } else {
+            if (_serviceOffering == null) {
                 s_logger.warn("Can't find system service offering specified by global config, uuid=" + cpvmSrvcOffIdStr + " for console proxy vm");
             }
         }

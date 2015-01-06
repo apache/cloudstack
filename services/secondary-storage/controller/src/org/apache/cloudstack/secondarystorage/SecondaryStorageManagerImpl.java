@@ -842,14 +842,20 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         //check if there is a default service offering configured
         String ssvmSrvcOffIdStr = configs.get(Config.SecondaryStorageServiceOffering.key());
         if (ssvmSrvcOffIdStr != null) {
-            Long ssvmSrvcOffId = Long.parseLong(ssvmSrvcOffIdStr);
-            _serviceOffering = _offeringDao.findById(ssvmSrvcOffId);
-            if (_serviceOffering == null || !_serviceOffering.getSystemUse()) {
-                String msg = "Can't find system service offering id=" + ssvmSrvcOffId + " for secondary storage vm";
-                s_logger.error(msg);
-                throw new ConfigurationException(msg);
+            _serviceOffering = _offeringDao.findByUuid(ssvmSrvcOffIdStr);
+            if (_serviceOffering == null) {
+                try {
+                    _serviceOffering = _offeringDao.findById(Long.parseLong(ssvmSrvcOffIdStr));
+                } catch (NumberFormatException ex) {
+                    s_logger.debug("The system service offering specified by global config is not id, but uuid=" + ssvmSrvcOffIdStr + " for secondary storage vm");
+                }
             }
-        } else {
+            if (_serviceOffering == null) {
+                s_logger.warn("Can't find system service offering specified by global config, uuid=" + ssvmSrvcOffIdStr + " for secondary storage vm");
+            }
+        }
+
+        if(_serviceOffering == null || !_serviceOffering.getSystemUse()){
             int ramSize = NumbersUtil.parseInt(_configDao.getValue("ssvm.ram.size"), DEFAULT_SS_VM_RAMSIZE);
             int cpuFreq = NumbersUtil.parseInt(_configDao.getValue("ssvm.cpu.mhz"), DEFAULT_SS_VM_CPUMHZ);
             _useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));

@@ -990,3 +990,5 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 
 INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'ManagementServer', 'xen.heartbeat.timeout' , '180', '120', 'Timeout value to send to the xenheartbeat script for guarding the self fencing functionality');
 
+UPDATE `cloud`.`configuration` SET description='Uuid of the service offering used by secondary storage; if NULL - system offering will be used' where name='secstorage.service.offering';
+

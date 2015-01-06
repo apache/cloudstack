@@ -1783,7 +1783,7 @@ public enum Config {
     ConsoleProxyServiceOffering(
             "Advanced",
             ManagementServer.class,
-            Long.class,
+            String.class,
             "consoleproxy.service.offering",
             null,
             "Uuid of the service offering used by console proxy; if NULL - system offering will be used",
@@ -1791,10 +1791,10 @@ public enum Config {
     SecondaryStorageServiceOffering(
             "Advanced",
             ManagementServer.class,
-            Long.class,
+            String.class,
             "secstorage.service.offering",
             null,
-            "Service offering used by secondary storage; if NULL - system offering will be used",
+            "Uuid of the service offering used by secondary storage; if NULL - system offering will be used",
             null),
     HaTag("Advanced", ManagementServer.class, String.class, "ha.tag", null, "HA tag defining that the host marked with this tag can be used for HA purposes only", null),
     ImplicitHostTags(
