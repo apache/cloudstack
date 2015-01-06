@@ -58,6 +58,7 @@ public class GetUploadParamsResponse extends BaseResponse {
     }
 
     public GetUploadParamsResponse() {
+        setObjectName("getuploadparams");
     }
 
     public void setId(UUID id) {
