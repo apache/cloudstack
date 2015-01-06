@@ -358,6 +358,18 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
                 nicResponse.setType(uvo.getGuestType().toString());
             }
             nicResponse.setIsDefault(uvo.isDefaultNic());
+            List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(uvo.getNicId());
+            if (secondaryIps != null) {
+                List<NicSecondaryIpResponse> ipList = new ArrayList<NicSecondaryIpResponse>();
+                for (NicSecondaryIpVO ip : secondaryIps) {
+                    NicSecondaryIpResponse ipRes = new NicSecondaryIpResponse();
+                    ipRes.setId(ip.getUuid());
+                    ipRes.setIpAddr(ip.getIp4Address());
+                    ipList.add(ipRes);
+                }
+                nicResponse.setSecondaryIps(ipList);
+            }
+
             nicResponse.setObjectName("nic");
             userVmData.addNic(nicResponse);
         }

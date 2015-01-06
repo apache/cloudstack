@@ -731,7 +731,7 @@ class TestTemplates(cloudstackTestCase):
 
         cls.testClient = super(TestTemplates, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -857,6 +857,8 @@ class TestTemplates(cloudstackTestCase):
         # 4. Check the size of snapshot and template
 
         # Create a snapshot from the ROOTDISK
+        if self.hypervisor.lower() in ['hyperv']:
+            self.skipTest("Snapshots feature is not supported on Hyper-V")
         snapshot = Snapshot.create(
                                    self.apiclient,
                                    self.volume.id,
@@ -922,6 +924,8 @@ class TestTemplates(cloudstackTestCase):
         # 5. Template should be created succesfully
 
         # Create a snapshot from the ROOTDISK
+        if self.hypervisor.lower() in ['hyperv']:
+            self.skipTest("Snapshots feature is not supported on Hyper-V")
         snapshot = Snapshot.create(
                                    self.apiclient,
                                    self.volume.id,

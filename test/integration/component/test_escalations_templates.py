@@ -16,14 +16,22 @@
 # under the License.
 
 # Import Local Modules
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.lib.utils import (cleanup_resources,
+                              validateList)
+from marvin.lib.base import (Account,
+                             Zone,
+                             Template,
+                             Hypervisor)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               list_os_types,
+                               get_builtin_template_info)
 from marvin.codes import PASS
 from nose.plugins.attrib import attr
 import time
+
 
 class TestTemplates(cloudstackTestCase):
 
@@ -36,23 +44,21 @@ class TestTemplates(cloudstackTestCase):
             cls.services = cls.testClient.getParsedTestDataConfig()
             # Get Domain, Zone, Template
             cls.domain = get_domain(cls.api_client)
-            cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+            cls.zone = get_zone(
+                cls.api_client,
+                cls.testClient.getZoneForTests())
             cls.template = get_template(
-                                cls.api_client,
-                                cls.zone.id,
-                                cls.services["ostype"]
-                                )
+                cls.api_client,
+                cls.zone.id,
+                cls.services["ostype"]
+            )
             cls.hypervisor = cls.testClient.getHypervisorInfo()
             cls.services['mode'] = cls.zone.networktype
-            cls.account = Account.create(
-                                cls.api_client,
-                                cls.services["account"],
-                                domainid=cls.domain.id
-                                )
-            # Getting authentication for user in newly created Account
-            cls.user = cls.account.user[0]
-            cls.userapiclient = cls.testClient.getUserApiClient(cls.user.username, cls.domain.name)
-            cls._cleanup.append(cls.account)
+
+            builtin_info = get_builtin_template_info(cls.api_client, cls.zone.id)
+            cls.services["privatetemplate"]["url"] = builtin_info[0]
+            cls.services["privatetemplate"]["hypervisor"] = builtin_info[1]
+            cls.services["privatetemplate"]["format"] = builtin_info[2]
         except Exception as e:
             cls.tearDownClass()
             raise Exception("Warning: Exception in setup : %s" % e)
@@ -62,6 +68,17 @@ class TestTemplates(cloudstackTestCase):
 
         self.apiClient = self.testClient.getApiClient()
         self.cleanup = []
+        self.account = Account.create(
+                self.apiClient,
+                self.services["account"],
+                domainid=self.domain.id
+        )
+        # Getting authentication for user in newly created Account
+        self.user = self.account.user[0]
+        self.userapiclient = self.testClient.getUserApiClient(
+            self.user.username,
+            self.domain.name)
+        self.cleanup.append(self.account)
 
     def tearDown(self):
         # Clean up, terminate the created resources
@@ -102,10 +119,9 @@ class TestTemplates(cloudstackTestCase):
                 return_flag = return_flag and True
             else:
                 return_flag = return_flag and False
-                self.debug("expected Value: %s, is not matching with actual value: %s" % (
-                                                                                          exp_val,
-                                                                                          act_val
-                                                                                          ))
+                self.debug(
+                    "expected Value: %s, is not matching with actual value: %s" %
+                    (exp_val, act_val))
         return return_flag
 
     @attr(tags=["advanced", "basic"], required_hardware="true")
@@ -132,105 +148,104 @@ class TestTemplates(cloudstackTestCase):
         """
         # Listing all the Templates for a User
         list_templates_before = Template.list(
-                                              self.userapiclient,
-                                              listall=self.services["listall"],
-                                              templatefilter=self.services["templatefilter"]
-                                              )
+            self.userapiclient,
+            listall=self.services["listall"],
+            templatefilter=self.services["templatefilter"]
+        )
         # Verifying that no Templates are listed
         self.assertIsNone(
-                          list_templates_before,
-                          "Templates listed for newly created User"
-                          )
-        self.services["templateregister"]["ostype"] = self.services["ostype"]
+            list_templates_before,
+            "Templates listed for newly created User"
+        )
+        self.services["privatetemplate"]["ostype"] = self.services["ostype"]
         # Creating pagesize + 1 number of Templates
         for i in range(0, (self.services["pagesize"] + 1)):
             template_created = Template.register(
-                                                 self.userapiclient,
-                                                 self.services["templateregister"],
-                                                 self.zone.id,
-                                                 hypervisor=self.hypervisor
-                                                 )
+                self.userapiclient,
+                self.services["privatetemplate"],
+                self.zone.id,
+                hypervisor=self.hypervisor
+            )
             self.assertIsNotNone(
-                                 template_created,
-                                 "Template creation failed"
-                                 )
-            if(i < self.services["pagesize"]):
-                self.cleanup.append(template_created)
+                template_created,
+                "Template creation failed"
+            )
 
         # Listing all the Templates for a User
         list_templates_after = Template.list(
-                                             self.userapiclient,
-                                             listall=self.services["listall"],
-                                             templatefilter=self.services["templatefilter"]
-                                             )
+            self.userapiclient,
+            listall=self.services["listall"],
+            templatefilter=self.services["templatefilter"]
+        )
         status = validateList(list_templates_after)
         self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Templates creation failed"
-                          )
+            PASS,
+            status[0],
+            "Templates creation failed"
+        )
         # Verifying that list size is pagesize + 1
         self.assertEquals(
-                          self.services["pagesize"] + 1,
-                          len(list_templates_after),
-                          "Failed to create pagesize + 1 number of Templates"
-                          )
+            self.services["pagesize"] + 1,
+            len(list_templates_after),
+            "Failed to create pagesize + 1 number of Templates"
+        )
         # Listing all the Templates in page 1
         list_templates_page1 = Template.list(
-                                             self.userapiclient,
-                                             listall=self.services["listall"],
-                                             templatefilter=self.services["templatefilter"],
-                                             page=1,
-                                             pagesize=self.services["pagesize"]
-                                             )
+            self.userapiclient,
+            listall=self.services["listall"],
+            templatefilter=self.services["templatefilter"],
+            page=1,
+            pagesize=self.services["pagesize"]
+        )
         status = validateList(list_templates_page1)
         self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Failed to list Templates in page 1"
-                          )
+            PASS,
+            status[0],
+            "Failed to list Templates in page 1"
+        )
         # Verifying the list size to be equal to pagesize
         self.assertEquals(
-                          self.services["pagesize"],
-                          len(list_templates_page1),
-                          "Size of Templates in page 1 is not matching"
-                          )
+            self.services["pagesize"],
+            len(list_templates_page1),
+            "Size of Templates in page 1 is not matching"
+        )
         # Listing all the Templates in page 2
         list_templates_page2 = Template.list(
-                                             self.userapiclient,
-                                             listall=self.services["listall"],
-                                             templatefilter=self.services["templatefilter"],
-                                             page=2,
-                                             pagesize=self.services["pagesize"]
-                                             )
+            self.userapiclient,
+            listall=self.services["listall"],
+            templatefilter=self.services["templatefilter"],
+            page=2,
+            pagesize=self.services["pagesize"]
+        )
         status = validateList(list_templates_page2)
         self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Failed to list Templates in page 2"
-                          )
+            PASS,
+            status[0],
+            "Failed to list Templates in page 2"
+        )
         # Verifying the list size to be equal to 1
         self.assertEquals(
-                          1,
-                          len(list_templates_page2),
-                          "Size of Templates in page 2 is not matching"
-                          )
-        # Verifying the state of the template to be ready. If not waiting for state to become ready
+            1,
+            len(list_templates_page2),
+            "Size of Templates in page 2 is not matching"
+        )
+        # Verifying the state of the template to be ready. If not waiting for
+        # state to become ready
         template_ready = False
         count = 0
         while template_ready is False:
             list_template = Template.list(
-                                          self.userapiclient,
-                                          id=template_created.id,
-                                          listall=self.services["listall"],
-                                          templatefilter=self.services["templatefilter"],
-                                          )
+                self.userapiclient,
+                id=template_created.id,
+                listall=self.services["listall"],
+                templatefilter=self.services["templatefilter"],
+            )
             status = validateList(list_template)
             self.assertEquals(
-                              PASS,
-                              status[0],
-                              "Failed to list Templates by Id"
-                              )
+                PASS,
+                status[0],
+                "Failed to list Templates by Id"
+            )
             if list_template[0].isready is True:
                 template_ready = True
             elif (str(list_template[0].status) == "Error"):
@@ -245,23 +260,23 @@ class TestTemplates(cloudstackTestCase):
 
         # Deleting the Template present in page 2
         Template.delete(
-                        template_created,
-                        self.userapiclient
-                        )
+            template_created,
+            self.userapiclient
+        )
         # Listing all the Templates in page 2 again
         list_templates_page2 = Template.list(
-                                             self.userapiclient,
-                                             listall=self.services["listall"],
-                                             templatefilter=self.services["templatefilter"],
-                                             page=2,
-                                             pagesize=self.services["pagesize"]
-                                             )
+            self.userapiclient,
+            listall=self.services["listall"],
+            templatefilter=self.services["templatefilter"],
+            page=2,
+            pagesize=self.services["pagesize"]
+        )
         # Verifying that there are no Templates listed
         self.assertIsNone(
-                          list_templates_page2,
-                          "Templates not deleted from page 2"
-                          )
-        del self.services["templateregister"]["ostype"]
+            list_templates_page2,
+            "Templates not deleted from page 2"
+        )
+        del self.services["privatetemplate"]["ostype"]
         return
 
     @attr(tags=["advanced", "basic"], required_hardware="true")
@@ -282,63 +297,63 @@ class TestTemplates(cloudstackTestCase):
         """
         # Listing all the Templates for a User
         list_templates_before = Template.list(
-                                              self.userapiclient,
-                                              listall=self.services["listall"],
-                                              templatefilter=self.services["templatefilter"]
-                                              )
+            self.userapiclient,
+            listall=self.services["listall"],
+            templatefilter=self.services["templatefilter"]
+        )
         # Verifying that no Templates are listed
         self.assertIsNone(
-                          list_templates_before,
-                          "Templates listed for newly created User"
-                          )
-        self.services["templateregister"]["ostype"] = self.services["ostype"]
-        self.services["templateregister"]["isextractable"] = True
+            list_templates_before,
+            "Templates listed for newly created User"
+        )
+        self.services["privatetemplate"]["ostype"] = self.services["ostype"]
+        self.services["privatetemplate"]["isextractable"] = True
         # Creating aTemplate
         template_created = Template.register(
-                                             self.userapiclient,
-                                             self.services["templateregister"],
-                                             self.zone.id,
-                                             hypervisor=self.hypervisor
-                                             )
+            self.userapiclient,
+            self.services["privatetemplate"],
+            self.zone.id,
+            hypervisor=self.hypervisor
+        )
         self.assertIsNotNone(
-                             template_created,
-                             "Template creation failed"
-                             )
-        self.cleanup.append(template_created)
+            template_created,
+            "Template creation failed"
+        )
         # Listing all the Templates for a User
         list_templates_after = Template.list(
-                                             self.userapiclient,
-                                             listall=self.services["listall"],
-                                             templatefilter=self.services["templatefilter"]
-                                             )
+            self.userapiclient,
+            listall=self.services["listall"],
+            templatefilter=self.services["templatefilter"]
+        )
         status = validateList(list_templates_after)
         self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Templates creation failed"
-                          )
+            PASS,
+            status[0],
+            "Templates creation failed"
+        )
         # Verifying that list size is 1
         self.assertEquals(
-                          1,
-                          len(list_templates_after),
-                          "Failed to create a Template"
-                          )
-        # Verifying the state of the template to be ready. If not waiting for state to become ready till time out
+            1,
+            len(list_templates_after),
+            "Failed to create a Template"
+        )
+        # Verifying the state of the template to be ready. If not waiting for
+        # state to become ready till time out
         template_ready = False
         count = 0
         while template_ready is False:
             list_template = Template.list(
-                                          self.userapiclient,
-                                          id=template_created.id,
-                                          listall=self.services["listall"],
-                                          templatefilter=self.services["templatefilter"],
-                                          )
+                self.userapiclient,
+                id=template_created.id,
+                listall=self.services["listall"],
+                templatefilter=self.services["templatefilter"],
+            )
             status = validateList(list_template)
             self.assertEquals(
-                              PASS,
-                              status[0],
-                              "Failed to list Templates by Id"
-                              )
+                PASS,
+                status[0],
+                "Failed to list Templates by Id"
+            )
             if list_template[0].isready is True:
                 template_ready = True
             elif (str(list_template[0].status) == "Error"):
@@ -353,32 +368,32 @@ class TestTemplates(cloudstackTestCase):
 
         # Downloading the Template name
         download_template = Template.extract(
-                                             self.userapiclient,
-                                             template_created.id,
-                                             mode="HTTP_DOWNLOAD",
-                                             zoneid=self.zone.id
-                                             )
+            self.userapiclient,
+            template_created.id,
+            mode="HTTP_DOWNLOAD",
+            zoneid=self.zone.id
+        )
         self.assertIsNotNone(
-                             download_template,
-                             "Download Template failed"
-                             )
-         # Verifying the details of downloaded template
+            download_template,
+            "Download Template failed"
+        )
+        # Verifying the details of downloaded template
         self.assertEquals(
-                          "DOWNLOAD_URL_CREATED",
-                          download_template.state,
-                          "Download URL not created for Template"
-                          )
+            "DOWNLOAD_URL_CREATED",
+            download_template.state,
+            "Download URL not created for Template"
+        )
         self.assertIsNotNone(
-                             download_template.url,
-                             "Download URL not created for Template"
-                             )
+            download_template.url,
+            "Download URL not created for Template"
+        )
         self.assertEquals(
-                          template_created.id,
-                          download_template.id,
-                          "Download Template details are not same as Template created"
-                          )
-        del self.services["templateregister"]["ostype"]
-        del self.services["templateregister"]["isextractable"]
+            template_created.id,
+            download_template.id,
+            "Download Template details are not same as Template created"
+        )
+        del self.services["privatetemplate"]["ostype"]
+        del self.services["privatetemplate"]["isextractable"]
         return
 
     @attr(tags=["advanced", "basic"], required_hardware="true")
@@ -407,62 +422,62 @@ class TestTemplates(cloudstackTestCase):
         """
         # Listing all the Templates for a User
         list_templates_before = Template.list(
-                                              self.userapiclient,
-                                              listall=self.services["listall"],
-                                              templatefilter=self.services["templatefilter"]
-                                              )
+            self.userapiclient,
+            listall=self.services["listall"],
+            templatefilter=self.services["templatefilter"]
+        )
         # Verifying that no Templates are listed
         self.assertIsNone(
-                          list_templates_before,
-                          "Templates listed for newly created User"
-                          )
-        self.services["templateregister"]["ostype"] = self.services["ostype"]
+            list_templates_before,
+            "Templates listed for newly created User"
+        )
+        self.services["privatetemplate"]["ostype"] = self.services["ostype"]
         # Creating aTemplate
         template_created = Template.register(
-                                             self.userapiclient,
-                                             self.services["templateregister"],
-                                             self.zone.id,
-                                             hypervisor=self.hypervisor
-                                             )
+            self.userapiclient,
+            self.services["privatetemplate"],
+            self.zone.id,
+            hypervisor=self.hypervisor
+        )
         self.assertIsNotNone(
-                             template_created,
-                             "Template creation failed"
-                             )
-        self.cleanup.append(template_created)
+            template_created,
+            "Template creation failed"
+        )
         # Listing all the Templates for a User
         list_templates_after = Template.list(
-                                             self.userapiclient,
-                                             listall=self.services["listall"],
-                                             templatefilter=self.services["templatefilter"]
-                                             )
+            self.userapiclient,
+            listall=self.services["listall"],
+            templatefilter=self.services["templatefilter"]
+        )
         status = validateList(list_templates_after)
         self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Templates creation failed"
-                          )
+            PASS,
+            status[0],
+            "Templates creation failed"
+        )
         # Verifying that list size is 1
         self.assertEquals(
-                          1,
-                          len(list_templates_after),
-                          "Failed to create a Template"
-                          )
-        # Verifying the state of the template to be ready. If not waiting for state to become ready till time out
+            1,
+            len(list_templates_after),
+            "Failed to create a Template"
+        )
+        # Verifying the state of the template to be ready. If not waiting for
+        # state to become ready till time out
         template_ready = False
         count = 0
         while template_ready is False:
             list_template = Template.list(
-                                          self.userapiclient,
-                                          id=template_created.id,
-                                          listall=self.services["listall"],
-                                          templatefilter=self.services["templatefilter"],
-                                          )
+                self.userapiclient,
+                id=template_created.id,
+                listall=self.services["listall"],
+                templatefilter=self.services["templatefilter"],
+            )
             status = validateList(list_template)
             self.assertEquals(
-                              PASS,
-                              status[0],
-                              "Failed to list Templates by Id"
-                              )
+                PASS,
+                status[0],
+                "Failed to list Templates by Id"
+            )
             if list_template[0].isready is True:
                 template_ready = True
             elif (str(list_template[0].status) == "Error"):
@@ -477,220 +492,220 @@ class TestTemplates(cloudstackTestCase):
 
         # Editing the Template name
         edited_template = Template.update(
-                                          template_created,
-                                          self.userapiclient,
-                                          name="NewTemplateName"
-                                          )
+            template_created,
+            self.userapiclient,
+            name="NewTemplateName"
+        )
         self.assertIsNotNone(
-                             edited_template,
-                             "Editing Template failed"
-                             )
-         # Verifying the details of edited template
+            edited_template,
+            "Editing Template failed"
+        )
+        # Verifying the details of edited template
         expected_dict = {
-                         "id":template_created.id,
-                         "name":"NewTemplateName",
-                         "displaytest":template_created.displaytext,
-                         "account":template_created.account,
-                         "domainid":template_created.domainid,
-                         "format":template_created.format,
-                         "ostypeid":template_created.ostypeid,
-                         "templatetype":template_created.templatetype,
-                         }
+            "id": template_created.id,
+            "name": "NewTemplateName",
+            "displaytest": template_created.displaytext,
+            "account": template_created.account,
+            "domainid": template_created.domainid,
+            "format": template_created.format,
+            "ostypeid": template_created.ostypeid,
+            "templatetype": template_created.templatetype,
+        }
         actual_dict = {
-                       "id":edited_template.id,
-                       "name":edited_template.name,
-                       "displaytest":edited_template.displaytext,
-                       "account":edited_template.account,
-                       "domainid":edited_template.domainid,
-                       "format":edited_template.format,
-                       "ostypeid":edited_template.ostypeid,
-                       "templatetype":edited_template.templatetype,
-                       }
+            "id": edited_template.id,
+            "name": edited_template.name,
+            "displaytest": edited_template.displaytext,
+            "account": edited_template.account,
+            "domainid": edited_template.domainid,
+            "format": edited_template.format,
+            "ostypeid": edited_template.ostypeid,
+            "templatetype": edited_template.templatetype,
+        }
         edit_template_status = self.__verify_values(
-                                                    expected_dict,
-                                                    actual_dict
-                                                    )
+            expected_dict,
+            actual_dict
+        )
         self.assertEqual(
-                         True,
-                         edit_template_status,
-                         "Edited Template details are not as expected"
-                         )
+            True,
+            edit_template_status,
+            "Edited Template details are not as expected"
+        )
         # Editing the Template displaytext
         edited_template = Template.update(
-                                          template_created,
-                                          self.userapiclient,
-                                          displaytext="TemplateDisplaytext"
-                                          )
+            template_created,
+            self.userapiclient,
+            displaytext="TemplateDisplaytext"
+        )
         self.assertIsNotNone(
-                             edited_template,
-                             "Editing Template failed"
-                             )
-         # Verifying the details of edited template
+            edited_template,
+            "Editing Template failed"
+        )
+        # Verifying the details of edited template
         expected_dict = {
-                         "id":template_created.id,
-                         "name":"NewTemplateName",
-                         "displaytest":"TemplateDisplaytext",
-                         "account":template_created.account,
-                         "domainid":template_created.domainid,
-                         "format":template_created.format,
-                         "ostypeid":template_created.ostypeid,
-                         "templatetype":template_created.templatetype,
-                         }
+            "id": template_created.id,
+            "name": "NewTemplateName",
+            "displaytest": "TemplateDisplaytext",
+            "account": template_created.account,
+            "domainid": template_created.domainid,
+            "format": template_created.format,
+            "ostypeid": template_created.ostypeid,
+            "templatetype": template_created.templatetype,
+        }
         actual_dict = {
-                       "id":edited_template.id,
-                       "name":edited_template.name,
-                       "displaytest":edited_template.displaytext,
-                       "account":edited_template.account,
-                       "domainid":edited_template.domainid,
-                       "format":edited_template.format,
-                       "ostypeid":edited_template.ostypeid,
-                       "templatetype":edited_template.templatetype,
-                       }
+            "id": edited_template.id,
+            "name": edited_template.name,
+            "displaytest": edited_template.displaytext,
+            "account": edited_template.account,
+            "domainid": edited_template.domainid,
+            "format": edited_template.format,
+            "ostypeid": edited_template.ostypeid,
+            "templatetype": edited_template.templatetype,
+        }
         edit_template_status = self.__verify_values(
-                                                    expected_dict,
-                                                    actual_dict
-                                                    )
+            expected_dict,
+            actual_dict
+        )
         self.assertEqual(
-                         True,
-                         edit_template_status,
-                         "Edited Template details are not as expected"
-                         )
+            True,
+            edit_template_status,
+            "Edited Template details are not as expected"
+        )
         # Editing the Template ostypeid
         ostype_list = list_os_types(self.userapiclient)
         status = validateList(ostype_list)
         self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Failed to list OS Types"
-                          )
+            PASS,
+            status[0],
+            "Failed to list OS Types"
+        )
         for i in range(0, len(ostype_list)):
             if ostype_list[i].id != template_created.ostypeid:
                 newostypeid = ostype_list[i].id
                 break
 
         edited_template = Template.update(
-                                          template_created,
-                                          self.userapiclient,
-                                          ostypeid=newostypeid
-                                          )
+            template_created,
+            self.userapiclient,
+            ostypeid=newostypeid
+        )
         self.assertIsNotNone(
-                             edited_template,
-                             "Editing Template failed"
-                             )
-         # Verifying the details of edited template
+            edited_template,
+            "Editing Template failed"
+        )
+        # Verifying the details of edited template
         expected_dict = {
-                         "id":template_created.id,
-                         "name":"NewTemplateName",
-                         "displaytest":"TemplateDisplaytext",
-                         "account":template_created.account,
-                         "domainid":template_created.domainid,
-                         "format":template_created.format,
-                         "ostypeid":newostypeid,
-                         "templatetype":template_created.templatetype,
-                         }
+            "id": template_created.id,
+            "name": "NewTemplateName",
+            "displaytest": "TemplateDisplaytext",
+            "account": template_created.account,
+            "domainid": template_created.domainid,
+            "format": template_created.format,
+            "ostypeid": newostypeid,
+            "templatetype": template_created.templatetype,
+        }
         actual_dict = {
-                       "id":edited_template.id,
-                       "name":edited_template.name,
-                       "displaytest":edited_template.displaytext,
-                       "account":edited_template.account,
-                       "domainid":edited_template.domainid,
-                       "format":edited_template.format,
-                       "ostypeid":edited_template.ostypeid,
-                       "templatetype":edited_template.templatetype,
-                       }
+            "id": edited_template.id,
+            "name": edited_template.name,
+            "displaytest": edited_template.displaytext,
+            "account": edited_template.account,
+            "domainid": edited_template.domainid,
+            "format": edited_template.format,
+            "ostypeid": edited_template.ostypeid,
+            "templatetype": edited_template.templatetype,
+        }
         edit_template_status = self.__verify_values(
-                                                    expected_dict,
-                                                    actual_dict
-                                                    )
+            expected_dict,
+            actual_dict
+        )
         self.assertEqual(
-                         True,
-                         edit_template_status,
-                         "Edited Template details are not as expected"
-                         )
+            True,
+            edit_template_status,
+            "Edited Template details are not as expected"
+        )
         # Editing the Template name, displaytext
         edited_template = Template.update(
-                                          template_created,
-                                          self.userapiclient,
-                                          name=template_created.name,
-                                          displaytext=template_created.displaytext
-                                          )
+            template_created,
+            self.userapiclient,
+            name=template_created.name,
+            displaytext=template_created.displaytext
+        )
         self.assertIsNotNone(
-                             edited_template,
-                             "Editing Template failed"
-                             )
-         # Verifying the details of edited template
+            edited_template,
+            "Editing Template failed"
+        )
+        # Verifying the details of edited template
         expected_dict = {
-                         "id":template_created.id,
-                         "name":template_created.name,
-                         "displaytest":template_created.displaytext,
-                         "account":template_created.account,
-                         "domainid":template_created.domainid,
-                         "format":template_created.format,
-                         "ostypeid":newostypeid,
-                         "templatetype":template_created.templatetype,
-                         }
+            "id": template_created.id,
+            "name": template_created.name,
+            "displaytest": template_created.displaytext,
+            "account": template_created.account,
+            "domainid": template_created.domainid,
+            "format": template_created.format,
+            "ostypeid": newostypeid,
+            "templatetype": template_created.templatetype,
+        }
         actual_dict = {
-                       "id":edited_template.id,
-                       "name":edited_template.name,
-                       "displaytest":edited_template.displaytext,
-                       "account":edited_template.account,
-                       "domainid":edited_template.domainid,
-                       "format":edited_template.format,
-                       "ostypeid":edited_template.ostypeid,
-                       "templatetype":edited_template.templatetype,
-                       }
+            "id": edited_template.id,
+            "name": edited_template.name,
+            "displaytest": edited_template.displaytext,
+            "account": edited_template.account,
+            "domainid": edited_template.domainid,
+            "format": edited_template.format,
+            "ostypeid": edited_template.ostypeid,
+            "templatetype": edited_template.templatetype,
+        }
         edit_template_status = self.__verify_values(
-                                                    expected_dict,
-                                                    actual_dict
-                                                    )
+            expected_dict,
+            actual_dict
+        )
         self.assertEqual(
-                         True,
-                         edit_template_status,
-                         "Edited Template details are not as expected"
-                         )
+            True,
+            edit_template_status,
+            "Edited Template details are not as expected"
+        )
         # Editing the Template name, displaytext, ostypeid
         edited_template = Template.update(
-                                          template_created,
-                                          self.userapiclient,
-                                          name="NewTemplateName",
-                                          displaytext="TemplateDisplaytext",
-                                          ostypeid=template_created.ostypeid
-                                          )
+            template_created,
+            self.userapiclient,
+            name="NewTemplateName",
+            displaytext="TemplateDisplaytext",
+            ostypeid=template_created.ostypeid
+        )
         self.assertIsNotNone(
-                             edited_template,
-                             "Editing Template failed"
-                             )
-         # Verifying the details of edited template
+            edited_template,
+            "Editing Template failed"
+        )
+        # Verifying the details of edited template
         expected_dict = {
-                         "id":template_created.id,
-                         "name":"NewTemplateName",
-                         "displaytest":"TemplateDisplaytext",
-                         "account":template_created.account,
-                         "domainid":template_created.domainid,
-                         "format":template_created.format,
-                         "ostypeid":template_created.ostypeid,
-                         "templatetype":template_created.templatetype,
-                         }
+            "id": template_created.id,
+            "name": "NewTemplateName",
+            "displaytest": "TemplateDisplaytext",
+            "account": template_created.account,
+            "domainid": template_created.domainid,
+            "format": template_created.format,
+            "ostypeid": template_created.ostypeid,
+            "templatetype": template_created.templatetype,
+        }
         actual_dict = {
-                       "id":edited_template.id,
-                       "name":edited_template.name,
-                       "displaytest":edited_template.displaytext,
-                       "account":edited_template.account,
-                       "domainid":edited_template.domainid,
-                       "format":edited_template.format,
-                       "ostypeid":edited_template.ostypeid,
-                       "templatetype":edited_template.templatetype,
-                       }
+            "id": edited_template.id,
+            "name": edited_template.name,
+            "displaytest": edited_template.displaytext,
+            "account": edited_template.account,
+            "domainid": edited_template.domainid,
+            "format": edited_template.format,
+            "ostypeid": edited_template.ostypeid,
+            "templatetype": edited_template.templatetype,
+        }
         edit_template_status = self.__verify_values(
-                                                    expected_dict,
-                                                    actual_dict
-                                                    )
+            expected_dict,
+            actual_dict
+        )
         self.assertEqual(
-                         True,
-                         edit_template_status,
-                         "Edited Template details are not as expected"
-                         )
-        del self.services["templateregister"]["ostype"]
+            True,
+            edit_template_status,
+            "Edited Template details are not as expected"
+        )
+        del self.services["privatetemplate"]["ostype"]
         return
 
     @attr(tags=["advanced", "basic"], required_hardware="true")
@@ -719,120 +734,122 @@ class TestTemplates(cloudstackTestCase):
         """
         # Listing Zones available for a user
         zones_list = Zone.list(
-                               self.userapiclient,
-                               available=True
-                               )
+            self.userapiclient,
+            available=True
+        )
         status = validateList(zones_list)
         self.assertEquals(
-                          PASS,
-                          status[0],
-                          "Failed to list Zones"
-                          )
+            PASS,
+            status[0],
+            "Failed to list Zones"
+        )
         if not len(zones_list) > 1:
             raise unittest.SkipTest("Not enough zones exist to copy template")
         else:
             # Listing all the Templates for a User in Zone 1
             list_templates_zone1 = Template.list(
-                                                 self.userapiclient,
-                                                 listall=self.services["listall"],
-                                                 templatefilter=self.services["templatefilter"],
-                                                 zoneid=zones_list[0].id
-                                                 )
+                self.userapiclient,
+                listall=self.services["listall"],
+                templatefilter=self.services["templatefilter"],
+                zoneid=zones_list[0].id
+            )
             # Verifying that no Templates are listed
             self.assertIsNone(
-                              list_templates_zone1,
-                              "Templates listed for newly created User in Zone1"
-                              )
+                list_templates_zone1,
+                "Templates listed for newly created User in Zone1"
+            )
             # Listing all the Templates for a User in Zone 2
             list_templates_zone2 = Template.list(
-                                                 self.userapiclient,
-                                                 listall=self.services["listall"],
-                                                 templatefilter=self.services["templatefilter"],
-                                                 zoneid=zones_list[1].id
-                                                 )
+                self.userapiclient,
+                listall=self.services["listall"],
+                templatefilter=self.services["templatefilter"],
+                zoneid=zones_list[1].id
+            )
             # Verifying that no Templates are listed
             self.assertIsNone(
-                              list_templates_zone2,
-                              "Templates listed for newly created User in Zone2"
-                              )
-            self.services["templateregister"]["ostype"] = self.services["ostype"]
+                list_templates_zone2,
+                "Templates listed for newly created User in Zone2"
+            )
+            self.services["privatetemplate"][
+                "ostype"] = self.services["ostype"]
             # Listing Hypervisors in Zone 1
             hypervisor_list = Hypervisor.list(
-                                              self.apiClient,
-                                              zoneid=zones_list[0].id
-                                              )
+                self.apiClient,
+                zoneid=zones_list[0].id
+            )
             status = validateList(zones_list)
             self.assertEquals(
-                              PASS,
-                              status[0],
-                              "Failed to list Hypervisors in Zone 1"
-                              )
+                PASS,
+                status[0],
+                "Failed to list Hypervisors in Zone 1"
+            )
             # Creating aTemplate in Zone 1
             template_created = Template.register(
-                                                 self.userapiclient,
-                                                 self.services["templateregister"],
-                                                 zones_list[0].id,
-                                                 hypervisor=hypervisor_list[0].name
-                                                 )
+                self.userapiclient,
+                self.services["privatetemplate"],
+                zones_list[0].id,
+                hypervisor=hypervisor_list[0].name
+            )
             self.assertIsNotNone(
-                                 template_created,
-                                 "Template creation failed"
-                                 )
-            self.cleanup.append(template_created)
+                template_created,
+                "Template creation failed"
+            )
             # Listing all the Templates for a User in Zone 1
             list_templates_zone1 = Template.list(
-                                                 self.userapiclient,
-                                                 listall=self.services["listall"],
-                                                 templatefilter=self.services["templatefilter"],
-                                                 zoneid=zones_list[0].id
-                                                 )
+                self.userapiclient,
+                listall=self.services["listall"],
+                templatefilter=self.services["templatefilter"],
+                zoneid=zones_list[0].id
+            )
             status = validateList(list_templates_zone1)
             self.assertEquals(
-                              PASS,
-                              status[0],
-                              "Templates creation failed in Zone1"
-                              )
+                PASS,
+                status[0],
+                "Templates creation failed in Zone1"
+            )
             # Verifying that list size is 1
             self.assertEquals(
-                              1,
-                              len(list_templates_zone1),
-                              "Failed to create a Template"
-                              )
+                1,
+                len(list_templates_zone1),
+                "Failed to create a Template"
+            )
             # Listing all the Templates for a User in Zone 2
             list_templates_zone2 = Template.list(
-                                                 self.userapiclient,
-                                                 listall=self.services["listall"],
-                                                 templatefilter=self.services["templatefilter"],
-                                                 zoneid=zones_list[1].id
-                                                 )
+                self.userapiclient,
+                listall=self.services["listall"],
+                templatefilter=self.services["templatefilter"],
+                zoneid=zones_list[1].id
+            )
             # Verifying that no Templates are listed
             self.assertIsNone(
-                              list_templates_zone2,
-                              "Templates listed for newly created User in Zone2"
-                              )
-            # Verifying the state of the template to be ready. If not waiting for state to become ready till time out
+                list_templates_zone2,
+                "Templates listed for newly created User in Zone2"
+            )
+            # Verifying the state of the template to be ready. If not waiting
+            # for state to become ready till time out
             template_ready = False
             count = 0
             while template_ready is False:
                 list_template = Template.list(
-                                              self.userapiclient,
-                                              id=template_created.id,
-                                              listall=self.services["listall"],
-                                              templatefilter=self.services["templatefilter"],
-                                              )
+                    self.userapiclient,
+                    id=template_created.id,
+                    listall=self.services["listall"],
+                    templatefilter=self.services["templatefilter"],
+                )
                 status = validateList(list_template)
                 self.assertEquals(
-                                  PASS,
-                                  status[0],
-                                  "Failed to list Templates by Id"
-                                  )
+                    PASS,
+                    status[0],
+                    "Failed to list Templates by Id"
+                )
                 if list_template[0].isready is True:
                     template_ready = True
                 elif (str(list_template[0].status) == "Error"):
                     self.fail("Created Template is in Errored state")
                     break
                 elif count > 10:
-                    self.fail("Timed out before Template came into ready state")
+                    self.fail(
+                        "Timed out before Template came into ready state")
                     break
                 else:
                     time.sleep(self.services["sleep"])
@@ -840,61 +857,61 @@ class TestTemplates(cloudstackTestCase):
 
             # Copying the Template from Zone1 to Zone2
             copied_template = template_created.copy(
-                                            self.userapiclient,
-                                            sourcezoneid=template_created.zoneid,
-                                            destzoneid=zones_list[1].id
-                                            )
+                self.userapiclient,
+                sourcezoneid=template_created.zoneid,
+                destzoneid=zones_list[1].id
+            )
             self.assertIsNotNone(
-                                 copied_template,
-                                 "Copying Template from Zone1 to Zone2 failed"
-                                 )
+                copied_template,
+                "Copying Template from Zone1 to Zone2 failed"
+            )
             # Listing all the Templates for a User in Zone 1
             list_templates_zone1 = Template.list(
-                                                 self.userapiclient,
-                                                 listall=self.services["listall"],
-                                                 templatefilter=self.services["templatefilter"],
-                                                 zoneid=zones_list[0].id
-                                                 )
+                self.userapiclient,
+                listall=self.services["listall"],
+                templatefilter=self.services["templatefilter"],
+                zoneid=zones_list[0].id
+            )
             status = validateList(list_templates_zone1)
             self.assertEquals(
-                              PASS,
-                              status[0],
-                              "Templates creation failed in Zone1"
-                              )
+                PASS,
+                status[0],
+                "Templates creation failed in Zone1"
+            )
             # Verifying that list size is 1
             self.assertEquals(
-                              1,
-                              len(list_templates_zone1),
-                              "Failed to create a Template"
-                              )
+                1,
+                len(list_templates_zone1),
+                "Failed to create a Template"
+            )
             # Listing all the Templates for a User in Zone 2
             list_templates_zone2 = Template.list(
-                                                 self.userapiclient,
-                                                 listall=self.services["listall"],
-                                                 templatefilter=self.services["templatefilter"],
-                                                 zoneid=zones_list[1].id
-                                                 )
+                self.userapiclient,
+                listall=self.services["listall"],
+                templatefilter=self.services["templatefilter"],
+                zoneid=zones_list[1].id
+            )
             status = validateList(list_templates_zone2)
             self.assertEquals(
-                              PASS,
-                              status[0],
-                              "Template failed to copy into Zone2"
-                              )
+                PASS,
+                status[0],
+                "Template failed to copy into Zone2"
+            )
             # Verifying that list size is 1
             self.assertEquals(
-                              1,
-                              len(list_templates_zone2),
-                              "Template failed to copy into Zone2"
-                              )
+                1,
+                len(list_templates_zone2),
+                "Template failed to copy into Zone2"
+            )
             self.assertNotEquals(
-                                 "Connection refused",
-                                 list_templates_zone2[0].status,
-                                 "Failed to copy Template"
-                                 )
+                "Connection refused",
+                list_templates_zone2[0].status,
+                "Failed to copy Template"
+            )
             self.assertEquals(
-                              True,
-                              list_templates_zone2[0].isready,
-                              "Failed to copy Template"
-                              )
-        del self.services["templateregister"]["ostype"]
+                True,
+                list_templates_zone2[0].isready,
+                "Failed to copy Template"
+            )
+        del self.services["privatetemplate"]["ostype"]
         return

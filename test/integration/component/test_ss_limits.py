@@ -58,6 +58,7 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         cloudstackTestClient = super(TestSecondaryStorageLimits,
                                cls).getClsTestClient()
         cls.api_client = cloudstackTestClient.getApiClient()
+        cls.hypervisor = cloudstackTestClient.getHypervisorInfo()
         # Fill services from the external config file
         cls.services = cloudstackTestClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
@@ -126,7 +127,7 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         except Exception as e:
             return [FAIL, e]
         return [PASS, None]
-
+ 
     @data(ROOT_DOMAIN_ADMIN, CHILD_DOMAIN_ADMIN)
     @attr(tags = ["advanced"], required_hardware="true")
     def test_01_register_template(self, value):
@@ -143,24 +144,28 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         response = self.setupAccount(value)
         self.assertEqual(response[0], PASS, response[1])
 
+        apiclient = self.testClient.getUserApiClient(
+                                UserName=self.account.name,
+                                DomainName=self.account.domain)
+
         builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
         self.services["template_2"]["url"] = builtin_info[0]
         self.services["template_2"]["hypervisor"] = builtin_info[1]
         self.services["template_2"]["format"] = builtin_info[2]
 
         try:
-            template = Template.register(self.apiclient,
+            template = Template.register(apiclient,
                                      self.services["template_2"],
                                      zoneid=self.zone.id,
                                      account=self.account.name,
                                      domainid=self.account.domainid,
                                      hypervisor=self.hypervisor)
 
-            template.download(self.apiclient)
+            template.download(apiclient)
         except Exception as e:
             self.fail("Failed to register template: %s" % e)
 
-        templates = Template.list(self.apiclient,
+        templates = Template.list(apiclient,
                                       templatefilter=\
                                       self.services["template_2"]["templatefilter"],
                                       id=template.id)
@@ -170,19 +175,19 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         templateSize = (templates[0].size / (1024**3))
         expectedCount = templateSize
         response = matchResourceCount(
-                        self.apiclient, expectedCount,
+                        apiclient, expectedCount,
                         RESOURCE_SECONDARY_STORAGE,
                         accountid=self.account.id)
         self.assertEqual(response[0], PASS, response[1])
 
         try:
-            template.delete(self.apiclient)
+            template.delete(apiclient)
         except Exception as e:
             self.fail("Failed to delete template: %s" % e)
 
         expectedCount = 0
         response = matchResourceCount(
-                        self.apiclient, expectedCount,
+                        apiclient, expectedCount,
                         RESOURCE_SECONDARY_STORAGE,
                         accountid=self.account.id)
         self.assertEqual(response[0], PASS, response[1])
@@ -200,6 +205,9 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         4. Create template from the snapshot
         5. Verify that the secondary storage count of the account equals
            the size of the template"""
+
+        if self.hypervisor.lower() in ['hyperv']:
+            self.skipTest("Snapshots feature is not supported on Hyper-V")
 
         response = self.setupAccount(value)
         self.assertEqual(response[0], PASS, response[1])

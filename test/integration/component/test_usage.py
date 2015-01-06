@@ -16,7 +16,7 @@
 # under the License.
 """ P1 tests for Snapshots
 """
-#Import Local Modules
+# Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.cloudstackAPI import deleteVolume
@@ -39,84 +39,86 @@ from marvin.lib.common import (get_zone,
                                get_domain,
                                get_template)
 
+
 class Services:
+
     """Test Snapshots Services
     """
 
     def __init__(self):
         self.services = {
-                        "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    # Random characters are appended for unique
-                                    # username
-                                    "password": "password",
-                         },
-                         "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 128, # In MBs
-                        },
-                        "disk_offering": {
-                                    "displaytext": "Small",
-                                    "name": "Small",
-                                    "disksize": 1
-                        },
-                        "volume": {
-                                   "diskname": "TestDiskServ",
-                                   },
-                        "server": {
-                                    "displayname": "TestVM",
-                                    "username": "root",
-                                    "password": "password",
-                                    "ssh_port": 22,
-                                    "hypervisor": 'XenServer',
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "protocol": 'TCP',
-                                },
-                        "templates": {
-                                    "displaytext": 'Template',
-                                    "name": 'Template',
-                                    "ostype": 'CentOS 5.3 (64-bit)',
-                                    "templatefilter": 'self',
-                                    "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.qcow2.bz2"
-                                },
-                        "iso": {
-                                  "displaytext": "Test ISO",
-                                  "name": "Test ISO",
-                                  "url": "http://people.apache.org/~tsp/dummy.iso",
-                                  # Source URL where ISO is located
-                                  "isextractable": True,
-                                  "isfeatured": True,
-                                  "ispublic": True,
-                                  "ostype": 'CentOS 5.3 (64-bit)',
-                                },
-                        "lbrule": {
-                                   "name": "SSH",
-                                   "alg": "roundrobin",
-                                   # Algorithm used for load balancing
-                                   "privateport": 22,
-                                   "publicport": 2222,
-                                },
-                        "natrule": {
-                                   "privateport": 22,
-                                   "publicport": 22,
-                                   "protocol": "TCP"
-                                },
-                        "vpn_user": {
-                                   "username": "test",
-                                   "password": "test",
-                                },
-                        "ostype": 'CentOS 5.3 (64-bit)',
-                        # Cent OS 5.3 (64 bit)
-                        "sleep": 60,
-                        "timeout": 10,
-                    }
+            "account": {
+                "email": "test@test.com",
+                "firstname": "Test",
+                "lastname": "User",
+                "username": "test",
+                # Random characters are appended for unique
+                # username
+                "password": "password",
+            },
+            "service_offering": {
+                "name": "Tiny Instance",
+                "displaytext": "Tiny Instance",
+                "cpunumber": 1,
+                "cpuspeed": 100,  # in MHz
+                "memory": 128,  # In MBs
+            },
+            "disk_offering": {
+                "displaytext": "Small",
+                "name": "Small",
+                "disksize": 1
+            },
+            "volume": {
+                "diskname": "TestDiskServ",
+            },
+            "server": {
+                "displayname": "TestVM",
+                "username": "root",
+                "password": "password",
+                "ssh_port": 22,
+                "hypervisor": 'XenServer',
+                "privateport": 22,
+                "publicport": 22,
+                "protocol": 'TCP',
+            },
+            "templates": {
+                "displaytext": 'Template',
+                "name": 'Template',
+                "ostype": 'CentOS 5.3 (64-bit)',
+                "templatefilter": 'self',
+                "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.qcow2.bz2"
+            },
+            "iso": {
+                "displaytext": "Test ISO",
+                "name": "Test ISO",
+                "url": "http://people.apache.org/~tsp/dummy.iso",
+                # Source URL where ISO is located
+                "isextractable": True,
+                "isfeatured": True,
+                "ispublic": True,
+                "ostype": 'CentOS 5.3 (64-bit)',
+            },
+            "lbrule": {
+                "name": "SSH",
+                "alg": "roundrobin",
+                # Algorithm used for load balancing
+                "privateport": 22,
+                "publicport": 2222,
+            },
+            "natrule": {
+                "privateport": 22,
+                "publicport": 22,
+                "protocol": "TCP"
+            },
+            "vpn_user": {
+                "username": "test",
+                "password": "test",
+            },
+            "ostype": 'CentOS 5.3 (64-bit)',
+            # Cent OS 5.3 (64 bit)
+            "sleep": 60,
+            "timeout": 10,
+        }
 
 
 class TestVmUsage(cloudstackTestCase):
@@ -133,45 +135,45 @@ class TestVmUsage(cloudstackTestCase):
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
+            cls.api_client,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
         cls.services["server"]["zoneid"] = cls.zone.id
 
         cls.services["template"] = template.id
 
         # Create Account, VMs etc
         cls.account = Account.create(
-                            cls.api_client,
-                            cls.services["account"],
-                            domainid=cls.domain.id
-                            )
+            cls.api_client,
+            cls.services["account"],
+            domainid=cls.domain.id
+        )
 
         cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
+            cls.api_client,
+            cls.services["service_offering"]
+        )
         cls.virtual_machine = VirtualMachine.create(
-                                cls.api_client,
-                                cls.services["server"],
-                                templateid=template.id,
-                                accountid=cls.account.name,
-                                domainid=cls.account.domainid,
-                                serviceofferingid=cls.service_offering.id
-                                )
+            cls.api_client,
+            cls.services["server"],
+            templateid=template.id,
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.service_offering.id
+        )
         cls._cleanup = [
-                        cls.service_offering,
-                        cls.account,
-                        ]
+            cls.service_offering,
+            cls.account,
+        ]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
-            #Cleanup resources used
+            # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -185,13 +187,21 @@ class TestVmUsage(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created instance, volumes and snapshots
+            # Clean up, terminate the created instance, volumes and snapshots
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "sg",
+            "eip",
+            "advancedns",
+            "simulator"],
+        required_hardware="false")
     def test_01_vm_usage(self):
         """Test Create/Destroy VM and verify usage calculation
         """
@@ -219,94 +229,94 @@ class TestVmUsage(cloudstackTestCase):
             self.fail("Failed to destroy VM: %s" % e)
 
         # Fetch account ID from account_uuid
-        self.debug("select id from account where uuid = '%s';" \
-                        % self.account.id)
+        self.debug("select id from account where uuid = '%s';"
+                   % self.account.id)
 
         qresultset = self.dbclient.execute(
-                        "select id from account where uuid = '%s';" \
-                        % self.account.id
-                        )
+            "select id from account where uuid = '%s';"
+            % self.account.id
+        )
         self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
 
         self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
         qresult = qresultset[0]
 
         account_id = qresult[0]
-        self.debug("select type from usage_event where account_id = '%s';" \
-                        % account_id)
+        self.debug("select type from usage_event where account_id = '%s';"
+                   % account_id)
 
         qresultset = self.dbclient.execute(
-                        "select type from usage_event where account_id = '%s';" \
-                        % account_id
-                        )
+            "select type from usage_event where account_id = '%s';"
+            % account_id
+        )
         self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
 
         self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
         qresult = str(qresultset)
         self.debug("Query result: %s" % qresult)
         # Check if VM.CREATE, VM.DESTROY events present in usage_event table
         self.assertEqual(
-                            qresult.count('VM.START'),
-                            1,
-                            "Check VM.START event in events table"
-                        )
+            qresult.count('VM.START'),
+            1,
+            "Check VM.START event in events table"
+        )
 
         self.assertEqual(
-                            qresult.count('NETWORK.OFFERING.ASSIGN'),
-                            1,
-                            "Check NETWORK.OFFERING.ASSIGN in events table"
-                        )
+            qresult.count('NETWORK.OFFERING.ASSIGN'),
+            1,
+            "Check NETWORK.OFFERING.ASSIGN in events table"
+        )
         self.assertEqual(
-                            qresult.count('VM.CREATE'),
-                            1,
-                            "Check VM.CREATE in list events"
-                        )
+            qresult.count('VM.CREATE'),
+            1,
+            "Check VM.CREATE in list events"
+        )
 
         self.assertEqual(
-                            qresult.count('VOLUME.CREATE'),
-                            1,
-                            "Check VOLUME.CREATE in events table"
-                        )
+            qresult.count('VOLUME.CREATE'),
+            1,
+            "Check VOLUME.CREATE in events table"
+        )
 
         self.assertEqual(
-                            qresult.count('VM.STOP'),
-                            1,
-                            "Check VM.STOP in events table"
-                        )
+            qresult.count('VM.STOP'),
+            1,
+            "Check VM.STOP in events table"
+        )
 
         self.assertEqual(
-                            qresult.count('NETWORK.OFFERING.REMOVE'),
-                            1,
-                            "Check NETWORK.OFFERING.REMOVE in list events"
-                        )
+            qresult.count('NETWORK.OFFERING.REMOVE'),
+            1,
+            "Check NETWORK.OFFERING.REMOVE in list events"
+        )
 
         self.assertEqual(
-                            qresult.count('VM.DESTROY'),
-                            1,
-                            "Check VM.DESTROY in events table"
-                        )
+            qresult.count('VM.DESTROY'),
+            1,
+            "Check VM.DESTROY in events table"
+        )
 
         self.assertEqual(
-                            qresult.count('VOLUME.DELETE'),
-                            1,
-                            "Check VOLUME.DELETE in events table"
-                        )
+            qresult.count('VOLUME.DELETE'),
+            1,
+            "Check VOLUME.DELETE in events table"
+        )
         return
 
 
@@ -324,53 +334,53 @@ class TestPublicIPUsage(cloudstackTestCase):
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
+            cls.api_client,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
         cls.services["server"]["zoneid"] = cls.zone.id
 
         cls.services["template"] = template.id
 
         # Create VMs, Assign Public IP etc
         cls.account = Account.create(
-                            cls.api_client,
-                            cls.services["account"],
-                            domainid=cls.domain.id
-                            )
+            cls.api_client,
+            cls.services["account"],
+            domainid=cls.domain.id
+        )
 
         cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
+            cls.api_client,
+            cls.services["service_offering"]
+        )
         cls.virtual_machine = VirtualMachine.create(
-                                cls.api_client,
-                                cls.services["server"],
-                                templateid=template.id,
-                                accountid=cls.account.name,
-                                domainid=cls.account.domainid,
-                                serviceofferingid=cls.service_offering.id
-                                )
+            cls.api_client,
+            cls.services["server"],
+            templateid=template.id,
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.service_offering.id
+        )
 
         cls.public_ip = PublicIPAddress.create(
-                                           cls.api_client,
-                                           accountid=cls.virtual_machine.account,
-                                           zoneid=cls.virtual_machine.zoneid,
-                                           domainid=cls.virtual_machine.domainid,
-                                           services=cls.services["server"]
-                                           )
+            cls.api_client,
+            accountid=cls.virtual_machine.account,
+            zoneid=cls.virtual_machine.zoneid,
+            domainid=cls.virtual_machine.domainid,
+            services=cls.services["server"]
+        )
         cls._cleanup = [
-                        cls.service_offering,
-                        cls.account,
-                        ]
+            cls.service_offering,
+            cls.account,
+        ]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
-            #Cleanup resources used
+            # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -384,13 +394,19 @@ class TestPublicIPUsage(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created instance
+            # Clean up, terminate the created instance
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "simulator"], required_hardware="false")
+    @attr(
+        tags=[
+            "advanced",
+            "eip",
+            "advancedns",
+            "simulator"],
+        required_hardware="false")
     def test_01_public_ip_usage(self):
         """Test Assign new IP and verify usage calculation
         """
@@ -402,65 +418,65 @@ class TestPublicIPUsage(cloudstackTestCase):
         # 3. Delete the newly created account
 
         self.debug("Deleting public IP: %s" %
-                                self.public_ip.ipaddress)
+                   self.public_ip.ipaddress)
 
         # Release one of the IP
         self.public_ip.delete(self.apiclient)
 
         # Fetch account ID from account_uuid
-        self.debug("select id from account where uuid = '%s';" \
-                        % self.account.id)
+        self.debug("select id from account where uuid = '%s';"
+                   % self.account.id)
 
         qresultset = self.dbclient.execute(
-                        "select id from account where uuid = '%s';" \
-                        % self.account.id
-                        )
+            "select id from account where uuid = '%s';"
+            % self.account.id
+        )
         self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
         self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
         qresult = qresultset[0]
 
         account_id = qresult[0]
-        self.debug("select type from usage_event where account_id = '%s';" \
-                        % account_id)
+        self.debug("select type from usage_event where account_id = '%s';"
+                   % account_id)
 
         qresultset = self.dbclient.execute(
-                        "select type from usage_event where account_id = '%s';" \
-                        % account_id
-                        )
+            "select type from usage_event where account_id = '%s';"
+            % account_id
+        )
 
         self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
         self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
 
         qresult = str(qresultset)
         # Check if NET.IPASSIGN, NET.IPRELEASE events present in usage_event
         # table
         self.assertEqual(
-                            qresult.count('NET.IPASSIGN') > 0,
-                            True,
-                            "Check NET.IPASSIGN event in events table"
-                        )
+            qresult.count('NET.IPASSIGN') > 0,
+            True,
+            "Check NET.IPASSIGN event in events table"
+        )
 
         self.assertEqual(
-                            qresult.count('NET.IPRELEASE') > 0,
-                            True,
-                            "Check NET.IPRELEASE in events table"
-                        )
+            qresult.count('NET.IPRELEASE') > 0,
+            True,
+            "Check NET.IPRELEASE in events table"
+        )
         return
 
 
@@ -477,50 +493,50 @@ class TestVolumeUsage(cloudstackTestCase):
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.disk_offering = DiskOffering.create(
-                                    cls.api_client,
-                                    cls.services["disk_offering"]
-                                    )
+            cls.api_client,
+            cls.services["disk_offering"]
+        )
         template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
+            cls.api_client,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
         cls.services["server"]["zoneid"] = cls.zone.id
         cls.services["server"]["diskoffering"] = cls.disk_offering.id
         cls.services["template"] = template.id
 
         # Create Account, VMs etc
         cls.account = Account.create(
-                            cls.api_client,
-                            cls.services["account"],
-                            domainid=cls.domain.id
-                            )
+            cls.api_client,
+            cls.services["account"],
+            domainid=cls.domain.id
+        )
 
         cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
+            cls.api_client,
+            cls.services["service_offering"]
+        )
         cls.virtual_machine = VirtualMachine.create(
-                                cls.api_client,
-                                cls.services["server"],
-                                templateid=template.id,
-                                accountid=cls.account.name,
-                                domainid=cls.account.domainid,
-                                serviceofferingid=cls.service_offering.id
-                                )
+            cls.api_client,
+            cls.services["server"],
+            templateid=template.id,
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.service_offering.id
+        )
         cls._cleanup = [
-                        cls.service_offering,
-                        cls.disk_offering,
-                        cls.account,
-                        ]
+            cls.service_offering,
+            cls.disk_offering,
+            cls.account,
+        ]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
-            #Cleanup resources used
+            # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -534,13 +550,21 @@ class TestVolumeUsage(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created instance, volumes
+            # Clean up, terminate the created instance, volumes
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "sg",
+            "eip",
+            "advancedns",
+            "simulator"],
+        required_hardware="false")
     def test_01_volume_usage(self):
         """Test Create/delete a volume and verify correct usage is recorded
         """
@@ -560,22 +584,22 @@ class TestVolumeUsage(cloudstackTestCase):
             self.fail("Failed to stop instance: %s" % e)
 
         volume_response = Volume.list(
-                                self.apiclient,
-                                virtualmachineid=self.virtual_machine.id,
-                                type='DATADISK',
-                                listall=True)
+            self.apiclient,
+            virtualmachineid=self.virtual_machine.id,
+            type='DATADISK',
+            listall=True)
         self.assertEqual(
-                         isinstance(volume_response, list),
-                         True,
-                         "Check for valid list volumes response"
-                         )
+            isinstance(volume_response, list),
+            True,
+            "Check for valid list volumes response"
+        )
         data_volume = volume_response[0]
 
         # Detach data Disk
         self.debug("Detaching volume ID: %s VM with ID: %s" % (
-                                                 data_volume.id,
-                                                 self.virtual_machine.id
-                                                 ))
+            data_volume.id,
+            self.virtual_machine.id
+        ))
         self.virtual_machine.detach_volume(self.apiclient, data_volume)
 
         # Delete Data disk
@@ -585,60 +609,60 @@ class TestVolumeUsage(cloudstackTestCase):
         self.apiclient.deleteVolume(cmd)
 
         # Fetch account ID from account_uuid
-        self.debug("select id from account where uuid = '%s';" \
-                        % self.account.id)
+        self.debug("select id from account where uuid = '%s';"
+                   % self.account.id)
 
         qresultset = self.dbclient.execute(
-                        "select id from account where uuid = '%s';" \
-                        % self.account.id
-                        )
+            "select id from account where uuid = '%s';"
+            % self.account.id
+        )
         self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
 
         self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
         qresult = qresultset[0]
 
         account_id = qresult[0]
-        self.debug("select type from usage_event where account_id = '%s';" \
-                        % account_id)
+        self.debug("select type from usage_event where account_id = '%s';"
+                   % account_id)
 
         qresultset = self.dbclient.execute(
-                        "select type from usage_event where account_id = '%s';" \
-                        % account_id
-                        )
+            "select type from usage_event where account_id = '%s';"
+            % account_id
+        )
 
         self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
         self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
 
         qresult = str(qresultset)
         self.debug("Query result: %s" % qresult)
         # Check VOLUME.CREATE, VOLUME.DESTROY events in cloud.usage_event table
         self.assertEqual(
-                            qresult.count('VOLUME.CREATE'),
-                            2,
-                            "Check VOLUME.CREATE event in events table"
-                        )
+            qresult.count('VOLUME.CREATE'),
+            2,
+            "Check VOLUME.CREATE event in events table"
+        )
 
         self.assertEqual(
-                            qresult.count('VOLUME.DELETE'),
-                            1,
-                            "Check VOLUME.DELETE in events table"
-                        )
+            qresult.count('VOLUME.DELETE'),
+            1,
+            "Check VOLUME.DELETE in events table"
+        )
         return
 
 
@@ -656,48 +680,48 @@ class TestTemplateUsage(cloudstackTestCase):
         cls.services['mode'] = cls.zone.networktype
         cls.services["server"]["zoneid"] = cls.zone.id
         template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
+            cls.api_client,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
         cls.services["server"]["zoneid"] = cls.zone.id
         cls._cleanup = []
         try:
             cls.account = Account.create(
-                            cls.api_client,
-                            cls.services["account"],
-                            domainid=cls.domain.id
-                            )
+                cls.api_client,
+                cls.services["account"],
+                domainid=cls.domain.id
+            )
             cls._cleanup.append(cls.account)
             cls.userapiclient = cls.testClient.getUserApiClient(
-                                    UserName=cls.account.name,
-                                    DomainName=cls.account.domain)
+                UserName=cls.account.name,
+                DomainName=cls.account.domain)
             cls.services["account"] = cls.account.name
 
             cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
+                cls.api_client,
+                cls.services["service_offering"]
+            )
             cls._cleanup.append(cls.service_offering)
-            #create virtual machine
+            # create virtual machine
             cls.virtual_machine = VirtualMachine.create(
-                                    cls.api_client,
-                                    cls.services["server"],
-                                    templateid=template.id,
-                                    accountid=cls.account.name,
-                                    domainid=cls.account.domainid,
-                                    serviceofferingid=cls.service_offering.id,
-                                    mode=cls.services["mode"]
-                                    )
+                cls.api_client,
+                cls.services["server"],
+                templateid=template.id,
+                accountid=cls.account.name,
+                domainid=cls.account.domainid,
+                serviceofferingid=cls.service_offering.id,
+                mode=cls.services["mode"]
+            )
 
-            #Stop virtual machine
+            # Stop virtual machine
             cls.virtual_machine.stop(cls.api_client)
 
             list_volume = Volume.list(
-                            cls.api_client,
-                            virtualmachineid=cls.virtual_machine.id,
-                            type='ROOT',
-                            listall=True)
+                cls.api_client,
+                virtualmachineid=cls.virtual_machine.id,
+                type='ROOT',
+                listall=True)
             if isinstance(list_volume, list):
                 cls.volume = list_volume[0]
             else:
@@ -710,7 +734,7 @@ class TestTemplateUsage(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            #Cleanup resources used
+            # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -724,13 +748,20 @@ class TestTemplateUsage(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created instance, templates
+            # Clean up, terminate the created instance, templates
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "sg",
+            "eip",
+            "advancedns"],
+        required_hardware="false")
     def test_01_template_usage(self):
         """Test Upload/ delete a template and verify correct usage is generated
             for the template uploaded
@@ -743,75 +774,75 @@ class TestTemplateUsage(cloudstackTestCase):
         #    cloud.usage_event tables for this account
         # 4. Destroy the account
 
-        #Create template from Virtual machine and Volume ID
+        # Create template from Virtual machine and Volume ID
         self.template = Template.create(
-                                self.userapiclient,
-                                self.services["templates"],
-                                self.volume.id,
-                                TestTemplateUsage.account.name,
-                                TestTemplateUsage.account.domainid
-                                )
+            self.userapiclient,
+            self.services["templates"],
+            self.volume.id,
+            TestTemplateUsage.account.name,
+            TestTemplateUsage.account.domainid
+        )
         self.debug("Created template with ID: %s" % self.template.id)
         # Delete template
         self.template.delete(self.userapiclient)
         self.debug("Deleted template with ID: %s" % self.template.id)
 
         # Fetch account ID from account_uuid
-        self.debug("select id from account where uuid = '%s';" \
-                        % self.account.id)
+        self.debug("select id from account where uuid = '%s';"
+                   % self.account.id)
 
         qresultset = self.dbclient.execute(
-                        "select id from account where uuid = '%s';" \
-                        % self.account.id
-                        )
+            "select id from account where uuid = '%s';"
+            % self.account.id
+        )
         self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
 
         self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
         qresult = qresultset[0]
 
         account_id = qresult[0]
-        self.debug("select type from usage_event where account_id = '%s';" \
-                        % account_id)
+        self.debug("select type from usage_event where account_id = '%s';"
+                   % account_id)
 
         qresultset = self.dbclient.execute(
-                        "select type from usage_event where account_id = '%s';" \
-                        % account_id
-                        )
+            "select type from usage_event where account_id = '%s';"
+            % account_id
+        )
 
         self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
         self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
 
         qresult = str(qresultset)
         self.debug("Query result: %s" % qresult)
 
         # Check for TEMPLATE.CREATE, TEMPLATE.DELETE in cloud.usage_event table
         self.assertEqual(
-                            qresult.count('TEMPLATE.CREATE'),
-                            1,
-                            "Check TEMPLATE.CREATE event in events table"
-                        )
+            qresult.count('TEMPLATE.CREATE'),
+            1,
+            "Check TEMPLATE.CREATE event in events table"
+        )
 
         self.assertEqual(
-                            qresult.count('TEMPLATE.DELETE'),
-                            1,
-                            "Check TEMPLATE.DELETE in events table"
-                        )
+            qresult.count('TEMPLATE.DELETE'),
+            1,
+            "Check TEMPLATE.DELETE in events table"
+        )
         return
 
 
@@ -831,34 +862,34 @@ class TestISOUsage(cloudstackTestCase):
         cls.services["iso"]["zoneid"] = cls.zone.id
         # Create Account, ISO image etc
         cls.account = Account.create(
-                            cls.api_client,
-                            cls.services["account"],
-                            domainid=cls.domain.id
-                            )
+            cls.api_client,
+            cls.services["account"],
+            domainid=cls.domain.id
+        )
         cls.services["account"] = cls.account.name
         cls.iso = Iso.create(
-                                cls.api_client,
-                                cls.services["iso"],
-                                account=cls.account.name,
-                                domainid=cls.account.domainid
-                            )
+            cls.api_client,
+            cls.services["iso"],
+            account=cls.account.name,
+            domainid=cls.account.domainid
+        )
         try:
             # Wait till ISO gets downloaded
             cls.iso.download(cls.api_client)
         except Exception as e:
             raise Exception("%s: Failed to download ISO: %s" % (
-                                                        e,
-                                                        cls.iso.id
-                                                        ))
+                e,
+                cls.iso.id
+            ))
         cls._cleanup = [
-                        cls.account,
-                        ]
+            cls.account,
+        ]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
-            #Cleanup resources used
+            # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -872,13 +903,20 @@ class TestISOUsage(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created ISO images
+            # Clean up, terminate the created ISO images
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "sg",
+            "eip",
+            "advancedns"],
+        required_hardware="false")
     def test_01_ISO_usage(self):
         """Test Create/Delete a ISO and verify its usage is generated correctly
         """
@@ -895,62 +933,62 @@ class TestISOUsage(cloudstackTestCase):
         self.iso.delete(self.apiclient)
 
         # Fetch account ID from account_uuid
-        self.debug("select id from account where uuid = '%s';" \
-                        % self.account.id)
+        self.debug("select id from account where uuid = '%s';"
+                   % self.account.id)
 
         qresultset = self.dbclient.execute(
-                        "select id from account where uuid = '%s';" \
-                        % self.account.id
-                        )
+            "select id from account where uuid = '%s';"
+            % self.account.id
+        )
         self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
 
         self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
         qresult = qresultset[0]
 
         account_id = qresult[0]
-        self.debug("select type from usage_event where account_id = '%s';" \
-                        % account_id)
+        self.debug("select type from usage_event where account_id = '%s';"
+                   % account_id)
 
         qresultset = self.dbclient.execute(
-                        "select type from usage_event where account_id = '%s';" \
-                        % account_id
-                        )
+            "select type from usage_event where account_id = '%s';"
+            % account_id
+        )
 
         self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
 
         self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
 
         qresult = str(qresultset)
         self.debug("Query result: %s" % qresult)
-        imageStores = ImageStore.list(self.api_client,zoneid=self.zone.id)
+        imageStores = ImageStore.list(self.api_client, zoneid=self.zone.id)
         # Check for ISO.CREATE, ISO.DELETE events in cloud.usage_event table
         self.assertEqual(
-                            qresult.count('ISO.CREATE'),
-                            len(imageStores),
-                            "Check ISO.CREATE event in events table"
-                        )
+            qresult.count('ISO.CREATE'),
+            len(imageStores),
+            "Check ISO.CREATE event in events table"
+        )
 
         self.assertEqual(
-                            qresult.count('ISO.DELETE'),
-                            len(imageStores),
-                            "Check ISO.DELETE in events table"
-                        )
+            qresult.count('ISO.DELETE'),
+            len(imageStores),
+            "Check ISO.DELETE in events table"
+        )
         return
 
 
@@ -967,52 +1005,52 @@ class TestLBRuleUsage(cloudstackTestCase):
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
+            cls.api_client,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
         cls.services["server"]["zoneid"] = cls.zone.id
 
         cls.services["template"] = template.id
 
         # Create VMs, LB Rules etc
         cls.account = Account.create(
-                            cls.api_client,
-                            cls.services["account"],
-                            domainid=cls.domain.id
-                            )
+            cls.api_client,
+            cls.services["account"],
+            domainid=cls.domain.id
+        )
 
         cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
+            cls.api_client,
+            cls.services["service_offering"]
+        )
         cls.virtual_machine = VirtualMachine.create(
-                                cls.api_client,
-                                cls.services["server"],
-                                templateid=template.id,
-                                accountid=cls.account.name,
-                                domainid=cls.account.domainid,
-                                serviceofferingid=cls.service_offering.id
-                                )
+            cls.api_client,
+            cls.services["server"],
+            templateid=template.id,
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.service_offering.id
+        )
         cls.public_ip_1 = PublicIPAddress.create(
-                                           cls.api_client,
-                                           accountid=cls.virtual_machine.account,
-                                           zoneid=cls.virtual_machine.zoneid,
-                                           domainid=cls.virtual_machine.domainid,
-                                           services=cls.services["server"]
-                                           )
+            cls.api_client,
+            accountid=cls.virtual_machine.account,
+            zoneid=cls.virtual_machine.zoneid,
+            domainid=cls.virtual_machine.domainid,
+            services=cls.services["server"]
+        )
         cls._cleanup = [
-                        cls.service_offering,
-                        cls.account,
-                        ]
+            cls.service_offering,
+            cls.account,
+        ]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
-            #Cleanup resources used
+            # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -1026,13 +1064,19 @@ class TestLBRuleUsage(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created instance, LB rules
+            # Clean up, terminate the created instance, LB rules
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "simulator"], required_hardware="false")
+    @attr(
+        tags=[
+            "advanced",
+            "eip",
+            "advancedns",
+            "simulator"],
+        required_hardware="false")
     def test_01_lb_usage(self):
         """Test Create/Delete a LB rule and verify correct usage is recorded
         """
@@ -1046,75 +1090,75 @@ class TestLBRuleUsage(cloudstackTestCase):
 
         self.debug(
             "Creating load balancer rule for public IP: %s" %
-                                    self.public_ip_1.ipaddress.id)
-        #Create Load Balancer rule and assign VMs to rule
+            self.public_ip_1.ipaddress.id)
+        # Create Load Balancer rule and assign VMs to rule
         lb_rule = LoadBalancerRule.create(
-                                          self.apiclient,
-                                          self.services["lbrule"],
-                                          self.public_ip_1.ipaddress.id,
-                                          accountid=self.account.name
-                                          )
+            self.apiclient,
+            self.services["lbrule"],
+            self.public_ip_1.ipaddress.id,
+            accountid=self.account.name
+        )
         # Delete LB Rule
         self.debug("Deleting LB rule with ID: %s" % lb_rule.id)
         lb_rule.delete(self.apiclient)
 
         # Fetch account ID from account_uuid
-        self.debug("select id from account where uuid = '%s';" \
-                        % self.account.id)
+        self.debug("select id from account where uuid = '%s';"
+                   % self.account.id)
 
         qresultset = self.dbclient.execute(
-                        "select id from account where uuid = '%s';" \
-                        % self.account.id
-                        )
+            "select id from account where uuid = '%s';"
+            % self.account.id
+        )
         self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
 
         self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
         qresult = qresultset[0]
 
         account_id = qresult[0]
-        self.debug("select type from usage_event where account_id = '%s';" \
-                        % account_id)
+        self.debug("select type from usage_event where account_id = '%s';"
+                   % account_id)
 
         qresultset = self.dbclient.execute(
-                        "select type from usage_event where account_id = '%s';" \
-                        % account_id
-                        )
+            "select type from usage_event where account_id = '%s';"
+            % account_id
+        )
 
         self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
 
         self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
 
         qresult = str(qresultset)
         self.debug("Query result: %s" % qresult)
 
         # Check for LB.CREATE, LB.DELETE in cloud.usage_event table
         self.assertEqual(
-                            qresult.count('LB.CREATE'),
-                            1,
-                            "Check LB.CREATE event in events table"
-                        )
+            qresult.count('LB.CREATE'),
+            1,
+            "Check LB.CREATE event in events table"
+        )
 
         self.assertEqual(
-                            qresult.count('LB.DELETE'),
-                            1,
-                            "Check LB.DELETE in events table"
-                        )
+            qresult.count('LB.DELETE'),
+            1,
+            "Check LB.DELETE in events table"
+        )
         return
 
 
@@ -1124,7 +1168,7 @@ class TestSnapshotUsage(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestSnapshotUsage, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -1132,45 +1176,45 @@ class TestSnapshotUsage(cloudstackTestCase):
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
+            cls.api_client,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
         cls.services["server"]["zoneid"] = cls.zone.id
 
         cls.services["template"] = template.id
 
         # Create Account, VMs etc
         cls.account = Account.create(
-                            cls.api_client,
-                            cls.services["account"],
-                            domainid=cls.domain.id
-                            )
+            cls.api_client,
+            cls.services["account"],
+            domainid=cls.domain.id
+        )
 
         cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
+            cls.api_client,
+            cls.services["service_offering"]
+        )
         cls.virtual_machine = VirtualMachine.create(
-                                cls.api_client,
-                                cls.services["server"],
-                                templateid=template.id,
-                                accountid=cls.account.name,
-                                domainid=cls.account.domainid,
-                                serviceofferingid=cls.service_offering.id
-                                )
+            cls.api_client,
+            cls.services["server"],
+            templateid=template.id,
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.service_offering.id
+        )
         cls._cleanup = [
-                        cls.service_offering,
-                        cls.account,
-                        ]
+            cls.service_offering,
+            cls.account,
+        ]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
-            #Cleanup resources used
+            # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -1184,14 +1228,22 @@ class TestSnapshotUsage(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created instance and snapshots
+            # Clean up, terminate the created instance and snapshots
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(speed = "slow")
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
+    @attr(speed="slow")
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "sg",
+            "eip",
+            "advancedns",
+            "simulator"],
+        required_hardware="false")
     def test_01_snapshot_usage(self):
         """Test Create/Delete a manual snap shot and verify
         correct usage is recorded
@@ -1204,16 +1256,20 @@ class TestSnapshotUsage(cloudstackTestCase):
         # 3. Delete the account
 
         # Get the Root disk of VM
+
+        if self.hypervisor.lower() in ['hyperv']:
+            self.skipTest("Snapshots feature is not supported on Hyper-V")
+
         volumes = Volume.list(
-                    self.apiclient,
-                    virtualmachineid=self.virtual_machine.id,
-                    type='ROOT',
-                    listall=True)
+            self.apiclient,
+            virtualmachineid=self.virtual_machine.id,
+            type='ROOT',
+            listall=True)
         self.assertEqual(
-                         isinstance(volumes, list),
-                         True,
-                         "Check if list volumes return a valid data"
-                        )
+            isinstance(volumes, list),
+            True,
+            "Check if list volumes return a valid data"
+        )
 
         # Create a snapshot from the ROOTDISK
         self.debug("Creating snapshot from volume: %s" % volumes[0].id)
@@ -1224,63 +1280,63 @@ class TestSnapshotUsage(cloudstackTestCase):
         snapshot.delete(self.apiclient)
 
         # Fetch account ID from account_uuid
-        self.debug("select id from account where uuid = '%s';" \
-                        % self.account.id)
+        self.debug("select id from account where uuid = '%s';"
+                   % self.account.id)
 
         qresultset = self.dbclient.execute(
-                        "select id from account where uuid = '%s';" \
-                        % self.account.id
-                        )
+            "select id from account where uuid = '%s';"
+            % self.account.id
+        )
         self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
 
         self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
         qresult = qresultset[0]
 
         account_id = qresult[0]
-        self.debug("select type from usage_event where account_id = '%s';" \
-                        % account_id)
+        self.debug("select type from usage_event where account_id = '%s';"
+                   % account_id)
 
         qresultset = self.dbclient.execute(
-                        "select type from usage_event where account_id = '%s';" \
-                        % account_id
-                        )
+            "select type from usage_event where account_id = '%s';"
+            % account_id
+        )
 
         self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check if database query returns a valid data"
-                         )
+            isinstance(qresultset, list),
+            True,
+            "Check if database query returns a valid data"
+        )
 
         self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
 
         qresult = str(qresultset)
         self.debug("Query Result: %s" % qresult)
 
-        # Check for SNAPSHOT.CREATE, SNAPSHOT.DELETE events in cloud.usage_event
-        # table
+        # Check for SNAPSHOT.CREATE, SNAPSHOT.DELETE events in
+        # cloud.usage_event table
         self.assertEqual(
-                            qresult.count('SNAPSHOT.CREATE'),
-                            1,
-                            "Check SNAPSHOT.CREATE event in events table"
-                        )
+            qresult.count('SNAPSHOT.CREATE'),
+            1,
+            "Check SNAPSHOT.CREATE event in events table"
+        )
 
         self.assertEqual(
-                            qresult.count('SNAPSHOT.DELETE'),
-                            1,
-                            "Check SNAPSHOT.DELETE in events table"
-                        )
+            qresult.count('SNAPSHOT.DELETE'),
+            1,
+            "Check SNAPSHOT.DELETE in events table"
+        )
         return
 
 
@@ -1297,52 +1353,52 @@ class TestNatRuleUsage(cloudstackTestCase):
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
+            cls.api_client,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
         cls.services["server"]["zoneid"] = cls.zone.id
 
         cls.services["template"] = template.id
 
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
-                            cls.api_client,
-                            cls.services["account"],
-                            domainid=cls.domain.id
-                            )
+            cls.api_client,
+            cls.services["account"],
+            domainid=cls.domain.id
+        )
 
         cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
+            cls.api_client,
+            cls.services["service_offering"]
+        )
         cls.virtual_machine = VirtualMachine.create(
-                                cls.api_client,
-                                cls.services["server"],
-                                templateid=template.id,
-                                accountid=cls.account.name,
-                                domainid=cls.account.domainid,
-                                serviceofferingid=cls.service_offering.id
-                                )
+            cls.api_client,
+            cls.services["server"],
+            templateid=template.id,
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.service_offering.id
+        )
         cls.public_ip_1 = PublicIPAddress.create(
-                                           cls.api_client,
-                                           accountid=cls.virtual_machine.account,
-                                           zoneid=cls.virtual_machine.zoneid,
-                                           domainid=cls.virtual_machine.domainid,
-                                           services=cls.services["server"]
-                                           )
+            cls.api_client,
+            accountid=cls.virtual_machine.account,
+            zoneid=cls.virtual_machine.zoneid,
+            domainid=cls.virtual_machine.domainid,
+            services=cls.services["server"]
+        )
         cls._cleanup = [
-                        cls.service_offering,
-                        cls.account,
-                        ]
+            cls.service_offering,
+            cls.account,
+        ]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
-            #Cleanup resources used
+            # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -1356,13 +1412,18 @@ class TestNatRuleUsage(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created instance, NAT rules
+            # Clean up, terminate the created instance, NAT rules
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "simulator"], required_hardware="false")
+    @attr(
+        tags=[
+            "advanced",
+            "advancedns",
+            "simulator"],
+        required_hardware="false")
     def test_01_nat_usage(self):
         """Test Create/Delete a PF rule and verify correct usage is recorded
         """
@@ -1376,75 +1437,75 @@ class TestNatRuleUsage(cloudstackTestCase):
         # 4. Delete this account.
 
         self.debug("Creating NAT rule with public IP: %s" %
-                                    self.public_ip_1.ipaddress.id)
-        #Create NAT rule
+                   self.public_ip_1.ipaddress.id)
+        # Create NAT rule
         nat_rule = NATRule.create(
-                        self.apiclient,
-                        self.virtual_machine,
-                        self.services["natrule"],
-                        self.public_ip_1.ipaddress.id
-                        )
+            self.apiclient,
+            self.virtual_machine,
+            self.services["natrule"],
+            self.public_ip_1.ipaddress.id
+        )
 
         # Delete NAT Rule
         self.debug("Deleting NAT rule: %s" % nat_rule.id)
         nat_rule.delete(self.apiclient)
 
         # Fetch account ID from account_uuid
-        self.debug("select id from account where uuid = '%s';" \
-                        % self.account.id)
+        self.debug("select id from account where uuid = '%s';"
+                   % self.account.id)
 
         qresultset = self.dbclient.execute(
-                        "select id from account where uuid = '%s';" \
-                        % self.account.id
-                        )
+            "select id from account where uuid = '%s';"
+            % self.account.id
+        )
         self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
 
         self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
         qresult = qresultset[0]
 
         account_id = qresult[0]
-        self.debug("select type from usage_event where account_id = '%s';" \
-                        % account_id)
+        self.debug("select type from usage_event where account_id = '%s';"
+                   % account_id)
 
         qresultset = self.dbclient.execute(
-                        "select type from usage_event where account_id = '%s';" \
-                        % account_id
-                        )
+            "select type from usage_event where account_id = '%s';"
+            % account_id
+        )
 
         self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
         self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
 
         qresult = str(qresultset)
         self.debug("Query result: %s" % qresult)
 
         # Check for NET.RULEADD, NET.RULEDELETE in cloud.usage_event table
         self.assertEqual(
-                            qresult.count('NET.RULEADD'),
-                            1,
-                            "Check NET.RULEADD event in events table"
-                        )
+            qresult.count('NET.RULEADD'),
+            1,
+            "Check NET.RULEADD event in events table"
+        )
 
         self.assertEqual(
-                            qresult.count('NET.RULEDELETE'),
-                            1,
-                            "Check NET.RULEDELETE in events table"
-                        )
+            qresult.count('NET.RULEDELETE'),
+            1,
+            "Check NET.RULEDELETE in events table"
+        )
         return
 
 
@@ -1461,10 +1522,10 @@ class TestVpnUsage(cloudstackTestCase):
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
+            cls.api_client,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
         cls.services["server"]["zoneid"] = cls.zone.id
 
         cls.services["template"] = template.id
@@ -1472,41 +1533,41 @@ class TestVpnUsage(cloudstackTestCase):
 
         # Create Service offerings, VMs etc
         cls.account = Account.create(
-                            cls.api_client,
-                            cls.services["account"],
-                            admin=True,
-                            domainid=cls.domain.id
-                            )
+            cls.api_client,
+            cls.services["account"],
+            admin=True,
+            domainid=cls.domain.id
+        )
         cls._cleanup.append(cls.account)
 
         cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
+            cls.api_client,
+            cls.services["service_offering"]
+        )
         cls._cleanup.append(cls.service_offering)
         cls.virtual_machine = VirtualMachine.create(
-                                cls.api_client,
-                                cls.services["server"],
-                                templateid=template.id,
-                                accountid=cls.account.name,
-                                domainid=cls.account.domainid,
-                                serviceofferingid=cls.service_offering.id
-                                )
+            cls.api_client,
+            cls.services["server"],
+            templateid=template.id,
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.service_offering.id
+        )
         cls.public_ip = PublicIPAddress.create(
-                                           cls.api_client,
-                                           accountid=cls.virtual_machine.account,
-                                           zoneid=cls.virtual_machine.zoneid,
-                                           domainid=cls.virtual_machine.domainid,
-                                           services=cls.services["server"]
-                                           )
+            cls.api_client,
+            accountid=cls.virtual_machine.account,
+            zoneid=cls.virtual_machine.zoneid,
+            domainid=cls.virtual_machine.domainid,
+            services=cls.services["server"]
+        )
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
-            #Cleanup resources used
+            # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -1520,7 +1581,7 @@ class TestVpnUsage(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created instance, VPN users
+            # Clean up, terminate the created instance, VPN users
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -1539,25 +1600,25 @@ class TestVpnUsage(cloudstackTestCase):
         # 4. Delete this account.
 
         self.debug("Created VPN with public IP: %s" %
-                                    self.public_ip.ipaddress.id)
-        #Assign VPN to Public IP
+                   self.public_ip.ipaddress.id)
+        # Assign VPN to Public IP
         vpn = Vpn.create(
-                        self.apiclient,
-                        self.public_ip.ipaddress.id,
-                        account=self.account.name,
-                        domainid=self.account.domainid
-                        )
+            self.apiclient,
+            self.public_ip.ipaddress.id,
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
 
         self.debug("Created VPN user for account: %s" %
-                                    self.account.name)
+                   self.account.name)
 
         vpnuser = VpnUser.create(
-                                 self.apiclient,
-                                 self.services["vpn_user"]["username"],
-                                 self.services["vpn_user"]["password"],
-                                 account=self.account.name,
-                                 domainid=self.account.domainid
-                                 )
+            self.apiclient,
+            self.services["vpn_user"]["username"],
+            self.services["vpn_user"]["password"],
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
 
         # Remove VPN user
         self.debug("Deleting VPN user: %s" % vpnuser.id)
@@ -1568,59 +1629,59 @@ class TestVpnUsage(cloudstackTestCase):
         vpn.delete(self.apiclient)
 
         # Fetch account ID from account_uuid
-        self.debug("select id from account where uuid = '%s';" \
-                        % self.account.id)
+        self.debug("select id from account where uuid = '%s';"
+                   % self.account.id)
 
         qresultset = self.dbclient.execute(
-                        "select id from account where uuid = '%s';" \
-                        % self.account.id
-                        )
+            "select id from account where uuid = '%s';"
+            % self.account.id
+        )
         self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
 
         self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
         qresult = qresultset[0]
 
         account_id = qresult[0]
-        self.debug("select type from usage_event where account_id = '%s';" \
-                        % account_id)
+        self.debug("select type from usage_event where account_id = '%s';"
+                   % account_id)
 
         qresultset = self.dbclient.execute(
-                        "select type from usage_event where account_id = '%s';" \
-                        % account_id
-                        )
+            "select type from usage_event where account_id = '%s';"
+            % account_id
+        )
 
         self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
+            isinstance(qresultset, list),
+            True,
+            "Check DB query result set for valid data"
+        )
         self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
+            len(qresultset),
+            0,
+            "Check DB Query result set"
+        )
 
         qresult = str(qresultset)
         self.debug("Query result: %s" % qresult)
 
         # Check for VPN user related events
         self.assertEqual(
-                            qresult.count('VPN.USER.ADD'),
-                            1,
-                            "Check VPN.USER.ADD event in events table"
-                        )
+            qresult.count('VPN.USER.ADD'),
+            1,
+            "Check VPN.USER.ADD event in events table"
+        )
 
         self.assertEqual(
-                            qresult.count('VPN.USER.ADD'),
-                            1,
-                            "Check VPN.USER.ADD in events table"
-                        )
+            qresult.count('VPN.USER.ADD'),
+            1,
+            "Check VPN.USER.ADD in events table"
+        )
         return

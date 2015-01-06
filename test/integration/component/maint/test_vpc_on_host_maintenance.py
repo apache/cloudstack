@@ -16,62 +16,64 @@
 # under the License.
 
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (Account,
+                             Host,
+                             VPC,
+                             VpcOffering)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               list_configurations)
+import time
 
 
 class Services:
+
     """Test VPC services
     """
 
     def __init__(self):
         self.services = {
-                         "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    # Random characters are appended for unique
-                                    # username
-                                    "password": "password",
-                                    },
-                          "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100,
-                                    "memory": 128,
-                                    },
-                         "vpc_offering": {
-                                    "name": 'VPC off',
-                                    "displaytext": 'VPC off',
-                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat,NetworkACL',
-                                },
-                         "vpc": {
-                                 "name": "TestVPC",
-                                 "displaytext": "TestVPC",
-                                 "cidr": '10.0.0.1/24'
-                                 },
-                         "virtual_machine": {
-                                    "displayname": "Test VM",
-                                    "username": "root",
-                                    "password": "password",
-                                    "ssh_port": 22,
-                                    "hypervisor": 'XenServer',
-                                    # Hypervisor type should be same as
-                                    # hypervisor type of cluster
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "protocol": 'TCP',
-                                },
-                         "ostype": 'CentOS 5.3 (64-bit)',
-                         # Cent OS 5.3 (64 bit)
-                         "sleep": 60,
-                         "timeout": 10
-                    }
+            "account": {
+                "email": "test@test.com",
+                "firstname": "Test",
+                "lastname": "User",
+                "username": "test",
+                # Random characters are appended for unique
+                # username
+                "password": "password",
+            },
+            "vpc_offering": {
+                "name": 'VPC off',
+                "displaytext": 'VPC off',
+                "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,\
+UserData,StaticNat,NetworkACL',
+            },
+            "vpc": {
+                "name": "TestVPC",
+                "displaytext": "TestVPC",
+                "cidr": '10.0.0.1/24'
+            },
+            "virtual_machine": {
+                "displayname": "Test VM",
+                "username": "root",
+                "password": "password",
+                "ssh_port": 22,
+                "hypervisor": 'XenServer',
+                # Hypervisor type should be same as
+                # hypervisor type of cluster
+                "privateport": 22,
+                "publicport": 22,
+                "protocol": 'TCP',
+            },
+            "ostype": 'CentOS 5.3 (64-bit)',
+            # Cent OS 5.3 (64 bit)
+            "sleep": 60,
+            "timeout": 10
+        }
+
 
 class TestVPCHostMaintenance(cloudstackTestCase):
 
@@ -93,24 +95,20 @@ class TestVPCHostMaintenance(cloudstackTestCase):
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.services["mode"] = cls.zone.networktype
 
-        cls.service_offering = ServiceOffering.create(
-            cls.api_client,
-            cls.services["service_offering"]
-        )
         cls.vpc_off = VpcOffering.create(
             cls.api_client,
             cls.services["vpc_offering"]
         )
         cls.vpc_off.update(cls.api_client, state='Enabled')
-        hosts = Host.list(
+        cls.hosts = Host.list(
             cls.api_client,
             zoneid=cls.zone.id,
             listall=True,
             type='Routing'
         )
 
-        if isinstance(hosts, list):
-            for host in hosts:
+        if isinstance(cls.hosts, list):
+            for host in cls.hosts:
                 Host.enableMaintenance(
                     cls.api_client,
                     id=host.id
@@ -124,7 +122,8 @@ class TestVPCHostMaintenance(cloudstackTestCase):
                         id=host.id,
                         listall=True
                     )
-                    if hosts_states[0].resourcestate == 'PrepareForMaintenance':
+                    if hosts_states[
+                            0].resourcestate == 'PrepareForMaintenance':
                         # Wait for sometimetill host goes in maintenance state
                         time.sleep(cls.services["sleep"])
                     elif hosts_states[0].resourcestate == 'Maintenance':
@@ -132,11 +131,11 @@ class TestVPCHostMaintenance(cloudstackTestCase):
                         break
                     elif timeout == 0:
                         raise unittest.SkipTest(
-                            "Failed to enable maintenance mode on %s" % host.name)
+                            "Failed to enable maintenance mode on %s" %
+                            host.name)
                     timeout = timeout - 1
 
         cls._cleanup = [
-            cls.service_offering,
             cls.vpc_off
         ]
         return
@@ -144,20 +143,13 @@ class TestVPCHostMaintenance(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            #Cleanup resources used
+            # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
-            hosts = Host.list(
-                cls.api_client,
-                zoneid=cls.zone.id,
-                listall=True,
-                type='Routing'
-            )
-            if isinstance(hosts, list):
-                for host in hosts:
-                    Host.cancelMaintenance(
-                        cls.api_client,
-                        id=host.id
-                    )
+            for host in cls.hosts:
+                Host.cancelMaintenance(
+                    cls.api_client,
+                    id=host.id
+                )
                 hosts_states = Host.list(
                     cls.api_client,
                     id=host.id,
@@ -165,7 +157,8 @@ class TestVPCHostMaintenance(cloudstackTestCase):
                 )
                 if hosts_states[0].resourcestate != 'Enabled':
                     raise Exception(
-                        "Failed to cancel maintenance mode on %s" % (host.name))
+                        "Failed to cancel maintenance mode on %s" %
+                        (host.name))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -184,18 +177,8 @@ class TestVPCHostMaintenance(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created network offerings
+            # Clean up, terminate the created network offerings
             cleanup_resources(self.apiclient, self.cleanup)
-            interval = list_configurations(
-                self.apiclient,
-                name='network.gc.interval'
-            )
-            wait = list_configurations(
-                self.apiclient,
-                name='network.gc.wait'
-            )
-            # Sleep to ensure that all resources are deleted
-            time.sleep(int(interval[0].value) + int(wait[0].value))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -243,7 +226,7 @@ class TestVPCHostMaintenance(cloudstackTestCase):
         )
         if state:
             self.assertEqual(
-                vpc_networks[0].state,
+                vpc_networks[0].state.lower(),
                 state,
                 "VPC state should be '%s'" % state
             )
@@ -269,9 +252,10 @@ class TestVPCHostMaintenance(cloudstackTestCase):
             vpcofferingid=self.vpc_off.id,
             zoneid=self.zone.id,
             account=self.account.name,
-            domainid=self.account.domainid
+            domainid=self.account.domainid,
+            start=False
         )
-        self.validate_vpc_network(vpc, state='Disabled')
+        self.validate_vpc_network(vpc, state='inactive')
         return
 
     @attr(tags=["advanced", "intervlan"])
@@ -295,9 +279,10 @@ class TestVPCHostMaintenance(cloudstackTestCase):
             vpcofferingid=self.vpc_off.id,
             zoneid=self.zone.id,
             account=self.account.name,
-            domainid=self.account.domainid
+            domainid=self.account.domainid,
+            start=False
         )
-        self.validate_vpc_network(vpc, state='Disabled')
+        self.validate_vpc_network(vpc, state='inactive')
         interval = list_configurations(
             self.apiclient,
             name='network.gc.interval'

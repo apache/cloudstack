@@ -675,6 +675,7 @@
                             confirm: function(args) {
                                 return 'message.action.expunge.instance';
                             },
+                            isWarning: true,
                             notification: function(args) {
                                 return 'label.action.expunge.instance';
                             }
@@ -741,6 +742,7 @@
                             confirm: function(args) {
                                 return 'message.reinstall.vm';
                             },
+                            isWarning: true,
                             notification: function(args) {
                                 return 'label.reinstall.vm';
                             },
@@ -2433,7 +2435,7 @@
             allowedActions.push("restart");
             
             if ((jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true) 
-            		|| (jsonObj.hypervisor != 'LXC')) {
+            		&& (jsonObj.hypervisor != 'LXC')) {
                 allowedActions.push("snapshot");
             }
             
@@ -2467,7 +2469,7 @@
             allowedActions.push("reinstall");
             
             if ((jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true) 
-            		|| (jsonObj.hypervisor != 'LXC')) {
+            		&& (jsonObj.hypervisor != 'LXC')) {
                 allowedActions.push("snapshot");
             }
             

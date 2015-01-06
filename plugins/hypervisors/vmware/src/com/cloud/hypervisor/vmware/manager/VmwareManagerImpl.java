@@ -696,8 +696,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         long mshostId = ManagementServerNode.getManagementServerId();
 
         // cleanup left-over NFS mounts from previous session
-        String[] mounts = _storage.listFiles(parent + File.separator + String.valueOf(mshostId) + ".*");
-        if (mounts != null && mounts.length > 0) {
+        List<String> mounts = _storage.listMountPointsByMsHost(parent, mshostId);
+        if (mounts != null && !mounts.isEmpty()) {
             for (String mountPoint : mounts) {
                 s_logger.info("umount NFS mount from previous session: " + mountPoint);
 

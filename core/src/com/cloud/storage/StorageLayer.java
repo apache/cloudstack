@@ -21,6 +21,7 @@ package com.cloud.storage;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import com.cloud.utils.component.Manager;
 
@@ -149,4 +150,6 @@ public interface StorageLayer extends Manager {
     boolean setWorldReadableAndWriteable(File file);
 
     boolean deleteDir(String dir);
+
+    List<String> listMountPointsByMsHost(String path, long msHostId);
 }
