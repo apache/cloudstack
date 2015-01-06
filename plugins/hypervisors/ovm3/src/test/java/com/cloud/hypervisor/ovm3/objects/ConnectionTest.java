@@ -50,7 +50,7 @@ public class ConnectionTest extends Connection {
 
     public ConnectionTest() {
     }
-    
+
     /*
      * public ConnectionTest(String agentIp, String agentOvsAgentUser,
      * String agentOvsAgentPassword) {
