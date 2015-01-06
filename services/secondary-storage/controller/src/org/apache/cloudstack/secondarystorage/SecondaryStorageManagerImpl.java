@@ -1051,6 +1051,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         buf.append(" guid=").append(profile.getVirtualMachine().getHostName());
 
+        buf.append(" workers=").append(_configDao.getValue("workers"));
+
         if (_configDao.isPremium()) {
             s_logger.debug("VmWare hypervisor configured, telling the ssvm to load the PremiumSecondaryStorageResource");
             buf.append(" resource=com.cloud.storage.resource.PremiumSecondaryStorageResource");

@@ -236,6 +236,9 @@ public class AgentShell implements IAgentShell, Daemon {
         }
 
         _workers = NumberUtils.toInt(workers, 5);
+        if (_workers <= 0) {
+            _workers = 5;
+        }
 
         if (host == null) {
             host = getProperty(null, "host");
