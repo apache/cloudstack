@@ -2020,14 +2020,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        if ((cpuNumber != null) && ((cpuNumber.intValue() <= 0) || (cpuNumber.intValue() > 2147483647))) {
-            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the cpu number value between 1 and 2147483647");
+        if ((cpuNumber != null) && ((cpuNumber.intValue() <= 0) || (cpuNumber.longValue() > Integer.MAX_VALUE))) {
+            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the cpu number value between 1 and " + Integer.MAX_VALUE);
         }
-        if ((cpuSpeed != null) && ((cpuSpeed.intValue() < 0) || (cpuSpeed.intValue() > 2147483647))) {
-            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the cpu speed value between 1 and 2147483647");
+        if ((cpuSpeed != null) && ((cpuSpeed.intValue() < 0) || (cpuSpeed.longValue() > Integer.MAX_VALUE))) {
+            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the cpu speed value between 0 and " + Integer.MAX_VALUE);
         }
-        if ((memory != null) && ((memory.intValue() < 32) || (memory.intValue() > 2147483647))) {
-            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the memory value between 32 and 2147483647 MB");
+        if ((memory != null) && ((memory.intValue() < 32) || (memory.longValue() > Integer.MAX_VALUE))) {
+            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the memory value between 32 and " + Integer.MAX_VALUE + " MB");
         }
 
         // check if valid domain
