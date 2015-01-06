@@ -110,6 +110,9 @@
                                 title: 'label.action.register.template',
                                 docID: 'helpNetworkOfferingName',
                                 preFilter: cloudStack.preFilter.createTemplate,
+
+                                // Handles POST to upload server
+                                // -- standard action handler won't be called until success() callback
                                 fileUpload: {
                                     action: function(args) {
                                         var fileData = args.fileData;
@@ -121,9 +124,10 @@
                                             cache: false,
                                             dataType: 'json',
                                             processData: false, // Don't process the files
-                                            contentType: false, // Set content type to false as jQuery will tell the server its a query string request
+                                            contentType: false, // jQuery will tell the server this is a query string request
                                             success: function(uploadData, textStatus, jqXHR) {
-                                                args.response.succes();
+                                                // Files uploaded successfully; proceed to handle rest of action
+                                                args.response.succes({ data: uploadData });
                                             },
                                             error: function(error) {
                                                 args.response.error('Error uploading files');

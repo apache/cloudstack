@@ -693,12 +693,12 @@
                         context: args.context,
                         uploadData: formData,
                         response: {
-                            success: function() {
+                            success: function(successArgs) {
                                 $form.find('.loading-overlay').remove();
                                 $form.data('files', null);
 
                                 args.after({
-                                    data: $.extend(data, { uploadData: uploadData }),
+                                    data: $.extend(data, { uploadData: successArgs.data }),
                                     ref: args.ref, // For backwards compatibility; use context
                                     context: args.context,
                                     $form: $form
