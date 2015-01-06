@@ -473,6 +473,12 @@
                     if (field.defaultValue) {
                         $input.val(strOrFunc(field.defaultValue));
                     }
+                } else if (field.isFileUpload) {
+                    $input = $('<input>').attr({
+                        type: 'file',
+                        name: 'files[]',
+                        'data-url': '/upload.jsp'
+                    }).appendTo($value);
                 } else if (field.isTokenInput) { // jquery.tokeninput.js
                     isAsync = true;
 
