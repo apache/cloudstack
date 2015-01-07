@@ -123,12 +123,12 @@ public class RouterDeploymentDefinitionTestBase {
 
 
     protected void initMocks() {
-        when(this.mockDestination.getDataCenter()).thenReturn(this.mockDataCenter);
-        when(this.mockDataCenter.getId()).thenReturn(DATA_CENTER_ID);
-        when(this.mockPod.getId()).thenReturn(POD_ID1);
-        when(this.mockHostPodVO1.getId()).thenReturn(POD_ID1);
-        when(this.mockHostPodVO2.getId()).thenReturn(POD_ID2);
-        when(this.mockHostPodVO3.getId()).thenReturn(POD_ID3);
-        when(this.mockNw.getId()).thenReturn(NW_ID_1);
+        when(mockDestination.getDataCenter()).thenReturn(mockDataCenter);
+        when(mockDataCenter.getId()).thenReturn(DATA_CENTER_ID);
+        when(mockPod.getId()).thenReturn(POD_ID1);
+        when(mockHostPodVO1.getId()).thenReturn(POD_ID1);
+        when(mockHostPodVO2.getId()).thenReturn(POD_ID2);
+        when(mockHostPodVO3.getId()).thenReturn(POD_ID3);
+        when(mockNw.getId()).thenReturn(NW_ID_1);
     }
 }

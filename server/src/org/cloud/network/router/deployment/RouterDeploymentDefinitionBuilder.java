@@ -16,6 +16,16 @@
 // under the License.
 package org.cloud.network.router.deployment;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
@@ -42,14 +52,6 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 public class RouterDeploymentDefinitionBuilder {
 
@@ -170,7 +172,7 @@ public class RouterDeploymentDefinitionBuilder {
         }
 
         public IntermediateStateBuilder setGuestNetwork(final Network nw) {
-            this.guestNetwork = nw;
+            guestNetwork = nw;
             return this;
         }
 

@@ -17,17 +17,16 @@
 package org.cloud.network.router.deployment;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.assertFalse;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.cloud.network.vpc.VpcOfferingVO;
 import java.util.List;
 
 import org.junit.Before;
@@ -46,6 +45,7 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.router.NicProfileHelper;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
@@ -154,7 +154,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     @Test
     public void testFindDestinations() {
         // Execute
-        List<DeployDestination> foundDestinations = deployment.findDestinations();
+        final List<DeployDestination> foundDestinations = deployment.findDestinations();
         // Assert
         assertEquals(FOR_VPC_ONLY_THE_GIVEN_DESTINATION_SHOULD_BE_USED, deployment.dest, foundDestinations.get(0));
         assertEquals(FOR_VPC_ONLY_THE_GIVEN_DESTINATION_SHOULD_BE_USED, 1, foundDestinations.size());
@@ -180,8 +180,8 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     @Test
     public void testFindOfferingIdLeavingPrevious() {
         // Prepare
-        Long initialOfferingId = deployment.serviceOfferingId;
-        VpcOfferingVO vpcOffering = mock(VpcOfferingVO.class);
+        final Long initialOfferingId = deployment.serviceOfferingId;
+        final VpcOfferingVO vpcOffering = mock(VpcOfferingVO.class);
         when(mockVpcOffDao.findById(VPC_OFFERING_ID)).thenReturn(vpcOffering);
         when(vpcOffering.getServiceOfferingId()).thenReturn(null);
 
@@ -196,7 +196,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     @Test
     public void testFindOfferingIdSettingNewOne() {
         // Prepare
-        VpcOfferingVO vpcOffering = mock(VpcOfferingVO.class);
+        final VpcOfferingVO vpcOffering = mock(VpcOfferingVO.class);
         when(mockVpcOffDao.findById(VPC_OFFERING_ID)).thenReturn(vpcOffering);
         when(vpcOffering.getServiceOfferingId()).thenReturn(VPC_OFFERING_ID);
 
@@ -215,7 +215,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
 
     @Test
     public void testDeployAllVirtualRoutersWithNoDeployedRouter() throws InsufficientAddressCapacityException, InsufficientServerCapacityException, StorageUnavailableException,
-            InsufficientCapacityException, ResourceUnavailableException {
+    InsufficientCapacityException, ResourceUnavailableException {
 
         driveTestDeployAllVirtualRouters(null);
 
@@ -225,9 +225,9 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     }
 
     public void driveTestDeployAllVirtualRouters(final DomainRouterVO router) throws InsufficientAddressCapacityException, InsufficientServerCapacityException,
-            StorageUnavailableException, InsufficientCapacityException, ResourceUnavailableException {
+    StorageUnavailableException, InsufficientCapacityException, ResourceUnavailableException {
         // Prepare
-        VpcRouterDeploymentDefinition vpcDeployment = (VpcRouterDeploymentDefinition) deployment;
+        final VpcRouterDeploymentDefinition vpcDeployment = (VpcRouterDeploymentDefinition) deployment;
         when(vpcDeployment.nwHelper.deployRouter(vpcDeployment, true)).thenReturn(router);
 
         // Execute
@@ -242,7 +242,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     @Test
     public void testFindSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
         // Prepare
-        PublicIp publicIp = mock(PublicIp.class);
+        final PublicIp publicIp = mock(PublicIp.class);
         when(vpcMgr.assignSourceNatIpAddressToVpc(mockOwner, mockVpc)).thenReturn(publicIp);
 
         // Execute
@@ -255,13 +255,13 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     @Test
     public void testRedundancyProperty() {
         // Set and confirm is redundant
-        when(this.mockVpc.isRedundant()).thenReturn(true);
-        RouterDeploymentDefinition deployment = this.builder.create()
-                .setVpc(this.mockVpc)
-                .setDeployDestination(this.mockDestination)
+        when(mockVpc.isRedundant()).thenReturn(true);
+        final RouterDeploymentDefinition deployment = builder.create()
+                .setVpc(mockVpc)
+                .setDeployDestination(mockDestination)
                 .build();
         assertTrue("The builder ignored redundancy from its inner network", deployment.isRedundant());
-        when(this.mockVpc.isRedundant()).thenReturn(false);
+        when(mockVpc.isRedundant()).thenReturn(false);
         assertFalse("The builder ignored redundancy from its inner network", deployment.isRedundant());
     }
 }

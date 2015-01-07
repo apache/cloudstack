@@ -188,11 +188,6 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
         }
 
-        // [FIXME] Comment added by Wilder Rodrigues - This exception has to be removed once we are able to test multiple routers.
-        //        if (routers.size() > 1) {
-        //            throw new CloudRuntimeException("Found more than one router in vpc " + vpc);
-        //        }
-
         s_logger.info("Adding VPC routers to Guest Network: " + routers.size() + " to be added!");
 
         for (final DomainRouterVO domainRouterVO : routers) {
@@ -201,7 +196,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 if (network.getState() == State.Setup) {
                     paramsForRouter.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
                 }
-                if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(domainRouterVO, network, false, paramsForRouter)) {
+                if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(domainRouterVO, network, paramsForRouter)) {
                     s_logger.error("Failed to add VPC router " + domainRouterVO + " to guest network " + network);
                 } else {
                     s_logger.debug("Successfully added VPC router " + domainRouterVO + " to guest network " + network);
@@ -240,11 +235,6 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
             }
 
-            // [FIXME] Comment added by Wilder Rodrigues - This exception has to be removed once we are able to test multiple routers.
-            //        if (routers.size() > 1) {
-            //            throw new CloudRuntimeException("Found more than one router in vpc " + vpc);
-            //        }
-
             s_logger.info("Adding VPC routers to Guest Network: " + routers.size() + " to be added!");
 
             for (final DomainRouterVO domainRouterVO : routers) {
@@ -255,7 +245,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                     if (network.getState() == State.Setup) {
                         paramsForRouter.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
                     }
-                    if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(domainRouterVO, network, false, paramsForRouter)) {
+                    if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(domainRouterVO, network, paramsForRouter)) {
                         s_logger.error("Failed to add VPC router " + domainRouterVO + " to guest network " + network);
                     } else {
                         s_logger.debug("Successfully added VPC router " + domainRouterVO + " to guest network " + network);
@@ -284,7 +274,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 continue;
             }
             // 2) Call unplugNics in the network service
-            success = success && _vpcRouterMgr.removeVpcRouterFromGuestNetwork(router, network, false);
+            success = success && _vpcRouterMgr.removeVpcRouterFromGuestNetwork(router, network);
             if (!success) {
                 s_logger.warn("Failed to unplug nic in network " + network + " for virtual router " + router);
             } else {
@@ -312,7 +302,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 continue;
             }
             // 2) Call unplugNics in the network service
-            success = success && _vpcRouterMgr.removeVpcRouterFromGuestNetwork(router, config, false);
+            success = success && _vpcRouterMgr.removeVpcRouterFromGuestNetwork(router, config);
             if (!success) {
                 s_logger.warn("Failed to unplug nic in network " + config + " for virtual router " + router);
             } else {
@@ -372,11 +362,6 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return true;
         }
 
-        // [FIXME] Comment added by Wilder Rodrigues - This exception has to be removed once we are able to test multiple routers.
-        //        if (routers.size() > 1) {
-        //            throw new CloudRuntimeException("Found more than one router in vpc " + vpc);
-        //        }
-
         s_logger.info("Adding VPC routers to Guest Network: " + routers.size() + " to be added!");
 
         final DataCenterVO dcVO = _dcDao.findById(gateway.getZoneId());
@@ -415,11 +400,6 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             s_logger.debug(getName() + " element doesn't need to delete Private gateway on the backend; VPC virtual " + "router doesn't exist in the vpc id=" + gateway.getVpcId());
             return true;
         }
-
-        // [FIXME] Comment added by Wilder Rodrigues - This exception has to be removed once we are able to test multiple routers.
-        //        if (routers.size() > 1) {
-        //            throw new CloudRuntimeException("Found more than one router in vpc " + vpc);
-        //        }
 
         s_logger.info("Adding VPC routers to Guest Network: " + routers.size() + " to be added!");
 
