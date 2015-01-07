@@ -70,6 +70,10 @@ public class NicProfile implements InternalIdentity, Serializable {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getDns2() {
         return dns2;
     }
@@ -369,6 +373,10 @@ public class NicProfile implements InternalIdentity, Serializable {
 
     public void setIp6Dns2(String ip6Dns2) {
         this.ip6Dns2 = ip6Dns2;
+    }
+
+    public void setNetworId(long networkId){
+        this.networkId = networkId;
     }
 
 }

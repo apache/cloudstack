@@ -431,6 +431,13 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     }
 
     @Override
+    public List<IPAddressVO> listByAssociatedVmId(long vmId) {
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("associatedWithVmId", vmId);
+        return listBy(sc);
+    }
+
+    @Override
     public void lockRange(long vlandbId) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("vlan", vlandbId);

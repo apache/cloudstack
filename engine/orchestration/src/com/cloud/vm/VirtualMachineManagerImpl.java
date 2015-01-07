@@ -3284,6 +3284,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         _networkMgr.prepareNicForMigration(profile, dest);
+
         volumeMgr.prepareForMigration(profile, dest);
 
         VirtualMachineTO to = toVmTO(profile);
