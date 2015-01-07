@@ -110,41 +110,11 @@
                                 title: 'label.action.register.template',
                                 docID: 'helpNetworkOfferingName',
                                 preFilter: cloudStack.preFilter.createTemplate,
-
-                                // Handles POST to upload server
-                                // -- standard action handler won't be called until success() callback
                                 fileUpload: {
-                                    action: function(args) {
-                                        var fileData = args.fileData;
-                                        var ajax = $.ajax({
-                                            xhr: function() {
-                                                var xhr = jQuery.ajaxSettings.xhr();
-
-                                                if (xhr instanceof window.XMLHttpRequest) {
-                                                    xhr.upload.addEventListener('progress', function(e) {
-                                                        console.log('progress -> ', e);
-                                                    });
-                                                }
-
-                                                return xhr;
-                                            },
-                                            url: '/test-upload.php',
-                                            type: 'POST',
-                                            data: fileData,
-                                            cache: false,
-                                            dataType: 'json',
-                                            processData: false, // Don't process the files
-                                            contentType: false, // jQuery will tell the server this is a query string request
-                                            success: function(uploadData, textStatus, jqXHR) {
-                                                // Files uploaded successfully; proceed to handle rest of action
-                                                args.response.success({ data: uploadData });
-                                            },
-                                            error: function(error) {
-                                                args.response.error('Error uploading files');
-                                            }
+                                    getURL: function(args) {
+                                        args.response.success({
+                                            data: 'http://10.223.183.3/test-upload.json'
                                         });
-
-                                        debugger;
                                     }
                                 },
                                 fields: {

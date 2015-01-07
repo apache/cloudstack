@@ -684,32 +684,20 @@
                 }
 
                 var uploadFiles = function() {
-                    var formData = new FormData();
-
                     $form.prepend($('<div>').addClass('loading-overlay').text('Uploading files...'));
-                    $.each($form.data('files'), function(key, value) {
-                        formData.append(key, value);
-                    });
-                    args.form.fileUpload.action({
+                    args.form.fileUpload.getURL({
+                        formData: data,
                         context: args.context,
-                        fileData: formData,
                         response: {
                             success: function(successArgs) {
-                                $form.find('.loading-overlay').remove();
-                                $form.data('files', null);
+                                var $uploadFrame = $('<iframe>');
 
-                                args.after({
-                                    data: $.extend(data, { uploadData: successArgs.data }),
-                                    ref: args.ref, // For backwards compatibility; use context
-                                    context: args.context,
-                                    $form: $form
-                                });
+                                $uploadFrame.appendTo('html body');
 
-                                $('div.overlay').remove();
-                                $('.tooltip-box').remove();
-                                $formContainer.remove();
-                                $(this).dialog('destroy');
-                                $('.hovered-elem').hide();
+                                
+                                // debug
+                                $uploadFrame.css({background:'white',width:320,height:240,position:'absolute',left:0,top:0,'z-index':12000}).show();
+                                //
                             },
                             error: function(msg) {
                                 cloudStack.dialog.error({ message: msg });
