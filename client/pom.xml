@@ -419,23 +419,23 @@
         </configuration>
       </plugin>
       <plugin>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-maven-plugin</artifactId>
-            <version>9.2.6.v20141205</version>
-             <dependencies>
-              <!-- specify the dependent jdbc driver here -->
-              <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${cs.mysql.version}</version>
-              </dependency>
-            </dependencies>
+         <groupId>org.mortbay.jetty</groupId>
+         <artifactId>maven-jetty-plugin</artifactId>
+         <version>6.1.26</version>
+         <dependencies>
+          <!-- specify the dependent jdbc driver here -->
+          <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>${cs.mysql.version}</version>
+          </dependency>
+        </dependencies>
         <configuration>
           <scanIntervalSeconds>0</scanIntervalSeconds>
           <stopPort>9966</stopPort>
           <stopKey>stop-jetty</stopKey>
           <connectors>
-            <connector implementation="org.eclipse.jetty.server.nio.SelectChannelConnector">
+            <connector implementation="org.mortbay.jetty.nio.SelectChannelConnector">
               <port>8080</port>
               <maxIdleTime>60000</maxIdleTime>
             </connector>
@@ -446,6 +446,13 @@
             <contextPath>/client</contextPath>
             <extraClasspath>${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
           </webAppConfig>
+          
+          <systemProperties>
+              <systemProperty>
+                 <name>log4j.configuration</name>
+                 <value>log4j-cloud.xml</value>
+              </systemProperty>
+          </systemProperties>
         </configuration>
       </plugin>
       <plugin>

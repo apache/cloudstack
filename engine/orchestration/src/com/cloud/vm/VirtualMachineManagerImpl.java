@@ -943,7 +943,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     if (planChangedByVolume) {
                         plan = originalPlan;
                         planChangedByVolume = false;
-                        //do not enter volume reuse for next retry, since we want to look for resorces outside the volume's cluster
+                        //do not enter volume reuse for next retry, since we want to look for resources outside the volume's cluster
                         reuseVolume = false;
                         continue;
                     }

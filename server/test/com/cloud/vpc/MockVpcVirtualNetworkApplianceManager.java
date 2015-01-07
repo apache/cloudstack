@@ -191,7 +191,7 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.VpcVirtualNetworkApplianceService#addVpcRouterToGuestNetwork(com.cloud.network.router.VirtualRouter, com.cloud.network.Network, boolean)
      */
     @Override
-    public boolean addVpcRouterToGuestNetwork(final VirtualRouter router, final Network network, final boolean isRedundant, final Map<VirtualMachineProfile.Param, Object> params)
+    public boolean addVpcRouterToGuestNetwork(final VirtualRouter router, final Network network, final Map<VirtualMachineProfile.Param, Object> params)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return false;
@@ -201,7 +201,7 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.VpcVirtualNetworkApplianceService#removeVpcRouterFromGuestNetwork(com.cloud.network.router.VirtualRouter, com.cloud.network.Network, boolean)
      */
     @Override
-    public boolean removeVpcRouterFromGuestNetwork(final VirtualRouter router, final Network network, final boolean isRedundant) throws ConcurrentOperationException {
+    public boolean removeVpcRouterFromGuestNetwork(final VirtualRouter router, final Network network) throws ConcurrentOperationException {
         // TODO Auto-generated method stub
         return false;
     }
