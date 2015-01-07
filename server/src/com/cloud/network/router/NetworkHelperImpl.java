@@ -469,8 +469,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     }
 
     @Override
-    public DomainRouterVO deployRouter(final RouterDeploymentDefinition routerDeploymentDefinition, final boolean startRouter) throws InsufficientAddressCapacityException,
-    InsufficientServerCapacityException, InsufficientCapacityException, StorageUnavailableException, ResourceUnavailableException {
+    public DomainRouterVO deployRouter(final RouterDeploymentDefinition routerDeploymentDefinition, final boolean startRouter)
+            throws InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException, StorageUnavailableException, ResourceUnavailableException {
 
         final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(routerDeploymentDefinition.getServiceOfferingId());
         final Account owner = routerDeploymentDefinition.getOwner();
@@ -520,7 +520,9 @@ public class NetworkHelperImpl implements NetworkHelper {
                 router.setDynamicallyScalable(template.isDynamicallyScalable());
                 router.setRole(Role.VIRTUAL_ROUTER);
                 router = _routerDao.persist(router);
+
                 final LinkedHashMap<Network, List<? extends NicProfile>> networks = createRouterNetworks(routerDeploymentDefinition);
+
                 _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, routerDeploymentDefinition.getPlan(), null);
                 router = _routerDao.findById(router.getId());
             } catch (final InsufficientCapacityException ex) {
@@ -632,6 +634,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         throw new CloudRuntimeException(errMsg);
     }
 
+    @Override
     public LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks(final RouterDeploymentDefinition routerDeploymentDefinition)
             throws ConcurrentOperationException, InsufficientAddressCapacityException {
 

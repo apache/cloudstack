@@ -186,7 +186,6 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
             final DomainRouterVO router = nwHelper.deployRouter(this, false);
 
             if (router != null) {
-                // TODO this.routerDao.addRouterToGuestNetwork(router, this.guestNetwork);
                 routers.add(router);
             }
         }

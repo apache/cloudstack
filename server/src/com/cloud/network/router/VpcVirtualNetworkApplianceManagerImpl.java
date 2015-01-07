@@ -127,7 +127,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public boolean addVpcRouterToGuestNetwork(final VirtualRouter router, final Network network, final boolean isRedundant, final Map<VirtualMachineProfile.Param, Object> params)
+    public boolean addVpcRouterToGuestNetwork(final VirtualRouter router, final Network network, final Map<VirtualMachineProfile.Param, Object> params)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         if (network.getTrafficType() != TrafficType.Guest) {
             s_logger.warn("Network " + network + " is not of type " + TrafficType.Guest);
@@ -159,7 +159,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         } finally {
             if (!result) {
                 s_logger.debug("Removing the router " + router + " from network " + network + " as a part of cleanup");
-                if (removeVpcRouterFromGuestNetwork(router, network, isRedundant)) {
+                if (removeVpcRouterFromGuestNetwork(router, network)) {
                     s_logger.debug("Removed the router " + router + " from network " + network + " as a part of cleanup");
                 } else {
                     s_logger.warn("Failed to remove the router " + router + " from network " + network + " as a part of cleanup");
@@ -173,7 +173,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public boolean removeVpcRouterFromGuestNetwork(final VirtualRouter router, final Network network, final boolean isRedundant) throws ConcurrentOperationException,
+    public boolean removeVpcRouterFromGuestNetwork(final VirtualRouter router, final Network network) throws ConcurrentOperationException,
     ResourceUnavailableException {
         if (network.getTrafficType() != TrafficType.Guest) {
             s_logger.warn("Network " + network + " is not of type " + TrafficType.Guest);

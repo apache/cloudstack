@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.router;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,9 +31,11 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.network.Network;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
 public interface NetworkHelper {
@@ -73,9 +76,11 @@ public interface NetworkHelper {
                     ConcurrentOperationException, ResourceUnavailableException;
 
     public abstract DomainRouterVO deployRouter(
-            RouterDeploymentDefinition routerDeploymentDefinition,
-            boolean startRouter)
+            RouterDeploymentDefinition routerDeploymentDefinition, boolean startRouter)
                     throws InsufficientAddressCapacityException,
                     InsufficientServerCapacityException, InsufficientCapacityException,
                     StorageUnavailableException, ResourceUnavailableException;
+
+    public abstract LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks(RouterDeploymentDefinition routerDeploymentDefinition)
+            throws ConcurrentOperationException, InsufficientAddressCapacityException;
 }
