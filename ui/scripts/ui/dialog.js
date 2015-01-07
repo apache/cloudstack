@@ -193,11 +193,12 @@
                         );
 
                 // red asterisk
-                var $astersikSpan = $('<span>').addClass('field-required').html('*');
-                $name.find('label').prepend($astersikSpan);
+                var $asterisk = $('<span>').addClass('field-required').html('*');
 
-                if (field.validation == null || field.validation.required == false) {
-                    $astersikSpan.hide();
+                $name.find('label').prepend($asterisk);
+
+                if (field.validation == null || !field.validation.required) {
+                    $asterisk.hide();
                 }
 
                 // Tooltip description
