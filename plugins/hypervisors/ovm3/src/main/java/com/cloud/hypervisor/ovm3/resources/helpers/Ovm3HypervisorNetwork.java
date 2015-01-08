@@ -219,7 +219,7 @@ public class Ovm3HypervisorNetwork {
         }
         return brName;
     }
-
+    /* getNetwork needs to be split in pure retrieval versus creation */
     public String getNetwork(NicTO nic) throws Ovm3ResourceException {
         String vlanId = null;
         String bridgeName = null;
@@ -230,6 +230,10 @@ public class Ovm3HypervisorNetwork {
         if (nic.getType() == TrafficType.Guest) {
             if (nic.getBroadcastType() == BroadcastDomainType.Vlan
                     && !"untagged".equalsIgnoreCase(vlanId)) {
+                /* This is completely the wrong place for this, we should NEVER
+                 * create a network when we're just trying to figure out if it's there
+                 * The name of this is misleading and wrong.
+                 */
                 bridgeName = createVlanBridge(config.getAgentGuestNetworkName(),
                         Integer.valueOf(vlanId));
             } else {

@@ -75,7 +75,8 @@ public class Xen extends OvmObject {
 
         /* 'vif': [ 'mac=00:21:f6:00:00:00,bridge=c0a80100'] */
         private ArrayList<String> _vmVifs = new ArrayList<String>();
-        private String[] _xvmVifs = new String[6];
+        private Integer maxVifs = 7;
+        private String[] _xvmVifs = new String[maxVifs -1];
         private String vmSimpleName = "";
         private String vmName = "";
         private String vmUuid = "";
@@ -301,7 +302,7 @@ public class Xen extends OvmObject {
 
         public boolean setupVifs() {
             for (String vif : _xvmVifs) {
-                if (vif != null) {
+                if (vif != null && !_vmVifs.contains(vif)) {
                     _vmVifs.add(vif);
                 }
             }
@@ -310,7 +311,20 @@ public class Xen extends OvmObject {
         }
 
         public Boolean removeVif(String bridge, String mac) {
-            // vmVfbs.remove("mac="+mac+",bridge="+bridge);
+            List<String> newVifs = new ArrayList<String>();
+            try {
+                String remove = "mac=" + mac + ",bridge=" + bridge;
+                for (String vif : getVmVifs()) {
+                    if (vif.equals(remove)) {
+                        LOGGER.debug("skipping vif: " + remove);
+                    } else {
+                        LOGGER.debug("keeping vif: " + vif);
+                        newVifs.add(vif);
+                    }
+                }
+            } catch (Exception e) {
+                LOGGER.debug(e);
+            }
             return true;
         }
 
@@ -876,6 +890,7 @@ public class Xen extends OvmObject {
     public Vm getVmConfig(String vmName) throws Ovm3ResourceException {
         defVm = this.getRunningVmConfig(vmName);
         if (defVm == null) {
+            LOGGER.debug("Unable to retrieve running config for " + vmName);
             return defVm;
         }
         return getVmConfig(defVm.getVmRootDiskPoolId(), defVm.getVmUuid());

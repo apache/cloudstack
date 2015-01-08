@@ -29,6 +29,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachVolumeAnswer;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
@@ -107,11 +108,11 @@ public class Ovm3VmSupport {
     private Boolean createVif(Xen.Vm vm, NicTO nic)
             throws Ovm3ResourceException {
         try {
-            if (network.getNetwork(nic) != null) {
+            String net = network.getNetwork(nic);
+            if (net != null) {
                 LOGGER.debug("Adding vif " + nic.getDeviceId() + " " + " "
-                        + nic.getMac() + " " + network.getNetwork(nic) + " to "
-                        + vm.getVmName());
-                vm.addVif(nic.getDeviceId(), network.getNetwork(nic), nic.getMac());
+                        + nic.getMac() + " " + net + " to " + vm.getVmName());
+                vm.addVif(nic.getDeviceId(), net, nic.getMac());
             } else {
                 LOGGER.debug("Unable to add vif " + nic.getDeviceId()
                         + " no network for " + vm.getVmName());
@@ -125,13 +126,35 @@ public class Ovm3VmSupport {
         }
         return true;
     }
+    private Boolean deleteVif(Xen.Vm vm, NicTO nic)
+            throws Ovm3ResourceException {
+        /* here we should use the housekeeping of VLANs/Networks etc..
+         * so we can clean after the last VM is gone
+         */
+        try {
+            String net = network.getNetwork(nic);
+            if (net != null) {
+                LOGGER.debug("Removing vif " + nic.getDeviceId() + " " + " "
+                        + nic.getMac() + " " + net + " from " + vm.getVmName());
+                vm.removeVif(net, nic.getMac());
+            } else {
+                LOGGER.debug("Unable to remove vif " + nic.getDeviceId()
+                        + " no network for " + vm.getVmName());
+                return false;
+            }
+        } catch (Exception e) {
+            String msg = "Unable to remove vif " + nic.getType() + " for "
+                    + vm.getVmName() + " " + e.getMessage();
+            LOGGER.debug(msg);
+            throw new Ovm3ResourceException(msg);
+        }
+        return true;
+    }
     /* TODO: Hot plugging harddisks... */
     public AttachVolumeAnswer execute(AttachVolumeCommand cmd) {
         return new AttachVolumeAnswer(cmd, "You must stop " + cmd.getVmName()
                 + " first, Ovm3 doesn't support hotplug datadisk");
     }
-
-
 
     /* Migration should make sure both HVs are the same ? */
     public PrepareForMigrationAnswer execute(PrepareForMigrationCommand cmd) {
@@ -389,33 +412,50 @@ public class Ovm3VmSupport {
     }
 
     /**
-     * PlugNicAnswer: plug a network interface into a VM
-     * @param cmd
+     * Implements the unplug and plug feature for Nics, the boolan decides
+     * to either plug (true) or unplug (false)
+     *
+     * @param nic
+     * @param vmName
+     * @param plug
      * @return
      */
-    public PlugNicAnswer execute(PlugNicCommand cmd) {
-        String vmName = cmd.getVmName();
-        NicTO nic = cmd.getNic();
+    private Answer plugNunplugNic(NicTO nic, String vmName, Boolean plug) {
         try {
             Xen xen = new Xen(c);
             Xen.Vm vm = xen.getVmConfig(vmName);
             /* check running */
             if (vm == null) {
-                return new PlugNicAnswer(cmd, false,
-                        "Unable to execute PlugNicCommand due to missing VM");
+                return new Answer(null, false,
+                        "Unable to execute command due to missing VM");
             }
             // setup the NIC in the VM config.
-            createVif(vm, nic);
-            vm.setupVifs();
-
+            if (plug) {
+                createVif(vm, nic);
+                vm.setupVifs();
+            } else {
+                deleteVif(vm, nic);
+                vm.setupVifs();
+                // return new Answer(null, false, "Not implemented yet!");
+            }
             // execute the change
             xen.configureVm(ovmObject.deDash(vm.getPrimaryPoolUuid()),
                     vm.getVmUuid());
         } catch (Ovm3ResourceException e) {
-            return new PlugNicAnswer(cmd, false,
-                    "Unable to execute PlugNicCommand due to " + e.toString());
+            String msg = "Unable to execute command due to " + e.toString();
+            LOGGER.debug(msg);
+            return new Answer(null, false, msg);
         }
-        return new PlugNicAnswer(cmd, true, "success");
+        return new Answer(null, true, "success");
+    }
+    /**
+     * PlugNicAnswer: plug a network interface into a VM
+     * @param cmd
+     * @return
+     */
+    public PlugNicAnswer execute(PlugNicCommand cmd) {
+        Answer ans = plugNunplugNic(cmd.getNic(), cmd.getVmName(), true);
+        return new PlugNicAnswer(cmd, ans.getResult(), ans.getDetails());
     }
 
     /**
@@ -424,6 +464,7 @@ public class Ovm3VmSupport {
      * @return
      */
     public UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
-        return new UnPlugNicAnswer(cmd, true, "");
+        Answer ans = plugNunplugNic(cmd.getNic(), cmd.getVmName(), false);
+        return new UnPlugNicAnswer(cmd, ans.getResult(), ans.getDetails());
     }
 }

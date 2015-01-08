@@ -29,11 +29,9 @@ import com.cloud.hypervisor.ovm3.objects.NetworkTest;
 import com.cloud.hypervisor.ovm3.objects.XenTest;
 import com.cloud.hypervisor.ovm3.objects.XmlTestResultTest;
 import com.cloud.hypervisor.ovm3.resources.Ovm3HypervisorResource;
-import com.cloud.hypervisor.ovm3.resources.Ovm3StorageProcessor;
 import com.cloud.hypervisor.ovm3.resources.Ovm3VirtualRoutingResource;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3Configuration;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3ConfigurationTest;
-import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3StoragePool;
 
 public class Ovm3SupportTest {
     ConnectionTest con = new ConnectionTest();
@@ -45,8 +43,6 @@ public class Ovm3SupportTest {
     Ovm3HypervisorResource hypervisor = new Ovm3HypervisorResource();
     Ovm3VirtualRoutingResource virtualrouting = new Ovm3VirtualRoutingResource();
     Ovm3ConfigurationTest configTest = new Ovm3ConfigurationTest();
-    Ovm3StoragePool pool;
-    Ovm3StorageProcessor storage;
 
     public ConnectionTest prepConnectionResults() {
         ConnectionTest con = new ConnectionTest();
@@ -91,9 +87,12 @@ public class Ovm3SupportTest {
         con.setMethodResponse("start_vm", results.getNil());
         con.setMethodResponse("reboot_vm", results.getNil());
         con.setMethodResponse("stop_vm", results.getNil());
+        con.setMethodResponse("configure_vm", results.getNil());
         con.setMethodResponse("copy_file", results.getNil());
         con.setMethodResponse("storage_plugin_destroy", results.getNil());
         con.setMethodResponse("check_domr_ssh",
+                results.simpleResponseWrap("boolean", "1"));
+        con.setMethodResponse("check_domr_port",
                 results.simpleResponseWrap("boolean", "1"));
         con.setMethodResponse("exec_domr", csp.getDomrExecXml());
         con.setMethodResponse("ovs_domr_upload_file",

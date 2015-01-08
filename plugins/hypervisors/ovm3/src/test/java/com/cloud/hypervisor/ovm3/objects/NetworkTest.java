@@ -30,8 +30,40 @@ public class NetworkTest {
     private String MAC = "52:54:00:24:47:70";
     private String INT = "xenbr0";
     private String PHY = "bond0";
-    private String VLANBR = "bond1";
-    private String VLANINT = "xenbr1";
+    private String VLANBR = "bond0";
+    public String getBridge() {
+        return BR;
+    }
+
+    public String getMac() {
+        return MAC;
+    }
+
+    public String getInterface() {
+        return INT;
+    }
+
+    public String getPhysical() {
+        return PHY;
+    }
+
+    public String getVlanBridge() {
+        return VLANBR;
+    }
+
+    public String getVlanInterface() {
+        return VLANINT;
+    }
+
+    public Integer getVlan() {
+        return VLAN;
+    }
+
+    public String getControl() {
+        return CONTROL;
+    }
+
+    private String VLANINT = "xenbr0";
     private Integer VLAN = 200;
     private String CONTROL = "control0";
     private String EMPTY = results.escapeOrNot("<?xml version=\"1.0\" ?>"
@@ -214,7 +246,7 @@ public class NetworkTest {
                     + "          </Interfaces>"
                     + "          <BootProto>none</BootProto>"
                     + "        </Device>"
-                    + "        <Device Name=\"xenbr1.200\">"
+                    + "        <Device Name=\"xenbr0.200\">"
                     + "          <Family Type=\"AF_INET\">"
                     + "            <MAC>52:54:00:26:7F:A0</MAC>"
                     + "          </Family>"
@@ -287,7 +319,7 @@ public class NetworkTest {
         results.basicBooleanTest(net.startOvsVlanBridge(
                 VLANINT + "." + VLAN.toString(), VLANBR, VLAN), false);
     }
-
+    
     @Test
     public void testVlanBridge() throws Ovm3ResourceException {
         String resp = "bridge=" + VLANINT + "." + VLAN.toString() + " netdev="

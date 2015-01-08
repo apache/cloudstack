@@ -32,6 +32,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -42,7 +43,6 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.ovm3.objects.CloudStackPluginTest;
-import com.cloud.hypervisor.ovm3.objects.Connection;
 import com.cloud.hypervisor.ovm3.objects.ConnectionTest;
 import com.cloud.hypervisor.ovm3.objects.NetworkTest;
 import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
@@ -178,6 +178,7 @@ public class Ovm3HypervisorResourceTest {
         Answer ra = hypervisor.executeRequest(cmd);
         return ra.getResult();
     }
+    
 
     @Test
     public void rebootCommandTest() throws ConfigurationException {
@@ -385,5 +386,12 @@ public class Ovm3HypervisorResourceTest {
     @Test
     public void stopResource() {
         results.basicBooleanTest(hypervisor.stop());
+    }
+    @Test
+    public void readyCommand() throws ConfigurationException {
+        hypervisor = support.prepare(configTest.getParams());
+        ReadyCommand ready = new ReadyCommand();
+        Answer ra = hypervisor.executeRequest(ready);
+        results.basicBooleanTest(ra.getResult());
     }
 }
