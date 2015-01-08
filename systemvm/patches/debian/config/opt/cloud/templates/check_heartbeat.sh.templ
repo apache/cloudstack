@@ -35,7 +35,12 @@ then
         s=$(($s+1))
         echo $s > $STRIKE_FILE
     else
-        rm $STRIKE_FILE
+        if [ -e $STRIKE_FILE ]
+        then
+            rm $STRIKE_FILE
+        else
+            echo keepalived.strikes file does not exist! >> $ROUTER_LOG
+        fi
     fi
     #3 strikes rule
     if [ $s -gt 2 ]
