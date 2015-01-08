@@ -18,6 +18,7 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.resources.helpers;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -64,6 +65,7 @@ public class Ovm3Configuration {
     private String domRCloudPath = "/opt/cloud/bin/";
     private Map<String, Network.Interface> agentInterfaces = null;
     private Boolean istest = false;
+    private Map<String, Object> rawParams = new HashMap<String, Object>();
 
     public Ovm3Configuration(Map<String, Object> params) throws ConfigurationException {
         setAgentZoneId(Long.parseLong((String) params.get("zone")));
@@ -382,5 +384,12 @@ public class Ovm3Configuration {
             throw new ConfigurationException(msg);
         }
         return param;
+    }
+
+    public Map<String, Object> getRawParams() {
+        return rawParams;
+    }
+    public void setRawParams(Map<String, Object> params) {
+        rawParams.putAll(params);
     }
 }

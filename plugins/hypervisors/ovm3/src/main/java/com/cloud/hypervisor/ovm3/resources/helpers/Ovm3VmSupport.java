@@ -241,8 +241,6 @@ public class Ovm3VmSupport {
         }
     }
 
-
-
     /*
      */
     public GetVncPortAnswer execute(GetVncPortCommand cmd) {
@@ -260,16 +258,21 @@ public class Ovm3VmSupport {
 
     private VmStatsEntry getVmStat(String vmName) {
         CloudStackPlugin cSp = new CloudStackPlugin(c);
-        Map<String, String> oleStats = vmStats.get(vmName);
+        Map<String, String> oldVmStats = null;
+        Map<String, String> newVmStats = null;
         VmStatsEntry stats = new VmStatsEntry();
-        Map<String, String> newStats;
         try {
-            newStats = cSp.ovsDomUStats(vmName);
+            if (vmStats.containsKey(vmName)) {
+                oldVmStats = new HashMap<String, String>();
+                oldVmStats.putAll(vmStats.get(vmName));
+            }
+            newVmStats = cSp.ovsDomUStats(vmName);
         } catch (Ovm3ResourceException e) {
             LOGGER.info("Unable to retrieve stats from " + vmName, e);
             return stats;
         }
-        if (oleStats == null) {
+        if (oldVmStats == null) {
+            LOGGER.debug("No old stats retrieved stats from " + vmName);
             stats.setNumCPUs(1);
             stats.setNetworkReadKBs(0);
             stats.setNetworkWriteKBs(0);
@@ -280,33 +283,32 @@ public class Ovm3VmSupport {
             stats.setCPUUtilization(0);
             stats.setEntityType("vm");
         } else {
-            /* beware of negatives ? */
-            Integer cpus = Integer.parseInt(newStats.get("vcpus"));
-            stats.setNumCPUs(Integer.parseInt(newStats.get(cpus)));
-            stats.setNetworkReadKBs(Double.parseDouble(newStats.get("rx_bytes"))
-                    - Double.parseDouble(oleStats.get("rx_bytes")));
-            stats.setNetworkWriteKBs(Double.parseDouble(newStats
-                    .get("tx_bytes"))
-                    - Double.parseDouble(oleStats.get("tx_bytes")));
-            stats.setDiskReadKBs(Double.parseDouble(newStats.get("rd_bytes"))
-                    - Double.parseDouble(oleStats.get("rd_bytes")));
-            stats.setDiskWriteKBs(Double.parseDouble(newStats.get("rw_bytes"))
-                    - Double.parseDouble(oleStats.get("rw_bytes")));
-            stats.setDiskReadIOs(Double.parseDouble(newStats.get("rd_ops"))
-                    - Double.parseDouble(oleStats.get("rd_ops")));
-            stats.setDiskWriteIOs(Double.parseDouble(newStats.get("rw_ops"))
-                    - Double.parseDouble(oleStats.get("rw_ops")));
-            Double dCpu = Double.parseDouble(newStats.get("cputime"))
-                    - Double.parseDouble(oleStats.get("cputime"));
-            Double dTime = Double.parseDouble(newStats.get("uptime"))
-                    - Double.parseDouble(oleStats.get("uptime"));
+            LOGGER.debug("Retrieved new stats from " + vmName);
+            int cpus = Integer.parseInt(newVmStats.get("vcpus"));
+            stats.setNumCPUs(cpus);
+            stats.setNetworkReadKBs(doubleMin(newVmStats.get("rx_bytes"), oldVmStats.get("rx_bytes")));
+            stats.setNetworkWriteKBs(doubleMin(newVmStats.get("tx_bytes"), oldVmStats.get("tx_bytes")));
+            stats.setDiskReadKBs(doubleMin(newVmStats.get("rd_bytes"), oldVmStats.get("rd_bytes")));
+            stats.setDiskWriteKBs(doubleMin(newVmStats.get("rw_bytes"), oldVmStats.get("rw_bytes")));
+            stats.setDiskReadIOs(doubleMin(newVmStats.get("rd_ops"), oldVmStats.get("rd_ops")));
+            stats.setDiskWriteIOs(doubleMin(newVmStats.get("rw_ops"), oldVmStats.get("rw_ops")));
+            Double dCpu = doubleMin(newVmStats.get("cputime"), oldVmStats.get("cputime"));
+            Double dTime = doubleMin(newVmStats.get("uptime"), oldVmStats.get("uptime"));
             Double cpupct = dCpu / dTime * 100 * cpus;
             stats.setCPUUtilization(cpupct);
             stats.setEntityType("vm");
         }
-        ((ConcurrentHashMap<String, Map<String, String>>) vmStats).replace(
-                vmName, newStats);
+        ((ConcurrentHashMap<String, Map<String, String>>) vmStats).put(
+                vmName, newVmStats);
         return stats;
+    }
+    private Double doubleMin(String x, String y) {
+        try {
+            double z = Double.parseDouble(x) - Double.parseDouble(y);
+            return z;
+        } catch (NullPointerException e) {
+            return 0D;
+        }
     }
 
     public GetVmStatsAnswer execute(GetVmStatsCommand cmd) {
@@ -320,7 +322,7 @@ public class Ovm3VmSupport {
                 (HashMap<String, VmStatsEntry>) vmStatsNameMap);
     }
     /* This is not create for us, but really start */
-    public boolean xstartVm(String repoId, String vmId) throws XmlRpcException {
+    public boolean startVm(String repoId, String vmId) throws XmlRpcException {
         Xen host = new Xen(c);
         try {
             if (host.getRunningVmConfig(vmId) == null) {

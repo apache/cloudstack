@@ -31,7 +31,7 @@ public class NetworkTest {
     private String INT = "xenbr0";
     private String PHY = "bond0";
     private String VLANBR = "bond0";
-    public String getBridge() {
+    public String getBroadcast() {
         return BR;
     }
 

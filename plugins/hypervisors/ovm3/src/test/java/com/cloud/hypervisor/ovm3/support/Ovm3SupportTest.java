@@ -58,6 +58,9 @@ public class Ovm3SupportTest {
                 configTest.getParams()));
         return hypervisor;
     }
+    public ConnectionTest getConnection() {
+        return con;
+    }
 
     public ConnectionTest configureResult(ConnectionTest con) {
         con.setMethodResponse("check_dom0_ip",
@@ -88,8 +91,11 @@ public class Ovm3SupportTest {
         con.setMethodResponse("reboot_vm", results.getNil());
         con.setMethodResponse("stop_vm", results.getNil());
         con.setMethodResponse("configure_vm", results.getNil());
+        con.setMethodResponse("migrate_vm", results.getNil());
         con.setMethodResponse("copy_file", results.getNil());
         con.setMethodResponse("storage_plugin_destroy", results.getNil());
+        con.setMethodResponse("ping",
+                results.simpleResponseWrap("boolean", "1"));
         con.setMethodResponse("check_domr_ssh",
                 results.simpleResponseWrap("boolean", "1"));
         con.setMethodResponse("check_domr_port",
@@ -97,6 +103,7 @@ public class Ovm3SupportTest {
         con.setMethodResponse("exec_domr", csp.getDomrExecXml());
         con.setMethodResponse("ovs_domr_upload_file",
                 results.simpleResponseWrap("boolean", "1"));
+        con.setMethodResponse("ovs_domU_stats", (csp.getDomuStatsXml()));
         return con;
     }
 }

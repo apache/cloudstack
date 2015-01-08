@@ -184,7 +184,7 @@ public class Ovm3HypervisorNetwork {
                     return new Answer(cmd, false, "ping failed");
                 }
             } else {
-                return new Answer(cmd, false, "why asks me to ping router???");
+                return new Answer(cmd, false, "why asks me to ping a router???");
             }
             return new Answer(cmd, true, "success");
         } catch (Ovm3ResourceException e) {

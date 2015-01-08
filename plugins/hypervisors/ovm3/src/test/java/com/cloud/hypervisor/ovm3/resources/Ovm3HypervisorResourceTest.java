@@ -225,7 +225,7 @@ public class Ovm3HypervisorResourceTest {
     }
 
     @Test
-    public void stopVmException() throws ConfigurationException {
+    public void stopVmExceptionTest() throws ConfigurationException {
         hypervisor = vmActionPreparation();
         con.removeMethodResponse("list_vms");
         StopCommand cmd = new StopCommand(vmName, true, true);
@@ -297,10 +297,7 @@ public class Ovm3HypervisorResourceTest {
         return host;
     }
 
-    @Test
-    public void testCreateVm() throws ConfigurationException,
-    Ovm3ResourceException {
-        /* use what we know */
+    public VirtualMachineTO createVm(String vmName) throws Ovm3ResourceException {
         con = support.prepConnectionResults();
         Xen vdata = new Xen(con);
         Xen.Vm vm = vdata.getVmConfig(vmName);
@@ -326,11 +323,15 @@ public class Ovm3HypervisorResourceTest {
                 cpus, speed, minRam, maxRam, bootloader, os, enableHA,
                 limitCpuUse, vncPassword);
         vmspec.setBootArgs("");
-
-        /* appendages */
         addDisksToSpec(vmspec, vm.getVmDisks());
         addNicsToSpec(vmspec, vm.getVmVifs());
+        return vmspec;
+    }
 
+    @Test
+    public void createVmTest() throws ConfigurationException,
+            Ovm3ResourceException {
+        VirtualMachineTO vmspec = createVm(vmName);
         hypervisor = vmActionPreparation();
         StartCommand cmd = new StartCommand(vmspec,
                 getHost(hypervisor.getName()), true);
@@ -339,38 +340,10 @@ public class Ovm3HypervisorResourceTest {
     }
 
     @Test
-    public void testCreateOtherVm() throws ConfigurationException,
-    Ovm3ResourceException {
-        /* use what we know */
-        con = support.prepConnectionResults();
-        Xen vdata = new Xen(con);
-        Xen.Vm vm = vdata.getVmConfig(vmName);
-        vdata.listVm(xen.getRepoId(), xen.getVmId());
-
-        Long id = 1L;
-        String instanceName = vm.getVmName();
-        VirtualMachine.Type type = Type.DomainRouter;
-        int cpus = 1; // vm.getVmCpus();
-        Integer speed = 0;
-        long minRam = vm.getVmMemory();
-        long maxRam = vm.getVmMemory();
-        BootloaderType bootloader = BootloaderType.PyGrub;
-        String os = "bogus";
-        boolean enableHA = true;
-        boolean limitCpuUse = false;
-        String vncPassword = "gobbeldygoo";
-        // public StartCommand(VirtualMachineTO vm, Host host, boolean
-        // executeInSequence) {
-        // ./api/src/com/cloud/agent/api/to/VirtualMachineTO.java
-        VirtualMachineTO vmspec = new VirtualMachineTO(id, instanceName, type,
-                cpus, speed, minRam, maxRam, bootloader, os, enableHA,
-                limitCpuUse, vncPassword);
-        vmspec.setBootArgs("");
-
-        /* appendages */
-        addDisksToSpec(vmspec, vm.getVmDisks());
-        addNicsToSpec(vmspec, vm.getVmVifs());
-
+    public void createOtherVmTest() throws ConfigurationException,
+            Ovm3ResourceException {
+        VirtualMachineTO vmspec = createVm(vmName);
+        vmspec.setOs("bogus");
         hypervisor = vmActionPreparation();
         StartCommand cmd = new StartCommand(vmspec,
                 getHost(hypervisor.getName()), true);
@@ -379,16 +352,16 @@ public class Ovm3HypervisorResourceTest {
     }
 
     @Test
-    public void startResource() {
+    public void startResourceTest() {
         results.basicBooleanTest(hypervisor.start());
     }
 
     @Test
-    public void stopResource() {
+    public void stopResourceTest() {
         results.basicBooleanTest(hypervisor.stop());
     }
     @Test
-    public void readyCommand() throws ConfigurationException {
+    public void readyCommandTest() throws ConfigurationException {
         hypervisor = support.prepare(configTest.getParams());
         ReadyCommand ready = new ReadyCommand();
         Answer ra = hypervisor.executeRequest(ready);

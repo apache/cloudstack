@@ -296,13 +296,12 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
 
     @Override
     public void setConfigParams(Map<String, Object> params) {
-        // TODO Auto-generated method stub
+        configuration.setRawParams(params);
     }
 
     @Override
     public Map<String, Object> getConfigParams() {
-        // TODO Auto-generated method stub
-        return null;
+        return configuration.getRawParams();
     }
 
     @Override
@@ -352,6 +351,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         storageprocessor = new Ovm3StorageProcessor(c, configuration, storagepool);
         guesttypes = new Ovm3VmGuestTypes();
         virtualroutingsupport = new Ovm3VirtualRoutingSupport(c, configuration, virtualroutingresource);
+        this.setConfigParams(params);
         return true;
     }
 
