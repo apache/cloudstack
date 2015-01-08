@@ -36,6 +36,7 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
@@ -59,6 +60,7 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -374,16 +376,23 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         VolumeInfo vol = volFactory.getVolume(volume.getId());
         DataStore store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
-        SnapshotInfo snapInfo = snapshotFactory.getSnapshot(snapshot.getId(), DataStoreRole.Image);
-        // sync snapshot to region store if necessary
-        DataStore snapStore = snapInfo.getDataStore();
-        long snapVolId = snapInfo.getVolumeId();
-        try {
-            _snapshotSrv.syncVolumeSnapshotsToRegionStore(snapVolId, snapStore);
-        } catch (Exception ex) {
-            // log but ignore the sync error to avoid any potential S3 down issue, it should be sync next time
-            s_logger.warn(ex.getMessage(), ex);
+        DataStoreRole dataStoreRole = getDataStoreRole(snapshot);
+        SnapshotInfo snapInfo = snapshotFactory.getSnapshot(snapshot.getId(), dataStoreRole);
+
+        // don't try to perform a sync if the DataStoreRole of the snapshot is equal to DataStoreRole.Primary
+        if (!DataStoreRole.Primary.equals(dataStoreRole)) {
+            try {
+                // sync snapshot to region store if necessary
+                DataStore snapStore = snapInfo.getDataStore();
+                long snapVolId = snapInfo.getVolumeId();
+
+                _snapshotSrv.syncVolumeSnapshotsToRegionStore(snapVolId, snapStore);
+            } catch (Exception ex) {
+                // log but ignore the sync error to avoid any potential S3 down issue, it should be sync next time
+                s_logger.warn(ex.getMessage(), ex);
+            }
         }
+
         // create volume on primary from snapshot
         AsyncCallFuture<VolumeApiResult> future = volService.createVolumeFromSnapshot(vol, store, snapInfo);
         try {
@@ -401,6 +410,30 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             throw new CloudRuntimeException("Failed to create volume from snapshot", e);
         }
 
+    }
+
+    public DataStoreRole getDataStoreRole(Snapshot snapshot) {
+        SnapshotDataStoreVO snapshotStore = _snapshotDataStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
+
+        if (snapshotStore == null) {
+            return DataStoreRole.Image;
+        }
+
+        long storagePoolId = snapshotStore.getDataStoreId();
+        DataStore dataStore = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+
+        Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
+
+        if (mapCapabilities != null) {
+            String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
+            Boolean supportsStorageSystemSnapshots = new Boolean(value);
+
+            if (supportsStorageSystemSnapshots) {
+                return DataStoreRole.Primary;
+            }
+        }
+
+        return DataStoreRole.Image;
     }
 
     protected DiskProfile createDiskCharacteristics(VolumeInfo volume, VirtualMachineTemplate template, DataCenter dc, DiskOffering diskOffering) {
@@ -517,7 +550,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     // The disk offering can collect this information and pass it on to the volume that's about to be created.
     // Ex. if you want a 10 GB CloudStack volume to reside on managed storage on Xen, this leads to an SR
     // that is a total size of (10 GB * (hypervisorSnapshotReserveSpace / 100) + 10 GB).
-    private VolumeInfo updateHypervisorSnapshotReserveForVolume(DiskOffering diskOffering, VolumeInfo volumeInfo, HypervisorType hyperType) {
+    @Override
+    public VolumeInfo updateHypervisorSnapshotReserveForVolume(DiskOffering diskOffering, VolumeInfo volumeInfo, HypervisorType hyperType) {
         Integer hypervisorSnapshotReserve = diskOffering.getHypervisorSnapshotReserve();
 
         if (hyperType == HypervisorType.KVM) {

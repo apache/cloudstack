@@ -1589,6 +1589,10 @@ public class XenServerStorageProcessor implements StorageProcessor {
         DataTO destData = cmd.getDestTO();
         DataStoreTO imageStore = srcData.getDataStore();
 
+        if (srcData.getDataStore() instanceof PrimaryDataStoreTO && destData.getDataStore() instanceof PrimaryDataStoreTO) {
+            return createVolumeFromSnapshot2(cmd);
+        }
+
         if (!(imageStore instanceof NfsTO)) {
             return new CopyCmdAnswer("unsupported protocol");
         }
@@ -1645,6 +1649,51 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
         // In all cases return something.
         return new CopyCmdAnswer(details);
+    }
+
+    protected Answer createVolumeFromSnapshot2(CopyCommand cmd) {
+        try {
+            Connection conn = hypervisorResource.getConnection();
+
+            Map<String, String> srcOptions = cmd.getOptions();
+
+            String src_iScsiName = srcOptions.get(DiskTO.IQN);
+            String srcStorageHost = srcOptions.get(DiskTO.STORAGE_HOST);
+            String srcChapInitiatorUsername = srcOptions.get(DiskTO.CHAP_INITIATOR_USERNAME);
+            String srcChapInitiatorSecret = srcOptions.get(DiskTO.CHAP_INITIATOR_SECRET);
+
+            SR srcSr = hypervisorResource.getIscsiSR(conn, src_iScsiName, srcStorageHost, src_iScsiName, srcChapInitiatorUsername, srcChapInitiatorSecret, false);
+
+            Map<String, String> destOptions = cmd.getOptions2();
+
+            String dest_iScsiName = destOptions.get(DiskTO.IQN);
+            String destStorageHost = destOptions.get(DiskTO.STORAGE_HOST);
+            String destChapInitiatorUsername = destOptions.get(DiskTO.CHAP_INITIATOR_USERNAME);
+            String destChapInitiatorSecret = destOptions.get(DiskTO.CHAP_INITIATOR_SECRET);
+
+            SR destSr = hypervisorResource.getIscsiSR(conn, dest_iScsiName, destStorageHost, dest_iScsiName, destChapInitiatorUsername, destChapInitiatorSecret, false);
+
+            // there should only be one VDI in this SR
+            VDI srcVdi = srcSr.getVDIs(conn).iterator().next();
+
+            VDI vdiCopy = srcVdi.copy(conn, destSr);
+
+            VolumeObjectTO newVol = new VolumeObjectTO();
+
+            newVol.setSize(vdiCopy.getVirtualSize(conn));
+            newVol.setPath(vdiCopy.getUuid(conn));
+            newVol.setFormat(ImageFormat.VHD);
+
+            hypervisorResource.removeSR(conn, srcSr);
+            hypervisorResource.removeSR(conn, destSr);
+
+            return new CopyCmdAnswer(newVol);
+        }
+        catch (Exception ex) {
+            s_logger.warn("Failed to copy snapshot to volume: " + ex.toString(), ex);
+
+            return new CopyCmdAnswer(ex.getMessage());
+        }
     }
 
     @Override

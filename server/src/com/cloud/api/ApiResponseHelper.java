@@ -483,7 +483,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (snapshot instanceof SnapshotInfo) {
             snapshotInfo = (SnapshotInfo)snapshot;
         } else {
-            DataStoreRole dataStoreRole = getDataStoreRole(snapshot);
+            DataStoreRole dataStoreRole = getDataStoreRole(snapshot, _snapshotStoreDao, _dataStoreMgr);
 
             snapshotInfo = snapshotfactory.getSnapshot(snapshot.getId(), dataStoreRole);
         }
@@ -509,15 +509,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         return snapshotResponse;
     }
 
-    private DataStoreRole getDataStoreRole(Snapshot snapshot) {
-        SnapshotDataStoreVO snapshotStore = _snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
+    public static DataStoreRole getDataStoreRole(Snapshot snapshot, SnapshotDataStoreDao snapshotStoreDao, DataStoreManager dataStoreMgr) {
+        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
 
         if (snapshotStore == null) {
             return DataStoreRole.Image;
         }
 
         long storagePoolId = snapshotStore.getDataStoreId();
-        DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
+        DataStore dataStore = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
 
         Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
 

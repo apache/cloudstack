@@ -19,6 +19,9 @@
 -- Schema upgrade from 4.5.0 to 4.6.0
 --
 
+ALTER TABLE `cloud`.`snapshots` ADD COLUMN `min_iops` bigint(20) unsigned COMMENT 'Minimum IOPS';
+ALTER TABLE `cloud`.`snapshots` ADD COLUMN `max_iops` bigint(20) unsigned COMMENT 'Maximum IOPS';
+
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'management-server', "stats.output.uri", "", "URI to additionally send StatsCollector statistics to", "", NULL, NULL, 0);
 
 DROP VIEW IF EXISTS `cloud`.`domain_view`;

@@ -125,4 +125,5 @@ public interface VolumeOrchestrationService {
 
     void updateVolumeDiskChain(long volumeId, String path, String chainInfo);
 
+    VolumeInfo updateHypervisorSnapshotReserveForVolume(DiskOffering diskOffering, VolumeInfo volumeInfo, HypervisorType hyperType);
 }

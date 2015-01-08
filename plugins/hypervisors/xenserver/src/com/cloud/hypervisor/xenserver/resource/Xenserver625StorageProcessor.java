@@ -656,7 +656,11 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         DataTO destData = cmd.getDestTO();
         PrimaryDataStoreTO pool = (PrimaryDataStoreTO)destData.getDataStore();
         VolumeObjectTO volume = (VolumeObjectTO)destData;
-                DataStoreTO imageStore = srcData.getDataStore();
+        DataStoreTO imageStore = srcData.getDataStore();
+
+        if (srcData.getDataStore() instanceof PrimaryDataStoreTO && destData.getDataStore() instanceof PrimaryDataStoreTO) {
+            return createVolumeFromSnapshot2(cmd);
+        }
 
         if (!(imageStore instanceof NfsTO)) {
             return new CopyCmdAnswer("unsupported protocol");
