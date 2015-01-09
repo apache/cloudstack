@@ -200,6 +200,9 @@ class TestResetSSHKeypair(cloudstackTestCase):
             for c in cmds:
                 ssh.execute(c)
 
+            # Adding delay of 120 sec to avoid data loss due to timing issue
+            time.sleep(120)
+
             #Stop virtual machine
             cls.virtual_machine.stop(cls.api_client)
 
@@ -1030,6 +1033,9 @@ class TestResetSSHKeyUserRights(cloudstackTestCase):
             ]
         for c in cmds:
             ssh.execute(c)
+
+        # Adding delay of 120 sec to avoid data loss due to timing issue
+        time.sleep(120)
 
         try:
             #Stop virtual machine
