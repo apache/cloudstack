@@ -106,7 +106,6 @@ class Services:
                         "sleep": 180,
                      }
 
-
 class TestTemplate(cloudstackTestCase):
 
     def setUp(self):
@@ -252,7 +251,6 @@ class TestTemplate(cloudstackTestCase):
                          "Check if the deployed VM returned a password"
                         )
         return
-
 
 class TestNATRules(cloudstackTestCase):
 
@@ -1000,4 +998,148 @@ class TestTemplates(cloudstackTestCase):
                             self.services["template"]["name"],
                             "Check the name of the template"
                         )
+        return
+
+class TestDataPersistency(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+
+        cls.testClient = super(TestDataPersistency, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = cls.testClient.getParsedTestDataConfig()
+        # Get Zone, Domain and templates
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
+        cls.services['mode'] = cls.zone.networktype
+        template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostype"]
+                            )
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+
+        #Create an account, network, VM and IP addresses
+        cls.account = Account.create(
+                                     cls.api_client,
+                                     cls.services["account"],
+                                     domainid=cls.domain.id
+                                     )
+
+        cls.userapiclient = cls.testClient.getUserApiClient(
+                            UserName=cls.account.name,
+                            DomainName=cls.account.domain)
+
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
+        cls.virtual_machine = VirtualMachine.create(
+                                    cls.api_client,
+                                    cls.services["virtual_machine"],
+                                    templateid=template.id,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
+                                    serviceofferingid=cls.service_offering.id,
+                                    mode=cls.services["mode"]
+                                    )
+        cls.cleanup = [
+                       cls.account,
+                       cls.service_offering
+                       ]
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            #Clean up, terminate the created templates
+            cleanup_resources(cls.api_client, cls.cleanup)
+
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        return
+
+    def tearDown(self):
+        # No need
+        return
+
+    @attr(tags=["advanced", "basic", "advancedns", "eip"], required_hardware="true")
+    def test_01_data_persistency_root_disk(self):
+        """
+        Test the timing issue of root disk data sync
+
+        # 1. Write data to root disk of a VM
+        # 2. Create a template from the root disk of VM
+        # 3. Create a new VM from this template
+        # 4. Check that the data is present in the new VM
+
+        This is to test that data is persisted on root disk of VM or not
+        when template is created immediately from it
+        """
+
+        ssh = self.virtual_machine.get_ssh_client()
+
+        sampleText = "This is sample data"
+
+        cmds = [
+                "cd /root/",
+                "touch testFile.txt",
+                "chmod 600 testFile.txt",
+                "echo %s >> testFile.txt" % sampleText
+                ]
+        for c in cmds:
+            ssh.execute(c)
+
+        #Stop virtual machine
+        self.virtual_machine.stop(self.api_client)
+
+        list_volume = Volume.list(
+                            self.api_client,
+                            virtualmachineid=self.virtual_machine.id,
+                            type='ROOT',
+                            listall=True)
+
+        if isinstance(list_volume, list):
+            self.volume = list_volume[0]
+        else:
+            raise Exception(
+                "Exception: Unable to find root volume for VM: %s" %
+                self.virtual_machine.id)
+
+        self.services["template"]["ostype"] = self.services["ostype"]
+        #Create templates for Edit, Delete & update permissions testcases
+        customTemplate = Template.create(
+                self.userapiclient,
+                self.services["template"],
+                self.volume.id,
+                account=self.account.name,
+                domainid=self.account.domainid
+            )
+        self.cleanup.append(customTemplate)
+        # Delete the VM - No longer needed
+        self.virtual_machine.delete(self.apiclient)
+
+        virtual_machine = VirtualMachine.create(
+                                    self.apiclient,
+                                    self.services["virtual_machine"],
+                                    templateid=customTemplate.id,
+                                    accountid=self.account.name,
+                                    domainid=self.account.domainid,
+                                    serviceofferingid=self.service_offering.id,
+                                    mode=self.services["mode"]
+                                    )
+
+        ssh = virtual_machine.get_ssh_client()
+
+        response = ssh.execute("cat /root/testFile.txt")
+        res = str(response[0])
+
+        self.assertEqual(res, sampleText, "The data %s does not match\
+                with sample test %s" %
+                (res, sampleText))
         return
