@@ -1155,6 +1155,10 @@ setup_secstorage() {
     setup_sshd $ETH0_IP "eth0"
   fi
   setup_apache2 $ETH2_IP
+  a2enmod proxy
+  a2enmod proxy_http
+  [ -f /etc/apache2/sites-available/default-ssl ] && sed -i -e "s/RewriteEngine Off/RewriteEngine On/" /etc/apache2/sites-available/default-ssl
+  service apache2 restart
 
   disable_rpfilter
   enable_fwding 0
