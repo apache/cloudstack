@@ -146,4 +146,11 @@ public class CloudStackPlugin extends OvmObject {
     public boolean dom0HasIp(String ovm3PoolVip) throws Ovm3ResourceException {
         return (Boolean) callWrapper("check_dom0_ip", ovm3PoolVip);
     }
+    public boolean dom0CheckStatus(String script) throws Ovm3ResourceException {
+        Object[] x = (Object[]) callWrapper("check_dom0_status", script);
+        Boolean running = (Boolean) x[0];
+        Boolean started = (Boolean) x[1];
+        System.out.println(running + " " + started);
+        return true;
+    }
 }

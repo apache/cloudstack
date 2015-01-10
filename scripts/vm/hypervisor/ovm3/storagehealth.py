@@ -29,6 +29,7 @@ import subprocess, threading
 import logging
 import logging.handlers
 import re
+import os
 
 """ a class to do checks with as a thread so we can have nice timeouts """
 class Check(object):
@@ -48,7 +49,7 @@ class Check(object):
         if file:
             epoch=time.time()
             self.logger.debug('Work on file: %s' % (file))
-            print "file: %s %s" % (file,epoch) 
+            # print "file: %s %s" % (file,epoch) 
             text_file = open("%s" % file, "w")
             text_file.write("%s" % epoch)
             text_file.close()
@@ -94,10 +95,21 @@ class Check(object):
             if self.failcmd:
                 self.logger.critical('Critical: executing; %s' % (failcmd))
                 p=subprocess.Popen(failcmd, shell=True, stdout=subprocess.PIPE)
-        runtime=(time.time() - start)
 
+""" here we figure out what we're running on more or less """
+def figureOutPrimary():
+    redhat="/etc/redhat-release"
+    if os.path.isfile(redhat):
+        for line in open(redhat):
+            if "XenServer" in line:
+                return "/var/run/sr-mount"
+            if "Oracle VM server" in line:
+                return "/OVS/Repositories/"
+    print "Unknown hypervisor, consider adding it, exiting"
+    sys.exit(42)
+    
 """ The logger is here """
-def Logger(level=logging.CRITICAL):
+def Logger(level=logging.WARNING):
     logger = logging.getLogger('cs-heartbeat')
     logger.setLevel(level)
     handler = logging.handlers.SysLogHandler(address = '/dev/log')
@@ -112,7 +124,7 @@ if __name__ == '__main__':
     file=".hb-%s" % (hostname)
     cmd=""
     level=logging.WARNING
-    primary="/OVS/Repositories"
+    primary=""
     failcmd=("echo 1 > /proc/sys/kernel/sysrq "
         "&& "
         "echo c > /proc/sysrq-trigger")
@@ -142,7 +154,22 @@ if __name__ == '__main__':
         if o in ('-i', '--interval'):
             interval=int(a)
 
+    if primary == "":
+        primary=figureOutPrimary()
+
     logger=Logger(level=level)
+    os.chdir("/") 
+    os.setsid() 
+    os.umask(0) 
+    try: 
+        pid = os.fork() 
+        if pid > 0:
+            # exit first parent
+            sys.exit(0) 
+    except OSError, e: 
+        print >>sys.stderr, "fork #1 failed: %d (%s)" % (e.errno, e.strerror) 
+        sys.exit(1)
+
     while True:
         start=time.time()
         checker = Check(cmd=cmd,

@@ -18,7 +18,9 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.resources.helpers;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -60,6 +62,10 @@ public class Ovm3Configuration {
     private String agentStorageNetworkName;
     private String agentControlNetworkName = "control0";
     private String agentOvmRepoPath = "/OVS/Repositories";
+    private String agentScript = "cloudstack.py";
+    private String agentCheckStorageScript = "storagehealth.py";
+    private List<String> agentScripts = Arrays.asList(agentCheckStorageScript, agentScript);
+    private String agentScriptsDir = "/opt/cloudstack/bin";
     private String agentSecStoragePath = "/nfsmnt";
     private int domRSshPort = 3922;
     private String domRCloudPath = "/opt/cloud/bin/";
@@ -117,11 +123,11 @@ public class Ovm3Configuration {
     }
 
     public String getAgentName() {
-        return agentName;
+        return agentHostname;
     }
 
     public void setAgentName(String agentName) {
-        this.agentName = agentName;
+        this.agentHostname = agentName;
     }
 
     public String getAgentIp() {
@@ -361,6 +367,21 @@ public class Ovm3Configuration {
     public void setIsTest(Boolean t) {
         istest = t;
     }
+    public String getAgentScript() {
+        return agentScript;
+    }
+
+    public void setAgentScript(String agentScript) {
+        this.agentScript = agentScript;
+    }
+
+    public String getAgentScriptsDir() {
+        return agentScriptsDir;
+    }
+
+    public void setAgentScriptsDir(String agentScriptsDir) {
+        this.agentScriptsDir = agentScriptsDir;
+    }
 
     public Map<String, Network.Interface> getAgentInterfaces() {
         return agentInterfaces;
@@ -368,6 +389,20 @@ public class Ovm3Configuration {
 
     public void setAgentInterfaces(Map<String, Network.Interface> agentInterfaces) {
         this.agentInterfaces = agentInterfaces;
+    }
+    public List<String> getAgentScripts() {
+        return agentScripts;
+    }
+
+    public void setAgentScripts(List<String> agentScripts) {
+        this.agentScripts = agentScripts;
+    }
+    public String getAgentCheckStorageScript() {
+        return agentCheckStorageScript;
+    }
+
+    public void setAgentCheckStorageScript(String agentCheckStorageScript) {
+        this.agentCheckStorageScript = agentCheckStorageScript;
     }
 
     /**

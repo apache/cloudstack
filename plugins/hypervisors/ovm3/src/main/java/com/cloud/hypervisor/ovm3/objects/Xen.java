@@ -42,7 +42,7 @@ public class Xen extends OvmObject {
      * It's either a list retrieval or
      * /usr/lib64/python2.4/site-packages/agent/lib/xenvm.py
      */
-    public static class Vm {
+    public class Vm {
         /* 'vfb': [ 'type=vnc,vncunused=1,vnclisten=127.0.0.1,keymap=en-us'] */
         private List<String> vmVncElement = new ArrayList<String>();
         private Map<String, String> vmVnc = new HashMap<String, String>() {

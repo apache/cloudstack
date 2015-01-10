@@ -174,6 +174,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
                 LOGGER.debug("Agent did not respond correctly: " + ping
                         + " but got " + pong);
             }
+
         } catch (Ovm3ResourceException|NullPointerException e) {
             LOGGER.debug("Check agent status failed", e);
             return null;

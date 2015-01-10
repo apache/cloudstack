@@ -63,14 +63,15 @@ import com.cloud.vm.VirtualMachine.State;
 import com.trilead.ssh2.SCPClient;
 
 public class Ovm3HypervisorSupport {
-    private final Logger LOGGER = Logger
-            .getLogger(Ovm3HypervisorSupport.class);
+    private final Logger LOGGER = Logger.getLogger(Ovm3HypervisorSupport.class);
     private Connection c;
     private Ovm3Configuration config;
+
     public Ovm3HypervisorSupport(Connection conn, Ovm3Configuration ovm3config) {
         c = conn;
         config = ovm3config;
     }
+
     /* statemap bounces */
     private Map<String, PowerState> powerStateMaps;
     {
@@ -99,13 +100,16 @@ public class Ovm3HypervisorSupport {
 
     /**
      * removeVmState: get rid of the state of a VM
+     *
      * @param vmName
      */
     public void revmoveVmState(String vmName) {
         vmStateMap.remove(vmName);
     }
+
     /**
      * vmStateMapClear: clear out the statemap and repopulate it.
+     *
      * @throws Ovm3ResourceException
      */
     public void vmStateMapClear() throws Ovm3ResourceException {
@@ -114,15 +118,19 @@ public class Ovm3HypervisorSupport {
             syncState(this.vmStateMap);
         }
     }
+
     /**
      * vmStateStarting: set the state of a vm to starting
+     *
      * @param vmName
      */
     public void setVmStateStarting(String vmName) {
         setVmState(vmName, State.Starting);
     }
+
     /**
      * getVmState: get the state for a vm
+     *
      * @param vmName
      * @return
      */
@@ -132,6 +140,7 @@ public class Ovm3HypervisorSupport {
 
     /**
      * vmStateChange: set the state of a vm to state
+     *
      * @param vmName
      * @param state
      */
@@ -143,12 +152,14 @@ public class Ovm3HypervisorSupport {
 
     /**
      * getSystemVMKeyFile:
-     * Figure out where the cloud  keyfile lives for access to the systemvm.
+     * Figure out where the cloud keyfile lives for access to the systemvm.
+     *
      * @param filename
      * @return keyfileURI
      */
     public File getSystemVMKeyFile(String filename) {
-        String keyPath =  Script.findScript("", "scripts/vm/systemvm/" + filename);
+        String keyPath = Script.findScript("", "scripts/vm/systemvm/"
+                + filename);
         File keyFile = null;
         if (keyPath != null) {
             LOGGER.debug("found SshKey " + keyPath);
@@ -170,13 +181,15 @@ public class Ovm3HypervisorSupport {
             URL url = this.getClass().getClassLoader()
                     .getResource("scripts/vm/systemvm/" + filename);
             keyFile = new File(url.getPath());
-            LOGGER.error("Unable to locate " + filename
-                    + " last resort: " + keyFile.toString());
+            LOGGER.error("Unable to locate " + filename + " last resort: "
+                    + keyFile.toString());
         }
         return keyFile;
     }
+
     /**
      * fillHostInfo: Startup the routing for the host.
+     *
      * @param cmd
      */
     public void fillHostInfo(StartupRoutingCommand cmd) {
@@ -224,13 +237,16 @@ public class Ovm3HypervisorSupport {
                 config.setAgentPublicNetworkName(defaultBridge);
             }
             if (config.getAgentPrivateNetworkName() == null) {
-                config.setAgentPrivateNetworkName(config.getAgentPublicNetworkName());
+                config.setAgentPrivateNetworkName(config
+                        .getAgentPublicNetworkName());
             }
             if (config.getAgentGuestNetworkName() == null) {
-                config.setAgentGuestNetworkName(config.getAgentPublicNetworkName());
+                config.setAgentGuestNetworkName(config
+                        .getAgentPublicNetworkName());
             }
             if (config.getAgentStorageNetworkName() == null) {
-                config.setAgentStorageNetworkName(config.getAgentPrivateNetworkName());
+                config.setAgentStorageNetworkName(config
+                        .getAgentPrivateNetworkName());
             }
             Map<String, String> d = cmd.getHostDetails();
             d.put("public.network.device", config.getAgentPublicNetworkName());
@@ -247,21 +263,19 @@ public class Ovm3HypervisorSupport {
                     + e.getMessage(), e);
         }
     }
+
     /**
      * setupServer:
      * Add the cloudstack plugin and setup the agent.
      * Add the ssh keys to the host.
+     *
      * @param c
      * @throws IOException
      */
     public Boolean setupServer(String key) throws IOException {
-        /* ssh-copy-id anyone ? */
+        LOGGER.debug("Setup all bits on agent: " + config.getAgentHostname());
         /* version dependent patching ? */
         try {
-            /*
-             * Do an agent check first, so we don't have to ssh, upload over the
-             * agent and restart if possible
-             */
             com.trilead.ssh2.Connection sshConnection = SSHCmdHelper
                     .acquireAuthorizedConnection(config.getAgentIp(),
                             config.getAgentSshUserName(),
@@ -274,15 +288,24 @@ public class Ovm3HypervisorSupport {
                         config.getAgentSshPassword()));
             }
             SCPClient scp = new SCPClient(sshConnection);
-            String userDataScript = "scripts/vm/hypervisor/ovm3/cloudstack.py";
-            String userDataScriptPath = Script.findScript("", userDataScript);
+            String userDataScriptDir = "scripts/vm/hypervisor/ovm3/";
+            String userDataScriptPath = Script.findScript("", userDataScriptDir);
             if (userDataScriptPath == null) {
                 throw new ConfigurationException("Can not find "
-                        + userDataScript);
+                        + userDataScriptDir);
             }
-            scp.put(userDataScriptPath, "", "0755");
-            String prepareCmd = String.format("./cloudstack.py " + "--ssl="
-                    + c.getUseSsl() + " " + "--port=" + c.getPort());
+            String mkdir = "mkdir -p " + config.getAgentScriptsDir();
+            if (!SSHCmdHelper.sshExecuteCmd(sshConnection, mkdir)) {
+                throw new ConfigurationException("Failed " + mkdir + " on "
+                        + config.getAgentHostname());
+            }
+            for (String script : config.getAgentScripts()) {
+                script = userDataScriptPath + "/" + script;
+                scp.put(script, config.getAgentScriptsDir(), "0755");
+            }
+            String prepareCmd = String.format(config.getAgentScriptsDir() + "/"
+                    + config.getAgentScript() + " --ssl=" + c.getUseSsl() + " "
+                    + "--port=" + c.getPort());
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, prepareCmd)) {
                 throw new ConfigurationException("Module insertion at "
                         + config.getAgentHostname() + " failed");
@@ -290,6 +313,8 @@ public class Ovm3HypervisorSupport {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
             cSp.ovsUploadSshKey(config.getAgentSshKeyFileName(),
                     FileUtils.readFileToString(getSystemVMKeyFile(key)));
+            cSp.dom0CheckStatus(config.getAgentScriptsDir() + "/"
+                    + config.getAgentCheckStorageScript());
         } catch (Exception es) {
             LOGGER.error("Unexpected exception ", es);
             String msg = "Unable to install module in agent";
@@ -297,17 +322,20 @@ public class Ovm3HypervisorSupport {
         }
         return true;
     }
-   /**
-    * Get all the VMs
-    * @return
-    * @throws Ovm3ResourceException
-    */
+
+    /**
+     * Get all the VMs
+     *
+     * @return
+     * @throws Ovm3ResourceException
+     */
     private Map<String, Xen.Vm> getAllVms() throws Ovm3ResourceException {
         try {
             Xen vms = new Xen(c);
             return vms.getRunningVmConfigs();
         } catch (Exception e) {
-            LOGGER.debug("getting VM list from " + config.getAgentHostname() + " failed", e);
+            LOGGER.debug("getting VM list from " + config.getAgentHostname()
+                    + " failed", e);
             throw new CloudRuntimeException("Exception on getting VMs from "
                     + config.getAgentHostname() + ":" + e.getMessage(), e);
         }
@@ -315,10 +343,12 @@ public class Ovm3HypervisorSupport {
 
     /**
      * getAllVmStates: Get the state of all the VMs
+     *
      * @return
      * @throws Ovm3ResourceException
      */
-    private Map<String, State> getAllVmStates(Map<String, State> vmStateMap) throws Ovm3ResourceException {
+    private Map<String, State> getAllVmStates(Map<String, State> vmStateMap)
+            throws Ovm3ResourceException {
         Map<String, Xen.Vm> vms = getAllVms();
         final Map<String, State> states = new HashMap<String, State>();
         for (final Map.Entry<String, Xen.Vm> entry : vms.entrySet()) {
@@ -364,15 +394,19 @@ public class Ovm3HypervisorSupport {
         }
         return states;
     }
+
     /**
      * syncState: Sync the state the VMs are in on the hypervisor.
+     *
      * @return
      * @throws Ovm3ResourceException
      */
     public Map<String, State> syncState() throws Ovm3ResourceException {
         return syncState(this.vmStateMap);
     }
-    private Map<String, State> syncState(Map<String, State> vmStateMap) throws Ovm3ResourceException {
+
+    private Map<String, State> syncState(Map<String, State> vmStateMap)
+            throws Ovm3ResourceException {
         Map<String, State> newStates;
         Map<String, State> oldStates = null;
         final Map<String, State> changes = new HashMap<String, State>();
@@ -481,7 +515,9 @@ public class Ovm3HypervisorSupport {
     }
 
     /**
-     * convertStateToPower: Convert a state, running, starting, stopped etc to a power state.
+     * convertStateToPower: Convert a state, running, starting, stopped etc to a
+     * power state.
+     *
      * @param s
      * @param powerStateMap
      * @return
@@ -493,6 +529,7 @@ public class Ovm3HypervisorSupport {
 
     /**
      * hostVmStateReport: Get all the VM states.
+     *
      * @return
      * @throws Ovm3ResourceException
      */
@@ -511,6 +548,7 @@ public class Ovm3HypervisorSupport {
     /**
      * CheckHealthAnwer: Check the health of an agent on the hypervisor.
      * TODO: should elaborate here with checks...
+     *
      * @param cmd
      * @return
      */
@@ -521,9 +559,8 @@ public class Ovm3HypervisorSupport {
         try {
             pong = test.echo(ping);
         } catch (Ovm3ResourceException e) {
-            LOGGER.debug(
-                    "CheckHealth went wrong: " + config.getAgentHostname() + ", "
-                            + e.getMessage(), e);
+            LOGGER.debug("CheckHealth went wrong: " + config.getAgentHostname()
+                    + ", " + e.getMessage(), e);
             return new CheckHealthAnswer(cmd, false);
         }
         if (ping.contentEquals(pong)) {
@@ -533,8 +570,10 @@ public class Ovm3HypervisorSupport {
                 + " from " + config.getAgentHostname());
         return new CheckHealthAnswer(cmd, false);
     }
+
     /**
      * materCheck
+     *
      * @return
      */
     /* TODO: move the connection elsewhere.... */
@@ -548,24 +587,28 @@ public class Ovm3HypervisorSupport {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
             if (cSp.dom0HasIp(config.getOvm3PoolVip())) {
                 LOGGER.debug("Host " + config.getAgentHostname()
-                        + " is a master, already has vip " + config.getOvm3PoolVip());
+                        + " is a master, already has vip "
+                        + config.getOvm3PoolVip());
                 config.setAgentIsMaster(true);
             } else if (cSp.ping(config.getOvm3PoolVip())) {
                 LOGGER.debug("Host " + config.getAgentHostname()
-                        + " has a master, someone has vip " + config.getOvm3PoolVip());
+                        + " has a master, someone has vip "
+                        + config.getOvm3PoolVip());
                 config.setAgentHasMaster(true);
             } else {
                 LOGGER.debug("Host " + config.getAgentHostname()
-                        + " becomes a master, no one has vip " + config.getOvm3PoolVip());
+                        + " becomes a master, no one has vip "
+                        + config.getOvm3PoolVip());
                 config.setAgentIsMaster(true);
             }
         } catch (Ovm3ResourceException e) {
-            LOGGER.debug("Host " + config.getAgentHostname() + " can't reach master: "
-                    + e.getMessage());
+            LOGGER.debug("Host " + config.getAgentHostname()
+                    + " can't reach master: " + e.getMessage());
             config.setAgentHasMaster(false);
         }
         return config.getAgentIsMaster();
     }
+
     /* Check if the host is in ready state for CS */
     public ReadyAnswer execute(ReadyCommand cmd) {
         try {
@@ -584,10 +627,12 @@ public class Ovm3HypervisorSupport {
                     return new ReadyAnswer(cmd, "I am not the master server");
                 }
             } else if (host.getIsMaster()) {
-                LOGGER.debug("Master, not clustered " + config.getAgentHostname());
+                LOGGER.debug("Master, not clustered "
+                        + config.getAgentHostname());
                 return new ReadyAnswer(cmd);
             } else {
-                LOGGER.debug("No master, not clustered " + config.getAgentHostname());
+                LOGGER.debug("No master, not clustered "
+                        + config.getAgentHostname());
                 return new ReadyAnswer(cmd);
             }
         } catch (CloudRuntimeException | Ovm3ResourceException e) {
@@ -597,6 +642,7 @@ public class Ovm3HypervisorSupport {
         }
 
     }
+
     /* check "the" virtual machine */
     public CheckVirtualMachineAnswer execute(
             final CheckVirtualMachineCommand cmd) {
@@ -633,21 +679,22 @@ public class Ovm3HypervisorSupport {
      */
     public MaintainAnswer execute(MaintainCommand cmd) {
         /*
-        try {
-            Network net = new Network(c);
-            net.stopOvsLocalConfig(config.getAgentControlNetworkName());
-        } catch (Ovm3ResourceException e) {
-            LOGGER.debug("unable to disable " + config.getAgentControlNetworkName(), e);
-        }
-        */
+         * try {
+         * Network net = new Network(c);
+         * net.stopOvsLocalConfig(config.getAgentControlNetworkName());
+         * } catch (Ovm3ResourceException e) {
+         * LOGGER.debug("unable to disable " +
+         * config.getAgentControlNetworkName(), e);
+         * }
+         */
         return new MaintainAnswer(cmd);
     }
 
     public Answer execute(GetHostStatsCommand cmd) {
         try {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
-            Map<String, String> stats = cSp
-                    .ovsDom0Stats(config.getAgentPublicNetworkName());
+            Map<String, String> stats = cSp.ovsDom0Stats(config
+                    .getAgentPublicNetworkName());
             Double cpuUtil = Double.parseDouble(stats.get("cpu"));
             Double rxBytes = Double.parseDouble(stats.get("rx"));
             Double txBytes = Double.parseDouble(stats.get("tx"));
