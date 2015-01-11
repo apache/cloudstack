@@ -287,7 +287,7 @@ def dom0CheckIp(ip):
             break
     return False
 
-def dom0CheckStatus(path, script):
+def dom0CheckStatus(path, script, timeout, interval):
     storagehealth="storagehealth.py"
     path="/opt/cloudstack/bin"
     running = False
@@ -304,7 +304,7 @@ def dom0CheckStatus(path, script):
             c = c + 1 
     if c < 1:
         started = True
-        command = ["%s/%s" % (path, storagehealth)]
+        command = ["%s/%s -t %d -i %d" % (path, storagehealth, timeout, interval)]
         log.warning("%s started: %s/%s" % (storagehealth, path, storagehealth))
         subprocess.call(command, shell=True)
     

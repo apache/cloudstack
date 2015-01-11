@@ -104,6 +104,7 @@ public class Ovm3SupportTest {
         con.setMethodResponse("ovs_domr_upload_file",
                 results.simpleResponseWrap("boolean", "1"));
         con.setMethodResponse("ovs_domU_stats", (csp.getDomuStatsXml()));
+        con.setMethodResponse("check_dom0_status", (csp.getDom0StorageCheckXml()));
         return con;
     }
 }

@@ -29,6 +29,7 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.ovm3.objects.Network;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.net.NetUtils;
 
 /* holds config data for the Ovm3 Hypervisor */
@@ -64,6 +65,8 @@ public class Ovm3Configuration {
     private String agentOvmRepoPath = "/OVS/Repositories";
     private String agentScript = "cloudstack.py";
     private String agentCheckStorageScript = "storagehealth.py";
+    private Integer agentStorageCheckTimeout = 120;
+    private Integer agentStorageCheckInterval = 1;
     private List<String> agentScripts = Arrays.asList(agentCheckStorageScript, agentScript);
     private String agentScriptsDir = "/opt/cloudstack/bin";
     private String agentSecStoragePath = "/nfsmnt";
@@ -73,9 +76,11 @@ public class Ovm3Configuration {
     private Boolean istest = false;
     private Map<String, Object> rawParams = new HashMap<String, Object>();
 
-    public Ovm3Configuration(Map<String, Object> params) throws ConfigurationException {
+    public Ovm3Configuration(Map<String, Object> params)
+            throws ConfigurationException {
         setAgentZoneId(Long.parseLong((String) params.get("zone")));
-        setAgentPodId(Long.parseLong(validateParam("PodId", (String) params.get("pod"))));
+        setAgentPodId(Long.parseLong(validateParam("PodId",
+                (String) params.get("pod"))));
         setAgentClusterId(Long.parseLong((String) params.get("cluster")));
         setOvm3PoolVip(String.valueOf(params.get("ovm3vip")));
         setAgentInOvm3Pool(BooleanUtils.toBoolean((String) params
@@ -88,16 +93,27 @@ public class Ovm3Configuration {
             setAgentOvsAgentPort(Integer.parseInt((String) params
                     .get("agentport")));
         }
-        setAgentSshUserName(validateParam("Username", (String) params.get("username")));
-        setAgentSshPassword(validateParam("Password", (String) params.get("password")));
+        setAgentSshUserName(validateParam("Username",
+                (String) params.get("username")));
+        setAgentSshPassword(validateParam("Password",
+                (String) params.get("password")));
         setCsGuid(validateParam("Cloudstack GUID", (String) params.get("guid")));
-        setAgentOvsAgentUser(validateParam("OVS Username", (String) params.get("agentusername")));
-        setAgentOvsAgentPassword(validateParam("OVS Password", (String) params.get("agentpassword")));
-        setAgentPrivateNetworkName((String) params.get("private.network.device"));
+        setAgentOvsAgentUser(validateParam("OVS Username",
+                (String) params.get("agentusername")));
+        setAgentOvsAgentPassword(validateParam("OVS Password",
+                (String) params.get("agentpassword")));
+        setAgentPrivateNetworkName((String) params
+                .get("private.network.device"));
         setAgentPublicNetworkName((String) params.get("public.network.device"));
         setAgentGuestNetworkName((String) params.get("guest.network.device"));
         setAgentStorageNetworkName((String) params
                 .get("storage.network.device1"));
+        this.setAgentStorageCheckTimeout(NumbersUtil.parseInt(
+                (String) params.get("ovm3.heartbeat.timeout"),
+                agentStorageCheckTimeout));
+        this.setAgentStorageCheckInterval(NumbersUtil.parseInt(
+                (String) params.get("ovm3.heartbeat.interval"),
+                agentStorageCheckInterval));
         validatePoolAndCluster();
         if (params.containsKey("istest")) {
             setIsTest((Boolean) params.get("istest"));
@@ -403,6 +419,20 @@ public class Ovm3Configuration {
 
     public void setAgentCheckStorageScript(String agentCheckStorageScript) {
         this.agentCheckStorageScript = agentCheckStorageScript;
+    }
+    public Integer getAgentStorageCheckTimeout() {
+        return agentStorageCheckTimeout;
+    }
+    public void setAgentStorageCheckTimeout(Integer agentStorageCheckTimeout) {
+        this.agentStorageCheckTimeout = agentStorageCheckTimeout;
+    }
+
+    public Integer getAgentStorageCheckInterval() {
+        return agentStorageCheckInterval;
+    }
+
+    public void setAgentStorageCheckInterval(Integer agentStorageCheckInterval) {
+        this.agentStorageCheckInterval = agentStorageCheckInterval;
     }
 
     /**

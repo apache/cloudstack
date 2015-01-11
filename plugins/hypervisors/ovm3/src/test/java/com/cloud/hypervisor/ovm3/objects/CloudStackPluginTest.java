@@ -155,7 +155,20 @@ public class CloudStackPluginTest {
             + "</param>"
             + "</params>"
             + "</methodResponse>";
-
+    private String dom0StorageCheckXml = "<?xml version='1.0'?>"
+            + "<methodResponse>"
+            + "<params>"
+            + "<param>"
+            + "<value><array><data>"
+            + "<value><boolean>1</boolean></value>"
+            + "<value><boolean>0</boolean></value>"
+            + "</data></array></value>"
+            + "</param>"
+            + "</params>"
+            + "</methodResponse>";
+    public String getDom0StorageCheckXml() {
+        return dom0StorageCheckXml;
+    }
     public String getDomrExecXml() {
         return domrExecXml;
     }
@@ -168,6 +181,12 @@ public class CloudStackPluginTest {
         return domuStatsXml;
     }
 
+    @Test
+    public void testDom0CheckStorage() throws Ovm3ResourceException {
+        con.setResult(dom0StorageCheckXml);
+        results.basicBooleanTest(cSp.dom0CheckStorageHealth("", "", 120, 1));
+        results.basicBooleanTest(cSp.dom0StorageCheckStarted(), false);
+    }
     @Test
     public void testOvsUploadFile() throws Ovm3ResourceException {
         con.setResult(results.getBoolean(true));

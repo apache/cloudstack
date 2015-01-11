@@ -69,6 +69,8 @@ public class Ovm3ConfigurationTest {
         params.put("guest.network.device", "xenbr0");
         params.put("cluster", "1");
         params.put("xenserver.heartbeat.timeout", "120");
+        params.put("ovm3.heartbeat.timeout", "120");
+        params.put("ovm3.heartbeat.interval", "1");
         params.put("zone", "1");
         params.put("istest", true);
     }

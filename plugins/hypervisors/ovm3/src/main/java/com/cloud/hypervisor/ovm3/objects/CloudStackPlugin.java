@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 public class CloudStackPlugin extends OvmObject {
     private static final Logger LOGGER = Logger
             .getLogger(CloudStackPlugin.class);
-
+    private boolean checkstoragestarted = false;
     public CloudStackPlugin(Connection c) {
         setClient(c);
     }
@@ -146,11 +146,13 @@ public class CloudStackPlugin extends OvmObject {
     public boolean dom0HasIp(String ovm3PoolVip) throws Ovm3ResourceException {
         return (Boolean) callWrapper("check_dom0_ip", ovm3PoolVip);
     }
-    public boolean dom0CheckStatus(String script) throws Ovm3ResourceException {
-        Object[] x = (Object[]) callWrapper("check_dom0_status", script);
+    public boolean dom0CheckStorageHealth(String path, String script, Integer timeout, Integer interval) throws Ovm3ResourceException {
+        Object[] x = (Object[]) callWrapper("check_dom0_status", path, script, timeout, interval);
         Boolean running = (Boolean) x[0];
-        Boolean started = (Boolean) x[1];
-        System.out.println(running + " " + started);
-        return true;
+        checkstoragestarted = (Boolean) x[1];
+        return running;
+    }
+    public boolean dom0StorageCheckStarted() {
+        return checkstoragestarted;
     }
 }

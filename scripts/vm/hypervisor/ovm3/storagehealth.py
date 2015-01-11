@@ -118,70 +118,85 @@ def Logger(level=logging.WARNING):
 
 """ main for preso-dent """
 if __name__ == '__main__':
+    me=os.path.basename(__file__)
     timeout=120
     interval=1
     hostname=socket.gethostname()
     file=".hb-%s" % (hostname)
     cmd=""
-    level=logging.WARNING
+    level=logging.DEBUG
     primary=""
     failcmd=("echo 1 > /proc/sys/kernel/sysrq "
         "&& "
         "echo c > /proc/sysrq-trigger")
-
-    # get options
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "p:f:c:t:i:",
-            [ 'primary=','failcmd=','cmd=','timeout=','interval'])
-    except getopt.GetoptError:
-        print """Usage: 
-               --primary|-p: match for primary storage to monitor.
-               --failcmd|-f: executed on timeout.
-               --cmd|-c: command to execute next to hb file(s) on primary.
-               --timeout|-t: excute failcmd after timeout(s) is hit.
-               --interval|-i: run the checks every %ss>""" 
-        sys.exit()
-
-    for o, a in opts:
-        if o in ('-p', '--primary'):
-            primary=a
-        if o in ('-f', '--failcmd'):
-            failcmd=a
-        if o in ('-c', '--cmd'):
-            cmd=a
-        if o in ('-t', '--timeout'):
-            timeout=int(a)
-        if o in ('-i', '--interval'):
-            interval=int(a)
+    
+    # Decide based on our identity
+    if me == "heartbeat": 
+        #  String result = callHostPluginPremium(conn, "heartbeat",
+        #  "host", _host.uuid,
+        #  "timeout", Integer.toString(_heartbeatTimeout),
+        #  "interval", Integer.toString(_heartbeatInterval));
+        # if (result == null || !result.contains("> DONE <")) {
+        #
+        print heartbeat
+    else:
+        # get options
+        try:
+            opts, args = getopt.getopt(sys.argv[1:], "p:f:c:t:i:",
+                [ 'primary=','failcmd=','cmd=','timeout=','interval'])
+        except getopt.GetoptError:
+            print """Usage: 
+                   --primary|-p: match for primary storage to monitor.
+                   --failcmd|-f: executed on timeout.
+                   --cmd|-c: command to execute next to hb file(s) on primary.
+                   --timeout|-t: excute failcmd after timeout(s) is hit.
+                   --interval|-i: run the checks every %ss>""" 
+            sys.exit()
+    
+        for o, a in opts:
+            if o in ('-p', '--primary'):
+                primary=a
+            if o in ('-f', '--failcmd'):
+                failcmd=a
+            if o in ('-c', '--cmd'):
+                cmd=a
+            if o in ('-t', '--timeout'):
+                timeout=int(a)
+            if o in ('-i', '--interval'):
+                interval=int(a)
 
     if primary == "":
         primary=figureOutPrimary()
 
     logger=Logger(level=level)
     os.chdir("/") 
-    os.setsid() 
+    # os.setsid() 
     os.umask(0) 
-    try: 
+    try:    
         pid = os.fork() 
         if pid > 0:
             # exit first parent
+            if me == "heartbeat":
+                print "> DONE <" 
             sys.exit(0) 
     except OSError, e: 
         print >>sys.stderr, "fork #1 failed: %d (%s)" % (e.errno, e.strerror) 
         sys.exit(1)
 
+    checker = Check(cmd=cmd,
+        failcmd=failcmd,
+        file=file,
+        timeout=timeout,
+        interval=interval,
+        logger=Logger(level=level));
+
     while True:
         start=time.time()
-        checker = Check(cmd=cmd,
-            failcmd=failcmd,
-            file=file,
-            timeout=timeout,
-            interval=interval,
-            logger=Logger(level=level));
-        runtime=time.time() - start
+        checker.run(timeout)
+        runtime=time.time() - start 
         logger.debug("cmd time: %s" % (runtime))
         if runtime > interval:
             logger.warning('Warning: runtime %s bigger than interval %s' %
                 (runtime, interval))
-        else:
+        else:   
             time.sleep(interval)

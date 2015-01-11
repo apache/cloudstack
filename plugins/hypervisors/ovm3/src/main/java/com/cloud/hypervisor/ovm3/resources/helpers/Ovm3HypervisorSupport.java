@@ -313,8 +313,10 @@ public class Ovm3HypervisorSupport {
             CloudStackPlugin cSp = new CloudStackPlugin(c);
             cSp.ovsUploadSshKey(config.getAgentSshKeyFileName(),
                     FileUtils.readFileToString(getSystemVMKeyFile(key)));
-            cSp.dom0CheckStatus(config.getAgentScriptsDir() + "/"
-                    + config.getAgentCheckStorageScript());
+            cSp.dom0CheckStorageHealth(config.getAgentScriptsDir(),
+                    config.getAgentCheckStorageScript(),
+                    config.getAgentStorageCheckTimeout(),
+                    config.getAgentStorageCheckInterval());
         } catch (Exception es) {
             LOGGER.error("Unexpected exception ", es);
             String msg = "Unable to install module in agent";
