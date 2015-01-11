@@ -30,7 +30,6 @@ import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
@@ -262,11 +261,13 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
         } else if (clazz == FenceCommand.class) {
             return hypervisorsupport.execute((FenceCommand) cmd);
         } else if (clazz == AttachIsoCommand.class) {
-            return storageprocessor.execute((attachIso) cmd);
+           return storageprocessor.attachIso((AttachCommand) cmd);
+           /*
         } else if (clazz == DettachCommand.class) {
             return storageprocessor.execute((DettachCommand) cmd);
         } else if (clazz == AttachCommand.class) {
              return storageprocessor.execute((AttachCommand) cmd);
+             */
         } else if (clazz == NetworkRulesSystemVmCommand.class) {
             return virtualroutingsupport
                     .execute((NetworkRulesSystemVmCommand) cmd);

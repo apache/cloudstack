@@ -533,5 +533,4 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     public Answer snapshotAndCopy(SnapshotAndCopyCommand cmd) {
         return new Answer(cmd, false, "not implemented yet");
     }
-
 }
