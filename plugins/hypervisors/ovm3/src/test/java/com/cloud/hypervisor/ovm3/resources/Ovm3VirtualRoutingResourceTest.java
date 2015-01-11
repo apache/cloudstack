@@ -180,6 +180,7 @@ public class Ovm3VirtualRoutingResourceTest {
     private IpAssocCommand generateIpAssocCommand(String mac) {
         IpAssocCommand cmd = new IpAssocCommand(getIp(mac));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, xen.getVmName());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerip);
         // assertEquals(6, cmd.getAnswersCount()); // AnswersCount is clearly
         // wrong as it doesn't know enough to tell
         return cmd;
