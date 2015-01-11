@@ -839,6 +839,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public void prepareAllNicsForMigration(VirtualMachineProfile vm, DeployDestination dest) {
+        return;
+    }
+
+    @Override
     public void prepareNicForMigration(VirtualMachineProfile vm, DeployDestination dest) {
         // TODO Auto-generated method stub
 

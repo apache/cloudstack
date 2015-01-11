@@ -3169,9 +3169,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
             //Network ID
-            NetworkVO network = _entityMgr.findByIdIncludingRemoved(NetworkVO.class, usageRecord.getNetworkId().toString());
-            if (network != null) {
-                usageRecResponse.setNetworkId(network.getUuid());
+            if((usageRecord.getNetworkId() != null) && (usageRecord.getNetworkId() != 0)) {
+                NetworkVO network = _entityMgr.findByIdIncludingRemoved(NetworkVO.class, usageRecord.getNetworkId().toString());
+                if (network != null) {
+                    usageRecResponse.setNetworkId(network.getUuid());
+                }
             }
 
         } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE

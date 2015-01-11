@@ -25,7 +25,7 @@ import javax.persistence.EntityExistsException;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.DiskOfferingVO.Type;
+import com.cloud.offering.DiskOffering.Type;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
