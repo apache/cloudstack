@@ -369,8 +369,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("wait");
         configValuesForValidation.add("xenserver.heartbeat.interval");
         configValuesForValidation.add("xenserver.heartbeat.timeout");
-        configValuesForValidation.add("ovm3.heartbeat.interval");$
-        configValuesForValidation.add("ovm3.heartbeat.timeout");$
+        configValuesForValidation.add("ovm3.heartbeat.interval");
+        configValuesForValidation.add("ovm3.heartbeat.timeout");
         configValuesForValidation.add("incorrect.login.attempts.allowed");
         configValuesForValidation.add("vm.password.length");
     }
