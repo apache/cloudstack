@@ -21,7 +21,6 @@ package com.cloud.hypervisor.ovm3.resources.helpers;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -176,13 +175,6 @@ public class Ovm3HypervisorSupport {
                     + filename;
             LOGGER.warn("generated key retrieval failed " + key);
             keyFile = new File(key);
-        }
-        if (!keyFile.exists()) {
-            URL url = this.getClass().getClassLoader()
-                    .getResource("scripts/vm/systemvm/" + filename);
-            keyFile = new File(url.getPath());
-            LOGGER.error("Unable to locate " + filename + " last resort: "
-                    + keyFile.toString());
         }
         return keyFile;
     }

@@ -176,6 +176,13 @@ public class Ovm3HypervisorSupportTest {
                 config);
         hypervisor.getSystemVMKeyFile(config.getAgentSshKeyFileName());
     }
+    @Test
+    public void getSystemVMKeyFileMissingTest() throws ConfigurationException {
+        Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
+        Ovm3HypervisorSupport hypervisor = new Ovm3HypervisorSupport(con,
+                config);
+        hypervisor.getSystemVMKeyFile("missing");
+    }
 
     @Test
     public void checkHealthTest() throws ConfigurationException {
