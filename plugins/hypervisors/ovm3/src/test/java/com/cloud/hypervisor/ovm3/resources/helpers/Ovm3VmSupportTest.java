@@ -4,11 +4,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
-    
 import javax.naming.ConfigurationException;
-
 import org.junit.Test;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.MigrateCommand;
