@@ -4,8 +4,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
+    
 import javax.naming.ConfigurationException;
 
 import org.junit.Test;
@@ -116,7 +115,7 @@ public class Ovm3VmSupportTest {
     @Test
     public void AttachVolumeCommandTest() throws ConfigurationException {
         hypervisor = support.prepare(configTest.getParams());
-        // boolean attach, boolean managed, String vmName, StoragePoolType pooltype, 
+        // boolean attach, boolean managed, String vmName, StoragePoolType pooltype,
         // String volumePath, String volumeName, Long volumeSize, Long deviceId, String chainInfo
         AttachVolumeCommand cmd = new AttachVolumeCommand(true, false, xen.getVmName(), StoragePoolType.NetworkFilesystem,
                 "x", "x", 0L, 0L, "x");

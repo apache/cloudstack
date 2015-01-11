@@ -211,7 +211,6 @@ public class Ovm3HypervisorSupportTest {
         con.setNull();
         Answer ra = hypervisor.executeRequest(cmd);
         results.basicBooleanTest(ra.getResult(), false);
-        
     }
 
     @Test

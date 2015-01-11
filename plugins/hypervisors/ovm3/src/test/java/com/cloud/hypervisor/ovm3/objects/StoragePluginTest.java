@@ -19,8 +19,6 @@
 package com.cloud.hypervisor.ovm3.objects;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-
 import java.io.File;
 
 import org.junit.Test;

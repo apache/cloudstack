@@ -56,7 +56,6 @@ import com.cloud.hypervisor.ovm3.support.Ovm3SupportTest;
 import com.cloud.network.Networks;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 
@@ -178,7 +177,6 @@ public class Ovm3HypervisorResourceTest {
         Answer ra = hypervisor.executeRequest(cmd);
         return ra.getResult();
     }
-    
 
     @Test
     public void rebootCommandTest() throws ConfigurationException {

@@ -319,7 +319,7 @@ public class NetworkTest {
         results.basicBooleanTest(net.startOvsVlanBridge(
                 VLANINT + "." + VLAN.toString(), VLANBR, VLAN), false);
     }
-    
+
     @Test
     public void testVlanBridge() throws Ovm3ResourceException {
         String resp = "bridge=" + VLANINT + "." + VLAN.toString() + " netdev="

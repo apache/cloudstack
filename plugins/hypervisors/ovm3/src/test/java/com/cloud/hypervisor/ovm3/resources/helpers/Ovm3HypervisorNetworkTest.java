@@ -30,7 +30,7 @@ public class Ovm3HypervisorNetworkTest {
     XenTest xen = new XenTest();
     NetworkTest network = new NetworkTest();
     XmlTestResultTest results = new XmlTestResultTest();
-    
+
     @Test
     public void CheckNetworkCommandTest() throws ConfigurationException {
         hypervisor = support.prepare(configTest.getParams());

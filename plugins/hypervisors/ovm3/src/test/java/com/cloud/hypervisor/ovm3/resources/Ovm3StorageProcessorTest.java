@@ -42,7 +42,6 @@ import com.cloud.hypervisor.ovm3.objects.XenTest;
 import com.cloud.hypervisor.ovm3.objects.XmlTestResultTest;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3Configuration;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3ConfigurationTest;
-import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3StoragePool;
 import com.cloud.hypervisor.ovm3.support.Ovm3SupportTest;
 import com.cloud.storage.Volume;
 import com.cloud.vm.DiskProfile;
