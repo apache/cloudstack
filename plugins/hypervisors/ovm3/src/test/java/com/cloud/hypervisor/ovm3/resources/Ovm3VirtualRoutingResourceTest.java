@@ -55,6 +55,7 @@ public class Ovm3VirtualRoutingResourceTest {
     CloudStackPluginTest csp = new CloudStackPluginTest();
     String dom0Ip = csp.getDom0Ip();
     String domrIp = csp.getDomrIp();
+    String routerip = "64.1.1.10";
     /* cheat */
     String cmd = "ls";
     String args = "";
@@ -105,13 +106,6 @@ public class Ovm3VirtualRoutingResourceTest {
     }
 
     @Test
-    public void prepareVpcCommandTest() throws ConfigurationException {
-        prepare();
-        IpAssocVpcCommand vpc = generateIpAssocVpcCommand(xen.getVmNicMac());
-        results.basicBooleanTest(hypervisor.executeRequest(vpc).getResult());
-    }
-
-    @Test
     public void prepareVpcCommandFailTest() throws ConfigurationException {
         prepare();
         IpAssocVpcCommand vpc = generateIpAssocVpcCommand(xen.getVmNicMac()
@@ -157,11 +151,19 @@ public class Ovm3VirtualRoutingResourceTest {
                 false);
     }
 
+    @Test
+    public void prepareVpcCommandTest() throws ConfigurationException {
+        prepare();
+        IpAssocVpcCommand vpc = generateIpAssocVpcCommand(xen.getVmNicMac());
+        results.basicBooleanTest(hypervisor.executeRequest(vpc).getResult());
+    }
+
     private IpAddressTO[] getIp(String mac) {
         String br[] = xen.getVmNicBridge().split("[.]");
         List<IpAddressTO> ips = new ArrayList<IpAddressTO>();
-        ips.add(new IpAddressTO(1, "64.1.1.10", true, true, true, "vlan://"
-                + br[1], "64.1.1.1", "255.255.255.0", mac, 1000, false));
+        IpAddressTO ip = new IpAddressTO(1, routerip, true, true, true, "vlan://"
+                + br[1], "64.1.1.1", "255.255.255.0", mac, 1000, false);
+        ips.add(ip);
         IpAddressTO[] ipArray = ips.toArray(new IpAddressTO[ips.size()]);
         return ipArray;
     }
@@ -169,6 +171,7 @@ public class Ovm3VirtualRoutingResourceTest {
     private IpAssocVpcCommand generateIpAssocVpcCommand(String mac) {
         IpAssocVpcCommand cmd = new IpAssocVpcCommand(getIp(mac));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, xen.getVmName());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerip);
         // assertEquals(6, cmd.getAnswersCount()); // AnswersCount is clearly
         // wrong as it doesn't know enough to tell
         return cmd;
