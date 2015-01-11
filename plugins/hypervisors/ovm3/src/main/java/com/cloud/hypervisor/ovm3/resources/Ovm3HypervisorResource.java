@@ -26,13 +26,16 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
@@ -258,15 +261,12 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             return hypervisornetwork.execute((PingTestCommand) cmd);
         } else if (clazz == FenceCommand.class) {
             return hypervisorsupport.execute((FenceCommand) cmd);
-            /*
-             * } else if (clazz == AttachIsoCommand.class) {
-             *
-             * return ovm3spr.execute((attachIso) cmd);
-             * } else if (clazz == DettachCommand.class) {
-             * return ovm3spr.execute((DettachCommand) cmd);
-             * } else if (clazz == AttachCommand.class) {
-             * return ovm3spr.execute((AttachCommand) cmd);
-             */
+        } else if (clazz == AttachIsoCommand.class) {
+            return storageprocessor.execute((attachIso) cmd);
+        } else if (clazz == DettachCommand.class) {
+            return storageprocessor.execute((DettachCommand) cmd);
+        } else if (clazz == AttachCommand.class) {
+             return storageprocessor.execute((AttachCommand) cmd);
         } else if (clazz == NetworkRulesSystemVmCommand.class) {
             return virtualroutingsupport
                     .execute((NetworkRulesSystemVmCommand) cmd);

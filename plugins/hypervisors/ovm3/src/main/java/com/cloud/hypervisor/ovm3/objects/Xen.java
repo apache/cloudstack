@@ -316,12 +316,13 @@ public class Xen extends OvmObject {
                 String remove = "mac=" + mac + ",bridge=" + bridge;
                 for (String vif : getVmVifs()) {
                     if (vif.equals(remove)) {
-                        LOGGER.debug("skipping vif: " + remove);
+                        LOGGER.debug("leaving out vif: " + remove);
                     } else {
                         LOGGER.debug("keeping vif: " + vif);
                         newVifs.add(vif);
                     }
                 }
+                vmParams.put("vif", newVifs);
             } catch (Exception e) {
                 LOGGER.debug(e);
             }
