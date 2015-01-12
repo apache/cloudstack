@@ -20,6 +20,7 @@
 package org.apache.cloudstack.utils.auth;
 
 import com.cloud.utils.HttpUtils;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.x509.X509V1CertificateGenerator;
@@ -96,18 +97,25 @@ public class SAMLUtils {
     public static final Logger s_logger = Logger.getLogger(SAMLUtils.class);
 
     public static final String SAML_RESPONSE = "SAMLResponse";
-    public static final String SAML_NS = "saml://";
+    public static final String SAML_NS = "SAML-";
     public static final String SAML_NAMEID = "SAML_NAMEID";
     public static final String SAML_SESSION = "SAML_SESSION";
     public static final String CERTIFICATE_NAME = "SAMLSP_CERTIFICATE";
 
     public static String createSAMLId(String uid) {
-        String samlUuid = SAML_NS + uid;
-        return samlUuid.length() > 40 ? samlUuid.substring(0, 40) : samlUuid;
+        if (uid == null)  {
+            return null;
+        }
+        String hash = DigestUtils.sha256Hex(uid);
+        String samlUuid = SAML_NS + hash;
+        return samlUuid.substring(0, 40);
     }
 
-    public static Boolean checkSAMLUserId(String uuid) {
-        return uuid.startsWith(SAML_NS);
+    public static boolean checkSAMLUser(String uuid, String username) {
+        if (uuid == null || uuid.isEmpty() || username == null || username.isEmpty()) {
+            return false;
+        }
+        return uuid.startsWith(SAML_NS) && createSAMLId(username).equals(uuid);
     }
 
     public static String generateSecureRandomId() {
