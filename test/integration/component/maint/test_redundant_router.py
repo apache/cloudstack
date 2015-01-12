@@ -787,7 +787,7 @@ class TestRVRInternals(cloudstackTestCase):
                 self.apiclient.connection.mgtSvr,
                 22,
                 self.apiclient.connection.user,
-                self.apiclient.connction.passwd,
+                self.apiclient.connection.passwd,
                 backup_router.linklocalip,
                 'ip addr show eth2',
                 hypervisor=self.hypervisor
