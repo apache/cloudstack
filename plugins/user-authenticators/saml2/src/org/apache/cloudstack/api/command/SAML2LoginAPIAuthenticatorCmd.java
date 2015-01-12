@@ -269,14 +269,14 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                     try {
                         if (_apiServer.verifyUser(user.getId())) {
                             LoginCmdResponse loginResponse = (LoginCmdResponse) _apiServer.loginUser(session, username, user.getPassword(), domainId, null, remoteAddress, params);
-                            resp.addCookie(new Cookie("userid", loginResponse.getUserId()));
-                            resp.addCookie(new Cookie("domainid", loginResponse.getDomainId()));
-                            resp.addCookie(new Cookie("role", loginResponse.getType()));
+                            resp.addCookie(new Cookie("userid", URLEncoder.encode(loginResponse.getUserId(), HttpUtils.UTF_8)));
+                            resp.addCookie(new Cookie("domainid", URLEncoder.encode(loginResponse.getDomainId(), HttpUtils.UTF_8)));
+                            resp.addCookie(new Cookie("role", URLEncoder.encode(loginResponse.getType(), HttpUtils.UTF_8)));
                             resp.addCookie(new Cookie("username", URLEncoder.encode(loginResponse.getUsername(), HttpUtils.UTF_8)));
                             resp.addCookie(new Cookie("sessionKey", URLEncoder.encode(loginResponse.getSessionKey(), HttpUtils.UTF_8)));
                             resp.addCookie(new Cookie("account", URLEncoder.encode(loginResponse.getAccount(), HttpUtils.UTF_8)));
                             resp.addCookie(new Cookie("timezone", URLEncoder.encode(loginResponse.getTimeZone(), HttpUtils.UTF_8)));
-                            resp.addCookie(new Cookie("userfullname", loginResponse.getFirstName() + "%20" + loginResponse.getLastName()));
+                            resp.addCookie(new Cookie("userfullname", URLEncoder.encode(loginResponse.getFirstName() + " " + loginResponse.getLastName(), HttpUtils.UTF_8).replace("+", "%20")));
                             resp.sendRedirect(_configDao.getValue(Config.SAMLCloudStackRedirectionUrl.key()));
                             return ApiResponseSerializer.toSerializedString(loginResponse, responseType);
 
