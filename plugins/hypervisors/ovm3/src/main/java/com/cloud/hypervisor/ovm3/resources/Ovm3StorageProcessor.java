@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.UUID;
 
+import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -288,14 +289,14 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer attachIso(AttachCommand cmd) {
+    public AttachAnswer attachIso(AttachCommand cmd) {
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
         return attachDetach(cmd, vmName, disk, true);
     }
 
     @Override
-    public Answer dettachIso(DettachCommand cmd) {
+    public AttachAnswer dettachIso(DettachCommand cmd) {
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
         return attachDetach(cmd, vmName, disk, false);
@@ -336,7 +337,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      * @param isAttach
      * @return
      */
-    public Answer attachDetach(Command cmd, String vmName, DiskTO disk, boolean isAttach) {
+    public AttachAnswer attachDetach(Command cmd, String vmName, DiskTO disk, boolean isAttach) {
         Xen xen = new Xen(c);
         String doThis = (isAttach) ? "Attach" : "Dettach";
         LOGGER.debug(doThis + " volume type " + disk.getType()
@@ -349,7 +350,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             if (vm == null) {
                 msg = doThis + " can't find VM " + vmName;
                 LOGGER.debug(msg);
-                return new Answer(cmd, false, msg);
+                return new AttachAnswer(msg);
             }
             if (disk.getType() == Volume.Type.ISO) {
                 path = getIsoPath(disk);
@@ -359,7 +360,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             if ("".equals(path)) {
                 msg = doThis + " can't do anything with an empty path.";
                 LOGGER.debug(msg);
-                return new Answer(cmd, false, msg);
+                return new AttachAnswer(msg);
             }
             if (isAttach) {
                 if (disk.getType() == Volume.Type.ISO) {
@@ -373,28 +374,28 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                             + disk.getType() + "  was not attached "
                             + path;
                     LOGGER.debug(msg);
-                    return new Answer(cmd, false, msg);
+                    return new AttachAnswer(msg);
                 }
             }
             xen.configureVm(ovmObject.deDash(vm.getPrimaryPoolUuid()),
                     vm.getVmUuid());
-            return new Answer(cmd, true, msg);
+            return new AttachAnswer(disk);
         } catch (Ovm3ResourceException e) {
             msg = doThis + " failed for " + vmName + " " + e.getMessage();
             LOGGER.warn(msg, e);
-            return new Answer(cmd, false, msg);
+            return new AttachAnswer(msg);
         }
     }
 
     @Override
-    public Answer attachVolume(AttachCommand cmd) {
+    public AttachAnswer attachVolume(AttachCommand cmd) {
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
         return attachDetach(cmd, vmName, disk, true);
     }
 
     @Override
-    public Answer dettachVolume(DettachCommand cmd) {
+    public AttachAnswer dettachVolume(DettachCommand cmd) {
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
         return attachDetach(cmd, vmName, disk, false);
