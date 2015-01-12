@@ -307,15 +307,13 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      * @throws Ovm3ResourceException
      */
     private String getIsoPath(DiskTO disk) throws Ovm3ResourceException {
-        /*
         TemplateObjectTO isoTO = (TemplateObjectTO) disk.getData();
         DataStoreTO store = isoTO.getDataStore();
         NfsTO nfsStore = (NfsTO) store;
         String secPoolUuid = pool.setupSecondaryStorage(nfsStore.getUrl());
         String isoPath = config.getAgentSecStoragePath() + File.separator + secPoolUuid
                 + File.separator + isoTO.getPath();
-        return isoPath; */
-        return disk.getPath();
+        return isoPath;
     }
     private String getDiskPath(DiskTO disk, String uuid) throws Ovm3ResourceException {
         /* VolumeObjectTO volume = (VolumeObjectTO) disk.getData();
@@ -349,11 +347,6 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             /* check running */
             if (vm == null) {
                 msg = doThis + " can't find VM " + vmName;
-                LOGGER.debug(msg);
-                return new Answer(cmd, false, msg);
-            }
-            if (!(disk.getData().getDataStore() instanceof NfsTO)) {
-                msg = doThis + " only NFS is supported at the moment.";
                 LOGGER.debug(msg);
                 return new Answer(cmd, false, msg);
             }
@@ -576,7 +569,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     public Answer execute(AttachCommand cmd) {
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
-        return attachDetach(cmd, vmName, disk, false);
+        return attachDetach(cmd, vmName, disk, true);
     }
     /**
      * Detach disks, calls a middle man which calls attachDetach for volumes.
@@ -586,6 +579,6 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     public Answer execute(DettachCommand cmd) {
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
-        return attachDetach(cmd, vmName, disk, true);
+        return attachDetach(cmd, vmName, disk, false);
     }
 }
