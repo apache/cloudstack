@@ -239,22 +239,27 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                     }
                 }
 
-                AttributeStatement attributeStatement = assertion.getAttributeStatements().get(0);
-                List<Attribute> attributes = attributeStatement.getAttributes();
-
-                // Try capturing standard LDAP attributes
-                for (Attribute attribute: attributes) {
-                    String attributeName = attribute.getName();
-                    String attributeValue = attribute.getAttributeValues().get(0).getDOM().getTextContent();
-                    if (attributeName.equalsIgnoreCase("uid") && uniqueUserId == null) {
-                        username = attributeValue;
-                        uniqueUserId = SAMLUtils.createSAMLId(username);
-                    } else if (attributeName.equalsIgnoreCase("givenName")) {
-                        firstName = attributeValue;
-                    } else if (attributeName.equalsIgnoreCase(("sn"))) {
-                        lastName = attributeValue;
-                    } else if (attributeName.equalsIgnoreCase("mail")) {
-                        email = attributeValue;
+                List<AttributeStatement> attributeStatements = assertion.getAttributeStatements();
+                if (attributeStatements != null && attributeStatements.size() > 0) {
+                    for (AttributeStatement attributeStatement: attributeStatements) {
+                        if (attributeStatement == null) {
+                            continue;
+                        }
+                        // Try capturing standard LDAP attributes
+                        for (Attribute attribute: attributeStatement.getAttributes()) {
+                            String attributeName = attribute.getName();
+                            String attributeValue = attribute.getAttributeValues().get(0).getDOM().getTextContent();
+                            if (attributeName.equalsIgnoreCase("uid") && uniqueUserId == null) {
+                                username = attributeValue;
+                                uniqueUserId = SAMLUtils.createSAMLId(username);
+                            } else if (attributeName.equalsIgnoreCase("givenName")) {
+                                firstName = attributeValue;
+                            } else if (attributeName.equalsIgnoreCase(("sn"))) {
+                                lastName = attributeValue;
+                            } else if (attributeName.equalsIgnoreCase("mail")) {
+                                email = attributeValue;
+                            }
+                        }
                     }
                 }
 
