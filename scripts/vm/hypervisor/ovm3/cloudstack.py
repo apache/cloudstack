@@ -306,7 +306,7 @@ def dom0CheckStatus(path, script, timeout, interval):
         started = True
         command = ["%s/%s -t %d -i %d" % (path, storagehealth, timeout, interval)]
         log.warning("%s started: %s/%s" % (storagehealth, path, storagehealth))
-        subprocess.call(command, shell=True)
+        subprocess.call(command, shell=True, close_fds=True)
     
     return [running, started]
         
