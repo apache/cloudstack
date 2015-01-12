@@ -437,8 +437,6 @@ public class Ovm3VmSupport {
                 vm.setupVifs();
             } else {
                 deleteVif(vm, nic);
-                vm.setupVifs();
-                // return new Answer(null, false, "Not implemented yet!");
             }
             // execute the change
             xen.configureVm(ovmObject.deDash(vm.getPrimaryPoolUuid()),
