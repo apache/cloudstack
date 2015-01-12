@@ -73,14 +73,28 @@ public class SAML2UserAuthenticatorTest {
         Mockito.when(userAccountDao.getUserAccount(Mockito.anyString(), Mockito.anyLong())).thenReturn(account);
         Mockito.when(userDao.getUser(Mockito.anyLong())).thenReturn(user);
 
-        // When there is no SAMLRequest in params
-        Pair<Boolean, ActionOnFailedAuthentication> pair1 = authenticator.authenticate(SAMLUtils.createSAMLId("user1234"), "random", 1l, null);
-        Assert.assertFalse(pair1.first());
-
-        // When there is SAMLRequest in params
+        Pair<Boolean, ActionOnFailedAuthentication> pair;
         Map<String, Object[]> params = new HashMap<String, Object[]>();
+
+        // When there is no SAMLRequest in params
+        pair = authenticator.authenticate("someUID", "random", 1l, params);
+        Assert.assertFalse(pair.first());
+
+        // When there is SAMLRequest in params and user is same as the mocked one
         params.put(SAMLUtils.SAML_RESPONSE, new Object[]{});
-        Pair<Boolean, ActionOnFailedAuthentication> pair2 = authenticator.authenticate(SAMLUtils.createSAMLId("user1234"), "random", 1l, params);
-        Assert.assertTrue(pair2.first());
+        pair = authenticator.authenticate("someUID", "random", 1l, params);
+        Assert.assertTrue(pair.first());
+
+        // When there is SAMLRequest in params but username is null
+        pair = authenticator.authenticate(null, "random", 1l, params);
+        Assert.assertFalse(pair.first());
+
+        // When there is SAMLRequest in params but username is empty
+        pair = authenticator.authenticate("", "random", 1l, params);
+        Assert.assertFalse(pair.first());
+
+        // When there is SAMLRequest in params but username is not valid
+        pair = authenticator.authenticate("someOtherUID", "random", 1l, params);
+        Assert.assertFalse(pair.first());
     }
 }
