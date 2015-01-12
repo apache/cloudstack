@@ -18,6 +18,7 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.resources;
 
+import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.UUID;
