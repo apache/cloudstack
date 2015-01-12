@@ -739,8 +739,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             metaFile.delete();
             uniqDir.delete();
             String md5sum = null;
-            try {
-                md5sum = DigestUtils.md5Hex(new FileInputStream(file));
+            try (FileInputStream fs = new FileInputStream(file)){
+                md5sum = DigestUtils.md5Hex(fs);
             } catch (IOException e) {
                 s_logger.debug("Failed to get md5sum: " + file.getAbsoluteFile());
             }
