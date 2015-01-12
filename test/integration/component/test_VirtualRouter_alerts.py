@@ -16,13 +16,20 @@
 # under the License.
 """ P1 tests for alert receiving from VR on service failure in VR
 """
-#Import Local Modules
-import marvin
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+# Import Local Modules
+# import marvin
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.utils import (get_process_status,
+                              cleanup_resources)
+from marvin.lib.base import (Account,
+                             ServiceOffering,
+                             VirtualMachine)
+
+from marvin.lib.common import (list_hosts,
+                               list_routers,
+                               get_zone,
+                               get_domain,
+                               get_template)
 from nose.plugins.attrib import attr
 from marvin.codes import FAILED
 import time
@@ -30,76 +37,16 @@ import time
 
 _multiprocess_shared_ = True
 
-class Services:
-    """Test VM Life Cycle Services
-    """
-
-    def __init__(self):
-        self.services = {
-
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                # Random characters are appended in create account to
-                # ensure unique username generated each time
-                "password": "password",
-                },
-            "small":
-            # Create a small virtual machine instance with disk offering
-                {
-                    "displayname": "testserver",
-                    "username": "root", # VM creds for SSH
-                    "password": "password",
-                    "ssh_port": 22,
-                    "hypervisor": 'XenServer',
-                    "privateport": 22,
-                    "publicport": 22,
-                    "protocol": 'TCP',
-                    },
-            "service_offerings":
-                {
-                    "small":
-                        {
-                            # Small service offering ID to for change VM
-                            # service offering from medium to small
-                            "name": "SmallInstance",
-                            "displaytext": "SmallInstance",
-                            "cpunumber": 1,
-                            "cpuspeed": 100,
-                            "memory": 256,
-                            },
-                    "big":
-                        {
-                            # Big service offering ID to for change VM
-                            "name": "BigInstance",
-                            "displaytext": "BigInstance",
-                            "cpunumber": 1,
-                            "cpuspeed": 100,
-                            "memory": 512,
-                            }
-                },
-            #Change this
-            "template": {
-                "displaytext": "xs",
-                "name": "xs",
-                "passwordenabled": False,
-                },
-            "sleep": 60,
-            "timeout": 10,
-            #Migrate VM to hostid
-            "ostype": 'CentOS 5.3 (64-bit)',
-            # CentOS 5.3 (64-bit)
-        }
-
 
 class TestVRServiceFailureAlerting(cloudstackTestCase):
+
     @classmethod
     def setUpClass(cls):
-        cls.testClient = super(TestVRServiceFailureAlerting, cls).getClsTestClient()
+        cls.testClient = super(
+            TestVRServiceFailureAlerting,
+            cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-        cls.services = Services().services
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -113,7 +60,8 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
         )
 
         if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_template() failed to return template with \
+                           description %s" % cls.services["ostype"]
         # Set Zones and disk offerings ??
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
@@ -130,7 +78,7 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
             cls.services["service_offerings"]["small"]
         )
 
-        #create a virtual machine
+        # create a virtual machine
         cls.virtual_machine = VirtualMachine.create(
             cls.api_client,
             cls.services["small"],
@@ -146,7 +94,9 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.api_client = super(TestVRServiceFailureAlerting, cls).getClsTestClient().getApiClient()
+        cls.api_client = super(
+            TestVRServiceFailureAlerting,
+            cls).getClsTestClient().getApiClient()
         cleanup_resources(cls.api_client, cls._cleanup)
         return
 
@@ -157,14 +107,13 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        #Clean up, terminate the created ISOs
+        # Clean up, terminate the created ISOs
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
     @attr(hypervisor="xenserver")
     @attr(tags=["advanced", "basic"])
     def test_01_VRServiceFailureAlerting(self):
-
 
         if self.zone.networktype == "Basic":
             list_router_response = list_routers(
@@ -184,67 +133,71 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
         )
         router = list_router_response[0]
 
-        hosts = list_hosts(
-            self.apiclient,
-            zoneid=router.zoneid,
-            type='Routing',
-            state='Up',
-            id=router.hostid
-        )
-        self.assertEqual(
-            isinstance(hosts, list),
-            True,
-            "Check list host returns a valid list"
-        )
-        host = hosts[0]
-
         self.debug("Router ID: %s, state: %s" % (router.id, router.state))
 
         self.assertEqual(
-        router.state,
-        'Running',
-        "Check list router response for router state"
+            router.state,
+            'Running',
+            "Check list router response for router state"
         )
 
         alertSubject = "Monitoring Service on VR " + router.name
 
         if self.hypervisor.lower() in ('vmware', 'hyperv'):
             result = get_process_status(
-                        self.apiclient.connection.mgtSvr,
-                        22,
-                        self.apiclient.connection.user,
-                        self.apiclient.connection.passwd,
-                        router.linklocalip,
-                        "service dnsmasq status",
-                        hypervisor=self.hypervisor
-                        )
+                self.apiclient.connection.mgtSvr,
+                22,
+                self.apiclient.connection.user,
+                self.apiclient.connection.passwd,
+                router.linklocalip,
+                "service dnsmasq status",
+                hypervisor=self.hypervisor
+            )
         else:
             try:
-                host.user, host.passwd = get_host_credentials(self.config, host.ipaddress)
+                hosts = list_hosts(
+                    self.apiclient,
+                    zoneid=router.zoneid,
+                    type='Routing',
+                    state='Up',
+                    id=router.hostid
+                )
+
+                self.assertEqual(
+                    isinstance(hosts, list),
+                    True,
+                    "Check list host returns a valid list"
+                )
+
+                host = hosts[0]
                 result = get_process_status(
-                            host.ipaddress,
-                            22,
-                            host.user,
-                            host.passwd,
-                            router.linklocalip,
-                            "service apache2 stop"
-                            )
-            except KeyError:
-                self.skipTest("Marvin configuration has no host credentials to check router services")
+                    host.ipaddress,
+                    22,
+                    self.services["configurableData"]["host"]["username"],
+                    self.services["configurableData"]["host"]["password"],
+                    router.linklocalip,
+                    "service apache2 stop"
+                )
+
+            except Exception as e:
+                raise Exception("Exception raised in getting host\
+                        credentials: %s " % e)
 
         res = str(result)
         self.debug("apache process status: %s" % res)
 
-        time.sleep(2400) #wait for 40 minutes meanwhile monitor service on VR starts the apache service (router.alerts.check.interval default value is 30minutes)
+        time.sleep(2400)
+        # wait for 40 minutes meanwhile monitor service on
+        # VR starts the apache service (
+        # router.alerts.check.interval default value is
+        # 30minutes)
 
         qresultset = self.dbclient.execute(
-            "select id from alert where subject = '%s' ORDER BY id DESC LIMIT 1;" \
-            % str(alertSubject)
-        )
+            "select id from alert where subject = '%s' ORDER BY id DESC LIMIT 1;" %
+            str(alertSubject))
         self.assertNotEqual(
             len(qresultset),
             0,
             "Check DB Query result set"
         )
-
         return
