@@ -308,8 +308,6 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
                 // But the host where system vms are running is marked as shared and still be part of empty Hosts.
                 // The scenario will fail where actual Empty hosts and uservms not running host.
                 return PlannerResourceUsage.Dedicated;
-            } else if (!preferred) {
-                return PlannerResourceUsage.Dedicated;
             } else {
                 if (!allOtherHosts.isEmpty() && (hostsToAvoid == null || !hostsToAvoid.containsAll(allOtherHosts))) {
                     return PlannerResourceUsage.Shared;

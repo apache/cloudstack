@@ -34,6 +34,10 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
         Inactive, Active,
     }
 
+    public enum Type {
+        Disk, Service
+    };
+
     State getState();
 
     public enum DiskCacheMode {
@@ -114,4 +118,6 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
     DiskCacheMode getCacheMode();
 
     void setCacheMode(DiskCacheMode cacheMode);
+
+    Type getType();
 }

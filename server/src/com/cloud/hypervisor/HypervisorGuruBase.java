@@ -18,6 +18,7 @@ package com.cloud.hypervisor;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.inject.Inject;
 
@@ -112,6 +113,9 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             to.setNicSecIps(secIps);
         } else {
             s_logger.warn("Unabled to load NicVO for NicProfile " + profile.getId());
+            //Workaround for dynamically created nics
+            //FixMe: uuid and secondary IPs can be made part of nic profile
+            to.setUuid(UUID.randomUUID().toString());
         }
 
         //check whether the this nic has secondary ip addresses set
