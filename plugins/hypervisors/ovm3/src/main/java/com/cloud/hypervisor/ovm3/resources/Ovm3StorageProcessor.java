@@ -539,8 +539,14 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         DiskTO disk = cmd.getDisk();
         Boolean success = false;
         String answer = "";
+        LOGGER.debug("Attach volume type " + cmd.getDisk().getType()
+                + " to " + vmName);
         if (cmd.getDisk().getType() == Volume.Type.ISO) {
             answer = isoAttachDetach(vmName, disk, true);
+        } else if (cmd.getDisk().getType() == Volume.Type.DATADISK) {
+            return attachVolume(cmd);
+        } else {
+            return new Answer(cmd, success, "Unsupported action");
         }
         if (answer == null) {
             success = true;
@@ -553,8 +559,14 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         DiskTO disk = cmd.getDisk();
         Boolean success = false;
         String answer = "";
+        LOGGER.debug("Detttach volume type " + cmd.getDisk().getType()
+                + " from " + vmName);
         if (cmd.getDisk().getType() == Volume.Type.ISO) {
             answer = isoAttachDetach(vmName, disk, false);
+        } else if (cmd.getDisk().getType() == Volume.Type.DATADISK) {
+            return dettachVolume(cmd);
+        } else {
+            return new Answer(cmd, success, "Unsupported action");
         }
         if (answer == null) {
             success = true;
