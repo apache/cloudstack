@@ -100,7 +100,8 @@ public class SAMLUtils {
     public static final String SAML_NS = "SAML-";
     public static final String SAML_NAMEID = "SAML_NAMEID";
     public static final String SAML_SESSION = "SAML_SESSION";
-    public static final String CERTIFICATE_NAME = "SAMLSP_CERTIFICATE";
+    public static final String SAMLSP_KEYPAIR = "SAMLSP_KEYPAIR";
+    public static final String SAMLSP_X509CERT = "SAMLSP_X509CERT";
 
     public static String createSAMLId(String uid) {
         if (uid == null)  {

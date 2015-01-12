@@ -27,6 +27,7 @@ import org.apache.cloudstack.framework.security.keystore.KeystoreDao;
 import org.apache.cloudstack.framework.security.keystore.KeystoreVO;
 import org.apache.cloudstack.utils.auth.SAMLUtils;
 import org.apache.log4j.Logger;
+import org.apache.commons.codec.binary.Base64;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.common.xml.SAMLConstants;
 import org.opensaml.saml2.metadata.EntityDescriptor;
@@ -45,6 +46,12 @@ import org.springframework.stereotype.Component;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.xml.stream.FactoryConfigurationError;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
@@ -94,12 +101,12 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
     }
 
     private boolean setup() {
-        KeystoreVO keyStoreVO = _ksDao.findByName(SAMLUtils.CERTIFICATE_NAME);
+        KeystoreVO keyStoreVO = _ksDao.findByName(SAMLUtils.SAMLSP_KEYPAIR);
         if (keyStoreVO == null) {
             try {
                 KeyPair keyPair = SAMLUtils.generateRandomKeyPair();
-                _ksDao.save(SAMLUtils.CERTIFICATE_NAME, SAMLUtils.savePrivateKey(keyPair.getPrivate()), SAMLUtils.savePublicKey(keyPair.getPublic()), "saml-sp");
-                keyStoreVO = _ksDao.findByName(SAMLUtils.CERTIFICATE_NAME);
+                _ksDao.save(SAMLUtils.SAMLSP_KEYPAIR, SAMLUtils.savePrivateKey(keyPair.getPrivate()), SAMLUtils.savePublicKey(keyPair.getPublic()), "samlsp-keypair");
+                keyStoreVO = _ksDao.findByName(SAMLUtils.SAMLSP_KEYPAIR);
             } catch (NoSuchProviderException | NoSuchAlgorithmException e) {
                 s_logger.error("Unable to create and save SAML keypair");
             }
@@ -110,10 +117,28 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
             PublicKey publicKey = SAMLUtils.loadPublicKey(keyStoreVO.getKey());
             if (privateKey != null && publicKey != null) {
                 spKeyPair = new KeyPair(publicKey, privateKey);
-                try {
-                    spX509Key = SAMLUtils.generateRandomX509Certificate(spKeyPair);
-                } catch (NoSuchAlgorithmException | NoSuchProviderException | CertificateEncodingException | SignatureException | InvalidKeyException e) {
-                    s_logger.error("SAML Plugin won't be able to use X509 signed authentication");
+                KeystoreVO x509VO = _ksDao.findByName(SAMLUtils.SAMLSP_X509CERT);
+                if (x509VO == null) {
+                    try {
+                        spX509Key = SAMLUtils.generateRandomX509Certificate(spKeyPair);
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                        ObjectOutput out = new ObjectOutputStream(bos);
+                        out.writeObject(spX509Key);
+                        out.flush();
+                        _ksDao.save(SAMLUtils.SAMLSP_X509CERT, Base64.encodeBase64String(bos.toByteArray()), "", "samlsp-x509cert");
+                        bos.close();
+                    } catch (NoSuchAlgorithmException | NoSuchProviderException | CertificateEncodingException | SignatureException | InvalidKeyException | IOException e) {
+                        s_logger.error("SAML Plugin won't be able to use X509 signed authentication");
+                    }
+                } else {
+                    try {
+                        ByteArrayInputStream bi = new ByteArrayInputStream(Base64.decodeBase64(x509VO.getCertificate()));
+                        ObjectInputStream si = new ObjectInputStream(bi);
+                        spX509Key = (X509Certificate) si.readObject();
+                        bi.close();
+                    } catch (IOException | ClassNotFoundException ignored) {
+                        s_logger.error("SAML Plugin won't be able to use X509 signed authentication. Failed to load X509 Certificate from Database.");
+                    }
                 }
             }
         }
