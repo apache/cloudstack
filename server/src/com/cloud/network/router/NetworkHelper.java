@@ -31,7 +31,9 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.vm.DomainRouterVO;
@@ -81,6 +83,12 @@ public interface NetworkHelper {
                     InsufficientServerCapacityException, InsufficientCapacityException,
                     StorageUnavailableException, ResourceUnavailableException;
 
-    public abstract LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks(RouterDeploymentDefinition routerDeploymentDefinition)
+    public abstract void reallocateRouterNetworks(RouterDeploymentDefinition routerDeploymentDefinition, VirtualRouter router, VMTemplateVO template, HypervisorType hType)
+            throws ConcurrentOperationException, InsufficientAddressCapacityException, InsufficientCapacityException;
+
+    public abstract LinkedHashMap<Network, List<? extends NicProfile>> configureDefaultNics(RouterDeploymentDefinition routerDeploymentDefinition)
+            throws ConcurrentOperationException, InsufficientAddressCapacityException;
+
+    public abstract LinkedHashMap<Network, List<? extends NicProfile>> configureGuestNic(RouterDeploymentDefinition routerDeploymentDefinition)
             throws ConcurrentOperationException, InsufficientAddressCapacityException;
 }

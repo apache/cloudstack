@@ -194,7 +194,7 @@ public class RouterDeploymentDefinitionBuilder {
         public RouterDeploymentDefinition build() {
             RouterDeploymentDefinition routerDeploymentDefinition = null;
             if (vpc != null) {
-                routerDeploymentDefinition = new VpcRouterDeploymentDefinition(vpc, dest, owner, params);
+                routerDeploymentDefinition = new VpcRouterDeploymentDefinition(guestNetwork, vpc, dest, owner, params);
             } else {
                 routerDeploymentDefinition = new RouterDeploymentDefinition(guestNetwork, dest, owner, params);
             }

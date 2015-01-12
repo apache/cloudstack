@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.element;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,8 @@ import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
 import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -36,6 +39,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -53,6 +57,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.network.router.VpcNetworkHelperImpl;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.NetworkACLItemDao;
@@ -62,6 +67,7 @@ import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcGateway;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.EntityManager;
@@ -70,13 +76,18 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = { NetworkElement.class, FirewallServiceProvider.class, DhcpServiceProvider.class, UserDataServiceProvider.class, StaticNatServiceProvider.class,
         LoadBalancingServiceProvider.class, PortForwardingServiceProvider.class, IpDeployer.class, VpcProvider.class, Site2SiteVpnServiceProvider.class,
         NetworkACLServiceProvider.class })
 public class VpcVirtualRouterElement extends VirtualRouterElement implements VpcProvider, Site2SiteVpnServiceProvider, NetworkACLServiceProvider {
+
     private static final Logger s_logger = Logger.getLogger(VpcVirtualRouterElement.class);
+
+    private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
+
     @Inject
     VpcManager _vpcMgr;
     @Inject
@@ -95,11 +106,19 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     NetworkACLItemDao _networkACLItemDao;
     @Inject
     EntityManager _entityMgr;
+    @Inject
+    VirtualMachineManager _itMgr;
+    @Inject
+    IpAddressManager _ipAddrMgr;
+    @Inject
+    VpcDao _vpcDao;
+
+    @Autowired
+    @Qualifier("vpcNetworkHelper")
+    private VpcNetworkHelperImpl _vpcNetWprkHelper;
 
     @Inject
     private RouterDeploymentDefinitionBuilder routerDeploymentDefinitionBuilder;
-
-    private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
     @Override
     protected boolean canHandle(final Network network, final Service service) {
@@ -179,8 +198,13 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         final Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
-        final RouterDeploymentDefinition routerDeploymentDefinition = routerDeploymentDefinitionBuilder.create().setVpc(vpc).setDeployDestination(dest)
-                .setAccountOwner(_accountMgr.getAccount(vpc.getAccountId())).setParams(params).build();
+        final RouterDeploymentDefinition routerDeploymentDefinition = routerDeploymentDefinitionBuilder.create()
+                .setGuestNetwork(network)
+                .setVpc(vpc)
+                .setDeployDestination(dest)
+                .setAccountOwner(_accountMgr.getAccount(vpc.getAccountId()))
+                .setParams(params)
+                .build();
 
         final List<DomainRouterVO> routers = routerDeploymentDefinition.deployVirtualRouter();
 
@@ -188,23 +212,29 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
         }
 
+        configureGuestNetwork(network, routers);
+
+        return true;
+    }
+
+    protected void configureGuestNetwork(final Network network, final List<DomainRouterVO> routers )
+            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+
         s_logger.info("Adding VPC routers to Guest Network: " + routers.size() + " to be added!");
 
-        for (final DomainRouterVO domainRouterVO : routers) {
-            if (!_networkMdl.isVmPartOfNetwork(domainRouterVO.getId(), network.getId())) {
+        for (final DomainRouterVO router : routers) {
+            if (!_networkMdl.isVmPartOfNetwork(router.getId(), network.getId())) {
                 final Map<VirtualMachineProfile.Param, Object> paramsForRouter = new HashMap<VirtualMachineProfile.Param, Object>(1);
                 if (network.getState() == State.Setup) {
                     paramsForRouter.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
                 }
-                if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(domainRouterVO, network, paramsForRouter)) {
-                    s_logger.error("Failed to add VPC router " + domainRouterVO + " to guest network " + network);
+                if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(router, network, paramsForRouter)) {
+                    s_logger.error("Failed to add VPC router " + router + " to guest network " + network);
                 } else {
-                    s_logger.debug("Successfully added VPC router " + domainRouterVO + " to guest network " + network);
+                    s_logger.debug("Successfully added VPC router " + router + " to guest network " + network);
                 }
             }
         }
-
-        return true;
     }
 
     @Override
@@ -227,31 +257,21 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             final Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
             params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
-            final RouterDeploymentDefinition routerDeploymentDefinition = routerDeploymentDefinitionBuilder.create().setVpc(vpc).setDeployDestination(dest)
-                    .setAccountOwner(_accountMgr.getAccount(vpc.getAccountId())).setParams(params).build();
+            final RouterDeploymentDefinition routerDeploymentDefinition = routerDeploymentDefinitionBuilder.create()
+                    .setGuestNetwork(network)
+                    .setVpc(vpc)
+                    .setDeployDestination(dest)
+                    .setAccountOwner(_accountMgr.getAccount(vpc.getAccountId()))
+                    .setParams(params)
+                    .build();
+
             final List<DomainRouterVO> routers = routerDeploymentDefinition.deployVirtualRouter();
 
             if (routers == null || routers.size() == 0) {
                 throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
             }
 
-            s_logger.info("Adding VPC routers to Guest Network: " + routers.size() + " to be added!");
-
-            for (final DomainRouterVO domainRouterVO : routers) {
-                // Add router to guest network if needed
-                if (!_networkMdl.isVmPartOfNetwork(domainRouterVO.getId(), network.getId())) {
-                    final Map<VirtualMachineProfile.Param, Object> paramsForRouter = new HashMap<VirtualMachineProfile.Param, Object>(1);
-                    // need to reprogram guest network if it comes in a setup state
-                    if (network.getState() == State.Setup) {
-                        paramsForRouter.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
-                    }
-                    if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(domainRouterVO, network, paramsForRouter)) {
-                        s_logger.error("Failed to add VPC router " + domainRouterVO + " to guest network " + network);
-                    } else {
-                        s_logger.debug("Successfully added VPC router " + domainRouterVO + " to guest network " + network);
-                    }
-                }
-            }
+            configureGuestNetwork(network, routers);
         }
 
         return true;
@@ -316,6 +336,42 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     @Override
     public Provider getProvider() {
         return Provider.VPCVirtualRouter;
+    }
+
+    @Override
+    protected List<DomainRouterVO> getRouters(final Network network, final DeployDestination dest) {
+        List<DomainRouterVO> routers = new ArrayList<DomainRouterVO>();
+
+        final Long vpcId = network.getVpcId();
+        if (vpcId == null) {
+            s_logger.error("Network " + network + " is not associated with any VPC");
+            return routers;
+        }
+
+        final Vpc vpc = _vpcMgr.getActiveVpc(vpcId);
+        if (vpc == null) {
+            s_logger.warn("Unable to find Enabled VPC by id " + vpcId);
+            return routers;
+        }
+
+        final RouterDeploymentDefinition routerDeploymentDefinition = routerDeploymentDefinitionBuilder.create()
+                .setGuestNetwork(network)
+                .setVpc(vpc)
+                .setDeployDestination(dest)
+                .setAccountOwner(_accountMgr.getAccount(vpc.getAccountId()))
+                .build();
+
+        try {
+            routers = routerDeploymentDefinition.deployVirtualRouter();
+        } catch (final ConcurrentOperationException e) {
+            s_logger.error("Error occurred when loading routers from routerDeploymentDefinition.deployVirtualRouter()!", e);
+        } catch (final InsufficientCapacityException e) {
+            s_logger.error("Error occurred when loading routers from routerDeploymentDefinition.deployVirtualRouter()!", e);
+        } catch (final ResourceUnavailableException e) {
+            s_logger.error("Error occurred when loading routers from routerDeploymentDefinition.deployVirtualRouter()!", e);
+        }
+
+        return routers;
     }
 
     private static Map<Service, Map<Capability, String>> setCapabilities() {
