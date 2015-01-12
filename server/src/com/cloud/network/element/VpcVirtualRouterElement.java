@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.element;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -340,8 +339,14 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
     @Override
     protected List<DomainRouterVO> getRouters(final Network network, final DeployDestination dest) {
-        List<DomainRouterVO> routers = new ArrayList<DomainRouterVO>();
 
+        //1st time it runs the domain router of the VM shall be returned
+        List<DomainRouterVO> routers = super.getRouters(network, dest);
+        if (routers.size() > 0) {
+            return routers;
+        }
+
+        //For the 2nd time it returns the VPC routers.
         final Long vpcId = network.getVpcId();
         if (vpcId == null) {
             s_logger.error("Network " + network + " is not associated with any VPC");

@@ -2636,6 +2636,12 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             final String routerControlIp = _routerControlHelper.getRouterControlIp(router.getId());
             final String routerIpInNetwork = _routerControlHelper.getRouterIpInNetwork(network.getId(), router.getId());
 
+            if (routerIpInNetwork == null) {
+                //Guest Nics are getting removed during the procedure and added back again.
+                //Returniung false here and waiting for the retry.
+                return false;
+            }
+
             final AggregationControlCommand cmd = new AggregationControlCommand(action, router.getInstanceName(), routerControlIp, routerIpInNetwork);
             final Commands cmds = new Commands(cmd);
             if (!_nwHelper.sendCommandsToRouter(router, cmds)) {
