@@ -533,4 +533,32 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     public Answer snapshotAndCopy(SnapshotAndCopyCommand cmd) {
         return new Answer(cmd, false, "not implemented yet");
     }
+
+    public Answer execute(AttachCommand cmd) {
+        String vmName = cmd.getVmName();
+        DiskTO disk = cmd.getDisk();
+        Boolean success = false;
+        String answer = "";
+        if (cmd.getDisk().getType() == Volume.Type.ISO) {
+            answer = isoAttachDetach(vmName, disk, true);
+        }
+        if (answer == null) {
+            success = true;
+        }
+        return new Answer(cmd, success, answer);
+    }
+
+    public Answer execute(DettachCommand cmd) {
+        String vmName = cmd.getVmName();
+        DiskTO disk = cmd.getDisk();
+        Boolean success = false;
+        String answer = "";
+        if (cmd.getDisk().getType() == Volume.Type.ISO) {
+            answer = isoAttachDetach(vmName, disk, false);
+        }
+        if (answer == null) {
+            success = true;
+        }
+        return new Answer(cmd, success, answer);
+    }
 }
