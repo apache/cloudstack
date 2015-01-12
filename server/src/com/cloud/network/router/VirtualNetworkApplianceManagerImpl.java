@@ -2632,8 +2632,11 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     protected boolean aggregationExecution(final AggregationControlCommand.Action action, final Network network, final List<DomainRouterVO> routers)
             throws AgentUnavailableException, ResourceUnavailableException {
         for (final DomainRouterVO router : routers) {
-            final AggregationControlCommand cmd = new AggregationControlCommand(action, router.getInstanceName(), _routerControlHelper.getRouterControlIp(router.getId()), _routerControlHelper.getRouterIpInNetwork(
-                    network.getId(), router.getId()));
+
+            final String routerControlIp = _routerControlHelper.getRouterControlIp(router.getId());
+            final String routerIpInNetwork = _routerControlHelper.getRouterIpInNetwork(network.getId(), router.getId());
+
+            final AggregationControlCommand cmd = new AggregationControlCommand(action, router.getInstanceName(), routerControlIp, routerIpInNetwork);
             final Commands cmds = new Commands(cmd);
             if (!_nwHelper.sendCommandsToRouter(router, cmds)) {
                 return false;

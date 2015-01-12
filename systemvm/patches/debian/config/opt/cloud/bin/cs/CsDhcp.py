@@ -111,7 +111,7 @@ class CsDhcp(CsDataBag):
 
             for o in leases:
                 if o['del']:
-                    cmd = "dhcp_release eth%s %s %s" % (o.device, o.ip, o.mac)
+                    cmd = "dhcp_release eth%s %s %s" % (o['device'], o['ip'], o['mac'])
                     logging.info(cmd)
                     CsHelper.execute(cmd)
         except IOError:

@@ -29,6 +29,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.VirtualRouterProvider.Type;
@@ -53,10 +54,10 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
 
     protected Vpc vpc;
 
-    protected VpcRouterDeploymentDefinition(final Vpc vpc, final DeployDestination dest, final Account owner,
+    protected VpcRouterDeploymentDefinition(final Network guestNetwork, final Vpc vpc, final DeployDestination dest, final Account owner,
             final Map<Param, Object> params) {
 
-        super(null, dest, owner, params);
+        super(guestNetwork, dest, owner, params);
 
         this.vpc = vpc;
     }
@@ -197,7 +198,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     }
 
     @Override
-    protected void generateDeploymentPlan() {
+    public void generateDeploymentPlan() {
         plan = new DataCenterDeployment(dest.getDataCenter().getId());
     }
 

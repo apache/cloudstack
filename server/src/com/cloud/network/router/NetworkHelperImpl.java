@@ -28,7 +28,6 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.user.dao.UserDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -87,6 +86,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
+import com.cloud.user.dao.UserDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
@@ -121,8 +121,6 @@ public class NetworkHelperImpl implements NetworkHelper {
     @Inject
     protected NetworkModel _networkModel;
     @Inject
-    private VirtualMachineManager _itMgr;
-    @Inject
     private AccountManager _accountMgr;
     @Inject
     private Site2SiteVpnManager _s2sVpnMgr;
@@ -130,8 +128,6 @@ public class NetworkHelperImpl implements NetworkHelper {
     private HostDao _hostDao;
     @Inject
     private VolumeDao _volumeDao;
-    @Inject
-    private ServiceOfferingDao _serviceOfferingDao;
     @Inject
     private VMTemplateDao _templateDao;
     @Inject
@@ -141,8 +137,6 @@ public class NetworkHelperImpl implements NetworkHelper {
     @Inject
     protected IPAddressDao _ipAddressDao;
     @Inject
-    private IpAddressManager _ipAddrMgr;
-    @Inject
     private UserIpv6AddressDao _ipv6Dao;
     @Inject
     private RouterControlHelper _routerControlHelper;
@@ -150,6 +144,11 @@ public class NetworkHelperImpl implements NetworkHelper {
     protected NetworkOrchestrationService _networkMgr;
     @Inject
     private UserDao _userDao;
+    protected ServiceOfferingDao _serviceOfferingDao;
+    @Inject
+    protected VirtualMachineManager _itMgr;
+    @Inject
+    protected IpAddressManager _ipAddrMgr;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -288,7 +287,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         if (router.getTemplateVersion() == null) {
             return false;
         }
-        long dcid = router.getDataCenterId();
+        final long dcid = router.getDataCenterId();
         final String trimmedVersion = Version.trimRouterVersion(router.getTemplateVersion());
         return Version.compare(trimmedVersion, NetworkOrchestrationService.MinVRVersion.valueIn(dcid)) >= 0;
     }
@@ -531,9 +530,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                 router.setRole(Role.VIRTUAL_ROUTER);
                 router = _routerDao.persist(router);
 
-                final LinkedHashMap<Network, List<? extends NicProfile>> networks = createRouterNetworks(routerDeploymentDefinition);
-
-                _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, routerDeploymentDefinition.getPlan(), null);
+                reallocateRouterNetworks(routerDeploymentDefinition, router, template, null);
                 router = _routerDao.findById(router.getId());
             } catch (final InsufficientCapacityException ex) {
                 if (allocateRetry < 2 && iter.hasNext()) {
@@ -645,13 +642,66 @@ public class NetworkHelperImpl implements NetworkHelper {
     }
 
     @Override
-    public LinkedHashMap<Network, List<? extends NicProfile>> createRouterNetworks(final RouterDeploymentDefinition routerDeploymentDefinition)
+    public LinkedHashMap<Network, List<? extends NicProfile>>  configureDefaultNics(final RouterDeploymentDefinition routerDeploymentDefinition) throws ConcurrentOperationException, InsufficientAddressCapacityException {
+
+        final LinkedHashMap<Network, List<? extends NicProfile>> networks = configureGuestNic(routerDeploymentDefinition);
+
+        // 2) Control network
+        s_logger.debug("Adding nic for Virtual Router in Control network ");
+        final List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
+        final NetworkOffering controlOffering = offerings.get(0);
+        final Network controlConfig = _networkMgr.setupNetwork(s_systemAccount, controlOffering, routerDeploymentDefinition.getPlan(), null, null, false).get(0);
+        networks.put(controlConfig, new ArrayList<NicProfile>());
+        // 3) Public network
+        if (routerDeploymentDefinition.isPublicNetwork()) {
+            s_logger.debug("Adding nic for Virtual Router in Public network ");
+            // if source nat service is supported by the network, get the source
+            // nat ip address
+            final NicProfile defaultNic = new NicProfile();
+            defaultNic.setDefaultNic(true);
+            final PublicIp sourceNatIp = routerDeploymentDefinition.getSourceNatIP();
+            defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
+            defaultNic.setGateway(sourceNatIp.getGateway());
+            defaultNic.setNetmask(sourceNatIp.getNetmask());
+            defaultNic.setMacAddress(sourceNatIp.getMacAddress());
+            // get broadcast from public network
+            final Network pubNet = _networkDao.findById(sourceNatIp.getNetworkId());
+            if (pubNet.getBroadcastDomainType() == BroadcastDomainType.Vxlan) {
+                defaultNic.setBroadcastType(BroadcastDomainType.Vxlan);
+                defaultNic.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(sourceNatIp.getVlanTag()));
+                defaultNic.setIsolationUri(BroadcastDomainType.Vxlan.toUri(sourceNatIp.getVlanTag()));
+            } else {
+                defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
+                defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
+                defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
+            }
+            //If guest nic has already been addedd we will have 2 devices in the list.
+            if (networks.size() > 1) {
+                defaultNic.setDeviceId(2);
+            }
+            final NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
+            final List<? extends Network> publicNetworks = _networkMgr.setupNetwork(s_systemAccount, publicOffering, routerDeploymentDefinition.getPlan(), null, null, false);
+            final String publicIp = defaultNic.getIp4Address();
+            // We want to use the identical MAC address for RvR on public
+            // interface if possible
+            final NicVO peerNic = _nicDao.findByIp4AddressAndNetworkId(publicIp, publicNetworks.get(0).getId());
+            if (peerNic != null) {
+                s_logger.info("Use same MAC as previous RvR, the MAC is " + peerNic.getMacAddress());
+                defaultNic.setMacAddress(peerNic.getMacAddress());
+            }
+            networks.put(publicNetworks.get(0), new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
+        }
+
+        return networks;
+    }
+
+    @Override
+    public LinkedHashMap<Network, List<? extends NicProfile>> configureGuestNic(final RouterDeploymentDefinition routerDeploymentDefinition)
             throws ConcurrentOperationException, InsufficientAddressCapacityException {
 
         // Form networks
         final LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
         // 1) Guest network
-        boolean hasGuestNetwork = false;
         final Network guestNetwork = routerDeploymentDefinition.getGuestNetwork();
 
         if (guestNetwork != null) {
@@ -711,55 +761,18 @@ public class NetworkHelperImpl implements NetworkHelper {
             }
 
             networks.put(guestNetwork, new ArrayList<NicProfile>(Arrays.asList(gatewayNic)));
-            hasGuestNetwork = true;
         }
-
-        // 2) Control network
-        s_logger.debug("Adding nic for Virtual Router in Control network ");
-        final List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
-        final NetworkOffering controlOffering = offerings.get(0);
-        final Network controlConfig = _networkMgr.setupNetwork(s_systemAccount, controlOffering, routerDeploymentDefinition.getPlan(), null, null, false).get(0);
-        networks.put(controlConfig, new ArrayList<NicProfile>());
-        // 3) Public network
-        if (routerDeploymentDefinition.isPublicNetwork()) {
-            s_logger.debug("Adding nic for Virtual Router in Public network ");
-            // if source nat service is supported by the network, get the source
-            // nat ip address
-            final NicProfile defaultNic = new NicProfile();
-            defaultNic.setDefaultNic(true);
-            final PublicIp sourceNatIp = routerDeploymentDefinition.getSourceNatIP();
-            defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
-            defaultNic.setGateway(sourceNatIp.getGateway());
-            defaultNic.setNetmask(sourceNatIp.getNetmask());
-            defaultNic.setMacAddress(sourceNatIp.getMacAddress());
-            // get broadcast from public network
-            final Network pubNet = _networkDao.findById(sourceNatIp.getNetworkId());
-            if (pubNet.getBroadcastDomainType() == BroadcastDomainType.Vxlan) {
-                defaultNic.setBroadcastType(BroadcastDomainType.Vxlan);
-                defaultNic.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(sourceNatIp.getVlanTag()));
-                defaultNic.setIsolationUri(BroadcastDomainType.Vxlan.toUri(sourceNatIp.getVlanTag()));
-            } else {
-                defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
-                defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
-                defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
-            }
-            if (hasGuestNetwork) {
-                defaultNic.setDeviceId(2);
-            }
-            final NetworkOffering publicOffering = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemPublicNetwork).get(0);
-            final List<? extends Network> publicNetworks = _networkMgr.setupNetwork(s_systemAccount, publicOffering, routerDeploymentDefinition.getPlan(), null, null, false);
-            final String publicIp = defaultNic.getIp4Address();
-            // We want to use the identical MAC address for RvR on public
-            // interface if possible
-            final NicVO peerNic = _nicDao.findByIp4AddressAndNetworkId(publicIp, publicNetworks.get(0).getId());
-            if (peerNic != null) {
-                s_logger.info("Use same MAC as previous RvR, the MAC is " + peerNic.getMacAddress());
-                defaultNic.setMacAddress(peerNic.getMacAddress());
-            }
-            networks.put(publicNetworks.get(0), new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
-        }
-
         return networks;
+    }
+
+    @Override
+    public void reallocateRouterNetworks(final RouterDeploymentDefinition routerDeploymentDefinition, final VirtualRouter router, final VMTemplateVO template, final HypervisorType hType)
+            throws ConcurrentOperationException, InsufficientCapacityException {
+        final ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(routerDeploymentDefinition.getServiceOfferingId());
+
+        final LinkedHashMap<Network, List<? extends NicProfile>> networks = configureDefaultNics(routerDeploymentDefinition);
+
+        _itMgr.allocate(router.getInstanceName(), template, routerOffering, networks, routerDeploymentDefinition.getPlan(), hType);
     }
 
     public static void setSystemAccount(final Account systemAccount) {
