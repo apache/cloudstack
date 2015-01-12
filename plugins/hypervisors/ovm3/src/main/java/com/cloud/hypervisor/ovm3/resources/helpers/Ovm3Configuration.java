@@ -63,13 +63,13 @@ public class Ovm3Configuration {
     private String agentStorageNetworkName;
     private String agentControlNetworkName = "control0";
     private String agentOvmRepoPath = "/OVS/Repositories";
+    private String agentSecStoragePath = "/nfsmnt";
     private String agentScript = "cloudstack.py";
     private String agentCheckStorageScript = "storagehealth.py";
     private Integer agentStorageCheckTimeout = 120;
     private Integer agentStorageCheckInterval = 1;
     private List<String> agentScripts = Arrays.asList(agentCheckStorageScript, agentScript);
     private String agentScriptsDir = "/opt/cloudstack/bin";
-    private String agentSecStoragePath = "/nfsmnt";
     private int domRSshPort = 3922;
     private String domRCloudPath = "/opt/cloud/bin/";
     private Map<String, Network.Interface> agentInterfaces = null;

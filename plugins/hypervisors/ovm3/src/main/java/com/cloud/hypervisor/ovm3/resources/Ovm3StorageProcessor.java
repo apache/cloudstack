@@ -18,7 +18,6 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.resources;
 
-import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.UUID;
@@ -39,6 +38,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
@@ -74,8 +74,6 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     private final Logger LOGGER = Logger
             .getLogger(Ovm3StorageProcessor.class);
     private Connection c;
-    private String agentOvmRepoPath = "/OVS/Repositories";
-    private String agentSecStoragePath = "/nfsmnt";
     private OvmObject ovmObject = new OvmObject();
     private Ovm3StoragePool pool;
     private Ovm3Configuration config;
@@ -105,9 +103,9 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 String storeUrl = srcImageStore.getUrl();
                 String secPoolUuid = pool.setupSecondaryStorage(storeUrl);
                 String primaryPoolUuid = destData.getDataStore().getUuid();
-                String destPath = agentOvmRepoPath + "/"
+                String destPath = config.getAgentOvmRepoPath() + "/"
                         + ovmObject.deDash(primaryPoolUuid) + "/" + "Templates";
-                String sourcePath = agentSecStoragePath + "/" + secPoolUuid;
+                String sourcePath = config.getAgentSecStoragePath() + "/" + secPoolUuid;
 
                 Linux host = new Linux(c);
                 String destUuid = srcTemplate.getUuid();
@@ -292,84 +290,120 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     public Answer attachIso(AttachCommand cmd) {
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
-        Boolean success = false;
-        String answer = "";
-        if (cmd.getDisk().getType() == Volume.Type.ISO) {
-            answer = isoAttachDetach(vmName, disk, true);
-        }
-        if (answer == null) {
-            success = true;
-        }
-        return new Answer(cmd, success, answer);
+        return attachDetach(cmd, vmName, disk, true);
     }
 
     @Override
     public Answer dettachIso(DettachCommand cmd) {
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
-        Boolean success = false;
-        String answer = "";
-        if (cmd.getDisk().getType() == Volume.Type.ISO) {
-            answer = isoAttachDetach(vmName, disk, false);
-        }
-        if (answer == null) {
-            success = true;
-        }
-        return new Answer(cmd, success, answer);
+        return attachDetach(cmd, vmName, disk, false);
     }
 
-    public String isoAttachDetach(String vmName, DiskTO disk, boolean isAttach) {
+    /**
+     * Iso specific path return.
+     * @param disk
+     * @return
+     * @throws Ovm3ResourceException
+     */
+    private String getIsoPath(DiskTO disk) throws Ovm3ResourceException {
+        /*
+        TemplateObjectTO isoTO = (TemplateObjectTO) disk.getData();
+        DataStoreTO store = isoTO.getDataStore();
+        NfsTO nfsStore = (NfsTO) store;
+        String secPoolUuid = pool.setupSecondaryStorage(nfsStore.getUrl());
+        String isoPath = config.getAgentSecStoragePath() + File.separator + secPoolUuid
+                + File.separator + isoTO.getPath();
+        return isoPath; */
+        return disk.getPath();
+    }
+    private String getDiskPath(DiskTO disk, String uuid) throws Ovm3ResourceException {
+        /* VolumeObjectTO volume = (VolumeObjectTO) disk.getData();
+        DataStoreTO store = volume.getDataStore();
+        NfsTO nfsStore = (NfsTO) store;
+        // store.get
+        // String secPoolUuid = pool.setupSecondaryStorage(nfsStore.getUrl());
+        String volPath = config.getAgentOvmRepoPath() + File.separator + uuid
+                + File.separator + volume.getPath();
+        return volPath; */
+        return disk.getPath();
+    }
+
+    /**
+     * Generic disk attachment.
+     * @param cmd
+     * @param vmName
+     * @param disk
+     * @param isAttach
+     * @return
+     */
+    public Answer attachDetach(Command cmd, String vmName, DiskTO disk, boolean isAttach) {
         Xen xen = new Xen(c);
-        String doThis = (isAttach) ? "AttachIso" : "DettachIso";
-        String msg = null;
+        String doThis = (isAttach) ? "Attach" : "Dettach";
+        LOGGER.debug(doThis + " volume type " + disk.getType()
+                + " to " + vmName);
+        String msg = "";
+        String path = "";
         try {
             Xen.Vm vm = xen.getVmConfig(vmName);
             /* check running */
             if (vm == null) {
                 msg = doThis + " can't find VM " + vmName;
                 LOGGER.debug(msg);
-                return msg;
+                return new Answer(cmd, false, msg);
             }
-            TemplateObjectTO isoTO = (TemplateObjectTO) disk.getData();
-            DataStoreTO store = isoTO.getDataStore();
-            if (!(store instanceof NfsTO)) {
+            if (!(disk.getData().getDataStore() instanceof NfsTO)) {
                 msg = doThis + " only NFS is supported at the moment.";
                 LOGGER.debug(msg);
-                return msg;
+                return new Answer(cmd, false, msg);
             }
-            NfsTO nfsStore = (NfsTO) store;
-            String secPoolUuid = pool.setupSecondaryStorage(nfsStore.getUrl());
-            String isoPath = agentSecStoragePath + File.separator + secPoolUuid
-                    + File.separator + isoTO.getPath();
+            if (disk.getType() == Volume.Type.ISO) {
+                path = getIsoPath(disk);
+            } else if (disk.getType() == Volume.Type.DATADISK) {
+                path = getDiskPath(disk, vm.getPrimaryPoolUuid());
+            }
+            if ("".equals(path)) {
+                msg = doThis + " can't do anything with an empty path.";
+                LOGGER.debug(msg);
+                return new Answer(cmd, false, msg);
+            }
             if (isAttach) {
-                /* check if iso is not already there ? */
-                vm.addIso(isoPath);
+                if (disk.getType() == Volume.Type.ISO) {
+                    vm.addIso(path);
+                } else {
+                    vm.addDataDisk(path);
+                }
             } else {
-                if (!vm.removeDisk(isoPath)) {
+                if (!vm.removeDisk(path)) {
                     msg = doThis + " failed for " + vmName
-                            + " iso was not attached " + isoPath;
+                            + disk.getType() + "  was not attached "
+                            + path;
                     LOGGER.debug(msg);
-                    return msg;
+                    return new Answer(cmd, false, msg);
                 }
             }
             xen.configureVm(ovmObject.deDash(vm.getPrimaryPoolUuid()),
                     vm.getVmUuid());
-            return msg;
+            return new Answer(cmd, true, msg);
         } catch (Ovm3ResourceException e) {
             msg = doThis + " failed for " + vmName + " " + e.getMessage();
             LOGGER.warn(msg, e);
-            return msg;
+            return new Answer(cmd, false, msg);
         }
     }
 
     @Override
     public Answer attachVolume(AttachCommand cmd) {
-        return new Answer(cmd, false, "not implemented yet");
+        String vmName = cmd.getVmName();
+        DiskTO disk = cmd.getDisk();
+        return attachDetach(cmd, vmName, disk, true);
     }
 
     @Override
     public Answer dettachVolume(DettachCommand cmd) {
-        return new Answer(cmd, false, "not implemented yet");
+        String vmName = cmd.getVmName();
+        DiskTO disk = cmd.getDisk();
+        return attachDetach(cmd, vmName, disk, false);
     }
 
     @Override
@@ -385,7 +419,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             String storeUrl = data.getDataStore().getUrl();
             URI uri = new URI(storeUrl);
             String host = uri.getHost();
-            String file = agentOvmRepoPath + "/" + ovmObject.deDash(poolUuid)
+            String file = config.getAgentOvmRepoPath() + "/" + ovmObject.deDash(poolUuid)
                     + "/VirtualDisks/" + volume.getUuid() + ".raw";
             Long size = volume.getSize();
             StoragePlugin sp = new StoragePlugin(c);
@@ -496,7 +530,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
 
         try {
             /* missing uuid */
-            String installPath = agentOvmRepoPath + "/Templates/" + accountId
+            String installPath = config.getAgentOvmRepoPath() + "/Templates/" + accountId
                     + "/" + templateId;
             Linux host = new Linux(c);
             /* check if VM is running or thrown an error, or pause it :P */
@@ -534,43 +568,24 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         return new Answer(cmd, false, "not implemented yet");
     }
 
+    /**
+     * Attach disks
+     * @param cmd
+     * @return
+     */
     public Answer execute(AttachCommand cmd) {
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
-        Boolean success = false;
-        String answer = "";
-        LOGGER.debug("Attach volume type " + cmd.getDisk().getType()
-                + " to " + vmName);
-        if (cmd.getDisk().getType() == Volume.Type.ISO) {
-            answer = isoAttachDetach(vmName, disk, true);
-        } else if (cmd.getDisk().getType() == Volume.Type.DATADISK) {
-            return attachVolume(cmd);
-        } else {
-            return new Answer(cmd, success, "Unsupported action");
-        }
-        if (answer == null) {
-            success = true;
-        }
-        return new Answer(cmd, success, answer);
+        return attachDetach(cmd, vmName, disk, false);
     }
-
+    /**
+     * Detach disks, calls a middle man which calls attachDetach for volumes.
+     * @param cmd
+     * @return
+     */
     public Answer execute(DettachCommand cmd) {
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
-        Boolean success = false;
-        String answer = "";
-        LOGGER.debug("Detttach volume type " + cmd.getDisk().getType()
-                + " from " + vmName);
-        if (cmd.getDisk().getType() == Volume.Type.ISO) {
-            answer = isoAttachDetach(vmName, disk, false);
-        } else if (cmd.getDisk().getType() == Volume.Type.DATADISK) {
-            return dettachVolume(cmd);
-        } else {
-            return new Answer(cmd, success, "Unsupported action");
-        }
-        if (answer == null) {
-            success = true;
-        }
-        return new Answer(cmd, success, answer);
+        return attachDetach(cmd, vmName, disk, true);
     }
 }
