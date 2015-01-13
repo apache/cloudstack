@@ -976,7 +976,12 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
      */
     private void updateSecondaryStorageVMSharedKey() {
         try {
-            _configDao.update(Config.SSVMPSK.key(), Config.SSVMPSK.getCategory(), getPrivateKey());
+            String key = _configDao.getValue(Config.SSVMPSK.key());
+            if(key == null) {
+                ConfigurationVO configVO = new ConfigurationVO(Config.SSVMPSK.getCategory(), "DEFAULT", Config.SSVMPSK.getComponent(), Config.SSVMPSK.key(), getPrivateKey(),
+                        Config.SSVMPSK.getDescription());
+                _configDao.persist(configVO);
+            }
         } catch (NoSuchAlgorithmException ex) {
             s_logger.error("error generating ssvm psk", ex);
         }
