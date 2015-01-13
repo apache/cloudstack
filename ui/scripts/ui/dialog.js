@@ -684,20 +684,52 @@
                 }
 
                 var uploadFiles = function() {
-                    $form.prepend($('<div>').addClass('loading-overlay').text('Uploading files...'));
+                    $form.prepend($('<div>').addClass('loading-overlay'));
                     args.form.fileUpload.getURL({
                         formData: data,
                         context: args.context,
                         response: {
                             success: function(successArgs) {
-                                var $uploadFrame = $('<iframe>');
-
-                                $uploadFrame.appendTo('html body');
-
-                                
-                                // debug
-                                $uploadFrame.css({background:'white',width:320,height:240,position:'absolute',left:0,top:0,'z-index':12000}).show();
                                 //
+                                // Move file field into iframe; keep visible for consistency
+                                //
+                                var $uploadFrame = $('<iframe>');
+                                var $frameForm = $('<form>').attr({
+                                    method: 'POST',
+                                    action: successArgs.url,
+                                    enctype: 'multipart/form-data'
+                                });
+                                var $file = $form.find('input[type=file]');
+                                var $field = $file.closest('.form-item .value');
+
+                                $uploadFrame.css({ width: $field.outerWidth(), height: $field.height() }).show();
+                                $frameForm.append($file);
+                                $field.append($uploadFrame);
+                                $uploadFrame.contents().find('html body').append($frameForm);
+                                $frameForm.submit(function() {
+                                    $uploadFrame.load(function() {
+                                        args.form.fileUpload.postUpload({
+                                            formData: data,
+                                            context: args.context,
+                                            response: {
+                                                success: function() {
+                                                    args.after({
+                                                        data: data,
+                                                        ref: args.ref, // For backwards compatibility; use context
+                                                        context: args.context,
+                                                        $form: $form
+                                                    });
+                                                },
+                                                error: function(msg) {
+                                                    $form.find('.loading-overlay').remove();
+                                                    cloudStack.dialog.error({ message: msg });
+                                                }
+                                            }
+                                        });
+                                    });
+                                    return true;
+                                });
+                                $frameForm.submit();
                             },
                             error: function(msg) {
                                 cloudStack.dialog.error({ message: msg });

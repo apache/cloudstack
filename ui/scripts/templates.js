@@ -113,8 +113,17 @@
                                 fileUpload: {
                                     getURL: function(args) {
                                         args.response.success({
-                                            data: 'http://10.223.183.3/test-upload.json'
+                                            url: 'http://10.223.183.3/test-upload.php'
                                         });
+                                    },
+                                    postUpload: function(args) {
+                                        // Called when upload is done to do 
+                                        // verification checks;
+                                        // i.e., poll the server to verify successful upload
+                                        //
+                                        // success() will close the dialog and call standard action
+                                        // error() will keep dialog open if user wants to re-submit
+                                        args.response.success();
                                     }
                                 },
                                 fields: {
