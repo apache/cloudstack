@@ -29,14 +29,13 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 
 import com.cloud.utils.EncryptionUtil;
-import com.google.gson.ExclusionStrategy;
-import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.cloudstack.api.command.user.volume.GetUploadParamsForVolumeCmd;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommandTypeAdapter;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
@@ -319,14 +318,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
          /*
           * encoded metadata using the post upload config ssh key
           */
-        Gson gson = new GsonBuilder().setExclusionStrategies(new ExclusionStrategy() {
-            @Override public boolean shouldSkipField(FieldAttributes f) {
-                return f.getDeclaredType().getClass().isInstance(Logger.class);
-            }
-            @Override public boolean shouldSkipClass(Class<?> clazz) {
-                return false;
-            }
-        }).create();
+
+        Gson gson = new GsonBuilder().registerTypeAdapter(TemplateOrVolumePostUploadCommand.class, new TemplateOrVolumePostUploadCommandTypeAdapter()).create();
         String jsonPayload = gson.toJson(command);
         response.setMetadata(EncryptionUtil.encodeData(jsonPayload, key));
 
