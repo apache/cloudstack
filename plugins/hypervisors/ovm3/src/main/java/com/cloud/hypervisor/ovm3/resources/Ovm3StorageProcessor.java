@@ -285,7 +285,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                     return new CreateObjectAnswer("Snapshot object creation not supported for running VMs." + snap.getVmName());
                 }
                 Linux host = new Linux(c);
-                String uuid = host.getUuid();
+                String uuid = host.newUuid();
                 String path = vol.getPath() + "/" + vol.getUuid() + ".raw";
                 String dest = vol.getPath() + "/" + uuid + ".raw";
                 host.copyFile(path,  dest);
@@ -294,7 +294,8 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 newVol.setName(vol.getName());
                 newVol.setSize(vol.getSize());
                 newVol.setPath(dest);
-                return new CreateObjectAnswer(newVol);
+                snap.setVolume(newVol);
+                return new CreateObjectAnswer(snap);
             } catch (Ovm3ResourceException e) {
                 return new CreateObjectAnswer("Snapshot object creation failed. " + e.getMessage());
             }
