@@ -28,7 +28,7 @@ public interface SAML2AuthManager extends PluggableAPIAuthenticator {
 
     public X509Certificate getIdpSigningKey();
     public X509Certificate getIdpEncryptionKey();
-    public X509Certificate getSpX509Key();
+    public X509Certificate getSpX509Certificate();
     public KeyPair getSpKeyPair();
 
     public String getSpSingleSignOnUrl();

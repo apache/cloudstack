@@ -148,7 +148,7 @@ public class SAMLUtils {
         RequestedAuthnContextBuilder requestedAuthnContextBuilder = new RequestedAuthnContextBuilder();
         RequestedAuthnContext requestedAuthnContext = requestedAuthnContextBuilder.buildObject();
         requestedAuthnContext
-                .setComparison(AuthnContextComparisonTypeEnumeration.MINIMUM);
+                .setComparison(AuthnContextComparisonTypeEnumeration.EXACT);
         requestedAuthnContext.getAuthnContextClassRefs().add(
                 authnContextClassRef);
 
@@ -166,7 +166,7 @@ public class SAMLUtils {
         authnRequest.setAssertionConsumerServiceURL(consumerUrl);
         authnRequest.setProviderName(spId);
         authnRequest.setNameIDPolicy(nameIdPolicy);
-        //authnRequest.setRequestedAuthnContext(requestedAuthnContext);
+        authnRequest.setRequestedAuthnContext(requestedAuthnContext);
 
         return authnRequest;
     }
@@ -315,8 +315,8 @@ public class SAMLUtils {
 
     public static X509Certificate generateRandomX509Certificate(KeyPair keyPair) throws NoSuchAlgorithmException, NoSuchProviderException, CertificateEncodingException, SignatureException, InvalidKeyException {
         Date validityBeginDate = new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000);
-        Date validityEndDate = new Date(System.currentTimeMillis() + 365 * 24 * 60 * 60 * 1000);
-        X500Principal dnName = new X500Principal("CN=Apache CloudStack");
+        Date validityEndDate = new Date(System.currentTimeMillis() + 3 * 365 * 24 * 60 * 60 * 1000);
+        X500Principal dnName = new X500Principal("CN=ApacheCloudStack");
         X509V1CertificateGenerator certGen = new X509V1CertificateGenerator();
         certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
         certGen.setSubjectDN(dnName);

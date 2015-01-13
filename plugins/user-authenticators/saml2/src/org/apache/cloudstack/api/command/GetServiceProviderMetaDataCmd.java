@@ -121,7 +121,7 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
 
         SPSSODescriptor spSSODescriptor = new SPSSODescriptorBuilder().buildObject();
         spSSODescriptor.setWantAssertionsSigned(true);
-        spSSODescriptor.setAuthnRequestsSigned(false);
+        spSSODescriptor.setAuthnRequestsSigned(true);
 
         X509KeyInfoGeneratorFactory keyInfoGeneratorFactory = new X509KeyInfoGeneratorFactory();
         keyInfoGeneratorFactory.setEmitEntityCertificate(true);
@@ -134,7 +134,7 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
         signKeyDescriptor.setUse(UsageType.SIGNING);
 
         BasicX509Credential credential = new BasicX509Credential();
-        credential.setEntityCertificate(_samlAuthManager.getSpX509Key());
+        credential.setEntityCertificate(_samlAuthManager.getSpX509Certificate());
         try {
             encKeyDescriptor.setKeyInfo(keyInfoGenerator.generate(credential));
             signKeyDescriptor.setKeyInfo(keyInfoGenerator.generate(credential));
@@ -147,6 +147,14 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
         NameIDFormat nameIDFormat = new NameIDFormatBuilder().buildObject();
         nameIDFormat.setFormat(NameIDType.PERSISTENT);
         spSSODescriptor.getNameIDFormats().add(nameIDFormat);
+
+        NameIDFormat emailNameIDFormat = new NameIDFormatBuilder().buildObject();
+        emailNameIDFormat.setFormat(NameIDType.EMAIL);
+        spSSODescriptor.getNameIDFormats().add(emailNameIDFormat);
+
+        NameIDFormat transientNameIDFormat = new NameIDFormatBuilder().buildObject();
+        transientNameIDFormat.setFormat(NameIDType.TRANSIENT);
+        spSSODescriptor.getNameIDFormats().add(transientNameIDFormat);
 
         AssertionConsumerService assertionConsumerService = new AssertionConsumerServiceBuilder().buildObject();
         assertionConsumerService.setIndex(0);
