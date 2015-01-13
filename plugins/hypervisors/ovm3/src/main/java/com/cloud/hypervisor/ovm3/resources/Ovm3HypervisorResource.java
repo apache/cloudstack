@@ -100,12 +100,8 @@ import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
-
-/* This should only contain stuff that @Override(s) */
-/*
- * update host set resource =
- * 'com.cloud.hypervisor.ovm3.resources.Ovm3HypervisorResource'
- * where resource = 'com.cloud.hypervisor.ovm3.hypervisor.Ovm3ResourceBase';
+/**
+ * Hypervisor related
  */
 @Local(value = HypervisorResource.class)
 public class Ovm3HypervisorResource extends ServerResourceBase implements
@@ -205,7 +201,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
         return null;
     }
 
-    /* order sometime, or just get rid of... */
     @Override
     public Answer executeRequest(Command cmd) {
         Class<? extends Command> clazz = cmd.getClass();
@@ -338,7 +333,9 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
         // TODO Auto-generated method stub
     }
 
-    /* TODO: fix this: Configure is the first thing called, later fillHostinfo */
+    /**
+     * Base configuration of the plugins components.
+     */
     @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
@@ -423,8 +420,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
                         + vmSpec.getOs());
             }
             vm.setVmDomainType(domType);
-            /* only for none user VMs? */
-            vm.setVmExtra(vmSpec.getBootArgs().replace(" ", "%"));
 
             /* TODO: booting from CD... */
             if (vmSpec.getBootloader() == BootloaderType.CD) {
@@ -438,6 +433,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             vmsupport.createVbds(vm, vmSpec);
 
             if (vmSpec.getType() != VirtualMachine.Type.User) {
+                vm.setVmExtra(vmSpec.getBootArgs().replace(" ", "%"));
                 String svmPath = configuration.getAgentOvmRepoPath() + "/"
                         + ovmObject.deDash(vm.getPrimaryPoolUuid()) + "/ISOs";
                 String svmIso = svmPath + "/"
@@ -448,11 +444,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             vmsupport.createVifs(vm, vmSpec);
             vm.setupVifs();
 
-            /* vm migration requires a 0.0.0.0 bind */
             vm.setVnc("0.0.0.0", vmSpec.getVncPassword());
-
-            /* this should be getVmRootDiskPoolId ? */
-            // System.out.println(vm.getPrimaryPoolUuid());
             xen.createVm(ovmObject.deDash(vm.getPrimaryPoolUuid()),
                     vm.getVmUuid());
             xen.startVm(ovmObject.deDash(vm.getPrimaryPoolUuid()),
@@ -514,7 +506,9 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
         }
     }
 
-    /* TODO: Stop the VM, this means cleanup too, should this be destroy ? */
+    /**
+     * Removes the vm and its configuration from the hypervisor.
+     */
     @Override
     public StopAnswer execute(StopCommand cmd) {
         String vmName = cmd.getVmName();
@@ -534,7 +528,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             }
             String repoId = ovmObject.deDash(vm.getVmRootDiskPoolId());
             String vmId = vm.getVmUuid();
-
             /* can we do without the poolId ? */
             vms.stopVm(repoId, vmId);
             int tries = 30;
@@ -570,7 +563,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
     public RebootAnswer execute(RebootCommand cmd) {
         String vmName = cmd.getVmName();
         hypervisorsupport.setVmStateStarting(vmName);
-
         try {
             Xen xen = new Xen(c);
             Xen.Vm vm = xen.getRunningVmConfig(vmName);

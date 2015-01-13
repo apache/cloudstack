@@ -33,8 +33,8 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
-// import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
@@ -69,8 +69,8 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.resource.StorageProcessor;
 import com.cloud.vm.DiskProfile;
 
-/* TODO: This should only contain stuff that @Override(s)
- * the rest should move
+/**
+ * Storage related bits
  */
 public class Ovm3StorageProcessor implements StorageProcessor {
     private final Logger LOGGER = Logger
@@ -86,8 +86,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     }
 
     /*
-     * TODO: Split out in Sec to prim and prim to prim and types ? Storage mount
-     * also goes in here for secstorage
+     * TODO: This should move to StorageSubSystemCommand type as defined in the KVM plugin
      */
     public final Answer execute(final CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
@@ -112,9 +111,9 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 Linux host = new Linux(c);
                 String destUuid = srcTemplate.getUuid();
                 /*
-                 * TODO: add dynamic formats (tolower), it also supports VHD and
-                 * QCOW2, although Ovm3.2 does not have tapdisk2 anymore so we
-                 * can forget about that.
+                 * Would love to add dynamic formats (tolower), to also support
+                 * VHD and QCOW2, although Ovm3.2 does not have tapdisk2 anymore
+                 * so we can forget about that.
                  */
                 /* TODO: add checksumming */
                 String srcFile = sourcePath + "/" + srcData.getPath();
@@ -122,7 +121,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                     srcFile = sourcePath + "/" + srcData.getPath() + "/"
                             + destUuid + ".raw";
                 }
-                String destFile = destPath + "/" + destUuid + ".raw";
+                String destFile = destPath + "/" + destUuid + ImageFormat.RAW;
                 LOGGER.debug("CopyFrom: " + srcData.getObjectType() + ","
                         + srcFile + " to " + destData.getObjectType() + ","
                         + destFile);
@@ -199,12 +198,10 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     public CreateAnswer execute(CreateCommand cmd) {
         StorageFilerTO primaryStorage = cmd.getPool();
         DiskProfile disk = cmd.getDiskCharacteristics();
-
         /* disk should have a uuid */
         String fileName = UUID.randomUUID().toString() + ".raw";
         String dst = primaryStorage.getPath() + "/" + primaryStorage.getUuid()
                 + "/" + fileName;
-
         try {
             StoragePlugin store = new StoragePlugin(c);
             if (cmd.getTemplateUrl() != null) {
@@ -218,7 +215,6 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 store.storagePluginCreate(primaryStorage.getUuid(),
                         primaryStorage.getHost(), dst, disk.getSize());
             }
-
             FileProperties fp = store.storagePluginGetFileInfo(
                     primaryStorage.getUuid(), primaryStorage.getHost(), dst);
             VolumeTO volume = new VolumeTO(cmd.getVolumeId(), disk.getType(),
@@ -273,6 +269,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
 
     public Answer execute(CreateObjectCommand cmd) {
         DataTO data = cmd.getData();
+        Xen xen = new Xen(c);
         if (data.getObjectType() == DataObjectType.VOLUME) {
             return createVolume(cmd);
         } else if (data.getObjectType() == DataObjectType.SNAPSHOT) {
@@ -280,7 +277,27 @@ public class Ovm3StorageProcessor implements StorageProcessor {
              * if stopped yes, if running ... no, unless we have ocfs2 when
              * using raw partitions (file:) if using tap:aio we cloud...
              */
-            LOGGER.debug("Snapshot object creation not supported.");
+            SnapshotObjectTO snap = (SnapshotObjectTO) data;
+            VolumeObjectTO vol = snap.getVolume();
+            try {
+                Xen.Vm vm = xen.getVmConfig(snap.getVmName());
+                if (vm != null) {
+                    return new CreateObjectAnswer("Snapshot object creation not supported for running VMs." + snap.getVmName());
+                }
+                Linux host = new Linux(c);
+                String uuid = host.getUuid();
+                String path = vol.getPath() + "/" + vol.getUuid() + ".raw";
+                String dest = vol.getPath() + "/" + uuid + ".raw";
+                host.copyFile(path,  dest);
+                VolumeObjectTO newVol = new VolumeObjectTO();
+                newVol.setUuid(uuid);
+                newVol.setName(vol.getName());
+                newVol.setSize(vol.getSize());
+                newVol.setPath(dest);
+                return new CreateObjectAnswer(newVol);
+            } catch (Ovm3ResourceException e) {
+                return new CreateObjectAnswer("Snapshot object creation failed. " + e.getMessage());
+            }
         } else if (data.getObjectType() == DataObjectType.TEMPLATE) {
             LOGGER.debug("Template object creation not supported.");
         }
@@ -317,20 +334,19 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 + File.separator + isoTO.getPath();
         return isoPath;
     }
-    private String getDiskPath(DiskTO disk, String uuid) throws Ovm3ResourceException {
-        /* VolumeObjectTO volume = (VolumeObjectTO) disk.getData();
-        DataStoreTO store = volume.getDataStore();
-        NfsTO nfsStore = (NfsTO) store;
-        // store.get
-        // String secPoolUuid = pool.setupSecondaryStorage(nfsStore.getUrl());
-        String volPath = config.getAgentOvmRepoPath() + File.separator + uuid
-                + File.separator + volume.getPath();
-        return volPath; */
+    /**
+     * Returns the disk path
+     * @param disk
+     * @param uuid
+     * @return
+     * @throws Ovm3ResourceException
+     */
+    private String getDiskPath(DiskTO disk) throws Ovm3ResourceException {
         return disk.getPath();
     }
 
     /**
-     * Generic disk attachment.
+     * Generic disk attach/detach.
      * @param cmd
      * @param vmName
      * @param disk
@@ -341,7 +357,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         Xen xen = new Xen(c);
         String doThis = (isAttach) ? "Attach" : "Dettach";
         LOGGER.debug(doThis + " volume type " + disk.getType()
-                + " to " + vmName);
+                + "  " + vmName);
         String msg = "";
         String path = "";
         try {
@@ -355,7 +371,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             if (disk.getType() == Volume.Type.ISO) {
                 path = getIsoPath(disk);
             } else if (disk.getType() == Volume.Type.DATADISK) {
-                path = getDiskPath(disk, vm.getPrimaryPoolUuid());
+                path = getDiskPath(disk);
             }
             if ("".equals(path)) {
                 msg = doThis + " can't do anything with an empty path.";
@@ -401,6 +417,9 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         return attachDetach(cmd, vmName, disk, false);
     }
 
+    /**
+     * Creates a volume, just a normal empty volume.
+     */
     @Override
     public Answer createVolume(CreateObjectCommand cmd) {
         DataTO data = cmd.getData();
