@@ -160,6 +160,9 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                     msg = "Primary to Primary doesn't match";
                     LOGGER.debug(msg);
                 }
+            } else if ((srcData.getObjectType() == DataObjectType.SNAPSHOT)
+                    && (destData.getObjectType() == DataObjectType.SNAPSHOT)) {
+                // Hop
             } else {
                 msg = "Unable to do stuff for " + srcStore.getClass()
                         + ":" + srcData.getObjectType() + " to "

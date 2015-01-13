@@ -130,15 +130,30 @@ if __name__ == '__main__':
         "&& "
         "echo c > /proc/sysrq-trigger")
     
-    # Decide based on our identity
+    # xenserver:
     if me == "heartbeat": 
         #  String result = callHostPluginPremium(conn, "heartbeat",
         #  "host", _host.uuid,
         #  "timeout", Integer.toString(_heartbeatTimeout),
         #  "interval", Integer.toString(_heartbeatInterval));
         # if (result == null || !result.contains("> DONE <")) {
-        #
-        print heartbeat
+        try:
+            opts, args = getopt.getopt(sys.argv[1:], "h:y:i:",
+                [ 'host', 'timeout', 'interval'])
+        except getopt.GetoptError:
+            print """Usage:
+                host: host uuid.
+                timeout: timeout to fail on
+                interval: time between checks"""
+            sys.exit()
+        for o, a in opts:
+            if o in ('host'):
+                file="hb-%s" % (a)
+            if o in ('timeout'):
+                timeout=a
+            if o in ('interval'):
+                interval=a
+    # OVM3:
     else:
         # get options
         try:
