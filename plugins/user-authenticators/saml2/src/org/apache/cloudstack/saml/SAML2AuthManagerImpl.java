@@ -202,6 +202,9 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
             s_logger.error("SAML2 Authentication may be unavailable");
         } catch (ConfigurationException | FactoryConfigurationError e) {
             s_logger.error("OpenSAML bootstrapping failed: error: " + e.getMessage());
+        } catch (NullPointerException e) {
+            s_logger.error("Unable to setup SAML Auth Plugin due to NullPointerException" +
+                    " please check the SAML IDP metadata URL and entity ID in global settings: " + e.getMessage());
         }
 
         if (this.idpSingleLogOutUrl == null || this.idpSingleSignOnUrl == null) {
@@ -259,7 +262,7 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
         return Boolean.valueOf(_configDao.getValue(Config.SAMLIsPluginEnabled.key()));
     }
 
-    public X509Certificate getSpX509Key() {
+    public X509Certificate getSpX509Certificate() {
         return spX509Key;
     }
 
