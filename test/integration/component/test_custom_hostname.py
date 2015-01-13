@@ -652,6 +652,12 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
         #    internal name will not be changed. The VM functionality must not
         #    be effected.
 
+        if not is_config_suitable(
+                apiclient=self.apiclient,
+                name='vm.instancename.flag',
+                value='true'):
+            self.skipTest('vm.instancename.flag should be true. skipping')
+
         # Spawn an instance in that network
         self.debug("Deploying VM in account: %s" % self.account.name)
         virtual_machine = VirtualMachine.create(
@@ -754,6 +760,12 @@ class TestInstanceNameFlagTrue(cloudstackTestCase):
         #    Gives an error message "Instance name can not be longer than 63
         #    characters. Only ASCII letters a~z, A~Z, digits 0~9, hyphen are
         #    allowed. Must start with a letter and end with a letter or digit
+
+        if not is_config_suitable(
+                apiclient=self.apiclient,
+                name='vm.instancename.flag',
+                value='true'):
+            self.skipTest('vm.instancename.flag should be true. skipping')
 
         self.debug("Creating VM with unsupported chars in display name")
         display_names = ["!hkzs566", "asdh asd", "!dsf d"]
