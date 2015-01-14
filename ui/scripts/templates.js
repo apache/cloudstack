@@ -107,6 +107,22 @@
                                 title: 'label.action.register.template',
                                 docID: 'helpNetworkOfferingName',
                                 preFilter: cloudStack.preFilter.createTemplate,
+                                fileUpload: {
+                                    getURL: function(args) {
+                                        args.response.success({
+                                            url: 'http://10.223.183.3/test-upload.php'
+                                        });
+                                    },
+                                    postUpload: function(args) {
+                                        // Called when upload is done to do 
+                                        // verification checks;
+                                        // i.e., poll the server to verify successful upload
+                                        //
+                                        // success() will close the dialog and call standard action
+                                        // error() will keep dialog open if user wants to re-submit
+                                        args.response.success();
+                                    }
+                                },
                                 fields: {
                                     name: {
                                         label: 'label.name',
@@ -114,6 +130,10 @@
                                         validation: {
                                             required: true
                                         }
+                                    },
+                                    templateFileUpload: {
+                                        label: 'Select a file',
+                                        isFileUpload: true
                                     },
                                     description: {
                                         label: 'label.description',
