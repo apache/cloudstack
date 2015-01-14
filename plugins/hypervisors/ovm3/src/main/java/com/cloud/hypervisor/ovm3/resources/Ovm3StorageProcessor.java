@@ -325,6 +325,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 }
                 Linux host = new Linux(c);
                 String uuid = host.newUuid();
+                /* for root volumes this works... */
                 String path = vol.getPath() + File.separator + vol.getUuid()
                         + ".raw";
                 String dest = vol.getPath() + File.separator + uuid + ".raw";
