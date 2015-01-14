@@ -178,20 +178,21 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 String destDir = config.getAgentSecStoragePath()
                         + File.separator + secPoolUuid + File.separator
                         + dest.getPath();
-                String destFile =  File.separator + snapshotName;
+                String destFile =  destDir + File.separator + snapshotName;
                 Linux host = new Linux(c);
                 CloudstackPlugin csp = new CloudstackPlugin(c);
+                csp.ovsMkdirs(destDir);
                 LOGGER.debug("CopyFrom: " + srcData.getObjectType() + ","
                         + srcFilePath + " to " + destData.getObjectType() + ","
                         + destFile);
-                csp.ovsMkdirs(destDir);
                 host.copyFile(srcFilePath, destFile);
                 VolumeObjectTO newVol = new VolumeObjectTO();
                 newVol.setUuid(snapshotName);
                 newVol.setPath(destFile);
                 newVol.setSize(src.getVolume().getSize());
                 newVol.setFormat(ImageFormat.RAW);
-                return new CopyCmdAnswer(newVol);
+                dest.setVolume(newVol);
+                return new CopyCmdAnswer(dest);
             } else {
                 msg = "Unable to do stuff for " + srcStore.getClass() + ":"
                         + srcData.getObjectType() + " to "
