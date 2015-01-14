@@ -29,7 +29,7 @@ import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.to.NicTO;
-import com.cloud.hypervisor.ovm3.objects.CloudStackPlugin;
+import com.cloud.hypervisor.ovm3.objects.CloudstackPlugin;
 import com.cloud.hypervisor.ovm3.objects.Connection;
 import com.cloud.hypervisor.ovm3.objects.Network;
 import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
@@ -85,7 +85,7 @@ public class Ovm3HypervisorNetwork {
            net.ovsIpConfig(controlIface, "static",
                    NetUtils.getLinkLocalGateway(),
                    NetUtils.getLinkLocalNetMask());
-           CloudStackPlugin cSp = new CloudStackPlugin(c);
+           CloudstackPlugin cSp = new CloudstackPlugin(c);
            cSp.ovsControlInterface(controlIface,
                    NetUtils.getLinkLocalCIDR());
         } catch (InterruptedException e) {
@@ -179,7 +179,7 @@ public class Ovm3HypervisorNetwork {
     public Answer execute(PingTestCommand cmd) {
         try {
             if (cmd.getComputingHostIp() != null) {
-                CloudStackPlugin cSp = new CloudStackPlugin(c);
+                CloudstackPlugin cSp = new CloudstackPlugin(c);
                 if (!cSp.ping(cmd.getComputingHostIp())) {
                     return new Answer(cmd, false, "ping failed");
                 }

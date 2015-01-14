@@ -26,7 +26,7 @@ import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
-import com.cloud.hypervisor.ovm3.objects.CloudStackPlugin;
+import com.cloud.hypervisor.ovm3.objects.CloudstackPlugin;
 import com.cloud.hypervisor.ovm3.objects.Connection;
 import com.cloud.hypervisor.ovm3.resources.Ovm3VirtualRoutingResource;
 import com.cloud.utils.ExecutionResult;
@@ -177,7 +177,7 @@ public class Ovm3VirtualRoutingSupport {
         int retries = cmd.getRetries();
 
         try {
-            CloudStackPlugin cSp = new CloudStackPlugin(c);
+            CloudstackPlugin cSp = new CloudstackPlugin(c);
             if (!cSp.domrCheckPort(privateIp, cmdPort, retries, interval)) {
                 String msg = "Port " + cmdPort + " not reachable for " + vmName
                         + " via " + config.getAgentHostname();

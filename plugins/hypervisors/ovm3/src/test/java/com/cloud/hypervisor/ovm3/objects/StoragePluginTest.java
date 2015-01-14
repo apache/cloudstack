@@ -273,7 +273,7 @@ public class StoragePluginTest {
     public void testStorageFileCreation() throws Ovm3ResourceException {
         con.setResult(results.simpleResponseWrapWrapper(FILECREATEXML));
         FileProperties file = sPt.storagePluginCreate(FSMNTUUID, NFSHOST, FILE,
-                SIZE);
+                SIZE, false);
         file.getOnDiskSize();
     }
 
@@ -284,7 +284,7 @@ public class StoragePluginTest {
                 .errorResponseWrap("exceptions OSError:[Errno.17] File exists "
                         + FILE));
         FileProperties file = sPt.storagePluginCreate(FSMNTUUID, NFSHOST, FILE,
-                SIZE);
+                SIZE, false);
         file.getSize();
     }
 

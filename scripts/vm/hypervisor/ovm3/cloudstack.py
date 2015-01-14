@@ -54,7 +54,7 @@ class CloudStack(Agent):
             'check_dom0_status': dom0CheckStatus,
             'ovs_domr_upload_file': ovsDomrUploadFile,
             'ovs_control_interface': ovsControlInterface,
-            'ovs_mkdir': ovsMkdir,
+            'ovs_mkdirs': ovsMkdirs,
             'ovs_check_file': ovsCheckFile,
             'ovs_upload_ssh_key': ovsUploadSshKey,
             'ovs_upload_file': ovsUploadFile,
@@ -311,7 +311,7 @@ def dom0CheckStatus(path, script, timeout, interval):
     return [running, started]
         
 # create a dir if we need it
-def ovsMkdir(dir, mode=0700):
+def ovsMkdirs(dir, mode=0700):
     if not os.path.exists(dir):
         return os.makedirs(dir, mode)
     return True

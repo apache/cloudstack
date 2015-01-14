@@ -18,7 +18,7 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.objects;
 
-class Cluster extends OvmObject {
+public class Cluster extends OvmObject {
     public Cluster(Connection c) {
         setClient(c);
     }

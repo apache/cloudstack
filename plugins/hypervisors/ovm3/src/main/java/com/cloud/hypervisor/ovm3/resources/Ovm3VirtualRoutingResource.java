@@ -29,7 +29,7 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
-import com.cloud.hypervisor.ovm3.objects.CloudStackPlugin;
+import com.cloud.hypervisor.ovm3.objects.CloudstackPlugin;
 import com.cloud.hypervisor.ovm3.objects.Connection;
 import com.cloud.hypervisor.ovm3.objects.Xen;
 import com.cloud.utils.ExecutionResult;
@@ -67,8 +67,8 @@ public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
         LOGGER.debug("executeInVR via " + agentName + " on " + routerIp + ": "
                 + cmd);
         try {
-            CloudStackPlugin cSp = new CloudStackPlugin(c);
-            CloudStackPlugin.ReturnCode result;
+            CloudstackPlugin cSp = new CloudstackPlugin(c);
+            CloudstackPlugin.ReturnCode result;
             result = cSp.domrExec(routerIp, cmd);
             return new ExecutionResult(result.getRc(), result.getStdOut());
         } catch (Exception e) {
@@ -85,7 +85,7 @@ public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
         LOGGER.debug("createFileInVR via " + agentName + " on " + routerIp
                 + ": " + path + "/" + filename + ", content: " + content);
         try {
-            CloudStackPlugin cSp = new CloudStackPlugin(c);
+            CloudstackPlugin cSp = new CloudstackPlugin(c);
             boolean result = cSp.ovsDomrUploadFile(routerIp, path, filename,
                     content);
             return new ExecutionResult(result, "");

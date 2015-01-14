@@ -80,7 +80,7 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.host.Host.Type;
-import com.cloud.hypervisor.ovm3.objects.CloudStackPlugin;
+import com.cloud.hypervisor.ovm3.objects.CloudstackPlugin;
 import com.cloud.hypervisor.ovm3.objects.Common;
 import com.cloud.hypervisor.ovm3.objects.Connection;
 import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
@@ -172,7 +172,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             String pong = test.echo(ping);
             if (pong.contains(ping)) {
                 hypervisorsupport.syncState();
-                CloudStackPlugin cSp = new CloudStackPlugin(c);
+                CloudstackPlugin cSp = new CloudstackPlugin(c);
                 if (!cSp.dom0CheckStorageHealth(configuration .getAgentScriptsDir(),
                         configuration.getAgentCheckStorageScript(),
                         configuration.getAgentStorageCheckTimeout(),
@@ -460,7 +460,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
                 }
                 /* fix is in cloudstack.py for xend restart timer */
                 for (int count = 0; count < 60; count++) {
-                    CloudStackPlugin cSp = new CloudStackPlugin(c);
+                    CloudstackPlugin cSp = new CloudstackPlugin(c);
                     if (hypervisorsupport.getVmState(vmName) == null) {
                         String msg = "VM " + vmName + " went missing on "
                                 + configuration.getAgentHostname()
@@ -478,7 +478,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
                             break;
                         }
                     } catch (Exception x) {
-                        LOGGER.info(
+                        LOGGER.trace(
                                 "unable to connect to " + controlIp
                                         + " on attempt " + count + " "
                                         + x.getMessage(), x);

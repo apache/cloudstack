@@ -23,11 +23,11 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-public class CloudStackPlugin extends OvmObject {
+public class CloudstackPlugin extends OvmObject {
     private static final Logger LOGGER = Logger
-            .getLogger(CloudStackPlugin.class);
+            .getLogger(CloudstackPlugin.class);
     private boolean checkstoragestarted = false;
-    public CloudStackPlugin(Connection c) {
+    public CloudstackPlugin(Connection c) {
         setClient(c);
     }
 
@@ -154,5 +154,11 @@ public class CloudStackPlugin extends OvmObject {
     }
     public boolean dom0StorageCheckStarted() {
         return checkstoragestarted;
+    }
+    public boolean ovsMkdirs(String dir) throws Ovm3ResourceException{
+        return ovsMkdirs(dir, "0700");
+    }
+    public boolean ovsMkdirs(String dir, String mode) throws Ovm3ResourceException{
+        return (Boolean) callWrapper("ovs_mkdirs", dir, mode);
     }
 }

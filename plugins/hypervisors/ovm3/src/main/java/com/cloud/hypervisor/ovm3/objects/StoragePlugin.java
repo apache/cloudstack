@@ -352,7 +352,7 @@ public class StoragePlugin extends OvmObject {
      * None - calls resize secretly.. after "create"
      */
     public FileProperties storagePluginCreate(String poolUuid, String host,
-            String file, Long size) throws Ovm3ResourceException{
+            String file, Long size, Boolean dir) throws Ovm3ResourceException{
         /* this is correct ordering stuff and correct naming!!! */
         String uuid = deDash(poolUuid);
         StorageServer ss = new StorageServer();
@@ -364,9 +364,13 @@ public class StoragePlugin extends OvmObject {
         sd.setUuid(poolUuid);
         sd.setDetailsRelationalUuid(uuid);
         sd.setState(2);
+        String type = "File";
+        if (dir) {
+            type = "Directory";
+        }
         fp.setProperties((HashMap<String, Object>) callWrapper("storage_plugin_create",
                 getPluginType, ss.getDetails(),
-                sd.getDetails(), file, "File", size));
+                sd.getDetails(), file, type, size));
         return fp;
     }
 

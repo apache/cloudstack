@@ -25,7 +25,7 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.cloud.hypervisor.ovm3.objects.CloudStackPlugin.ReturnCode;
+import com.cloud.hypervisor.ovm3.objects.CloudstackPlugin.ReturnCode;
 
 public class CloudStackPluginTest {
     private static final String VMNAME = "test";
@@ -55,7 +55,7 @@ public class CloudStackPluginTest {
     Integer interval = 1;
 
     ConnectionTest con = new ConnectionTest();
-    CloudStackPlugin cSp = new CloudStackPlugin(con);
+    CloudstackPlugin cSp = new CloudstackPlugin(con);
     XmlTestResultTest results = new XmlTestResultTest();
 
     String domrExecXml = "<?xml version='1.0'?>"

@@ -52,7 +52,7 @@ import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.HostVO;
-import com.cloud.hypervisor.ovm3.objects.CloudStackPlugin;
+import com.cloud.hypervisor.ovm3.objects.CloudstackPlugin;
 import com.cloud.hypervisor.ovm3.objects.Connection;
 import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
 import com.cloud.hypervisor.ovm3.objects.OvmObject;
@@ -257,7 +257,7 @@ public class Ovm3VmSupport {
     }
 
     private VmStatsEntry getVmStat(String vmName) {
-        CloudStackPlugin cSp = new CloudStackPlugin(c);
+        CloudstackPlugin cSp = new CloudstackPlugin(c);
         Map<String, String> oldVmStats = null;
         Map<String, String> newVmStats = null;
         VmStatsEntry stats = new VmStatsEntry();

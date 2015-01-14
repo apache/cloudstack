@@ -46,7 +46,7 @@ import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.ovm3.objects.CloudStackPlugin;
+import com.cloud.hypervisor.ovm3.objects.CloudstackPlugin;
 import com.cloud.hypervisor.ovm3.objects.Common;
 import com.cloud.hypervisor.ovm3.objects.Connection;
 import com.cloud.hypervisor.ovm3.objects.Linux;
@@ -302,7 +302,7 @@ public class Ovm3HypervisorSupport {
                 throw new ConfigurationException("Module insertion at "
                         + config.getAgentHostname() + " failed");
             }
-            CloudStackPlugin cSp = new CloudStackPlugin(c);
+            CloudstackPlugin cSp = new CloudstackPlugin(c);
             cSp.ovsUploadSshKey(config.getAgentSshKeyFileName(),
                     FileUtils.readFileToString(getSystemVMKeyFile(key)));
             cSp.dom0CheckStorageHealth(config.getAgentScriptsDir(),
@@ -578,7 +578,7 @@ public class Ovm3HypervisorSupport {
         }
 
         try {
-            CloudStackPlugin cSp = new CloudStackPlugin(c);
+            CloudstackPlugin cSp = new CloudstackPlugin(c);
             if (cSp.dom0HasIp(config.getOvm3PoolVip())) {
                 LOGGER.debug("Host " + config.getAgentHostname()
                         + " is a master, already has vip "
@@ -642,7 +642,7 @@ public class Ovm3HypervisorSupport {
             final CheckVirtualMachineCommand cmd) {
         String vmName = cmd.getVmName();
         try {
-            CloudStackPlugin plug = new CloudStackPlugin(c);
+            CloudstackPlugin plug = new CloudstackPlugin(c);
             Integer vncPort = Integer.valueOf(plug.getVncPort(vmName));
             if (vncPort == 0) {
                 LOGGER.warn("No VNC port for " + vmName);
@@ -686,7 +686,7 @@ public class Ovm3HypervisorSupport {
 
     public Answer execute(GetHostStatsCommand cmd) {
         try {
-            CloudStackPlugin cSp = new CloudStackPlugin(c);
+            CloudstackPlugin cSp = new CloudstackPlugin(c);
             Map<String, String> stats = cSp.ovsDom0Stats(config
                     .getAgentPublicNetworkName());
             Double cpuUtil = Double.parseDouble(stats.get("cpu"));
