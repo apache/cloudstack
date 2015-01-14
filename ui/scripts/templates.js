@@ -2209,7 +2209,7 @@
                                                     dataType: "json",
                                                     async: true,
                                                     success: function(json) {
-                                                        var jid = json.deleteisosresponse.jobid;
+                                                        var jid = json.deleteisoresponse.jobid;
                                                         args.response.success({
                                                             _custom: {
                                                                 jobId: jid
