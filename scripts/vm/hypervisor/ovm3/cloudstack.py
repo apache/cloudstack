@@ -325,7 +325,7 @@ def ovsCheckFile(file):
 def ovsUploadFile(path, filename, content):
     file = "%s/%s" % (path, filename)
     try:
-        ovsMkdir(os.path.expanduser(path))
+        ovsMkdirs(os.path.expanduser(path))
     except Error, v:
         print "path was already there %s" % path
 
