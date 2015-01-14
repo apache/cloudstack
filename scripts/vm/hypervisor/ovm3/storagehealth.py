@@ -124,7 +124,7 @@ if __name__ == '__main__':
     hostname=socket.gethostname()
     file=".hb-%s" % (hostname)
     cmd=""
-    level=logging.DEBUG
+    level=logging.WARNING
     primary=""
     failcmd=("echo 1 > /proc/sys/kernel/sysrq "
         "&& "

@@ -121,7 +121,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                     srcFile = sourcePath + "/" + srcData.getPath() + "/"
                             + destUuid + ".raw";
                 }
-                String destFile = destPath + "/" + destUuid + ImageFormat.RAW;
+                String destFile = destPath + "/" + destUuid + ".raw";
                 LOGGER.debug("CopyFrom: " + srcData.getObjectType() + ","
                         + srcFile + " to " + destData.getObjectType() + ","
                         + destFile);
@@ -136,14 +136,14 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             } else if ((srcData.getObjectType() == DataObjectType.TEMPLATE)
                     && (destData.getObjectType() == DataObjectType.VOLUME)) {
                 if (srcStore.getUrl().equals(destStore.getUrl())) {
-                    TemplateObjectTO srcTemplate = (TemplateObjectTO) srcData;
-                    VolumeObjectTO dstVolume = (VolumeObjectTO) destData;
+                    TemplateObjectTO src = (TemplateObjectTO) srcData;
+                    VolumeObjectTO dest = (VolumeObjectTO) destData;
 
-                    String srcFile = srcTemplate.getPath() + "/"
-                            + srcTemplate.getUuid() + ".raw";
-                    String vDisksPath = srcTemplate.getPath().replace(
+                    String srcFile = src.getPath() + "/"
+                            + src.getUuid() + ".raw";
+                    String destPath = src.getPath().replace(
                             "Templates", "VirtualDisks");
-                    String destFile = vDisksPath + "/" + dstVolume.getUuid()
+                    String destFile = destPath + "/" + dest.getUuid()
                             + ".raw";
 
                     Linux host = new Linux(c);
@@ -152,8 +152,8 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                             + destFile);
                     host.copyFile(srcFile, destFile);
                     VolumeObjectTO newVol = new VolumeObjectTO();
-                    newVol.setUuid(dstVolume.getUuid());
-                    newVol.setPath(vDisksPath);
+                    newVol.setUuid(dest.getUuid());
+                    newVol.setPath(destPath);
                     newVol.setFormat(ImageFormat.RAW);
                     return new CopyCmdAnswer(newVol);
                 } else {
@@ -162,7 +162,22 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 }
             } else if ((srcData.getObjectType() == DataObjectType.SNAPSHOT)
                     && (destData.getObjectType() == DataObjectType.SNAPSHOT)) {
-                // Hop
+                Volume src = (Volume) srcData;
+                SnapshotObjectTO dest = (SnapshotObjectTO) destData;
+                String srcFile = src.getPath() + "/" + src.getUuid() + ".raw";
+                String storeUrl = dest.getDataStore().getUrl();
+                String secPoolUuid = pool.setupSecondaryStorage(storeUrl);
+                String destFile = config.getAgentSecStoragePath() + "/" + secPoolUuid + "/" + dest.getPath();
+                Linux host = new Linux(c);
+                LOGGER.debug("CopyFrom: " + srcData.getObjectType() + ","
+                        + srcFile + " to " + destData.getObjectType() + ","
+                        + destFile);
+                host.copyFile(srcFile, destFile);
+                VolumeObjectTO newVol = new VolumeObjectTO();
+                newVol.setUuid(src.getUuid());
+                newVol.setPath(destFile);
+                newVol.setFormat(ImageFormat.RAW);
+                return new CopyCmdAnswer(newVol);
             } else {
                 msg = "Unable to do stuff for " + srcStore.getClass()
                         + ":" + srcData.getObjectType() + " to "
