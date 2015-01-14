@@ -45,7 +45,6 @@ import com.google.gson.GsonBuilder;
 
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 
-import com.cloud.api.ConstantTimeComparator;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor;
@@ -55,6 +54,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.EntityManager;
