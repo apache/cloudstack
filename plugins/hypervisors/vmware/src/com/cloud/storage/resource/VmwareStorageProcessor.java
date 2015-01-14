@@ -71,12 +71,14 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.hypervisor.vmware.manager.VmwareHostService;
+import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageMount;
 import com.cloud.hypervisor.vmware.mo.ClusterMO;
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
+import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import com.cloud.hypervisor.vmware.mo.HostDatastoreSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HostStorageSystemMO;
@@ -100,15 +102,16 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine.PowerState;
+import com.cloud.vm.VmDetailConstants;
 
 public class VmwareStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(VmwareStorageProcessor.class);
 
-    private VmwareHostService hostService;
-    private boolean _fullCloneFlag;
-    private VmwareStorageMount mountService;
-    private VmwareResource resource;
-    private Integer _timeout;
+    private final VmwareHostService hostService;
+    private final boolean _fullCloneFlag;
+    private final VmwareStorageMount mountService;
+    private final VmwareResource resource;
+    private final Integer _timeout;
     protected Integer _shutdownWaitMs;
     private final Gson _gson;
     private final StorageLayer _storage = new JavaStorageLayer();
@@ -1279,10 +1282,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
         String storageHost = details.get(DiskTO.STORAGE_HOST);
         int storagePort = Integer.parseInt(details.get(DiskTO.STORAGE_PORT));
 
-        return this.attachVolume(cmd, cmd.getDisk(), true, isManaged, cmd.getVmName(), iScsiName, storageHost, storagePort);
+        return this.attachVolume(cmd, cmd.getDisk(), true, isManaged, cmd.getVmName(), iScsiName, storageHost, storagePort, cmd.getControllerInfo());
     }
 
-    private Answer attachVolume(Command cmd, DiskTO disk, boolean isAttach, boolean isManaged, String vmName, String iScsiName, String storageHost, int storagePort) {
+    private Answer attachVolume(Command cmd, DiskTO disk, boolean isAttach, boolean isManaged, String vmName, String iScsiName, String storageHost, int storagePort, Map<String, String> controllerInfo) {
         VolumeObjectTO volumeTO = (VolumeObjectTO)disk.getData();
         DataStoreTO primaryStore = volumeTO.getDataStore();
         try {
@@ -1342,7 +1345,24 @@ public class VmwareStorageProcessor implements StorageProcessor {
             AttachAnswer answer = new AttachAnswer(disk);
 
             if (isAttach) {
-                vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);
+                String dataDiskController = controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER);
+                String rootDiskController = controllerInfo.get(VmDetailConstants.ROOK_DISK_CONTROLLER);
+                DiskControllerType rootDiskControllerType = DiskControllerType.getType(rootDiskController);
+
+                if (dataDiskController == null) {
+                    dataDiskController = getLegacyVmDataDiskController();
+                } else if ((rootDiskControllerType == DiskControllerType.lsilogic) ||
+                           (rootDiskControllerType == DiskControllerType.lsisas1068) ||
+                           (rootDiskControllerType == DiskControllerType.pvscsi) ||
+                           (rootDiskControllerType == DiskControllerType.buslogic)) {
+                    //TODO: Support mix of SCSI controller types for single VM. If root disk is already over
+                    //a SCSI controller then use the same for data volume as well. This limitation will go once mix
+                    //of SCSI controller types for single VM.
+                    dataDiskController = rootDiskController;
+                } else if (DiskControllerType.getType(dataDiskController) == DiskControllerType.osdefault) {
+                    dataDiskController = vmMo.getRecommendedDiskController(null);
+                }
+                vmMo.attachDisk(new String[] {datastoreVolumePath}, morDs, dataDiskController);
             } else {
                 vmMo.removeAllSnapshots();
                 vmMo.detachDisk(datastoreVolumePath, false);
@@ -1480,7 +1500,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer dettachVolume(DettachCommand cmd) {
-        return this.attachVolume(cmd, cmd.getDisk(), false, cmd.isManaged(), cmd.getVmName(), cmd.get_iScsiName(), cmd.getStorageHost(), cmd.getStoragePort());
+        return this.attachVolume(cmd, cmd.getDisk(), false, cmd.isManaged(), cmd.getVmName(), cmd.get_iScsiName(), cmd.getStorageHost(), cmd.getStoragePort(), null);
     }
 
     @Override
@@ -2224,5 +2244,29 @@ public class VmwareStorageProcessor implements StorageProcessor {
         String templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes()).toString();
         templateUuid = templateUuid.replaceAll("-", "");
         return templateUuid;
+    }
+
+    private String getControllerFromConfigurationSetting() throws Exception {
+        String diskController = null;
+        VmwareContext context = null;
+        try {
+            context = hostService.getServiceContext(null);
+            VmwareManager mgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+            diskController = mgr.getDataDiskController();
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
+                hostService.invalidateServiceContext(context);
+            }
+
+            String details = "Failed to connect to vCenter due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(details, e);
+        }
+
+        return diskController;
+    }
+
+    private String getLegacyVmDataDiskController() throws Exception {
+        return DiskControllerType.lsilogic.toString();
     }
 }
