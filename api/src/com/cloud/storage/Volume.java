@@ -45,9 +45,12 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         Destroy("The volume is destroyed, and can't be recovered."),
         Destroying("The volume is destroying, and can't be recovered."),
         UploadOp("The volume upload operation is in progress or in short the volume is on secondary storage"),
-        Uploading("volume is uploading"),
-        Copying("volume is copying from image store to primary, in case it's an uploaded volume"),
-        Uploaded("volume is uploaded");
+        Copying("Volume is copying from image store to primary, in case it's an uploaded volume"),
+        Uploaded("Volume is uploaded"),
+        NotUploaded("The volume entry is just created in DB, not yet uploaded"),
+        UploadInProgress("Volume upload is in progress"),
+        UploadError("Volume upload encountered some error"),
+        UploadAbandoned("Volume upload is abandoned since the upload was never initiated within a specificed time");
 
         String _description;
 
@@ -100,7 +103,12 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Uploaded, Event.DestroyRequested, Destroy, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunged, Event.ExpungingRequested, Expunged, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunged, Event.OperationSucceeded, Expunged, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunged, Event.OperationFailed, Expunged,null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunged, Event.OperationFailed, Expunged, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(NotUploaded, Event.OperationTimeout, UploadAbandoned, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(NotUploaded, Event.UploadRequested, UploadInProgress, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadInProgress, Event.OperationSucceeded, Uploaded, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadInProgress, Event.OperationFailed, UploadError, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadInProgress, Event.OperationTimeout, UploadError, null));
         }
     }
 
@@ -120,7 +128,8 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         SnapshotRequested,
         DestroyRequested,
         ExpungingRequested,
-        ResizeRequested;
+        ResizeRequested,
+        OperationTimeout;
     }
 
     /**

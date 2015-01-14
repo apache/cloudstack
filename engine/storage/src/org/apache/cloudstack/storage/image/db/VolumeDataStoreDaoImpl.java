@@ -27,7 +27,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -36,7 +35,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -53,11 +56,15 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     private SearchBuilder<VolumeDataStoreVO> storeVolumeSearch;
     private SearchBuilder<VolumeDataStoreVO> downloadVolumeSearch;
     private SearchBuilder<VolumeDataStoreVO> uploadVolumeSearch;
+    private SearchBuilder<VolumeVO> volumeOnlySearch;
+    private SearchBuilder<VolumeDataStoreVO> uploadVolumeStateSearch;
     private static final String EXPIRE_DOWNLOAD_URLS_FOR_ZONE = "update volume_store_ref set download_url_created=? where store_id in (select id from image_store where data_center_id=?)";
 
 
     @Inject
     DataStoreManager storeMgr;
+    @Inject
+    VolumeDao volumeDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -101,6 +108,13 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         uploadVolumeSearch.and("url", uploadVolumeSearch.entity().getDownloadUrl(), Op.NNULL);
         uploadVolumeSearch.and("destroyed", uploadVolumeSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         uploadVolumeSearch.done();
+
+        volumeOnlySearch = volumeDao.createSearchBuilder();
+        volumeOnlySearch.and("state", volumeOnlySearch.entity().getState(), Op.IN);
+        uploadVolumeStateSearch = createSearchBuilder();
+        uploadVolumeStateSearch.join("volumeOnlySearch", volumeOnlySearch, volumeOnlySearch.entity().getId(), uploadVolumeStateSearch.entity().getVolumeId(), JoinType.LEFT);
+        uploadVolumeStateSearch.and("destroyed", uploadVolumeStateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        uploadVolumeStateSearch.done();
 
         return true;
     }
@@ -304,4 +318,13 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         }
 
     }
+
+    @Override
+    public List<VolumeDataStoreVO> listByVolumeState(Volume.State... states) {
+        SearchCriteria<VolumeDataStoreVO> sc = uploadVolumeStateSearch.create();
+        sc.setJoinParameters("volumeOnlySearch", "state", (Object[])states);
+        sc.setParameters("destroyed", false);
+        return listIncludingRemovedBy(sc);
+    }
+
 }

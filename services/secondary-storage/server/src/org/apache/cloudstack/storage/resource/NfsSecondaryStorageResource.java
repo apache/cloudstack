@@ -50,6 +50,7 @@ import com.cloud.utils.nio.HandlerFactory;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
+
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -70,6 +71,9 @@ import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.command.UploadStatusAnswer;
+import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
+import org.apache.cloudstack.storage.command.UploadStatusCommand;
 import org.apache.cloudstack.storage.template.DownloadManager;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
@@ -238,6 +242,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((CopyCommand)cmd);
         } else if (cmd instanceof DeleteCommand) {
             return execute((DeleteCommand)cmd);
+        } else if (cmd instanceof UploadStatusCommand) {
+            return execute((UploadStatusCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -1614,6 +1620,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
         return new Answer(cmd, success, result);
+    }
+
+    private UploadStatusAnswer execute(UploadStatusCommand cmd) {
+        return new UploadStatusAnswer(cmd, UploadStatus.COMPLETED);
     }
 
     protected GetStorageStatsAnswer execute(final GetStorageStatsCommand cmd) {
