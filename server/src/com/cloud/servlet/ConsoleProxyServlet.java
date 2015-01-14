@@ -54,6 +54,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.EntityManager;
@@ -659,7 +660,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             mac.update(unsignedRequest.getBytes());
             byte[] encryptedBytes = mac.doFinal();
             String computedSignature = Base64.encodeBase64String(encryptedBytes);
-            boolean equalSig = signature.equals(computedSignature);
+            boolean equalSig = ConstantTimeComparator.compareStrings(signature, computedSignature);
             if (!equalSig) {
                 s_logger.debug("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
             }
