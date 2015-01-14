@@ -734,16 +734,17 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 
     @Override
     public boolean createBlankVm(String vmName, String vmInternalCSName, int cpuCount, int cpuSpeedMHz, int cpuReservedMHz, boolean limitCpuUse, int memoryMB,
-            int memoryReserveMB, String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent) throws Exception {
+            int memoryReserveMB, String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent, Pair<String, String> controllerInfo, Boolean systemVm) throws Exception {
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - createBlankVm(). target MOR: " + _mor.getValue() + ", vmName: " + vmName + ", cpuCount: " + cpuCount + ", cpuSpeedMhz: " +
                     cpuSpeedMHz + ", cpuReservedMHz: " + cpuReservedMHz + ", limitCpu: " + limitCpuUse + ", memoryMB: " + memoryMB + ", guestOS: " + guestOsIdentifier +
-                    ", datastore: " + morDs.getValue() + ", snapshotDirToParent: " + snapshotDirToParent);
+                    ", datastore: " + morDs.getValue() + ", snapshotDirToParent: " + snapshotDirToParent +
+                    ", controllerInfo:[" + controllerInfo.first() + "," + controllerInfo.second() + "], systemvm: " + systemVm);
 
         boolean result =
                 HypervisorHostHelper.createBlankVm(this, vmName, vmInternalCSName, cpuCount, cpuSpeedMHz, cpuReservedMHz, limitCpuUse, memoryMB, memoryReserveMB,
-                        guestOsIdentifier, morDs, snapshotDirToParent);
+                        guestOsIdentifier, morDs, snapshotDirToParent, controllerInfo, systemVm);
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - createBlankVm() done");
@@ -1043,6 +1044,16 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
             if (bRefresh)
                 firewallMo.refreshFirewall();
         }
+    }
+
+    @Override
+    public String getRecommendedDiskController(String guestOsId) throws Exception {
+        ManagedObjectReference morParent = getParentMor();
+        if (morParent.getType().equals("ClusterComputeResource")) {
+            ClusterMO clusterMo = new ClusterMO(_context, morParent);
+            return clusterMo.getRecommendedDiskController(guestOsId);
+        }
+        return null;
     }
 
     public String getHostManagementIp(String managementPortGroup) throws Exception {

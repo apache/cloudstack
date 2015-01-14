@@ -34,6 +34,7 @@ import com.vmware.vim25.ComputeResourceSummary;
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DatastoreInfo;
 import com.vmware.vim25.DynamicProperty;
+import com.vmware.vim25.GuestOsDescriptor;
 import com.vmware.vim25.HostHardwareSummary;
 import com.vmware.vim25.HostIpRouteEntry;
 import com.vmware.vim25.HostRuntimeInfo;
@@ -46,9 +47,11 @@ import com.vmware.vim25.OptionValue;
 import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.TraversalSpec;
+import com.vmware.vim25.VirtualMachineConfigOption;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -271,7 +274,7 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
 
     @Override
     public boolean createBlankVm(String vmName, String vmInternalCSName, int cpuCount, int cpuSpeedMHz, int cpuReservedMHz, boolean limitCpuUse, int memoryMB,
-            int memoryReserveMB, String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent) throws Exception {
+            int memoryReserveMB, String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent, Pair<String, String> controllerInfo, Boolean systemVm) throws Exception {
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - createBlankVm(). target MOR: " + _mor.getValue() + ", vmName: " + vmName + ", cpuCount: " + cpuCount + ", cpuSpeedMhz: " +
@@ -280,7 +283,7 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
 
         boolean result =
                 HypervisorHostHelper.createBlankVm(this, vmName, vmInternalCSName, cpuCount, cpuSpeedMHz, cpuReservedMHz, limitCpuUse, memoryMB, memoryReserveMB,
-                        guestOsIdentifier, morDs, snapshotDirToParent);
+                        guestOsIdentifier, morDs, snapshotDirToParent, controllerInfo, systemVm);
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - createBlankVm() done");
@@ -581,5 +584,33 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
     public LicenseAssignmentManagerMO getLicenseAssignmentManager() throws Exception {
         // LicenseAssignmentManager deals with only host/vcenter licenses only. Has nothing todo with cluster
         throw new CloudRuntimeException("Unable to get LicenseAssignmentManager at cluster level");
+    }
+    private ManagedObjectReference getEnvironmentBrowser() throws Exception {
+        if (_environmentBrowser == null) {
+            _environmentBrowser = _context.getVimClient().getMoRefProp(_mor, "environmentBrowser");
+        }
+        return _environmentBrowser;
+    }
+    @Override
+    public String getRecommendedDiskController(String guestOsId) throws Exception {
+        VirtualMachineConfigOption vmConfigOption = _context.getService().queryConfigOption(getEnvironmentBrowser(), null, null);
+        GuestOsDescriptor guestOsDescriptor = null;
+        String diskController = null;
+        List<GuestOsDescriptor> guestDescriptors = vmConfigOption.getGuestOSDescriptor();
+        for (GuestOsDescriptor descriptor : guestDescriptors) {
+            if (guestOsId != null && guestOsId.equalsIgnoreCase(descriptor.getId())) {
+                guestOsDescriptor = descriptor;
+                break;
+            }
+        }
+        if (guestOsDescriptor != null) {
+            diskController = VmwareHelper.getRecommendedDiskControllerFromDescriptor(guestOsDescriptor);
+            s_logger.debug("Retrieved recommended disk controller for guest OS : " + guestOsId + " in cluster " + getHyperHostName() + " : " + diskController);
+            return diskController;
+        } else {
+            String msg = "Unable to retrieve recommended disk controller for guest OS : " + guestOsId + " in cluster " + getHyperHostName();
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
     }
 }

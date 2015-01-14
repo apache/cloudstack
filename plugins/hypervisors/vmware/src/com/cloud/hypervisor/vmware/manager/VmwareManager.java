@@ -78,5 +78,6 @@ public interface VmwareManager {
 
     boolean isLegacyZone(long dcId);
 
+    public String getDataDiskController();
     boolean hasNexusVSM(Long clusterId);
 }

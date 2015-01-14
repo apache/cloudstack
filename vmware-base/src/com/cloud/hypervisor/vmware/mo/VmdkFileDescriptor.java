@@ -29,6 +29,9 @@ import org.apache.log4j.Logger;
 
 public class VmdkFileDescriptor {
     private static final Logger s_logger = Logger.getLogger(VmdkFileDescriptor.class);
+    private static final String VMDK_PROPERTY_CREATE_TYPE = "createType";
+    private static final String VMDK_CREATE_TYPE_VMFSSPARSE = "vmfsSparse";
+    private static final String VMDK_PROPERTY_ADAPTER_TYPE = "ddb.adapterType";
 
     private Properties _properties = new Properties();
     private String _baseFileName;
@@ -82,6 +85,73 @@ public class VmdkFileDescriptor {
 
     public String getParentFileName() {
         return _properties.getProperty("parentFileNameHint");
+    }
+
+    public boolean isVmfsSparseFile() {
+        String vmdkCreateType = _properties.getProperty(VMDK_PROPERTY_CREATE_TYPE);
+        if (vmdkCreateType.equalsIgnoreCase(VMDK_CREATE_TYPE_VMFSSPARSE)) {
+            return true;
+        }
+        return false;
+    }
+
+    public String getAdapterType() {
+        return _properties.getProperty(VMDK_PROPERTY_ADAPTER_TYPE);
+    }
+
+
+    public static byte[] changeVmdkAdapterType(byte[] vmdkContent, String newAdapterType) throws IOException {
+        assert (vmdkContent != null);
+
+        BufferedReader in = null;
+        BufferedWriter out = null;
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+        try {
+            in = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(vmdkContent)));
+            out = new BufferedWriter(new OutputStreamWriter(bos));
+            String line;
+            while ((line = in.readLine()) != null) {
+                // ignore empty and comment lines
+                line = line.trim();
+                if (line.isEmpty()) {
+                    out.newLine();
+                    continue;
+                }
+                if (line.charAt(0) == '#') {
+                    out.write(line);
+                    out.newLine();
+                    continue;
+                }
+
+                String[] tokens = line.split("=");
+                if (tokens.length == 2) {
+                    String name = tokens[0].trim();
+                    String value = tokens[1].trim();
+                    if (value.charAt(0) == '\"')
+                        value = value.substring(1, value.length() - 1);
+
+                    if (newAdapterType != null && name.equals(VMDK_PROPERTY_ADAPTER_TYPE)) {
+                        out.write(name + "=\"" + newAdapterType + "\"");
+                        out.newLine();
+                    } else {
+                        out.write(line);
+                        out.newLine();
+                    }
+                } else {
+                    out.write(line);
+                    out.newLine();
+                }
+            }
+        } finally {
+            if (in != null)
+                in.close();
+            if (out != null)
+                out.close();
+        }
+
+        return bos.toByteArray();
+
     }
 
     public static byte[] changeVmdkContentBaseInfo(byte[] vmdkContent, String baseFileName, String parentFileName) throws IOException {
