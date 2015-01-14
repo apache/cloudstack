@@ -45,6 +45,7 @@ import com.google.gson.GsonBuilder;
 
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 
+import com.cloud.api.ConstantTimeComparator;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.server.ManagementServer;
@@ -657,7 +658,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             mac.update(unsignedRequest.getBytes());
             byte[] encryptedBytes = mac.doFinal();
             String computedSignature = Base64.encodeBase64String(encryptedBytes);
-            boolean equalSig = signature.equals(computedSignature);
+            boolean equalSig = ConstantTimeComparator.compareStrings(signature, computedSignature);
             if (!equalSig) {
                 s_logger.debug("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
             }

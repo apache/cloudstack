@@ -61,6 +61,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ConstantTimeComparator;
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -488,6 +489,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public void checkAccess(Account caller, AccessType accessType, boolean sameOwner, String apiName, ControlledEntity... entities) {
+
         //check for the same owner
         Long ownerId = null;
         ControlledEntity prevEntity = null;
@@ -2074,7 +2076,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 mac.update(unsignedRequest.getBytes());
                 byte[] encryptedBytes = mac.doFinal();
                 String computedSignature = new String(Base64.encodeBase64(encryptedBytes));
-                boolean equalSig = signature.equals(computedSignature);
+                boolean equalSig = ConstantTimeComparator.compareStrings(signature, computedSignature);
                 if (!equalSig) {
                     s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
                 } else {
