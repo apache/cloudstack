@@ -104,9 +104,9 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 String storeUrl = srcImageStore.getUrl();
                 String secPoolUuid = pool.setupSecondaryStorage(storeUrl);
                 String primaryPoolUuid = destData.getDataStore().getUuid();
-                String destPath = config.getAgentOvmRepoPath() + "/"
-                        + ovmObject.deDash(primaryPoolUuid) + "/" + "Templates";
-                String sourcePath = config.getAgentSecStoragePath() + "/" + secPoolUuid;
+                String destPath = config.getAgentOvmRepoPath() + File.separator
+                        + ovmObject.deDash(primaryPoolUuid) + File.separator  + "Templates";
+                String sourcePath = config.getAgentSecStoragePath() + File.separator  + secPoolUuid;
 
                 Linux host = new Linux(c);
                 String destUuid = srcTemplate.getUuid();
@@ -116,12 +116,12 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                  * so we can forget about that.
                  */
                 /* TODO: add checksumming */
-                String srcFile = sourcePath + "/" + srcData.getPath();
-                if (srcData.getPath().endsWith("/")) {
-                    srcFile = sourcePath + "/" + srcData.getPath() + "/"
+                String srcFile = sourcePath + File.separator  + srcData.getPath();
+                if (srcData.getPath().endsWith(File.separator )) {
+                    srcFile = sourcePath + File.separator  + srcData.getPath() + File.separator
                             + destUuid + ".raw";
                 }
-                String destFile = destPath + "/" + destUuid + ".raw";
+                String destFile = destPath + File.separator  + destUuid + ".raw";
                 LOGGER.debug("CopyFrom: " + srcData.getObjectType() + ","
                         + srcFile + " to " + destData.getObjectType() + ","
                         + destFile);
@@ -139,11 +139,11 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                     TemplateObjectTO src = (TemplateObjectTO) srcData;
                     VolumeObjectTO dest = (VolumeObjectTO) destData;
 
-                    String srcFile = src.getPath() + "/"
+                    String srcFile = src.getPath() + File.separator
                             + src.getUuid() + ".raw";
                     String destPath = src.getPath().replace(
                             "Templates", "VirtualDisks");
-                    String destFile = destPath + "/" + dest.getUuid()
+                    String destFile = destPath + File.separator  + dest.getUuid()
                             + ".raw";
 
                     Linux host = new Linux(c);
@@ -164,10 +164,10 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                     && (destData.getObjectType() == DataObjectType.SNAPSHOT)) {
                 Volume src = (Volume) srcData;
                 SnapshotObjectTO dest = (SnapshotObjectTO) destData;
-                String srcFile = src.getPath() + "/" + src.getUuid() + ".raw";
+                String srcFile = src.getPath() + File.separator  + src.getUuid() + ".raw";
                 String storeUrl = dest.getDataStore().getUrl();
                 String secPoolUuid = pool.setupSecondaryStorage(storeUrl);
-                String destFile = config.getAgentSecStoragePath() + "/" + secPoolUuid + "/" + dest.getPath();
+                String destFile = config.getAgentSecStoragePath() + File.separator  + secPoolUuid + File.separator  + dest.getPath();
                 Linux host = new Linux(c);
                 LOGGER.debug("CopyFrom: " + srcData.getObjectType() + ","
                         + srcFile + " to " + destData.getObjectType() + ","
@@ -218,8 +218,8 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         DiskProfile disk = cmd.getDiskCharacteristics();
         /* disk should have a uuid */
         String fileName = UUID.randomUUID().toString() + ".raw";
-        String dst = primaryStorage.getPath() + "/" + primaryStorage.getUuid()
-                + "/" + fileName;
+        String dst = primaryStorage.getPath() + File.separator  + primaryStorage.getUuid()
+                + File.separator  + fileName;
         try {
             StoragePlugin store = new StoragePlugin(c);
             if (cmd.getTemplateUrl() != null) {
@@ -304,14 +304,16 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 }
                 Linux host = new Linux(c);
                 String uuid = host.newUuid();
-                String path = vol.getPath() + "/" + vol.getUuid() + ".raw";
-                String dest = vol.getPath() + "/" + uuid + ".raw";
+                String path = vol.getPath() + File.separator  + vol.getUuid() + ".raw";
+                String dest = vol.getPath() + File.separator  + uuid + ".raw";
+                LOGGER.debug("Snapshot " + path + " to " + dest);
                 host.copyFile(path,  dest);
                 VolumeObjectTO newVol = new VolumeObjectTO();
                 newVol.setUuid(uuid);
                 newVol.setName(vol.getName());
                 newVol.setSize(vol.getSize());
                 newVol.setPath(dest);
+                snap.setPath(dest);
                 snap.setVolume(newVol);
                 return new CreateObjectAnswer(snap);
             } catch (Ovm3ResourceException e) {
@@ -452,7 +454,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             String storeUrl = data.getDataStore().getUrl();
             URI uri = new URI(storeUrl);
             String host = uri.getHost();
-            String file = config.getAgentOvmRepoPath() + "/" + ovmObject.deDash(poolUuid)
+            String file = config.getAgentOvmRepoPath() + File.separator  + ovmObject.deDash(poolUuid)
                     + "/VirtualDisks/" + volume.getUuid() + ".raw";
             Long size = volume.getSize();
             StoragePlugin sp = new StoragePlugin(c);
@@ -488,7 +490,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             /* needs the file attached too please... */
             String path = volume.getPath();
             if (!path.contains(volume.getUuid())) {
-                path = volume.getPath() + "/" + volume.getUuid() + ".raw";
+                path = volume.getPath() + File.separator  + volume.getUuid() + ".raw";
             }
             StoragePlugin sp = new StoragePlugin(c);
             sp.storagePluginDestroy(poolUuid, path);
@@ -564,7 +566,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         try {
             /* missing uuid */
             String installPath = config.getAgentOvmRepoPath() + "/Templates/" + accountId
-                    + "/" + templateId;
+                    + File.separator  + templateId;
             Linux host = new Linux(c);
             /* check if VM is running or thrown an error, or pause it :P */
             host.copyFile(volumePath, installPath);
