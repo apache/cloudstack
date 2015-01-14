@@ -86,7 +86,8 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     }
 
     /*
-     * TODO: This should move to StorageSubSystemCommand type as defined in the KVM plugin
+     * TODO: move to the override methods...
+     * size check on fs/checksum
      */
     public final Answer execute(final CopyCommand cmd) {
         DataTO srcData = cmd.getSrcTO();
@@ -162,9 +163,9 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 }
             } else if ((srcData.getObjectType() == DataObjectType.SNAPSHOT)
                     && (destData.getObjectType() == DataObjectType.SNAPSHOT)) {
-                Volume src = (Volume) srcData;
+                SnapshotObjectTO src = (SnapshotObjectTO) srcData;
                 SnapshotObjectTO dest = (SnapshotObjectTO) destData;
-                String srcFile = src.getPath() + File.separator  + src.getUuid() + ".raw";
+                String srcFile = src.getPath();
                 String storeUrl = dest.getDataStore().getUrl();
                 String secPoolUuid = pool.setupSecondaryStorage(storeUrl);
                 String destFile = config.getAgentSecStoragePath() + File.separator  + secPoolUuid + File.separator  + dest.getPath();
@@ -173,9 +174,12 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                         + srcFile + " to " + destData.getObjectType() + ","
                         + destFile);
                 host.copyFile(srcFile, destFile);
+                int index = destFile.lastIndexOf("/");
+                String snapshotName = destFile.substring(index + 1);
                 VolumeObjectTO newVol = new VolumeObjectTO();
-                newVol.setUuid(src.getUuid());
+                newVol.setUuid(snapshotName);
                 newVol.setPath(destFile);
+                newVol.setSize(src.getVolume().getSize());
                 newVol.setFormat(ImageFormat.RAW);
                 return new CopyCmdAnswer(newVol);
             } else {
@@ -294,6 +298,11 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             /*
              * if stopped yes, if running ... no, unless we have ocfs2 when
              * using raw partitions (file:) if using tap:aio we cloud...
+             * The "ancient" way:
+             * We do however follow the "two stage" approach, of "snap"
+             * on primary first, with the create object... and then
+             * backup the snapshot with the copycmd....
+             * (should transfer to createSnapshot, backupSnapshot)
              */
             SnapshotObjectTO snap = (SnapshotObjectTO) data;
             VolumeObjectTO vol = snap.getVolume();
