@@ -908,9 +908,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA1");
             mac.init(keySpec);
             mac.update(unsignedRequest.getBytes());
+
             final byte[] encryptedBytes = mac.doFinal();
             final String computedSignature = Base64.encodeBase64String(encryptedBytes);
-            final boolean equalSig = signature.equals(computedSignature);
+            final boolean equalSig = ConstantTimeComparator.compareStrings(signature, computedSignature);
+
             if (!equalSig) {
                 s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
             } else {
