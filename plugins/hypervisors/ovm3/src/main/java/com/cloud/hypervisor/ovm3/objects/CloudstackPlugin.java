@@ -156,7 +156,7 @@ public class CloudstackPlugin extends OvmObject {
         return checkstoragestarted;
     }
     public boolean ovsMkdirs(String dir) throws Ovm3ResourceException{
-        return ovsMkdirs(dir);
+        return (Boolean) callWrapper("ovs_mkdirs", dir);
     }
     public boolean ovsMkdirs(String dir, Integer mode) throws Ovm3ResourceException{
         return (Boolean) callWrapper("ovs_mkdirs", dir, mode);

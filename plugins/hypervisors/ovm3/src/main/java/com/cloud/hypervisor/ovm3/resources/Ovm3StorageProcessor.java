@@ -170,11 +170,11 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                     && (destData.getObjectType() == DataObjectType.SNAPSHOT)) {
                 SnapshotObjectTO src = (SnapshotObjectTO) srcData;
                 SnapshotObjectTO dest = (SnapshotObjectTO) destData;
-                String srcFile = src.getPath();
+                String srcFilePath = src.getPath();
                 String storeUrl = dest.getDataStore().getUrl();
                 String secPoolUuid = pool.setupSecondaryStorage(storeUrl);
-                int index = srcFile.lastIndexOf(File.separator);
-                String snapshotName = srcFile.substring(index + 1);
+                int index = srcFilePath.lastIndexOf(File.separator);
+                String snapshotName = srcFilePath.substring(index + 1);
                 String destDir = config.getAgentSecStoragePath()
                         + File.separator + secPoolUuid + File.separator
                         + dest.getPath();
@@ -182,10 +182,10 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 Linux host = new Linux(c);
                 CloudstackPlugin csp = new CloudstackPlugin(c);
                 LOGGER.debug("CopyFrom: " + srcData.getObjectType() + ","
-                        + srcFile + " to " + destData.getObjectType() + ","
+                        + srcFilePath + " to " + destData.getObjectType() + ","
                         + destFile);
                 csp.ovsMkdirs(destDir);
-                host.copyFile(srcFile, destFile);
+                host.copyFile(srcFilePath, destFile);
                 VolumeObjectTO newVol = new VolumeObjectTO();
                 newVol.setUuid(snapshotName);
                 newVol.setPath(destFile);
@@ -326,11 +326,18 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 Linux host = new Linux(c);
                 String uuid = host.newUuid();
                 /* for root volumes this works... */
-                String path = vol.getPath() + File.separator + vol.getUuid()
+                String src = vol.getPath() + File.separator + vol.getUuid()
                         + ".raw";
                 String dest = vol.getPath() + File.separator + uuid + ".raw";
-                LOGGER.debug("Snapshot " + path + " to " + dest);
-                host.copyFile(path, dest);
+                /* seems that sometimes the path is already contains a file
+                 * in case, we just replace it.... (Seems to happen if not ROOT)
+                 */
+                if (vol.getPath().contains(vol.getUuid())) {
+                    src = vol.getPath();
+                    dest = vol.getPath().replace(vol.getUuid(), uuid);
+                }
+                LOGGER.debug("Snapshot " + src + " to " + dest);
+                host.copyFile(src, dest);
                 VolumeObjectTO newVol = new VolumeObjectTO();
                 newVol.setUuid(uuid);
                 newVol.setName(vol.getName());
