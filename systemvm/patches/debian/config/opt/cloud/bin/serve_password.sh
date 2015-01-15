@@ -68,7 +68,7 @@ do
 	then
 		break
 	fi
-done
+done &
 
 echo -ne "HTTP/1.0 200 OK\r\nDocumentType: text/plain\r\n\r\n"
 

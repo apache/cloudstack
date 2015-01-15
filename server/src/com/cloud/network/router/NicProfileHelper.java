@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network.router;
 
+import org.cloud.network.router.deployment.RouterDeploymentDefinition;
+
 import com.cloud.network.Network;
 import com.cloud.network.vpc.VpcGateway;
 import com.cloud.vm.NicProfile;
@@ -25,7 +27,7 @@ public interface NicProfileHelper {
     public abstract NicProfile createPrivateNicProfileForGateway(
             VpcGateway privateGateway);
 
-    public abstract NicProfile createGuestNicProfileForVpcRouter(
+    public abstract NicProfile createGuestNicProfileForVpcRouter(final RouterDeploymentDefinition vpcRouterDeploymentDefinition,
             Network guestNetwork);
 
 }

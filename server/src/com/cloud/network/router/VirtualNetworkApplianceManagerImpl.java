@@ -2631,15 +2631,19 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
     protected boolean aggregationExecution(final AggregationControlCommand.Action action, final Network network, final List<DomainRouterVO> routers)
             throws AgentUnavailableException, ResourceUnavailableException {
+
+        int errors = 0;
+
         for (final DomainRouterVO router : routers) {
 
             final String routerControlIp = _routerControlHelper.getRouterControlIp(router.getId());
             final String routerIpInNetwork = _routerControlHelper.getRouterIpInNetwork(network.getId(), router.getId());
 
             if (routerIpInNetwork == null) {
-                //Guest Nics are getting removed during the procedure and added back again.
-                //Returniung false here and waiting for the retry.
-                return false;
+                // Nic hasn't been created in this router yet. Try to configure the next one.
+                s_logger.warn("The Network is not configured in the router " + router.getHostName() + " yet. Try the next router!");
+                errors++;
+                continue;
             }
 
             final AggregationControlCommand cmd = new AggregationControlCommand(action, router.getInstanceName(), routerControlIp, routerIpInNetwork);
@@ -2647,6 +2651,10 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             if (!_nwHelper.sendCommandsToRouter(router, cmds)) {
                 return false;
             }
+        }
+        if (errors == routers.size()) {
+            s_logger.error("aggregationExecution() on " + getClass().getName() + " failed! Network is not configured in any router.");
+            return false;
         }
         return true;
     }

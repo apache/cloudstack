@@ -103,8 +103,8 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         final VirtualRouter router = acls.getRouter();
         final Network network = acls.getNetwork();
 
-        Commands commands = new Commands(Command.OnError.Continue);
-        List<? extends NetworkACLItem> rules = acls.getRules();
+        final Commands commands = new Commands(Command.OnError.Continue);
+        final List<? extends NetworkACLItem> rules = acls.getRules();
         _commandSetupHelper.createNetworkACLsCommands(rules, router, commands, network.getId(), acls.isPrivateGateway());
 
         return _networkGeneralHelper.sendCommandsToRouter(router, commands);
@@ -114,9 +114,9 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
     public boolean visit(final VpcIpAssociationRules vpcip) throws ResourceUnavailableException {
         final VirtualRouter router = vpcip.getRouter();
 
-        Commands cmds = new Commands(Command.OnError.Continue);
-        Map<String, String> vlanMacAddress = vpcip.getVlanMacAddress();
-        List<PublicIpAddress> ipsToSend = vpcip.getIpsToSend();
+        final Commands cmds = new Commands(Command.OnError.Continue);
+        final Map<String, String> vlanMacAddress = vpcip.getVlanMacAddress();
+        final List<PublicIpAddress> ipsToSend = vpcip.getIpsToSend();
 
         if (!ipsToSend.isEmpty()) {
             _commandSetupHelper.createVpcAssociatePublicIPCommands(router, ipsToSend, cmds, vlanMacAddress);
@@ -135,16 +135,16 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
         if (router.getState() == State.Running) {
 
-            PrivateIpVO ipVO = privateGW.retrivePrivateIP(this);
-            Network network = privateGW.retrievePrivateNetwork(this);
+            final PrivateIpVO ipVO = privateGW.retrivePrivateIP(this);
+            final Network network = privateGW.retrievePrivateNetwork(this);
 
-            String netmask = NetUtils.getCidrNetmask(network.getCidr());
-            PrivateIpAddress ip = new PrivateIpAddress(ipVO, network.getBroadcastUri().toString(), network.getGateway(), netmask, nicProfile.getMacAddress());
+            final String netmask = NetUtils.getCidrNetmask(network.getCidr());
+            final PrivateIpAddress ip = new PrivateIpAddress(ipVO, network.getBroadcastUri().toString(), network.getGateway(), netmask, nicProfile.getMacAddress());
 
-            List<PrivateIpAddress> privateIps = new ArrayList<PrivateIpAddress>(1);
+            final List<PrivateIpAddress> privateIps = new ArrayList<PrivateIpAddress>(1);
             privateIps.add(ip);
 
-            Commands cmds = new Commands(Command.OnError.Stop);
+            final Commands cmds = new Commands(Command.OnError.Stop);
             _commandSetupHelper.createVpcAssociatePrivateIPCommands(router, privateIps, cmds, isAddOperation);
 
             try {
@@ -155,7 +155,7 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
                     s_logger.warn("Failed to associate ip address " + ip + " in vpc network " + network);
                     return false;
                 }
-            } catch (Exception ex) {
+            } catch (final Exception ex) {
                 s_logger.warn("Failed to send  " + (isAddOperation ? "add " : "delete ") + " private network " + network + " commands to rotuer ");
                 return false;
             }
@@ -177,7 +177,7 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
 
         // In fact we send command to the host of router, we're not programming
         // router but the host
-        Commands cmds = new Commands(Command.OnError.Stop);
+        final Commands cmds = new Commands(Command.OnError.Stop);
         cmds.addCommand(setupCommand);
 
         try {
@@ -191,9 +191,9 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
     @Override
     public boolean visit(final StaticRoutesRules staticRoutesRules) throws ResourceUnavailableException {
         final VirtualRouter router = staticRoutesRules.getRouter();
-        List<StaticRouteProfile> staticRoutes = staticRoutesRules.getStaticRoutes();
+        final List<StaticRouteProfile> staticRoutes = staticRoutesRules.getStaticRoutes();
 
-        Commands cmds = new Commands(Command.OnError.Continue);
+        final Commands cmds = new Commands(Command.OnError.Continue);
         _commandSetupHelper.createStaticRouteCommands(staticRoutes, router, cmds);
 
         return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
@@ -202,9 +202,9 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
     @Override
     public boolean visit(final AdvancedVpnRules vpnRules) throws ResourceUnavailableException {
         final VirtualRouter router = vpnRules.getRouter();
-        List<? extends VpnUser> users = vpnRules.getUsers();
+        final List<? extends VpnUser> users = vpnRules.getUsers();
 
-        Commands cmds = new Commands(Command.OnError.Continue);
+        final Commands cmds = new Commands(Command.OnError.Continue);
         _commandSetupHelper.createApplyVpnUsersCommand(users, router, cmds);
 
         // Currently we receive just one answer from the agent. In the future we
