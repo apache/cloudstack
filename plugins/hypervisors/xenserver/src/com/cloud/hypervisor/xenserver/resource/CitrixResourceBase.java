@@ -7162,7 +7162,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             // Wilder Rodrigues - replaced this code with the code above.
-            //            final VIF vif = getVifByMac(conn, vm, nic.getMac());
+            //            VIF vif = getVifByMac(conn, vm, nic.getMac());
             //            if (vif != null) {
             //                final String msg = " Plug Nic failed due to a VIF with the same mac " + nic.getMac() + " exists";
             //                s_logger.warn(msg);

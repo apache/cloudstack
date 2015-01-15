@@ -79,9 +79,7 @@ def is_guestnet_configured(guestnet_dict, key):
     if not new_eth_key:
         '''
         Why is the new guest net dictionary empty?
-          1. It might be setting up a single VPC, no  need to continue.
-          2. Did we get any RTNETLINK error? If so, it might be trying to unplug the Guest Net NIC. Let's not allow it for now.
-          3. Might be a bug on the Java side.
+          1. Might be a bug on the Java side.
         Return True so we won't process an empty file. However, we have to investigate it!
         '''
         return True
@@ -117,9 +115,13 @@ if sys.argv[1] == "guest_network.json":
         file = open(currentGuestNetConfig)
         guestnet_dict = json.load(file)
     
-        if not is_guestnet_configured(guestnet_dict, ['eth1', 'eth2', 'eth3']):
+        if not is_guestnet_configured(guestnet_dict, ['eth1', 'eth2', 'eth3', 'eth4', 'eth5']):
             process_file()
         else:
-            finish_config() 
+            print "[INFO] No need to process Guest Network."
+            finish_config()
+    else:
+        print "[INFO] No GuestNetwork configured yet. Configuring first one now."
+        process_file()
 else:
     process_file()
