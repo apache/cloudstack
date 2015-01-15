@@ -105,7 +105,7 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
                 continue;
             }
             if (guestNetwork.getState() == Network.State.Implemented || guestNetwork.getState() == Network.State.Setup) {
-                final NicProfile guestNic = nicProfileHelper.createGuestNicProfileForVpcRouter(guestNetwork);
+                final NicProfile guestNic = nicProfileHelper.createGuestNicProfileForVpcRouter(vpcRouterDeploymentDefinition, guestNetwork);
                 networks.put(guestNetwork, new ArrayList<NicProfile>(Arrays.asList(guestNic)));
             }
         }

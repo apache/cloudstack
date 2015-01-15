@@ -34,8 +34,8 @@ public class GuestNetwork extends ConfigBase {
         super(ConfigBase.GUEST_NETWORK);
     }
 
-    public GuestNetwork(boolean add, String macAddress, String device, String routerGuestIp, String routerGuestNetmask, String routerGuestGateway, String cidr, String dns,
-            String domainName) {
+    public GuestNetwork(final boolean add, final String macAddress, final String device, final String routerGuestIp, final String routerGuestNetmask, final String routerGuestGateway,
+            final String cidr, final String dns, final String domainName) {
         super(ConfigBase.GUEST_NETWORK);
         this.add = add;
         this.macAddress = macAddress;
@@ -52,7 +52,7 @@ public class GuestNetwork extends ConfigBase {
         return add;
     }
 
-    public void setAdd(boolean add) {
+    public void setAdd(final boolean add) {
         this.add = add;
     }
 
@@ -60,7 +60,7 @@ public class GuestNetwork extends ConfigBase {
         return macAddress;
     }
 
-    public void setMacAddress(String macAddress) {
+    public void setMacAddress(final String macAddress) {
         this.macAddress = macAddress;
     }
 
@@ -68,7 +68,7 @@ public class GuestNetwork extends ConfigBase {
         return device;
     }
 
-    public void setDevice(String device) {
+    public void setDevice(final String device) {
         this.device = device;
     }
 
@@ -76,7 +76,7 @@ public class GuestNetwork extends ConfigBase {
         return routerGuestIp;
     }
 
-    public void setRouterGuestIp(String routerGuestIp) {
+    public void setRouterGuestIp(final String routerGuestIp) {
         this.routerGuestIp = routerGuestIp;
     }
 
@@ -84,7 +84,7 @@ public class GuestNetwork extends ConfigBase {
         return routerGuestNetmask;
     }
 
-    public void setRouterGuestNetmask(String routerGuestNetmask) {
+    public void setRouterGuestNetmask(final String routerGuestNetmask) {
         this.routerGuestNetmask = routerGuestNetmask;
     }
 
@@ -92,7 +92,7 @@ public class GuestNetwork extends ConfigBase {
         return routerGuestGateway;
     }
 
-    public void setRouterGuestGateway(String routerGuestGateway) {
+    public void setRouterGuestGateway(final String routerGuestGateway) {
         this.routerGuestGateway = routerGuestGateway;
     }
 
@@ -100,7 +100,7 @@ public class GuestNetwork extends ConfigBase {
         return cidr;
     }
 
-    public void setCidr(String cidr) {
+    public void setCidr(final String cidr) {
         this.cidr = cidr;
     }
 
@@ -108,7 +108,7 @@ public class GuestNetwork extends ConfigBase {
         return dns;
     }
 
-    public void setDns(String dns) {
+    public void setDns(final String dns) {
         this.dns = dns;
     }
 
@@ -116,8 +116,7 @@ public class GuestNetwork extends ConfigBase {
         return domainName;
     }
 
-    public void setDomainName(String domainName) {
+    public void setDomainName(final String domainName) {
         this.domainName = domainName;
     }
-
 }

@@ -126,6 +126,10 @@ class updateDataBag:
 
     def processGuestNetwork(self, dbag):
         d = self.qFile.data
+        
+        if not set(['device']).issubset(d):
+            return dbag
+        
         dp = {}
         dp['public_ip'] = d['router_guest_ip']
         dp['netmask'] = d['router_guest_netmask']
@@ -139,7 +143,7 @@ class updateDataBag:
         qf.load({'ip_address': [dp], 'type': 'ips'})
         if 'domain_name' not in d.keys() or d['domain_name'] == '':
             d['domain_name'] = "cloudnine.internal"
-        return cs_guestnetwork.merge(dbag, self.qFile.data)
+        return cs_guestnetwork.merge(dbag, d)
 
     def process_dhcp_entry(self, dbag):
         return cs_dhcp.merge(dbag, self.qFile.data)
