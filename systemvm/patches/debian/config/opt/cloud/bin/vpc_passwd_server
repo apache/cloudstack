@@ -29,4 +29,4 @@ do
         sleep 3
     fi
     result=`ip addr show | grep $ip`
-done
+done &

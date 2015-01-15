@@ -1622,7 +1622,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (result != null) {
                 return new CheckSshAnswer(cmd, "Can not ping System vm " + vmName + "due to:" + result);
             }
-            destroyPatchVbd(conn, vmName);
+            //destroyPatchVbd(conn, vmName);
         } catch (final Exception e) {
             return new CheckSshAnswer(cmd, e);
         }
@@ -7162,9 +7162,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             // Wilder Rodrigues - replaced this code with the code above.
-            //            VIF vif = getVifByMac(conn, vm, nic.getMac());
+            //            final VIF vif = getVifByMac(conn, vm, nic.getMac());
             //            if (vif != null) {
-            //                String msg = " Plug Nic failed due to a VIF with the same mac " + nic.getMac() + " exists";
+            //                final String msg = " Plug Nic failed due to a VIF with the same mac " + nic.getMac() + " exists";
             //                s_logger.warn(msg);
             //                return new PlugNicAnswer(cmd, false, msg);
             //            }
@@ -7172,6 +7172,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             final String deviceId = getLowestAvailableVIFDeviceNum(conn, vm);
             nic.setDeviceId(Integer.parseInt(deviceId));
             final VIF vif = createVif(conn, vmName, vm, null, nic);
+            //            vif = createVif(conn, vmName, vm, null, nic);
             vif.plug(conn);
             return new PlugNicAnswer(cmd, true, "success");
         } catch (final Exception e) {

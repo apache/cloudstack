@@ -52,6 +52,7 @@ class CsRedundant(object):
     CONNTRACKD_BIN = "/usr/sbin/conntrackd"
     CONNTRACKD_LOCK = "/var/lock/conntrack.lock"
     CONNTRACKD_CONFIG = "/etc/conntrackd/conntrackd.conf"
+    RROUTER_LOG = "/var/log/cloud.log"
 
     def __init__(self, config):
         self.cl = config.cmdline()
@@ -85,6 +86,11 @@ class CsRedundant(object):
         CsHelper.copy_if_needed("%s/%s" % (self.CS_TEMPLATES_DIR, "keepalived.conf.templ"), "/etc/keepalived/keepalived.conf")
         CsHelper.copy_if_needed("%s/%s" % (self.CS_TEMPLATES_DIR, "conntrackd.conf.templ"), "/etc/conntrackd/conntrackd.conf")
         CsHelper.copy_if_needed("%s/%s" % (self.CS_TEMPLATES_DIR, "checkrouter.sh.templ"), "/opt/cloud/bin/checkrouter.sh")
+
+        # checkrouter.sh configuration
+        file = CsFile("/opt/cloud/bin/checkrouter.sh")
+        file.greplace("[RROUTER_LOG]", self.RROUTER_LOG)
+        file.commit()
 
         # keepalived configuration
         file = CsFile("/etc/keepalived/keepalived.conf")
