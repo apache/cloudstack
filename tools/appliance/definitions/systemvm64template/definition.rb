@@ -10,9 +10,9 @@ Veewee::Definition.declare({
   :memory_size=> '256',
   :disk_size => '2500', :disk_format => 'VDI', :hostiocache => 'off',
   :os_type_id => 'Debian_64',
-  :iso_file => "debian-7.7.0-amd64-netinst.iso",
-  :iso_src => "http://ftp.acc.umu.se/debian-cd/7.7.0/amd64/iso-cd/debian-7.7.0-amd64-netinst.iso",
-  :iso_md5 => "0b31bccccb048d20b551f70830bb7ad0",
+  :iso_file => "debian-7.8.0-amd64-netinst.iso",
+  :iso_src => "http://cdimage.debian.org/debian-cd/7.8.0/amd64/iso-cd/debian-7.8.0-amd64-netinst.iso",
+  :iso_md5 => "a91fba5001cf0fbccb44a7ae38c63b6e",
   :iso_download_timeout => "1000",
   :boot_wait => "10", :boot_cmd_sequence => [
      '<Esc>',
