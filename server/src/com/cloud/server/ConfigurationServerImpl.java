@@ -894,8 +894,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         } else {
             command = new Script("/bin/bash", s_logger);
         }
-        String osname = System.getProperty("os.name");
-        if (osname.startsWith("Windows")) {
+        if (this.isOnWindows()) {
             scriptPath = scriptPath.replaceAll("\\\\" ,"/" );
             systemVmIsoPath = systemVmIsoPath.replaceAll("\\\\" ,"/" );
             publicKeyPath = publicKeyPath.replaceAll("\\\\" ,"/" );
