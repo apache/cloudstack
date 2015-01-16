@@ -718,6 +718,13 @@
                                                         context: args.context,
                                                         $form: $form
                                                     });
+
+                                                    $('div.overlay').remove();
+                                                    $('.tooltip-box').remove();
+                                                    $formContainer.remove();
+                                                    $(this).dialog('destroy');
+
+                                                    $('.hovered-elem').hide();
                                                 },
                                                 error: function(msg) {
                                                     $form.find('.loading-overlay').remove();
