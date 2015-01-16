@@ -22,18 +22,27 @@ package org.apache.cloudstack.storage.command;
 import com.cloud.agent.api.Command;
 
 public class UploadStatusCommand extends Command {
-
+    public enum EntityType {
+        Volume,
+        Template
+    }
     private long entityId;
+    private EntityType entityType;
 
     protected UploadStatusCommand() {
     }
 
-    public UploadStatusCommand(long entityId) {
+    public UploadStatusCommand(long entityId, EntityType entityType) {
         this.entityId = entityId;
+        this.entityType = entityType;
     }
 
     public long getEntityId() {
         return entityId;
+    }
+
+    public EntityType getEntityType() {
+        return entityType;
     }
 
     @Override
