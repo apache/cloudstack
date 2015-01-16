@@ -2659,23 +2659,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
         public void handleInternal(HttpRequest httpRequest, HttpResponse httpResponse, HttpContext httpContext) throws HttpException, IOException {
 
-            s_logger.info(""); // empty line before each request
-            s_logger.info(httpRequest.getRequestLine());
-            s_logger.info("-------- HEADERS --------");
-            for (Header header : httpRequest.getAllHeaders()) {
-                s_logger.info(header.getName() + " : " + header.getValue());
-            }
-            s_logger.info("--------");
-
             HttpEntity entity = null;
             if (httpRequest instanceof HttpEntityEnclosingRequest) {
                 entity = ((HttpEntityEnclosingRequest) httpRequest).getEntity();
-            }
-
-            if (entity != null) {
-                s_logger.info(entity.getContentType());
-                s_logger.info(entity.getContentLength());
-                s_logger.info(entity.isChunked());
             }
             // For some reason, just putting the incoming entity into
             // the response will not work. We have to buffer the message.
