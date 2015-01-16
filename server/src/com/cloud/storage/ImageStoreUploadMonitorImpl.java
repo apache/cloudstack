@@ -90,6 +90,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Upload-Monitor"));
+        //TODO: use config variable
         _monitoringInterval = 60;
         _uploadOperationTimeout = 10 * 60 * 1000; // 10 minutes
         _nodeId = ManagementServerNode.getManagementServerId();
@@ -208,7 +209,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             if (tmpVolumeDataStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.NOT_UPLOADED ||
                                 tmpVolumeDataStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.UPLOAD_IN_PROGRESS) {
                                 if (System.currentTimeMillis() - tmpVolumeDataStore.getCreated().getTime() > _uploadOperationTimeout) {
-                                    tmpVolumeDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.ABANDONED);
+                                    tmpVolumeDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
                                     stateMachine.transitTo(tmpVolume, Event.OperationTimeout, null, _volumeDao);
                                     if (s_logger.isDebugEnabled()) {
                                         s_logger.debug("Volume " + tmpVolume.getUuid() + " failed to upload due to operation timed out");
@@ -225,8 +226,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             break;
                         case UNKNOWN:
                             // check for timeout
-                            if (tmpVolumeDataStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.NOT_UPLOADED ||
-                                tmpVolumeDataStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.UPLOAD_IN_PROGRESS) {
+                            if (tmpVolumeDataStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.NOT_UPLOADED) {
                                 if (System.currentTimeMillis() - tmpVolumeDataStore.getCreated().getTime() > _uploadOperationTimeout) {
                                     tmpVolumeDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.ABANDONED);
                                     stateMachine.transitTo(tmpVolume, Event.OperationTimeout, null, _volumeDao);
