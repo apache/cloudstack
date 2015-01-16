@@ -48,6 +48,7 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.template.UploadEntity;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -216,6 +217,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     protected String _parent = "/mnt/SecStorage";
     final private String _tmpltpp = "template.properties";
     protected String createTemplateFromSnapshotXenScript;
+    private HashMap<Long,UploadEntity> uploadEntityStateMap = new HashMap<Long,UploadEntity>();
 
     public void setParentPath(String path) {
         _parent = path;
@@ -1702,7 +1704,20 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     private UploadStatusAnswer execute(UploadStatusCommand cmd) {
-        return new UploadStatusAnswer(cmd, UploadStatus.COMPLETED);
+        long entityId = cmd.getEntityId();
+        if (uploadEntityStateMap.containsKey(entityId)) {
+            UploadEntity uploadEntity = uploadEntityStateMap.get(entityId);
+            if (uploadEntity.getUploadState()== UploadEntity.Status.ERROR) {
+                uploadEntityStateMap.remove(uploadEntity);
+                return new UploadStatusAnswer(cmd, UploadStatus.ERROR, uploadEntity.getErrorMessage());
+            }else if (uploadEntity.getUploadState()== UploadEntity.Status.COMPLETED) {
+                uploadEntityStateMap.remove(uploadEntity);
+                return new UploadStatusAnswer(cmd, UploadStatus.COMPLETED);
+            }else if (uploadEntity.getUploadState()==UploadEntity.Status.IN_PROGRESS) {
+                return new UploadStatusAnswer(cmd,UploadStatus.IN_PROGRESS);
+            }
+        }
+        return new UploadStatusAnswer(cmd, UploadStatus.UNKNOWN);
     }
 
     protected GetStorageStatsAnswer execute(final GetStorageStatsCommand cmd) {
@@ -2596,6 +2611,48 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     //TODO: move this class to a separate file
     private class PostUploadRequestHandler implements HttpAsyncRequestHandler<HttpRequest> {
+        //private  static final Logger s_logger = Logger.getLogger(PostUploadRequestHandler.class);
+
+        public void handleuplod(long entityId, String absolutePath, String entityName, long entitySize, byte[] data) {
+            UploadEntity uploadEntity=null;
+            try {
+
+                if (uploadEntityStateMap.containsKey(entityId)) {
+                    //the file upload entity has been created.
+                    uploadEntity = uploadEntityStateMap.get(entityId);
+                    uploadEntity.getFilewriter().write(data);
+                    uploadEntity.incremetByteCount(data.length);
+                    if (uploadEntity.getDownloadedsize() == uploadEntity.getEntitysize()) {
+                        uploadEntity.setStatus(UploadEntity.Status.COMPLETED);
+                        uploadEntity.getFile().renameTo(new File(uploadEntity.getAbsoluteFilePath()));
+                        uploadEntity.getFilewriter().close();
+                    } else {
+                        uploadEntity.setStatus(UploadEntity.Status.IN_PROGRESS);
+                    }
+                }else{
+                    //this is a new upload.
+                    uploadEntity = new UploadEntity(entitySize, UploadEntity.Status.IN_PROGRESS, entityName, absolutePath);
+                    uploadEntityStateMap.put(entityId, uploadEntity);
+                    File tempFile = File.createTempFile("dnld_" + entityId,absolutePath);
+                    FileOutputStream filewriter = new FileOutputStream(tempFile.getAbsolutePath());
+                    uploadEntity.setFilewriter(filewriter);
+                    filewriter.write(data);
+                    uploadEntity.setFile(tempFile);
+                    uploadEntity.incremetByteCount(data.length);
+                }
+            } catch (Exception e) {
+                uploadEntity.setErrorMessage(e.getMessage());
+                uploadEntity.setStatus(UploadEntity.Status.ERROR);
+                try {
+                    uploadEntity.getFilewriter().close();
+                }
+                 catch (Exception io) {
+                     s_logger.debug("exception occured when closing a file object " + io.getMessage());
+                 }
+                s_logger.debug("exception occured while writing to a file " + e);
+            }
+        }
+
         public void handleInternal(HttpRequest httpRequest, HttpResponse httpResponse, HttpContext httpContext) throws HttpException, IOException {
 
             s_logger.info(""); // empty line before each request
@@ -2624,6 +2681,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             } else {
                 data = EntityUtils.toByteArray(entity);
             }
+            //call handle upload method.
+            //handleuplod();
 
             s_logger.info(new String(data));
             //TODO: post request is available in data. Need to parse and save file.
