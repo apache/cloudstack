@@ -25,6 +25,8 @@ import static org.apache.commons.lang.StringUtils.substringAfterLast;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -32,7 +34,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
+import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -2681,11 +2685,43 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             } else {
                 data = EntityUtils.toByteArray(entity);
             }
-            //call handle upload method.
-            //handleuplod();
 
-            s_logger.info(new String(data));
-            //TODO: post request is available in data. Need to parse and save file.
+            InputStream is = new ByteArrayInputStream(data);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+            String currentLine = reader.readLine();
+            String boundary = currentLine.replace("-","");
+
+            while(reader.ready()) {
+                currentLine = reader.readLine();
+                if (currentLine.contains("Content-Type: ")) {
+                    // File Content here
+                    reader.readLine();
+
+                    String prevLine = reader.readLine();
+                    currentLine = reader.readLine();
+
+                    //writing the data to a output stream
+                    while (true) {
+                        if (currentLine.contains(boundary)) {
+                            output.write(prevLine.getBytes());
+                            break;
+                        }
+                        else {
+                            output.write(currentLine.getBytes());
+                        }
+                        prevLine = currentLine;
+                        currentLine = reader.readLine();
+                    }
+
+                }
+            }
+            //call handle upload method.
+            //TODO: get entityid, absolute path from metadata and filename from post data
+            handleuplod(1, null, "file", output.size(), output.toByteArray());
+
+            s_logger.error(new String(data));
 
             httpResponse.setEntity(new StringEntity("upload successful"));
         }
