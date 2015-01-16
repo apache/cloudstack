@@ -1325,6 +1325,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         vmr.actionsAfterCrash = Types.OnCrashBehaviour.DESTROY;
         vmr.actionsAfterShutdown = Types.OnNormalExit.DESTROY;
         vmr.otherConfig.put("vm_uuid", vmSpec.getUuid());
+        vmr.VCPUsMax = (long) vmSpec.getCpus(); // FIX ME: In case of dynamic scaling this VCPU max should be the minumum of
+                                                // recommended value for that template and capacity remaining on host
 
         if (isDmcEnabled(conn, host) && vmSpec.isEnableDynamicallyScaleVm()) {
             //scaling is allowed
@@ -1333,13 +1335,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vmr.memoryDynamicMin = vmSpec.getMinRam();
             vmr.memoryDynamicMax = vmSpec.getMaxRam();
             if (guestOsTypeName.toLowerCase().contains("windows")) {
-                vmr.VCPUsMax = (long)vmSpec.getCpus();
+                vmr.VCPUsMax = (long) vmSpec.getCpus();
             } else {
-                // XenServer has a documented limit of 16 vcpus per vm
-                vmr.VCPUsMax = 2L * vmSpec.getCpus();
-                if (vmr.VCPUsMax > 16)
-                {
-                    vmr.VCPUsMax = 16L;
+                if (vmSpec.getVcpuMaxLimit() != null) {
+                    vmr.VCPUsMax = (long) vmSpec.getVcpuMaxLimit();
                 }
             }
         } else {
@@ -1351,11 +1350,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vmr.memoryStaticMax = vmSpec.getMaxRam();
             vmr.memoryDynamicMin = vmSpec.getMaxRam();;
             vmr.memoryDynamicMax = vmSpec.getMaxRam();
-            vmr.VCPUsMax = (long)vmSpec.getCpus();
+
+            vmr.VCPUsMax = (long) vmSpec.getCpus();
         }
 
-
-        vmr.VCPUsAtStartup = (long)vmSpec.getCpus();
+        vmr.VCPUsAtStartup = (long) vmSpec.getCpus();
         vmr.consoles.clear();
 
         VM vm = VM.create(conn, vmr);
