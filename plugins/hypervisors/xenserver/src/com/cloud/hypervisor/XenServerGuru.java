@@ -26,12 +26,14 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataObjectType;
@@ -51,11 +53,13 @@ import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.UserVmDao;
 
 @Local(value = HypervisorGuru.class)
-public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru {
+public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
     @Inject
     GuestOSDao _guestOsDao;
     @Inject
@@ -70,6 +74,11 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru 
     PrimaryDataStoreDao _storagePoolDao;
     @Inject
     VolumeDataFactory _volFactory;
+    @Inject
+    UserVmDao _userVmDao;
+
+    static final ConfigKey<Integer> MaxNumberOfVCPUSPerVM = new ConfigKey<Integer>("Advanced", Integer.class, "xen.vm.vcpu.max", "16",
+            "Maximum number of VCPUs that VM can get in XenServer.", true, ConfigKey.Scope.Cluster);
 
     protected XenServerGuru() {
         super();
@@ -87,6 +96,14 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru 
             bt = vm.getBootLoaderType();
         }
         VirtualMachineTO to = toVirtualMachineTO(vm);
+        UserVmVO userVmVO = _userVmDao.findById(vm.getId());
+        if (userVmVO != null) {
+            HostVO host = hostDao.findById(userVmVO.getHostId());
+            if (host != null) {
+                to.setVcpuMaxLimit(MaxNumberOfVCPUSPerVM.valueIn(host.getClusterId()));
+            }
+        }
+
         to.setBootloader(bt);
 
         // Determine the VM's OS description
@@ -175,5 +192,15 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru 
             }
         }
         return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return XenServerGuru.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {MaxNumberOfVCPUSPerVM};
     }
 }
