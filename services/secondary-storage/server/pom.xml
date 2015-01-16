@@ -53,6 +53,17 @@
       <artifactId>cloud-server</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- dependencies for starting a post upload server on ssvm -->
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpcore</artifactId>
+      <version>${cs.httpcore.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpcore-nio</artifactId>
+      <version>${cs.httpcore.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

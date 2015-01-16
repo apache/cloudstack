@@ -50,6 +50,7 @@
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpcore</artifactId>
+      <version>${cs.httpcore.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
