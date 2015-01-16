@@ -48,10 +48,6 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.nio.HandlerFactory;
-import com.cloud.utils.nio.Link;
-import com.cloud.utils.nio.Task;
-
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -176,7 +172,7 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.SecondaryStorageVm;
 
-public class NfsSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource, HandlerFactory {
+public class NfsSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
 
     private static final Logger s_logger = Logger.getLogger(NfsSecondaryStorageResource.class);
 
@@ -2595,21 +2591,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             cmd.setName(_hostname);
         } else {
             super.fillNetworkInformation(cmd);
-        }
-    }
-
-    @Override
-    public Task create(Task.Type type, Link link, byte[] data) {
-        return new PostUploadHandler(type, link, data);
-    }
-
-    private class PostUploadHandler extends Task {
-        public PostUploadHandler(Task.Type type, Link link, byte[] data) {
-            super(type, link, data);
-        }
-        @Override
-        protected void doTask(Task task) throws Exception {
-            // TODO Auto-generated method stub
         }
     }
 
