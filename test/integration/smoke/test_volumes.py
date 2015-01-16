@@ -17,7 +17,7 @@
 """ BVT tests for Volumes
 """
 #Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 #from marvin.cloudstackException import *
 from marvin.cloudstackAPI import (deleteVolume,
                                   extractVolume,
@@ -34,7 +34,8 @@ from marvin.lib.base import (ServiceOffering,
                              StoragePool,)
 from marvin.lib.common import (get_domain,
                                 get_zone,
-                                get_template)
+                                get_template,
+                                find_storage_pool_type)
 from marvin.lib.utils import checkVolumeSize
 from marvin.codes import SUCCESS, FAILED, XEN_SERVER
 from nose.plugins.attrib import attr
@@ -56,7 +57,12 @@ class TestCreateVolume(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.hypervisor = testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
+        #for LXC if the storage pool of type 'rbd' ex: ceph is not available, skip the test
+        if cls.hypervisor.lower() == 'lxc':
+            if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
+                raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
         cls.disk_offering = DiskOffering.create(
                                     cls.apiclient,
                                     cls.services["disk_offering"]
@@ -263,6 +269,11 @@ class TestVolumes(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        cls.hypervisor = testClient.getHypervisorInfo()
+        #for LXC if the storage pool of type 'rbd' ex: ceph is not available, skip the test
+        if cls.hypervisor.lower() == 'lxc':
+            if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
+                raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
         cls.disk_offering = DiskOffering.create(
                                     cls.apiclient,
                                     cls.services["disk_offering"]
@@ -310,7 +321,16 @@ class TestVolumes(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                 )
+        pools = StoragePool.list(cls.apiclient)
+        # cls.assertEqual(
+        #         validateList(pools)[0],
+        #         PASS,
+        #         "storage pool list validation failed")
 
+
+
+        if cls.hypervisor.lower() == 'lxc' and cls.storage_pools.type.lower() != 'rbd':
+            raise unittest.SkipTest("Snapshots not supported on Hyper-V or LXC")
         cls.volume = Volume.create(
                                    cls.apiclient,
                                    cls.services,
