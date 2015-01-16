@@ -38,6 +38,8 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer;
 import org.apache.cloudstack.storage.command.UploadStatusCommand;
 import org.apache.cloudstack.storage.command.UploadStatusCommand.EntityType;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -53,7 +55,9 @@ import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.Volume.Event;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.Transaction;
@@ -75,6 +79,10 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
     private VolumeDao _volumeDao;
     @Inject
     private VolumeDataStoreDao _volumeDataStoreDao;
+    @Inject
+    private VMTemplateDao _templateDao;
+    @Inject
+    private TemplateDataStoreDao _templateDataStoreDao;
     @Inject
     private HostDao _hostDao;
     @Inject
@@ -189,6 +197,32 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                     handleVolumeStatusResponse((UploadStatusAnswer)answer, volume, volumeDataStore);
                 }
             }
+
+            // Handle for template upload as well
+            List<TemplateDataStoreVO> templateDataStores = _templateDataStoreDao.listByTemplateState(VirtualMachineTemplate.State.NotUploaded, VirtualMachineTemplate.State.UploadInProgress);
+            for (TemplateDataStoreVO templateDataStore : templateDataStores) {
+                DataStore dataStore = storeMgr.getDataStore(templateDataStore.getDataStoreId(), DataStoreRole.Image);
+                EndPoint ep = _epSelector.select(dataStore, templateDataStore.getExtractUrl());
+                if (ep == null) {
+                    s_logger.warn("There is no secondary storage VM for image store " + dataStore.getName());
+                    continue;
+                }
+                VMTemplateVO template = _templateDao.findById(templateDataStore.getTemplateId());
+                if (template == null) {
+                    s_logger.warn("Template with id " + templateDataStore.getTemplateId() + " not found");
+                    continue;
+                }
+                Host host = _hostDao.findById(ep.getId());
+                if (host != null && host.getManagementServerId() != null && _nodeId == host.getManagementServerId().longValue()) {
+                    UploadStatusCommand cmd = new UploadStatusCommand(template.getId(), EntityType.Template);
+                    Answer answer = ep.sendMessage(cmd);
+                    if (answer == null || !(answer instanceof UploadStatusAnswer)) {
+                        s_logger.warn("No or invalid answer corresponding to UploadStatusCommand for template " + templateDataStore.getTemplateId());
+                        continue;
+                    }
+                    handleTemplateStatusResponse((UploadStatusAnswer)answer, template, templateDataStore);
+                }
+            }
         }
 
         private void handleVolumeStatusResponse(final UploadStatusAnswer answer, final VolumeVO volume, final VolumeDataStoreVO volumeDataStore) {
@@ -248,6 +282,64 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                 }
             });
         }
+
+        private void handleTemplateStatusResponse(final UploadStatusAnswer answer, final VMTemplateVO template, final TemplateDataStoreVO templateDataStore) {
+            final StateMachine2<VirtualMachineTemplate.State, VirtualMachineTemplate.Event, VirtualMachineTemplate> stateMachine = VirtualMachineTemplate.State.getStateMachine();
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    VMTemplateVO tmpTemplate = _templateDao.findById(template.getId());
+                    TemplateDataStoreVO tmpTemplateDataStore = _templateDataStoreDao.findById(templateDataStore.getId());
+                    try {
+                        switch (answer.getStatus()) {
+                        case COMPLETED:
+                            tmpTemplateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.UPLOADED);
+                            stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationSucceeded, null, _templateDao);
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Template " + tmpTemplate.getUuid() + " uploaded successfully");
+                            }
+                            break;
+                        case IN_PROGRESS:
+                            if (tmpTemplate.getState() == VirtualMachineTemplate.State.NotUploaded) {
+                                tmpTemplateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.UPLOAD_IN_PROGRESS);
+                                stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.UploadRequested, null, _templateDao);
+                            } else if (tmpTemplate.getState() == VirtualMachineTemplate.State.UploadInProgress) { // check for timeout
+                                if (System.currentTimeMillis() - tmpTemplateDataStore.getCreated().getTime() > _uploadOperationTimeout) {
+                                    tmpTemplateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.UPLOAD_ERROR);
+                                    stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationFailed, null, _templateDao);
+                                    if (s_logger.isDebugEnabled()) {
+                                        s_logger.debug("Template " + tmpTemplate.getUuid() + " failed to upload due to operation timed out");
+                                    }
+                                }
+                            }
+                            break;
+                        case ERROR:
+                            tmpTemplateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.UPLOAD_ERROR);
+                            stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationFailed, null, _templateDao);
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Template " + tmpTemplate.getUuid() + " failed to upload. Error details: " + answer.getDetails());
+                            }
+                            break;
+                        case UNKNOWN:
+                            if (tmpTemplate.getState() == VirtualMachineTemplate.State.NotUploaded) { // check for timeout
+                                if (System.currentTimeMillis() - tmpTemplateDataStore.getCreated().getTime() > _uploadOperationTimeout) {
+                                    tmpTemplateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.ABANDONED);
+                                    stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationTimeout, null, _templateDao);
+                                    if (s_logger.isDebugEnabled()) {
+                                        s_logger.debug("Template " + tmpTemplate.getUuid() + " failed to upload due to operation timed out");
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                        _templateDataStoreDao.update(tmpTemplateDataStore.getId(), tmpTemplateDataStore);
+                    } catch (NoTransitionException e) {
+                        s_logger.error("Unexpected error " + e.getMessage());
+                    }
+                }
+            });
+        }
+
     }
 
     @Override

@@ -110,7 +110,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         uploadVolumeSearch.done();
 
         volumeOnlySearch = volumeDao.createSearchBuilder();
-        volumeOnlySearch.and("state", volumeOnlySearch.entity().getState(), Op.IN);
+        volumeOnlySearch.and("states", volumeOnlySearch.entity().getState(), Op.IN);
         uploadVolumeStateSearch = createSearchBuilder();
         uploadVolumeStateSearch.join("volumeOnlySearch", volumeOnlySearch, volumeOnlySearch.entity().getId(), uploadVolumeStateSearch.entity().getVolumeId(), JoinType.LEFT);
         uploadVolumeStateSearch.and("destroyed", uploadVolumeStateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
@@ -322,7 +322,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     @Override
     public List<VolumeDataStoreVO> listByVolumeState(Volume.State... states) {
         SearchCriteria<VolumeDataStoreVO> sc = uploadVolumeStateSearch.create();
-        sc.setJoinParameters("volumeOnlySearch", "state", (Object[])states);
+        sc.setJoinParameters("volumeOnlySearch", "states", (Object[])states);
         sc.setParameters("destroyed", false);
         return listIncludingRemovedBy(sc);
     }
