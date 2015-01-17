@@ -1622,6 +1622,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (result != null) {
                 return new CheckSshAnswer(cmd, "Can not ping System vm " + vmName + "due to:" + result);
             }
+            //Do not destroy the disk here! It will stio the patching process. Please, don't!
             //destroyPatchVbd(conn, vmName);
         } catch (final Exception e) {
             return new CheckSshAnswer(cmd, e);
