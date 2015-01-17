@@ -205,7 +205,12 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             parameters += " --guestNic=" + kvmGuestNic;
             parameters += " --hypervisor=" + cluster.getHypervisorType().toString().toLowerCase();
 
-            SSHCmdHelper.sshExecuteCmd(sshConnection, "cloudstack-setup-agent " + parameters, 3);
+            if (!SSHCmdHelper.sshExecuteCmd(sshConnection,
+                    "cloudstack-setup-agent " + parameters, 3)) {
+                s_logger.info("cloudstack agent setup command failed: "
+                        + "cloudstack-setup-agent " + parameters);
+                return null;
+            }
 
             KvmDummyResourceBase kvmResource = new KvmDummyResourceBase();
             Map<String, Object> params = new HashMap<String, Object>();
