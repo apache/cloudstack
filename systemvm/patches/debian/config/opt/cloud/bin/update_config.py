@@ -51,52 +51,46 @@ def process_file():
     # Converge
     finish_config()
 
-def is_guestnet_configured(guestnet_dict, key):
+def is_guestnet_configured(guestnet_dict, keys):
     
-    existing_key = None
+    existing_keys = []
     new_eth_key = None
     
-    for k1, v in guestnet_dict.iteritems():
-        for k2 in key:
-            if k1 == k2 and len(guestnet_dict[k1]) > 0:
-                existing_key = k1
-        if existing_key:
-            break
-    
-    if not existing_key:
-        return False
+    for k1, v1 in guestnet_dict.iteritems():
+        if k1 in keys and len(v1) > 0:
+            existing_keys.append(k1)
     
     file = open(jsonCmdConfigPath)
     new_guestnet_dict = json.load(file)
     
-    for k1, v in new_guestnet_dict.iteritems():
-        for k2 in key:
-            if k1 == k2 and len(new_guestnet_dict[k1]) > 0:
-                new_eth_key = k1
-        if new_eth_key:
+    '''
+    Check if we have a new guest network ready to be setup
+    '''
+    device = new_guestnet_dict['device']
+    
+    if device in existing_keys:
+        '''
+        Device already configured, ignore.
+        '''
+        return True
+    
+    exists = False
+    
+    for key in existing_keys:
+        for interface in guestnet_dict[key]:
+            new_mac = new_guestnet_dict["mac_address"].encode('utf-8')
+            old_mac = interface["mac_address"].encode('utf-8')
+            new_ip = new_guestnet_dict["router_guest_ip"].encode('utf-8')
+            old_ip = interface["router_guest_ip"].encode('utf-8')
+    
+            if (new_mac == old_mac) and (new_ip == old_ip):
+                exists = True
+                break
+        
+        if exists:
             break
-    
-    if not new_eth_key:
-        '''
-        Why is the new guest net dictionary empty?
-          1. Might be a bug on the Java side.
-        Return True so we won't process an empty file. However, we have to investigate it!
-        '''
-        return True
-
-    old_eth = guestnet_dict[existing_key][0]
-    new_eth = new_guestnet_dict[new_eth_key][0]
-    
-    new_mac = new_eth["mac_address"].encode('utf-8')
-    old_mac = old_eth["mac_address"].encode('utf-8')
-    new_ip = new_eth["router_guest_ip"].encode('utf-8')
-    old_ip = old_eth["router_guest_ip"].encode('utf-8')
-    
-    if (new_mac == old_mac) and (new_ip == old_ip):
-        print "[WARN] Guest Network already configured. Will skip the file to avoid RTNETLINK errors."
-        return True
-    
-    return False
+        
+    return exists
 
 if not (os.path.isfile(jsonCmdConfigPath) and os.access(jsonCmdConfigPath, os.R_OK)):
     print "[ERROR]: You are telling me to process %s, but i can't access it" % jsonCmdConfigPath
@@ -115,7 +109,8 @@ if sys.argv[1] == "guest_network.json":
         file = open(currentGuestNetConfig)
         guestnet_dict = json.load(file)
     
-        if not is_guestnet_configured(guestnet_dict, ['eth1', 'eth2', 'eth3', 'eth4', 'eth5']):
+        if not is_guestnet_configured(guestnet_dict, ['eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'eth6', 'eth7', 'eth8', 'eth9']):
+            print "[INFO] Processing Guest Network."
             process_file()
         else:
             print "[INFO] No need to process Guest Network."
