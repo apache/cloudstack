@@ -97,6 +97,10 @@ public class NetworkOfferingUsageParser {
                 noCreateDate = startDate;
             }
 
+            if (noCreateDate.after(endDate)) {
+                continue;
+            }
+
             long currentDuration = (noDeleteDate.getTime() - noCreateDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
 
 
