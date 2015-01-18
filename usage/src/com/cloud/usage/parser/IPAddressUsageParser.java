@@ -101,6 +101,11 @@ public class IPAddressUsageParser {
                 IpAssignDate = startDate;
             }
 
+            // ignore if assign date is after end date
+            if (IpAssignDate.after(endDate)) {
+                continue;
+            }
+
             long currentDuration = (IpReleaseDeleteDate.getTime() - IpAssignDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
 
             updateIpUsageData(usageMap, key, usageIp.getId(), currentDuration);

@@ -1726,7 +1726,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         Long offeringId = event.getOfferingId();
         Long zoneId = event.getZoneId();
         Long accountId = event.getAccountId();
-        long size = event.getSize();
+        long size = event.getSize() == null ? 0L : event.getSize().longValue();
         Date created = event.getCreateDate();
         Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
         Long domainId = acct.getDomainId();
