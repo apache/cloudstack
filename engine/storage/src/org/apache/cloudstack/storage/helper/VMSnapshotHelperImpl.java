@@ -138,6 +138,9 @@ public class VMSnapshotHelperImpl implements VMSnapshotHelper {
         VMSnapshotVO current = snapshot;
         while (current.getParent() != null) {
             VMSnapshotVO parent = snapshotMap.get(current.getParent());
+            if (parent == null) {
+                break;
+            }
             currentTO.setParent(convert2VMSnapshotTO(parent));
             current = snapshotMap.get(current.getParent());
             currentTO = currentTO.getParent();
