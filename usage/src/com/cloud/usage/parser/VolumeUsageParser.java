@@ -103,6 +103,10 @@ public class VolumeUsageParser {
                 volCreateDate = startDate;
             }
 
+            if (volCreateDate.after(endDate)) {
+                continue;
+            }
+
             long currentDuration = (volDeleteDate.getTime() - volCreateDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
 
             updateVolUsageData(usageMap, key, usageVol.getId(), currentDuration);

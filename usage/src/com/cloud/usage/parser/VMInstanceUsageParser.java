@@ -104,6 +104,10 @@ public class VMInstanceUsageParser {
                 vmStartDate = startDate;
             }
 
+            if (vmStartDate.after(endDate)) {
+                continue;
+            }
+
             long currentDuration = (vmEndDate.getTime() - vmStartDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
 
             switch (usageType) {
