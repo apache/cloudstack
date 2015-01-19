@@ -79,9 +79,9 @@ public class VMSnapshotHelperImpl implements VMSnapshotHelper {
             return vm.getHostId();
 
         // check if lastHostId is available
-        if(vm.getLastHostId() != null){
-            HostVO lastHost =  hostDao.findById(vm.getLastHostId());
-            if(lastHost.getStatus() == com.cloud.host.Status.Up && !lastHost.isInMaintenanceStates())
+        if (vm.getLastHostId() != null) {
+            HostVO lastHost = hostDao.findByIdIncludingRemoved(vm.getLastHostId());
+            if (lastHost.getStatus() == com.cloud.host.Status.Up && !lastHost.isInMaintenanceStates())
                 return lastHost.getId();
         }
 

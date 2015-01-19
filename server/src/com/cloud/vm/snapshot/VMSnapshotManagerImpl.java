@@ -766,6 +766,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             if (jobResult != null) {
                 if (jobResult instanceof ConcurrentOperationException)
                     throw (ConcurrentOperationException)jobResult;
+                else if (jobResult instanceof InvalidParameterValueException)
+                    throw (InvalidParameterValueException)jobResult;
                 else if (jobResult instanceof Throwable)
                     throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
             }
