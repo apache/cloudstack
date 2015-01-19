@@ -36,7 +36,16 @@ class CsGuestNetwork:
         return self.guest
 
     def get_dns(self):
-        return self.config.get_dns()
+        if not self.guest:
+        	return self.config.get_dns()
+		# Can a router provide dhcp but not dns?
+        return [ self.data['router_guest_gateway'] ] + self.data['dns'].split(',')
+
+    def set_dns(self, val):
+		self.data['dns'] = val
+
+    def set_router(self, val):
+		self.data['router_guest_gateway'] = val
 
     def get_netmask(self):
         #We need to fix it properly. I just added the if, as Ian did in some other files, to avoid the exception.
