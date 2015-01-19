@@ -45,6 +45,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -225,7 +226,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     protected String _parent = "/mnt/SecStorage";
     final private String _tmpltpp = "template.properties";
     protected String createTemplateFromSnapshotXenScript;
-    private HashMap<Long,UploadEntity> uploadEntityStateMap = new HashMap<Long,UploadEntity>();
+    private HashMap<String,UploadEntity> uploadEntityStateMap = new HashMap<String,UploadEntity>();
 
     public void setParentPath(String path) {
         _parent = path;
@@ -1361,7 +1362,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         // Create request handler registry
         UriHttpAsyncRequestHandlerMapper reqistry = new UriHttpAsyncRequestHandlerMapper();
         // Register the default handler for all URIs
-        reqistry.register("/upload*", new PostUploadRequestHandler());
+        reqistry.register("/upload*", new PostUploadRequestHandler(_params,this,_dlMgr));
         // Create server-side HTTP protocol handler
         HttpAsyncService protocolHandler = new HttpAsyncService(httpproc, reqistry) {
 
@@ -2628,32 +2629,100 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private class PostUploadRequestHandler implements HttpAsyncRequestHandler<HttpRequest> {
         //private  static final Logger s_logger = Logger.getLogger(PostUploadRequestHandler.class);
 
-        public void handleuplod(long entityId, String absolutePath, String entityName, long entitySize, byte[] data) {
+        private String createTmpltScr;
+        private String createVolScr;
+        private String scriptsDir;
+        private int installTimeoutPerGig = 180 * 60 * 1000;
+        private Map<String,ImageFormat> formatMap = new HashMap<>();
+        private DownloadManager _downloadMgr;
+        private SecondaryStorageResource _resource;
+
+        public PostUploadRequestHandler(Map<String, Object> params, SecondaryStorageResource resource, DownloadManager dlmgr) {
+                  configure(params, dlmgr);
+                  this._resource=resource;
+        }
+
+        public void configure(Map<String, Object> params, DownloadManager dlmgr) {
+
+            _downloadMgr=dlmgr;
+            String scriptsDir = (String)params.get("template.scripts.dir");
+            if (scriptsDir == null) {
+                scriptsDir = "scripts/storage/secondary";
+            }
+           try {
+               createTmpltScr = Script.findScript(scriptsDir, "createtmplt.sh");
+               if (createTmpltScr == null) {
+                   throw new ConfigurationException("Unable to find createtmplt.sh");
+               }
+               s_logger.info("createtmplt.sh found in " + createTmpltScr);
+               createVolScr = Script.findScript(scriptsDir, "createvolume.sh");
+               if (createVolScr == null) {
+                   throw new ConfigurationException("Unable to find createvolume.sh");
+               }
+               s_logger.info("createvolume.sh found in " + createVolScr);
+
+           }catch (Exception e) {
+               s_logger.debug("failed to configure the postupload handler "+e);
+           }
+
+            formatMap.put("qcow2",ImageFormat.QCOW2);
+            formatMap.put("vhd",ImageFormat.VHD);
+            formatMap.put("iso",ImageFormat.ISO);
+            formatMap.put("vmdk",ImageFormat.VMDK);
+            formatMap.put("tar",ImageFormat.TAR);
+            formatMap.put("ova",ImageFormat.OVA);
+
+        }
+
+        public void handleuplod(long entityId, String installPathPrefix, String uuid, String localTemppath, String entityName, long entitySize, String resourceType, String imageFormat, byte[] data, boolean isHvm, String chksum, String dataStoreUrl) {
             UploadEntity uploadEntity=null;
             try {
 
-                if (uploadEntityStateMap.containsKey(entityId)) {
+                if (uploadEntityStateMap.containsKey(uuid)) {
                     //the file upload entity has been created.
-                    uploadEntity = uploadEntityStateMap.get(entityId);
-                    uploadEntity.getFilewriter().write(data);
-                    uploadEntity.incremetByteCount(data.length);
-                    if (uploadEntity.getDownloadedsize() == uploadEntity.getEntitysize()) {
-                        uploadEntity.setStatus(UploadEntity.Status.COMPLETED);
-                        uploadEntity.getFile().renameTo(new File(uploadEntity.getAbsoluteFilePath()));
-                        uploadEntity.getFilewriter().close();
-                    } else {
-                        uploadEntity.setStatus(UploadEntity.Status.IN_PROGRESS);
+                    uploadEntity = uploadEntityStateMap.get(uuid);
+                    if (uploadEntity.getUploadState() == UploadEntity.Status.ERROR) {
+                        s_logger.debug("received data write requres for a uplod entity in error state. Ignoring.");
+                    }else if (uploadEntity.getUploadState()== UploadEntity.Status.COMPLETED) {
+                        s_logger.debug("received a write request for entity which is alredy downloaded. Ignoring.");
+                    }else if (uploadEntity.getUploadState()== UploadEntity.Status.IN_PROGRESS) {
+                        uploadEntity.getFilewriter().write(data);
+                        uploadEntity.incremetByteCount(data.length);
+                        if (uploadEntity.getDownloadedsize() == uploadEntity.getEntitysize()) {
+                            postUpload(uploadEntity);
+                        } else {
+                            uploadEntity.setStatus(UploadEntity.Status.IN_PROGRESS);
+                        }
                     }
                 }else{
                     //this is a new upload.
-                    uploadEntity = new UploadEntity(entitySize, UploadEntity.Status.IN_PROGRESS, entityName, absolutePath);
-                    uploadEntityStateMap.put(entityId, uploadEntity);
-                    File tempFile = File.createTempFile("dnld_" + entityId,absolutePath);
+                    uploadEntity = new UploadEntity(uuid, entityId, entitySize, UploadEntity.Status.IN_PROGRESS, entityName, installPathPrefix);
+                    uploadEntity.setResourceType("volume".equalsIgnoreCase(resourceType) ? UploadEntity.ResourceType.VOLUME : UploadEntity.ResourceType.TEMPLATE);
+                    uploadEntity.setFormat(formatMap.get(imageFormat.toLowerCase()));
+                    //relative path wihour ssvm mount info.
+                    uploadEntity.setTemplatePath(installPathPrefix);
+                    installPathPrefix = _resource.getRootDir(dataStoreUrl) + File.separator + installPathPrefix;
+                    uploadEntity.setInstallPathPrefix(installPathPrefix);
+                    uploadEntity.setEntitysize(entitySize);
+                    uploadEntity.setHvm(isHvm);
+                    uploadEntity.setFilename(entityName);
+                    if (!_storage.exists(installPathPrefix)) {
+                        _storage.mkdir(installPathPrefix);
+                    }
+                    File tempFile = File.createTempFile("dnld_", entityName,new File(installPathPrefix));
+                    uploadEntity.setFile(tempFile);
                     FileOutputStream filewriter = new FileOutputStream(tempFile.getAbsolutePath());
                     uploadEntity.setFilewriter(filewriter);
                     filewriter.write(data);
                     uploadEntity.setFile(tempFile);
                     uploadEntity.incremetByteCount(data.length);
+                    uploadEntityStateMap.put(uuid, uploadEntity);
+                    if (uploadEntity.getDownloadedsize() == uploadEntity.getEntitysize()) {
+                        postUpload(uploadEntity);
+
+                    } else {
+                        uploadEntity.setStatus(UploadEntity.Status.IN_PROGRESS);
+                    }
                 }
             } catch (Exception e) {
                 uploadEntity.setErrorMessage(e.getMessage());
@@ -2666,6 +2735,117 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                  }
                 s_logger.debug("exception occured while writing to a file " + e);
             }
+        }
+        public String postUpload(UploadEntity uploadEntity) {
+
+            String resourcePath = uploadEntity.getInstallPathPrefix(); // install path prefix // path with mount
+            // directory
+            String finalResourcePath = uploadEntity.getTmpltPath(); // template download
+            // path on secondary
+            // storage
+            UploadEntity.ResourceType resourceType = uploadEntity.getResourceType();
+
+            File originalTemplate = uploadEntity.getFile();
+            //String checkSum = computeCheckSum(originalTemplate);
+            //if (checkSum == null) {
+            //  s_logger.warn("Something wrong happened when try to calculate the checksum of downloaded template!");
+            //}
+            //dnld.setCheckSum(checkSum);
+
+            int imgSizeGigs = (int)Math.ceil(_storage.getSize(originalTemplate.getPath()) * 1.0d / (1024 * 1024 * 1024));
+            imgSizeGigs++; // add one just in case
+            long timeout = (long)imgSizeGigs * installTimeoutPerGig;
+            Script scr = null;
+            String script = resourceType == UploadEntity.ResourceType.TEMPLATE ? createTmpltScr : createVolScr;
+            scr = new Script(script, timeout, s_logger);
+            scr.add("-s", Integer.toString(imgSizeGigs));
+            scr.add("-S", Long.toString(UploadEntity.s_maxTemplateSize));
+            //if (uploadEntity.getDescription() != null && dnld.getDescription().length() > 1) {
+            //    scr.add("-d", dnld.getDescription());
+            //}
+            if (uploadEntity.isHvm()) {
+                scr.add("-h");
+            }
+
+            // add options common to ISO and template
+            String extension = uploadEntity.getFormat().getFileExtension();
+            String templateName = "";
+            if (extension.equals("iso")) {
+                templateName = uploadEntity.getUuid().trim().replace(" ", "_");
+            } else {
+                templateName = java.util.UUID.nameUUIDFromBytes((uploadEntity.getFilename() + System.currentTimeMillis()).getBytes()).toString();
+            }
+
+            // run script to mv the temporary template file to the final template
+            // file
+            String templateFilename = templateName + "." + extension;
+            uploadEntity.setTemplatePath(finalResourcePath + "/" + templateFilename);
+            scr.add("-n", templateFilename);
+
+            scr.add("-t", resourcePath);
+            scr.add("-f", uploadEntity.getFile().getAbsolutePath()); // this is the temporary
+            // template file downloaded
+            if (uploadEntity.getChksum() != null && uploadEntity.getChksum().length() > 1) {
+                scr.add("-c", uploadEntity.getChksum());
+            }
+            scr.add("-u"); // cleanup
+            String result;
+            result = scr.execute();
+
+            if (result != null) {
+                return result;
+            }
+
+            // Set permissions for the downloaded template
+            File downloadedTemplate = new File(resourcePath + "/" + templateFilename);
+            _storage.setWorldReadableAndWriteable(downloadedTemplate);
+
+            // Set permissions for template/volume.properties
+            String propertiesFile = resourcePath;
+            if (resourceType == UploadEntity.ResourceType.TEMPLATE) {
+                propertiesFile += "/template.properties";
+            } else {
+                propertiesFile += "/volume.properties";
+            }
+            File templateProperties = new File(propertiesFile);
+            _storage.setWorldReadableAndWriteable(templateProperties);
+
+            TemplateLocation loc = new TemplateLocation(_storage, resourcePath);
+            try {
+                loc.create(uploadEntity.getEntityId(), true, uploadEntity.getFilename());
+            } catch (IOException e) {
+                s_logger.warn("Something is wrong with template location " + resourcePath, e);
+                loc.purge();
+                return "Unable to download due to " + e.getMessage();
+            }
+
+            Iterator<Processor> en = _downloadMgr.getProcessesors().values().iterator();
+            while (en.hasNext()) {
+                Processor processor = en.next();
+
+                FormatInfo info = null;
+                try {
+                    info = processor.process(resourcePath, null, templateName);
+                } catch (InternalErrorException e) {
+                    s_logger.error("Template process exception ", e);
+                    return e.toString();
+                }
+                if (info != null) {
+                    loc.addFormat(info);
+                    //dnld.setTemplatesize(info.virtualSize);
+                    //dnld.setTemplatePhysicalSize(info.size);
+                    break;
+                }
+            }
+
+            if (!loc.save()) {
+                s_logger.warn("Cleaning up because we're unable to save the formats");
+                loc.purge();
+            }
+            uploadEntity.setStatus(UploadEntity.Status.COMPLETED);
+            uploadEntityStateMap.put(uploadEntity.getUuid(), uploadEntity);
+
+            return null;
         }
 
         private void parsePostBody(InputStream input, OutputStream output, Map<String, String> params) throws IOException {
@@ -2745,7 +2925,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             TemplateOrVolumePostUploadCommand cmd = gson.fromJson(metadata, TemplateOrVolumePostUploadCommand.class);
 
             //call handle upload method.
-            handleuplod(cmd.getEntityId(), cmd.getAbsolutePath(), cmd.getName(), output.size(), output.toByteArray());
+            handleuplod(cmd.getEntityId(),cmd.getAbsolutePath(), cmd.getEntityUUID(),cmd.getLocalPath(),cmd.getName(),output.size(), cmd.getType(), cmd.getImageFormat(), output.toByteArray(), false, cmd.getChecksum(), cmd.getDataTo());
 
             s_logger.error(new String(data));
 

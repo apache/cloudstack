@@ -18,6 +18,7 @@
 package org.apache.cloudstack.storage.template;
 
 
+import com.cloud.storage.Storage;
 import java.io.File;
 import java.io.FileOutputStream;
 
@@ -25,10 +26,19 @@ public class UploadEntity {
     private long filesize;
     private long downloadedsize;
     private String filename;
-    private String absoluteFilePath;
+    private String installPathPrefix;
+    private String templatePath;
+    private boolean isHvm;
+    private Storage.ImageFormat format;
+    private String uuid;
+    private long entityId;
+    private String chksum;
 
 
 
+    public static enum ResourceType {
+        VOLUME, TEMPLATE
+    }
 
     public static enum Status {
         UNKNOWN, IN_PROGRESS, COMPLETED, ERROR
@@ -38,13 +48,18 @@ public class UploadEntity {
     private FileOutputStream filewriter = null;
     private String errorMessage=null;
     private File file;
+    private ResourceType resourceType;
 
-    public UploadEntity(long filesize, Status status, String filename, String absoluteFilePath) {
+    public static long s_maxTemplateSize = 50L * 1024L * 1024L * 1024L;
+
+    public UploadEntity(String uuid,long entityId,long filesize, Status status, String filename, String installPathPrefix){
+        this.uuid=uuid;
         this.filesize=filesize;
         this.uploadState=status;
         this.downloadedsize=0l;
         this.filename=filename;
-        this.absoluteFilePath=absoluteFilePath;
+        this.installPathPrefix = installPathPrefix;
+        this.entityId=entityId;
     }
 
     public void setEntitysize(long filesize) {
@@ -102,13 +117,60 @@ public class UploadEntity {
     public void setFilename(String filename) {
         this.filename = filename;
     }
-    public String getAbsoluteFilePath() {
-        return absoluteFilePath;
+    public String getInstallPathPrefix() {
+        return installPathPrefix;
     }
 
-    public void setAbsoluteFilePath(String absoluteFilePath) {
-        this.absoluteFilePath = absoluteFilePath;
+    public void setInstallPathPrefix(String absoluteFilePath) {
+        this.installPathPrefix = absoluteFilePath;
     }
 
+    public String getTmpltPath() {
+        return templatePath;
+    }
+
+    public void setTemplatePath(String templatePath) {
+        this.templatePath=templatePath;
+    }
+
+    public ResourceType getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(ResourceType resourceType) {
+        this.resourceType = resourceType;
+    }
+
+    public boolean isHvm() {
+        return isHvm;
+    }
+
+    public void setHvm(boolean isHvm) {
+        this.isHvm = isHvm;
+    }
+
+    public Storage.ImageFormat getFormat() {
+        return format;
+    }
+
+    public void setFormat(Storage.ImageFormat format) {
+        this.format = format;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public long getEntityId() {
+        return entityId;
+    }
+
+    public String getChksum() {
+        return chksum;
+    }
+
+    public void setChksum(String chksum) {
+        this.chksum = chksum;
+    }
 
 }

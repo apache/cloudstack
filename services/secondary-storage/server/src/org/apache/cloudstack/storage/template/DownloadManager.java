@@ -52,6 +52,8 @@ public interface DownloadManager extends Manager {
     public String downloadS3Template(S3TO s3, long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
         String installPathPrefix, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType);
 
+    Map getProcessesors();
+
     /**
      * Get the status of a download job
      * @param jobId job Id
