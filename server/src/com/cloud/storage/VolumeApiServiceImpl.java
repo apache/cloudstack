@@ -31,13 +31,13 @@ import javax.inject.Inject;
 import com.cloud.utils.EncryptionUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
 import org.apache.cloudstack.api.command.user.volume.GetUploadParamsForVolumeCmd;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommandTypeAdapter;
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -156,6 +156,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
@@ -262,7 +263,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         validateVolume(caller, ownerId, zoneId, volumeName, url, format, diskOfferingId);
 
-        VolumeVO volume = persistVolume(owner, zoneId, volumeName, url, cmd.getFormat(), diskOfferingId);
+        VolumeVO volume = persistVolume(owner, zoneId, volumeName, url, cmd.getFormat(), diskOfferingId, Volume.State.Allocated);
 
         VolumeInfo vol = volFactory.getVolume(volume.getId());
 
@@ -289,7 +290,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         validateVolume(caller, ownerId, zoneId, volumeName, null, format, diskOfferingId);
 
-        VolumeVO volume = persistVolume(owner, zoneId, volumeName, null, cmd.getFormat(), diskOfferingId);
+        VolumeVO volume = persistVolume(owner, zoneId, volumeName, null, cmd.getFormat(), diskOfferingId, Volume.State.NotUploaded);
 
         VolumeInfo vol = volFactory.getVolume(volume.getId());
 
@@ -303,6 +304,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         GetUploadParamsResponse response = new GetUploadParamsResponse();
         String url = "https://" + command.getEndPoint().getPublicAddr() + "/upload/" + command.getDataObject().getUuid();
         response.setPostURL(new URL(url));
+
+        // set the post url, this is used in the monitoring thread to determine the SSVM
+        VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(volume.getId());
+        if (volumeStore != null) {
+            volumeStore.setExtractUrl(url);
+        }
 
         response.setId(UUID.fromString(command.getDataObject().getUuid()));
 
@@ -395,7 +402,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @DB
     protected VolumeVO persistVolume(final Account owner, final Long zoneId, final String volumeName, final String url,
-            final String format, final Long diskOfferingId) {
+            final String format, final Long diskOfferingId, final Volume.State state) {
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
@@ -403,7 +410,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setPoolId(null);
                 volume.setDataCenterId(zoneId);
                 volume.setPodId(null);
-                // to prevent a nullpointer deref I put the system account id here when no owner is given.
+                volume.setState(state); // initialize the state
+                // to prevent a null pointer deref I put the system account id here when no owner is given.
                 // TODO Decide if this is valid or whether  throwing a CloudRuntimeException is more appropriate
                 volume.setAccountId((owner == null) ? Account.ACCOUNT_ID_SYSTEM : owner.getAccountId());
                 volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());

@@ -39,7 +39,7 @@ public class UploadEntity {
     private String errorMessage=null;
     private File file;
 
-    public UploadEntity(long filesize, Status status, String filename, String absoluteFilePath){
+    public UploadEntity(long filesize, Status status, String filename, String absoluteFilePath) {
         this.filesize=filesize;
         this.uploadState=status;
         this.downloadedsize=0l;
@@ -47,7 +47,7 @@ public class UploadEntity {
         this.absoluteFilePath=absoluteFilePath;
     }
 
-    public void setEntitysize(long filesize){
+    public void setEntitysize(long filesize) {
          this.filesize=filesize;
     }
 
@@ -86,6 +86,7 @@ public class UploadEntity {
     public void incremetByteCount(long numberOfBytes) {
            this.downloadedsize+= numberOfBytes;
     }
+
     public File getFile() {
         return file;
     }
