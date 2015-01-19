@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -53,6 +54,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.template.UploadEntity;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
@@ -2655,30 +2657,30 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
         }
 
-        public void handleInternal(HttpRequest httpRequest, HttpResponse httpResponse, HttpContext httpContext) throws HttpException, IOException {
-
-            HttpEntity entity = null;
-            if (httpRequest instanceof HttpEntityEnclosingRequest) {
-                entity = ((HttpEntityEnclosingRequest) httpRequest).getEntity();
-            }
-            // For some reason, just putting the incoming entity into
-            // the response will not work. We have to buffer the message.
-            byte[] data;
-            if (entity == null) {
-                data = new byte[0];
-            } else {
-                data = EntityUtils.toByteArray(entity);
-            }
-
-            InputStream is = new ByteArrayInputStream(data);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
-
+        private void parsePostBody(InputStream input, OutputStream output, Map<String, String> params) throws IOException {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
             String currentLine = reader.readLine();
-            String boundary = currentLine.replace("-","");
+            String boundary = currentLine;
 
             while(reader.ready()) {
                 currentLine = reader.readLine();
+                if (currentLine.contains("Content-Disposition: form-data;")) {
+                    String paramName = currentLine;
+                    paramName = paramName.replace("Content-Disposition: form-data; name=","").replace("\"","");
+                    StringBuilder paramValue = new StringBuilder();
+                    if(paramName.contains("filename")) {
+                        String[] temp = paramName.split(";");
+                        paramName = temp[0];
+                        paramValue.append(temp[1].replace("filename", "").replace("=", "").replace(" ", ""));
+                    } else {
+                        currentLine = reader.readLine();
+                        while(!currentLine.contains(boundary)) {
+                            paramValue.append(currentLine);
+                            currentLine = reader.readLine();
+                        }
+                    }
+                    params.put(paramName, paramValue.toString());
+                }
                 if (currentLine.contains("Content-Type: ")) {
                     // File Content here
                     reader.readLine();
@@ -2701,6 +2703,32 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
                 }
             }
+
+        }
+
+        public void handleInternal(HttpRequest httpRequest, HttpResponse httpResponse, HttpContext httpContext) throws HttpException, IOException {
+
+            HttpEntity entity = null;
+            if (httpRequest instanceof HttpEntityEnclosingRequest) {
+                entity = ((HttpEntityEnclosingRequest) httpRequest).getEntity();
+            }
+            // For some reason, just putting the incoming entity into
+            // the response will not work. We have to buffer the message.
+            byte[] data;
+            if (entity == null) {
+                httpResponse.setEntity(new StringEntity("upload failed"));
+                httpResponse.setStatusCode(HttpStatus.SC_UNPROCESSABLE_ENTITY);
+                return;
+            } else {
+                data = EntityUtils.toByteArray(entity);
+            }
+
+            InputStream inputStream = new ByteArrayInputStream(data);
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            HashMap<String, String> paramsMap = new HashMap<>();
+
+            parsePostBody(inputStream, output, paramsMap);
+
             //call handle upload method.
             //TODO: get entityid, absolute path from metadata and filename from post data
             handleuplod(1, null, "file", output.size(), output.toByteArray());
