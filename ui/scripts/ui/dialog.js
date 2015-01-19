@@ -701,6 +701,17 @@
                                 var $file = $form.find('input[type=file]');
                                 var $field = $file.closest('.form-item .value');
 
+                                // Add additional passed data
+                                $.map(successArgs.data, function(v, k) {
+                                    var $hidden = $('<input>').attr({
+                                        type: 'hidden',
+                                        name: k,
+                                        value: v
+                                    });
+
+                                    $hidden.appendTo($frameForm);
+                                });
+
                                 $uploadFrame.css({ width: $field.outerWidth(), height: $field.height() }).show();
                                 $frameForm.append($file);
                                 $field.append($uploadFrame);

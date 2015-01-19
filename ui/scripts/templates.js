@@ -110,7 +110,11 @@
                                 fileUpload: {
                                     getURL: function(args) {
                                         args.response.success({
-                                            url: 'http://10.223.183.3/test-upload.php'
+                                            url: 'http://10.223.183.3/test-upload.php',
+                                            data: {
+                                                testData1: '1',
+                                                testData2: '2'
+                                            }
                                         });
                                     },
                                     postUpload: function(args) {
