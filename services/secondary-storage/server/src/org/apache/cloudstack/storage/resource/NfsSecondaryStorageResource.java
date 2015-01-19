@@ -52,6 +52,10 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.EncryptionUtil;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.template.UploadEntity;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.httpclient.HttpStatus;
@@ -183,6 +187,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     private static final String TEMPLATE_ROOT_DIR = "template/tmpl";
     private static final String VOLUME_ROOT_DIR = "volumes";
+    private static final String POST_UPLOAD_KEY_LOCATION = "/etc/cloudstack/agent/ms-psk";
 
     int _timeout;
 
@@ -1401,7 +1406,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     private void savePostUploadPSK(String psk) {
         try {
-            FileUtils.writeStringToFile(new File("/etc/cloudstack/agent/ms-psk"),psk, "utf-8");
+            FileUtils.writeStringToFile(new File(POST_UPLOAD_KEY_LOCATION),psk, "utf-8");
         } catch (IOException ex) {
             s_logger.debug("Failed to copy PSK to the file.", ex);
         }
@@ -2725,13 +2730,18 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
             InputStream inputStream = new ByteArrayInputStream(data);
             ByteArrayOutputStream output = new ByteArrayOutputStream();
-            HashMap<String, String> paramsMap = new HashMap<>();
+            HashMap<String, String> params = new HashMap<>();
 
-            parsePostBody(inputStream, output, paramsMap);
+            parsePostBody(inputStream, output, params);
+            String encodedMetadata = params.get("metadata");
+            String key = FileUtils.readFileToString(new File(POST_UPLOAD_KEY_LOCATION), "utf-8");
+            String metadata = EncryptionUtil.decodeData(encodedMetadata, key);
+
+            Gson gson = new GsonBuilder().create();
+            TemplateOrVolumePostUploadCommand cmd = gson.fromJson(metadata, TemplateOrVolumePostUploadCommand.class);
 
             //call handle upload method.
-            //TODO: get entityid, absolute path from metadata and filename from post data
-            handleuplod(1, null, "file", output.size(), output.toByteArray());
+            handleuplod(cmd.getEntityId(), cmd.getAbsolutePath(), cmd.getName(), output.size(), output.toByteArray());
 
             s_logger.error(new String(data));
 

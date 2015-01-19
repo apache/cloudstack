@@ -34,9 +34,9 @@ import com.google.gson.GsonBuilder;
 
 import org.apache.cloudstack.api.command.user.volume.GetUploadParamsForVolumeCmd;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
-import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommandTypeAdapter;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -297,21 +297,23 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         RegisterVolumePayload payload = new RegisterVolumePayload(null, cmd.getChecksum(), cmd.getFormat());
         vol.addPayload(payload);
 
-        EndPoint ep = volService.registerVolumeForPostUpload(vol, store);
+        Pair<EndPoint, DataObject> pair = volService.registerVolumeForPostUpload(vol, store);
+        EndPoint ep = pair.first();
+        DataObject dataObject = pair.second();
 
-        TemplateOrVolumePostUploadCommand command = new TemplateOrVolumePostUploadCommand(vol, ep);
 
         GetUploadParamsResponse response = new GetUploadParamsResponse();
-        String url = "https://" + command.getEndPoint().getPublicAddr() + "/upload/" + command.getDataObject().getUuid();
+        String url = "https://" + ep.getPublicAddr() + "/upload/" + vol.getUuid();
         response.setPostURL(new URL(url));
 
         // set the post url, this is used in the monitoring thread to determine the SSVM
         VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(volume.getId());
         if (volumeStore != null) {
             volumeStore.setExtractUrl(url);
+            _volumeStoreDao.persist(volumeStore);
         }
 
-        response.setId(UUID.fromString(command.getDataObject().getUuid()));
+        response.setId(UUID.fromString(vol.getUuid()));
 
         /*
          * TODO: hardcoding the timeout to current + 60 min for now. This needs to goto the database
@@ -323,10 +325,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         String key = _configDao.getValue(Config.SSVMPSK.key());
          /*
-          * encoded metadata using the post upload config ssh key
+          * encoded metadata using the post upload config key
           */
 
-        Gson gson = new GsonBuilder().registerTypeAdapter(TemplateOrVolumePostUploadCommand.class, new TemplateOrVolumePostUploadCommandTypeAdapter()).create();
+
+        TemplateOrVolumePostUploadCommand command =
+            new TemplateOrVolumePostUploadCommand(vol.getId(), vol.getUuid(), volumeStore.getInstallPath(), volumeStore.getChecksum(), vol.getType().toString(), vol.getName(),
+                                                  volumeStore.getLocalDownloadPath(), vol.getFormat().toString(), dataObject.getDataStore().getUri(),
+                                                  dataObject.getDataStore().getRole().toString());
+        Gson gson = new GsonBuilder().create();
         String jsonPayload = gson.toJson(command);
         response.setMetadata(EncryptionUtil.encodeData(jsonPayload, key));
 

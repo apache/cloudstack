@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.storage.RegisterVolumePayload;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -1224,7 +1225,7 @@ public class VolumeServiceImpl implements VolumeService {
     }
 
     @Override
-    public EndPoint registerVolumeForPostUpload(VolumeInfo volume, DataStore store) {
+    public Pair<EndPoint,DataObject> registerVolumeForPostUpload(VolumeInfo volume, DataStore store) {
         DataObject volumeOnStore = store.create(volume);
 
         volumeOnStore.processEvent(Event.CreateOnlyRequested);
@@ -1234,7 +1235,7 @@ public class VolumeServiceImpl implements VolumeService {
             s_logger.warn("There is no secondary storage VM for image store " + store.getName());
             return null;
         }
-        return ep;
+        return new Pair<>(ep,volumeOnStore);
     }
 
     protected Void registerVolumeCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> callback, CreateVolumeContext<VolumeApiResult> context) {

@@ -26,6 +26,130 @@ public class TemplateOrVolumePostUploadCommand {
     DataObject dataObject;
     EndPoint endPoint;
 
+    long entityId;
+    String entityUUID;
+    String absolutePath;
+    String checksum;
+    String type;
+    String name;
+//    String installPathPrefix;
+    String localPath;
+//    String isHvm;
+    String imageFormat;
+    String dataTo;
+    String dataToRole;
+
+    public TemplateOrVolumePostUploadCommand(long entityId, String entityUUID, String absolutePath, String checksum, String type, String name,
+                                             String localPath, String imageFormat, String dataTo, String dataToRole) {
+        this.entityId = entityId;
+        this.entityUUID = entityUUID;
+        this.absolutePath = absolutePath;
+        this.checksum = checksum;
+        this.type = type;
+        this.name = name;
+//        this.installPathPrefix = installPathPrefix;
+        this.localPath = localPath;
+//        this.isHvm = isHvm;
+        this.imageFormat = imageFormat;
+        this.dataTo = dataTo;
+        this.dataToRole = dataToRole;
+    }
+
+    public String getDataTo() {
+        return dataTo;
+    }
+
+    public void setDataTo(String dataTo) {
+        this.dataTo = dataTo;
+    }
+
+    public String getDataToRole() {
+        return dataToRole;
+    }
+
+    public void setDataToRole(String dataToRole) {
+        this.dataToRole = dataToRole;
+    }
+    //    public String getInstallPathPrefix() {
+//        return installPathPrefix;
+//    }
+//
+//    public void setInstallPathPrefix(String installPathPrefix) {
+//        this.installPathPrefix = installPathPrefix;
+//    }
+
+    public String getLocalPath() {
+        return localPath;
+    }
+
+    public void setLocalPath(String localPath) {
+        this.localPath = localPath;
+    }
+
+//    public String getIsHvm() {
+//        return isHvm;
+//    }
+
+//    public void setIsHvm(String isHvm) {
+//        this.isHvm = isHvm;
+//    }
+
+    public String getImageFormat() {
+        return imageFormat;
+    }
+
+    public void setImageFormat(String imageFormat) {
+        this.imageFormat = imageFormat;
+    }
+
+    public long getEntityId() {
+        return entityId;
+    }
+
+    public void setEntityId(long entityId) {
+        this.entityId = entityId;
+    }
+
+    public String getEntityUUID() {
+        return entityUUID;
+    }
+
+    public void setEntityUUID(String entityUUID) {
+        this.entityUUID = entityUUID;
+    }
+
+    public String getAbsolutePath() {
+        return absolutePath;
+    }
+
+    public void setAbsolutePath(String absolutePath) {
+        this.absolutePath = absolutePath;
+    }
+
+    public String getChecksum() {
+        return checksum;
+    }
+
+    public void setChecksum(String checksum) {
+        this.checksum = checksum;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public TemplateOrVolumePostUploadCommand(DataObject dataObject, EndPoint endPoint) {
         this.dataObject = dataObject;
         this.endPoint = endPoint;
