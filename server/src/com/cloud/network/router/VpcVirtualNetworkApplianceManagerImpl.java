@@ -234,39 +234,35 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
     @Override
     public boolean finalizeVirtualMachineProfile(final VirtualMachineProfile profile, final DeployDestination dest, final ReservationContext context) {
-        final DomainRouterVO vr = _routerDao.findById(profile.getId());
+        final DomainRouterVO domainRouterVO = _routerDao.findById(profile.getId());
 
-        if (vr.getVpcId() != null) {
-            final List<DomainRouterVO> routers = getVpcRouters(vr.getVpcId());
-            for (final DomainRouterVO domainRouterVO : routers) {
-
-                if (domainRouterVO.getState() == State.Starting || domainRouterVO.getState() == State.Running) {
-                    String defaultDns1 = null;
-                    String defaultDns2 = null;
-                    // remove public and guest nics as we will plug them later
-                    final Iterator<NicProfile> it = profile.getNics().iterator();
-                    while (it.hasNext()) {
-                        final NicProfile nic = it.next();
-                        if (nic.getTrafficType() == TrafficType.Public || nic.getTrafficType() == TrafficType.Guest) {
-                            // save dns information
-                            if (nic.getTrafficType() == TrafficType.Public) {
-                                defaultDns1 = nic.getDns1();
-                                defaultDns2 = nic.getDns2();
-                            }
-                            s_logger.debug("Removing nic " + nic + " of type " + nic.getTrafficType() + " from the nics passed on vm start. " + "The nic will be plugged later");
-                            it.remove();
+        if (domainRouterVO.getVpcId() != null) {
+            if (domainRouterVO.getState() == State.Starting || domainRouterVO.getState() == State.Running) {
+                String defaultDns1 = null;
+                String defaultDns2 = null;
+                // remove public and guest nics as we will plug them later
+                final Iterator<NicProfile> it = profile.getNics().iterator();
+                while (it.hasNext()) {
+                    final NicProfile nic = it.next();
+                    if (nic.getTrafficType() == TrafficType.Public || nic.getTrafficType() == TrafficType.Guest) {
+                        // save dns information
+                        if (nic.getTrafficType() == TrafficType.Public) {
+                            defaultDns1 = nic.getDns1();
+                            defaultDns2 = nic.getDns2();
                         }
+                        s_logger.debug("Removing nic " + nic + " of type " + nic.getTrafficType() + " from the nics passed on vm start. " + "The nic will be plugged later");
+                        it.remove();
                     }
+                }
 
-                    // add vpc cidr/dns/networkdomain to the boot load args
-                    final StringBuilder buf = profile.getBootArgsBuilder();
-                    final Vpc vpc = _entityMgr.findById(Vpc.class, domainRouterVO.getVpcId());
-                    buf.append(" vpccidr=" + vpc.getCidr() + " domain=" + vpc.getNetworkDomain());
+                // add vpc cidr/dns/networkdomain to the boot load args
+                final StringBuilder buf = profile.getBootArgsBuilder();
+                final Vpc vpc = _entityMgr.findById(Vpc.class, domainRouterVO.getVpcId());
+                buf.append(" vpccidr=" + vpc.getCidr() + " domain=" + vpc.getNetworkDomain());
 
-                    buf.append(" dns1=").append(defaultDns1);
-                    if (defaultDns2 != null) {
-                        buf.append(" dns2=").append(defaultDns2);
-                    }
+                buf.append(" dns1=").append(defaultDns1);
+                if (defaultDns2 != null) {
+                    buf.append(" dns2=").append(defaultDns2);
                 }
             }
         }
@@ -276,208 +272,201 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
     @Override
     public boolean finalizeCommandsOnStart(final Commands cmds, final VirtualMachineProfile profile) {
-        final DomainRouterVO router = _routerDao.findById(profile.getId());
+        final DomainRouterVO domainRouterVO = _routerDao.findById(profile.getId());
 
-        final boolean isVpc = router.getVpcId() != null;
+        final boolean isVpc = domainRouterVO.getVpcId() != null;
         if (!isVpc) {
             return super.finalizeCommandsOnStart(cmds, profile);
         }
 
-        final List<DomainRouterVO> routers = getVpcRouters(router.getVpcId());
-        for (final DomainRouterVO domainRouterVO : routers) {
+        if (domainRouterVO.getState() == State.Starting || domainRouterVO.getState() == State.Running) {
+            // 1) FORM SSH CHECK COMMAND
+            final NicProfile controlNic = getControlNic(profile);
+            if (controlNic == null) {
+                s_logger.error("Control network doesn't exist for the router " + domainRouterVO);
+                return false;
+            }
 
-            if (domainRouterVO.getState() == State.Starting || domainRouterVO.getState() == State.Running) {
-                // 1) FORM SSH CHECK COMMAND
-                final NicProfile controlNic = getControlNic(profile);
-                if (controlNic == null) {
-                    s_logger.error("Control network doesn't exist for the router " + domainRouterVO);
-                    return false;
+            finalizeSshAndVersionAndNetworkUsageOnStart(cmds, profile, domainRouterVO, controlNic);
+
+            // 2) FORM PLUG NIC COMMANDS
+            final List<Pair<Nic, Network>> guestNics = new ArrayList<Pair<Nic, Network>>();
+            final List<Pair<Nic, Network>> publicNics = new ArrayList<Pair<Nic, Network>>();
+            final Map<String, String> vlanMacAddress = new HashMap<String, String>();
+
+            final List<? extends Nic> routerNics = _nicDao.listByVmId(profile.getId());
+            for (final Nic routerNic : routerNics) {
+                final Network network = _networkModel.getNetwork(routerNic.getNetworkId());
+                if (network.getTrafficType() == TrafficType.Guest) {
+                    final Pair<Nic, Network> guestNic = new Pair<Nic, Network>(routerNic, network);
+                    guestNics.add(guestNic);
+                } else if (network.getTrafficType() == TrafficType.Public) {
+                    final Pair<Nic, Network> publicNic = new Pair<Nic, Network>(routerNic, network);
+                    publicNics.add(publicNic);
+                    final String vlanTag = BroadcastDomainType.getValue(routerNic.getBroadcastUri());
+                    vlanMacAddress.put(vlanTag, routerNic.getMacAddress());
                 }
+            }
 
-                finalizeSshAndVersionAndNetworkUsageOnStart(cmds, profile, domainRouterVO, controlNic);
+            final List<Command> usageCmds = new ArrayList<Command>();
 
-                // 2) FORM PLUG NIC COMMANDS
-                final List<Pair<Nic, Network>> guestNics = new ArrayList<Pair<Nic, Network>>();
-                final List<Pair<Nic, Network>> publicNics = new ArrayList<Pair<Nic, Network>>();
-                final Map<String, String> vlanMacAddress = new HashMap<String, String>();
+            // 3) PREPARE PLUG NIC COMMANDS
+            try {
+                // add VPC router to public networks
+                final List<PublicIp> sourceNat = new ArrayList<PublicIp>(1);
+                for (final Pair<Nic, Network> nicNtwk : publicNics) {
+                    final Nic publicNic = nicNtwk.first();
+                    final Network publicNtwk = nicNtwk.second();
+                    final IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(publicNtwk.getId(), publicNic.getIp4Address());
 
-                final List<? extends Nic> routerNics = _nicDao.listByVmId(profile.getId());
-                for (final Nic routerNic : routerNics) {
-                    final Network network = _networkModel.getNetwork(routerNic.getNetworkId());
-                    if (network.getTrafficType() == TrafficType.Guest) {
-                        final Pair<Nic, Network> guestNic = new Pair<Nic, Network>(routerNic, network);
-                        guestNics.add(guestNic);
-                    } else if (network.getTrafficType() == TrafficType.Public) {
-                        final Pair<Nic, Network> publicNic = new Pair<Nic, Network>(routerNic, network);
-                        publicNics.add(publicNic);
-                        final String vlanTag = BroadcastDomainType.getValue(routerNic.getBroadcastUri());
-                        vlanMacAddress.put(vlanTag, routerNic.getMacAddress());
-                    }
-                }
+                    if (userIp.isSourceNat()) {
+                        final PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
+                        sourceNat.add(publicIp);
 
-                final List<Command> usageCmds = new ArrayList<Command>();
-
-                // 3) PREPARE PLUG NIC COMMANDS
-                try {
-                    // add VPC router to public networks
-                    final List<PublicIp> sourceNat = new ArrayList<PublicIp>(1);
-                    for (final Pair<Nic, Network> nicNtwk : publicNics) {
-                        final Nic publicNic = nicNtwk.first();
-                        final Network publicNtwk = nicNtwk.second();
-                        final IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(publicNtwk.getId(), publicNic.getIp4Address());
-
-                        if (userIp.isSourceNat()) {
-                            final PublicIp publicIp = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
-                            sourceNat.add(publicIp);
-
-                            if (domainRouterVO.getPublicIpAddress() == null) {
-                                final DomainRouterVO routerVO = _routerDao.findById(domainRouterVO.getId());
-                                routerVO.setPublicIpAddress(publicNic.getIp4Address());
-                                routerVO.setPublicNetmask(publicNic.getNetmask());
-                                routerVO.setPublicMacAddress(publicNic.getMacAddress());
-                                _routerDao.update(routerVO.getId(), routerVO);
-                            }
-                        }
-                        final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, publicNic.getNetworkId(), publicNic.getBroadcastUri().toString()),
-                                domainRouterVO.getInstanceName(), domainRouterVO.getType());
-                        cmds.addCommand(plugNicCmd);
-                        final VpcVO vpc = _vpcDao.findById(domainRouterVO.getVpcId());
-                        final NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(domainRouterVO.getPrivateIpAddress(), domainRouterVO.getInstanceName(), true, publicNic.getIp4Address(), vpc.getCidr());
-                        usageCmds.add(netUsageCmd);
-                        UserStatisticsVO stats = _userStatsDao.findBy(domainRouterVO.getAccountId(), domainRouterVO.getDataCenterId(), publicNtwk.getId(), publicNic.getIp4Address(), domainRouterVO.getId(),
-                                domainRouterVO.getType().toString());
-                        if (stats == null) {
-                            stats = new UserStatisticsVO(domainRouterVO.getAccountId(), domainRouterVO.getDataCenterId(), publicNic.getIp4Address(), domainRouterVO.getId(), domainRouterVO.getType().toString(),
-                                    publicNtwk.getId());
-                            _userStatsDao.persist(stats);
+                        if (domainRouterVO.getPublicIpAddress() == null) {
+                            final DomainRouterVO routerVO = _routerDao.findById(domainRouterVO.getId());
+                            routerVO.setPublicIpAddress(publicNic.getIp4Address());
+                            routerVO.setPublicNetmask(publicNic.getNetmask());
+                            routerVO.setPublicMacAddress(publicNic.getMacAddress());
+                            _routerDao.update(routerVO.getId(), routerVO);
                         }
                     }
-
-                    // create ip assoc for source nat
-                    if (!sourceNat.isEmpty()) {
-                        _commandSetupHelper.createVpcAssociatePublicIPCommands(domainRouterVO, sourceNat, cmds, vlanMacAddress);
+                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, publicNic.getNetworkId(), publicNic.getBroadcastUri().toString()),
+                            domainRouterVO.getInstanceName(), domainRouterVO.getType());
+                    cmds.addCommand(plugNicCmd);
+                    final VpcVO vpc = _vpcDao.findById(domainRouterVO.getVpcId());
+                    final NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(domainRouterVO.getPrivateIpAddress(), domainRouterVO.getInstanceName(), true, publicNic.getIp4Address(), vpc.getCidr());
+                    usageCmds.add(netUsageCmd);
+                    UserStatisticsVO stats = _userStatsDao.findBy(domainRouterVO.getAccountId(), domainRouterVO.getDataCenterId(), publicNtwk.getId(), publicNic.getIp4Address(), domainRouterVO.getId(),
+                            domainRouterVO.getType().toString());
+                    if (stats == null) {
+                        stats = new UserStatisticsVO(domainRouterVO.getAccountId(), domainRouterVO.getDataCenterId(), publicNic.getIp4Address(), domainRouterVO.getId(), domainRouterVO.getType().toString(),
+                                publicNtwk.getId());
+                        _userStatsDao.persist(stats);
                     }
-
-                    // add VPC router to guest networks
-                    for (final Pair<Nic, Network> nicNtwk : guestNics) {
-                        final Nic guestNic = nicNtwk.first();
-                        // plug guest nic
-                        final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, guestNic.getNetworkId(), null), domainRouterVO.getInstanceName(), domainRouterVO.getType());
-                        cmds.addCommand(plugNicCmd);
-                        if (!_networkModel.isPrivateGateway(guestNic.getNetworkId())) {
-                            // set guest network
-                            final VirtualMachine vm = _vmDao.findById(domainRouterVO.getId());
-                            final NicProfile nicProfile = _networkModel.getNicProfile(vm, guestNic.getNetworkId(), null);
-                            final SetupGuestNetworkCommand setupCmd = _commandSetupHelper.createSetupGuestNetworkCommand(domainRouterVO, true, nicProfile);
-                            cmds.addCommand(setupCmd);
-                        } else {
-
-                            // set private network
-                            final PrivateIpVO ipVO = _privateIpDao.findByIpAndSourceNetworkId(guestNic.getNetworkId(), guestNic.getIp4Address());
-                            final Network network = _networkDao.findById(guestNic.getNetworkId());
-                            BroadcastDomainType.getValue(network.getBroadcastUri());
-                            final String netmask = NetUtils.getCidrNetmask(network.getCidr());
-                            final PrivateIpAddress ip = new PrivateIpAddress(ipVO, network.getBroadcastUri().toString(), network.getGateway(), netmask, guestNic.getMacAddress());
-
-                            final List<PrivateIpAddress> privateIps = new ArrayList<PrivateIpAddress>(1);
-                            privateIps.add(ip);
-                            _commandSetupHelper.createVpcAssociatePrivateIPCommands(domainRouterVO, privateIps, cmds, true);
-
-                            final Long privateGwAclId = _vpcGatewayDao.getNetworkAclIdForPrivateIp(ipVO.getVpcId(), ipVO.getNetworkId(), ipVO.getIpAddress());
-
-                            if (privateGwAclId != null) {
-                                // set network acl on private gateway
-                                final List<NetworkACLItemVO> networkACLs = _networkACLItemDao.listByACL(privateGwAclId);
-                                s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + domainRouterVO + " start for private gateway ip = "
-                                        + ipVO.getIpAddress());
-
-                                _commandSetupHelper.createNetworkACLsCommands(networkACLs, domainRouterVO, cmds, ipVO.getNetworkId(), true);
-                            }
-                        }
-                    }
-                } catch (final Exception ex) {
-                    s_logger.warn("Failed to add router " + domainRouterVO + " to network due to exception ", ex);
-                    return false;
                 }
 
-                // 4) RE-APPLY ALL STATIC ROUTE RULES
-                final List<? extends StaticRoute> routes = _staticRouteDao.listByVpcId(domainRouterVO.getVpcId());
-                final List<StaticRouteProfile> staticRouteProfiles = new ArrayList<StaticRouteProfile>(routes.size());
-                final Map<Long, VpcGateway> gatewayMap = new HashMap<Long, VpcGateway>();
-                for (final StaticRoute route : routes) {
-                    VpcGateway gateway = gatewayMap.get(route.getVpcGatewayId());
-                    if (gateway == null) {
-                        gateway = _entityMgr.findById(VpcGateway.class, route.getVpcGatewayId());
-                        gatewayMap.put(gateway.getId(), gateway);
-                    }
-                    staticRouteProfiles.add(new StaticRouteProfile(route, gateway));
+                // create ip assoc for source nat
+                if (!sourceNat.isEmpty()) {
+                    _commandSetupHelper.createVpcAssociatePublicIPCommands(domainRouterVO, sourceNat, cmds, vlanMacAddress);
                 }
 
-                s_logger.debug("Found " + staticRouteProfiles.size() + " static routes to apply as a part of vpc route " + domainRouterVO + " start");
-                if (!staticRouteProfiles.isEmpty()) {
-                    _commandSetupHelper.createStaticRouteCommands(staticRouteProfiles, domainRouterVO, cmds);
-                }
-
-                // 5) RE-APPLY ALL REMOTE ACCESS VPNs
-                final RemoteAccessVpnVO vpn = _vpnDao.findByAccountAndVpc(domainRouterVO.getAccountId(), domainRouterVO.getVpcId());
-                if (vpn != null) {
-                    _commandSetupHelper.createApplyVpnCommands(true, vpn, domainRouterVO, cmds);
-                }
-
-                // 6) REPROGRAM GUEST NETWORK
-                boolean reprogramGuestNtwks = true;
-                if (profile.getParameter(Param.ReProgramGuestNetworks) != null && (Boolean) profile.getParameter(Param.ReProgramGuestNetworks) == false) {
-                    reprogramGuestNtwks = false;
-                }
-
-                final VirtualRouterProvider vrProvider = _vrProviderDao.findById(domainRouterVO.getElementId());
-                if (vrProvider == null) {
-                    throw new CloudRuntimeException("Cannot find related virtual router provider of router: " + domainRouterVO.getHostName());
-                }
-                final Provider provider = Network.Provider.getProvider(vrProvider.getType().toString());
-                if (provider == null) {
-                    throw new CloudRuntimeException("Cannot find related provider of virtual router provider: " + vrProvider.getType().toString());
-                }
-
+                // add VPC router to guest networks
                 for (final Pair<Nic, Network> nicNtwk : guestNics) {
                     final Nic guestNic = nicNtwk.first();
-                    final AggregationControlCommand startCmd = new AggregationControlCommand(Action.Start, domainRouterVO.getInstanceName(), controlNic.getIp4Address(), _routerControlHelper.getRouterIpInNetwork(
-                            guestNic.getNetworkId(), domainRouterVO.getId()));
-                    cmds.addCommand(startCmd);
-                    if (reprogramGuestNtwks) {
-                        finalizeIpAssocForNetwork(cmds, domainRouterVO, provider, guestNic.getNetworkId(), vlanMacAddress);
-                        finalizeNetworkRulesForNetwork(cmds, domainRouterVO, provider, guestNic.getNetworkId());
-                    }
+                    // plug guest nic
+                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, guestNic.getNetworkId(), null), domainRouterVO.getInstanceName(), domainRouterVO.getType());
+                    cmds.addCommand(plugNicCmd);
+                    if (!_networkModel.isPrivateGateway(guestNic.getNetworkId())) {
+                        // set guest network
+                        final VirtualMachine vm = _vmDao.findById(domainRouterVO.getId());
+                        final NicProfile nicProfile = _networkModel.getNicProfile(vm, guestNic.getNetworkId(), null);
+                        final SetupGuestNetworkCommand setupCmd = _commandSetupHelper.createSetupGuestNetworkCommand(domainRouterVO, true, nicProfile);
+                        cmds.addCommand(setupCmd);
+                    } else {
 
-                    finalizeUserDataAndDhcpOnStart(cmds, domainRouterVO, provider, guestNic.getNetworkId());
-                    final AggregationControlCommand finishCmd = new AggregationControlCommand(Action.Finish, domainRouterVO.getInstanceName(), controlNic.getIp4Address(), _routerControlHelper.getRouterIpInNetwork(
-                            guestNic.getNetworkId(), domainRouterVO.getId()));
-                    cmds.addCommand(finishCmd);
+                        // set private network
+                        final PrivateIpVO ipVO = _privateIpDao.findByIpAndSourceNetworkId(guestNic.getNetworkId(), guestNic.getIp4Address());
+                        final Network network = _networkDao.findById(guestNic.getNetworkId());
+                        BroadcastDomainType.getValue(network.getBroadcastUri());
+                        final String netmask = NetUtils.getCidrNetmask(network.getCidr());
+                        final PrivateIpAddress ip = new PrivateIpAddress(ipVO, network.getBroadcastUri().toString(), network.getGateway(), netmask, guestNic.getMacAddress());
+
+                        final List<PrivateIpAddress> privateIps = new ArrayList<PrivateIpAddress>(1);
+                        privateIps.add(ip);
+                        _commandSetupHelper.createVpcAssociatePrivateIPCommands(domainRouterVO, privateIps, cmds, true);
+
+                        final Long privateGwAclId = _vpcGatewayDao.getNetworkAclIdForPrivateIp(ipVO.getVpcId(), ipVO.getNetworkId(), ipVO.getIpAddress());
+
+                        if (privateGwAclId != null) {
+                            // set network acl on private gateway
+                            final List<NetworkACLItemVO> networkACLs = _networkACLItemDao.listByACL(privateGwAclId);
+                            s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + domainRouterVO + " start for private gateway ip = "
+                                    + ipVO.getIpAddress());
+
+                            _commandSetupHelper.createNetworkACLsCommands(networkACLs, domainRouterVO, cmds, ipVO.getNetworkId(), true);
+                        }
+                    }
+                }
+            } catch (final Exception ex) {
+                s_logger.warn("Failed to add router " + domainRouterVO + " to network due to exception ", ex);
+                return false;
+            }
+
+            // 4) RE-APPLY ALL STATIC ROUTE RULES
+            final List<? extends StaticRoute> routes = _staticRouteDao.listByVpcId(domainRouterVO.getVpcId());
+            final List<StaticRouteProfile> staticRouteProfiles = new ArrayList<StaticRouteProfile>(routes.size());
+            final Map<Long, VpcGateway> gatewayMap = new HashMap<Long, VpcGateway>();
+            for (final StaticRoute route : routes) {
+                VpcGateway gateway = gatewayMap.get(route.getVpcGatewayId());
+                if (gateway == null) {
+                    gateway = _entityMgr.findById(VpcGateway.class, route.getVpcGatewayId());
+                    gatewayMap.put(gateway.getId(), gateway);
+                }
+                staticRouteProfiles.add(new StaticRouteProfile(route, gateway));
+            }
+
+            s_logger.debug("Found " + staticRouteProfiles.size() + " static routes to apply as a part of vpc route " + domainRouterVO + " start");
+            if (!staticRouteProfiles.isEmpty()) {
+                _commandSetupHelper.createStaticRouteCommands(staticRouteProfiles, domainRouterVO, cmds);
+            }
+
+            // 5) RE-APPLY ALL REMOTE ACCESS VPNs
+            final RemoteAccessVpnVO vpn = _vpnDao.findByAccountAndVpc(domainRouterVO.getAccountId(), domainRouterVO.getVpcId());
+            if (vpn != null) {
+                _commandSetupHelper.createApplyVpnCommands(true, vpn, domainRouterVO, cmds);
+            }
+
+            // 6) REPROGRAM GUEST NETWORK
+            boolean reprogramGuestNtwks = true;
+            if (profile.getParameter(Param.ReProgramGuestNetworks) != null && (Boolean) profile.getParameter(Param.ReProgramGuestNetworks) == false) {
+                reprogramGuestNtwks = false;
+            }
+
+            final VirtualRouterProvider vrProvider = _vrProviderDao.findById(domainRouterVO.getElementId());
+            if (vrProvider == null) {
+                throw new CloudRuntimeException("Cannot find related virtual router provider of router: " + domainRouterVO.getHostName());
+            }
+            final Provider provider = Network.Provider.getProvider(vrProvider.getType().toString());
+            if (provider == null) {
+                throw new CloudRuntimeException("Cannot find related provider of virtual router provider: " + vrProvider.getType().toString());
+            }
+
+            for (final Pair<Nic, Network> nicNtwk : guestNics) {
+                final Nic guestNic = nicNtwk.first();
+                final AggregationControlCommand startCmd = new AggregationControlCommand(Action.Start, domainRouterVO.getInstanceName(), controlNic.getIp4Address(), _routerControlHelper.getRouterIpInNetwork(
+                        guestNic.getNetworkId(), domainRouterVO.getId()));
+                cmds.addCommand(startCmd);
+                if (reprogramGuestNtwks) {
+                    finalizeIpAssocForNetwork(cmds, domainRouterVO, provider, guestNic.getNetworkId(), vlanMacAddress);
+                    finalizeNetworkRulesForNetwork(cmds, domainRouterVO, provider, guestNic.getNetworkId());
                 }
 
-                // Add network usage commands
-                cmds.addCommands(usageCmds);
+                finalizeUserDataAndDhcpOnStart(cmds, domainRouterVO, provider, guestNic.getNetworkId());
+                final AggregationControlCommand finishCmd = new AggregationControlCommand(Action.Finish, domainRouterVO.getInstanceName(), controlNic.getIp4Address(), _routerControlHelper.getRouterIpInNetwork(
+                        guestNic.getNetworkId(), domainRouterVO.getId()));
+                cmds.addCommand(finishCmd);
             }
+
+            // Add network usage commands
+            cmds.addCommands(usageCmds);
         }
         return true;
     }
 
     @Override
-    protected void finalizeNetworkRulesForNetwork(final Commands cmds, final DomainRouterVO router, final Provider provider, final Long guestNetworkId) {
+    protected void finalizeNetworkRulesForNetwork(final Commands cmds, final DomainRouterVO domainRouterVO, final Provider provider, final Long guestNetworkId) {
 
-        super.finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
+        super.finalizeNetworkRulesForNetwork(cmds, domainRouterVO, provider, guestNetworkId);
 
-        if (router.getVpcId() != null) {
-            final List<DomainRouterVO> routers = getVpcRouters(router.getVpcId());
-            for (final DomainRouterVO domainRouterVO : routers) {
+        if (domainRouterVO.getVpcId() != null) {
 
-                if (domainRouterVO.getState() == State.Starting || domainRouterVO.getState() == State.Running) {
-                    if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.NetworkACL, Provider.VPCVirtualRouter)) {
-                        final List<NetworkACLItemVO> networkACLs = _networkACLMgr.listNetworkACLItems(guestNetworkId);
-                        if (networkACLs != null && !networkACLs.isEmpty()) {
-                            s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + domainRouterVO + " start for guest network id=" + guestNetworkId);
-                            _commandSetupHelper.createNetworkACLsCommands(networkACLs, domainRouterVO, cmds, guestNetworkId, false);
-                        }
+            if (domainRouterVO.getState() == State.Starting || domainRouterVO.getState() == State.Running) {
+                if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.NetworkACL, Provider.VPCVirtualRouter)) {
+                    final List<NetworkACLItemVO> networkACLs = _networkACLMgr.listNetworkACLItems(guestNetworkId);
+                    if (networkACLs != null && !networkACLs.isEmpty()) {
+                        s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + domainRouterVO + " start for guest network id=" + guestNetworkId);
+                        _commandSetupHelper.createNetworkACLsCommands(networkACLs, domainRouterVO, cmds, guestNetworkId, false);
                     }
                 }
             }
@@ -574,25 +563,21 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    protected void finalizeIpAssocForNetwork(final Commands cmds, final VirtualRouter router, final Provider provider, final Long guestNetworkId,
+    protected void finalizeIpAssocForNetwork(final Commands cmds, final VirtualRouter domainRouterVO, final Provider provider, final Long guestNetworkId,
             final Map<String, String> vlanMacAddress) {
 
-        if (router.getVpcId() == null) {
-            super.finalizeIpAssocForNetwork(cmds, router, provider, guestNetworkId, vlanMacAddress);
+        if (domainRouterVO.getVpcId() == null) {
+            super.finalizeIpAssocForNetwork(cmds, domainRouterVO, provider, guestNetworkId, vlanMacAddress);
             return;
         }
 
-        final List<DomainRouterVO> routers = getVpcRouters(router.getVpcId());
-        for (final DomainRouterVO domainRouterVO : routers) {
+        if (domainRouterVO.getState() == State.Starting || domainRouterVO.getState() == State.Running) {
+            final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(domainRouterVO, provider, guestNetworkId, IpAddress.State.Releasing);
 
-            if (domainRouterVO.getState() == State.Starting || domainRouterVO.getState() == State.Running) {
-                final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(domainRouterVO, provider, guestNetworkId, IpAddress.State.Releasing);
-
-                if (publicIps != null && !publicIps.isEmpty()) {
-                    s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + domainRouterVO + " start.");
-                    // Re-apply public ip addresses - should come before PF/LB/VPN
-                    _commandSetupHelper.createVpcAssociatePublicIPCommands(domainRouterVO, publicIps, cmds, vlanMacAddress);
-                }
+            if (publicIps != null && !publicIps.isEmpty()) {
+                s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + domainRouterVO + " start.");
+                // Re-apply public ip addresses - should come before PF/LB/VPN
+                _commandSetupHelper.createVpcAssociatePublicIPCommands(domainRouterVO, publicIps, cmds, vlanMacAddress);
             }
         }
     }
