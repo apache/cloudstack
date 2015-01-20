@@ -778,29 +778,80 @@
                                             });
                                         }
                                     },
-                                    
+                                                                        
                                     format: {
                                         label: 'label.format',
                                         docID: 'helpRegisterTemplateFormat',
+                                        dependsOn: 'hypervisor',
                                         select: function(args) {
-                                            var items = [];                                            
-                                            items.push({
-                                                id: 'VHD',
-                                                description: 'VHD'
-                                            });                                            
-                                            items.push({
-                                                id: 'RAW',
-                                                description: 'RAW'
-                                            });
-                                            items.push({
-                                                id: 'QCOW2',
-                                                description: 'QCOW2'
-                                            });                                            
+                                            var items = [];
+                                            if (args.hypervisor == "XenServer") {                                                
+                                                items.push({
+                                                    id: 'VHD',
+                                                    description: 'VHD'
+                                                });
+                                            } else if (args.hypervisor == "VMware") {                                                
+                                                /*
+                                                items.push({
+                                                    id: 'OVA',
+                                                    description: 'OVA'
+                                                });
+                                                */
+                                            } else if (args.hypervisor == "KVM") {                                                
+                                                items.push({
+                                                    id: 'QCOW2',
+                                                    description: 'QCOW2'
+                                                });
+                                                items.push({
+                                                    id: 'RAW',
+                                                    description: 'RAW'
+                                                });
+                                                items.push({
+                                                    id: 'VHD',
+                                                    description: 'VHD'
+                                                });
+                                                /*
+                                                items.push({
+                                                    id: 'VMDK',
+                                                    description: 'VMDK'
+                                                });
+                                                */
+                                            } else if (args.hypervisor == "BareMetal") {
+                                                /*
+                                                items.push({
+                                                    id: 'BareMetal',
+                                                    description: 'BareMetal'
+                                                });
+                                                */
+                                            } else if (args.hypervisor == "Ovm") {                                                
+                                                items.push({
+                                                    id: 'RAW',
+                                                    description: 'RAW'
+                                                });
+                                            } else if (args.hypervisor == "LXC") {
+                                                /*
+                                                items.push({
+                                                    id: 'TAR',
+                                                    description: 'TAR'
+                                                });
+                                                */
+                                            } else if (args.hypervisor == "Hyperv") {
+                                            	items.push({
+                                                    id: 'VHD',
+                                                    description: 'VHD'
+                                                });
+                                                /*
+                                                items.push({
+                                                    id: 'VHDX',
+                                                    description: 'VHDX'
+                                                });
+                                                */
+                                            }
                                             args.response.success({
                                                 data: items
                                             });
                                         }
-                                    },
+                                    },                                   
 
                                     osTypeId: {
                                         label: 'label.os.type',
