@@ -900,9 +900,9 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         # 1. Scaling operation should be successful
 
         hypervisor = get_hypervisor_type(self.apiclient)
-        if hypervisor.lower() == "kvm":
+        if hypervisor.lower() in ["kvm", "hyperv"]:
             self.skipTest(
-                "Scaling VM in running state is not supported on KVM")
+                "Scaling VM in running state is not supported on %s" % hypervisor)
 
         isadmin = True
         if value == USER_ACCOUNT:
@@ -977,9 +977,9 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         # 2. Scale operation in step 6 should fail
 
         hypervisor = get_hypervisor_type(self.apiclient)
-        if hypervisor.lower() == "kvm":
+        if hypervisor.lower() in ["kvm", "hyperv"]:
             self.skipTest(
-                "Scaling VM in running state is not supported on KVM")
+                "Scaling VM in running state is not supported on %s" % hypervisor)
 
         isadmin = True
         if value == USER_ACCOUNT:
@@ -1077,9 +1077,9 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         # Validations:
         # 1. Scale operation in step 4 should be successful
         hypervisor = get_hypervisor_type(self.apiclient)
-        if hypervisor.lower() == "kvm":
+        if hypervisor.lower() in ["kvm", "hyperv"]:
             self.skipTest(
-                "Scaling VM in running state is not supported on KVM")
+                "Scaling VM in running state is not supported on %s" % hypervisor)
 
         isadmin = True
         if value == USER_ACCOUNT:
@@ -1160,9 +1160,9 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         # 3. Scale operation in step 6 should fail
 
         hypervisor = get_hypervisor_type(self.apiclient)
-        if hypervisor.lower() == "kvm":
+        if hypervisor.lower() in ["kvm", "hyperv"]:
             self.skipTest(
-                "Scaling VM in running state is not supported on KVM")
+                "Scaling VM in running state is not supported on %s" % hypervisor)
 
         isadmin = True
         if value == USER_ACCOUNT:
