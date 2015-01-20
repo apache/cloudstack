@@ -88,6 +88,7 @@ import org.apache.http.nio.protocol.HttpAsyncRequestHandler;
 import org.apache.http.nio.protocol.HttpAsyncService;
 import org.apache.http.nio.protocol.UriHttpAsyncRequestHandlerMapper;
 import org.apache.http.nio.reactor.IOEventDispatch;
+import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.nio.reactor.ListeningIOReactor;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpProcessor;
@@ -1341,13 +1342,18 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
         savePostUploadPSK(cmd.getPostUploadKey());
-        startNioServerForPostUpload();
+        try {
+            startNioServerForPostUpload();
+        } catch (IOException e) {
+            //returning TRUE even if this fails as this will only disable post upload functionality
+            s_logger.error("exception while starting the nio server for post upload.", e);
+        }
         return answer;
     }
 
-    private void startNioServerForPostUpload() {
+    private void startNioServerForPostUpload() throws IOException {
         //TODO: make port configurable.
-        int port = 8210;
+        final int port = 8210;
         // Create HTTP protocol processing chain
         HttpProcessor httpproc = HttpProcessorBuilder.create()
             .add(new ResponseDate())
@@ -1380,7 +1386,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         connFactory = new DefaultNHttpServerConnectionFactory(
             ConnectionConfig.DEFAULT);
         // Create server-side I/O event dispatch
-        IOEventDispatch ioEventDispatch = new DefaultHttpServerIODispatch(protocolHandler, connFactory);
+        final IOEventDispatch ioEventDispatch = new DefaultHttpServerIODispatch(protocolHandler, connFactory);
         // Set I/O reactor defaults
         IOReactorConfig config = IOReactorConfig.custom()
             .setIoThreadCount(15)
@@ -1388,20 +1394,22 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             .setConnectTimeout(3000)
             .build();
 
-        try {
-            // Create server-side I/O reactor
-            ListeningIOReactor ioReactor = new DefaultListeningIOReactor(config);
-
-            // Listen of the given port
-            ioReactor.listen(new InetSocketAddress(port));
-            // Ready to go!
-            ioReactor.execute(ioEventDispatch);
-        } catch (InterruptedIOException ex) {
-            s_logger.info("Interrupted");
-        } catch (IOException e) {
-            s_logger.info("I/O error: " + e.getMessage());
-        }
-        s_logger.info("Shutdown");
+        // Create server-side I/O reactor
+        final ListeningIOReactor ioReactor = new DefaultListeningIOReactor(config);
+        new Thread() {
+            @Override public void run() {
+                // Listen of the given port
+                ioReactor.listen(new InetSocketAddress(port));
+                // Ready to go!
+                try {
+                    ioReactor.execute(ioEventDispatch);
+                } catch (IOException e) {
+                    throw new RuntimeException("Exception while starting the post upload server on port: " + port);
+                }
+                s_logger.info("Nio server for post upload on port: " + port + " is shutdown.");
+            }
+        }.start();
+        s_logger.info("Started Nioserver for post upload on port: " + port);
     }
 
     private void savePostUploadPSK(String psk) {
