@@ -770,6 +770,8 @@ INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, crea
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (247, UUID(), 3, 'Oracle Linux 7', utc_timestamp());
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (248, UUID(), 1, 'CentOS 6 (32-bit)', utc_timestamp());
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (249, UUID(), 1, 'CentOS 6 (64-bit)', utc_timestamp());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (250, UUID(), 3, 'Oracle Enterprise Linux 6.5 (32-bit)', utc_timestamp());
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (251, UUID(), 3, 'Oracle Enterprise Linux 6.5 (64-bit)', utc_timestamp());
 
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'CentOS 4.5 (32-bit)', 1, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'CentOS 4.6 (32-bit)', 2, utc_timestamp(), 0);
@@ -852,6 +854,8 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Oracle Enterprise Linux 6 (64-bit)', 220, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Oracle Enterprise Linux 6 (32-bit)', 235, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Oracle Enterprise Linux 6 (64-bit)', 236, utc_timestamp(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Oracle Enterprise Linux 6 (32-bit)', 250, utc_timestamp(), 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Oracle Enterprise Linux 6 (64-bit)', 251, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Oracle Linux 7', 247, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Red Hat Enterprise Linux 4.5 (32-bit)', 26, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'Xenserver', '6.5.0', 'Red Hat Enterprise Linux 4.6 (32-bit)', 27, utc_timestamp(), 0);
@@ -948,6 +952,16 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, storage_motion_supported) VALUES (UUID(), 'XenServer', '6.5.0', 500, 1, 13, 1);
 
+update vlan set vlan_id=concat('vlan://', vlan_id) where vlan_type = "VirtualNetwork" and vlan_id not like "vlan://%";
+
+CREATE TABLE `cloud`.`baremetal_rct` (
+  `id` bigint unsigned UNIQUE AUTO_INCREMENT,
+  `uuid` varchar(40) UNIQUE NOT NULL,
+  `url` varchar(2048) NOT NULL,
+  `rct` text NOT NULL,
+   PRIMARY KEY (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+
 --Remove duplicates from guest_os_hypervisor table
 DELETE t1 FROM guest_os_hypervisor t1, guest_os_hypervisor t2 WHERE (t1.hypervisor_type = t2.hypervisor_type AND t1.hypervisor_version = t2.hypervisor_version AND t1.guest_os_id = t2.guest_os_id AND t1.id > t2.id AND t1.is_user_defined=0);
 
@@ -960,6 +974,9 @@ ALTER TABLE `cloud_usage`.`usage_vpn_user` CHANGE `user_name` `user_name` VARCHA
 ALTER TABLE `cloud`.`user_vm_details` MODIFY `value` VARCHAR(5120);
 
 UPDATE `cloud`.`host` SET resource = REPLACE(resource, 'com.cloud.hypervisor.xen.resource', 'com.cloud.hypervisor.xenserver.resource') WHERE hypervisor_type='XenServer' AND REMOVED IS NULL;
+
+INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable, state)
+    VALUES (11, UUID(), 'centos7-x86_64-lxc', 'CentOS 7(64-bit) no GUI (LXC)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloud.com/templates/builtin/centos-7-x86_64.tar.gz', 'c2c4fa2d0978121c7977db571f132d6e', 0, 'CentOS 7(64-bit) no GUI (LXC)', 'TAR', 246, 1, 1, 'LXC', 1, 'Active');
 
 --Support for RHEL 6.5 in relevant hypervisor versions
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (252, UUID(), 4, 'Red Hat Enterprise Linux 6.5 (32-bit)', utc_timestamp());
@@ -979,8 +996,6 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'VMware', '5.1', 'rhel6_64Guest', 253, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'VMware', '5.5', 'rhel6Guest', 252, utc_timestamp(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'VMware', '5,5', 'rhel6_64Guest', 253, utc_timestamp(), 0);
-INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable, state)
-    VALUES (11, UUID(), 'centos7-x86_64-lxc', 'CentOS 7(64-bit) no GUI (LXC)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloud.com/templates/builtin/centos-7-x86_64.tar.gz', 'c2c4fa2d0978121c7977db571f132d6e', 0, 'CentOS 7(64-bit) no GUI (LXC)', 'TAR', 246, 1, 1, 'LXC', 1, 'Active');
 
 --Support for Debian 7 on KVM/LXC
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(),'KVM', 'default', 'Debian GNU/Linux 7(32-bit)', 183, utc_timestamp(), 0);
