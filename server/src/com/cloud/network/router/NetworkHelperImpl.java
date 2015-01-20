@@ -396,10 +396,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         DomainRouterVO result = null;
         assert router.getIsRedundantRouter();
         final List<Long> networkIds = _routerDao.getRouterNetworks(router.getId());
-        // Not support VPC now
-        if (networkIds.size() > 1) {
-            throw new ResourceUnavailableException("Unable to support more than one guest network for redundant router now!", DataCenter.class, router.getDataCenterId());
-        }
+
         DomainRouterVO routerToBeAvoid = null;
         if (networkIds.size() != 0) {
             final List<DomainRouterVO> routerList = _routerDao.findByNetwork(networkIds.get(0));
