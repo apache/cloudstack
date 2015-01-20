@@ -33,6 +33,7 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -109,7 +110,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 String primaryPoolUuid = destData.getDataStore().getUuid();
                 String destPath = config.getAgentOvmRepoPath() + File.separator
                         + ovmObject.deDash(primaryPoolUuid) + File.separator
-                        + "Templates";
+                        + config.getTemplateDir();
                 String sourcePath = config.getAgentSecStoragePath()
                         + File.separator + secPoolUuid;
 
@@ -147,8 +148,8 @@ public class Ovm3StorageProcessor implements StorageProcessor {
 
                     String srcFile = src.getPath() + File.separator
                             + src.getUuid() + ".raw";
-                    String destPath = src.getPath().replace("Templates",
-                            "VirtualDisks");
+                    String destPath = src.getPath().replace(config.getTemplateDir(),
+                            config.getVirtualDiskDir());
                     String destFile = destPath + File.separator
                             + dest.getUuid() + ".raw";
 
@@ -186,6 +187,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                         + srcFilePath + " to " + destData.getObjectType() + ","
                         + destFile);
                 host.copyFile(srcFilePath, destFile);
+                // cleanip snapshot as it is left on the voluem
                 VolumeObjectTO newVol = new VolumeObjectTO();
                 newVol.setUuid(snapshotName);
                 newVol.setPath(destFile);
@@ -215,8 +217,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         if (data.getObjectType() == DataObjectType.VOLUME) {
             return deleteVolume(cmd);
         } else if (data.getObjectType() == DataObjectType.SNAPSHOT) {
-            msg = "Snapshot deletion is not implemented yet.";
-            LOGGER.info(msg);
+            return deleteSnapshot(cmd);
         } else if (data.getObjectType() == DataObjectType.TEMPLATE) {
             msg = "Template deletion is not implemented yet.";
             LOGGER.info(msg);
@@ -261,40 +262,52 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         }
     }
 
+    /**
+     * src is Nfs and Template to secondary storage
+     */
     @Override
     public Answer copyTemplateToPrimaryStorage(CopyCommand cmd) {
         return new Answer(cmd);
     }
-
+    /**
+     * Only copies in case of dest is NfsTO, xenserver also unmounts secstorage
+     */
     @Override
     public Answer copyVolumeFromPrimaryToSecondary(CopyCommand cmd) {
         return new Answer(cmd);
     }
-
+    /**
+     * dest is VolumeObject, src is a template
+     */
     @Override
     public Answer cloneVolumeFromBaseTemplate(CopyCommand cmd) {
         return new Answer(cmd);
     }
-
+    /**
+     * createprivatetemplate, also needs template.properties
+     */
     @Override
     public Answer createTemplateFromVolume(CopyCommand cmd) {
         return new Answer(cmd);
     }
-
+    /**
+     * Volume to Volume from NfsTO
+     */
     @Override
     public Answer copyVolumeFromImageCacheToPrimary(CopyCommand cmd) {
         return new Answer(cmd);
     }
-
+    /**
+     * createprivatetemplate, also needs template.properties
+     */
     @Override
     public Answer createTemplateFromSnapshot(CopyCommand cmd) {
-        /*
-         * To change body of implemented methods use File | Settings | File
-         * Templates.
-         */
-        return null;
+        return new Answer(cmd);
     }
-
+    /**
+     * use the cache, or the normal nfs, also delete the leftovers for us
+     * also contains object store storage in xenserver.
+     */
     @Override
     public Answer backupSnapshot(CopyCommand cmd) {
         return new Answer(cmd);
@@ -302,69 +315,28 @@ public class Ovm3StorageProcessor implements StorageProcessor {
 
     public Answer execute(CreateObjectCommand cmd) {
         DataTO data = cmd.getData();
-        Xen xen = new Xen(c);
         if (data.getObjectType() == DataObjectType.VOLUME) {
             return createVolume(cmd);
         } else if (data.getObjectType() == DataObjectType.SNAPSHOT) {
-            /*
-             * if stopped yes, if running ... no, unless we have ocfs2 when
-             * using raw partitions (file:) if using tap:aio we cloud...
-             * The "ancient" way:
-             * We do however follow the "two stage" approach, of "snap"
-             * on primary first, with the create object... and then
-             * backup the snapshot with the copycmd....
-             * (should transfer to createSnapshot, backupSnapshot)
-             */
-            SnapshotObjectTO snap = (SnapshotObjectTO) data;
-            VolumeObjectTO vol = snap.getVolume();
-            try {
-                Xen.Vm vm = xen.getVmConfig(snap.getVmName());
-                if (vm != null) {
-                    return new CreateObjectAnswer(
-                            "Snapshot object creation not supported for running VMs."
-                                    + snap.getVmName());
-                }
-                Linux host = new Linux(c);
-                String uuid = host.newUuid();
-                /* for root volumes this works... */
-                String src = vol.getPath() + File.separator + vol.getUuid()
-                        + ".raw";
-                String dest = vol.getPath() + File.separator + uuid + ".raw";
-                /* seems that sometimes the path is already contains a file
-                 * in case, we just replace it.... (Seems to happen if not ROOT)
-                 */
-                if (vol.getPath().contains(vol.getUuid())) {
-                    src = vol.getPath();
-                    dest = vol.getPath().replace(vol.getUuid(), uuid);
-                }
-                LOGGER.debug("Snapshot " + src + " to " + dest);
-                host.copyFile(src, dest);
-                VolumeObjectTO newVol = new VolumeObjectTO();
-                newVol.setUuid(uuid);
-                newVol.setName(vol.getName());
-                newVol.setSize(vol.getSize());
-                newVol.setPath(dest);
-                snap.setPath(dest);
-                snap.setVolume(newVol);
-                return new CreateObjectAnswer(snap);
-            } catch (Ovm3ResourceException e) {
-                return new CreateObjectAnswer(
-                        "Snapshot object creation failed. " + e.getMessage());
-            }
+            return createSnapshot(cmd);
         } else if (data.getObjectType() == DataObjectType.TEMPLATE) {
             LOGGER.debug("Template object creation not supported.");
         }
         return new CreateObjectAnswer(data.getObjectType()
                 + " object creation not supported");
     }
-
+    /**
+     * Attach an iso
+     */
     @Override
     public AttachAnswer attachIso(AttachCommand cmd) {
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
         return attachDetach(cmd, vmName, disk, true);
     }
-
+    /**
+     * Detach an iso
+     */
     @Override
     public AttachAnswer dettachIso(DettachCommand cmd) {
         String vmName = cmd.getVmName();
@@ -391,12 +363,17 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     /**
      * Returns the disk path
      * @param disk
-     * @param uuid
      * @return
      * @throws Ovm3ResourceException
      */
-    private String getDiskPath(DiskTO disk) throws Ovm3ResourceException {
-        return disk.getPath();
+    private String getDiskPath(DiskTO disk, String uuid) throws Ovm3ResourceException {
+        return config.getAgentOvmRepoPath() +
+                File.separator +
+                ovmObject.deDash(uuid) +
+                File.separator +
+                config.getVirtualDiskDir() +
+                File.separator +
+                disk.getPath() + ".raw";
     }
 
     /**
@@ -425,7 +402,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             if (disk.getType() == Volume.Type.ISO) {
                 path = getIsoPath(disk);
             } else if (disk.getType() == Volume.Type.DATADISK) {
-                path = getDiskPath(disk);
+                path = getDiskPath(disk, vm.getPrimaryPoolUuid());
             }
             if ("".equals(path)) {
                 msg = doThis + " can't do anything with an empty path.";
@@ -455,14 +432,18 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             return new AttachAnswer(msg);
         }
     }
-
+    /**
+     * Attach a volume
+     */
     @Override
     public AttachAnswer attachVolume(AttachCommand cmd) {
         String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
         return attachDetach(cmd, vmName, disk, true);
     }
-
+    /**
+     * Detach a volume
+     */
     @Override
     public AttachAnswer dettachVolume(DettachCommand cmd) {
         String vmName = cmd.getVmName();
@@ -486,8 +467,12 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             String storeUrl = data.getDataStore().getUrl();
             URI uri = new URI(storeUrl);
             String host = uri.getHost();
-            String file = config.getAgentOvmRepoPath() + File.separator
-                    + ovmObject.deDash(poolUuid) + "/VirtualDisks/"
+            String file = config.getAgentOvmRepoPath()
+                    + File.separator
+                    + ovmObject.deDash(poolUuid)
+                    + File.separator
+                    + config.getVirtualDiskDir()
+                    + File.separator
                     + volume.getUuid() + ".raw";
             Long size = volume.getSize();
             StoragePlugin sp = new StoragePlugin(c);
@@ -497,11 +482,10 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                 return new CreateObjectAnswer("Filename mismatch: "
                         + fp.getName() + " != " + file);
             }
-            // sp.storagePluginGetFileInfo(file);
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setName(volume.getName());
             newVol.setSize(fp.getSize());
-            newVol.setPath(file);
+            newVol.setPath(volume.getUuid());
             return new CreateObjectAnswer(newVol);
         } catch (Ovm3ResourceException | URISyntaxException e) {
             LOGGER.info("Volume creation failed: " + e.toString(), e);
@@ -509,19 +493,61 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         }
     }
 
+    /**
+     * Creates a snapshot from a volume, but only if the VM is stopped.
+     * This due qemu not being able to snap raw volumes.
+     *
+     * if stopped yes, if running ... no, unless we have ocfs2 when
+     * using raw partitions (file:) if using tap:aio we cloud...
+     * The "ancient" way:
+     * We do however follow the "two stage" approach, of "snap"
+     * on primary first, with the create object... and then
+     * backup the snapshot with the copycmd....
+     * (should transfer to createSnapshot, backupSnapshot)
+     */
     @Override
     public Answer createSnapshot(CreateObjectCommand cmd) {
-        return new Answer(cmd, false, "not implemented yet");
+        DataTO data = cmd.getData();
+        Xen xen = new Xen(c);
+        SnapshotObjectTO snap = (SnapshotObjectTO) data;
+        VolumeObjectTO vol = snap.getVolume();
+        try {
+            Xen.Vm vm = xen.getVmConfig(snap.getVmName());
+            if (vm != null) {
+                return new CreateObjectAnswer(
+                        "Snapshot object creation not supported for running VMs."
+                                + snap.getVmName());
+            }
+            Linux host = new Linux(c);
+            String uuid = host.newUuid();
+            /* for root volumes this works... */
+            String src = vol.getPath() + File.separator + vol.getUuid()
+                    + ".raw";
+            String dest = vol.getPath() + File.separator + uuid + ".raw";
+            /* seems that sometimes the path is already contains a file
+             * in case, we just replace it.... (Seems to happen if not ROOT)
+             */
+            if (vol.getPath().contains(vol.getUuid())) {
+                src = vol.getPath();
+                dest = vol.getPath().replace(vol.getUuid(), uuid);
+            }
+            LOGGER.debug("Snapshot " + src + " to " + dest);
+            host.copyFile(src, dest);
+            SnapshotObjectTO nsnap = new SnapshotObjectTO();
+            nsnap.setPath(uuid);
+            return new CreateObjectAnswer(nsnap);
+        } catch (Ovm3ResourceException e) {
+            return new CreateObjectAnswer(
+                    "Snapshot object creation failed. " + e.getMessage());
+        }
     }
 
     @Override
     public Answer deleteVolume(DeleteCommand cmd) {
-        /* storagePluginDestroy(String ssuuid, String file) */
         DataTO data = cmd.getData();
         VolumeObjectTO volume = (VolumeObjectTO) data;
         try {
             String poolUuid = data.getDataStore().getUuid();
-            /* needs the file attached too please... */
             String path = volume.getPath();
             if (!path.contains(volume.getUuid())) {
                 path = volume.getPath() + File.separator + volume.getUuid()
@@ -605,7 +631,8 @@ public class Ovm3StorageProcessor implements StorageProcessor {
 
         try {
             /* missing uuid */
-            String installPath = config.getAgentOvmRepoPath() + "/Templates/"
+            String installPath = config.getAgentOvmRepoPath() + File.separator
+                    + config.getTemplateDir() + File.separator
                     + accountId + File.separator + templateId;
             Linux host = new Linux(c);
             /* check if VM is running or thrown an error, or pause it :P */
@@ -618,29 +645,84 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         }
     }
 
+    /**
+     * SnapshotObjectTO secondary to VolumeObjectTO primary in xenserver,
+     *
+     */
     @Override
-    public Answer createVolumeFromSnapshot(CopyCommand cmd) {
-        return new Answer(cmd, false, "not implemented yet");
+    public Answer createVolumeFromSnapshot(CopyCommand cmd)   {
+        try {
+            DataTO srcData = cmd.getSrcTO();
+            DataStoreTO srcStore = srcData.getDataStore();
+            DataTO destData = cmd.getDestTO();
+            NfsTO srcImageStore = (NfsTO) srcStore;
+            TemplateObjectTO srcTemplate = (TemplateObjectTO) srcData;
+            String secPoolUuid = pool.setupSecondaryStorage(srcImageStore.getUrl());
+
+            String primaryPoolUuid = destData.getDataStore().getUuid();
+            String destPath = config.getAgentOvmRepoPath() + File.separator
+                    + ovmObject.deDash(primaryPoolUuid) + File.separator
+                    + config.getTemplateDir();
+            String sourcePath = config.getAgentSecStoragePath()
+                    + File.separator + secPoolUuid;
+
+            Linux host = new Linux(c);
+            String destUuid = srcTemplate.getUuid();
+            String srcFile = sourcePath + File.separator
+                    + srcData.getPath();
+            if (srcData.getPath().endsWith(File.separator)) {
+                srcFile = sourcePath + File.separator + srcData.getPath()
+                        + File.separator + destUuid + ".raw";
+            }
+            String destFile = destPath + File.separator + destUuid + ".raw";
+            LOGGER.debug("CopyFrom: " + srcData.getObjectType() + ","
+                    + srcFile + " to " + destData.getObjectType() + ","
+                    + destFile);
+            host.copyFile(srcFile, destFile);
+
+            VolumeObjectTO newVol = new VolumeObjectTO();
+            newVol.setUuid(destUuid);
+            newVol.setPath(destPath);
+            newVol.setFormat(ImageFormat.RAW);
+            return new CopyCmdAnswer(newVol);
+            /* we assume the cache for templates is local */
+        } catch (Ovm3ResourceException e) {
+            LOGGER.debug("Failed to createVolumeFromSnapshot: ", e);
+            return new CopyCmdAnswer(e.toString());
+        }
     }
 
+    /**
+     * if storagage is primary in xenserver
+     */
     @Override
     public Answer deleteSnapshot(DeleteCommand cmd) {
         return new Answer(cmd, false, "not implemented yet");
     }
-
+    /**
+     * SR scan in xenserver
+     */
     @Override
     public Answer introduceObject(IntroduceObjectCmd cmd) {
         return new Answer(cmd, false, "not implemented yet");
     }
-
+    /**
+     * used as unmount for VDIs in xenserver
+     */
     @Override
     public Answer forgetObject(ForgetObjectCmd cmd) {
         return new Answer(cmd, false, "not implemented yet");
     }
 
+    /**
+     * make sure both mounts are there, snapshot source image
+     * copy snap to dest image, remove source snap and unmount
+     * iSCSI?
+     */
     @Override
     public Answer snapshotAndCopy(SnapshotAndCopyCommand cmd) {
-        return new Answer(cmd, false, "not implemented yet");
+        LOGGER.info("'SnapshotAndCopyAnswer snapshotAndCopy(SnapshotAndCopyCommand)' not currently implementd");
+        return new SnapshotAndCopyAnswer();
     }
 
     /**

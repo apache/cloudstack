@@ -72,6 +72,8 @@ public class Ovm3Configuration {
     private String agentScriptsDir = "/opt/cloudstack/bin";
     private int domRSshPort = 3922;
     private String domRCloudPath = "/opt/cloud/bin/";
+    private String virtualdiskdir = "VirtualDisks";
+    private String templatedir = "Templates";
     private Map<String, Network.Interface> agentInterfaces = null;
     private Boolean istest = false;
     private Map<String, Object> rawParams = new HashMap<String, Object>();
@@ -434,7 +436,12 @@ public class Ovm3Configuration {
     public void setAgentStorageCheckInterval(Integer agentStorageCheckInterval) {
         this.agentStorageCheckInterval = agentStorageCheckInterval;
     }
-
+    public String getVirtualDiskDir() {
+        return this.virtualdiskdir;
+    }
+    public String getTemplateDir() {
+        return this.templatedir;
+    }
     /**
      * ValidateParam: Validate the input for configure
      * @param name

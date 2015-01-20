@@ -390,7 +390,9 @@ public class Xen extends OvmObject {
         public Boolean removeDisk(String image) {
             for (String disk : vmDisks) {
                 if (disk.contains(image)) {
-                    return vmDisks.remove(disk);
+                    vmDisks.remove(disk);
+                    vmParams.put("disk", vmDisks);
+                    return true;
                 }
             }
             LOGGER.debug("No disk found corresponding to image: " + image);

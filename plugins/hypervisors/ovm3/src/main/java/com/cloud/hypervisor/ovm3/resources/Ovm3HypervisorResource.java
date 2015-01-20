@@ -31,6 +31,7 @@ import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
@@ -96,6 +97,8 @@ import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3HypervisorSupport;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.resource.hypervisor.HypervisorResource;
+import com.cloud.storage.resource.StorageSubsystemCommandHandler;
+import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
@@ -110,6 +113,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             .getLogger(Ovm3HypervisorResource.class);
     @Inject
     private VirtualRoutingResource vrResource;
+    private StorageSubsystemCommandHandler storageHandler;
 
     private Connection c;
     private Ovm3StoragePool storagepool;
@@ -220,6 +224,8 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             return storageprocessor.execute((CopyCommand) cmd);
         } else if (clazz == DeleteCommand.class) {
             return storageprocessor.execute((DeleteCommand) cmd);
+        } else if (cmd instanceof StorageSubSystemCommand) {
+            return storageHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
         } else if (clazz == CreateStoragePoolCommand.class) {
             return storagepool.execute((CreateStoragePoolCommand) cmd);
         } else if (clazz == ModifyStoragePoolCommand.class) {
@@ -372,6 +378,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
         storageprocessor = new Ovm3StorageProcessor(c, configuration,
                 storagepool);
         guesttypes = new Ovm3VmGuestTypes();
+        storageHandler = new StorageSubsystemCommandHandlerBase(storageprocessor);
         virtualroutingsupport = new Ovm3VirtualRoutingSupport(c, configuration,
                 virtualroutingresource);
         this.setConfigParams(params);
