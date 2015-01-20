@@ -26,7 +26,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.RegisterVolumePayload;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
