@@ -685,6 +685,7 @@
                 var uploadFiles = function() {
                     $form.prepend($('<div>').addClass('loading-overlay'));
                     args.form.fileUpload.getURL({
+                        $form: $form,
                         formData: data,
                         context: args.context,
                         response: {
@@ -708,6 +709,7 @@
                                 $frameForm.submit(function() {
                                     $uploadFrame.load(function() {
                                         args.form.fileUpload.postUpload({
+                                            $form: $form,
                                             formData: data,
                                             context: args.context,
                                             response: {
