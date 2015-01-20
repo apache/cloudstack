@@ -606,11 +606,7 @@
                                             osTypeId: args.data.osTypeId,
                                             hypervisor: args.data.hypervisor
                                         };
-
-                                        
-                                        debugger;
-                                        //Brian, please extend args to include $form 
-                                        /*
+                                                                              
                                         if (args.$form.find('.form-item[rel=isPublic]').css("display") != "none") {
                                             $.extend(data, {
                                                 ispublic: (args.data.isPublic == "on")
@@ -634,8 +630,7 @@
                                                 isrouting: (args.data.isrouting === 'on')
                                             });
                                         }
-                                        */
-
+                                        
                                         $.ajax({
                                             url: createURL('getUploadParamsForTemplate'),
                                             data: data,
