@@ -43,6 +43,9 @@
                         mine: {
                             label: 'ui.listView.filters.mine'
                         },
+                        shared: {
+                            label: 'Shared'
+                        },
                         featured: {
                             label: 'label.featured'
                         },
@@ -107,22 +110,6 @@
                                 title: 'label.action.register.template',
                                 docID: 'helpNetworkOfferingName',
                                 preFilter: cloudStack.preFilter.createTemplate,
-                                fileUpload: {
-                                    getURL: function(args) {
-                                        args.response.success({
-                                            url: 'http://10.223.183.3/test-upload.php'
-                                        });
-                                    },
-                                    postUpload: function(args) {
-                                        // Called when upload is done to do 
-                                        // verification checks;
-                                        // i.e., poll the server to verify successful upload
-                                        //
-                                        // success() will close the dialog and call standard action
-                                        // error() will keep dialog open if user wants to re-submit
-                                        args.response.success();
-                                    }
-                                },
                                 fields: {
                                     name: {
                                         label: 'label.name',
@@ -130,10 +117,6 @@
                                         validation: {
                                             required: true
                                         }
-                                    },
-                                    templateFileUpload: {
-                                        label: 'Select a file',
-                                        isFileUpload: true
                                     },
                                     description: {
                                         label: 'label.description',
@@ -342,11 +325,19 @@
                                             });
                                             items.push({
                                                 id: "us",
-                                                description: "US"
+                                                description: "US Keboard"
+                                            });
+                                            items.push({
+                                                id: "uk",
+                                                description: "UK Keyboard"
                                             });
                                             items.push({
                                                 id: "jp",
-                                                description: "Japanese"
+                                                description: "Japanese Keyboard"
+                                            });
+                                            items.push({
+                                                id: "sc",
+                                                description: "Simplified Chinese"
                                             });
                                             args.response.success({
                                                 data: items
@@ -428,20 +419,18 @@
                                     osTypeId: {
                                         label: 'label.os.type',
                                         docID: 'helpRegisterTemplateOSType',
-                                        select: function(args) {                                        	
-                                        	if (ostypeObjs == undefined) {
-	                                            $.ajax({
-	                                                url: createURL("listOsTypes"),
-	                                                dataType: "json",
-	                                                async: false,
-	                                                success: function(json) {	                                                	
-	                                                	ostypeObjs = json.listostypesresponse.ostype;	                                                    
-	                                                }
-	                                            });
-                                        	}                                        	
-                                        	args.response.success({
-                                                data: ostypeObjs
-                                            });
+                                        select: function(args) {    
+                                            $.ajax({
+                                                url: createURL("listOsTypes"),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {	                                                	
+                                                	var ostypeObjs = json.listostypesresponse.ostype;
+                                                	args.response.success({
+                                                        data: ostypeObjs
+                                                    });
+                                                }
+                                            });                                        	    
                                         }
                                     },
 
@@ -611,6 +600,11 @@
                                             templatefilter: 'self'
                                         });
                                         break;
+                                    case "shared":
+                                        $.extend(data, {
+                                            templatefilter: 'shared'
+                                        });
+                                        break;
                                     case "featured":
                                         ignoreProject = true;
                                         $.extend(data, {
@@ -663,6 +657,10 @@
 
                     detailView: {
                         name: 'Template details',
+                        viewAll: {
+                            label: 'label.instances',
+                            path: 'instances'
+                        },
                         actions: {
                             edit: {
                                 label: 'label.edit',
@@ -865,16 +863,16 @@
                                     }
                                                                       
                                     if ('templates' in args.context && args.context.templates[0].ostypeid != undefined) {
-                                    	if (ostypeObjs == undefined) {
-        	                            	$.ajax({
-        	                                    url: createURL("listOsTypes"),
-        	                                    dataType: "json",
-        	                                    async: false,
-        	                                    success: function(json) {	                                    	
-        	                                    	ostypeObjs = json.listostypesresponse.ostype;		                                    	
-        	                                    }
-        	                                });
-                                    	}                            	
+                                    	var ostypeObjs;
+    	                            	$.ajax({
+    	                                    url: createURL("listOsTypes"),
+    	                                    dataType: "json",
+    	                                    async: false,
+    	                                    success: function(json) {	                                    	
+    	                                    	var ostypeObjs = json.listostypesresponse.ostype;		                                    	
+    	                                    }
+    	                                });
+                                    	                           	
                                     	if (ostypeObjs != undefined) {
                                     		var ostypeName;
                                     		for (var i = 0; i < ostypeObjs.length; i++) {
@@ -926,7 +924,7 @@
                                         }
                                     },
                                     isextractable: {
-                                        label: 'label.extractable',
+                                        label: 'label.extractable.lower',
                                         isBoolean: true,
                                         isEditable: function() {
                                             if (isAdmin())
@@ -979,16 +977,16 @@
                                         label: 'label.os.type',
                                         isEditable: true,
                                         select: function(args) {
-                                        	if (ostypeObjs == undefined) {
-	                                            $.ajax({
-	                                                url: createURL("listOsTypes"),
-	                                                dataType: "json",
-	                                                async: false,
-	                                                success: function(json) {	                                                	
-	                                                	ostypeObjs = json.listostypesresponse.ostype;	                                                   
-	                                                }
-	                                            });
-                                        	}                                        	
+                                        	var ostypeObjs;
+                                            $.ajax({
+                                                url: createURL("listOsTypes"),
+                                                dataType: "json",
+                                                async: false,
+                                                success: function(json) {	                                                	
+                                                	ostypeObjs = json.listostypesresponse.ostype;	                                                   
+                                                }
+                                            });
+                                        	                                        	
                                         	var items = [];
                                             $(ostypeObjs).each(function() {
                                                 items.push({
@@ -1078,7 +1076,7 @@
                                             label: 'label.status'
                                         },
                                         isready: {
-                                            label: 'state.ready',
+                                            label: 'state.Ready',
                                             converter: cloudStack.converters.toBooleanText
                                         }
                                     },
@@ -1116,6 +1114,7 @@
                                     },
                                     
                                     detailView: {
+                                        noCompact: true,
                                         actions: {
                                              remove: {
                                                  label: 'label.action.delete.template',
@@ -1246,16 +1245,16 @@
                                                 }
                                                                                                
                                                 if ('templates' in args.context && args.context.templates[0].ostypeid != undefined) {
-                                                	if (ostypeObjs == undefined) {
-                    	                            	$.ajax({
-                    	                                    url: createURL("listOsTypes"),
-                    	                                    dataType: "json",
-                    	                                    async: false,
-                    	                                    success: function(json) {	                                    	
-                    	                                    	ostypeObjs = json.listostypesresponse.ostype;		                                    	
-                    	                                    }
-                    	                                });
-                                                	}                            	
+                                                	var ostypeObjs;
+                	                            	$.ajax({
+                	                                    url: createURL("listOsTypes"),
+                	                                    dataType: "json",
+                	                                    async: false,
+                	                                    success: function(json) {	                                    	
+                	                                    	ostypeObjs = json.listostypesresponse.ostype;		                                    	
+                	                                    }
+                	                                });
+                                                	                           	
                                                 	if (ostypeObjs != undefined) {
                                                 		var ostypeName;
                                                 		for (var i = 0; i < ostypeObjs.length; i++) {
@@ -1292,7 +1291,7 @@
                                                     label: 'label.zone.id'
                                                 },
                                             	isready: {
-                                                    label: 'state.ready',
+                                                    label: 'state.Ready',
                                                     converter: cloudStack.converters.toBooleanText
                                                 },
                                                 status: {
@@ -1324,7 +1323,7 @@
                                                     }
                                                 },
                                                 isextractable: {
-                                                    label: 'extractable',
+                                                    label: 'label.extractable.lower',
                                                     isBoolean: true,
                                                     isEditable: function() {
                                                         if (isAdmin())
@@ -1341,7 +1340,7 @@
                                                     converter: cloudStack.converters.toBooleanText
                                                 },
                                                 isdynamicallyscalable: {
-                                                    label: 'Dynamically Scalable',
+                                                    label: 'label.dynamically.scalable',
                                                     isBoolean: true,
                                                     isEditable: true,
                                                     converter: cloudStack.converters.toBooleanText
@@ -1377,16 +1376,16 @@
                                                     label: 'label.os.type',
                                                     isEditable: true,
                                                     select: function(args) {                                                    
-                                                    	if (ostypeObjs == undefined) {      
-	                                                        $.ajax({
-	                                                            url: createURL("listOsTypes"),
-	                                                            dataType: "json",
-	                                                            async: false,
-	                                                            success: function(json) {
-	                                                            	ostypeObjs = json.listostypesresponse.ostype;	                                                                
-	                                                            }
-	                                                        });
-                                                    	}                                                    
+                                                    	var ostypeObjs;
+                                                        $.ajax({
+                                                            url: createURL("listOsTypes"),
+                                                            dataType: "json",
+                                                            async: false,
+                                                            success: function(json) {
+                                                            	ostypeObjs = json.listostypesresponse.ostype;	                                                                
+                                                            }
+                                                        });
+                                                    	                                                    
                                                     	var items = [];
                                                         $(ostypeObjs).each(function() {
                                                             items.push({
@@ -1473,6 +1472,9 @@
                         },
                         mine: {
                             label: 'ui.listView.filters.mine'
+                        },
+                        shared: {
+                            label: 'Shared'
                         },
                         featured: {
                             label: 'label.featured'
@@ -1580,27 +1582,25 @@
                                             required: true
                                         },
                                         select: function(args) {
-                                        	if (ostypeObjs == undefined) {   
-	                                            $.ajax({
-	                                                url: createURL("listOsTypes"),
-	                                                dataType: "json",
-	                                                async: false,
-	                                                success: function(json) {
-	                                                    osTypeObjs = json.listostypesresponse.ostype;	                                                    
-	                                                }
-	                                            });
-                                        	}
-                                        	var items = [];
-                                            //items.push({id: "", description: "None"}); //shouldn't have None option when bootable is checked
-                                            $(osTypeObjs).each(function() {
-                                                items.push({
-                                                    id: this.id,
-                                                    description: this.description
-                                                });
-                                            });
-                                            args.response.success({
-                                                data: items
-                                            });
+                                        	$.ajax({
+                                                url: createURL("listOsTypes"),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var ostypeObjs = json.listostypesresponse.ostype;	
+                                                    var items = [];
+                                                    //items.push({id: "", description: "None"}); //shouldn't have None option when bootable is checked
+                                                    $(ostypeObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.description
+                                                        });
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });                                        	                                        	
                                         }
                                     },
 
@@ -1741,6 +1741,11 @@
                                             isofilter: 'self'
                                         });
                                         break;
+                                    case "shared":
+                                        $.extend(data, {
+                                        	isofilter: 'shared'
+                                        });
+                                        break;
                                     case "featured":
                                         ignoreProject = true;
                                         $.extend(data, {
@@ -1796,6 +1801,10 @@
 
                     detailView: {
                         name: 'label.details',
+                        viewAll: {
+                            label: 'label.instances',
+                            path: 'instances'
+                        },
                         actions: {
                             edit: {
                                 label: 'label.edit',
@@ -1963,7 +1972,7 @@
                                         }
                                     },
                                     isextractable: {
-                                        label: 'label.extractable',
+                                        label: 'label.extractable.lower',
                                         isBoolean: true,
                                         isEditable: function() {
                                             if (isAdmin())
@@ -2074,7 +2083,7 @@
                                             label: 'label.status'
                                         },
                                         isready: {
-                                            label: 'state.ready',
+                                            label: 'state.Ready',
                                             converter: cloudStack.converters.toBooleanText
                                         }
                                     },
@@ -2228,7 +2237,7 @@
                                                 }
                                             }, {
                                                 id: {
-                                                    label: 'ID'
+                                                    label: 'label.id'
                                                 },
                                                 zonename: {
                                                     label: 'label.zone.name'
@@ -2261,7 +2270,7 @@
                                                     }
                                                 },
                                                 isextractable: {
-                                                    label: 'extractable',
+                                                    label: 'label.extractable.lower',
                                                     isBoolean: true,
                                                     isEditable: function() {
                                                         if (isAdmin())
@@ -2297,16 +2306,16 @@
                                                     label: 'label.os.type',
                                                     isEditable: true,
                                                     select: function(args) {
-                                                    	if (ostypeObjs == undefined) {  
-	                                                        $.ajax({
-	                                                            url: createURL("listOsTypes"),
-	                                                            dataType: "json",
-	                                                            async: false,
-	                                                            success: function(json) {
-	                                                            	ostypeObjs = json.listostypesresponse.ostype;	                                                                
-	                                                            }
-	                                                        });
-                                                    	}
+                                                    	var ostypeObjs;
+                                                        $.ajax({
+                                                            url: createURL("listOsTypes"),
+                                                            dataType: "json",
+                                                            async: false,
+                                                            success: function(json) {
+                                                            	ostypeObjs = json.listostypesresponse.ostype;	                                                                
+                                                            }
+                                                        });
+                                                	
                                                     	var items = [];
                                                         $(ostypeObjs).each(function() {
                                                             items.push({
