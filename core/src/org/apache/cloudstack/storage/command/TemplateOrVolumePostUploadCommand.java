@@ -19,40 +19,54 @@
 
 package org.apache.cloudstack.storage.command;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-
 public class TemplateOrVolumePostUploadCommand {
-    DataObject dataObject;
-    EndPoint endPoint;
 
     long entityId;
+
     String entityUUID;
+
     String absolutePath;
+
     String checksum;
+
     String type;
+
     String name;
-//    String installPathPrefix;
+
     String localPath;
-//    String isHvm;
+
+    boolean requiresHvm;
+
     String imageFormat;
+
     String dataTo;
+
     String dataToRole;
 
-    public TemplateOrVolumePostUploadCommand(long entityId, String entityUUID, String absolutePath, String checksum, String type, String name,
-                                             String localPath, String imageFormat, String dataTo, String dataToRole) {
+    String remoteEndPoint;
+
+    public TemplateOrVolumePostUploadCommand(long entityId, String entityUUID, String absolutePath, String checksum, String type, String name, String imageFormat, String dataTo,
+            String dataToRole) {
         this.entityId = entityId;
         this.entityUUID = entityUUID;
         this.absolutePath = absolutePath;
         this.checksum = checksum;
         this.type = type;
         this.name = name;
-//        this.installPathPrefix = installPathPrefix;
-        this.localPath = localPath;
-//        this.isHvm = isHvm;
         this.imageFormat = imageFormat;
         this.dataTo = dataTo;
         this.dataToRole = dataToRole;
+    }
+
+    public TemplateOrVolumePostUploadCommand() {
+    }
+
+    public String getRemoteEndPoint() {
+        return remoteEndPoint;
+    }
+
+    public void setRemoteEndPoint(String remoteEndPoint) {
+        this.remoteEndPoint = remoteEndPoint;
     }
 
     public String getDataTo() {
@@ -70,13 +84,6 @@ public class TemplateOrVolumePostUploadCommand {
     public void setDataToRole(String dataToRole) {
         this.dataToRole = dataToRole;
     }
-    //    public String getInstallPathPrefix() {
-//        return installPathPrefix;
-//    }
-//
-//    public void setInstallPathPrefix(String installPathPrefix) {
-//        this.installPathPrefix = installPathPrefix;
-//    }
 
     public String getLocalPath() {
         return localPath;
@@ -86,13 +93,13 @@ public class TemplateOrVolumePostUploadCommand {
         this.localPath = localPath;
     }
 
-//    public String getIsHvm() {
-//        return isHvm;
-//    }
+    public boolean getRequiresHvm() {
+        return requiresHvm;
+    }
 
-//    public void setIsHvm(String isHvm) {
-//        this.isHvm = isHvm;
-//    }
+    public void setRequiresHvm(boolean requiresHvm) {
+        this.requiresHvm = requiresHvm;
+    }
 
     public String getImageFormat() {
         return imageFormat;
@@ -148,56 +155,5 @@ public class TemplateOrVolumePostUploadCommand {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public TemplateOrVolumePostUploadCommand(DataObject dataObject, EndPoint endPoint) {
-        this.dataObject = dataObject;
-        this.endPoint = endPoint;
-    }
-
-    public TemplateOrVolumePostUploadCommand() {
-    }
-
-    public DataObject getDataObject() {
-        return dataObject;
-    }
-
-    public void setDataObject(DataObject dataObject) {
-        this.dataObject = dataObject;
-    }
-
-    public EndPoint getEndPoint() {
-        return endPoint;
-    }
-
-    public void setEndPoint(EndPoint endPoint) {
-        this.endPoint = endPoint;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        TemplateOrVolumePostUploadCommand that = (TemplateOrVolumePostUploadCommand)o;
-
-        return dataObject.equals(that.dataObject) && endPoint.equals(that.endPoint);
-
-    }
-
-    @Override
-    public int hashCode() {
-        int result = dataObject.hashCode();
-        result = 31 * result + endPoint.hashCode();
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        return "TemplateOrVolumePostUploadCommand{" + "dataObject=" + dataObject + ", endPoint=" + endPoint + '}';
     }
 }

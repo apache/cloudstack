@@ -2717,8 +2717,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             if (httpRequest instanceof HttpEntityEnclosingRequest) {
                 entity = ((HttpEntityEnclosingRequest) httpRequest).getEntity();
             }
-            // For some reason, just putting the incoming entity into
-            // the response will not work. We have to buffer the message.
             byte[] data;
             if (entity == null) {
                 httpResponse.setEntity(new StringEntity("upload failed"));

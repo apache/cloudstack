@@ -39,7 +39,6 @@ import com.google.gson.GsonBuilder;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
-import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommandTypeAdapter;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -348,10 +347,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
              */
             TemplateOrVolumePostUploadCommand firstCommand = payload.get(0);
 
-            String url = "https://" + firstCommand.getEndPoint().getPublicAddr() + "/upload/" + firstCommand.getDataObject().getUuid();
+            String url = "https://" + firstCommand.getRemoteEndPoint() + "/upload/" + firstCommand.getEntityUUID();
             response.setPostURL(new URL(url));
 
-            response.setId(UUID.fromString(firstCommand.getDataObject().getUuid()));
+            response.setId(UUID.fromString(firstCommand.getEntityUUID()));
 
             /*
              * TODO: hardcoding the timeout to current + 60 min for now. This needs to goto the database
@@ -365,7 +364,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             /*
              * encoded metadata using the post upload config ssh key
              */
-            Gson gson = new GsonBuilder().registerTypeAdapter(TemplateOrVolumePostUploadCommand.class, new TemplateOrVolumePostUploadCommandTypeAdapter()).create();
+            Gson gson = new GsonBuilder().create();
             String jsonPayload = gson.toJson(payload);
             response.setMetadata(EncryptionUtil.encodeData(jsonPayload, key));
 

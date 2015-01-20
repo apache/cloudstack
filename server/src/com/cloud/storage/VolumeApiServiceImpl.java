@@ -329,10 +329,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
           */
 
 
-        TemplateOrVolumePostUploadCommand command =
-            new TemplateOrVolumePostUploadCommand(vol.getId(), vol.getUuid(), volumeStore.getInstallPath(), volumeStore.getChecksum(), vol.getType().toString(), vol.getName(),
-                                                  volumeStore.getLocalDownloadPath(), vol.getFormat().toString(), dataObject.getDataStore().getUri(),
-                                                  dataObject.getDataStore().getRole().toString());
+        TemplateOrVolumePostUploadCommand command = new TemplateOrVolumePostUploadCommand(vol.getId(), vol.getUuid(), volumeStore.getInstallPath(), volumeStore.getChecksum(), vol
+                .getType().toString(), vol.getName(), vol.getFormat().toString(), dataObject.getDataStore().getUri(), dataObject.getDataStore().getRole().toString());
+        command.setLocalPath(volumeStore.getLocalDownloadPath());
         Gson gson = new GsonBuilder().create();
         String jsonPayload = gson.toJson(command);
         response.setMetadata(EncryptionUtil.encodeData(jsonPayload, key));

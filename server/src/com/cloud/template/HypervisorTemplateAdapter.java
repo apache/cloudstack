@@ -256,7 +256,11 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 throw new CloudRuntimeException(errMsg);
             }
 
-            TemplateOrVolumePostUploadCommand payload = new TemplateOrVolumePostUploadCommand(templateOnStore, ep);
+            TemplateOrVolumePostUploadCommand payload = new TemplateOrVolumePostUploadCommand(template.getId(), template.getUuid(), tmpl.getInstallPath(), tmpl.getChecksum(), tmpl
+                    .getType().toString(), template.getName(), template.getFormat().toString(), templateOnStore.getDataStore().getUri(), templateOnStore.getDataStore().getRole()
+                    .toString());
+            payload.setRemoteEndPoint(ep.getPublicAddr());
+            payload.setRequiresHvm(template.requiresHvm());
             payloads.add(payload);
         }
         _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
