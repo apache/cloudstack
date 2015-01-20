@@ -578,6 +578,314 @@
                                     args.complete();
                                 }
                             }
+                        },
+                        
+                        uploadTemplateFromLocal: {
+                            isHeader: true,
+                            label: 'Upload Template from Local',
+                            messages: {
+                                notification: function(args) {
+                                    return 'Upload Template from Local';
+                                }
+                            },
+                            createForm: {
+                                title: 'Upload Template from Local',
+                                preFilter: cloudStack.preFilter.createTemplate,
+                                fileUpload: {
+                                    getURL: function(args) {                                        
+                                        args.data = args.formData;
+                                        
+                                        var data = {
+                                            name: args.data.name,
+                                            displayText: args.data.description,
+                                            zoneid: args.data.zone,
+                                            format: args.data.format,
+                                            isextractable: (args.data.isExtractable == "on"),
+                                            passwordEnabled: (args.data.isPasswordEnabled == "on"),
+                                            isdynamicallyscalable: (args.data.isdynamicallyscalable == "on"),
+                                            osTypeId: args.data.osTypeId,
+                                            hypervisor: args.data.hypervisor
+                                        };
+
+                                        
+                                        debugger;
+                                        //Brian, please extend args to include $form 
+                                        /*
+                                        if (args.$form.find('.form-item[rel=isPublic]').css("display") != "none") {
+                                            $.extend(data, {
+                                                ispublic: (args.data.isPublic == "on")
+                                            });
+                                        }
+
+                                        if (args.$form.find('.form-item[rel=requireshvm]').css("display") != "none") {
+                                            $.extend(data, {
+                                                requireshvm: (args.data.requireshvm == "on")
+                                            });
+                                        }
+
+                                        if (args.$form.find('.form-item[rel=isFeatured]').css("display") != "none") {
+                                            $.extend(data, {
+                                                isfeatured: (args.data.isFeatured == "on")
+                                            });
+                                        }
+
+                                        if (args.$form.find('.form-item[rel=isrouting]').is(':visible')) {
+                                            $.extend(data, {
+                                                isrouting: (args.data.isrouting === 'on')
+                                            });
+                                        }
+                                        */
+
+                                        $.ajax({
+                                            url: createURL('getUploadParamsForTemplate'),
+                                            data: data,
+                                            async: false,
+                                            success: function(json) {
+                                                debugger;
+                                                /*                        						
+												{
+												    "postuploadtemplateresponse": {
+												        "getuploadparams": {
+												            "id": "d5bdaf23-dcb9-4eef-9b94-81870490f457",
+												            "postURL": "https://10.223.67.4/upload/d5bdaf23-dcb9-4eef-9b94-81870490f457",
+												            "metadata": "7jCvmzKuMBStM/qEjx9HjSAISd+f3VAUqC9CkYmq92O+SznYov415LUndZ4KuLAtGNY37VeePs8X+0oyaVSj+cjD+KKoBJuynjBJViAQQYKT/amcOdrkloBA4DgNEAn16p32Z2qI4+Ky1ecDAtg1vkYNoz9ReaKbehM3n5MIFPonhnYBEmbVSZkCIbVbJeh+vmYs9Y3SHtcG+0gWiU06YQ4KGl7Wc03wp3wusAlj7+L+fEBha54Rx+C7aS6UPZgm8/+atUUric6xiGMsx603NUElcLWE+gQ7PTimsIr6ySvcmc3D0n6JK6A7bc72sfPrHEbnNPD+5+qXJsBcXPLtEAG2WwduarwZ",
+												            "timeout": "2015-01-20T01:01:02.548Z",
+												            "signature": "NLXv5YsNuUn7NKC+ZP5JtSM26MY="
+												        }
+												    }
+												}
+                                                */
+
+                                                var uploadparams = json.postuploadtemplateresponse.getuploadparams; //son.postuploadtemplateresponse.getuploadparams is an object, not an array of object.
+                                                var templateId = uploadparams.id;
+                                                debugger;
+                                                args.response.success({
+                                                    url: uploadparams.postURL,
+                                                    data: {
+                                                        signature: uploadparams.signature,
+                                                        expires: uploadparams.timeout,
+                                                        metadata: uploadparams.metadata
+                                                    }
+                                                });
+                                                debugger;
+                                            }
+                                        });
+                                        debugger;
+                                    },
+                                    postUpload: function(args) {
+                                        debugger;
+                                        // Called when upload is done to do 
+                                        // verification checks;
+                                        // i.e., poll the server to verify successful upload
+                                        //
+                                        // success() will close the dialog and call standard action
+                                        // error() will keep dialog open if user wants to re-submit
+                                        args.response.success();
+                                    }
+                                },
+                                fields: {
+                                    templateFileUpload: {
+                                        label: 'local file',
+                                        isFileUpload: true
+                                    },
+
+                                    name: {
+                                        label: 'label.name',
+                                        docID: 'helpRegisterTemplateName',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
+
+                                    description: {
+                                        label: 'label.description',
+                                        docID: 'helpRegisterTemplateDescription',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },                                    
+
+                                    zone: {
+                                        label: 'label.zone',
+                                        docID: 'helpRegisterTemplateZone',
+                                        select: function(args) {
+                                            if (g_regionsecondaryenabled == true) {
+                                                args.response.success({
+                                                    data: [{
+                                                        id: -1,
+                                                        description: "All Zones"
+                                                    }]
+                                                });
+                                            } else {
+                                                $.ajax({
+                                                    url: createURL("listZones&available=true"),
+                                                    dataType: "json",
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var zoneObjs = [];
+                                                        var items = json.listzonesresponse.zone;
+                                                        if (items != null) {
+                                                            for (var i = 0; i < items.length; i++) {
+                                                                zoneObjs.push({
+                                                                    id: items[i].id,
+                                                                    description: items[i].name
+                                                                });
+                                                            }
+                                                        }
+                                                        if (isAdmin() && !(cloudStack.context.projects && cloudStack.context.projects[0])) {
+                                                            zoneObjs.unshift({
+                                                                id: -1,
+                                                                description: "All Zones"
+                                                            });
+                                                        }
+                                                        args.response.success({
+                                                            data: zoneObjs
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    },
+
+                                    hypervisor: {
+                                        label: 'label.hypervisor',
+                                        docID: 'helpRegisterTemplateHypervisor',
+                                        dependsOn: 'zone',
+                                        select: function(args) {
+                                            if (args.zone == null)
+                                                return;
+
+                                            var apiCmd;
+                                            if (args.zone == -1) { //All Zones
+                                                //apiCmd = "listHypervisors&zoneid=-1"; //"listHypervisors&zoneid=-1" has been changed to return only hypervisors available in all zones (bug 8809)
+                                                apiCmd = "listHypervisors";
+                                            } else {
+                                                apiCmd = "listHypervisors&zoneid=" + args.zone;
+                                            }
+
+                                            $.ajax({
+                                                url: createURL(apiCmd),
+                                                dataType: "json",
+                                                async: false,
+                                                success: function(json) {
+                                                    var hypervisorObjs = json.listhypervisorsresponse.hypervisor;
+                                                    var items = [];
+                                                    $(hypervisorObjs).each(function() {
+                                                        items.push({
+                                                            id: this.name,
+                                                            description: this.name
+                                                        });
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    },
+                                    
+                                    format: {
+                                        label: 'label.format',
+                                        docID: 'helpRegisterTemplateFormat',
+                                        select: function(args) {
+                                            var items = [];                                            
+                                            items.push({
+                                                id: 'VHD',
+                                                description: 'VHD'
+                                            });                                            
+                                            items.push({
+                                                id: 'RAW',
+                                                description: 'RAW'
+                                            });
+                                            items.push({
+                                                id: 'QCOW2',
+                                                description: 'QCOW2'
+                                            });                                            
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
+
+                                    osTypeId: {
+                                        label: 'label.os.type',
+                                        docID: 'helpRegisterTemplateOSType',
+                                        select: function(args) {
+                                            if (ostypeObjs == undefined) {
+                                                $.ajax({
+                                                    url: createURL("listOsTypes"),
+                                                    dataType: "json",
+                                                    async: false,
+                                                    success: function(json) {
+                                                        ostypeObjs = json.listostypesresponse.ostype;
+                                                    }
+                                                });
+                                            }
+                                            args.response.success({
+                                                data: ostypeObjs
+                                            });
+                                        }
+                                    },
+
+                                    isExtractable: {
+                                        label: "extractable",
+                                        docID: 'helpRegisterTemplateExtractable',
+                                        isBoolean: true
+                                    },
+                                    
+                                    isPasswordEnabled: {
+                                        label: "label.password.enabled",
+                                        docID: 'helpRegisterTemplatePasswordEnabled',
+                                        isBoolean: true
+                                    },
+                                    
+                                    isdynamicallyscalable: {
+                                        label: "label.dynamically.scalable",
+                                        docID: 'helpRegisterTemplateDynamicallyScalable',
+                                        isBoolean: true
+                                    },                                                                        
+                                    
+                                    isPublic: {
+                                        label: "label.public",
+                                        docID: 'helpRegisterTemplatePublic',
+                                        isBoolean: true,
+                                        isHidden: true
+                                    },                                  
+                                                                        
+                                    isFeatured: {
+                                        label: "label.featured",
+                                        docID: 'helpRegisterTemplateFeatured',
+                                        isBoolean: true,
+                                        isHidden: true
+                                    },
+                                    
+                                    isrouting: {
+                                        label: 'label.routing',
+                                        docID: 'helpRegisterTemplateRouting',
+                                        isBoolean: true,
+                                        isHidden: true
+                                    },
+                                    
+                                    requireshvm: {
+                                        label: 'label.hvm',
+                                        docID: 'helpRegisterTemplateHvm',
+                                        isBoolean: true,
+                                        isHidden: false,
+                                        isChecked: true
+                                    }
+                                }
+                            },
+
+                            action: function(args) {
+                                debugger;
+
+                            },
+
+                            notification: {
+                                poll: function(args) {
+                                    args.complete();
+                                }
+                            }
                         }
                     },
 
