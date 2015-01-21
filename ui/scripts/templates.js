@@ -635,8 +635,7 @@
                                             url: createURL('getUploadParamsForTemplate'),
                                             data: data,
                                             async: false,
-                                            success: function(json) {
-                                                debugger;
+                                            success: function(json) {                                                
                                                 /*                        						
 												{
 												    "postuploadtemplateresponse": {
@@ -653,7 +652,7 @@
 
                                                 var uploadparams = json.postuploadtemplateresponse.getuploadparams; //son.postuploadtemplateresponse.getuploadparams is an object, not an array of object.
                                                 var templateId = uploadparams.id;
-                                                debugger;
+                                               
                                                 args.response.success({
                                                     url: uploadparams.postURL,
                                                     data: {
@@ -661,14 +660,17 @@
                                                         expires: uploadparams.timeout,
                                                         metadata: uploadparams.metadata
                                                     }
+                                                });   
+                                                   
+                                                cloudStack.dialog.notice({ 
+                                                	message: "This template file has been uploaded. Please check its status at Templates menu > " + args.data.name + " > Zones tab > click a zone > Status field and Ready field."
                                                 });
-                                                debugger;
+                                                
                                             }
-                                        });
-                                        debugger;
+                                        });                                        
                                     },
                                     postUpload: function(args) {
-                                        debugger;
+                                        console.log("postUpload() is hit");
                                         // Called when upload is done to do 
                                         // verification checks;
                                         // i.e., poll the server to verify successful upload
@@ -911,8 +913,7 @@
                             },
 
                             action: function(args) {
-                                debugger;
-
+                                return; //createForm.fileUpload.getURL() has executed the whole action. Therefore, nothing needs to be done here.
                             },
 
                             notification: {
