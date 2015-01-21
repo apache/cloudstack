@@ -1260,6 +1260,6 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
 
     @Override
     public UploadStatusAnswer getUploadStatus(UploadStatusCommand cmd) {
-        return new UploadStatusAnswer(cmd, UploadStatus.UNKNOWN);
+        return new UploadStatusAnswer(cmd, UploadStatus.COMPLETED);
     }
 }
