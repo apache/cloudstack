@@ -856,20 +856,18 @@
                                     osTypeId: {
                                         label: 'label.os.type',
                                         docID: 'helpRegisterTemplateOSType',
-                                        select: function(args) {
-                                            if (ostypeObjs == undefined) {
-                                                $.ajax({
-                                                    url: createURL("listOsTypes"),
-                                                    dataType: "json",
-                                                    async: false,
-                                                    success: function(json) {
-                                                        ostypeObjs = json.listostypesresponse.ostype;
-                                                    }
-                                                });
-                                            }
-                                            args.response.success({
-                                                data: ostypeObjs
-                                            });
+                                        select: function(args) {    
+                                            $.ajax({
+                                                url: createURL("listOsTypes"),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {	                                                	
+                                                	var ostypeObjs = json.listostypesresponse.ostype;
+                                                	args.response.success({
+                                                        data: ostypeObjs
+                                                    });
+                                                }
+                                            });                                        	    
                                         }
                                     },
 
