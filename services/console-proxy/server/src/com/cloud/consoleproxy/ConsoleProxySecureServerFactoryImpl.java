@@ -21,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
+import org.apache.cloudstack.utils.security.SSLUtils;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -68,7 +69,7 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
                 tmf.init(ks);
                 s_logger.info("Trust manager factory is initialized");
 
-                sslContext = SSLContext.getInstance("TLS");
+                sslContext = SSLUtils.getSSLContext();
                 sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
                 s_logger.info("SSL context is initialized");
             } catch (Exception ioe) {
@@ -90,8 +91,8 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
                 TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
                 tmf.init(ks);
                 s_logger.info("Trust manager factory is initialized");
-        
-                sslContext = SSLContext.getInstance("TLS");
+
+                sslContext = SSLUtils.getSSLContext();
                 sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
                 s_logger.info("SSL context is initialized");
             } catch(Exception e) {
@@ -133,8 +134,10 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
         try {
             SSLServerSocket srvSock = null;
             SSLServerSocketFactory ssf = sslContext.getServerSocketFactory();
+
             srvSock = (SSLServerSocket) ssf.createServerSocket(port);
-            
+            srvSock.setEnabledProtocols(SSLUtils.getSupportedProtocols(srvSock.getEnabledProtocols()));
+
             s_logger.info("create SSL server socket on port: " + port);
             return srvSock;
         } catch (Exception ioe) {

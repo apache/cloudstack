@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.consoleproxy.util;
 
+import org.apache.cloudstack.utils.security.SSLUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -136,8 +138,16 @@ public final class RawHTTP {
 
     private Socket _getSocket() throws IOException {
         if (useSSL) {
-            SSLContext context = getClientSSLContext();
-            if(context == null)
+            SSLContext context = null;
+            try {
+                context = SSLUtils.getSSLContext("SunJSSE");
+            } catch (NoSuchAlgorithmException e) {
+                s_logger.error("Unexpected exception ", e);
+            } catch (NoSuchProviderException e) {
+                s_logger.error("Unexpected exception ", e);
+            }
+
+            if (context == null)
                 throw new IOException("Unable to setup SSL context");
             
             SSLSocket ssl = null;
@@ -145,6 +155,7 @@ public final class RawHTTP {
                 context.init(null, trustAllCerts, new SecureRandom());
                 SocketFactory factory = context.getSocketFactory();
                 ssl = (SSLSocket) factory.createSocket(host, port);
+                ssl.setEnabledProtocols(SSLUtils.getSupportedProtocols(ssl.getEnabledProtocols()));
                 /* ssl.setSSLParameters(context.getDefaultSSLParameters()); */
             } catch (IOException e) {
                 s_logger.error("IOException: " + e.getMessage(), e);
@@ -233,17 +244,5 @@ public final class RawHTTP {
                 throw e;
             }
         }
-    }
-    
-    private SSLContext getClientSSLContext() {
-        SSLContext sslContext = null;
-        try {
-            sslContext = SSLContext.getInstance("SSL", "SunJSSE");
-        } catch (NoSuchAlgorithmException e) {
-            s_logger.error("Unexpected exception ", e);
-        } catch (NoSuchProviderException e) {
-            s_logger.error("Unexpected exception ", e);
-        }
-        return sslContext;
     }
 }

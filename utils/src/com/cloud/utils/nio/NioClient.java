@@ -27,6 +27,8 @@ import javax.net.ssl.SSLEngine;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.utils.security.SSLUtils;
+
 public class NioClient extends NioConnection {
     private static final Logger s_logger = Logger.getLogger(NioClient.class);
     
@@ -75,6 +77,7 @@ public class NioClient extends NioConnection {
         	SSLContext sslContext = Link.initSSLContext(true);
         	sslEngine = sslContext.createSSLEngine(_host, _port);
         	sslEngine.setUseClientMode(true);
+        	sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
 
         	Link.doHandshake(sch, sslEngine, true);
         	s_logger.info("SSL: Handshake done");

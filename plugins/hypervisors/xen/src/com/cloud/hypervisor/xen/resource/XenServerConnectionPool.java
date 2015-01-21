@@ -38,6 +38,9 @@ import org.apache.xmlrpc.client.XmlRpcClientException;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
+
+import org.apache.cloudstack.utils.security.SSLUtils;
+
 import com.xensource.xenapi.APIVersion;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
@@ -79,7 +82,7 @@ public class XenServerConnectionPool {
             javax.net.ssl.TrustManager[] trustAllCerts = new javax.net.ssl.TrustManager[1]; 
             javax.net.ssl.TrustManager tm = new TrustAllManager(); 
             trustAllCerts[0] = tm; 
-            javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext.getInstance("TLS"); 
+            javax.net.ssl.SSLContext sc = SSLUtils.getSSLContext();
             sc.init(null, trustAllCerts, null); 
             javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
             HostnameVerifier hv = new HostnameVerifier() {

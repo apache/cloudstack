@@ -140,7 +140,7 @@ public class SocketWrapperImpl extends PipelineImpl implements SocketWrapper {
 
             SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
             sslSocket = (SSLSocket)sslSocketFactory.createSocket(socket, address.getHostName(), address.getPort(), true);
-
+            sslSocket.setEnabledProtocols(new String[]{"TLSv1", "TLSv1.1", "TLSv1.2"});
             sslSocket.startHandshake();
 
             InputStream sis = sslSocket.getInputStream();
