@@ -32,6 +32,8 @@ import javax.xml.ws.handler.MessageContext;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.utils.security.SSLUtils;
+
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.InvalidCollectorVersionFaultMsg;
 import com.vmware.vim25.InvalidPropertyFaultMsg;
@@ -103,7 +105,7 @@ public class VmwareClient {
         javax.net.ssl.TrustManager[] trustAllCerts = new javax.net.ssl.TrustManager[1];
         javax.net.ssl.TrustManager tm = new TrustAllTrustManager();
         trustAllCerts[0] = tm;
-        javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext.getInstance("SSL");
+        javax.net.ssl.SSLContext sc = SSLUtils.getSSLContext();
         javax.net.ssl.SSLSessionContext sslsc = sc.getServerSessionContext();
         sslsc.setSessionTimeout(0);
         sc.init(null, trustAllCerts, null);

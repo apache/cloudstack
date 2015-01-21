@@ -37,6 +37,7 @@ config_httpd_conf() {
   echo "  DocumentRoot /var/www/html/" >> /etc/httpd/conf/httpd.conf
   echo "  ServerName $srvr" >> /etc/httpd/conf/httpd.conf
   echo "  SSLEngine on" >>  /etc/httpd/conf/httpd.conf
+  echo "  SSLProtocol all -SSLv2 -SSLv3" >>  /etc/httpd/conf/httpd.conf
   echo "  SSLCertificateFile /etc/httpd/ssl/certs/realhostip.crt" >>  /etc/httpd/conf/httpd.conf
   echo "  SSLCertificateKeyFile /etc/httpd/ssl/keys/realhostip.key" >> /etc/httpd/conf/httpd.conf
   echo "</VirtualHost>" >> /etc/httpd/conf/httpd.conf
@@ -54,6 +55,7 @@ config_apache2_conf() {
   sed -i -e "s/NameVirtualHost .*:80/NameVirtualHost $ip:80/g" /etc/apache2/ports.conf
   sed -i  's/ssl-cert-snakeoil.key/cert_apache.key/' /etc/apache2/sites-available/default-ssl
   sed -i  's/ssl-cert-snakeoil.pem/cert_apache.crt/' /etc/apache2/sites-available/default-ssl
+  sed -i  's/SSLProtocol.*$/SSLProtocol all -SSLv2 -SSLv3/' /etc/apache2/sites-available/default-ssl
   if [ -f /etc/ssl/certs/cert_apache_chain.crt ]
   then
     sed -i -e "s/#SSLCertificateChainFile.*/SSLCertificateChainFile \/etc\/ssl\/certs\/cert_apache_chain.crt/" /etc/apache2/sites-available/default-ssl

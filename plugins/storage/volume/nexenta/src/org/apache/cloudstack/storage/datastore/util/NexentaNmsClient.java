@@ -45,6 +45,8 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.BasicClientConnectionManager;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.utils.security.SSLUtils;
+
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 
@@ -80,7 +82,7 @@ public class NexentaNmsClient {
 
     protected DefaultHttpClient getHttpsClient() {
         try {
-            SSLContext sslContext = SSLContext.getInstance("SSL");
+            SSLContext sslContext = SSLUtils.getSSLContext();
             X509TrustManager tm = new X509TrustManager() {
                 @Override
                 public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException {
