@@ -1226,9 +1226,6 @@ public class VolumeServiceImpl implements VolumeService {
 
     @Override
     public Pair<EndPoint,DataObject> registerVolumeForPostUpload(VolumeInfo volume, DataStore store) {
-        DataObject volumeOnStore = store.create(volume);
-
-        volumeOnStore.processEvent(Event.CreateOnlyRequested);
 
         EndPoint ep = _epSelector.select(store);
         if (ep == null) {
@@ -1236,6 +1233,7 @@ public class VolumeServiceImpl implements VolumeService {
             s_logger.warn(errorMessage);
             throw new CloudRuntimeException(errorMessage);
         }
+        DataObject volumeOnStore = store.create(volume);
         return new Pair<>(ep,volumeOnStore);
     }
 
