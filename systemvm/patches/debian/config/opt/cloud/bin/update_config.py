@@ -60,8 +60,22 @@ def is_guestnet_configured(guestnet_dict, keys):
         if k1 in keys and len(v1) > 0:
             existing_keys.append(k1)
     
+    if not existing_keys:
+        '''
+        It seems all the interfaces have been removed. Let's allow a new configuration to come in.
+        '''
+        print "[WARN] update_config.py :: Reconfiguring guest network..."
+        return False
+    
     file = open(jsonCmdConfigPath)
     new_guestnet_dict = json.load(file)
+    
+    if not new_guestnet_dict['add']:
+        '''
+        Guest network has to be removed.
+        '''
+        print "[INFO] update_config.py :: Removing guest network..."
+        return False
     
     '''
     Check if we have a new guest network ready to be setup
@@ -93,7 +107,7 @@ def is_guestnet_configured(guestnet_dict, keys):
     return exists
 
 if not (os.path.isfile(jsonCmdConfigPath) and os.access(jsonCmdConfigPath, os.R_OK)):
-    print "[ERROR]: You are telling me to process %s, but i can't access it" % jsonCmdConfigPath
+    print "[ERROR] update_config.py :: You are telling me to process %s, but i can't access it" % jsonCmdConfigPath
     sys.exit(1)
 
 # If the command line json file is unprocessed process it
@@ -110,13 +124,14 @@ if sys.argv[1] == "guest_network.json":
         guestnet_dict = json.load(file)
     
         if not is_guestnet_configured(guestnet_dict, ['eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'eth6', 'eth7', 'eth8', 'eth9']):
-            print "[INFO] Processing Guest Network."
+            print "[INFO] update_config.py :: Processing Guest Network."
             process_file()
         else:
-            print "[INFO] No need to process Guest Network."
+            print "[INFO] update_config.py :: No need to process Guest Network."
             finish_config()
     else:
-        print "[INFO] No GuestNetwork configured yet. Configuring first one now."
+        print "[INFO] update_config.py :: No GuestNetwork configured yet. Configuring first one now."
         process_file()
 else:
+    print "[INFO] update_config.py :: Processing incoming file => %s" % sys.argv[1] 
     process_file()

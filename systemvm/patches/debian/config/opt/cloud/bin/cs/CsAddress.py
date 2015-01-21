@@ -299,9 +299,7 @@ class CsIP:
             if " DOWN " in i:
                 cmd2 = "ip link set %s up" % self.getDevice()
                 # Do not change the state of ips on a redundant router that are managed by vrrp or CsRedundant
-                if self.config.cmdline().is_redundant() and self.is_public():
-                    pass
-                else:
+                if not self.config.cmdline().is_redundant() and not self.is_public():
                     CsHelper.execute(cmd2)
 
     def set_mark(self):

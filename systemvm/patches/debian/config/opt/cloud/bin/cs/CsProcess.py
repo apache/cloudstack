@@ -33,7 +33,12 @@ class CsProcess(object):
         logging.info("Started %s", " ".join(self.search))
         os.system("%s %s %s" % (thru, " ".join(self.search), background))
 
-    def find(self):
+    def kill_all(self):
+        pids = self.find_pid()
+        for p in pids:
+            CsHelper.execute("kill -9 %s" % p)
+
+    def find_pid(self):
         self.pid = []
         for i in CsHelper.execute("ps aux"):
             items = len(self.search)
@@ -41,4 +46,8 @@ class CsProcess(object):
             matches = len([m for m in proc if m in self.search])
             if matches == items:
                 self.pid.append(re.split("\s+", i)[1])
-        return len(self.pid) > 0
+        return self.pid
+
+    def find(self):
+        has_pid = len(self.find_pid()) > 0
+        return has_pid

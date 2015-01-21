@@ -71,7 +71,7 @@ class CsPasswdSvc(CsApp):
 
         proc = CsProcess(['/opt/cloud/bin/vpc_passwd_server', self.ip])
         if not proc.find():
-            proc.start("/usr/bin/nohup", "2>&1 &")
+            proc.start("/usr/bin/nohup", ">/dev/null 2>&1 &")
 
 
 class CsDnsmasq(CsApp):
