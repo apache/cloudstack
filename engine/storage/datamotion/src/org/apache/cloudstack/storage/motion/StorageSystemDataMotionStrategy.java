@@ -152,11 +152,13 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 }
 
                 if (canHandleSrc) {
-                    // return handleCreateVolumeFromSnapshotOnlySourceOnStorageSystem();
+                    throw new UnsupportedOperationException("This operation is not supported (DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT " +
+                            "not supported by destination storage plug-in).");
                 }
 
                 if (canHandleDest) {
-                    // return handleCreateVolumeFromSnapshotOnlyDestinationOnStorageSystem();
+                    throw new UnsupportedOperationException("This operation is not supported (DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT " +
+                            "not supported by source storage plug-in).");
                 }
             }
         }
