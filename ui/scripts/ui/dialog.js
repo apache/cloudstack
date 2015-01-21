@@ -718,7 +718,9 @@
                                 $field.append($uploadFrame);
                                 $uploadFrame.contents().find('html body').append($frameForm);
                                 $frameForm.submit(function() {
+                                	console.log("callback() in $frameForm.submit(callback(){}) is triggered");
                                     $uploadFrame.load(function() {
+                                    	console.log("callback() in $uploadFrame.load(callback(){}) is triggered");
                                         args.form.fileUpload.postUpload({
                                             $form: $form,
                                             formData: data,
