@@ -39,6 +39,7 @@ import javax.ws.rs.core.UriBuilder;
 
 import org.apache.http.auth.InvalidCredentialsException;
 import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.security.SSLUtils;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
@@ -1086,7 +1087,7 @@ public class ElastistorUtil {
 
                 // Install the all-trusting trust manager
                 try {
-                    SSLContext sc = SSLContext.getInstance("TLS");
+                    SSLContext sc = SSLUtils.getSSLContext();
                     sc.init(null, trustAllCerts, new SecureRandom());
                     HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
                     HttpsURLConnection.setDefaultHostnameVerifier(hv);

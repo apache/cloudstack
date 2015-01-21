@@ -19,6 +19,7 @@
 
 package org.apache.cloudstack.network.opendaylight.api;
 
+import org.apache.cloudstack.utils.security.SSLUtils;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -33,6 +34,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -175,7 +177,7 @@ public class NeutronRestApi {
 
             try {
                 // Install the all-trusting trust manager
-                SSLContext sc = SSLContext.getInstance("SSL");
+                SSLContext sc = SSLUtils.getSSLContext();
                 sc.init(null, trustAllCerts, new java.security.SecureRandom());
                 ssf = sc.getSocketFactory();
             } catch (KeyManagementException e) {
@@ -187,17 +189,23 @@ public class NeutronRestApi {
 
         @Override
         public Socket createSocket(final String host, final int port) throws IOException {
-            return ssf.createSocket(host, port);
+            SSLSocket s = (SSLSocket) ssf.createSocket(host, port);
+            s.setEnabledProtocols(SSLUtils.getSupportedProtocols(s.getEnabledProtocols()));
+            return s;
         }
 
         @Override
         public Socket createSocket(final String address, final int port, final InetAddress localAddress, final int localPort) throws IOException, UnknownHostException {
-            return ssf.createSocket(address, port, localAddress, localPort);
+            SSLSocket s = (SSLSocket) ssf.createSocket(address, port, localAddress, localPort);
+            s.setEnabledProtocols(SSLUtils.getSupportedProtocols(s.getEnabledProtocols()));
+            return s;
         }
 
         @Override
         public Socket createSocket(final Socket socket, final String host, final int port, final boolean autoClose) throws IOException, UnknownHostException {
-            return ssf.createSocket(socket, host, port, autoClose);
+            SSLSocket s = (SSLSocket) ssf.createSocket(socket, host, port, autoClose);
+            s.setEnabledProtocols(SSLUtils.getSupportedProtocols(s.getEnabledProtocols()));
+            return s;
         }
 
         @Override
@@ -207,7 +215,8 @@ public class NeutronRestApi {
             if (timeout == 0) {
                 return createSocket(host, port, localAddress, localPort);
             } else {
-                Socket s = ssf.createSocket();
+                SSLSocket s = (SSLSocket) ssf.createSocket();
+                s.setEnabledProtocols(SSLUtils.getSupportedProtocols(s.getEnabledProtocols()));
                 s.bind(new InetSocketAddress(localAddress, localPort));
                 s.connect(new InetSocketAddress(host, port), timeout);
                 return s;

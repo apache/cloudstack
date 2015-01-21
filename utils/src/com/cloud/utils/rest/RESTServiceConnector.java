@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -60,6 +61,8 @@ import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.utils.security.SSLUtils;
 
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -334,7 +337,7 @@ public class RESTServiceConnector {
 
             try {
                 // Install the all-trusting trust manager
-                final SSLContext sc = SSLContext.getInstance("SSL");
+                final SSLContext sc = SSLUtils.getSSLContext();
                 sc.init(null, trustAllCerts, new java.security.SecureRandom());
                 ssf = sc.getSocketFactory();
             } catch (final KeyManagementException e) {
@@ -346,17 +349,23 @@ public class RESTServiceConnector {
 
         @Override
         public Socket createSocket(final String host, final int port) throws IOException {
-            return ssf.createSocket(host, port);
+            SSLSocket socket = (SSLSocket) ssf.createSocket(host, port);
+            socket.setEnabledProtocols(SSLUtils.getSupportedProtocols(socket.getEnabledProtocols()));
+            return socket;
         }
 
         @Override
         public Socket createSocket(final String address, final int port, final InetAddress localAddress, final int localPort) throws IOException, UnknownHostException {
-            return ssf.createSocket(address, port, localAddress, localPort);
+            SSLSocket socket = (SSLSocket) ssf.createSocket(address, port, localAddress, localPort);
+            socket.setEnabledProtocols(SSLUtils.getSupportedProtocols(socket.getEnabledProtocols()));
+            return socket;
         }
 
         @Override
         public Socket createSocket(final Socket socket, final String host, final int port, final boolean autoClose) throws IOException, UnknownHostException {
-            return ssf.createSocket(socket, host, port, autoClose);
+            SSLSocket s = (SSLSocket) ssf.createSocket(socket, host, port, autoClose);
+            s.setEnabledProtocols(SSLUtils.getSupportedProtocols(s.getEnabledProtocols()));
+            return s;
         }
 
         @Override
@@ -366,7 +375,8 @@ public class RESTServiceConnector {
             if (timeout == 0) {
                 return createSocket(host, port, localAddress, localPort);
             } else {
-                final Socket s = ssf.createSocket();
+                final SSLSocket s = (SSLSocket) ssf.createSocket();
+                s.setEnabledProtocols(SSLUtils.getSupportedProtocols(s.getEnabledProtocols()));
                 s.bind(new InetSocketAddress(localAddress, localPort));
                 s.connect(new InetSocketAddress(host, port), timeout);
                 return s;

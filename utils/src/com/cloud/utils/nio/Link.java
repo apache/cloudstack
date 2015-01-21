@@ -44,6 +44,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.PropertiesUtil;
@@ -443,7 +444,7 @@ public class Link {
             tms[0] = new TrustAllManager();
         }
 
-        sslContext = SSLContext.getInstance("TLS");
+        sslContext = SSLUtils.getSSLContext();
         sslContext.init(kmf.getKeyManagers(), tms, null);
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("SSL: SSLcontext has been initialized");
@@ -465,7 +466,7 @@ public class Link {
         ByteBuffer out_pkgBuf = ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
         ByteBuffer out_appBuf = ByteBuffer.allocate(sslSession.getApplicationBufferSize() + 40);
         int count;
-        ch.socket().setSoTimeout(10 * 1000);
+        ch.socket().setSoTimeout(30 * 1000);
         InputStream inStream = ch.socket().getInputStream();
         // Use readCh to make sure the timeout on reading is working
         ReadableByteChannel readCh = Channels.newChannel(inStream);

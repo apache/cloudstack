@@ -41,6 +41,8 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
+import org.apache.cloudstack.utils.security.SSLUtils;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -198,6 +200,7 @@ public abstract class NioConnection implements Runnable {
             sslEngine = sslContext.createSSLEngine();
             sslEngine.setUseClientMode(false);
             sslEngine.setNeedClientAuth(false);
+            sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
 
             Link.doHandshake(socketChannel, sslEngine, false);
 

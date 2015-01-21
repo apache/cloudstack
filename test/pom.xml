@@ -67,7 +67,7 @@
         <dependency>
             <groupId>commons-httpclient</groupId>
             <artifactId>commons-httpclient</artifactId>
-            <version>${cs.httpclient.version}</version>
+            <version>${cs.commons-httpclient.version}</version>
         </dependency>
     </dependencies>
     <build>
