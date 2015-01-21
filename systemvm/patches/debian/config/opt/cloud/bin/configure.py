@@ -574,6 +574,5 @@ def main(argv):
     mon = CsMonitor("monitorservice", config)
     mon.process()
 
-
 if __name__ == "__main__":
     main(sys.argv)

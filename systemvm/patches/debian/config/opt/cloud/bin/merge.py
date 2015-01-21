@@ -127,9 +127,6 @@ class updateDataBag:
     def processGuestNetwork(self, dbag):
         d = self.qFile.data
         
-        if not set(['device']).issubset(d):
-            return dbag
-        
         dp = {}
         dp['public_ip'] = d['router_guest_ip']
         dp['netmask'] = d['router_guest_netmask']
