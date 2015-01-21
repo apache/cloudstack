@@ -1232,8 +1232,9 @@ public class VolumeServiceImpl implements VolumeService {
 
         EndPoint ep = _epSelector.select(store);
         if (ep == null) {
-            s_logger.warn("There is no secondary storage VM for image store " + store.getName());
-            return null;
+            String errorMessage = "There is no secondary storage VM for image store " + store.getName();
+            s_logger.warn(errorMessage);
+            throw new CloudRuntimeException(errorMessage);
         }
         return new Pair<>(ep,volumeOnStore);
     }
