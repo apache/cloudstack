@@ -1267,7 +1267,6 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
                                           networkofferingid=self.isolated_network_offering.id)
         self.debug("Created isolated network %s in zone %s" %
                    (isolated_network.id, foreignZoneId))
-        self.cleanup.append(isolated_network)
 
         self.debug("Trying to add network to VM, both belonging to different zones")
         cmd = addNicToVirtualMachine.addNicToVirtualMachineCmd()
