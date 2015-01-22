@@ -68,7 +68,7 @@
                     actions: {
                         // Add volume
                         add: {
-                            label: 'label.add.volume',
+                            label: 'Add',
 
                             preFilter: function(args) {
                                 return !args.context.instances;
@@ -255,18 +255,25 @@
 
                         uploadVolume: {
                             isHeader: true,
-                            label: 'label.upload.volume',
+                            label: 'Upload',
                             preFilter: function(args) {
                                 return !args.context.instances;
                             },
                             messages: {
                                 notification: function() {
-                                    return 'label.upload.volume';
+                                    return 'Upload Volume from URL';
                                 }
                             },
                             createForm: {
-                                title: 'label.upload.volume',
+                                title: 'Upload Volume from URL',
                                 fields: {
+                                	url: {
+                                        label: 'label.url',
+                                        docID: 'helpUploadVolumeURL',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
                                     name: {
                                         label: 'label.name',
                                         validation: {
@@ -321,14 +328,7 @@
                                                 data: items
                                             });
                                         }
-                                    },
-                                    url: {
-                                        label: 'label.url',
-                                        docID: 'helpUploadVolumeURL',
-                                        validation: {
-                                            required: true
-                                        }
-                                    },
+                                    },                                    
                                     checksum: {
                                         docID: 'helpUploadVolumeChecksum',
                                         label: 'label.md5.checksum'
@@ -380,7 +380,7 @@
                                                 
                         uploadVolumefromLocal: {
                             isHeader: true,
-                            label: 'Upload Volume from Local',
+                            label: 'Upload from Local',
                             preFilter: function(args) {
                                 return !args.context.instances;
                             },
@@ -445,7 +445,10 @@
                                 fields: {
                                     volumeFileUpload: {
                                         label: 'local file',
-                                        isFileUpload: true
+                                        isFileUpload: true,
+                                        validation: {
+                                            required: true
+                                        }
                                     },
                                     name: {
                                         label: 'label.name',
