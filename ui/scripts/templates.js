@@ -100,17 +100,24 @@
                     reorder: cloudStack.api.actions.sort('updateTemplate', 'templates'),
                     actions: {
                         add: {
-                            label: 'label.action.register.template',
+                            label: 'Add',
                             messages: {
                                 notification: function(args) {
-                                    return 'label.action.register.template';
+                                    return 'Register Template from URL';
                                 }
                             },
                             createForm: {
-                                title: 'label.action.register.template',
+                                title: 'Register Template from URL',
                                 docID: 'helpNetworkOfferingName',
                                 preFilter: cloudStack.preFilter.createTemplate,
                                 fields: {
+                                	url: {
+                                        label: 'label.url',
+                                        docID: 'helpRegisterTemplateURL',
+                                        validation: {
+                                            required: true
+                                        }
+                                    },
                                     name: {
                                         label: 'label.name',
                                         docID: 'helpRegisterTemplateName',
@@ -124,14 +131,7 @@
                                         validation: {
                                             required: true
                                         }
-                                    },
-                                    url: {
-                                        label: 'label.url',
-                                        docID: 'helpRegisterTemplateURL',
-                                        validation: {
-                                            required: true
-                                        }
-                                    },
+                                    },                                    
                                     zone: {
                                         label: 'label.zone',
                                         docID: 'helpRegisterTemplateZone',
@@ -582,7 +582,7 @@
                         
                         uploadTemplateFromLocal: {
                             isHeader: true,
-                            label: 'Upload Template from Local',
+                            label: 'Upload from Local',
                             messages: {
                                 notification: function(args) {
                                     return 'Upload Template from Local';
@@ -683,7 +683,10 @@
                                 fields: {
                                     templateFileUpload: {
                                         label: 'local file',
-                                        isFileUpload: true
+                                        isFileUpload: true,
+                                        validation: {
+                                            required: true
+                                        }
                                     },
 
                                     name: {
