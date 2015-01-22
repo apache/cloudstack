@@ -376,7 +376,147 @@
                             notification: {
                                 poll: pollAsyncJobResult
                             }
-                        }
+                        },
+                                                
+                        uploadVolumefromLocal: {
+                            isHeader: true,
+                            label: 'Upload Volume from Local',
+                            preFilter: function(args) {
+                                return !args.context.instances;
+                            },
+                            messages: {
+                                notification: function() {
+                                    return 'Upload Volume from Local';
+                                }
+                            },
+                            createForm: {
+                                title: 'Upload Volume from Local',
+                                fileUpload: {
+                                    getURL: function(args) {
+                                        args.data = args.formData;
+                                        
+                                        var data = {
+                                            name: args.data.name,
+                                            zoneId: args.data.availabilityZone,
+                                            format: args.data.format,
+                                            url: args.data.url
+                                        };
+
+                                        if (args.data.checksum != null && args.data.checksum.length > 0) {
+                                            $.extend(data, {
+                                                checksum: args.data.checksum
+                                            });
+                                        }
+                                        
+                                        $.ajax({
+                                            url: createURL('getUploadParamsForVolume'),
+                                            data: data,
+                                            async: false,
+                                            success: function(json) {
+                                                var uploadparams = json.postuploadvolumeresponse.getuploadparams; //son.postuploadvolumeresponse.getuploadparams is an object, not an array of object.
+                                                var volumeId = uploadparams.id;
+
+                                                args.response.success({
+                                                    url: uploadparams.postURL,
+                                                    data: {
+                                                        signature: uploadparams.signature,
+                                                        expires: uploadparams.timeout,
+                                                        metadata: uploadparams.metadata
+                                                    }
+                                                });
+                                                
+                                                cloudStack.dialog.notice({
+                                                    message: "This volume file has been uploaded. Please check its status at Stroage menu > Volumes > " + args.data.name + " > Status field."
+                                                });
+                                            }
+                                        });
+                                    },
+                                    postUpload: function(args) {
+                                        console.log("postUpload() is hit");
+                                        // Called when upload is done to do 
+                                        // verification checks;
+                                        // i.e., poll the server to verify successful upload
+                                        //
+                                        // success() will close the dialog and call standard action
+                                        // error() will keep dialog open if user wants to re-submit
+                                        args.response.success();
+                                    }
+                                },                                
+                                fields: {
+                                    volumeFileUpload: {
+                                        label: 'local file',
+                                        isFileUpload: true
+                                    },
+                                    name: {
+                                        label: 'label.name',
+                                        validation: {
+                                            required: true
+                                        },
+                                        docID: 'helpUploadVolumeName'
+                                    },
+                                    availabilityZone: {
+                                        label: 'label.availability.zone',
+                                        docID: 'helpUploadVolumeZone',
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL("listZones&available=true"),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var zoneObjs = json.listzonesresponse.zone;
+                                                    args.response.success({
+                                                        descriptionField: 'name',
+                                                        data: zoneObjs
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    },
+                                    format: {
+                                        label: 'label.format',
+                                        docID: 'helpUploadVolumeFormat',
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: 'RAW',
+                                                description: 'RAW'
+                                            });
+                                            items.push({
+                                                id: 'VHD',
+                                                description: 'VHD'
+                                            });
+                                            items.push({
+                                                id: 'VHDX',
+                                                description: 'VHDX'
+                                            });
+                                            items.push({
+                                                id: 'OVA',
+                                                description: 'OVA'
+                                            });
+                                            items.push({
+                                                id: 'QCOW2',
+                                                description: 'QCOW2'
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
+                                    checksum: {
+                                        docID: 'helpUploadVolumeChecksum',
+                                        label: 'label.md5.checksum'
+                                    }
+                                }
+                            },
+
+                            action: function(args) {
+                                return; //createForm.fileUpload.getURL() has executed the whole action. Therefore, nothing needs to be done here.
+                            },
+
+                            notification: {
+                                poll: pollAsyncJobResult
+                            }
+                        }                        
                     },
 
                     advSearchFields: {
