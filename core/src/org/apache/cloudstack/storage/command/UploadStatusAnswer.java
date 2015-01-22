@@ -33,7 +33,7 @@ public class UploadStatusAnswer extends Answer {
 
     public UploadStatusAnswer(UploadStatusCommand cmd, UploadStatus status, String msg) {
         super(cmd, false, msg);
-        this.status = UploadStatus.ERROR;
+        this.status = status;
     }
 
     public UploadStatusAnswer(UploadStatusCommand cmd, Exception e) {
