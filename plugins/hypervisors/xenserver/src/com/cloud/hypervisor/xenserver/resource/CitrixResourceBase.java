@@ -2868,6 +2868,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (sr == null) {
             return;
         }
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(logX(sr, "Removing SR"));
         }
@@ -2875,34 +2876,49 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         for (int i = 0; i < 2; i++) {
             try {
                 Set<VDI> vdis = sr.getVDIs(conn);
+
                 for (VDI vdi : vdis) {
+                    Set<VBD> vbds = vdi.getVBDs(conn);
+
+                    for (VBD vbd : vbds) {
+                        vbd.unplug(conn);
+                    }
+
                     vdi.forget(conn);
                 }
+
                 Set<PBD> pbds = sr.getPBDs(conn);
+
                 for (PBD pbd : pbds) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug(logX(pbd, "Unplugging pbd"));
                     }
-                    if (pbd.getCurrentlyAttached(conn)) {
-                        pbd.unplug(conn);
-                    }
+
+//                    if (pbd.getCurrentlyAttached(conn)) {
+                    pbd.unplug(conn);
+//                    }
+
                     pbd.destroy(conn);
                 }
 
                 pbds = sr.getPBDs(conn);
+
                 if (pbds.size() == 0) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug(logX(sr, "Forgetting"));
                     }
+
                     sr.forget(conn);
+
                     return;
                 }
 
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(logX(sr, "There are still pbd attached"));
+                    s_logger.debug(logX(sr, "There is still one or more PBDs attached."));
+
                     if (s_logger.isTraceEnabled()) {
                         for (PBD pbd : pbds) {
-                            s_logger.trace(logX(pbd, " Still attached"));
+                            s_logger.trace(logX(pbd, "Still attached"));
                         }
                     }
                 }
@@ -2912,6 +2928,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.debug(logX(sr, "Catch Exception: " + e.getMessage()));
             }
         }
+
         s_logger.warn(logX(sr, "Unable to remove SR"));
     }
 
