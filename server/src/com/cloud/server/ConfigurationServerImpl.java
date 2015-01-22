@@ -46,6 +46,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.utils.nio.Link;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.config.ApiServiceConfiguration;
@@ -976,11 +977,15 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
      */
     private void updateSecondaryStorageVMSharedKey() {
         try {
-            String key = _configDao.getValue(Config.SSVMPSK.key());
-            if(key == null) {
+            ConfigurationVO configInDB = _configDao.findByName(Config.SSVMPSK.key());
+            if(configInDB == null) {
                 ConfigurationVO configVO = new ConfigurationVO(Config.SSVMPSK.getCategory(), "DEFAULT", Config.SSVMPSK.getComponent(), Config.SSVMPSK.key(), getPrivateKey(),
                         Config.SSVMPSK.getDescription());
+                s_logger.info("generating a new SSVM PSK. This goes to SSVM on Start");
                 _configDao.persist(configVO);
+            } else if (StringUtils.isEmpty(configInDB.getValue())) {
+                s_logger.info("updating the SSVM PSK with new value. This goes to SSVM on Start");
+                _configDao.update(Config.SSVMPSK.key(), Config.SSVMPSK.getCategory(), getPrivateKey());
             }
         } catch (NoSuchAlgorithmException ex) {
             s_logger.error("error generating ssvm psk", ex);
