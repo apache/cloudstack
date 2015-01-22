@@ -3443,7 +3443,7 @@ div.toolbar div.section-switcher div.section-select {
 }
 
 div.toolbar div.section-switcher div.section-select select {
-  width: 142px;
+  width: 100px;
   height: 21px;
   margin-right: 13px;
   font-size: 12px;
