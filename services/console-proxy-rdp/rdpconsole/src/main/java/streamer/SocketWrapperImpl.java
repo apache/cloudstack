@@ -32,6 +32,8 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 
+import org.apache.cloudstack.utils.security.SSLUtils;
+
 import streamer.debug.MockServer;
 import streamer.debug.MockServer.Packet;
 import streamer.ssl.SSLState;
@@ -140,7 +142,8 @@ public class SocketWrapperImpl extends PipelineImpl implements SocketWrapper {
 
             SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
             sslSocket = (SSLSocket)sslSocketFactory.createSocket(socket, address.getHostName(), address.getPort(), true);
-            sslSocket.setEnabledProtocols(new String[]{"TLSv1", "TLSv1.1", "TLSv1.2"});
+            sslSocket.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslSocket.getEnabledProtocols()));
+
             sslSocket.startHandshake();
 
             InputStream sis = sslSocket.getInputStream();
