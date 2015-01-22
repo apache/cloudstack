@@ -61,6 +61,11 @@
       <version>${cs.junit.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-utils</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <!-- Apache Portable Runtime implementation of SSL protocol, which is compatible with broken MS RDP SSL suport.
     NOTE: tomcat-native package with /usr/lib/libtcnative-1.so library is necessary for APR to work. -->
     <dependency>
