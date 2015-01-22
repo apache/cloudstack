@@ -713,6 +713,9 @@
                                     $hidden.appendTo($frameForm);
                                 });                                
                                 
+                                console.log("The following object is a hidden HTML form that will submit local file with hidden field signature/expires/metadata:");
+                                console.log($frameForm);                                
+                                
                                 $uploadFrame.css({ width: $field.outerWidth(), height: $field.height() }).show();
                                 $frameForm.append($file);
                                 $field.append($uploadFrame);
