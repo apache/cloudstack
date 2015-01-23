@@ -4080,6 +4080,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return _storagePoolMgr.disconnectPhysicalDiskByPath(path);
     }
 
+    protected KVMStoragePoolManager getPoolManager() {
+        return _storagePoolMgr;
+    }
+
     protected synchronized String attachOrDetachISO(Connect conn, String vmName, String isoPath, boolean isAttach) throws LibvirtException, URISyntaxException,
     InternalErrorException {
         String isoXml = null;
