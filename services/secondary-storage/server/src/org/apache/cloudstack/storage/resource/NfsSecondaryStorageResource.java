@@ -2848,26 +2848,35 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return null;
         }
 
-        private void parsePostBody(InputStream input, OutputStream output, Map<String, String> params) throws IOException {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-            String currentLine = reader.readLine();
-            String boundary = currentLine;
+        private void parsePostBody(ByteArrayInputStream input, OutputStream output, Map<String, String> params) throws IOException {
 
-            while(reader.ready()) {
+            byte [] bytebuf = new byte[4096];
+            input.read(bytebuf,0,1024);
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(bytebuf)));
+            int readBytes=0;
+            String boundary =reader.readLine();
+            readBytes+=boundary.length()+2;
+            String currentLine =null;
+
+            while (reader.ready()) {
                 currentLine = reader.readLine();
+                readBytes+=currentLine.length()+2;
                 if (currentLine.contains("Content-Disposition: form-data;")) {
                     String paramName = currentLine;
-                    paramName = paramName.replace("Content-Disposition: form-data; name=","").replace("\"","");
+                    paramName = paramName.replace("Content-Disposition: form-data; name=", "").replace("\"", "");
                     StringBuilder paramValue = new StringBuilder();
-                    if(paramName.contains("filename")) {
+                    if (paramName.contains("filename")) {
                         String[] temp = paramName.split(";");
                         paramName = temp[0];
                         paramValue.append(temp[1].replace("filename", "").replace("=", "").replace(" ", ""));
                     } else {
                         currentLine = reader.readLine();
-                        while(!currentLine.contains(boundary)) {
+                        readBytes+=currentLine.length()+2;
+                        while (!currentLine.contains(boundary)) {
                             paramValue.append(currentLine);
                             currentLine = reader.readLine();
+                            readBytes+=currentLine.length()+2;
                         }
                     }
                     params.put(paramName, paramValue.toString());
@@ -2876,20 +2885,38 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     // File Content here
                     reader.readLine();
 
-                    String prevLine = reader.readLine();
-                    currentLine = reader.readLine();
+                    readBytes+=2;
 
-                    //writing the data to a output stream
+                    input.reset();
+                    input.skip(readBytes);
+                    int read=0;
                     while (true) {
-                        if (currentLine.contains(boundary)) {
-                            output.write(prevLine.getBytes());
+                        read=input.read(bytebuf,0,1024);
+                        if (read == -1) {
                             break;
                         }
-                        else {
-                            output.write(currentLine.getBytes());
+                        readBytes+=read;
+                        String stringBuf= new String(bytebuf);
+                        if (stringBuf.contains(boundary)) {
+                            int i=0;
+                            while (!(bytebuf[i] == '\r' && bytebuf[i+1] == '\n')) {
+                                output.write(bytebuf[i]);
+                                i++;
+                            }
+                            break;
                         }
-                        prevLine = currentLine;
-                        currentLine = reader.readLine();
+                        if (stringBuf.contains("-")) {
+                            int i=0;
+                            while (bytebuf[i] != '-') {
+                                output.write(bytebuf[i]);
+                                i++;
+                            }
+                            readBytes+=i;
+                            input.reset();
+                            input.skip(readBytes);
+                        } else {
+                            output.write(bytebuf,0,1024);
+                        }
                     }
 
                 }
@@ -2912,7 +2939,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 data = EntityUtils.toByteArray(entity);
             }
 
-            InputStream inputStream = new ByteArrayInputStream(data);
+            ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
             ByteArrayOutputStream output = new ByteArrayOutputStream();
             HashMap<String, String> params = new HashMap<>();
 
