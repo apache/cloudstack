@@ -1,4 +1,4 @@
-// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under oneD
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -4042,6 +4042,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return _storagePoolMgr.disconnectPhysicalDiskByPath(path);
+    }
+
+    protected KVMStoragePoolManager getPoolManager() {
+        return _storagePoolMgr;
     }
 
     protected synchronized String attachOrDetachISO(Connect conn, String vmName, String isoPath, boolean isAttach) throws LibvirtException, URISyntaxException,
