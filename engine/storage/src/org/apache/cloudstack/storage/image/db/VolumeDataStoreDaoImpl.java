@@ -100,6 +100,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
 
         downloadVolumeSearch = createSearchBuilder();
         downloadVolumeSearch.and("download_url", downloadVolumeSearch.entity().getExtractUrl(), Op.NNULL);
+        downloadVolumeSearch.and("download_url_created", downloadVolumeSearch.entity().getExtractUrlCreated(), Op.NNULL);
         downloadVolumeSearch.and("destroyed", downloadVolumeSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         downloadVolumeSearch.done();
 

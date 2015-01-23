@@ -97,6 +97,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         stateMachines.addTransition(State.Destroying, Event.DestroyRequested, State.Destroying);
         stateMachines.addTransition(State.Destroying, Event.OperationSuccessed, State.Destroyed);
         stateMachines.addTransition(State.Destroying, Event.OperationFailed, State.Destroying);
+        stateMachines.addTransition(State.Failed, Event.DestroyRequested, State.Destroying);
         // TODO: further investigate why an extra event is sent when it is
         // alreay Ready for DownloadListener
         stateMachines.addTransition(State.Ready, Event.OperationSuccessed, State.Ready);
