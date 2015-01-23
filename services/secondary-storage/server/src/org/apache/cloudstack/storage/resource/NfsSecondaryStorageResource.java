@@ -44,6 +44,7 @@ import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -2903,6 +2904,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                                 output.write(bytebuf[i]);
                                 i++;
                             }
+                            readBytes = readBytes - read + i;
+                            input.reset();
+                            input.skip(readBytes);
                             break;
                         }
                         if (stringBuf.contains("-")) {
@@ -2911,13 +2915,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                                 output.write(bytebuf[i]);
                                 i++;
                             }
-                            readBytes+=i;
+                            readBytes = readBytes - read + i;
                             input.reset();
                             input.skip(readBytes);
                         } else {
                             output.write(bytebuf,0,1024);
                         }
                     }
+                    Arrays.fill(bytebuf, (byte)0);
+                    input.read(bytebuf,0,1024);
+                    reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(bytebuf)));
 
                 }
             }
