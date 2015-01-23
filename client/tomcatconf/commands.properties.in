@@ -544,6 +544,7 @@ listOvsElements=7
 generateUsageRecords=1
 listUsageRecords=7
 listUsageTypes=1
+removeRawUsageRecords=1
 
 #### traffic monitor commands
 addTrafficMonitor=1

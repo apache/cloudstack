@@ -16,26 +16,6 @@
 // under the License.
 package com.cloud.event;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import com.cloud.network.IpAddress;
-import com.cloud.network.Site2SiteCustomerGateway;
-import com.cloud.network.Site2SiteVpnGateway;
-import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.HealthCheckPolicy;
-import com.cloud.network.rules.StickinessPolicy;
-import com.cloud.network.vpc.NetworkACL;
-import com.cloud.network.vpc.NetworkACLItem;
-import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.server.ResourceTag;
-import com.cloud.storage.snapshot.SnapshotPolicy;
-import com.cloud.vm.ConsoleProxy;
-import com.cloud.vm.Nic;
-import com.cloud.vm.NicSecondaryIp;
-import com.cloud.vm.SecondaryStorageVm;
-import org.apache.cloudstack.config.Configuration;
-
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;
@@ -43,20 +23,29 @@ import com.cloud.dc.Vlan;
 import com.cloud.domain.Domain;
 import com.cloud.host.Host;
 import com.cloud.network.GuestVlan;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.Site2SiteCustomerGateway;
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.as.AutoScaleCounter;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.network.as.Condition;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.network.security.SecurityGroup;
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
@@ -64,14 +53,25 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
+import com.cloud.server.ResourceTag;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
+import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.vm.ConsoleProxy;
+import com.cloud.vm.Nic;
+import com.cloud.vm.NicSecondaryIp;
+import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.usage.Usage;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class EventTypes {
 
@@ -519,6 +519,8 @@ public class EventTypes {
     public static final String EVENT_NIC_SECONDARY_IP_UNASSIGN = "NIC.SECONDARY.IP.UNASSIGN";
     public static final String EVENT_NIC_SECONDARY_IP_CONFIGURE = "NIC.SECONDARY.IP.CONFIGURE";
 
+    //Usage related events
+    public static final String EVENT_USAGE_REMOVE_USAGE_RECORDS = "USAGE.REMOVE.USAGE.RECORDS";
 
     static {
 
@@ -871,6 +873,8 @@ public class EventTypes {
         entityEventDetails.put(EVENT_NIC_SECONDARY_IP_UNASSIGN, NicSecondaryIp.class);
         entityEventDetails.put(EVENT_NIC_SECONDARY_IP_CONFIGURE, NicSecondaryIp.class);
 
+        //Usage
+        entityEventDetails.put(EVENT_USAGE_REMOVE_USAGE_RECORDS, Usage.class);
     }
 
     public static String getEntityForEvent(String eventName) {

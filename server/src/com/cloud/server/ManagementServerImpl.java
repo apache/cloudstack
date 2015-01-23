@@ -39,6 +39,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
 import org.apache.cloudstack.api.command.user.snapshot.UpdateSnapshotPolicyCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
@@ -2658,6 +2659,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DeleteTrafficTypeCmd.class);
         cmdList.add(GenerateUsageRecordsCmd.class);
         cmdList.add(GetUsageRecordsCmd.class);
+        cmdList.add(RemoveRawUsageRecordsCmd.class);
         cmdList.add(ListTrafficMonitorsCmd.class);
         cmdList.add(ListTrafficTypeImplementorsCmd.class);
         cmdList.add(ListTrafficTypesCmd.class);
