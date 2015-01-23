@@ -3726,7 +3726,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             clock.setClockOffset(ClockDef.ClockOffset.LOCALTIME);
             clock.setTimer("rtc", "catchup", null);
         } else if (vmTO.getType() != VirtualMachine.Type.User || isGuestPVEnabled(vmTO.getOs())) {
-            clock.setTimer("kvmclock", "catchup", null, _noKvmClock);
+            clock.setTimer("kvmclock", null, null, _noKvmClock);
         }
 
         vm.addComp(clock);
