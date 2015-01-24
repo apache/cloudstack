@@ -1303,7 +1303,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("The specified VM already has the maximum number of data disks (" + maxDataVolumesSupported + "). Please specify another VM.");
             }
         }
-        deviceId = getDeviceId(vmId, deviceId);
 
         // If local storage is disabled then attaching a volume with local disk
         // offering not allowed
@@ -2300,6 +2299,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             DataTO volTO = volFactory.getVolume(volumeToAttach.getId()).getTO();
+
+            deviceId = getDeviceId(vm.getId(), deviceId);
+
             DiskTO disk = new DiskTO(volTO, deviceId, volumeToAttach.getPath(), volumeToAttach.getVolumeType());
 
             AttachCommand cmd = new AttachCommand(disk, vm.getInstanceName());
