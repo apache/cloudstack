@@ -147,6 +147,7 @@ class CsRedundant(object):
         CsHelper.service("dnsmasq", "stop")
         cl.dbag['config']['redundant_master'] = "false"
         cl.save()
+        logging.info("Router switched to fault mode")
 
     def set_backup(self):
         """ Set the current router to backup """
@@ -171,6 +172,7 @@ class CsRedundant(object):
         self.cl.dbag['config']['redundant_master'] = "false"
         CsHelper.service("keepalived", "restart")
         self.cl.save()
+        logging.info("Router switched to backup mode")
 
     def set_master(self):
         """ Set the current router to master """
