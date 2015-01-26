@@ -549,7 +549,9 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             storagePool.setUsedBytes(usedBytes);
 
-            long sfNewVolumeId = SolidFireUtil.createSolidFireVolume(sfConnection, snapshotInfo.getUuid(), sfVolume.getAccountId(), sfVolumeSize,
+            String volumeName = volumeInfo.getName() + "-" + snapshotInfo.getUuid();
+
+            long sfNewVolumeId = SolidFireUtil.createSolidFireVolume(sfConnection, volumeName, sfVolume.getAccountId(), sfVolumeSize,
                     sfVolume.isEnable512e(), NumberFormat.getInstance().format(volumeInfo.getSize()), sfVolume.getMinIops(), 50000, 75000);
 
             // Now that we have successfully created a volume, update the space usage in the storage_pool table
