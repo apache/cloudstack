@@ -68,8 +68,8 @@ class CsDhcp(CsDataBag):
             line = "dhcp-option=tag:interface-%s,15,%s" % (device, gn.get_domain())
             self.conf.search(sline, line)
             # DNS search order
-            sline = "dhcp-option=tag:interface-%s,119" % device
-            line = "dhcp-option=tag:interface-%s,119,%s" % (device, ','.join(gn.get_dns()))
+            sline = "dhcp-option=tag:interface-%s,6" % device
+            line = "dhcp-option=tag:interface-%s,6,%s" % (device, ','.join(gn.get_dns()))
             self.conf.search(sline, line)
             # Gateway
             gateway = ''
@@ -103,7 +103,7 @@ class CsDhcp(CsDataBag):
                       "del": False
                       }
                 changed.append(to)
-                
+
                 for v in changed:
                     if v['mac'] == to['mac'] or v['ip'] == to['ip'] or v['host'] == to['host']:
                         to['del'] = True

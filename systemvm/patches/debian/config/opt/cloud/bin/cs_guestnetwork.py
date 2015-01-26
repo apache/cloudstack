@@ -19,11 +19,12 @@ from pprint import pprint
 
 keys = ['eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'eth6', 'eth7', 'eth8', 'eth9']
 
+
 def merge(dbag, gn):
     device = gn['device']
-    
+
     if not gn['add'] and device in dbag:
-        
+
         if dbag[device]:
             device_to_die = dbag[device][0]
             try:
@@ -33,8 +34,8 @@ def merge(dbag, gn):
                 del(dbag[device])
         else:
             del(dbag[device])
-    
+
     else:
         dbag.setdefault(device, []).append(gn)
-    
+
     return dbag

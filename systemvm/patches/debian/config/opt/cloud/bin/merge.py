@@ -126,7 +126,6 @@ class updateDataBag:
 
     def processGuestNetwork(self, dbag):
         d = self.qFile.data
-        
         dp = {}
         dp['public_ip'] = d['router_guest_ip']
         dp['netmask'] = d['router_guest_netmask']
