@@ -1174,6 +1174,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private Volume orchestrateAttachVolumeToVM(Long vmId, Long volumeId, Long deviceId) {
         VolumeInfo volumeToAttach = volFactory.getVolume(volumeId);
+
+        if (volumeToAttach.isAttachedVM()) {
+            throw new CloudRuntimeException("This volume is already attached to a VM.");
+        }
+
         UserVmVO vm = _userVmDao.findById(vmId);
         VolumeVO exstingVolumeOfVm = null;
         List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
