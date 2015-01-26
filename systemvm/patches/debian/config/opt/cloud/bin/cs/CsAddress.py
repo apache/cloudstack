@@ -26,7 +26,7 @@ import time
 from CsRoute import CsRoute
 from CsRule import CsRule
 
-VRRP_TYPES = ['public']
+VRRP_TYPES = ['guest']
 
 class CsAddress(CsDataBag):
 
@@ -299,7 +299,7 @@ class CsIP:
                 cmd2 = "ip link set %s up" % self.getDevice()
                 # Do not change the state of ips on a redundant router that are managed by vrrp or CsRedundant
                 # the guest networks interfaces should be up and running.
-                if not self.is_public():
+                if not self.config.cmdline().is_redundant() and not self.is_public():
                     CsHelper.execute(cmd2)
 
     def set_mark(self):
