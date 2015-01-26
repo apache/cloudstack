@@ -28,6 +28,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
@@ -115,6 +116,10 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             _snapshotDao.remove(snapshotId);
 
             return true;
+        }
+
+        if (ObjectInDataStoreStateMachine.State.Copying.equals(snapshotObj.getStatus())) {
+            throw new InvalidParameterValueException("Unable to delete snapshotshot " + snapshotId + " because it is in the copying state.");
         }
 
         try {
