@@ -61,6 +61,9 @@ class CsCmdLine(CsDataBag):
             return self.idata()['router_pr']
         return 99
 
+    def set_priority(self, val):
+        self.idata()['router_pr'] = val
+
     def is_redundant(self):
         if "redundant_router" in self.idata():
             return self.idata()['redundant_router'] == "true"

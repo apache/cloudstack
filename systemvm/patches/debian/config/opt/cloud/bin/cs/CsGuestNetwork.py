@@ -37,29 +37,29 @@ class CsGuestNetwork:
 
     def get_dns(self):
         if not self.guest:
-        	return self.config.get_dns()
-		# Can a router provide dhcp but not dns?
+            return self.config.get_dns()
+        # Can a router provide dhcp but not dns?
         if 'dns' in self.data:
-            return [ self.data['router_guest_gateway'] ] + self.data['dns'].split(',')
+            return [self.data['router_guest_gateway']] + self.data['dns'].split(',')
         elif "router_guest_gateway" in self.data:
-            return [ self.data['router_guest_gateway'] ]
+            return [self.data['router_guest_gateway']]
         else:
             return [""]
 
     def set_dns(self, val):
-		self.data['dns'] = val
+        self.data['dns'] = val
 
     def set_router(self, val):
-		self.data['router_guest_gateway'] = val
+        self.data['router_guest_gateway'] = val
 
     def get_netmask(self):
-        #We need to fix it properly. I just added the if, as Ian did in some other files, to avoid the exception.
+        # We need to fix it properly. I just added the if, as Ian did in some other files, to avoid the exception.
         if 'router_guest_netmask' in self.data:
             return self.data['router_guest_netmask']
         return ''
 
     def get_gateway(self):
-        #We need to fix it properly. I just added the if, as Ian did in some other files, to avoid the exception.
+        # We need to fix it properly. I just added the if, as Ian did in some other files, to avoid the exception.
         if 'router_guest_gateway' in self.data:
             return self.data['router_guest_gateway']
         return ''
