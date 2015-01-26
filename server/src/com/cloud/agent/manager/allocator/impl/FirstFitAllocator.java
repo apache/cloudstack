@@ -32,6 +32,9 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.capacity.CapacityVO;
+import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -89,6 +92,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     CapacityManager _capacityMgr;
+    @Inject
+    CapacityDao _capacityDao;
 
     boolean _checkHvm = true;
     protected String _allocationAlgorithm = "random";
@@ -235,6 +240,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             Collections.shuffle(hosts);
         } else if (_allocationAlgorithm.equals("userdispersing")) {
             hosts = reorderHostsByNumberOfVms(plan, hosts, account);
+        }else if(_allocationAlgorithm.equals("firstfitleastconsumed")){
+            hosts = reorderHostsByCapacity(plan, hosts);
         }
 
         if (s_logger.isDebugEnabled()) {
@@ -316,6 +323,37 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         }
 
         return suitableHosts;
+    }
+
+    // Reorder hosts in the decreasing order of free capacity.
+    private List<? extends Host> reorderHostsByCapacity(DeploymentPlan plan, List<? extends Host> hosts) {
+        Long clusterId = plan.getClusterId();
+        //Get capacity by which we should reorder
+        String capacityTypeToOrder = _configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
+        short capacityType = CapacityVO.CAPACITY_TYPE_CPU;
+        if("RAM".equalsIgnoreCase(capacityTypeToOrder)){
+            capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
+        }
+        List<Long> hostIdsByFreeCapacity = _capacityDao.orderHostsByFreeCapacity(clusterId, capacityType);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("List of hosts in descending order of free capacity in the cluster: "+ hostIdsByFreeCapacity);
+        }
+
+        //now filter the given list of Hosts by this ordered list
+        Map<Long, Host> hostMap = new HashMap<Long, Host>();
+        for (Host host : hosts) {
+            hostMap.put(host.getId(), host);
+        }
+        List<Long> matchingHostIds = new ArrayList<Long>(hostMap.keySet());
+
+        hostIdsByFreeCapacity.retainAll(matchingHostIds);
+
+        List<Host> reorderedHosts = new ArrayList<Host>();
+        for(Long id: hostIdsByFreeCapacity){
+            reorderedHosts.add(hostMap.get(id));
+        }
+
+        return reorderedHosts;
     }
 
     private List<? extends Host> reorderHostsByNumberOfVms(DeploymentPlan plan, List<? extends Host> hosts, Account account) {

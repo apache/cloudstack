@@ -98,6 +98,8 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     private static final String ORDER_PODS_BY_AGGREGATE_OVERCOMMIT_CAPACITY =
             "SELECT capacity.pod_id, SUM(used_capacity+reserved_capacity)/SUM(total_capacity * cluster_details.value) FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`cluster_details` cluster_details ON (capacity.cluster_id = cluster_details.cluster_id) WHERE data_center_id=? AND capacity_type = ?  AND cluster_details.name = ? GROUP BY capacity.pod_id ORDER BY SUM(used_capacity+reserved_capacity)/SUM(total_capacity * cluster_details.value) ASC";
+    private static final String ORDER_HOSTS_BY_FREE_CAPACITY = "SELECT host_id, SUM(total_capacity - (used_capacity+reserved_capacity))/SUM(total_capacity) FROM `cloud`.`op_host_capacity` WHERE "
+                    + " cluster_id = ? AND capacity_type = ? GROUP BY host_id ORDER BY SUM(total_capacity - (used_capacity+reserved_capacity))/SUM(total_capacity) DESC ";
 
     private static final String LIST_CAPACITY_BY_RESOURCE_STATE =
             "SELECT capacity.data_center_id, sum(capacity.used_capacity), sum(capacity.reserved_quantity), sum(capacity.total_capacity), capacity_capacity_type "
@@ -855,6 +857,29 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + sql, e);
         }
+    }
+
+    @Override
+    public List<Long> orderHostsByFreeCapacity(Long clusterId, short capacityTypeForOrdering){
+         TransactionLegacy txn = TransactionLegacy.currentTxn();
+         PreparedStatement pstmt = null;
+         List<Long> result = new ArrayList<Long>();
+         StringBuilder sql = new StringBuilder(ORDER_HOSTS_BY_FREE_CAPACITY);
+
+         try {
+             pstmt = txn.prepareAutoCloseStatement(sql.toString());
+             pstmt.setLong(1, clusterId);
+             pstmt.setShort(2, capacityTypeForOrdering);
+             ResultSet rs = pstmt.executeQuery();
+             while (rs.next()) {
+                 result.add(rs.getLong(1));
+             }
+             return result;
+         } catch (SQLException e) {
+             throw new CloudRuntimeException("DB Exception on: " + sql, e);
+         } catch (Throwable e) {
+             throw new CloudRuntimeException("Caught: " + sql, e);
+         }
     }
 
     @Override

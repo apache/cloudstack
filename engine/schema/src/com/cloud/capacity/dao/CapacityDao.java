@@ -56,4 +56,6 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
     List<Long> listClustersCrossingThreshold(short capacityType, Long zoneId, String configName, long computeRequested);
 
     float findClusterConsumption(Long clusterId, short capacityType, long computeRequested);
+
+    List<Long> orderHostsByFreeCapacity(Long clusterId, short capacityType);
 }
