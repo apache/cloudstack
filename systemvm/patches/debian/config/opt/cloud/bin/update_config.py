@@ -38,10 +38,12 @@ jsonPath = "/var/cache/cloud/%s"
 jsonCmdConfigPath = jsonPath % sys.argv[1]
 currentGuestNetConfig = "/etc/cloudstack/guestnetwork.json"
 
+
 def finish_config():
     # Converge
     returncode = configure.main([])
     sys.exit(returncode)
+
 
 def process_file():
     print "[INFO] Processing JSON file %s" % sys.argv[1]
@@ -51,59 +53,60 @@ def process_file():
     # Converge
     finish_config()
 
+
 def is_guestnet_configured(guestnet_dict, keys):
-    
+
     existing_keys = []
     new_eth_key = None
-    
+
     for k1, v1 in guestnet_dict.iteritems():
         if k1 in keys and len(v1) > 0:
             existing_keys.append(k1)
-    
+
     if not existing_keys:
         '''
         It seems all the interfaces have been removed. Let's allow a new configuration to come in.
         '''
         print "[WARN] update_config.py :: Reconfiguring guest network..."
         return False
-    
+
     file = open(jsonCmdConfigPath)
     new_guestnet_dict = json.load(file)
-    
+
     if not new_guestnet_dict['add']:
         '''
         Guest network has to be removed.
         '''
         print "[INFO] update_config.py :: Removing guest network..."
         return False
-    
+
     '''
     Check if we have a new guest network ready to be setup
     '''
     device = new_guestnet_dict['device']
-    
+
     if device in existing_keys:
         '''
         Device already configured, ignore.
         '''
         return True
-    
+
     exists = False
-    
+
     for key in existing_keys:
         for interface in guestnet_dict[key]:
             new_mac = new_guestnet_dict["mac_address"].encode('utf-8')
             old_mac = interface["mac_address"].encode('utf-8')
             new_ip = new_guestnet_dict["router_guest_ip"].encode('utf-8')
             old_ip = interface["router_guest_ip"].encode('utf-8')
-    
+
             if (new_mac == old_mac) and (new_ip == old_ip):
                 exists = True
                 break
-        
+
         if exists:
             break
-        
+
     return exists
 
 if not (os.path.isfile(jsonCmdConfigPath) and os.access(jsonCmdConfigPath, os.R_OK)):
@@ -122,7 +125,7 @@ if sys.argv[1] == "guest_network.json":
     if os.path.isfile(currentGuestNetConfig):
         file = open(currentGuestNetConfig)
         guestnet_dict = json.load(file)
-    
+
         if not is_guestnet_configured(guestnet_dict, ['eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'eth6', 'eth7', 'eth8', 'eth9']):
             print "[INFO] update_config.py :: Processing Guest Network."
             process_file()
@@ -133,5 +136,5 @@ if sys.argv[1] == "guest_network.json":
         print "[INFO] update_config.py :: No GuestNetwork configured yet. Configuring first one now."
         process_file()
 else:
-    print "[INFO] update_config.py :: Processing incoming file => %s" % sys.argv[1] 
+    print "[INFO] update_config.py :: Processing incoming file => %s" % sys.argv[1]
     process_file()
