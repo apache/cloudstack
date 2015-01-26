@@ -101,6 +101,7 @@ class CsRedundant(object):
         file.search(" router_id ", "    router_id %s" % self.cl.get_name())
         file.search(" priority ", "    priority %s" % self.cl.get_priority())
         file.search(" weight ", "    weight %s" % 2)
+        file.search(" state ", "    state %s" % self.cl.get_state())
         file.greplace("[RROUTER_BIN_PATH]", self.CS_ROUTER_DIR)
         file.section("virtual_ipaddress {", "}", self._collect_ips())
         file.commit()
@@ -121,7 +122,7 @@ class CsRedundant(object):
         if connt.is_changed():
             CsHelper.service("conntrackd", "restart")
 
-        if file.is_changed():
+        if file.is_changed() and self.cl.get_state() == 'MASTER':
             CsHelper.service("keepalived", "restart")
 
         # FIXME

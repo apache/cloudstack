@@ -1060,8 +1060,8 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
         /*
          * In order to make fail-over works well at any time, we have to ensure:
-         * 1. Backup router's priority = Master's priority - DELTA + 1 2. Backup
-         * router's priority hasn't been bumped up.
+         * 1. Backup router's priority = Master's priority - DELTA + 1
+         * 2. Backup router's priority hasn't been bumped up.
          */
         private void checkSanity(final List<DomainRouterVO> routers) {
             final Set<Long> checkedNetwork = new HashSet<Long>();
@@ -1137,15 +1137,8 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         protected void runInContext() {
             while (true) {
                 try {
-                    final Long networkId = _vrUpdateQueue.take(); // This is a
-                    // blocking
-                    // call so
-                    // this thread
-                    // won't run
-                    // all the
-                    // time if no
-                    // work item
-                    // in queue.
+                    final Long networkId = _vrUpdateQueue.take();
+                    // This is a blocking call so this thread won't run all the time if no work item in queue.
                     final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(networkId, Role.VIRTUAL_ROUTER);
 
                     if (routers.size() != 2) {
@@ -1159,7 +1152,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     final DomainRouterVO router0 = routers.get(0);
                     final DomainRouterVO router1 = routers.get(1);
                     DomainRouterVO router = router0;
-                    if (router0.getId() < router1.getId() && router0.getHostId() != null) {
+                    if (router0.getId() < router1.getId()) {
                         router = router0;
                     } else {
                         router = router1;
@@ -1596,7 +1589,28 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         final boolean isRedundant = router.getIsRedundantRouter();
         if (isRedundant) {
             buf.append(" redundant_router=1");
-            final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(nic.getNetworkId(), Role.VIRTUAL_ROUTER);
+
+            final Long vpcId = router.getVpcId();
+            final List<DomainRouterVO> routers;
+            if (vpcId != null) {
+                routers = _routerDao.listByVpcId(vpcId);
+            } else {
+                routers = _routerDao.listByNetworkAndRole(nic.getNetworkId(), Role.VIRTUAL_ROUTER);
+            }
+
+            String redundantState = RedundantState.BACKUP.toString();
+            if (routers.size() == 0) {
+                redundantState = RedundantState.MASTER.toString();
+            } else {
+                final DomainRouterVO router0 = routers.get(0);
+
+                if (router.getId() == router0.getId()) {
+                    redundantState = RedundantState.MASTER.toString();
+                }
+            }
+
+            buf.append(" redundant_state=").append(redundantState);
+
             try {
                 final int priority = getUpdatedPriority(network, routers, router);
                 router.setPriority(priority);
