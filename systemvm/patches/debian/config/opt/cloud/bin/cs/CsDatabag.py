@@ -125,3 +125,8 @@ class CsCmdLine(CsDataBag):
         if "redundant_master" in self.idata():
             return self.idata()['redundant_master'] == "true"
         return False
+    
+    def get_state(self):
+        if "redundant_state" in self.idata():
+            return self.idata()['redundant_state']
+        return "MASTER"

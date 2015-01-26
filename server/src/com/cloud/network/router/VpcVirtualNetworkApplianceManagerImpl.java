@@ -236,7 +236,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     public boolean finalizeVirtualMachineProfile(final VirtualMachineProfile profile, final DeployDestination dest, final ReservationContext context) {
         final DomainRouterVO domainRouterVO = _routerDao.findById(profile.getId());
 
-        if (domainRouterVO.getVpcId() != null) {
+        final Long vpcId = domainRouterVO.getVpcId();
+
+        if (vpcId != null) {
             if (domainRouterVO.getState() == State.Starting || domainRouterVO.getState() == State.Running) {
                 String defaultDns1 = null;
                 String defaultDns2 = null;
@@ -257,7 +259,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
                 // add vpc cidr/dns/networkdomain to the boot load args
                 final StringBuilder buf = profile.getBootArgsBuilder();
-                final Vpc vpc = _entityMgr.findById(Vpc.class, domainRouterVO.getVpcId());
+                final Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
                 buf.append(" vpccidr=" + vpc.getCidr() + " domain=" + vpc.getNetworkDomain());
 
                 buf.append(" dns1=").append(defaultDns1);
@@ -686,16 +688,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     @Override
     public List<DomainRouterVO> getVpcRouters(final long vpcId) {
         return _routerDao.listByVpcId(vpcId);
-    }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
     }
 
     @Override
