@@ -177,12 +177,21 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     }
 
     private Void handleCreateTemplateFromSnapshot(SnapshotInfo snapshotInfo, TemplateInfo templateInfo, AsyncCompletionCallback<CopyCommandResult> callback) {
+        try {
+            snapshotInfo.processEvent(Event.CopyingRequested);
+        }
+        catch (Exception ex) {
+            throw new CloudRuntimeException("This snapshot is not currently in a state where it can be used to create a template.");
+        }
+
         HostVO hostVO = getHost(snapshotInfo.getDataStore().getId());
         DataStore srcDataStore = snapshotInfo.getDataStore();
 
         String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
         int primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
         CopyCommand copyCommand = new CopyCommand(snapshotInfo.getTO(), templateInfo.getTO(), primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
+
+        String errMsg = null;
 
         CopyCmdAnswer copyCmdAnswer = null;
 
@@ -205,16 +214,26 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             catch (Exception ex) {
                 s_logger.debug(ex.getMessage(), ex);
             }
-        }
 
-        String errMsg = null;
-
-        if (copyCmdAnswer == null || !copyCmdAnswer.getResult()) {
-            if (copyCmdAnswer != null && copyCmdAnswer.getDetails() != null && !copyCmdAnswer.getDetails().isEmpty()) {
-                errMsg = copyCmdAnswer.getDetails();
+            if (copyCmdAnswer == null || !copyCmdAnswer.getResult()) {
+                if (copyCmdAnswer != null && copyCmdAnswer.getDetails() != null && !copyCmdAnswer.getDetails().isEmpty()) {
+                    errMsg = copyCmdAnswer.getDetails();
+                }
+                else {
+                    errMsg = "Unable to perform host-side operation";
+                }
             }
-            else {
-                errMsg = "Unable to perform host-side operation";
+
+            try {
+                if (errMsg == null) {
+                    snapshotInfo.processEvent(Event.OperationSuccessed);
+                }
+                else {
+                    snapshotInfo.processEvent(Event.OperationFailed);
+                }
+            }
+            catch (Exception ex) {
+                s_logger.debug(ex.getMessage(), ex);
             }
         }
 
