@@ -105,6 +105,8 @@ class CsRedundant(object):
         file.search(" virtual_router_id ", "    virtual_router_id %s" % self.cl.get_router_id())
         file.greplace("[RROUTER_BIN_PATH]", self.CS_ROUTER_DIR)
         file.section("virtual_ipaddress {", "}", self._collect_ips())
+        if self.cl.get_state() == 'MASTER':
+            file.search(" priority ", "    priority %s" % 120)
         file.commit()
 
         # conntrackd configuration
@@ -209,7 +211,6 @@ class CsRedundant(object):
         CsHelper.service("cloud-passwd-srvr", "restart")
         CsHelper.service("dnsmasq", "restart")
         self.cl.dbag['config']['redundant_master'] = "true"
-        self._set_priority(self.CS_PRIO_UP)
         self.cl.save()
         #CsHelper.service("keepalived", "restart")
         logging.info("Router switched to master mode")
