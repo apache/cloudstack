@@ -60,6 +60,7 @@ setup_apache2() {
 var="$1"
 cert="/root/.ssh/id_rsa.cloud"
 config_ips=""
+setDnsRules=0
 
 while [ -n "$var" ]
 do
@@ -71,6 +72,7 @@ do
  setup_apache2 "$routerip"
  config_ips="${config_ips}"$routerip":"
  var=$( echo $var | sed "s/${var1}-//" )
+ setDnsRules=1
 done
 
 #restarting the apache server for the config to take effect.
@@ -94,6 +96,33 @@ then
    service apache2 restart
    unlock_exit $result $lock $locked
 fi
+
+if [ "$setDnsRules" -eq 1 ]
+then
+    //check wether chain exist
+    iptables-save -t filter | grep 'dnsIpAlias_allow'
+
+    if [ $? -eq  0 ]
+    then
+      iptables -F dnsIpAlias_allow
+    else
+        //if not exist create it
+        iptables -N dnsIpAlias_allow
+        iptables -A INPUT -i eth0 -p tcp --dport 53 -j dnsIpAlias_allow
+        iptables -A INPUT -i eth0 -p udp --dport 53 -j dnsIpAlias_allow
+    fi
+
+    for cidr in $(ip addr | grep eth0 | grep inet | awk '{print $2}');
+    do
+        iptables -A dnsIpAlias_allow  -i eth0 -p tcp --dport 53 -s $cidr -j ACCEPT
+        iptables -A dnsIpAlias_allow  -i eth0 -p udp --dport 53 -s $cidr -j ACCEPT
+    done
+else
+        iptables -D INPUT -i eth0 -p tcp --dport 53 -j dnsIpAlias_allow
+        iptables -D INPUT -i eth0 -p udp --dport 53 -j dnsIpAlias_allow
+        iptables -X dnsIpAlias_allow
+fi
+
 
 #restaring the password service to enable it on the ip aliases
 /etc/init.d/cloud-passwd-srvr restart
