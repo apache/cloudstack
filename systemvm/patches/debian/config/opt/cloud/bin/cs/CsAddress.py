@@ -491,8 +491,19 @@ class CsIP:
                     self.setAddress(address)
                     if self.hasIP(ip):
                         found = True
+                    if self.is_guest_gateway(address, ip):
+                        found = True
             if not found:
                 self.delete(ip)
+
+    def is_guest_gateway(self, bag, ip):
+        """ Exclude the vrrp maintained addresses on a redundant router """
+        if not self.config.cl.is_redundant():
+           return False
+        rip = ip.split('/')[0]
+        if bag['nw_type'] == "guest" and rip == bag['gateway']:
+           return True
+        return False
 
     def delete(self, ip):
         remove = []
