@@ -280,7 +280,6 @@ public class RestAuth {
 		int offset = signature.indexOf( "%" );
 		if (-1 != offset) signature = URLDecoder.decode( signature, "UTF-8" );
 	
-        boolean match = signature.equals( calSig );
         boolean match = ConstantTimeComparator.compareStrings(signature, calSig);
         if (!match) 
         	logger.error( "Signature mismatch, [" + signature + "] [" + calSig + "] over [" + StringToSign + "]" );
