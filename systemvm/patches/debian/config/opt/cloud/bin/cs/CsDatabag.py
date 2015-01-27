@@ -130,3 +130,8 @@ class CsCmdLine(CsDataBag):
         if "redundant_state" in self.idata():
             return self.idata()['redundant_state']
         return "MASTER"
+    
+    def get_router_id(self):
+        if "router_id" in self.idata():
+            return self.idata()['router_id']
+        return 1
