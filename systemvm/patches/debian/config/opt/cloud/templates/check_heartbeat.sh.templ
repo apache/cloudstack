@@ -38,6 +38,7 @@ then
         if [ -e $STRIKE_FILE ]
         then
             rm $STRIKE_FILE
+            echo keepalived.strikes file was removed! >> $ROUTER_LOG
         else
             echo keepalived.strikes file does not exist! >> $ROUTER_LOG
         fi
