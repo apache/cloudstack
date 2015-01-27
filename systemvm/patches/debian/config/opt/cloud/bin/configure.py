@@ -556,14 +556,17 @@ def main(argv):
     fwd = CsForwardingRules("forwardingrules", config)
     fwd.process()
 
-    vpns = CsSite2SiteVpn("site2sitevpn", config)
-    vpns.process()
+    nf = CsNetfilters()
+    nf.compare(config.get_fw())
 
     red = CsRedundant(config)
     red.set()
 
     nf = CsNetfilters()
     nf.compare(config.get_fw())
+
+    vpns = CsSite2SiteVpn("site2sitevpn", config)
+    vpns.process()
 
     dhcp = CsDhcp("dhcpentry", config)
     dhcp.process()
