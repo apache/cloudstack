@@ -33,7 +33,8 @@ public class GetUploadParamsResponse extends BaseResponse {
     @Param(description = "the template/volume ID")
     private UUID id;
 
-    @Param(name = ApiConstants.URL, description = "POST url to upload the file to")
+    @SerializedName(ApiConstants.URL)
+    @Param(description = "POST url to upload the file to")
     private URL postURL;
 
     @SerializedName(ApiConstants.METADATA)
