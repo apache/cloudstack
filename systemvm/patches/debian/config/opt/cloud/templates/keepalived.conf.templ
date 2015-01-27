@@ -19,11 +19,11 @@ global_defs {
    router_id [ROUTER_ID]
 }
 
-vrrp_script check_bumpup {
-    script "[RROUTER_BIN_PATH]/check_bumpup.sh"
-    interval 5
-    weight [DELTA]
-}
+!vrrp_script check_bumpup {
+    !script "[RROUTER_BIN_PATH]/check_bumpup.sh"
+    !interval 5
+    !weight [DELTA]
+!}
 
 vrrp_script heartbeat {
     script "[RROUTER_BIN_PATH]/heartbeat.sh"
@@ -47,7 +47,7 @@ vrrp_instance inside_network {
     }
 
     track_script {
-        check_bumpup
+        !check_bumpup
         heartbeat
     }
 
