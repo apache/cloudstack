@@ -1542,7 +1542,6 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             final String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIp4Address()) | ~NetUtils.ip2Long(guestNic.getNetmask()));
             buf.append(" guestbrd=").append(brd);
             buf.append(" guestcidrsize=").append(NetUtils.getCidrSize(guestNic.getNetmask()));
-            buf.append(" router_pr=").append(router.getPriority());
 
             final int advertInt = NumbersUtil.parseInt(_configDao.getValue(Config.RedundantRouterVrrpInterval.key()), 1);
             buf.append(" advert_int=").append(advertInt);
@@ -1621,6 +1620,8 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 final int priority = getUpdatedPriority(network, routers, router);
                 router.setPriority(priority);
                 router = _routerDao.persist(router);
+
+                buf.append(" router_pr=").append(router.getPriority());
             } catch (final InsufficientVirtualNetworkCapacityException e) {
                 s_logger.error("Failed to get update priority!", e);
                 throw new CloudRuntimeException("Failed to get update priority!");
