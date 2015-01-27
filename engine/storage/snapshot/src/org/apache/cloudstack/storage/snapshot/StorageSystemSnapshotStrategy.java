@@ -200,9 +200,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 volumeInfo.stateTransit(Volume.Event.OperationFailed);
             }
 
-            if (snapshotVO != null) {
-                _snapshotDao.releaseFromLockTable(snapshotInfo.getId());
-            }
+            _snapshotDao.releaseFromLockTable(snapshotInfo.getId());
         }
 
         return snapshotInfo;
