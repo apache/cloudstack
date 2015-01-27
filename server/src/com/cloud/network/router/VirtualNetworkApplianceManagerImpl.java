@@ -1302,23 +1302,24 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         }
     }
 
-    protected int getUpdatedPriority(final Network network, final List<DomainRouterVO> routers, final DomainRouterVO exclude)
+    protected int getUpdatedPriority(final Network network, final List<DomainRouterVO> routers, final DomainRouterVO masterRouter)
             throws InsufficientVirtualNetworkCapacityException {
         int priority;
         if (routers.size() == 0) {
             priority = DEFAULT_PRIORITY;
         } else {
             int maxPriority = 0;
-            for (final DomainRouterVO r : routers) {
-                if (!r.getIsRedundantRouter()) {
+
+            final DomainRouterVO router0 = routers.get(0);
+            if (router0.getId() == masterRouter.getId()) {
+                if (!router0.getIsRedundantRouter()) {
                     throw new CloudRuntimeException("Redundant router is mixed with single router in one network!");
                 }
-                // FIXME Assume the maxPriority one should be running or just
-                // created.
-                if (r.getId() != exclude.getId() && _nwHelper.getRealPriority(r) > maxPriority) {
-                    maxPriority = _nwHelper.getRealPriority(r);
-                }
+                maxPriority = _nwHelper.getRealPriority(router0);
+            } else {
+                maxPriority = DEFAULT_PRIORITY;
             }
+
             if (maxPriority == 0) {
                 return DEFAULT_PRIORITY;
             }
@@ -1330,6 +1331,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 throw new InsufficientVirtualNetworkCapacityException("Too many times fail-over happened! Current maximum priority is too high as " + maxPriority + "!",
                         network.getId());
             }
+
             priority = maxPriority - DEFAULT_DELTA + 1;
         }
         return priority;
@@ -1589,6 +1591,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         final boolean isRedundant = router.getIsRedundantRouter();
         if (isRedundant) {
             buf.append(" redundant_router=1");
+            buf.append(" router_id=").append(router.getId());
 
             final Long vpcId = router.getVpcId();
             final List<DomainRouterVO> routers;
@@ -1599,13 +1602,16 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             }
 
             String redundantState = RedundantState.BACKUP.toString();
+            router.setRedundantState(RedundantState.BACKUP);
             if (routers.size() == 0) {
                 redundantState = RedundantState.MASTER.toString();
+                router.setRedundantState(RedundantState.MASTER);
             } else {
                 final DomainRouterVO router0 = routers.get(0);
 
                 if (router.getId() == router0.getId()) {
                     redundantState = RedundantState.MASTER.toString();
+                    router.setRedundantState(RedundantState.MASTER);
                 }
             }
 
