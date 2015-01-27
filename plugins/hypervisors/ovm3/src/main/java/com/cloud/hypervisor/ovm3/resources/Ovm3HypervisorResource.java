@@ -113,7 +113,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             .getLogger(Ovm3HypervisorResource.class);
     @Inject
     private VirtualRoutingResource vrResource;
-    private StorageSubsystemCommandHandler storageHandler;
+    protected StorageSubsystemCommandHandler storageHandler;
 
     private Connection c;
     private Ovm3StoragePool storagepool;
@@ -208,86 +208,87 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
     @Override
     public Answer executeRequest(Command cmd) {
         Class<? extends Command> clazz = cmd.getClass();
+        LOGGER.debug("executeRequest called: " + cmd.getClass());
         if (cmd instanceof NetworkElementCommand) {
             return vrResource.executeRequest((NetworkElementCommand) cmd);
-        } else if (clazz == CheckHealthCommand.class) {
-            return hypervisorsupport.execute((CheckHealthCommand) cmd);
+        } else if (clazz == NetworkRulesSystemVmCommand.class) {
+            return virtualroutingsupport
+                    .execute((NetworkRulesSystemVmCommand) cmd);
+        } else if (clazz == CheckSshCommand.class) {
+            return virtualroutingsupport.execute((CheckSshCommand) cmd);
         } else if (clazz == NetworkUsageCommand.class) {
             return virtualroutingsupport.execute((NetworkUsageCommand) cmd);
-        } else if (clazz == PlugNicCommand.class) {
-            return vmsupport.execute((PlugNicCommand) cmd);
-        } else if (clazz == UnPlugNicCommand.class) {
-            return vmsupport.execute((UnPlugNicCommand) cmd);
-        } else if (clazz == ReadyCommand.class) {
-            return hypervisorsupport.execute((ReadyCommand) cmd);
+        } else if (cmd instanceof StorageSubSystemCommand) {
+            return storageHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
         } else if (clazz == CopyCommand.class) {
             return storageprocessor.execute((CopyCommand) cmd);
         } else if (clazz == DeleteCommand.class) {
             return storageprocessor.execute((DeleteCommand) cmd);
-        } else if (cmd instanceof StorageSubSystemCommand) {
-            return storageHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
+        } else if (clazz == CreateCommand.class) {
+            return storageprocessor.execute((CreateCommand) cmd);
+        } else if (clazz == CreateObjectCommand.class) {
+            return storageprocessor.execute((CreateObjectCommand) cmd);
+        } else if (clazz == AttachIsoCommand.class) {
+            return storageprocessor.attachIso((AttachCommand) cmd);
+         } else if (clazz == DettachCommand.class) {
+            return storageprocessor.execute((DettachCommand) cmd);
+         } else if (clazz == AttachCommand.class) {
+            return storageprocessor.execute((AttachCommand) cmd);
+         } else if (clazz == CreatePrivateTemplateFromVolumeCommand.class) {
+             return storageprocessor
+                     .execute((CreatePrivateTemplateFromVolumeCommand) cmd);
+         } else if (clazz == DestroyCommand.class) {
+             return storageprocessor.execute((DestroyCommand) cmd);
+         } else if (clazz == CopyVolumeCommand.class) {
+             return storageprocessor.execute((CopyVolumeCommand) cmd);
         } else if (clazz == CreateStoragePoolCommand.class) {
             return storagepool.execute((CreateStoragePoolCommand) cmd);
         } else if (clazz == ModifyStoragePoolCommand.class) {
             return storagepool.execute((ModifyStoragePoolCommand) cmd);
         } else if (clazz == PrimaryStorageDownloadCommand.class) {
             return storagepool.execute((PrimaryStorageDownloadCommand) cmd);
-        } else if (clazz == CreateCommand.class) {
-            return storageprocessor.execute((CreateCommand) cmd);
-        } else if (clazz == GetHostStatsCommand.class) {
-            return hypervisorsupport.execute((GetHostStatsCommand) cmd);
-        } else if (clazz == StopCommand.class) {
-            return execute((StopCommand) cmd);
-        } else if (clazz == RebootCommand.class) {
-            return execute((RebootCommand) cmd);
+        } else if (clazz == DeleteStoragePoolCommand.class) {
+            return storagepool.execute((DeleteStoragePoolCommand) cmd);
         } else if (clazz == GetStorageStatsCommand.class) {
             return storagepool.execute((GetStorageStatsCommand) cmd);
-        } else if (clazz == GetVmStatsCommand.class) {
-            return vmsupport.execute((GetVmStatsCommand) cmd);
-        } else if (clazz == AttachVolumeCommand.class) {
-            return vmsupport.execute((AttachVolumeCommand) cmd);
-        } else if (clazz == DestroyCommand.class) {
-            return storageprocessor.execute((DestroyCommand) cmd);
-        } else if (clazz == PrepareForMigrationCommand.class) {
-            return vmsupport.execute((PrepareForMigrationCommand) cmd);
-        } else if (clazz == MigrateCommand.class) {
-            return vmsupport.execute((MigrateCommand) cmd);
+        } else if (clazz == GetHostStatsCommand.class) {
+            return hypervisorsupport.execute((GetHostStatsCommand) cmd);
         } else if (clazz == CheckVirtualMachineCommand.class) {
             return hypervisorsupport.execute((CheckVirtualMachineCommand) cmd);
         } else if (clazz == MaintainCommand.class) {
             return hypervisorsupport.execute((MaintainCommand) cmd);
-        } else if (clazz == GetVncPortCommand.class) {
-            return vmsupport.execute((GetVncPortCommand) cmd);
-        } else if (clazz == PingTestCommand.class) {
-            return hypervisornetwork.execute((PingTestCommand) cmd);
+        } else if (clazz == CheckHealthCommand.class) {
+            return hypervisorsupport.execute((CheckHealthCommand) cmd);
+        } else if (clazz == ReadyCommand.class) {
+            return hypervisorsupport.execute((ReadyCommand) cmd);
         } else if (clazz == FenceCommand.class) {
             return hypervisorsupport.execute((FenceCommand) cmd);
-        } else if (clazz == AttachIsoCommand.class) {
-           return storageprocessor.attachIso((AttachCommand) cmd);
-        } else if (clazz == DettachCommand.class) {
-            return storageprocessor.execute((DettachCommand) cmd);
-        } else if (clazz == AttachCommand.class) {
-             return storageprocessor.execute((AttachCommand) cmd);
-        } else if (clazz == NetworkRulesSystemVmCommand.class) {
-            return virtualroutingsupport
-                    .execute((NetworkRulesSystemVmCommand) cmd);
-        } else if (clazz == CreatePrivateTemplateFromVolumeCommand.class) {
-            return storageprocessor
-                    .execute((CreatePrivateTemplateFromVolumeCommand) cmd);
-        } else if (clazz == CopyVolumeCommand.class) {
-            return storageprocessor.execute((CopyVolumeCommand) cmd);
-        } else if (clazz == DeleteStoragePoolCommand.class) {
-            return storagepool.execute((DeleteStoragePoolCommand) cmd);
+        } else if (clazz == PingTestCommand.class) {
+            return hypervisornetwork.execute((PingTestCommand) cmd);
         } else if (clazz == CheckNetworkCommand.class) {
             return hypervisornetwork.execute((CheckNetworkCommand) cmd);
-        } else if (clazz == CheckSshCommand.class) {
-            return virtualroutingsupport.execute((CheckSshCommand) cmd);
-        } else if (clazz == CreateObjectCommand.class) {
-            return storageprocessor.execute((CreateObjectCommand) cmd);
+        } else if (clazz == GetVmStatsCommand.class) {
+            return vmsupport.execute((GetVmStatsCommand) cmd);
+        } else if (clazz == AttachVolumeCommand.class) {
+            return vmsupport.execute((AttachVolumeCommand) cmd);
+        } else if (clazz == PrepareForMigrationCommand.class) {
+            return vmsupport.execute((PrepareForMigrationCommand) cmd);
+        } else if (clazz == MigrateCommand.class) {
+            return vmsupport.execute((MigrateCommand) cmd);
+        } else if (clazz == GetVncPortCommand.class) {
+            return vmsupport.execute((GetVncPortCommand) cmd);
+        } else if (clazz == PlugNicCommand.class) {
+            return vmsupport.execute((PlugNicCommand) cmd);
+        } else if (clazz == UnPlugNicCommand.class) {
+            return vmsupport.execute((UnPlugNicCommand) cmd);
         } else if (clazz == StartCommand.class) {
             return execute((StartCommand) cmd);
+        } else if (clazz == StopCommand.class) {
+            return execute((StopCommand) cmd);
+        } else if (clazz == RebootCommand.class) {
+            return execute((RebootCommand) cmd);
         }
-        LOGGER.debug("Can't find class for executeRequest, is your direct call missing?");
+        LOGGER.debug("Can't find class for executeRequest " + cmd.getClass() +", is your direct call missing?");
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
 

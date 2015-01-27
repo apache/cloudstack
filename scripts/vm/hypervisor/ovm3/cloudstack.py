@@ -51,7 +51,7 @@ class CloudStack(Agent):
             'check_domr_port': domrCheckPort,
             'check_domr_ssh': domrCheckSsh,
             'check_dom0_ip': dom0CheckIp,
-            'check_dom0_status': dom0CheckStatus,
+            'check_dom0_storage_status': dom0CheckStorageStatus,
             'ovs_domr_upload_file': ovsDomrUploadFile,
             'ovs_control_interface': ovsControlInterface,
             'ovs_mkdirs': ovsMkdirs,
@@ -273,6 +273,10 @@ def ovsControlInterface(dev, cidr):
 
     command = ['ifconfig', dev, 'arp']
     subprocess.call(command, shell=False)
+    # because OVM creates this and it breaks stuff if we're rebooted sometimes...
+    control = "/etc/sysconfig/network-scripts/%s" % (dev)
+    command = ['rm', control]
+    subprocess.call(command, shell=False)
     return True
 
 def dom0CheckIp(ip):
@@ -287,7 +291,7 @@ def dom0CheckIp(ip):
             break
     return False
 
-def dom0CheckStatus(path, script, timeout, interval):
+def dom0CheckStorageStatus(path, script, timeout, interval):
     storagehealth="storagehealth.py"
     path="/opt/cloudstack/bin"
     running = False

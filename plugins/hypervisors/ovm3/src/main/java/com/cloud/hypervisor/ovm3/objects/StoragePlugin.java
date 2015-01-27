@@ -709,7 +709,6 @@ public class StoragePlugin extends OvmObject {
         sd.setDetails((HashMap<String, Object>) callWrapper(
                 "storage_plugin_getFileSystemInfo", getPluginType,
                 ss.getDetails(), sd.getDetails()));
-        // System.out.println(sd.getDetails());
         return sd;
     }
     public StorageDetails getStorageDetails() {

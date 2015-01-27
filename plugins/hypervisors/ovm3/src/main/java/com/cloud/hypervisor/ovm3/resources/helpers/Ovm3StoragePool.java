@@ -471,6 +471,18 @@ public class Ovm3StoragePool {
             /* or is it mntUuid ish ? */
             StorageDetails sd = store.storagePluginGetFileSystemInfo(propUuid,
                     mntUuid, fs.getHost(), fs.getDevice());
+            /* FIXME: cure me or kill me, this needs to trigger a reinit of
+             * primary storage, actually the problem is more deeprooted, as
+             * when the hypervisor reboots it looses partial context and needs
+             * to be reinitiated.... actually a full configure round... how
+             * to trigger that ?
+             */
+            if (sd == null) {
+                String msg = "GetStorageStatsCommand on pool " + cmd.getStorageId()
+                        + " failed";
+                LOGGER.debug(msg);
+                return new GetStorageStatsAnswer(cmd, msg);
+            }
             long total = Long.parseLong(sd.getSize());
             long used = total - Long.parseLong(sd.getFreeSize());
             return new GetStorageStatsAnswer(cmd, total, used);

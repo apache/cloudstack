@@ -66,6 +66,7 @@ public class NetworkTest {
     private String VLANINT = "xenbr0";
     private Integer VLAN = 200;
     private String CONTROL = "control0";
+    private String CONTROLMAC = "B2:D1:75:69:8C:58";
     private String EMPTY = results.escapeOrNot("<?xml version=\"1.0\" ?>"
             + "<Discover_Network_Result>" + "</Discover_Network_Result>");
     private String DISCOVERNETWORK = results
@@ -238,9 +239,13 @@ public class NetworkTest {
                     + "          </Interfaces>"
                     + "          <BootProto>none</BootProto>"
                     + "        </Device>"
-                    + "        <Device Name=\"control0\">"
-                    + "          <Family Type=\"AF_INET\">"
-                    + "            <MAC>B2:D1:75:69:8C:58</MAC>"
+                    + "        <Device Name=\""
+                    + CONTROL
+                    + "\">"
+                    + "          \"<Family Type=\"AF_INET\">"
+                    + "            <MAC>"
+                    + CONTROLMAC
+                    + "            </MAC>"
                     + "          </Family>"
                     + "          <Interfaces>"
                     + "          </Interfaces>"
@@ -274,6 +279,7 @@ public class NetworkTest {
         results.basicBooleanTest(net.discoverNetwork());
         results.basicStringTest(net.getBridgeByIp(IP).getName(), INT);
         results.basicStringTest(net.getBridgeByName(INT).getAddress(), IP);
+        results.basicStringTest(net.getInterfaceByName(CONTROL).getMac(), CONTROLMAC);
         net.getBridgeByIp("");
         results.basicBooleanTest(net.getSuccess(), false);
         net.getBridgeByName("");
@@ -288,8 +294,14 @@ public class NetworkTest {
     }
 
     @Test
-    public void testInterfaces() throws Ovm3ResourceException {
-
+    public void testInterfacesNotFound() throws Ovm3ResourceException {
+        con.setResult(results.getNil());
+        results.basicBooleanTest(net.discoverNetwork(), false);
+        con.setResult(results.simpleResponseWrapWrapper(DISCOVERNETWORK));
+        results.basicBooleanTest(net.discoverNetwork());
+        if (net.getInterfaceByName(CONTROL+ "xx") == null) {
+            System.out.println("yay!");
+        };
     }
 
     @Test(expected = Ovm3ResourceException.class)

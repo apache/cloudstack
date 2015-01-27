@@ -56,17 +56,15 @@ public class Ovm3HypervisorNetwork {
         */
         try {
            Network net = new Network(c);
-           config.setAgentInterfaces(net.getInterfaceList());
            String controlIface = config.getAgentControlNetworkName();
            if (controlIface != null
-                   && !config.getAgentInterfaces().containsKey(controlIface)) {
+                   && net.getInterfaceByName(controlIface) == null) {
                LOGGER.debug("starting " + controlIface);
                net.startOvsLocalConfig(controlIface);
                /* ovs replies too "fast" so the bridge can be "busy" */
                int contCount = 0;
-               while (!config.getAgentInterfaces().containsKey(controlIface)) {
+               while (net.getInterfaceByName(controlIface) == null) {
                    LOGGER.debug("waiting for " + controlIface);
-                   config.setAgentInterfaces(net.getInterfaceList());
                    Thread.sleep(1 * 1000);
                    if (contCount > 9) {
                        throw new ConfigurationException("Unable to configure "

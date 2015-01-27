@@ -147,7 +147,7 @@ public class CloudstackPlugin extends OvmObject {
         return (Boolean) callWrapper("check_dom0_ip", ovm3PoolVip);
     }
     public boolean dom0CheckStorageHealth(String path, String script, Integer timeout, Integer interval) throws Ovm3ResourceException {
-        Object[] x = (Object[]) callWrapper("check_dom0_status", path, script, timeout, interval);
+        Object[] x = (Object[]) callWrapper("check_dom0_storage_status", path, script, timeout, interval);
         Boolean running = (Boolean) x[0];
         checkstoragestarted = (Boolean) x[1];
         return running;
