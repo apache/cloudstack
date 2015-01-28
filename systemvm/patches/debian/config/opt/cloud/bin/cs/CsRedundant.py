@@ -102,7 +102,7 @@ class CsRedundant(object):
         file.search(" priority ", "    priority %s" % self.cl.get_priority())
         file.search(" weight ", "    weight %s" % 2)
         file.search(" state ", "    state %s" % self.cl.get_state())
-        file.search(" virtual_router_id ", "    virtual_router_id %s" % self.cl.get_router_id())
+        #file.search(" virtual_router_id ", "    virtual_router_id %s" % self.cl.get_router_id())
         file.greplace("[RROUTER_BIN_PATH]", self.CS_ROUTER_DIR)
         file.section("virtual_ipaddress {", "}", self._collect_ips())
         if self.cl.get_state() == 'MASTER':
