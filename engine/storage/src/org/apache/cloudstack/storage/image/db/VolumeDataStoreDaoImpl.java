@@ -58,7 +58,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     private SearchBuilder<VolumeDataStoreVO> uploadVolumeSearch;
     private SearchBuilder<VolumeVO> volumeOnlySearch;
     private SearchBuilder<VolumeDataStoreVO> uploadVolumeStateSearch;
-    private static final String EXPIRE_DOWNLOAD_URLS_FOR_ZONE = "update volume_store_ref set download_url_created=? where store_id in (select id from image_store where data_center_id=?)";
+    private static final String EXPIRE_DOWNLOAD_URLS_FOR_ZONE = "update volume_store_ref set download_url_created=? where download_url_created is not null and store_id in (select id from image_store where data_center_id=?)";
 
 
     @Inject
