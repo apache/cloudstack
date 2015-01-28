@@ -5508,6 +5508,29 @@
 
                             restart: {
                                 label: 'label.restart.vpc',
+                                createForm: {
+		                            title: 'label.restart.vpc',
+		                            desc: 'message.restart.vpc',
+		                            preFilter: function(args) {
+		                               var zoneObj;
+		                               $.ajax({
+		                                   url: createURL("listZones&id=" + args.context.vpc[0].zoneid),
+		                                   dataType: "json",
+		                                   async: false,
+		                                   success: function(json) {
+		                                       zoneObj = json.listzonesresponse.zone[0];
+		                                   }
+		                               });
+		                               args.$form.find('.form-item[rel=cleanup]').find('input').attr('checked', 'checked'); //checked
+		                               args.$form.find('.form-item[rel=cleanup]').css('display', 'inline-block'); //shown
+		                           },
+		                           fields: {
+		                               cleanup: {
+		                                   label: 'label.clean.up',
+		                                   isBoolean: true
+		                               }
+		                           }
+		                        },
                                 messages: {
                                     confirm: function(args) {
                                         return 'message.restart.vpc';
@@ -5516,11 +5539,13 @@
                                         return 'label.restart.vpc';
                                     }
                                 },
+
                                 action: function(args) {
                                     $.ajax({
                                         url: createURL("restartVPC"),
                                         data: {
-                                            id: args.context.vpc[0].id
+                                            id: args.context.vpc[0].id,
+                                            cleanup: (args.data.cleanup == "on")
                                         },
                                         success: function(json) {
                                             var jid = json.restartvpcresponse.jobid;
