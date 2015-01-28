@@ -93,14 +93,6 @@ class CsCmdLine(CsDataBag):
         else:
             return "unloved-router"
 
-    def get_dns(self):
-        dns = []
-        names = "dns1 dns2"
-        for name in names:
-            if name in self.idata():
-                dns.append(self.idata()[name])
-        return dns
-
     def get_type(self):
         if "type" in self.idata():
             return self.idata()['type']
