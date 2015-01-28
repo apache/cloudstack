@@ -60,6 +60,7 @@ install_packages() {
   echo "openswan openswan/install_x509_certificate boolean false" | debconf-set-selections
   echo "openswan openswan/install_x509_certificate seen true" | debconf-set-selections
   apt-get --no-install-recommends -q -y --force-yes install openswan=1:2.6.37-3
+  apt-mark hold openswan
 
   # xenstore utils
   apt-get --no-install-recommends -q -y --force-yes install xenstore-utils libxenstore3.0
