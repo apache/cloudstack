@@ -35,6 +35,7 @@ vrrp_instance inside_network {
     interface eth0
     virtual_router_id 51
     priority [PRIORITY]
+		nopreempt
 
     advert_int 1
     authentication {
