@@ -108,7 +108,9 @@ install_packages() {
   apt-get update
   apt-get --no-install-recommends -q -y --force-yes install links:i386 libuuid1:i386
 
-
+  # do a final update and upgrade
+  apt-get update
+  apt-get -y --force-yes upgrade
 }
 
 setup_accounts() {
