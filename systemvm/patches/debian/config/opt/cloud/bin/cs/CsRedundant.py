@@ -99,7 +99,7 @@ class CsRedundant(object):
         # keepalived configuration
         file = CsFile(self.KEEPALIVED_CONF)
         file.search(" router_id ", "    router_id %s" % self.cl.get_name())
-        # file.search(" priority ", "    priority %s" % self.cl.get_priority())
+        file.search(" priority ", "    priority %s" % self.cl.get_priority())
         file.search(" weight ", "    weight %s" % 2)
         # file.search(" state ", "    state %s" % self.cl.get_state())
         file.search(" state ", "    state %s" % "EQUAL")
