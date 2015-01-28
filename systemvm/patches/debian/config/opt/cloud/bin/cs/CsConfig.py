@@ -67,7 +67,14 @@ class CsConfig(object):
         return self.cl.get_domain()
 
     def get_dns(self):
-        return self.cmdline().get_dns()
+        dns = []
+        # Check what happens with use_ext_dns
+        dns.append(self.address().get_guest_ip())
+        names = ["dns1", "dns2"]
+        for name in names:
+            if name in self.cmdline().idata():
+                dns.append(self.cmdline().idata()[name])
+        return dns
 
     def get_format(self):
         return self.__LOG_FORMAT
