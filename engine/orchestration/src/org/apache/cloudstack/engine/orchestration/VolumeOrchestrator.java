@@ -483,7 +483,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     public VolumeInfo createVolume(VolumeInfo volume, VirtualMachine vm, VirtualMachineTemplate template, DataCenter dc, Pod pod, Long clusterId, ServiceOffering offering,
             DiskOffering diskOffering, List<StoragePool> avoids, long size, HypervisorType hyperType) {
         // update the volume's hypervisor_ss_reserve from its disk offering (used for managed storage)
-        volume = updateHypervisorSnapshotReserveForVolume(diskOffering, volume, hyperType);
+        volume = volService.updateHypervisorSnapshotReserveForVolume(diskOffering, volume.getId(), hyperType);
 
         StoragePool pool = null;
 
@@ -544,29 +544,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             }
         }
         throw new CloudRuntimeException("create volume failed even after template re-deploy");
-    }
-
-    // For managed storage on Xen and VMware, we need to potentially make space for hypervisor snapshots.
-    // The disk offering can collect this information and pass it on to the volume that's about to be created.
-    // Ex. if you want a 10 GB CloudStack volume to reside on managed storage on Xen, this leads to an SR
-    // that is a total size of (10 GB * (hypervisorSnapshotReserveSpace / 100) + 10 GB).
-    @Override
-    public VolumeInfo updateHypervisorSnapshotReserveForVolume(DiskOffering diskOffering, VolumeInfo volumeInfo, HypervisorType hyperType) {
-        Integer hypervisorSnapshotReserve = diskOffering.getHypervisorSnapshotReserve();
-
-        if (hyperType == HypervisorType.KVM) {
-            hypervisorSnapshotReserve = null;
-        } else if (hypervisorSnapshotReserve == null || hypervisorSnapshotReserve < 0) {
-            hypervisorSnapshotReserve = 0;
-        }
-
-        VolumeVO volume = _volsDao.findById(volumeInfo.getId());
-
-        volume.setHypervisorSnapshotReserve(hypervisorSnapshotReserve);
-
-        _volsDao.update(volume.getId(), volume);
-
-        return volFactory.getVolume(volume.getId());
     }
 
     public String getRandomVolumeName() {
@@ -1259,7 +1236,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 HypervisorType hyperType = vm.getVirtualMachine().getHypervisorType();
 
                 // update the volume's hypervisor_ss_reserve from its disk offering (used for managed storage)
-                updateHypervisorSnapshotReserveForVolume(diskOffering, volume, hyperType);
+                volService.updateHypervisorSnapshotReserveForVolume(diskOffering, volume.getId(), hyperType);
 
                 volume = volFactory.getVolume(newVol.getId(), destPool);
 
@@ -1279,7 +1256,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     HypervisorType hyperType = vm.getVirtualMachine().getHypervisorType();
 
                     // update the volume's hypervisor_ss_reserve from its disk offering (used for managed storage)
-                    updateHypervisorSnapshotReserveForVolume(diskOffering, volume, hyperType);
+                    volService.updateHypervisorSnapshotReserveForVolume(diskOffering, volume.getId(), hyperType);
 
                     long hostId = vm.getVirtualMachine().getHostId();
 

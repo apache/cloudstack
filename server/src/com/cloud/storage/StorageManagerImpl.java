@@ -138,6 +138,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.Type;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolWorkDao;
@@ -266,6 +267,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     private TemplateService _imageSrv;
     @Inject
     EndPointSelector _epSelector;
+    @Inject
+    private DiskOfferingDao _diskOfferingDao;
 
     protected List<StoragePoolDiscoverer> _discoverers;
 
@@ -1579,14 +1582,22 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         long allocatedSizeWithtemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, null);
         long totalAskingSize = 0;
         for (Volume volume : volumes) {
-            if (volume.getTemplateId() != null) {
-                VMTemplateVO tmpl = _templateDao.findByIdIncludingRemoved(volume.getTemplateId());
+            VolumeVO volumeVO = _volumeDao.findById(volume.getId());
+
+            if (volumeVO.getHypervisorSnapshotReserve() == null) {
+                volService.updateHypervisorSnapshotReserveForVolume(getDiskOfferingVO(volumeVO), volumeVO.getId(), getHypervisorType(volumeVO));
+
+                volumeVO = _volumeDao.findById(volume.getId());
+            }
+
+            if (volumeVO.getTemplateId() != null) {
+                VMTemplateVO tmpl = _templateDao.findByIdIncludingRemoved(volumeVO.getTemplateId());
                 if (tmpl != null && tmpl.getFormat() != ImageFormat.ISO) {
                     allocatedSizeWithtemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, tmpl);
                 }
             }
-            if (volume.getState() != Volume.State.Ready) {
-                totalAskingSize = totalAskingSize + getVolumeSizeIncludingHypervisorSnapshotReserve(volume, pool);
+            if (volumeVO.getState() != Volume.State.Ready) {
+                totalAskingSize = totalAskingSize + getVolumeSizeIncludingHypervisorSnapshotReserve(volumeVO, pool);
             }
         }
 
@@ -1629,6 +1640,24 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return false;
         }
         return true;
+    }
+
+    private DiskOfferingVO getDiskOfferingVO(Volume volume) {
+        Long diskOfferingId = volume.getDiskOfferingId();
+
+        return _diskOfferingDao.findById(diskOfferingId);
+    }
+
+    private HypervisorType getHypervisorType(Volume volume) {
+        Long instanceId = volume.getInstanceId();
+
+        VMInstanceVO vmInstance = _vmInstanceDao.findById(instanceId);
+
+        if (vmInstance != null) {
+            return vmInstance.getHypervisorType();
+        }
+
+        return null;
     }
 
     private long getVolumeSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool) {

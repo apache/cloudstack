@@ -27,7 +27,6 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
@@ -90,7 +89,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     @Inject private SnapshotDetailsDao _snapshotDetailsDao;
     @Inject private VolumeDao _volumeDao;
     @Inject private VolumeDataFactory _volumeDataFactory;
-    @Inject private VolumeOrchestrationService _volumeMgr;
     @Inject private VolumeService _volumeService;
 
     @Override
@@ -253,7 +251,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             SnapshotVO snapshot = _snapshotDao.findById(snapshotInfo.getId());
 
             // update the volume's hypervisor_ss_reserve from its disk offering (used for managed storage)
-            _volumeMgr.updateHypervisorSnapshotReserveForVolume(diskOffering, volumeInfo, snapshot.getHypervisorType());
+            _volumeService.updateHypervisorSnapshotReserveForVolume(diskOffering, volumeInfo.getId(), snapshot.getHypervisorType());
 
             AsyncCallFuture<VolumeApiResult> future = _volumeService.createVolumeAsync(volumeInfo, volumeInfo.getDataStore());
 

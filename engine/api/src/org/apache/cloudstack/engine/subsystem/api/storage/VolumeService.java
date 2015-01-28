@@ -27,6 +27,8 @@ import org.apache.cloudstack.storage.command.CommandResult;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.host.Host;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.DiskOffering;
 
 public interface VolumeService {
     class VolumeApiResult extends CommandResult {
@@ -102,4 +104,5 @@ public interface VolumeService {
 
     SnapshotInfo takeSnapshot(VolumeInfo volume);
 
+    VolumeInfo updateHypervisorSnapshotReserveForVolume(DiskOffering diskOffering, long volumeId, HypervisorType hyperType);
 }
