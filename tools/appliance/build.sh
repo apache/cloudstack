@@ -397,7 +397,7 @@ function xen_server_export() {
     vboxmanage internalcommands converttoraw -format vdi "${hdd_path}" img.raw
     vhd-util convert -s 0 -t 1 -i img.raw -o stagefixed.vhd
     faketime '2010-01-01' vhd-util convert -s 1 -t 2 -i stagefixed.vhd -o "${appliance_build_name}-xen.vhd"
-    rm *.bak
+    rm -f *.bak
     bzip2 "${appliance_build_name}-xen.vhd"
     mv "${appliance_build_name}-xen.vhd.bz2" dist/
     log INFO "${appliance} exported for XenServer: dist/${appliance_build_name}-xen.vhd.bz2"
