@@ -75,7 +75,7 @@ which faketime >/dev/null 2>&1 && which vhd-util >/dev/null 2>&1
 if [ $? == 0 ]; then
   set -e
   vboxmanage internalcommands converttoraw -format vdi "$hdd_path" img.raw
-  faketime '2010-01-01' vhd-util convert -s 0 -t 1 -i img.raw -o stagefixed.vhd
+  vhd-util convert -s 0 -t 1 -i img.raw -o stagefixed.vhd
   faketime '2010-01-01' vhd-util convert -s 1 -t 2 -i stagefixed.vhd -o $appliance-$build_date-$branch-xen.vhd
   rm -f *.bak
   bzip2 $appliance-$build_date-$branch-xen.vhd
