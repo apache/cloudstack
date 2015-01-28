@@ -76,6 +76,11 @@ function install_packages() {
     radvd \
     sharutils
 
+  # hold on installed openswan version, upgrade rest of the packages (if any)
+  apt-mark hold openswan
+  apt-get update
+  apt-get -y --force-yes upgrade
+
   # commented out installation of vmware-tools as we are using the open source open-vm-tools:
   # ${apt_install} build-essential linux-headers-`uname -r`
   # df -h
