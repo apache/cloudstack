@@ -48,9 +48,6 @@ public class SocketWrapperImpl extends PipelineImpl implements SocketWrapper {
 
     protected SSLSocket sslSocket;
 
-    protected String SSL_VERSION_TO_USE = "TLSv1.2";
-    //protected String SSL_VERSION_TO_USE = "SSLv3";
-
     protected SSLState sslState;
 
     public SocketWrapperImpl(String id, SSLState sslState) {
@@ -135,7 +132,7 @@ public class SocketWrapperImpl extends PipelineImpl implements SocketWrapper {
             // Use most secure implementation of SSL available now.
             // JVM will try to negotiate TLS1.2, then will fallback to TLS1.0, if
             // TLS1.2 is not supported.
-            SSLContext sslContext = SSLContext.getInstance(SSL_VERSION_TO_USE);
+            SSLContext sslContext = SSLUtils.getSSLContext();
 
             // Trust all certificates (FIXME: insecure)
             sslContext.init(null, new TrustManager[] {new TrustAllX509TrustManager(sslState)}, null);

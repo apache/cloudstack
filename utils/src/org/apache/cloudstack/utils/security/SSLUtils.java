@@ -42,10 +42,10 @@ public class SSLUtils {
     }
 
     public static SSLContext getSSLContext() throws NoSuchAlgorithmException {
-        return SSLContext.getInstance("TLSv1.2");
+        return SSLContext.getInstance("TLSv1");
     }
 
     public static SSLContext getSSLContext(String provider) throws NoSuchAlgorithmException, NoSuchProviderException {
-        return SSLContext.getInstance("TLSv1.2", provider);
+        return SSLContext.getInstance("TLSv1", provider);
     }
 }

@@ -47,7 +47,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     private static Integer port;
     private static String username;
     private static String password;
-    private static String secureProtocol = "TLSv1.2";
+    private static String secureProtocol = "TLSv1";
 
     public static void setVirtualHost(String virtualHost) {
         RabbitMQEventBus.virtualHost = virtualHost;
