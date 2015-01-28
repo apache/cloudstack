@@ -100,7 +100,7 @@ install_packages() {
 
   # do a final update and upgrade
   apt-get update
-  apt-get -y --force-yes
+  apt-get -y --force-yes upgrade
 }
 
 setup_accounts() {
