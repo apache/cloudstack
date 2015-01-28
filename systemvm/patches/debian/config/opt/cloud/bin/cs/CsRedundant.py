@@ -107,8 +107,7 @@ class CsRedundant(object):
         file.greplace("[RROUTER_BIN_PATH]", self.CS_ROUTER_DIR)
 # If there is no guest network still bring up the public interface
 # Maybe necessary for things like VPNs and private gateways
-        if self.address.get_guest_if():
-            file.section("virtual_ipaddress {", "}", self._collect_ips())
+        file.section("virtual_ipaddress {", "}", self._collect_ips())
         # if self.cl.get_state() == 'MASTER':
             # file.search(" priority ", "    priority %s" % 100)
         file.commit()
