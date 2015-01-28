@@ -71,6 +71,9 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class RouterDeploymentDefinition {
     private static final Logger logger = Logger.getLogger(RouterDeploymentDefinition.class);
 
+    protected static final int LIMIT_NUMBER_OF_ROUTERS = 5;
+    protected static final int MAX_NUMBER_OF_ROUTERS = 2;
+
     protected NetworkDao networkDao;
     protected DomainRouterDao routerDao;
     protected PhysicalNetworkServiceProviderDao physicalProviderDao;
@@ -280,7 +283,7 @@ public class RouterDeploymentDefinition {
 
     protected int getNumberOfRoutersToDeploy() {
         // TODO Are we sure this makes sense? Somebody said 5 was too many?
-        if (routers.size() >= 5) {
+        if (routers.size() >= LIMIT_NUMBER_OF_ROUTERS) {
             logger.error("Too many redundant routers!");
         }
 

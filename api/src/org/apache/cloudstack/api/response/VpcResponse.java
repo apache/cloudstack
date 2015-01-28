@@ -115,72 +115,72 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     @Param(description = "is VPC uses distributed router for one hop forwarding and host based network ACL's", since = "4.4")
     private boolean usesDistributedRouter;
 
-    @SerializedName((ApiConstants.REGION_LEVEL_VPC))
+    @SerializedName(ApiConstants.REGION_LEVEL_VPC)
     @Param(description = "true if VPC is region level", since = "4.4")
     private Boolean regionLevelVpc;
 
     @SerializedName(ApiConstants.REDUNDANT_VPC_ROUTER)
-    @Param(description = "if this VPC has redundant router", since = "4.4")
+    @Param(description = "if this VPC has redundant router", since = "4.6")
     private boolean redundantRouter;
 
-    public void setId(String id) {
+    public void setId(final String id) {
         this.id = id;
     }
 
-    public void setName(String name) {
+    public void setName(final String name) {
         this.name = name;
     }
 
-    public void setDisplayText(String displayText) {
+    public void setDisplayText(final String displayText) {
         this.displayText = displayText;
     }
 
-    public void setCreated(Date created) {
+    public void setCreated(final Date created) {
         this.created = created;
     }
 
-    public void setServices(List<ServiceResponse> services) {
+    public void setServices(final List<ServiceResponse> services) {
         this.services = services;
     }
 
-    public void setState(String state) {
+    public void setState(final String state) {
         this.state = state;
     }
 
     @Override
-    public void setAccountName(String accountName) {
+    public void setAccountName(final String accountName) {
         this.accountName = accountName;
     }
 
     @Override
-    public void setProjectId(String projectId) {
+    public void setProjectId(final String projectId) {
         this.projectId = projectId;
     }
 
     @Override
-    public void setProjectName(String projectName) {
+    public void setProjectName(final String projectName) {
         this.projectName = projectName;
     }
 
     @Override
-    public void setDomainId(String domainId) {
+    public void setDomainId(final String domainId) {
         this.domainId = domainId;
     }
 
     @Override
-    public void setDomainName(String domainName) {
-        this.domain = domainName;
+    public void setDomainName(final String domainName) {
+        domain = domainName;
     }
 
-    public void setZoneId(String zoneId) {
+    public void setZoneId(final String zoneId) {
         this.zoneId = zoneId;
     }
 
-    public void setCidr(String cidr) {
+    public void setCidr(final String cidr) {
         this.cidr = cidr;
     }
 
-    public void setVpcOfferingId(String vpcOfferingId) {
+    public void setVpcOfferingId(final String vpcOfferingId) {
         this.vpcOfferingId = vpcOfferingId;
     }
 
@@ -188,39 +188,39 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
         return networks;
     }
 
-    public void setNetworks(List<NetworkResponse> networks) {
+    public void setNetworks(final List<NetworkResponse> networks) {
         this.networks = networks;
     }
 
-    public void setRestartRequired(Boolean restartRequired) {
+    public void setRestartRequired(final Boolean restartRequired) {
         this.restartRequired = restartRequired;
     }
 
-    public void setNetworkDomain(String networkDomain) {
+    public void setNetworkDomain(final String networkDomain) {
         this.networkDomain = networkDomain;
     }
 
-    public void setZoneName(String zoneName) {
+    public void setZoneName(final String zoneName) {
         this.zoneName = zoneName;
     }
 
-    public void setTags(List<ResourceTagResponse> tags) {
+    public void setTags(final List<ResourceTagResponse> tags) {
         this.tags = tags;
     }
 
-    public void setForDisplay(Boolean forDisplay) {
+    public void setForDisplay(final Boolean forDisplay) {
         this.forDisplay = forDisplay;
     }
 
-    public void setRegionLevelVpc(Boolean regionLevelVpc) {
+    public void setRegionLevelVpc(final Boolean regionLevelVpc) {
         this.regionLevelVpc = regionLevelVpc;
     }
 
-    public void setUsesDistributedRouter(Boolean usesDistributedRouter) {
+    public void setUsesDistributedRouter(final Boolean usesDistributedRouter) {
         this.usesDistributedRouter = usesDistributedRouter;
     }
 
-    public void setRedundantRouter(Boolean redundantRouter) {
+    public void setRedundantRouter(final Boolean redundantRouter) {
         this.redundantRouter = redundantRouter;
     }
 }

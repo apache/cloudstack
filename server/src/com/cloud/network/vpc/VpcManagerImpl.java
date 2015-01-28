@@ -1488,7 +1488,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_RESTART, eventDescription = "restarting vpc")
-    public boolean restartVpc(final long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean restartVpc(final long vpcId, final boolean cleanUp) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         final Account caller = CallContext.current().getCallingAccount();
 
         // Verify input parameters
@@ -1504,11 +1504,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         s_logger.debug("Restarting VPC " + vpc);
         boolean restartRequired = false;
         try {
-            s_logger.debug("Shutting down VPC " + vpc + " as a part of VPC restart process");
-            if (!shutdownVpc(vpcId)) {
-                s_logger.warn("Failed to shutdown vpc as a part of VPC " + vpc + " restart process");
-                restartRequired = true;
-                return false;
+            if (cleanUp) {
+                s_logger.debug("Shutting down VPC " + vpc + " as a part of VPC restart process");
+                if (!shutdownVpc(vpcId)) {
+                    s_logger.warn("Failed to shutdown vpc as a part of VPC " + vpc + " restart process");
+                    restartRequired = true;
+                    return false;
+                }
+            } else {
+                s_logger.info("Will not shutdown vpc as a part of VPC " + vpc + " restart process.");
             }
 
             s_logger.debug("Starting VPC " + vpc + " as a part of VPC restart process");
