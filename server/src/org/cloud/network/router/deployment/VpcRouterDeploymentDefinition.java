@@ -108,13 +108,6 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
         return destinations;
     }
 
-    @Override
-    protected int getNumberOfRoutersToDeploy() {
-        // Enable redundant Vpc, with the same behavior a Non Vpc Router
-        // TODO Remove this method unless we need to actually add some behavior
-        return super.getNumberOfRoutersToDeploy();
-    }
-
     /**
      * @see RouterDeploymentDefinition#prepareDeployment()
      *
@@ -123,13 +116,6 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     @Override
     protected boolean prepareDeployment() {
         return true;
-    }
-
-    @Override
-    protected void setupPriorityOfRedundantRouter() {
-        // Implement Redundant Vpc
-        // TODO Remove this method unless we need to actually add some behavior
-        super.setupPriorityOfRedundantRouter();
     }
 
     @Override
@@ -144,8 +130,8 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
             // This call will associate any existing router to the "routers" attribute.
             // It's needed in order to continue with the VMs deployment.
             planDeploymentRouters();
-            if (!routers.isEmpty()) {
-                // If routers are found, just return: nothing need to be done here.
+            if (routers.size() == MAX_NUMBER_OF_ROUTERS) {
+                // If we have 2 routers already deployed, do nothing and return.
                 return;
             }
         }

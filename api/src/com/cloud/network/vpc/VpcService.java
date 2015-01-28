@@ -48,7 +48,7 @@ public interface VpcService {
      * @throws ResourceAllocationException TODO
      */
     public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String networkDomain, Boolean displayVpc)
-        throws ResourceAllocationException;
+            throws ResourceAllocationException;
 
     /**
      * Deletes a VPC
@@ -98,8 +98,8 @@ public interface VpcService {
      * @return
      */
     public Pair<List<? extends Vpc>, Integer> listVpcs(Long id, String vpcName, String displayText, List<String> supportedServicesStr, String cidr, Long vpcOffId, String state,
-        String accountName, Long domainId, String keyword, Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, Boolean restartRequired,
-        Map<String, String> tags, Long projectId, Boolean display);
+            String accountName, Long domainId, String keyword, Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, Boolean restartRequired,
+            Map<String, String> tags, Long projectId, Boolean display);
 
     /**
      * Starts VPC which includes starting VPC provider and applying all the neworking rules on the backend
@@ -130,7 +130,7 @@ public interface VpcService {
      * @return
      * @throws InsufficientCapacityException
      */
-    boolean restartVpc(long id) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean restartVpc(long id, boolean cleanUp) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * Returns a Private gateway found in the VPC by id
@@ -160,7 +160,7 @@ public interface VpcService {
      * @throws ResourceAllocationException
      */
     public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress, String gateway, String netmask, long gatewayOwnerId,
-        Long networkOfferingId, Boolean isSoruceNat, Long aclId) throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
+            Long networkOfferingId, Boolean isSoruceNat, Long aclId) throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
 
     /**
      * Applies VPC private gateway on the backend, so it becomes functional
@@ -246,7 +246,7 @@ public interface VpcService {
      * @throws ConcurrentOperationException
      */
     IpAddress associateIPToVpc(long ipId, long vpcId) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException,
-        ConcurrentOperationException;
+    ConcurrentOperationException;
 
     /**
      * @param routeId
