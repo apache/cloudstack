@@ -28,6 +28,7 @@ from CsRule import CsRule
 
 VRRP_TYPES = ['guest']
 
+
 class CsAddress(CsDataBag):
 
     def compare(self):
@@ -499,10 +500,10 @@ class CsIP:
     def is_guest_gateway(self, bag, ip):
         """ Exclude the vrrp maintained addresses on a redundant router """
         if not self.config.cl.is_redundant():
-           return False
+            return False
         rip = ip.split('/')[0]
         if bag['nw_type'] == "guest" and rip == bag['gateway']:
-           return True
+            return True
         return False
 
     def delete(self, ip):

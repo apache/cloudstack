@@ -38,6 +38,7 @@ import logging
 import CsHelper
 from CsFile import CsFile
 from CsConfig import CsConfig
+from CsProcess import CsProcess
 
 
 class CsRedundant(object):
@@ -63,8 +64,7 @@ class CsRedundant(object):
 
     def set(self):
         logging.debug("Router redundancy status is %s", self.cl.is_redundant())
-        guest = self.address.get_guest_if()
-        if self.cl.is_redundant() and guest:
+        if self.cl.is_redundant():
             self._redundant_on()
         else:
             self._redundant_off()
@@ -99,29 +99,35 @@ class CsRedundant(object):
         # keepalived configuration
         file = CsFile(self.KEEPALIVED_CONF)
         file.search(" router_id ", "    router_id %s" % self.cl.get_name())
-        file.search(" priority ", "    priority %s" % self.cl.get_priority())
+        # file.search(" priority ", "    priority %s" % self.cl.get_priority())
         file.search(" weight ", "    weight %s" % 2)
-        file.search(" state ", "    state %s" % self.cl.get_state())
-        #file.search(" virtual_router_id ", "    virtual_router_id %s" % self.cl.get_router_id())
+        # file.search(" state ", "    state %s" % self.cl.get_state())
+        file.search(" state ", "    state %s" % "EQUAL")
+        # file.search(" virtual_router_id ", "    virtual_router_id %s" % self.cl.get_router_id())
         file.greplace("[RROUTER_BIN_PATH]", self.CS_ROUTER_DIR)
-        file.section("virtual_ipaddress {", "}", self._collect_ips())
-        if self.cl.get_state() == 'MASTER':
-            file.search(" priority ", "    priority %s" % 120)
+# If there is no guest network still bring up the public interface
+# Maybe necessary for things like VPNs and private gateways
+        if self.address.get_guest_if():
+            file.section("virtual_ipaddress {", "}", self._collect_ips())
+        # if self.cl.get_state() == 'MASTER':
+            # file.search(" priority ", "    priority %s" % 100)
         file.commit()
 
         # conntrackd configuration
         guest = self.address.get_guest_if()
         connt = CsFile(self.CONNTRACKD_CONF)
-        connt.section("Multicast {", "}", [
-                      "IPv4_address 225.0.0.50\n",
-                      "Group 3780\n",
-                      "IPv4_interface %s\n" % guest.get_ip(),
-                      "Interface %s\n" % guest.get_device(),
-                      "SndSocketBuffer 1249280\n",
-                      "RcvSocketBuffer 1249280\n",
-                      "Checksum on\n"])
-        connt.section("Address Ignore {", "}", self._collect_ignore_ips())
-        connt.commit()
+        if guest is not None:
+            connt.section("Multicast {", "}", [
+                          "IPv4_address 225.0.0.50\n",
+                          "Group 3780\n",
+                          "IPv4_interface %s\n" % guest.get_ip(),
+                          "Interface %s\n" % guest.get_device(),
+                          "SndSocketBuffer 1249280\n",
+                          "RcvSocketBuffer 1249280\n",
+                          "Checksum on\n"])
+            connt.section("Address Ignore {", "}", self._collect_ignore_ips())
+            connt.commit()
+
         if connt.is_changed():
             CsHelper.service("conntrackd", "restart")
 
@@ -137,6 +143,10 @@ class CsRedundant(object):
         cron.add("PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
         cron.add("*/1 * * * * root $SHELL %s/check_heartbeat.sh 2>&1 > /dev/null" % self.CS_ROUTER_DIR, -1)
         cron.commit()
+
+        proc = CsProcess(['/usr/sbin/keepalived', '--vrrp'])
+        if not proc.find():
+            CsHelper.service("keepalived", "restart")
 
     def set_fault(self):
         """ Set fault mode on this router """
@@ -177,9 +187,9 @@ class CsRedundant(object):
         CsHelper.service("xl2tpd", "stop")
         CsHelper.service("cloud-passwd-srvr", "stop")
         CsHelper.service("dnsmasq", "stop")
-        self._set_priority(self.CS_PRIO_DOWN)
+        # self._set_priority(self.CS_PRIO_DOWN)
         self.cl.dbag['config']['redundant_master'] = "false"
-        #CsHelper.service("keepalived", "restart")
+        # CsHelper.service("keepalived", "restart")
         self.cl.save()
         logging.info("Router switched to backup mode")
 
@@ -212,14 +222,8 @@ class CsRedundant(object):
         CsHelper.service("dnsmasq", "restart")
         self.cl.dbag['config']['redundant_master'] = "true"
         self.cl.save()
-        #CsHelper.service("keepalived", "restart")
+        # CsHelper.service("keepalived", "restart")
         logging.info("Router switched to master mode")
-
-    def _set_priority(self, dir):
-        self.cl.set_priority(int(self.cl.get_priority()) + dir)
-        file = CsFile(self.KEEPALIVED_CONF)
-        file.search(" priority ", "    priority %s" % self.cl.get_priority())
-        file.commit()
 
     def _collect_ignore_ips(self):
         """
