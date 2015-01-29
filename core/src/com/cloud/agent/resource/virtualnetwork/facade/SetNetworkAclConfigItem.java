@@ -22,6 +22,8 @@ package com.cloud.agent.resource.virtualnetwork.facade;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.to.NicTO;
@@ -38,6 +40,8 @@ import com.cloud.agent.resource.virtualnetwork.model.UdpAclRule;
 import com.cloud.utils.net.NetUtils;
 
 public class SetNetworkAclConfigItem extends AbstractConfigItemFacade {
+
+    public static final Logger s_logger = Logger.getLogger(SetNetworkAclConfigItem.class.getName());
 
     @Override
     public List<ConfigItem> generateConfig(final NetworkElementCommand cmd) {
@@ -71,7 +75,15 @@ public class SetNetworkAclConfigItem extends AbstractConfigItemFacade {
                 aclRule = new AllAclRule(ruleParts[4], "ACCEPT".equals(ruleParts[5]));
                 break;
             default:
-                aclRule = new ProtocolAclRule(ruleParts[4], "ACCEPT".equals(ruleParts[5]), Integer.parseInt(ruleParts[1]));
+                // Fuzzy logic in cloudstack: if we do not handle it here, it will throw an exception and work okay (with a stack trace on the console).
+                // If we check the size of the array, it will fail to setup the network.
+                // So, let's catch the exception and continue in the loop.
+                try {
+                    aclRule = new ProtocolAclRule(ruleParts[5], false, Integer.parseInt(ruleParts[1]));
+                } catch (final Exception e) {
+                    s_logger.warn("Problem occured when reading the entries in the ruleParts array. Actual array size is '" + ruleParts.length + "', but trying to read from index 5.");
+                    continue;
+                }
             }
             if ("Ingress".equals(ruleParts[0])) {
                 ingressRules.add(aclRule);
