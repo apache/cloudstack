@@ -18,8 +18,6 @@ package org.apache.cloudstack.api.command.admin.user;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -29,6 +27,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
+import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -61,9 +60,11 @@ public class UpdateUserCmd extends BaseCmd {
     private String lastname;
 
     @Parameter(name = ApiConstants.PASSWORD,
-               type = CommandType.STRING,
-               description = "Clear text password (default hashed to SHA256SALT). If you wish to use any other hasing algorithm, you would need to write a custom authentication adapter")
+            type = CommandType.STRING,
+            description = "Clear text password (default hashed to SHA256SALT). If you wish to use any other hasing algorithm, you would need to write a custom authentication adapter. Can't be passed when command is executed via integration.api.port",
+            acceptedOnAdminPort = false)
     private String password;
+
 
     @Parameter(name = ApiConstants.SECRET_KEY, type = CommandType.STRING, description = "The secret key for the user. Must be specified with userSecretKey")
     private String secretKey;
