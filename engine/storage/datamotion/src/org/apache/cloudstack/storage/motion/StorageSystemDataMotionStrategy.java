@@ -250,7 +250,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             DiskOfferingVO diskOffering = _diskOfferingDao.findByIdIncludingRemoved(volumeInfo.getDiskOfferingId());
             SnapshotVO snapshot = _snapshotDao.findById(snapshotInfo.getId());
 
-            // update the volume's hypervisor_ss_reserve from its disk offering (used for managed storage)
+            // update the volume's hv_ss_reserve (hypervisor snapshot reserve) from a disk offering (used for managed storage)
             _volumeService.updateHypervisorSnapshotReserveForVolume(diskOffering, volumeInfo.getId(), snapshot.getHypervisorType());
 
             AsyncCallFuture<VolumeApiResult> future = _volumeService.createVolumeAsync(volumeInfo, volumeInfo.getDataStore());

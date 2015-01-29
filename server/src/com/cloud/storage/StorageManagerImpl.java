@@ -1582,11 +1582,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         long allocatedSizeWithtemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, null);
         long totalAskingSize = 0;
         for (Volume volume : volumes) {
+            // refreshing the volume from the DB to get latest hv_ss_reserve (hypervisor snapshot reserve) field
+            // I could have just assigned this to "volume", but decided to make a new variable for it so that it
+            // might be clearer that this "volume" in "volumes" still might have an old value for hv_ss_reverse.
             VolumeVO volumeVO = _volumeDao.findById(volume.getId());
 
             if (volumeVO.getHypervisorSnapshotReserve() == null) {
+                // update the volume's hv_ss_reserve (hypervisor snapshot reserve) from a disk offering (used for managed storage)
                 volService.updateHypervisorSnapshotReserveForVolume(getDiskOfferingVO(volumeVO), volumeVO.getId(), getHypervisorType(volumeVO));
 
+                // hv_ss_reserve field might have been updated; refresh from DB to make use of it in getVolumeSizeIncludingHypervisorSnapshotReserve
                 volumeVO = _volumeDao.findById(volume.getId());
             }
 

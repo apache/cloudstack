@@ -482,7 +482,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @DB
     public VolumeInfo createVolume(VolumeInfo volume, VirtualMachine vm, VirtualMachineTemplate template, DataCenter dc, Pod pod, Long clusterId, ServiceOffering offering,
             DiskOffering diskOffering, List<StoragePool> avoids, long size, HypervisorType hyperType) {
-        // update the volume's hypervisor_ss_reserve from its disk offering (used for managed storage)
+        // update the volume's hv_ss_reserve (hypervisor snapshot reserve) from a disk offering (used for managed storage)
         volume = volService.updateHypervisorSnapshotReserveForVolume(diskOffering, volume.getId(), hyperType);
 
         StoragePool pool = null;
@@ -1235,7 +1235,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, volume.getDiskOfferingId());
                 HypervisorType hyperType = vm.getVirtualMachine().getHypervisorType();
 
-                // update the volume's hypervisor_ss_reserve from its disk offering (used for managed storage)
+                // update the volume's hv_ss_reserve (hypervisor snapshot reserve) from a disk offering (used for managed storage)
                 volService.updateHypervisorSnapshotReserveForVolume(diskOffering, volume.getId(), hyperType);
 
                 volume = volFactory.getVolume(newVol.getId(), destPool);
@@ -1255,7 +1255,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, volume.getDiskOfferingId());
                     HypervisorType hyperType = vm.getVirtualMachine().getHypervisorType();
 
-                    // update the volume's hypervisor_ss_reserve from its disk offering (used for managed storage)
+                    // update the volume's hv_ss_reserve (hypervisor snapshot reserve) from a disk offering (used for managed storage)
                     volService.updateHypervisorSnapshotReserveForVolume(diskOffering, volume.getId(), hyperType);
 
                     long hostId = vm.getVirtualMachine().getHostId();
