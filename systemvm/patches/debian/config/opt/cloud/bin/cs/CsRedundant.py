@@ -98,6 +98,13 @@ class CsRedundant(object):
 
         # keepalived configuration
         file = CsFile(self.KEEPALIVED_CONF)
+        ads = [o for o in self.address.get_ips() if o.is_public()]
+        # Add a comment for each public IP.  If any change this will cause keepalived to restart
+        # As things stand keepalived will be configured before the IP is added or deleted
+        i = 0
+        for o in ads:
+            file.addeq("! %s=%s" % (i, o.get_cidr()))
+            i = i + 1
         file.search(" router_id ", "    router_id %s" % self.cl.get_name())
         file.search(" priority ", "    priority %s" % self.cl.get_priority())
         file.search(" weight ", "    weight %s" % 2)
@@ -105,11 +112,7 @@ class CsRedundant(object):
         file.search(" state ", "    state %s" % "EQUAL")
         # file.search(" virtual_router_id ", "    virtual_router_id %s" % self.cl.get_router_id())
         file.greplace("[RROUTER_BIN_PATH]", self.CS_ROUTER_DIR)
-# If there is no guest network still bring up the public interface
-# Maybe necessary for things like VPNs and private gateways
         file.section("virtual_ipaddress {", "}", self._collect_ips())
-        # if self.cl.get_state() == 'MASTER':
-            # file.search(" priority ", "    priority %s" % 100)
         file.commit()
 
         # conntrackd configuration
