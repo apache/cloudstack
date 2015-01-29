@@ -1155,9 +1155,25 @@ setup_secstorage() {
     setup_sshd $ETH0_IP "eth0"
   fi
   setup_apache2 $ETH2_IP
+
+  log_it "setting up apache2 for post upload of volume/template"
   a2enmod proxy
   a2enmod proxy_http
-  [ -f /etc/apache2/sites-available/default-ssl ] && sed -i -e "s/RewriteEngine Off/RewriteEngine On/" /etc/apache2/sites-available/default-ssl
+
+  SSL_FILE="/etc/apache2/sites-available/default-ssl"
+  PATTERN="RewriteRule ^\/upload\/(.*)"
+  if [ -f $SSL_FILE ]; then
+    if grep -q "$PATTERN" $SSL_FILE ; then
+      log_it "rewrite rules already exist in file $SSL_FILE"
+    else
+        log_it "adding rewrite rules to file: $SSL_FILE"
+        sed -i -e "s/<\/VirtualHost>/RewriteEngine On \n&/" $SSL_FILE
+        sed -i -e "s/<\/VirtualHost>/RewriteCond %{HTTPS} =on \n&/" $SSL_FILE
+        sed -i -e "s/<\/VirtualHost>/RewriteCond %{REQUEST_METHOD} =POST \n&/" $SSL_FILE
+        sed -i -e "s/<\/VirtualHost>/RewriteRule ^\/upload\/(.*) http:\/\/127.0.0.1:8210\/upload?uuid=$1 [P,L] \n&/" $SSL_FILE
+    fi
+  fi
+
   service apache2 restart
 
   disable_rpfilter

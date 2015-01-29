@@ -168,10 +168,5 @@
 	# MSIE 7 and newer should be able to use keepalive
 	BrowserMatch "MSIE [17-9]" ssl-unclean-shutdown
 
-	RewriteEngine Off
-	RewriteCond %{HTTPS} =on
-	RewriteCond %{REQUEST_METHOD} =POST
-	RewriteRule ^/upload/(.*) http://127.0.0.1:8210/upload?uuid=$1 [P,L]
-
 </VirtualHost>
 </IfModule>
