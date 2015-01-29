@@ -33,7 +33,7 @@ public class GetUploadParamsResponse extends BaseResponse {
     @Param(description = "the template/volume ID")
     private UUID id;
 
-    @SerializedName(ApiConstants.URL)
+    @SerializedName(ApiConstants.POST_URL)
     @Param(description = "POST url to upload the file to")
     private URL postURL;
 
@@ -41,19 +41,19 @@ public class GetUploadParamsResponse extends BaseResponse {
     @Param(description = "encrypted data to be sent in the POST request.")
     private String metadata;
 
-    @SerializedName(ApiConstants.TIMEOUT)
+    @SerializedName(ApiConstants.EXPIRES)
     @Param(description = "the timestamp after which the signature expires")
-    private String timeout;
+    private String expires;
 
     @SerializedName(ApiConstants.SIGNATURE)
     @Param(description = "signature to be sent in the POST request.")
     private String signature;
 
-    public GetUploadParamsResponse(UUID id, URL postURL, String metadata, String timeout, String signature) {
+    public GetUploadParamsResponse(UUID id, URL postURL, String metadata, String expires, String signature) {
         this.id = id;
         this.postURL = postURL;
         this.metadata = metadata;
-        this.timeout = timeout;
+        this.expires = expires;
         this.signature = signature;
         setObjectName("getuploadparams");
     }
@@ -74,8 +74,8 @@ public class GetUploadParamsResponse extends BaseResponse {
         this.metadata = metadata;
     }
 
-    public void setTimeout(String timeout) {
-        this.timeout = timeout;
+    public void setTimeout(String expires) {
+        this.expires = expires;
     }
 
     public void setSignature(String signature) {

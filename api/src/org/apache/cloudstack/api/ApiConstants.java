@@ -190,6 +190,7 @@ public class ApiConstants {
     public static final String PORTAL = "portal";
     public static final String PORTABLE_IP_ADDRESS = "portableipaddress";
     public static final String PORT_FORWARDING_SERVICE_ID = "portforwardingserviceid";
+    public static final String POST_URL = "postURL";
     public static final String PRIVATE_INTERFACE = "privateinterface";
     public static final String PRIVATE_IP = "privateip";
     public static final String PRIVATE_PORT = "privateport";
