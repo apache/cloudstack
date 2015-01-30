@@ -38,6 +38,7 @@ import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -128,7 +129,12 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
             // if the storage scope is ZONE wide, then get all the hosts for which hypervisor ZWSP created to send Modifystoragepoolcommand
             //TODO: if it's zone wide, this code will list a lot of hosts in the zone, which may cause performance/OOM issue.
             if (pool.getScope().equals(ScopeType.ZONE)) {
-                hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(pool.getHypervisor(), pool.getDataCenterId());
+                if (HypervisorType.Any.equals(pool.getHypervisor())) {
+                    hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZone(pool.getDataCenterId());
+                }
+                else {
+                    hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(pool.getHypervisor(), pool.getDataCenterId());
+                }
             } else {
                 hosts = _resourceMgr.listHostsInClusterByStatus(pool.getClusterId(), Status.Up);
             }
@@ -290,7 +296,12 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
         List<HostVO> hosts = new ArrayList<HostVO>();
         // if the storage scope is ZONE wide, then get all the hosts for which hypervisor ZWSP created to send Modifystoragepoolcommand
         if (poolVO.getScope().equals(ScopeType.ZONE)) {
-            hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(poolVO.getHypervisor(), pool.getDataCenterId());
+            if (HypervisorType.Any.equals(pool.getHypervisor())) {
+                hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZone(pool.getDataCenterId());
+            }
+            else {
+                hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(poolVO.getHypervisor(), pool.getDataCenterId());
+            }
         } else {
             hosts = _resourceMgr.listHostsInClusterByStatus(pool.getClusterId(), Status.Up);
         }

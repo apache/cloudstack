@@ -2532,6 +2532,17 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    public List<HostVO> listAllUpAndEnabledHostsInOneZone(long dcId) {
+        QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        sc.and(sc.entity().getResourceState(), Op.EQ, ResourceState.Enabled);
+
+        return sc.list();
+    }
+
+    @Override
     public boolean isHostGpuEnabled(long hostId) {
         SearchCriteria<HostGpuGroupsVO> sc = _gpuAvailability.create();
         sc.setParameters("hostId", hostId);
