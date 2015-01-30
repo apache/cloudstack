@@ -281,6 +281,9 @@ class TestProjectsCPULimits(cloudstackTestCase):
         # 2. Deploy VM with the accounts added to the project
         # 3. Migrate VM of an accounts added to the project to a new host
         # 4. Resource count should list properly.
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate feature is not supported on %s" % self.hypervisor.lower())
 
         project_list = Project.list(self.apiclient, id=self.project.id, listall=True)
         self.assertIsInstance(project_list,

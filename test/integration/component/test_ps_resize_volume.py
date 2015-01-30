@@ -64,6 +64,8 @@ class TestResizeVolume(cloudstackTestCase):
         cls.resourcetypemapping = {RESOURCE_PRIMARY_STORAGE: 10,
                                    RESOURCE_SECONDARY_STORAGE: 11}
 
+
+
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,

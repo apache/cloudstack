@@ -39,7 +39,8 @@ from marvin.lib.base import (Tag,
                              Project)
 from marvin.lib.common import (get_zone,
                                get_domain,
-                               get_template)
+                               get_template,
+                               find_storage_pool_type)
 from marvin.codes import FAILED
 import time
 
@@ -949,6 +950,9 @@ class TestResourceTags(cloudstackTestCase):
         # 1. Create a tag on template/ISO using createTags API
         # 2. Delete above created tag using deleteTags API
 
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("template creation from volume feature is not supported on %s" % self.hypervisor.lower())
+
         try:
             self.debug("Stopping the virtual machine: %s" % self.vm_1.name)
             # Stop virtual machine
@@ -1151,6 +1155,10 @@ class TestResourceTags(cloudstackTestCase):
         # 1. Create a tag on volume using createTags API
         # 2. Delete above created tag using deleteTags API
 
+        if self.hypervisor.lower() == 'lxc':
+            if not find_storage_pool_type(self.apiclient, storagetype='rbd'):
+                self.SkipTest("RBD storage type is required for data volumes for LXC")
+
         self.debug("Creating volume for account: %s " %
                    self.account.name)
         volume = Volume.create(
@@ -1240,8 +1248,8 @@ class TestResourceTags(cloudstackTestCase):
         # 1. Create a tag on snapshot using createTags API
         # 2. Delete above created tag using deleteTags API
 
-        if self.hypervisor.lower() in ['hyperv']:
-            self.skipTest("Snapshots feature is not supported on Hyper-V")
+        if self.hypervisor.lower() in ['hyperv', 'lxc']:
+            self.skipTest("Snapshots feature is not supported on %s" % self.hypervisor.lower())
 
         self.debug("Creating snapshot on ROOT volume for VM: %s " %
                    self.vm_1.name)
@@ -1440,6 +1448,9 @@ class TestResourceTags(cloudstackTestCase):
         # Validate the following
         # 1. Create a tag on VM using createTags API
         # 2. Delete above created tag using deleteTags API
+
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate feature is not supported on %s" % self.hypervisor.lower())
 
         vms = VirtualMachine.list(
             self.apiclient,

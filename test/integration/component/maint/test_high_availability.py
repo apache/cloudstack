@@ -139,6 +139,9 @@ class TestHighAvailability(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"]
         )
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['lxc']:
+            raise unittest.SkipTest("Template creation from root volume is not supported in LXC")
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 

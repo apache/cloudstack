@@ -41,6 +41,8 @@ class TestSnapshots(cloudstackTestCase):
             cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
             cls.hypervisor = cls.testClient.getHypervisorInfo()
+            if cls.hypervisor.lower() == 'lxc':
+                raise unittest.SkipTest("snapshots are not supported on %s" % cls.hypervisor.lower())
             # Get Domain, Zone, Template
             cls.domain = get_domain(cls.api_client)
             cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())

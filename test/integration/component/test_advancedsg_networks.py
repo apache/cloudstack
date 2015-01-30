@@ -2083,6 +2083,9 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
 
         #Create admin account
 
+        if cls.hypervisor.lower() in ['lxc']:
+            raise unittest.SkipTest("Template creation from root volume is not supported in LXC")
+
         hosts = Host.list(self.api_client, zoneid=self.zone.id)
         self.assertEqual(validateList(hosts)[0], PASS, "hosts list validation failed, list is %s" % hosts)
         if len(hosts) < 2:
@@ -2159,7 +2162,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
             name=self.services["test_34_DeployVM_in_SecondSGNetwork"]["zone"]
         )
         status = validateList(zone_list)
-        self.assertEquals(status[0],PASS,"Failed to list the zones")
+        self.assertEquals(status[0], PASS, "Failed to list the zones")
         count = 0
         """
         In simulator environment default guest os template should be in ready state immediately after the ssvm is up.

@@ -126,6 +126,12 @@ class TestPathVolume(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient)
         cls.testdata["mode"] = cls.zone.networktype
+        cls.hypervisor = testClient.getHypervisorInfo()
+        #for LXC if the storage pool of type 'rbd' ex: ceph is not available, skip the test
+        if cls.hypervisor.lower() == 'lxc':
+            if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
+                raise unittest.SkipTest("RBD storage type is required for data volumes for %s" % cls.hypervisor.lower())
+
         cls.template = get_template(
             cls.apiclient,
             cls.zone.id,

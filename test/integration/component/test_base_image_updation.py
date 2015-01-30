@@ -528,6 +528,9 @@ class TestBaseImageUpdate(cloudstackTestCase):
         1) New root disk should be formed
         2) The recurring snapshot rule should be deleted
         """
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            raise self.SkipTest("Template creation from root volume is not supported in LXC")
         vms = VirtualMachine.list(
                                   self.apiclient,
                                   id=self.vm_with_reset.id,

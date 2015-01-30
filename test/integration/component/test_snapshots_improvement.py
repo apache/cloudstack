@@ -133,6 +133,9 @@ class TestSnapshotOnRootVolume(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['lxc']:
+            raise unittest.SkipTest("snapshots are not supported on %s" % cls.hypervisor.lower())
         cls.template = get_template(
                                     cls.api_client,
                                     cls.zone.id,
@@ -304,8 +307,8 @@ class TestCreateSnapshot(cloudstackTestCase):
         cls.testClient = super(TestCreateSnapshot, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
         cls.hypervisor = cls.testClient.getHypervisorInfo()
-        if cls.hypervisor.lower() in ['hyperv']:
-            raise unittest.SkipTest("Snapshots feature is not supported on Hyper-V")
+        if cls.hypervisor.lower() in ['hyperv', 'lxc']:
+            raise unittest.SkipTest("Snapshots feature is not supported on %s" % cls.hypervisor.lower())
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)

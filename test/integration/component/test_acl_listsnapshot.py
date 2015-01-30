@@ -47,6 +47,9 @@ class TestSnapshotList(cloudstackTestCase):
         cls.testclient = super(TestSnapshotList, cls).getClsTestClient()
         cls.apiclient = cls.testclient.getApiClient()
         cls.testdata = cls.testClient.getParsedTestDataConfig()
+        cls.hypervisor = cls.testclient.getHypervisorInfo()
+        if cls.hypervisor.lower() == 'lxc':
+            raise unittest.SkipTest("snapshots are not supported on %s" % cls.hypervisor.lower())
         cls.acldata = cls.testdata["acl"]
 
         cls.domain_1 = None

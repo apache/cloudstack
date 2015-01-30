@@ -242,7 +242,7 @@ class TestStorageMotion(cloudstackTestCase):
         # 3. Migrate volume of the vm to another pool.
         # 4. Check volume is present in the new pool and is in Ready state.
 
-        # TODO: add test case for data volume migrate
+        # TODO: add test case for data volume migrate and handle it for LXC
 
         list_volumes_response = list_volumes(
                                     self.apiclient,
