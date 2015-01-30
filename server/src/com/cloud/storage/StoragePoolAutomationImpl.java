@@ -371,13 +371,14 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
 
                 // if the instance is of type user vm, call the user vm manager
                 if (vmInstance.getType().equals(VirtualMachine.Type.User)) {
-                    UserVmVO userVm = userVmDao.findById(vmInstance.getId());
                     // check if the vm has a root volume. If not, remove the item from the queue, the vm should be
                     // started only when it has at least one root volume attached to it
                     // don't allow to start vm that doesn't have a root volume
-                    if (volumeDao.findByInstanceAndType(work.getId(), Volume.Type.ROOT).isEmpty()) {
+                    if (volumeDao.findByInstanceAndType(vmInstance.getId(), Volume.Type.ROOT).isEmpty()) {
                         _storagePoolWorkDao.remove(work.getId());
                     } else {
+                        UserVmVO userVm = userVmDao.findById(vmInstance.getId());
+
                         vmMgr.advanceStart(userVm.getUuid(), null, null);
                         work.setStartedAfterMaintenance(true);
                         _storagePoolWorkDao.update(work.getId(), work);
