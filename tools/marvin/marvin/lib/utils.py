@@ -501,8 +501,8 @@ def verifyRouterState(apiclient, routerid, allowedstates):
     listvalidationresult = validateList(routers)
     if listvalidationresult[0] == FAIL:
         return [FAIL, listvalidationresult[2]]
-    if routers[0].redundantstate not in allowedstates:
-        return [FAIL, "Redundant state of the router should be in %s but is %s" %
-            (allowedstates, routers[0].redundantstate)]
+    if routers[0].state.lower() not in allowedstates:
+        return [FAIL, "state of the router should be in %s but is %s" %
+            (allowedstates, routers[0].state)]
     return [PASS, None]
         

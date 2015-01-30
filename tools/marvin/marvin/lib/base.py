@@ -795,7 +795,7 @@ class Volume:
                domainid=None, diskofferingid=None, projectid=None):
         """Create Volume"""
         cmd = createVolume.createVolumeCmd()
-        cmd.name = services["diskname"]
+        cmd.name = "-".join([services["diskname"], random_gen()])
 
         if diskofferingid:
             cmd.diskofferingid = diskofferingid
@@ -1284,12 +1284,12 @@ class Iso:
 
     @classmethod
     def create(cls, apiclient, services, account=None, domainid=None,
-               projectid=None):
+               projectid=None, zoneid=None):
         """Create an ISO"""
         # Create ISO from URL
         cmd = registerIso.registerIsoCmd()
         cmd.displaytext = services["displaytext"]
-        cmd.name = services["name"]
+        cmd.name = "-".join([services["name"], random_gen()])
         if "ostypeid" in services:
             cmd.ostypeid = services["ostypeid"]
         elif "ostype" in services:
@@ -1308,7 +1308,11 @@ class Iso:
                 "Unable to find Ostype is required for creating ISO")
 
         cmd.url = services["url"]
-        cmd.zoneid = services["zoneid"]
+
+        if zoneid:
+            cmd.zoneid = zoneid
+        else:
+            cmd.zoneid = services["zoneid"]
 
         if "isextractable" in services:
             cmd.isextractable = services["isextractable"]
@@ -1625,7 +1629,7 @@ class EgressFireWallRule:
 
     @classmethod
     def create(cls, apiclient, networkid, protocol, cidrlist=None,
-               startport=None, endport=None):
+               startport=None, endport=None, type=None, code=None):
         """Create Egress Firewall Rule"""
         cmd = createEgressFirewallRule.createEgressFirewallRuleCmd()
         cmd.networkid = networkid
@@ -1636,6 +1640,10 @@ class EgressFireWallRule:
             cmd.startport = startport
         if endport:
             cmd.endport = endport
+        if type:
+            cmd.type = type
+        if code:
+            cmd.code = code
 
         return EgressFireWallRule(
             apiclient.createEgressFirewallRule(cmd).__dict__)
@@ -4711,5 +4719,35 @@ class SimulatorMock:
                 return SimulatorMock(simulatormock.__dict__)
         except Exception as e:
             raise e
+
+class Usage:
+    """Manage Usage Generation"""
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def listRecords(cls, apiclient, **kwargs):
+        """Lists domains"""
+        cmd = listUsageRecords.listUsageRecordsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+            cmd.listall = True
+        return(apiclient.listUsageRecords(cmd))
+
+    @classmethod
+    def listTypes(cls, apiclient, **kwargs):
+        """Lists domains"""
+        cmd = listUsageTypes.listUsageTypesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        if 'account' in kwargs.keys() and 'domainid' in kwargs.keys():
+            cmd.listall = True
+        return(apiclient.listUsageTypes(cmd))
+
+    @classmethod
+    def generateRecords(cls, apiclient, **kwargs):
+        """Lists domains"""
+        cmd = generateUsageRecords.generateUsageRecordsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.generateUsageRecords(cmd))
 
 

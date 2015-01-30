@@ -828,6 +828,11 @@ test_data = {
         "mode": "HTTP_DOWNLOAD",
         "templatefilter": "self"
     },
+    "volume_from_snapshot": {
+        "diskname": 'Volume from snapshot',
+        "size": "1",
+        "zoneid": ""
+    },
     "templatefilter": 'self',
     "templates": {
         "displaytext": 'Template',
@@ -1512,7 +1517,8 @@ test_data = {
             "ldapPassword": ""
         },
         "systemVmDelay": 120,
-        "vmware_cluster" : {
+	"setUsageConfigurationThroughTestCase": True
+	"vmware_cluster" : {
             "hypervisor": 'VMware',
             "clustertype": 'ExternalManaged',
             "username": '',
