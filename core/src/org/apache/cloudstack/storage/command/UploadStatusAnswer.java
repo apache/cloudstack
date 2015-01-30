@@ -27,6 +27,9 @@ public class UploadStatusAnswer extends Answer {
     }
 
     private UploadStatus status;
+    private long virtualSize = 0;
+    private long physicalSize = 0;
+    private String installPath = null;
 
     protected UploadStatusAnswer() {
     }
@@ -50,4 +53,27 @@ public class UploadStatusAnswer extends Answer {
         return status;
     }
 
+    public long getVirtualSize() {
+        return virtualSize;
+    }
+
+    public void setVirtualSize(long virtualSize) {
+        this.virtualSize = virtualSize;
+    }
+
+    public long getPhysicalSize() {
+        return physicalSize;
+    }
+
+    public void setPhysicalSize(long physicalSize) {
+        this.physicalSize = physicalSize;
+    }
+
+    public String getInstallPath() {
+        return installPath;
+    }
+
+    public void setInstallPath(String installPath) {
+        this.installPath = installPath;
+    }
 }

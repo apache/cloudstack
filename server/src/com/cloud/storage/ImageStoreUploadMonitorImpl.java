@@ -262,6 +262,10 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                         case COMPLETED:
                             tmpVolumeDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
                             tmpVolumeDataStore.setState(State.Ready);
+                            tmpVolumeDataStore.setInstallPath(answer.getInstallPath());
+                            tmpVolumeDataStore.setPhysicalSize(answer.getPhysicalSize());
+                            tmpVolumeDataStore.setSize(answer.getVirtualSize());
+                            tmpVolumeDataStore.setDownloadPercent(100);
                             stateMachine.transitTo(tmpVolume, Event.OperationSucceeded, null, _volumeDao);
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Volume " + tmpVolume.getUuid() + " uploaded successfully");
@@ -322,6 +326,10 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                         case COMPLETED:
                             tmpTemplateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
                             tmpTemplateDataStore.setState(State.Ready);
+                            tmpTemplateDataStore.setInstallPath(answer.getInstallPath());
+                            tmpTemplateDataStore.setPhysicalSize(answer.getPhysicalSize());
+                            tmpTemplateDataStore.setSize(answer.getVirtualSize());
+                            tmpTemplateDataStore.setDownloadPercent(100);
                             stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationSucceeded, null, _templateDao);
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Template " + tmpTemplate.getUuid() + " uploaded successfully");
