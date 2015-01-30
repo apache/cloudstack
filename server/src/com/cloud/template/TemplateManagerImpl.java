@@ -36,12 +36,12 @@ import javax.naming.ConfigurationException;
 import com.cloud.utils.EncryptionUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
@@ -188,6 +188,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
@@ -349,6 +350,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
             String url = "https://" + firstCommand.getRemoteEndPoint() + "/upload/" + firstCommand.getEntityUUID();
             response.setPostURL(new URL(url));
+
+            // set the post url, this is used in the monitoring thread to determine the SSVM
+            TemplateDataStoreVO templateStore = _tmplStoreDao.findByTemplate(firstCommand.getEntityId(), DataStoreRole.getRole(firstCommand.getDataToRole()));
+            if (templateStore != null) {
+                templateStore.setExtractUrl(url);
+                _tmplStoreDao.persist(templateStore);
+            }
 
             response.setId(UUID.fromString(firstCommand.getEntityUUID()));
 

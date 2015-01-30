@@ -31,7 +31,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
@@ -74,6 +73,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.download.DownloadMonitor;
+import com.cloud.template.VirtualMachineTemplate.State;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
@@ -148,7 +148,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     @Override
     public VMTemplateVO create(TemplateProfile profile) {
         // persist entry in vm_template, vm_template_details and template_zone_ref tables, not that entry at template_store_ref is not created here, and created in createTemplateAsync.
-        VMTemplateVO template = persistTemplate(profile);
+        VMTemplateVO template = persistTemplate(profile, State.Active);
 
         if (template == null) {
             throw new CloudRuntimeException("Unable to persist the template " + profile.getTemplate());
@@ -202,7 +202,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     @Override
     public List<TemplateOrVolumePostUploadCommand> createTemplateForPostUpload(TemplateProfile profile) {
         // persist entry in vm_template, vm_template_details and template_zone_ref tables, not that entry at template_store_ref is not created here, and created in createTemplateAsync.
-        VMTemplateVO template = persistTemplate(profile);
+        VMTemplateVO template = persistTemplate(profile, State.NotUploaded);
 
         if (template == null) {
             throw new CloudRuntimeException("Unable to persist the template " + profile.getTemplate());

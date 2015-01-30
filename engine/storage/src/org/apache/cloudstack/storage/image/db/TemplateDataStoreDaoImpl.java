@@ -68,7 +68,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     private SearchBuilder<TemplateDataStoreVO> downloadTemplateSearch;
     private SearchBuilder<TemplateDataStoreVO> uploadTemplateStateSearch;
     private SearchBuilder<VMTemplateVO> templateOnlySearch;
-    private static final String EXPIRE_DOWNLOAD_URLS_FOR_ZONE = "update template_store_ref set download_url_created=? where store_id in (select id from image_store where data_center_id=?)";
+    private static final String EXPIRE_DOWNLOAD_URLS_FOR_ZONE = "update template_store_ref set download_url_created=? where download_url_created is not null and store_id in (select id from image_store where data_center_id=?)";
 
     @Inject
     private DataStoreManager _storeMgr;
@@ -139,6 +139,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
 
         downloadTemplateSearch = createSearchBuilder();
         downloadTemplateSearch.and("download_url", downloadTemplateSearch.entity().getExtractUrl(), Op.NNULL);
+        downloadTemplateSearch.and("download_url_created", downloadTemplateSearch.entity().getExtractUrlCreated(), Op.NNULL);
         downloadTemplateSearch.and("destroyed", downloadTemplateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         downloadTemplateSearch.done();
 

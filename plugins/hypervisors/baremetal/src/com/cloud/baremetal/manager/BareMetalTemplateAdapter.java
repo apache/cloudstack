@@ -35,6 +35,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.template.TemplateAdapter;
 import com.cloud.template.TemplateAdapterBase;
+import com.cloud.template.VirtualMachineTemplate.State;
 import com.cloud.user.Account;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -84,7 +85,7 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 
     @Override
     public VMTemplateVO create(TemplateProfile profile) {
-        VMTemplateVO template = persistTemplate(profile);
+        VMTemplateVO template = persistTemplate(profile, State.Active);
         Long zoneId = profile.getZoneId();
 
         // create an entry at template_store_ref with store_id = null to represent that this template is ready for use.

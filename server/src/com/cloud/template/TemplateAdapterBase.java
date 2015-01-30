@@ -316,13 +316,14 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             owner, null, false, cmd.getImageStoreUuid(), cmd.isDynamicallyScalable(), TemplateType.USER);
     }
 
-    protected VMTemplateVO persistTemplate(TemplateProfile profile) {
+    protected VMTemplateVO persistTemplate(TemplateProfile profile, VirtualMachineTemplate.State initialState) {
         Long zoneId = profile.getZoneId();
         VMTemplateVO template =
             new VMTemplateVO(profile.getTemplateId(), profile.getName(), profile.getFormat(), profile.getIsPublic(), profile.getFeatured(), profile.getIsExtractable(),
                 profile.getTemplateType(), profile.getUrl(), profile.getRequiresHVM(), profile.getBits(), profile.getAccountId(), profile.getCheckSum(),
                 profile.getDisplayText(), profile.getPasswordEnabled(), profile.getGuestOsId(), profile.getBootable(), profile.getHypervisorType(),
                 profile.getTemplateTag(), profile.getDetails(), profile.getSshKeyEnabled(), profile.IsDynamicallyScalable());
+        template.setState(initialState);
 
         if (zoneId == null || zoneId.longValue() == -1) {
             List<DataCenterVO> dcs = _dcDao.listAll();
