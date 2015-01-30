@@ -517,6 +517,9 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
          """
 
         # register windows 2012 VM template as windows 8 template
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("windows VM is not supported on %s" % self.hypervisor.lower())
         self.win2012_template = Template.register(
             self.apiClient,
             self.services["win2012template"],

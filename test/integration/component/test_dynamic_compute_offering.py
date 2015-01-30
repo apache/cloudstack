@@ -62,6 +62,9 @@ class TestDynamicServiceOffering(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("dynamic scaling feature is not supported on %s" % self.hypervisor.lower())
 
         cls.template = get_template(
             cls.apiclient,
@@ -481,8 +484,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
             TestScaleVmDynamicServiceOffering,
             cls).getClsTestClient()
         cls.api_client = cloudstackTestClient.getApiClient()
-        cls.hypervisor = cloudstackTestClient.getHypervisorInfo()
-
+        self.hypervisor = self.testClient.getHypervisorInfo()
         # Fill services from the external config file
         cls.services = cloudstackTestClient.getParsedTestDataConfig()
 
@@ -1260,6 +1262,9 @@ class TestAccountLimits(cloudstackTestCase):
 
         # Fill services from the external config file
         cls.services = cloudstackTestClient.getParsedTestDataConfig()
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("dynamic scaling feature is not supported on %s" % self.hypervisor.lower())
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -1597,6 +1602,9 @@ class TestAffinityGroup(cloudstackTestCase):
 
         # Fill services from the external config file
         cls.services = cloudstackTestClient.getParsedTestDataConfig()
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("migrate VM feature is not supported on %s" % self.hypervisor.lower())
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
