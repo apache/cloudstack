@@ -1725,11 +1725,15 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (uploadEntityStateMap.containsKey(entityId)) {
             UploadEntity uploadEntity = uploadEntityStateMap.get(entityId);
             if (uploadEntity.getUploadState()== UploadEntity.Status.ERROR) {
-                uploadEntityStateMap.remove(uploadEntity);
+                uploadEntityStateMap.remove(entityId);
                 return new UploadStatusAnswer(cmd, UploadStatus.ERROR, uploadEntity.getErrorMessage());
             }else if (uploadEntity.getUploadState()== UploadEntity.Status.COMPLETED) {
-                uploadEntityStateMap.remove(uploadEntity);
-                return new UploadStatusAnswer(cmd, UploadStatus.COMPLETED);
+                UploadStatusAnswer answer =  new UploadStatusAnswer(cmd, UploadStatus.COMPLETED);
+                answer.setVirtualSize(uploadEntity.getVirtualSize());
+                answer.setInstallPath(uploadEntity.getTmpltPath());
+                answer.setPhysicalSize(uploadEntity.getEntitysize());
+                uploadEntityStateMap.remove(entityId);
+                return answer;
             }else if (uploadEntity.getUploadState()==UploadEntity.Status.IN_PROGRESS) {
                 return new UploadStatusAnswer(cmd,UploadStatus.IN_PROGRESS);
             }
@@ -2833,6 +2837,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 }
                 if (info != null) {
                     loc.addFormat(info);
+                    uploadEntity.setVirtualSize(info.virtualSize);
                     //dnld.setTemplatesize(info.virtualSize);
                     //dnld.setTemplatePhysicalSize(info.size);
                     break;

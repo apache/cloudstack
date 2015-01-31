@@ -49,6 +49,7 @@ public class UploadEntity {
     private String errorMessage=null;
     private File file;
     private ResourceType resourceType;
+    private long virtualSize;
 
     public static long s_maxTemplateSize = 50L * 1024L * 1024L * 1024L;
 
@@ -173,4 +174,11 @@ public class UploadEntity {
         this.chksum = chksum;
     }
 
+    public long getVirtualSize() {
+        return virtualSize;
+    }
+
+    public void setVirtualSize(long virtualSize) {
+        this.virtualSize = virtualSize;
+    }
 }
