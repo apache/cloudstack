@@ -738,6 +738,9 @@
                                                     });
 
                                                     $('div.overlay').remove();
+                                                    $form.find('.loading-overlay').remove();
+                                                    $('div.loading-overlay').remove();
+                                                    
                                                     $('.tooltip-box').remove();
                                                     $formContainer.remove();
                                                     $(this).dialog('destroy');
@@ -745,7 +748,10 @@
                                                     $('.hovered-elem').hide();
                                                 },
                                                 error: function(msg) {
+                                                	$('div.overlay').remove();
                                                     $form.find('.loading-overlay').remove();
+                                                    $('div.loading-overlay').remove();
+                                                    
                                                     cloudStack.dialog.error({ message: msg });
                                                 }
                                             }
