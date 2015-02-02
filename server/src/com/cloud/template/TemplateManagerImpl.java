@@ -33,6 +33,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.ImageStoreUploadMonitorImpl;
 import com.cloud.utils.EncryptionUtil;
 import com.cloud.utils.ImageStoreUtil;
 import com.google.gson.Gson;
@@ -363,12 +364,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
             response.setId(UUID.fromString(firstCommand.getEntityUUID()));
 
-            /*
-             * TODO: hardcoding the timeout to current + 60 min for now. This needs to goto the database
-             */
+            int timeout = ImageStoreUploadMonitorImpl.getUploadOperationTimeout();
             DateTime currentDateTime = new DateTime(DateTimeZone.UTC);
-            currentDateTime.plusHours(1);
-            String expires = currentDateTime.toString();
+            String expires = currentDateTime.plusMinutes(timeout).toString();
             response.setTimeout(expires);
 
             String key = _configDao.getValue(Config.SSVMPSK.key());

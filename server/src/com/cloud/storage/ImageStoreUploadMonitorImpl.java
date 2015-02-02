@@ -390,4 +390,8 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
         return new ConfigKey<?>[] {UploadMonitoringInterval, UploadOperationTimeout};
     }
 
+    public static int getUploadOperationTimeout() {
+        return UploadOperationTimeout.value();
+    }
+
 }

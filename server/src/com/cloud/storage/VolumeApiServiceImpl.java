@@ -319,20 +319,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         response.setId(UUID.fromString(vol.getUuid()));
 
-        /*
-         * TODO: hardcoding the timeout to current + 60 min for now. This needs to goto the database
-         */
+        int timeout = ImageStoreUploadMonitorImpl.getUploadOperationTimeout();
         DateTime currentDateTime = new DateTime(DateTimeZone.UTC);
-        currentDateTime.plusHours(1);
-        String expires = currentDateTime.toString();
+        String expires = currentDateTime.plusMinutes(timeout).toString();
         response.setTimeout(expires);
 
         String key = _configDao.getValue(Config.SSVMPSK.key());
          /*
           * encoded metadata using the post upload config key
           */
-
-
         TemplateOrVolumePostUploadCommand command = new TemplateOrVolumePostUploadCommand(vol.getId(), vol.getUuid(), volumeStore.getInstallPath(), volumeStore.getChecksum(), vol
                 .getType().toString(), vol.getName(), vol.getFormat().toString(), dataObject.getDataStore().getUri(), dataObject.getDataStore().getRole().toString());
         command.setLocalPath(volumeStore.getLocalDownloadPath());
