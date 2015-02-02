@@ -120,6 +120,12 @@
             return false;
         });
 
+        // SAML Login action
+        $login.find('input[type=samlsubmit]').click(function() {
+            args.samlLoginAction({
+            });
+        });
+
         // Select language
         var $languageSelect = $login.find('select[name=language]');
         $languageSelect.change(function() {

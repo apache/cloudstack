@@ -346,6 +346,16 @@
                 });
             },
 
+            samlLoginAction: function(args) {
+                $.cookie('sessionKey', null);
+                $.cookie('username', null);
+                $.cookie('account', null);
+                $.cookie('domainid', null);
+                $.cookie('role', null);
+                $.cookie('timezone', null);
+                window.location.href = createURL('samlSso');
+            },
+
             // Show cloudStack main UI widget
             complete: function(args) {
                 var context = {
