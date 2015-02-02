@@ -760,6 +760,7 @@ dictionary = {
 'label.local.storage': '<fmt:message key="label.local.storage" />',
 'label.login': '<fmt:message key="label.login" />',
 'label.logout': '<fmt:message key="label.logout" />',
+'label.saml.login': '<fmt:message key="label.saml.login" />',
 'label.lun': '<fmt:message key="label.lun" />',
 'label.LUN.number': '<fmt:message key="label.LUN.number" />',
 'label.make.project.owner': '<fmt:message key="label.make.project.owner" />',

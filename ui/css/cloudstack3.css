@@ -440,7 +440,7 @@ body.login {
   background: transparent url(../images/sprites.png) -563px -747px;
   cursor: pointer;
   border: none;
-  margin: 7px 238px 0 -1px;
+  margin: 7px 120px 0 -1px;
   text-align: center;
   width: 69px;
   height: 25px;
@@ -454,6 +454,27 @@ body.login {
   -webkit-text-shadow: 0px 1px 2px #000000;
   -o-text-shadow: 0px 1px 2px #000000;
   text-shadow: 0px 1px 2px #000000;
+}
+
+.login .fields input[type=samlsubmit] {
+  background: transparent url(../images/sprites.png) -563px -747px;
+  cursor: pointer;
+  border: none;
+  margin: 7px 120px 0 -1px;
+  text-align: center;
+  width: 60px;
+  height: 15px;
+  display: block;
+  color: #FFFFFF;
+  font-weight: bold;
+  float: left;
+  text-indent: -1px;
+  /*+text-shadow:0px 1px 2px #000000;*/
+  -moz-text-shadow: 0px 1px 2px #000000;
+  -webkit-text-shadow: 0px 1px 2px #000000;
+  -o-text-shadow: 0px 1px 2px #000000;
+  text-shadow: 0px 1px 2px #000000;
+  font-size: 10px;
 }
 
 .login .fields input[type=submit]:hover {
@@ -13017,4 +13038,3 @@ div.gpugroups div.list-view {
   background: transparent url("../images/icons.png") no-repeat -626px -209px;
   padding: 0 0 3px 18px;
 }
-

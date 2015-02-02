@@ -1014,7 +1014,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("The user " + userName + " already exists in domain " + domainId);
         }
 
-        if (networkDomain != null) {
+        if (networkDomain != null && networkDomain.length() > 0) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
                         "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "

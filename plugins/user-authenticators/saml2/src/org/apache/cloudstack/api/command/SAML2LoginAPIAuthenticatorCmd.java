@@ -23,7 +23,8 @@ import com.cloud.domain.Domain;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
 import com.cloud.user.DomainManager;
-import com.cloud.user.User;
+import com.cloud.user.UserAccount;
+import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.HttpUtils;
 import com.cloud.utils.db.EntityManager;
 import org.apache.cloudstack.api.APICommand;
@@ -72,6 +73,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @APICommand(name = "samlSso", description = "SP initiated SAML Single Sign On", requestHasSensitiveInfo = true, responseObject = LoginCmdResponse.class, entityType = {})
 public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
@@ -92,6 +94,8 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
     ConfigurationDao _configDao;
     @Inject
     DomainManager _domainMgr;
+    @Inject
+    private UserAccountDao _userAccountDao;
 
     SAML2AuthManager _samlAuthManager;
 
@@ -200,11 +204,9 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                     }
                 }
 
-                String uniqueUserId = null;
-                String accountName = _configDao.getValue(Config.SAMLUserAccountName.key());
                 String domainString = _configDao.getValue(Config.SAMLUserDomain.key());
 
-                Long domainId = -1L;
+                Long domainId = null;
                 Domain domain = _domainMgr.getDomain(domainString);
                 if (domain != null) {
                     domainId = domain.getId();
@@ -214,16 +216,17 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                     } catch (NumberFormatException ignore) {
                     }
                 }
-                if (domainId == -1L) {
-                    s_logger.error("The default domain ID for SAML users is not set correct, it should be a UUID");
+                if (domainId == null) {
+                    s_logger.error("The default domain ID for SAML users is not set correct, it should be a UUID. ROOT domain will be used.");
                 }
 
                 String username = null;
                 String password = SAMLUtils.generateSecureRandomId(); // Random password
                 String firstName = "";
                 String lastName = "";
-                String timeZone = "";
+                String timeZone = "GMT";
                 String email = "";
+                short accountType = 0; // User account
 
                 Assertion assertion = processedSAMLResponse.getAssertions().get(0);
                 NameID nameId = assertion.getSubject().getNameID();
@@ -233,7 +236,6 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
 
                 if (nameId.getFormat().equals(NameIDType.PERSISTENT) || nameId.getFormat().equals(NameIDType.EMAIL)) {
                     username = nameId.getValue();
-                    uniqueUserId = SAMLUtils.createSAMLId(username);
                     if (nameId.getFormat().equals(NameIDType.EMAIL)) {
                         email = username;
                     }
@@ -249,9 +251,8 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                         for (Attribute attribute: attributeStatement.getAttributes()) {
                             String attributeName = attribute.getName();
                             String attributeValue = attribute.getAttributeValues().get(0).getDOM().getTextContent();
-                            if (attributeName.equalsIgnoreCase("uid") && uniqueUserId == null) {
+                            if (attributeName.equalsIgnoreCase("uid") && username == null) {
                                 username = attributeValue;
-                                uniqueUserId = SAMLUtils.createSAMLId(username);
                             } else if (attributeName.equalsIgnoreCase("givenName")) {
                                 firstName = attributeValue;
                             } else if (attributeName.equalsIgnoreCase(("sn"))) {
@@ -263,17 +264,22 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                     }
                 }
 
-                User user = _entityMgr.findByUuid(User.class, uniqueUserId);
-                if (user == null && uniqueUserId != null && username != null
-                        && accountName != null && domainId != null) {
-                    CallContext.current().setEventDetails("UserName: " + username + ", FirstName :" + password + ", LastName: " + lastName);
-                    user = _accountService.createUser(username, password, firstName, lastName, email, timeZone, accountName, domainId, uniqueUserId);
+                if (username == null && email != null) {
+                    username = email;
+                }
+                final String uniqueUserId = SAMLUtils.createSAMLId(username);
+
+                UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
+                if (userAccount == null && uniqueUserId != null && username != null) {
+                    CallContext.current().setEventDetails("SAML Account/User with UserName: " + username + ", FirstName :" + password + ", LastName: " + lastName);
+                    _accountService.createUserAccount(username, password, firstName, lastName, email, timeZone,
+                            username, (short) accountType, domainId, null, null, UUID.randomUUID().toString(), uniqueUserId);
                 }
 
-                if (user != null) {
+                if (userAccount != null) {
                     try {
-                        if (_apiServer.verifyUser(user.getId())) {
-                            LoginCmdResponse loginResponse = (LoginCmdResponse) _apiServer.loginUser(session, username, user.getPassword(), domainId, null, remoteAddress, params);
+                        if (_apiServer.verifyUser(userAccount.getId())) {
+                            LoginCmdResponse loginResponse = (LoginCmdResponse) _apiServer.loginUser(session, username, userAccount.getPassword(), domainId, null, remoteAddress, params);
                             resp.addCookie(new Cookie("userid", URLEncoder.encode(loginResponse.getUserId(), HttpUtils.UTF_8)));
                             resp.addCookie(new Cookie("domainid", URLEncoder.encode(loginResponse.getDomainId(), HttpUtils.UTF_8)));
                             resp.addCookie(new Cookie("role", URLEncoder.encode(loginResponse.getType(), HttpUtils.UTF_8)));

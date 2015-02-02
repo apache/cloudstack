@@ -1378,14 +1378,6 @@ public enum Config {
             "false",
             "Set it to true to enable SAML SSO plugin",
             null),
-    SAMLUserAccountName(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "saml2.default.accountname",
-            "admin",
-            "The name of the default account to use when creating users from SAML SSO",
-            null),
     SAMLUserDomain(
             "Advanced",
             ManagementServer.class,
