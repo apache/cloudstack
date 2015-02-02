@@ -29,6 +29,7 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 
 import com.cloud.utils.EncryptionUtil;
+import com.cloud.utils.ImageStoreUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -303,7 +304,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
 
         GetUploadParamsResponse response = new GetUploadParamsResponse();
-        String url = "https://" + ep.getPublicAddr() + "/upload/" + vol.getUuid();
+
+        String ssvmUrlDomain = _configDao.getValue(Config.SecStorageSecureCopyCert.key());
+
+        String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, ep.getPublicAddr(), vol.getUuid());
         response.setPostURL(new URL(url));
 
         // set the post url, this is used in the monitoring thread to determine the SSVM

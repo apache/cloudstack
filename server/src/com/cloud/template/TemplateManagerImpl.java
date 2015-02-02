@@ -34,6 +34,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.utils.EncryptionUtil;
+import com.cloud.utils.ImageStoreUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -348,7 +349,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
              */
             TemplateOrVolumePostUploadCommand firstCommand = payload.get(0);
 
-            String url = "https://" + firstCommand.getRemoteEndPoint() + "/upload/" + firstCommand.getEntityUUID();
+            String ssvmUrlDomain = _configDao.getValue(Config.SecStorageSecureCopyCert.key());
+
+            String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, firstCommand.getRemoteEndPoint(), firstCommand.getEntityUUID());
             response.setPostURL(new URL(url));
 
             // set the post url, this is used in the monitoring thread to determine the SSVM
