@@ -230,7 +230,8 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             host.copyFile(srcFile, destFile);
             TemplateObjectTO newVol = new TemplateObjectTO();
             newVol.setUuid(destUuid);
-            newVol.setPath(destPath);
+            // was destfile
+            newVol.setPath(destUuid);
             newVol.setFormat(ImageFormat.RAW);
             return new CopyCmdAnswer(newVol);
         } catch (Ovm3ResourceException e) {
@@ -254,18 +255,15 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     public CopyCmdAnswer cloneVolumeFromBaseTemplate(CopyCommand cmd) {
         LOGGER.debug("execute cloneVolumeFromBaseTemplate: "+ cmd.getClass());
         try {
+            // src
             DataTO srcData = cmd.getSrcTO();
-            // DataStoreTO srcStore = srcData.getDataStore();
-            DataTO destData = cmd.getDestTO();
-            // DataStoreTO destStore = destData.getDataStore();
             TemplateObjectTO src = (TemplateObjectTO) srcData;
+            String srcFile = getVirtualDiskPath(src.getUuid(), src.getDataStore().getUuid());
+            srcFile = srcFile.replace(config.getVirtualDiskDir(), config.getTemplateDir());
+
+            DataTO destData = cmd.getDestTO();
             VolumeObjectTO dest = (VolumeObjectTO) destData;
-            String srcFile = src.getPath() + File.separator
-                    + src.getUuid() + ".raw";
-            String destPath = src.getPath().replace(config.getTemplateDir(),
-                    config.getVirtualDiskDir());
-            String destFile = destPath + File.separator
-                    + dest.getUuid() + ".raw";
+            String destFile = getVirtualDiskPath(dest.getUuid(), dest.getDataStore().getUuid());
             Linux host = new Linux(c);
             LOGGER.debug("CopyFrom: " + srcData.getObjectType() + ","
                     + srcFile + " to " + destData.getObjectType() + ","
@@ -273,7 +271,8 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             host.copyFile(srcFile, destFile);
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setUuid(dest.getUuid());
-            newVol.setPath(destPath);
+            // was destfile
+            newVol.setPath(dest.getUuid());
             newVol.setFormat(ImageFormat.RAW);
             return new CopyCmdAnswer(newVol);
         } catch (Ovm3ResourceException e) {
@@ -338,14 +337,13 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                     + srcFile + " to " + destData.getObjectType() + ","
                     + destFile);
             host.copyFile(srcFile, destFile);
-            /* delete after succes, or just always delete ? */
             StoragePlugin sp = new StoragePlugin(c);
             sp.storagePluginDestroy(secPoolUuid, srcFile);
-            // delete from primary after copy. ovm3 doesn't have this...
+
             SnapshotObjectTO newSnap = new SnapshotObjectTO();
-            newSnap.setPath(destFile);
-            // the store_ref table holds the destpath, so not the uuid
-            newSnap.setPath(dest.getPath());
+            // newSnap.setPath(destFile);
+            // damnit frickin crap, no reference whatsoever... could use parent ?
+            newSnap.setPath(dest.getPath() + File.separator + src.getPath() + ".raw");
             newSnap.setParentSnapshotPath(null);
             return new CopyCmdAnswer(newSnap);
         } catch (Ovm3ResourceException e) {
@@ -411,7 +409,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      * @return
      * @throws Ovm3ResourceException
      */
-    private String getVirtualDiskPath(String diskUuid, String storeUuid) throws Ovm3ResourceException {
+    public String getVirtualDiskPath(String diskUuid, String storeUuid) throws Ovm3ResourceException {
         String d = config.getAgentOvmRepoPath() +
                 File.separator +
                 ovmObject.deDash(storeUuid) +
@@ -424,8 +422,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         }
         return d;
     }
-
-    private String getVirtualDiskPath(DiskTO disk, String storeUuid) throws Ovm3ResourceException {
+    public String getVirtualDiskPath(DiskTO disk, String storeUuid) throws Ovm3ResourceException {
         return getVirtualDiskPath(disk.getPath(), storeUuid);
     }
 
@@ -523,13 +520,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             String storeUrl = data.getDataStore().getUrl();
             URI uri = new URI(storeUrl);
             String host = uri.getHost();
-            String file = config.getAgentOvmRepoPath()
-                    + File.separator
-                    + ovmObject.deDash(poolUuid)
-                    + File.separator
-                    + config.getVirtualDiskDir()
-                    + File.separator
-                    + volume.getUuid() + ".raw";
+            String file = getVirtualDiskPath(volume.getUuid(), poolUuid);
             Long size = volume.getSize();
             StoragePlugin sp = new StoragePlugin(c);
             FileProperties fp = sp.storagePluginCreate(poolUuid, host, file,
@@ -591,7 +582,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             LOGGER.debug("Snapshot " + src + " to " + dest);
             host.copyFile(src, dest);
             SnapshotObjectTO nsnap = new SnapshotObjectTO();
-            nsnap.setPath(dest);
+            // nsnap.setPath(dest);
             // move to something that looks the same as xenserver.
             nsnap.setPath(uuid);
             return new CreateObjectAnswer(nsnap);
@@ -713,26 +704,30 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     public Answer createVolumeFromSnapshot(CopyCommand cmd) {
         LOGGER.debug("execute createVolumeFromSnapshot: "+ cmd.getClass());
         try {
-            /* src file and pool, secstorage */
             DataTO srcData = cmd.getSrcTO();
             DataStoreTO srcStore = srcData.getDataStore();
             NfsTO srcImageStore = (NfsTO) srcStore;
+
+            // source, should contain snap dir/filename
             SnapshotObjectTO srcSnap = (SnapshotObjectTO) srcData;
             String secPoolUuid = pool.setupSecondaryStorage(srcImageStore.getUrl());
-            String srcFile = srcSnap.getPath();
+            String srcFile = config.getAgentSecStoragePath()
+                    + File.separator + secPoolUuid + File.separator
+                    + srcSnap.getPath();
 
-            /* dest file and pool */
+            // dest
             DataTO destData = cmd.getDestTO();
             VolumeObjectTO destVol = (VolumeObjectTO) destData;
             String primaryPoolUuid = destData.getDataStore().getUuid();
-            String destFile = getVirtualDiskPath(ovmObject.deDash(primaryPoolUuid), destVol.getUuid());
+            String destFile = getVirtualDiskPath(destVol.getUuid(), ovmObject.deDash(primaryPoolUuid));
 
             Linux host = new Linux(c);
             host.copyFile(srcFile, destFile);
 
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setUuid(destVol.getUuid());
-            newVol.setPath(destFile);
+            // newVol.setPath(destFile);
+            newVol.setPath(destVol.getUuid());
             newVol.setFormat(ImageFormat.RAW);
             return new CopyCmdAnswer(newVol);
             /* we assume the cache for templates is local */
@@ -743,7 +738,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     }
 
     /**
-     * Is not used in normal operation it seems, the SSVM takes care of this.
+     * Is not used in normal operation, the SSVM takes care of this.
      */
     @Override
     public Answer deleteSnapshot(DeleteCommand cmd) {

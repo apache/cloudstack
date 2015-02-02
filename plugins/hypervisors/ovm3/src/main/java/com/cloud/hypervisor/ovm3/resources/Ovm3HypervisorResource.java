@@ -367,17 +367,17 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
         hypervisornetwork = new Ovm3HypervisorNetwork(c, configuration);
         hypervisornetwork.configureNetworking();
         virtualroutingresource = new Ovm3VirtualRoutingResource(c);
+        storagepool = new Ovm3StoragePool(c, configuration);
+        storagepool.prepareForPool();
+        storageprocessor = new Ovm3StorageProcessor(c, configuration,
+                storagepool);
         vmsupport = new Ovm3VmSupport(c, configuration, hypervisorsupport,
-                storagepool, hypervisornetwork);
+                storageprocessor, storagepool, hypervisornetwork);
         vrResource = new VirtualRoutingResource(virtualroutingresource);
         if (!vrResource.configure(name, params)) {
             throw new ConfigurationException(
                     "Unable to configure VirtualRoutingResource");
         }
-        storagepool = new Ovm3StoragePool(c, configuration);
-        storagepool.prepareForPool();
-        storageprocessor = new Ovm3StorageProcessor(c, configuration,
-                storagepool);
         guesttypes = new Ovm3VmGuestTypes();
         storageHandler = new StorageSubsystemCommandHandlerBase(storageprocessor);
         virtualroutingsupport = new Ovm3VirtualRoutingSupport(c, configuration,

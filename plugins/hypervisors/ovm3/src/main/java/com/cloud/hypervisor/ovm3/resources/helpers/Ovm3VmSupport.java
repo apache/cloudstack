@@ -57,6 +57,7 @@ import com.cloud.hypervisor.ovm3.objects.Connection;
 import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
 import com.cloud.hypervisor.ovm3.objects.OvmObject;
 import com.cloud.hypervisor.ovm3.objects.Xen;
+import com.cloud.hypervisor.ovm3.resources.Ovm3StorageProcessor;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Volume;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -70,17 +71,20 @@ public class Ovm3VmSupport {
     private Ovm3HypervisorNetwork network;
     private Ovm3Configuration config;
     private Ovm3HypervisorSupport hypervisor;
+    private Ovm3StorageProcessor processor;
     private Ovm3StoragePool pool;
     private final Map<String, Map<String, String>> vmStats = new ConcurrentHashMap<String, Map<String, String>>();
     public Ovm3VmSupport(Connection conn,
             Ovm3Configuration ovm3config,
             Ovm3HypervisorSupport ovm3hyper,
+            Ovm3StorageProcessor ovm3stp,
             Ovm3StoragePool ovm3sp,
             Ovm3HypervisorNetwork ovm3hvn) {
         c = conn;
         config = ovm3config;
         hypervisor = ovm3hyper;
         pool = ovm3sp;
+        processor = ovm3stp;
         network = ovm3hvn;
     }
     public Boolean createVifs(Xen.Vm vm, VirtualMachineTO spec)
@@ -372,12 +376,10 @@ public class Ovm3VmSupport {
             try {
                 if (disk.getType() == Volume.Type.ROOT) {
                     VolumeObjectTO vol = (VolumeObjectTO) disk.getData();
-                    DataStoreTO ds = vol.getDataStore();
-                    String dsk = vol.getPath() + "/" + vol.getUuid() + ".raw";
-                    vm.addRootDisk(dsk);
-                    /* TODO: needs to be replaced by rootdiskuuid? */
-                    vm.setPrimaryPoolUuid(ds.getUuid());
-                    LOGGER.debug("Adding root disk: " + dsk);
+                    String diskFile = processor.getVirtualDiskPath(vol.getUuid(),  vol.getDataStore().getUuid());
+                    vm.addRootDisk(diskFile);
+                    vm.setPrimaryPoolUuid(vol.getDataStore().getUuid());
+                    LOGGER.debug("Adding root disk: " + diskFile);
                 } else if (disk.getType() == Volume.Type.ISO) {
                     DataTO isoTO = disk.getData();
                     if (isoTO.getPath() != null) {
@@ -398,9 +400,11 @@ public class Ovm3VmSupport {
                         LOGGER.debug("Adding ISO: " + isoPath);
                     }
                 } else if (disk.getType() == Volume.Type.DATADISK) {
-                    vm.addDataDisk(disk.getData().getPath());
+                    VolumeObjectTO vol = (VolumeObjectTO) disk.getData();
+                    String diskFile = processor.getVirtualDiskPath(vol.getUuid(),  vol.getDataStore().getUuid());
+                    vm.addDataDisk(diskFile);
                     LOGGER.debug("Adding data disk: "
-                            + disk.getData().getPath());
+                            + diskFile);
                 } else {
                     throw new CloudRuntimeException("Unknown disk type: "
                             + disk.getType());
