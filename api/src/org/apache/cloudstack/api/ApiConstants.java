@@ -380,7 +380,7 @@ public class ApiConstants {
     public static final String SECURITY_GROUP_EANBLED = "securitygroupenabled";
     public static final String LOCAL_STORAGE_ENABLED = "localstorageenabled";
     public static final String GUEST_IP_TYPE = "guestiptype";
-    public static final String XENSERVER_NETWORK_LABEL = "xenservernetworklabel";
+    public static final String XENSERVER_NETWORK_LABEL = "xennetworklabel";
     public static final String KVM_NETWORK_LABEL = "kvmnetworklabel";
     public static final String VMWARE_NETWORK_LABEL = "vmwarenetworklabel";
     public static final String HYPERV_NETWORK_LABEL = "hypervnetworklabel";

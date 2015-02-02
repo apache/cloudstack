@@ -71,7 +71,7 @@
 
         switch (hypervisor) {
             case 'XenServer':
-                hypervisorAttr = 'xenservernetworklabel';
+                hypervisorAttr = 'xennetworklabel';
                 break;
             case 'KVM':
                 hypervisorAttr = 'kvmnetworklabel';
