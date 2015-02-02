@@ -345,7 +345,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
             /*
              * There can be one or more commands depending on the number of secondary stores the template needs to go to. Taking the first one to do the url upload. The
-             * template will be propagated to the rest through copy.
+             * template will be propagated to the rest through copy by management server commands.
              */
             TemplateOrVolumePostUploadCommand firstCommand = payload.get(0);
 
@@ -376,7 +376,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
              * encoded metadata using the post upload config ssh key
              */
             Gson gson = new GsonBuilder().create();
-            String jsonPayload = gson.toJson(payload);
+            String jsonPayload = gson.toJson(firstCommand);
             response.setMetadata(EncryptionUtil.encodeData(jsonPayload, key));
 
             /*
