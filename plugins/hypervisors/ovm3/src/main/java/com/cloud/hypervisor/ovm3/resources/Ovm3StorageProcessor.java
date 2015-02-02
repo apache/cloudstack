@@ -66,7 +66,6 @@ import com.cloud.hypervisor.ovm3.objects.Xen;
 import com.cloud.hypervisor.ovm3.objects.StoragePlugin.FileProperties;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3Configuration;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3StoragePool;
-import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.resource.StorageProcessor;
@@ -161,6 +160,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         StorageFilerTO primaryStorage = cmd.getPool();
         DiskProfile disk = cmd.getDiskCharacteristics();
         /* disk should have a uuid */
+        // should also be replaced with getVirtualDiskPath ?
         String fileName = UUID.randomUUID().toString() + ".raw";
         String dst = primaryStorage.getPath() + File.separator
                 + primaryStorage.getUuid() + File.separator + fileName;
@@ -318,36 +318,35 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             DataTO destData = cmd.getDestTO();
             SnapshotObjectTO src = (SnapshotObjectTO) srcData;
             SnapshotObjectTO dest = (SnapshotObjectTO) destData;
-            // src
-            String srcFilePath = src.getPath();
-            if (destData.getDataStore().getRole() == DataStoreRole.Image) {
-                LOGGER.debug("Snapshot from primary to image store (secondary)");
-            } else {
-                // srcFilePath = getDiskPath(src.getPath(),src.getDataStore().getUuid());
-            }
+
+            // src.getPath contains the uuid of the snapshot.
+            String srcFile = getVirtualDiskPath(src.getPath(), src.getDataStore().getUuid());
+
             // destination
             String storeUrl = dest.getDataStore().getUrl();
             String secPoolUuid = pool.setupSecondaryStorage(storeUrl);
-            int index = srcFilePath.lastIndexOf(File.separator);
-            String snapshotName = srcFilePath.substring(index + 1);
             String destDir = config.getAgentSecStoragePath()
                     + File.separator + secPoolUuid + File.separator
                     + dest.getPath();
-            String destFile =  destDir + File.separator + snapshotName;
+            String destFile =  destDir + File.separator + src.getPath();
+            destFile = destFile.concat(".raw");
             // copy
             Linux host = new Linux(c);
             CloudstackPlugin csp = new CloudstackPlugin(c);
             csp.ovsMkdirs(destDir);
             LOGGER.debug("CopyFrom: " + srcData.getObjectType() + ","
-                    + srcFilePath + " to " + destData.getObjectType() + ","
+                    + srcFile + " to " + destData.getObjectType() + ","
                     + destFile);
-            host.copyFile(srcFilePath, destFile);
+            host.copyFile(srcFile, destFile);
             /* delete after succes, or just always delete ? */
             StoragePlugin sp = new StoragePlugin(c);
-            sp.storagePluginDestroy(secPoolUuid, srcFilePath);
+            sp.storagePluginDestroy(secPoolUuid, srcFile);
             // delete from primary after copy. ovm3 doesn't have this...
             SnapshotObjectTO newSnap = new SnapshotObjectTO();
             newSnap.setPath(destFile);
+            // the store_ref table holds the destpath, so not the uuid
+            newSnap.setPath(dest.getPath());
+            newSnap.setParentSnapshotPath(null);
             return new CopyCmdAnswer(newSnap);
         } catch (Ovm3ResourceException e) {
             String msg = "Error backupSnapshot: " + e.getMessage();
@@ -408,21 +407,26 @@ public class Ovm3StorageProcessor implements StorageProcessor {
 
     /**
      * Returns the disk path
-     * @param disk
+     * @param diskUuid
      * @return
      * @throws Ovm3ResourceException
      */
-    private String getDiskPath(String disk, String uuid) throws Ovm3ResourceException {
-        return config.getAgentOvmRepoPath() +
+    private String getVirtualDiskPath(String diskUuid, String storeUuid) throws Ovm3ResourceException {
+        String d = config.getAgentOvmRepoPath() +
                 File.separator +
-                ovmObject.deDash(uuid) +
+                ovmObject.deDash(storeUuid) +
                 File.separator +
                 config.getVirtualDiskDir() +
                 File.separator +
-                disk + ".raw";
+                diskUuid;
+        if (!d.endsWith(".raw")) {
+            d = d.concat(".raw");
+        }
+        return d;
     }
-    private String getDiskPath(DiskTO disk, String uuid) throws Ovm3ResourceException {
-        return getDiskPath(disk.getPath(), uuid);
+
+    private String getVirtualDiskPath(DiskTO disk, String storeUuid) throws Ovm3ResourceException {
+        return getVirtualDiskPath(disk.getPath(), storeUuid);
     }
 
     /**
@@ -451,7 +455,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             if (disk.getType() == Volume.Type.ISO) {
                 path = getIsoPath(disk);
             } else if (disk.getType() == Volume.Type.DATADISK) {
-                path = getDiskPath(disk, vm.getPrimaryPoolUuid());
+                path = getVirtualDiskPath(disk, vm.getPrimaryPoolUuid());
             }
             if ("".equals(path)) {
                 msg = doThis + " can't do anything with an empty path.";
@@ -581,13 +585,15 @@ public class Ovm3StorageProcessor implements StorageProcessor {
              * in case, we just replace it.... (Seems to happen if not ROOT)
              */
             if (vol.getPath().contains(vol.getUuid())) {
-                src = getDiskPath(vol.getUuid(),data.getDataStore().getUuid());
+                src = getVirtualDiskPath(vol.getUuid(),data.getDataStore().getUuid());
                 dest = src.replace(vol.getUuid(), uuid);
             }
             LOGGER.debug("Snapshot " + src + " to " + dest);
             host.copyFile(src, dest);
             SnapshotObjectTO nsnap = new SnapshotObjectTO();
             nsnap.setPath(dest);
+            // move to something that looks the same as xenserver.
+            nsnap.setPath(uuid);
             return new CreateObjectAnswer(nsnap);
         } catch (Ovm3ResourceException e) {
             return new CreateObjectAnswer(
@@ -603,7 +609,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         try {
             String poolUuid = data.getDataStore().getUuid();
             String uuid = volume.getUuid();
-            String path = getDiskPath(uuid, poolUuid);
+            String path = getVirtualDiskPath(uuid, poolUuid);
             StoragePlugin sp = new StoragePlugin(c);
             sp.storagePluginDestroy(poolUuid, path);
             LOGGER.debug("Volume deletion success: " + path);
@@ -719,10 +725,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             DataTO destData = cmd.getDestTO();
             VolumeObjectTO destVol = (VolumeObjectTO) destData;
             String primaryPoolUuid = destData.getDataStore().getUuid();
-            String destFile = config.getAgentOvmRepoPath() + File.separator
-                    + ovmObject.deDash(primaryPoolUuid) + File.separator
-                    + config.getVirtualDiskDir() + File.separator
-                    + destVol.getUuid() + ".raw";
+            String destFile = getVirtualDiskPath(ovmObject.deDash(primaryPoolUuid), destVol.getUuid());
 
             Linux host = new Linux(c);
             host.copyFile(srcFile, destFile);
@@ -740,12 +743,29 @@ public class Ovm3StorageProcessor implements StorageProcessor {
     }
 
     /**
-     * if storagage is primary in xenserver
+     * Is not used in normal operation it seems, the SSVM takes care of this.
      */
     @Override
     public Answer deleteSnapshot(DeleteCommand cmd) {
         LOGGER.debug("execute deleteSnapshot: "+ cmd.getClass());
-        return new Answer(cmd, false, "not implemented yet");
+        DataTO data = cmd.getData();
+        SnapshotObjectTO snap = (SnapshotObjectTO) data;
+        String storeUrl = data.getDataStore().getUrl();
+        String snapUuid = snap.getPath();
+        try {
+            // snapshots/accountid/volumeid
+            String secPoolUuid = pool.setupSecondaryStorage(storeUrl);
+            String filePath = config.getAgentSecStoragePath()
+                    + File.separator + secPoolUuid + File.separator
+                    + snapUuid + ".raw";
+            StoragePlugin sp = new StoragePlugin(c);
+            sp.storagePluginDestroy(secPoolUuid, filePath);
+            LOGGER.debug("Snapshot deletion success: " + filePath);
+            return new Answer(cmd, true, "Deleted Snapshot " + filePath);
+        } catch (Ovm3ResourceException e) {
+            LOGGER.info("Snapshot deletion failed: " + e.toString(), e);
+            return new CreateObjectAnswer(e.toString());
+        }
     }
     /**
      * SR scan in xenserver
