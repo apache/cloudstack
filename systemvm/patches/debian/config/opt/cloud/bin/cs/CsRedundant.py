@@ -78,6 +78,11 @@ class CsRedundant(object):
         CsHelper.rm(self.KEEPALIVED_CONF)
 
     def _redundant_on(self):
+        guest = self.address.get_guest_if()
+        # No redundancy if there is no guest network
+        if guest is None:
+            self._redundant_off()
+            return
         CsHelper.mkdir(self.CS_RAMDISK_DIR, 0755, False)
         CsHelper.mount_tmpfs(self.CS_RAMDISK_DIR)
         CsHelper.mkdir(self.CS_ROUTER_DIR, 0755, False)
@@ -107,7 +112,8 @@ class CsRedundant(object):
             i = i + 1
         file.search(" router_id ", "    router_id %s" % self.cl.get_name())
         file.search(" priority ", "    priority %s" % self.cl.get_priority())
-        file.search(" weight ", "    weight %s" % 2)
+        file.search(" interface ", "    interface %s" % guest.get_device())
+        #file.search(" weight ", "    weight %s" % 2)
         # file.search(" state ", "    state %s" % self.cl.get_state())
         file.search(" state ", "    state %s" % "EQUAL")
         # file.search(" virtual_router_id ", "    virtual_router_id %s" % self.cl.get_router_id())
@@ -116,7 +122,6 @@ class CsRedundant(object):
         file.commit()
 
         # conntrackd configuration
-        guest = self.address.get_guest_if()
         connt = CsFile(self.CONNTRACKD_CONF)
         if guest is not None:
             connt.section("Multicast {", "}", [
@@ -135,9 +140,6 @@ class CsRedundant(object):
 
         if file.is_changed():
             CsHelper.service("keepalived", "restart")
-
-        # FIXME
-        # enable/disable_pubip/master/slave etc. will need rewriting to use the new python config
 
         # Configure heartbeat cron job
         cron = CsFile("/etc/cron.d/heartbeat")

@@ -502,10 +502,12 @@ class CsIP:
 
     def is_guest_gateway(self, bag, ip):
         """ Exclude the vrrp maintained addresses on a redundant router """
+        interface = CsInterface(bag, self.config)
         if not self.config.cl.is_redundant():
             return False
         rip = ip.split('/')[0]
-        if bag['nw_type'] == "guest" and rip == bag['gateway']:
+        gw = interface.get_gateway()
+        if bag['nw_type'] == "guest" and rip == gw:
             return True
         return False
 
