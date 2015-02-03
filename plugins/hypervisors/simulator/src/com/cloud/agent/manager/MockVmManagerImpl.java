@@ -26,8 +26,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.VirtualNetworkApplianceService;
-
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -551,7 +550,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public GetDomRVersionAnswer getDomRVersion(GetDomRVersionCmd cmd) {
-        String template_version = "CloudStack Release "+ VirtualNetworkApplianceService.MinVRVersion.toString();
+        String template_version = "CloudStack Release "+ NetworkOrchestrationService.MinVRVersion.defaultValue();
         return new GetDomRVersionAnswer(cmd, null, template_version, UUID.randomUUID().toString());
     }
 
