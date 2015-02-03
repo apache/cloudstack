@@ -5523,10 +5523,16 @@
 		                               });
 		                               args.$form.find('.form-item[rel=cleanup]').find('input').attr('checked', 'checked'); //checked
 		                               args.$form.find('.form-item[rel=cleanup]').css('display', 'inline-block'); //shown
+	                                   args.$form.find('.form-item[rel=makeredundant]').find('input').attr('checked', 'checked'); //checked
+	                                   args.$form.find('.form-item[rel=makeredundant]').css('display', 'inline-block'); //shown
 		                           },
 		                           fields: {
 		                               cleanup: {
 		                                   label: 'label.clean.up',
+		                                   isBoolean: true
+		                               },
+		                               makeredundant: {
+		                                   label: 'label.make.redundant',
 		                                   isBoolean: true
 		                               }
 		                           }
@@ -5545,7 +5551,8 @@
                                         url: createURL("restartVPC"),
                                         data: {
                                             id: args.context.vpc[0].id,
-                                            cleanup: (args.data.cleanup == "on")
+                                            cleanup: (args.data.cleanup == "on"),
+                                            makeredundant: (args.data.makeredundant == "on")
                                         },
                                         success: function(json) {
                                             var jid = json.restartvpcresponse.jobid;

@@ -48,6 +48,7 @@ public class ApiConstants {
     public static final String IP6_CIDR = "ip6cidr";
     public static final String CIDR_LIST = "cidrlist";
     public static final String CLEANUP = "cleanup";
+    public static final String MAKEREDUNDANTE = "makeredundant";
     public static final String CLUSTER_ID = "clusterid";
     public static final String CLUSTER_NAME = "clustername";
     public static final String CLUSTER_TYPE = "clustertype";
@@ -450,7 +451,7 @@ public class ApiConstants {
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_NAME = "vsmdevicename";
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_STATE = "vsmdevicestate";
     // Would we need to have a capacity field for Cisco N1KV VSM? Max hosts managed by it perhaps? May remove this
-// later.
+    // later.
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_CAPACITY = "vsmdevicecapacity";
     public static final String CISCO_NEXUS_VSM_NAME = "vsmname";
     public static final String VSM_USERNAME = "vsmusername";
