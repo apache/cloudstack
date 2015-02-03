@@ -784,7 +784,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         _localStorageUUID = (String)params.get("local.storage.uuid");
         if (_localStorageUUID == null) {
-            _localStorageUUID = UUID.nameUUIDFromBytes(_localStoragePath.getBytes()).toString();
+            _localStorageUUID = UUID.randomUUID().toString();
         }
 
         value = (String)params.get("scripts.timeout");
