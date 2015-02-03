@@ -114,7 +114,6 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                     msg = "Primary to Primary doesn't match";
                     LOGGER.debug(msg);
                 }
-                /* the fucker thinks we're chaining while we're not -sigh- */
             } else if ((srcData.getObjectType() == DataObjectType.SNAPSHOT)
                     && (destData.getObjectType() == DataObjectType.SNAPSHOT)) {
                 return backupSnapshot(cmd);
@@ -133,6 +132,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             LOGGER.warn(msg, e);
             return new CopyCmdAnswer(msg);
         }
+        LOGGER.warn(msg + " " + cmd.getClass());
         return new CopyCmdAnswer(msg);
     }
 
@@ -298,13 +298,45 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         return new Answer(cmd);
     }
     /**
-     * createprivatetemplate, also needs template.properties
+     * Copies from secondary to secondary
      */
     @Override
     public Answer createTemplateFromSnapshot(CopyCommand cmd) {
         LOGGER.debug("execute createTemplateFromSnapshot: "+ cmd.getClass());
-        return new Answer(cmd);
+        try {
+            // src.getPath contains the uuid of the snapshot.
+            DataTO srcData = cmd.getSrcTO();
+            SnapshotObjectTO srcSnap = (SnapshotObjectTO) srcData;
+            String secPoolUuid = pool.setupSecondaryStorage(srcData.getDataStore().getUrl());
+            String srcFile = config.getAgentSecStoragePath()
+                    + File.separator + secPoolUuid + File.separator
+                    + srcSnap.getPath();
+            // dest
+            DataTO destData = cmd.getDestTO();
+            TemplateObjectTO destTemplate = (TemplateObjectTO) destData;
+            String secPoolUuidTemplate = pool.setupSecondaryStorage(destData.getDataStore().getUrl());
+            String destDir = config.getAgentSecStoragePath()
+                    + File.separator + secPoolUuidTemplate + File.separator
+                    + destTemplate.getPath();
+            String destFile = destDir + File.separator
+                    + destTemplate.getUuid() + ".raw";
+            CloudstackPlugin csp = new CloudstackPlugin(c);
+            csp.ovsMkdirs(destDir);
+
+            Linux host = new Linux(c);
+            host.copyFile(srcFile, destFile);
+            TemplateObjectTO newVol = new TemplateObjectTO();
+            newVol.setUuid(destTemplate.getUuid());
+            newVol.setPath(destTemplate.getUuid());
+            newVol.setFormat(ImageFormat.RAW);
+            return new CopyCmdAnswer(newVol);
+        } catch (Ovm3ResourceException e) {
+            String msg = "Error backupSnapshot: " + e.getMessage();
+            LOGGER.info(msg);
+            return new CopyCmdAnswer(msg);
+        }
     }
+
     /**
      * use the cache, or the normal nfs, also delete the leftovers for us
      * also contains object store storage in xenserver.
@@ -698,7 +730,6 @@ public class Ovm3StorageProcessor implements StorageProcessor {
 
     /**
      * SnapshotObjectTO secondary to VolumeObjectTO primary in xenserver,
-     *
      */
     @Override
     public Answer createVolumeFromSnapshot(CopyCommand cmd) {

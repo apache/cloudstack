@@ -245,7 +245,7 @@ public class NetworkTest {
                     + "          \"<Family Type=\"AF_INET\">"
                     + "            <MAC>"
                     + CONTROLMAC
-                    + "            </MAC>"
+                    + "</MAC>"
                     + "          </Family>"
                     + "          <Interfaces>"
                     + "          </Interfaces>"
