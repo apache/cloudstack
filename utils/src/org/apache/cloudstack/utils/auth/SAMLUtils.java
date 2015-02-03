@@ -309,7 +309,7 @@ public class SAMLUtils {
     public static KeyPair generateRandomKeyPair() throws NoSuchProviderException, NoSuchAlgorithmException {
         Security.addProvider(new BouncyCastleProvider());
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", "BC");
-        keyPairGenerator.initialize(2048, new SecureRandom());
+        keyPairGenerator.initialize(4096, new SecureRandom());
         return keyPairGenerator.generateKeyPair();
     }
 

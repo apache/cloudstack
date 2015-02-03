@@ -273,7 +273,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
                 if (userAccount == null && uniqueUserId != null && username != null) {
                     CallContext.current().setEventDetails("SAML Account/User with UserName: " + username + ", FirstName :" + password + ", LastName: " + lastName);
-                    _accountService.createUserAccount(username, password, firstName, lastName, email, timeZone,
+                    userAccount = _accountService.createUserAccount(username, password, firstName, lastName, email, timeZone,
                             username, (short) accountType, domainId, null, null, UUID.randomUUID().toString(), uniqueUserId);
                 }
 

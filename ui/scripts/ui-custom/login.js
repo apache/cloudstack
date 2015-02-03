@@ -126,6 +126,25 @@
             });
         });
 
+        // Show SAML button if only SP is configured
+        $login.find("#saml-login").hide();
+        $.ajax({
+            type: "GET",
+            url: createURL("getSPMetadata"),
+            dataType: "json",
+            async: false,
+            success: function(data, textStatus, xhr) {
+                if (xhr.status === 200) {
+                    $login.find('#saml-login').show();
+                } else {
+                    $login.find('#saml-login').hide();
+                }
+            },
+            error: function(xhr) {
+                $login.find('#saml-login').hide();
+            },
+        });
+
         // Select language
         var $languageSelect = $login.find('select[name=language]');
         $languageSelect.change(function() {
