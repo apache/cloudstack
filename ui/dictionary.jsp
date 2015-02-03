@@ -467,6 +467,7 @@ dictionary = {
 'label.CIDR.list': '<fmt:message key="label.CIDR.list" />',
 'label.CIDR.of.destination.network': '<fmt:message key="label.CIDR.of.destination.network" />',
 'label.clean.up': '<fmt:message key="label.clean.up" />',
+'label.make.redundant': '<fmt:message key="label.make.redundant" />',
 'label.clear.list': '<fmt:message key="label.clear.list" />',
 'label.close': '<fmt:message key="label.close" />',
 'label.cloud.console': '<fmt:message key="label.cloud.console" />',
