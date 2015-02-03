@@ -51,6 +51,9 @@ public class RestartVPCCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.CLEANUP, type = CommandType.BOOLEAN, required = false, description = "If cleanup old network elements")
     private Boolean cleanup;
 
+    @Parameter(name = ApiConstants.MAKEREDUNDANTE, type = CommandType.BOOLEAN, required = false, description = "Turn a single VPC into a redundant one.")
+    private Boolean makeredundant;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -62,6 +65,13 @@ public class RestartVPCCmd extends BaseAsyncCmd {
     public Boolean getCleanup() {
         if (cleanup != null) {
             return cleanup;
+        }
+        return true;
+    }
+
+    public Boolean getMakeredundant() {
+        if (makeredundant != null) {
+            return makeredundant;
         }
         return true;
     }
@@ -87,7 +97,7 @@ public class RestartVPCCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         try {
-            final boolean result = _vpcService.restartVpc(getId(), getCleanup());
+            final boolean result = _vpcService.restartVpc(getId(), getCleanup(), getMakeredundant());
             if (result) {
                 final SuccessResponse response = new SuccessResponse(getCommandName());
                 setResponseObject(response);
