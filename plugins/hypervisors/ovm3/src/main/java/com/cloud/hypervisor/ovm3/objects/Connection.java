@@ -86,7 +86,7 @@ public class Connection extends XmlRpcClient {
             /* reply time is 5 mins */
             xmlClientConfig.setReplyTimeout(60 * 15000);
             if (hostUser != null && hostPass != null) {
-                LOGGER.debug("setting username " + hostUser);
+                LOGGER.debug("Setting username " + hostUser);
                 xmlClientConfig.setBasicUserName(hostUser);
                 xmlClientConfig.setBasicPassword(hostPass);
             }

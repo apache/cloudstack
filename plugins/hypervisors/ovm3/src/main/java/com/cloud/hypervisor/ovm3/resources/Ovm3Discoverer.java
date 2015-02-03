@@ -302,8 +302,7 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     @Override
     public void postDiscovery(List<HostVO> hosts, long msId)
             throws CloudRuntimeException {
-        // TODO Auto-generated method stub
-        LOGGER.debug("postDiscovery" + hosts);
+        LOGGER.debug("postDiscovery: " + hosts);
     }
 
     @Override
@@ -319,26 +318,26 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     @Override
     public HostVO createHostVOForConnectedAgent(HostVO host,
             StartupCommand[] cmd) {
-        // TODO Auto-generated method stub
+        LOGGER.debug("createHostVOForConnectedAgent: " + host);
         return null;
     }
 
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
-        // TODO Auto-generated method stub
+        LOGGER.debug("processAnswers: " + agentId);
         return false;
     }
 
     @Override
     public boolean processCommands(long agentId, long seq, Command[] commands) {
-        // TODO Auto-generated method stub
+        LOGGER.debug("processCommands: " + agentId);
         return false;
     }
 
     @Override
     public AgentControlAnswer processControlCommand(long agentId,
             AgentControlCommand cmd) {
-        // TODO Auto-generated method stub
+        LOGGER.debug("processControlCommand: " + agentId);
         return null;
     }
 
@@ -346,12 +345,13 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     @Override
     public void processConnect(Host host, StartupCommand cmd,
             boolean forRebalance) {
+        LOGGER.debug("processConnect");
         // Should we check the connect status here or something ?
     }
 
     @Override
     public boolean processDisconnect(long agentId, Status state) {
-        // TODO Auto-generated method stub
+        LOGGER.debug("processDisconnect");
         return false;
     }
 
@@ -363,13 +363,13 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
 
     @Override
     public int getTimeout() {
-        // TODO Auto-generated method stub
+        LOGGER.debug("getTimeout");
         return 0;
     }
 
     @Override
     public boolean processTimeout(long agentId, long seq) {
-        // TODO Auto-generated method stub
+        LOGGER.debug("processTimeout: " + agentId);
         return false;
     }
 
@@ -377,6 +377,7 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     public HostVO createHostVOForDirectConnectAgent(HostVO host,
             StartupCommand[] startup, ServerResource resource,
             Map<String, String> details, List<String> hostTags) {
+        LOGGER.debug("createHostVOForDirectConnectAgent: " + host);
         StartupCommand firstCmd = startup[0];
         if (!(firstCmd instanceof StartupRoutingCommand)) {
             return null;
@@ -396,6 +397,7 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     @Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced,
             boolean isForceDeleteStorage) throws UnableDeleteHostException {
+        LOGGER.debug("deleteHost: " + host);
         if (host.getType() != com.cloud.host.Host.Type.Routing
                 || host.getHypervisorType() != HypervisorType.Ovm3) {
             return null;

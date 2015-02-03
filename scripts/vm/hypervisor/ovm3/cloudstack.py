@@ -274,7 +274,7 @@ def ovsControlInterface(dev, cidr):
     command = ['ifconfig', dev, 'arp']
     subprocess.call(command, shell=False)
     # because OVM creates this and it breaks stuff if we're rebooted sometimes...
-    control = "/etc/sysconfig/network-scripts/%s" % (dev)
+    control = "/etc/sysconfig/network-scripts/ifcfg-%s" % (dev)
     command = ['rm', control]
     subprocess.call(command, shell=False)
     return True

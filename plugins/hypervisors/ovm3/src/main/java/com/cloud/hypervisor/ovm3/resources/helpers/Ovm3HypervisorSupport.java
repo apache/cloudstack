@@ -32,6 +32,8 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckOnHostAnswer;
+import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.FenceAnswer;
@@ -640,6 +642,7 @@ public class Ovm3HypervisorSupport {
     /* check "the" virtual machine */
     public CheckVirtualMachineAnswer execute(
             final CheckVirtualMachineCommand cmd) {
+        LOGGER.debug("CheckVirtualMachineCommand: " + cmd.getVmName());
         String vmName = cmd.getVmName();
         try {
             CloudstackPlugin plug = new CloudstackPlugin(c);
@@ -672,6 +675,7 @@ public class Ovm3HypervisorSupport {
      * start over ?
      */
     public MaintainAnswer execute(MaintainCommand cmd) {
+        LOGGER.debug("MaintainCommand");
         /*
          * try {
          * Network net = new Network(c);
@@ -712,6 +716,7 @@ public class Ovm3HypervisorSupport {
      * fence
      */
     public FenceAnswer execute(FenceCommand cmd) {
+        LOGGER.debug("FenceCommand");
         try {
             Boolean res = false;
             return new FenceAnswer(cmd, res, res.toString());
@@ -719,5 +724,21 @@ public class Ovm3HypervisorSupport {
             LOGGER.error("fencing of  " + cmd.getHostIp() + " failed: ", e);
             return new FenceAnswer(cmd, false, e.getMessage());
         }
+    }
+
+    public CheckOnHostAnswer execute(CheckOnHostCommand cmd) {
+        LOGGER.debug("CheckOnHostCommand");
+        Boolean alive = true;
+        // check_heartbeat(cmd.getHost().getGuid());
+        String msg = "";
+        if (alive == null) {
+                msg = " cannot determine ";
+        } else if ( alive == true) {
+                msg = "Heart beat is still going";
+        } else {
+                msg = "Heart beat is gone so dead.";
+        }
+        LOGGER.debug(msg);
+        return new CheckOnHostAnswer(cmd, alive, msg);
     }
 }

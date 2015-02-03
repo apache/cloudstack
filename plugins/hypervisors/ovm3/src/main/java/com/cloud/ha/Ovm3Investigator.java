@@ -48,6 +48,7 @@ public class Ovm3Investigator extends AdapterBase implements Investigator {
 
     @Override
     public Boolean isVmAlive(com.cloud.vm.VirtualMachine vm, Host host) {
+        LOGGER.debug("isVmAlive: " + vm.getHostName() + " on " + host.getName());
         Status status = isAgentAlive(host);
         if (status == null) {
             return false;
@@ -57,6 +58,7 @@ public class Ovm3Investigator extends AdapterBase implements Investigator {
 
     @Override
     public Status isAgentAlive(Host agent) {
+        LOGGER.debug("isAgentAlive: " + agent.getName());
         if (agent.getHypervisorType() != Hypervisor.HypervisorType.Ovm3) {
             return null;
         }

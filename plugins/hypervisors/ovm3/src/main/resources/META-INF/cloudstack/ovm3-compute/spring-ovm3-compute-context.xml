@@ -35,5 +35,7 @@
         <property name="name" value="Ovm3Guru" />
     </bean>
 
-    
+    <bean id="Ovm3Investigator" class="com.cloud.ha.Ovm3Investigator">
+        <property name="name" value="Ovm3Investigator" />
+    </bean>
 </beans>

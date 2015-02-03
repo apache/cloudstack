@@ -40,6 +40,7 @@ import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
+import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
@@ -263,6 +264,8 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             return hypervisorsupport.execute((ReadyCommand) cmd);
         } else if (clazz == FenceCommand.class) {
             return hypervisorsupport.execute((FenceCommand) cmd);
+        } else if (clazz == CheckOnHostCommand.class) {
+            return hypervisorsupport.execute((CheckOnHostCommand)cmd);
         } else if (clazz == PingTestCommand.class) {
             return hypervisornetwork.execute((PingTestCommand) cmd);
         } else if (clazz == CheckNetworkCommand.class) {
