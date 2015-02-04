@@ -5510,7 +5510,14 @@
                                 label: 'label.restart.vpc',
                                 createForm: {
 		                            title: 'label.restart.vpc',
-		                            desc: 'message.restart.vpc',
+		                            desc: function(args) {
+		                                if (Boolean(args.context.vpc[0].redundantvpcrouter)) {
+		                                   return 'message.restart.vpc';
+		                               } else {
+		                                   return 'message.restart.vpc.remark';
+		                               }
+		                            },
+                                    
 		                            preFilter: function(args) {
 		                               var zoneObj;
 		                               $.ajax({
@@ -5521,10 +5528,18 @@
 		                                       zoneObj = json.listzonesresponse.zone[0];
 		                                   }
 		                               });
+		                               
+		                               
 		                               args.$form.find('.form-item[rel=cleanup]').find('input').attr('checked', 'checked'); //checked
 		                               args.$form.find('.form-item[rel=cleanup]').css('display', 'inline-block'); //shown
 	                                   args.$form.find('.form-item[rel=makeredundant]').find('input').attr('checked', 'checked'); //checked
 	                                   args.$form.find('.form-item[rel=makeredundant]').css('display', 'inline-block'); //shown
+	                                   
+		                               if (Boolean(args.context.vpc[0].redundantvpcrouter)) {
+		                                   args.$form.find('.form-item[rel=makeredundant]').hide();
+		                               } else {
+		                                   args.$form.find('.form-item[rel=makeredundant]').show();
+		                               }
 		                           },
 		                           fields: {
 		                               cleanup: {
@@ -5539,7 +5554,7 @@
 		                        },
                                 messages: {
                                     confirm: function(args) {
-                                        return 'message.restart.vpc';
+		                                return 'message.restart.vpc';
                                     },
                                     notification: function(args) {
                                         return 'label.restart.vpc';
@@ -5651,14 +5666,29 @@
                                     },
                                     ispersistent: {
                                         label: 'label.persistent',
-                                        converter: cloudStack.converters.toBooleanText
+                                        converter: function(booleanValue) {
+                                            if (booleanValue == true) {
+                                                return "Yes";
+                                            }
 
+                                            return "No";
+                                        }
+                                    },
+                                    redundantvpcrouter: {
+                                        label: 'label.redundant.vpc',
+                                        converter: function(booleanValue) {
+                                            if (booleanValue == true) {
+                                                return "Yes";
+                                            }
+
+                                            return "No";
+                                        }
                                     },
                                     restartrequired: {
                                         label: 'label.restart.required',
                                         converter: function(booleanValue) {
                                             if (booleanValue == true) {
-                                                return "<font color='red'>Yes</font>";
+                                                return "Yes";
                                             }
 
                                             return "No";
@@ -5729,7 +5759,7 @@
                                         label: 'label.redundant.router',
                                         converter: function(booleanValue) {
                                             if (booleanValue == true) {
-                                                return "<font color='red'>Yes</font>";
+                                                return "Yes";
                                             }
                                             return "No";
                                         }
