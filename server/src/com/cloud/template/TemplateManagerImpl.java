@@ -374,13 +374,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
              * encoded metadata using the post upload config ssh key
              */
             Gson gson = new GsonBuilder().create();
-            String jsonPayload = gson.toJson(firstCommand);
-            response.setMetadata(EncryptionUtil.encodeData(jsonPayload, key));
+            String metadata = EncryptionUtil.encodeData(gson.toJson(firstCommand), key);
+            response.setMetadata(metadata);
 
             /*
              * signature calculated on the url, expiry, metadata.
              */
-            response.setSignature(EncryptionUtil.generateSignature(jsonPayload + url + expires, key));
+            response.setSignature(EncryptionUtil.generateSignature(metadata + url + expires, key));
 
             return response;
         } else {

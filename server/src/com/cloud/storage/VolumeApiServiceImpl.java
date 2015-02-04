@@ -332,13 +332,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 .getType().toString(), vol.getName(), vol.getFormat().toString(), dataObject.getDataStore().getUri(), dataObject.getDataStore().getRole().toString());
         command.setLocalPath(volumeStore.getLocalDownloadPath());
         Gson gson = new GsonBuilder().create();
-        String jsonPayload = gson.toJson(command);
-        response.setMetadata(EncryptionUtil.encodeData(jsonPayload, key));
+        String metadata = EncryptionUtil.encodeData(gson.toJson(command), key);
+        response.setMetadata(metadata);
 
         /*
          * signature calculated on the url, expiry, metadata.
          */
-        response.setSignature(EncryptionUtil.generateSignature(jsonPayload + url + expires, key));
+        response.setSignature(EncryptionUtil.generateSignature(metadata + url + expires, key));
         return response;
     }
 
