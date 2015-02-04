@@ -66,7 +66,6 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
-import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
@@ -163,7 +162,7 @@ public class NetworkHelperImpl implements NetworkHelper {
     public boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds) throws AgentUnavailableException, ResourceUnavailableException {
         if (!checkRouterVersion(router)) {
             s_logger.debug("Router requires upgrade. Unable to send command to router:" + router.getId() + ", router template version : " + router.getTemplateVersion()
-                    + ", minimal required version : " + VirtualNetworkApplianceService.MinVRVersion);
+                    + ", minimal required version : " + NetworkOrchestrationService.MinVRVersion.valueIn(router.getDataCenterId()));
             throw new ResourceUnavailableException("Unable to send command. Router requires upgrade", VirtualRouter.class, router.getId());
         }
         Answer[] answers = null;
@@ -284,8 +283,9 @@ public class NetworkHelperImpl implements NetworkHelper {
         if (router.getTemplateVersion() == null) {
             return false;
         }
+        long dcid = router.getDataCenterId();
         final String trimmedVersion = Version.trimRouterVersion(router.getTemplateVersion());
-        return Version.compare(trimmedVersion, VirtualNetworkApplianceService.MinVRVersion) >= 0;
+        return Version.compare(trimmedVersion, NetworkOrchestrationService.MinVRVersion.valueIn(dcid)) >= 0;
     }
 
     protected DomainRouterVO start(DomainRouterVO router, final User user, final Account caller, final Map<Param, Object> params, final DeploymentPlan planToDeploy)
