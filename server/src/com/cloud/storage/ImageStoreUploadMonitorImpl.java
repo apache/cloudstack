@@ -190,7 +190,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                     continue;
                 }
                 Host host = _hostDao.findById(ep.getId());
-                UploadStatusCommand cmd = new UploadStatusCommand(volume.getId(), EntityType.Volume);
+                UploadStatusCommand cmd = new UploadStatusCommand(volume.getUuid(), EntityType.Volume);
                 if (host != null && host.getManagementServerId() != null) {
                     if (_nodeId == host.getManagementServerId().longValue()) {
                         Answer answer = null;
@@ -227,7 +227,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                     continue;
                 }
                 Host host = _hostDao.findById(ep.getId());
-                UploadStatusCommand cmd = new UploadStatusCommand(template.getId(), EntityType.Template);
+                UploadStatusCommand cmd = new UploadStatusCommand(template.getUuid(), EntityType.Template);
                 if (host != null && host.getManagementServerId() != null) {
                     if (_nodeId == host.getManagementServerId().longValue()) {
                         Answer answer = null;

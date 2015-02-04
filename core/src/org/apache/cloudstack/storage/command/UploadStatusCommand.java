@@ -26,19 +26,19 @@ public class UploadStatusCommand extends Command {
         Volume,
         Template
     }
-    private long entityId;
+    private String entityUuid;
     private EntityType entityType;
 
     protected UploadStatusCommand() {
     }
 
-    public UploadStatusCommand(long entityId, EntityType entityType) {
-        this.entityId = entityId;
+    public UploadStatusCommand(String entityUuid, EntityType entityType) {
+        this.entityUuid = entityUuid;
         this.entityType = entityType;
     }
 
-    public long getEntityId() {
-        return entityId;
+    public String getEntityUuid() {
+        return entityUuid;
     }
 
     public EntityType getEntityType() {
