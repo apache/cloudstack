@@ -1343,6 +1343,7 @@ class Iso:
     def download(self, apiclient, timeout=5, interval=60):
         """Download an ISO"""
         # Ensuring ISO is successfully downloaded
+        retry = 1
         while True:
             time.sleep(interval)
 
@@ -1360,6 +1361,9 @@ class Iso:
                     return
                 elif 'Downloaded' not in response.status and \
                         'Installing' not in response.status:
+                    if retry == 1:
+                        retry = retry - 1
+                        continue
                     raise Exception(
                         "Error In Downloading ISO: ISO Status - %s" %
                         response.status)
