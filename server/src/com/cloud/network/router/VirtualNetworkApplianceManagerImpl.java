@@ -1590,7 +1590,6 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         final boolean isRedundant = router.getIsRedundantRouter();
         if (isRedundant) {
             buf.append(" redundant_router=1");
-            buf.append(" router_id=").append(router.getId());
 
             final Long vpcId = router.getVpcId();
             final List<DomainRouterVO> routers;
@@ -1605,8 +1604,13 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             if (routers.size() == 0) {
                 redundantState = RedundantState.MASTER.toString();
                 router.setRedundantState(RedundantState.MASTER);
+
+                buf.append(" router_id=").append(router.getId());
             } else {
                 final DomainRouterVO router0 = routers.get(0);
+
+                //For a redundant router, both shall have the same router id. It will be used by the VRRP virtural_router_id attribute.
+                buf.append(" router_id=").append(router0.getId());
 
                 if (router.getId() == router0.getId()) {
                     redundantState = RedundantState.MASTER.toString();
