@@ -96,7 +96,6 @@ class CsAddress(CsDataBag):
             if dev == "id":
                 continue
             ip = CsIP(dev, self.config)
-            addcnt = 0
             for address in self.dbag[dev]:
                 if not address["nw_type"] == "control":
                     CsRoute(dev).add(address)
@@ -108,37 +107,6 @@ class CsAddress(CsDataBag):
                     logging.info("Address %s on device %s not configured", ip.ip(), dev)
                     if CsDevice(dev, self.config).waitfordevice():
                         ip.configure()
-                # This could go one level up but the ip type is stored in the
-                # ip address object and not in the device object
-                # Call only once
-                if addcnt == 0:
-                    self.add_netstats(address)
-                addcnt += 1
-
-    def add_netstats(self, address):
-        # add in the network stats iptables rules
-        dev = "eth%s" % address['nic_dev_id']
-        if address["nw_type"] == "public":
-            self.fw.append(["", "front", "-A FORWARD -j NETWORK_STATS"])
-            self.fw.append(["", "front", "-A INPUT -j NETWORK_STATS"])
-            self.fw.append(["", "front", "-A OUTPUT -j NETWORK_STATS"])
-            # it is not possible to calculate these devices
-            # When the vrouter and the vpc router are combined this silliness can go
-            self.fw.append(["", "", "-A NETWORK_STATS -i %s -o eth0 -p tcp" % dev])
-            self.fw.append(["", "", "-A NETWORK_STATS -o %s -i eth0 -p tcp" % dev])
-            self.fw.append(["", "", "-A NETWORK_STATS -o %s ! -i eth0 -p tcp" % dev])
-            self.fw.append(["", "", "-A NETWORK_STATS -i %s ! -o eth0 -p tcp" % dev])
-
-        # Netstats per interface only used on VPC
-        if address["nw_type"] == "guest" and self.config.is_vpc():
-            self.fw.append(["", "front", "-A FORWARD -j NETWORK_STATS_%s" % dev])
-            self.fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -s %s" % (dev, dev, address['network'])])
-            self.fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -d %s" % (dev, dev, address['network'])])
-            # Only relevant if there is a VPN configured so will have to move
-            # at some stage
-            self.fw.append(["mangle", "", "-A FORWARD -j VPN_STATS_%s" % dev])
-            self.fw.append(["mangle", "", "-A VPN_STATS_%s -o %s -m mark --set-xmark 0x525/0xffffffff" % (dev, dev)])
-            self.fw.append(["mangle", "", "-A VPN_STATS_%s -i %s -m mark --set-xmark 0x524/0xffffffff" % (dev, dev)])
 
 
 class CsInterface:
@@ -298,7 +266,7 @@ class CsIP:
         for i in CsHelper.execute(cmd):
             if " DOWN " in i:
                 cmd2 = "ip link set %s up" % self.getDevice()
-                # If redundant do not bring up public interfaces 
+                # If redundant do not bring up public interfaces
                 # master.py and keepalived deal with tham
                 if self.config.cmdline().is_redundant() and not self.is_public():
                     CsHelper.execute(cmd2)
@@ -392,7 +360,46 @@ class CsIP:
     def fw_vpcrouter(self):
         if not self.config.is_vpc():
             return
-        # TODO seperate out vpc rules
+        self.fw.append(["mangle", "front", "-A PREROUTING " +
+                        "-m state --state RELATED,ESTABLISHED " +
+                        "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"])
+        if self.get_type() in ["guest"]:
+            self.fw.append(["filter", "", "-A INPUT -i %s -p udp -m udp --dport 67 -j ACCEPT" % self.dev])
+            self.fw.append(["filter", "", "-A INPUT -i %s -p udp -m udp --dport 53 -j ACCEPT" % self.dev])
+            self.fw.append(["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 53 -j ACCEPT" % self.dev])
+            self.fw.append(["mangle", "",
+                            "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
+                            (self.dev, self.address['network'], self.address['gateway'], self.dev)
+                            ])
+            self.fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -s %s" % ("eth1", "eth1", self.address['network'])])
+            self.fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -d %s" % ("eth1", "eth1", self.address['network'])])
+
+        if self.get_type() in ["public"]:
+            self.fw.append(["nat", "front",
+                            "-A POSTROUTING -o %s -j SNAT --to-source %s" %
+                           (self.dev, self.address['public_ip'])
+                            ])
+            self.fw.append(["nat", "front",
+                            "-A POSTROUTING -s %s -o %s -j SNAT --to-source %s" %
+                           (self.address['network'], self.dev,
+                            self.address['public_ip'])
+                            ])
+            self.fw.append(["", "front",
+                            "-A FORWARD -o %s -d %s -j ACL_INBOUND_%s" % (self.dev, self.address['network'], self.dev)
+                            ])
+            self.fw.append(["mangle", "", "-A FORWARD -j VPN_STATS_%s" % self.dev])
+            self.fw.append(["mangle", "", "-A VPN_STATS_%s -o %s -m mark --mark 0x525/0xffffffff" % (self.dev, self.dev)])
+            self.fw.append(["mangle", "", "-A VPN_STATS_%s -i %s -m mark --mark 0x524/0xffffffff" % (self.dev, self.dev)])
+            self.fw.append(["", "front", "-A FORWARD -j NETWORK_STATS_%s" % self.dev])
+
+        self.fw.append(["", "front", "-A FORWARD -j NETWORK_STATS"])
+        self.fw.append(["", "front", "-A INPUT -j NETWORK_STATS"])
+        self.fw.append(["", "front", "-A OUTPUT -j NETWORK_STATS"])
+
+        self.fw.append(["", "", "-A NETWORK_STATS -i eth0 -o eth2 -p tcp"])
+        self.fw.append(["", "", "-A NETWORK_STATS -i eth2 -o eth0 -p tcp"])
+        self.fw.append(["", "", "-A NETWORK_STATS ! -i eth0 -o eth2 -p tcp"])
+        self.fw.append(["", "", "-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp"])
 
     def post_config_change(self, method):
         route = CsRoute(self.dev)
@@ -402,24 +409,9 @@ class CsIP:
         self.fw_vpcrouter()
         # On deletion nw_type will no longer be known
         if self.get_type() in ["guest"] and self.config.is_vpc():
-            devChain = self.config.get_ingress_chain(self.dev, self.address['public_ip'])
+
             CsDevice(self.dev, self.config).configure_rp()
 
-            self.fw.append(["nat", "front",
-                            "-A POSTROUTING -s %s -o %s -j SNAT --to-source %s" %
-                           (self.address['network'], self.dev,
-                            self.address['public_ip'])
-                            ])
-            self.fw.append(["mangle", "front", "-A %s -j ACCEPT" % devChain])
-
-            self.fw.append(["", "front",
-                            "-A FORWARD -o %s -d %s -j %s" % (self.dev, self.address['network'], devChain)
-                            ])
-            self.fw.append(["", "", "-A %s -j DROP" % devChain])
-            self.fw.append(["mangle", "",
-                            "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j %s" %
-                            (self.dev, self.address['network'], self.address['public_ip'], devChain)
-                            ])
             logging.error("Not able to setup sourcenat for a regular router yet")
             dns = CsDnsmasq(self)
             dns.add_firewall_rules()

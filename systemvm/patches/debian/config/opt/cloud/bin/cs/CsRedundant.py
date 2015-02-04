@@ -82,6 +82,11 @@ class CsRedundant(object):
         # No redundancy if there is no guest network
         if guest is None:
             self._redundant_off()
+            # Bring up the public Interface(s)
+            if self.cl.is_master():
+                for obj in [o for o in self.address.get_ips() if o.is_public()]:
+                    print obj.get_device()
+                    self.check_is_up(obj.get_device())
             return
         CsHelper.mkdir(self.CS_RAMDISK_DIR, 0755, False)
         CsHelper.mount_tmpfs(self.CS_RAMDISK_DIR)
@@ -113,8 +118,6 @@ class CsRedundant(object):
         file.search(" router_id ", "    router_id %s" % self.cl.get_name())
         file.search(" priority ", "    priority %s" % self.cl.get_priority())
         file.search(" interface ", "    interface %s" % guest.get_device())
-        #file.search(" weight ", "    weight %s" % 2)
-        # file.search(" state ", "    state %s" % self.cl.get_state())
         file.search(" state ", "    state %s" % "EQUAL")
         file.search(" virtual_router_id ", "    virtual_router_id %s" % self.cl.get_router_id())
         file.greplace("[RROUTER_BIN_PATH]", self.CS_ROUTER_DIR)
@@ -255,7 +258,6 @@ class CsRedundant(object):
             if o.needs_vrrp():
                 str = "        %s brd %s dev %s\n" % (o.get_gateway_cidr(), o.get_broadcast(), o.get_device())
                 lines.append(str)
-                # This is wrong set_master and set_backup need to do this
                 self.check_is_up(o.get_device())
         return lines
 
