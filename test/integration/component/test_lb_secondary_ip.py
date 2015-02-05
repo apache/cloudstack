@@ -1897,7 +1897,7 @@ class TestExternalLoadBalancer(cloudstackTestCase):
                               self.virtual_machine.password
                               )
         cmd = "ip addr add {0}/24 broadcast {0} dev eth0".format(
-            self.secondaryip.ipaddress)
+            secondaryip.ipaddress)
         sshClient.execute(cmd)
         sshClient.execute("ip addr show")
 
