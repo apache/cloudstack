@@ -3655,8 +3655,7 @@ class NetScaler:
             str(services["privateinterface"]) + '&'
         url = url + 'numretries=' + str(services["numretries"]) + '&'
 
-        if not services["lbdevicededicated"] and \
-           "lbdevicecapacity" in services:
+        if "lbdevicecapacity" in services:
             url = url + 'lbdevicecapacity=' + \
                 str(services["lbdevicecapacity"]) + '&'
 
