@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.x509.X509V1CertificateGenerator;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.opensaml.Configuration;
 import org.opensaml.common.SAMLVersion;
 import org.opensaml.common.xml.SAMLConstants;
@@ -89,7 +90,6 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Date;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 
@@ -314,18 +314,16 @@ public class SAMLUtils {
     }
 
     public static X509Certificate generateRandomX509Certificate(KeyPair keyPair) throws NoSuchAlgorithmException, NoSuchProviderException, CertificateEncodingException, SignatureException, InvalidKeyException {
-        Date validityBeginDate = new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000);
-        Date validityEndDate = new Date(System.currentTimeMillis() + 3 * 365 * 24 * 60 * 60 * 1000);
+        DateTime now = DateTime.now(DateTimeZone.UTC);
         X500Principal dnName = new X500Principal("CN=ApacheCloudStack");
         X509V1CertificateGenerator certGen = new X509V1CertificateGenerator();
         certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
         certGen.setSubjectDN(dnName);
         certGen.setIssuerDN(dnName);
-        certGen.setNotBefore(validityBeginDate);
-        certGen.setNotAfter(validityEndDate);
+        certGen.setNotBefore(now.minusDays(1).toDate());
+        certGen.setNotAfter(now.plusYears(3).toDate());
         certGen.setPublicKey(keyPair.getPublic());
         certGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
-
         return certGen.generate(keyPair.getPrivate(), "BC");
     }
 
