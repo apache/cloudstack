@@ -4027,6 +4027,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                             diskdef.defBlockBasedDisk(device, devId, DiskDef.diskBus.VIRTIO);
                             diskdef.setQemuDriver(false);
                             vm.getDevices().addDevice(diskdef);
+                        } else {
+                           throw new InternalErrorException("Error while mapping RBD device on host");
                         }
                     }
                 }

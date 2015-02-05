@@ -363,6 +363,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 storage.create(0);
             }
             LibvirtStoragePoolDef spd = getStoragePoolDef(conn, storage);
+            if (spd == null) {
+                throw new CloudRuntimeException("Unable to parse the storage pool definition for storage pool " + uuid);
+            }
             StoragePoolType type = null;
             if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.NETFS) {
                 type = StoragePoolType.NetworkFilesystem;
