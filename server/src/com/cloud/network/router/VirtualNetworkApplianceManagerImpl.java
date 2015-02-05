@@ -693,13 +693,13 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         }
 
         // We cannot schedule a job at specific time. Provide initial delay instead, from current time, so that the job runs at desired time
-        long initialDelay = aggDate - System.currentTimeMillis();
+        final long initialDelay = aggDate - System.currentTimeMillis();
 
         if( initialDelay < 0){
             s_logger.warn("Initial delay for network usage stats update task is incorrect. Stats update task will run immediately");
         }
 
-        _networkStatsUpdateExecutor.scheduleAtFixedRate(new NetworkStatsUpdateTask(), initialDelay, (_usageAggregationRange * 60 * 1000),
+        _networkStatsUpdateExecutor.scheduleAtFixedRate(new NetworkStatsUpdateTask(), initialDelay, _usageAggregationRange * 60 * 1000,
                 TimeUnit.MILLISECONDS);
 
         if (_routerCheckInterval > 0) {
@@ -1595,6 +1595,9 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             final List<DomainRouterVO> routers;
             if (vpcId != null) {
                 routers = _routerDao.listByVpcId(vpcId);
+                // For a redundant VPC router, both shall have the same router id. It will be used by the VRRP virtural_router_id attribute.
+                // So we use the VPC id to avoid group problems.
+                buf.append(" router_id=").append(vpcId);
             } else {
                 routers = _routerDao.listByNetworkAndRole(nic.getNetworkId(), Role.VIRTUAL_ROUTER);
             }
@@ -1604,14 +1607,8 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             if (routers.size() == 0) {
                 redundantState = RedundantState.MASTER.toString();
                 router.setRedundantState(RedundantState.MASTER);
-
-                buf.append(" router_id=").append(router.getId());
             } else {
                 final DomainRouterVO router0 = routers.get(0);
-
-                //For a redundant router, both shall have the same router id. It will be used by the VRRP virtural_router_id attribute.
-                buf.append(" router_id=").append(router0.getId());
-
                 if (router.getId() == router0.getId()) {
                     redundantState = RedundantState.MASTER.toString();
                     router.setRedundantState(RedundantState.MASTER);
