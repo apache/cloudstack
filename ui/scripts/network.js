@@ -5777,12 +5777,14 @@
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
-                                            var item = json.listroutersresponse.router[0];
+                                            for (var i = 0; i < json.listroutersresponse.router.length; i++) {
+                                                var item = json.listroutersresponse.router[i];
 
-                                            args.response.success({
-                                                actionFilter: cloudStack.sections.system.routerActionFilter,
-                                                data: item
-                                            });
+                                                args.response.success({
+                                                    actionFilter: cloudStack.sections.system.routerActionFilter,
+                                                    data: item
+                                                });
+                                            }
                                         }
                                     });
                                 }
