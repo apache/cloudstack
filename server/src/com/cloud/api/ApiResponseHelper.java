@@ -548,8 +548,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         if (vmSnapshot.getParent() != null) {
             VMSnapshot vmSnapshotParent = ApiDBUtils.getVMSnapshotById(vmSnapshot.getParent());
-            vmSnapshotResponse.setParent(vmSnapshotParent.getUuid());
-            vmSnapshotResponse.setParentName(vmSnapshotParent.getDisplayName());
+            if (vmSnapshotParent != null) {
+                vmSnapshotResponse.setParent(vmSnapshotParent.getUuid());
+                vmSnapshotResponse.setParentName(vmSnapshotParent.getDisplayName());
+            }
         }
         vmSnapshotResponse.setCurrent(vmSnapshot.getCurrent());
         vmSnapshotResponse.setType(vmSnapshot.getType().toString());
