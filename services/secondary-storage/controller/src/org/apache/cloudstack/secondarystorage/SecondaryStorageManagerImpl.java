@@ -506,6 +506,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 s_logger.debug("Unable to allocate secondary storage vm storage, remove the secondary storage vm record from DB, secondary storage vm id: " +
                     secStorageVmId);
             }
+            SubscriptionMgr.getInstance().notifySubscribers(ALERT_SUBJECT, this,
+                new SecStorageVmAlertEventArgs(SecStorageVmAlertEventArgs.SSVM_CREATE_FAILURE, dataCenterId, secStorageVmId, null, "Unable to allocate storage"));
         }
         return null;
     }
