@@ -972,7 +972,7 @@ def get_free_vlan(apiclient, zoneid):
 
     physical_network = list_physical_networks_response[0]
 
-    networks = list_networks(apiclient, zoneid=zoneid, type='Shared')
+    networks = list_networks(apiclient, zoneid=zoneid)
     usedVlanIds = []
 
     if isinstance(networks, list) and len(networks) > 0:
