@@ -18,8 +18,10 @@
  */
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -182,7 +184,14 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
 
         String scheme = uri.getScheme();
         String storageHost = uri.getHost();
-        String hostPath = uri.getPath();
+        String hostPath = null;
+        try {
+          hostPath = URLDecoder.decode(uri.getPath(), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+        }
+        if (hostPath == null) { // if decoding fails, use getPath() anyway
+            hostPath = uri.getPath();
+        }
         Object localStorage = dsInfos.get("localStorage");
         if (localStorage != null) {
             hostPath = hostPath.replaceFirst("/", "");
