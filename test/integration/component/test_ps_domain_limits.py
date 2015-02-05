@@ -450,7 +450,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
 
         if self.hypervisor.lower() == 'lxc':
             if not find_storage_pool_type(self.apiclient, storagetype='rbd'):
-                self.SkipTest("RBD storage type is required for data volumes for LXC")
+                self.skipTest("RBD storage type is required for data volumes for LXC")
         result = self.setupAccounts()
         if result[0] == FAIL:
             self.fail(

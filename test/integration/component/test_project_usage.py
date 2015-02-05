@@ -40,7 +40,8 @@ from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
                                list_volumes,
-                               get_builtin_template_info)
+                               get_builtin_template_info,
+                               find_storage_pool_type)
 import time
 
 class Services:

@@ -30,7 +30,8 @@ from marvin.lib.base import (Account,
                              SnapshotPolicy)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template)
+                               get_template,
+                               find_storage_pool_type)
 from nose.plugins.attrib import attr
 from marvin.codes import PASS
 

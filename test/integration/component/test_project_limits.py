@@ -18,7 +18,7 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase,unittest
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 #from marvin.cloudstackAPI import *
 from marvin.lib.utils import (cleanup_resources,
                               validateList)
@@ -837,7 +837,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
 
         if self.hypervisor.lower() == 'lxc':
             if not find_storage_pool_type(self.apiclient, storagetype='rbd'):
-                self.SkipTest("RBD storage type is required for data volumes for LXC")
+                self.skipTest("RBD storage type is required for data volumes for LXC")
         self.project_1 = Project.create(
                          self.api_client,
                          self.services["project"],

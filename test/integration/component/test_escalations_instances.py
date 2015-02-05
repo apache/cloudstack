@@ -34,7 +34,8 @@ from marvin.lib.base import (Account,
                              Zone)
 from marvin.lib.common import (get_zone,
                                get_template,
-                               get_domain)
+                               get_domain,
+                               find_storage_pool_type)
 from marvin.codes import PASS
 from nose.plugins.attrib import attr
 
@@ -1777,7 +1778,7 @@ class TestListInstances(cloudstackTestCase):
         Step16: Verifying that VM deployed in step1 has only 1 nic
         """
         if self.hypervisor.lower() in ['hyperv']:
-            raise unittest.SkipTest(
+            self.skipTest(
                 "This feature is not supported on existing hypervisor.\
                         Hence, skipping the test")
 
@@ -2208,8 +2209,8 @@ class TestInstances(cloudstackTestCase):
         Step10: Detaching the ISO attached in step8
         Step11: Verifying that detached ISO details are not associated with VM
         """
-        if self.hypervisor.lower() in ['kvm', 'hyperv']:
-            raise unittest.SkipTest(
+        if self.hypervisor.lower() in ['kvm', 'hyperv', 'lxc']:
+            self.skipTest(
                 "This feature is not supported on existing hypervisor. Hence,\
                         skipping the test")
         # Listing all the VM's for a User
@@ -2352,8 +2353,8 @@ class TestInstances(cloudstackTestCase):
         Step12: Listing all the VM snapshots in Page 2 with page size
         Step13: Verifying that size of the list is 0
         """
-        if self.hypervisor.lower() in ['kvm', 'hyperv']:
-            raise unittest.SkipTest(
+        if self.hypervisor.lower() in ['kvm', 'hyperv', 'lxc']:
+            self.skipTest(
                 "This feature is not supported on existing hypervisor. Hence,\
                         skipping the test")
         # Listing all the VM's for a User
@@ -2514,8 +2515,8 @@ class TestInstances(cloudstackTestCase):
         Step11: Verifying that the VM Snapshot with current flag set to true
                 is the reverted snapshot in Step 8
         """
-        if self.hypervisor.lower() in ['kvm', 'hyperv']:
-            raise unittest.SkipTest(
+        if self.hypervisor.lower() in ['kvm', 'hyperv', 'lxc']:
+            self.skipTest(
                 "This feature is not supported on existing hypervisor.\
                         Hence, skipping the test")
         # Listing all the VM's for a User
@@ -2684,6 +2685,10 @@ class TestInstances(cloudstackTestCase):
         Step13: Listing all the Volumes in Page 2
         Step14: Verifying that list size is 0
         """
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() == 'lxc':
+            if not find_storage_pool_type(cls.api_client, storagetype='rbd'):
+                self.skipTest("RBD storage type is required for data volumes for LXC")
         # Listing all the VM's for a User
         list_vms_before = VirtualMachine.list(
             self.userapiclient,
@@ -2904,7 +2909,7 @@ class TestInstances(cloudstackTestCase):
         Step6: Verifying that VM's service offerings is changed
         """
         if self.hypervisor.lower() == 'kvm':
-            raise unittest.SkipTest(
+            self.skipTest(
                 "ScaleVM is not supported on KVM. Hence, skipping the test")
         # Checking if Dynamic scaling of VM is supported or not
         list_config = Configurations.list(
