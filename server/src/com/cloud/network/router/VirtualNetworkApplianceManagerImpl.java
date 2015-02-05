@@ -1137,9 +1137,17 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         protected void runInContext() {
             while (true) {
                 try {
-                    final Long networkId = _vrUpdateQueue.take();
-                    // This is a blocking call so this thread won't run all the time if no work item in queue.
-                    final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(networkId, Role.VIRTUAL_ROUTER);
+                    final Long networkId = _vrUpdateQueue.take(); // This is a blocking call so this thread won't run all the time if no work item in queue.
+
+                    final NetworkVO network = _networkDao.findById(networkId);
+                    final Long vpcId = network.getVpcId();
+
+                    final List<DomainRouterVO> routers;
+                    if (vpcId != null) {
+                        routers = _routerDao.listByVpcId(vpcId);
+                    } else {
+                        routers = _routerDao.listByNetworkAndRole(networkId, Role.VIRTUAL_ROUTER);
+                    }
 
                     if (routers.size() != 2) {
                         continue;
@@ -1189,16 +1197,24 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
                 updateSite2SiteVpnConnectionState(routers);
 
-                final List<NetworkVO> networks = _networkDao.listRedundantNetworks();
+                List<NetworkVO> networks = _networkDao.listVpcNetworks();
+                s_logger.debug("Found " + networks.size() + " VPC networks to update Redundant State. ");
+                pushToUpdateQueue(networks);
+
+                networks = _networkDao.listRedundantNetworks();
                 s_logger.debug("Found " + networks.size() + " networks to update RvR status. ");
-                for (final NetworkVO network : networks) {
-                    if (!_vrUpdateQueue.offer(network.getId(), 500, TimeUnit.MILLISECONDS)) {
-                        s_logger.warn("Cannot insert into virtual router update queue! Adjustment of router.check.interval and router.check.poolsize maybe needed.");
-                        break;
-                    }
-                }
+                pushToUpdateQueue(networks);
             } catch (final Exception ex) {
                 s_logger.error("Fail to complete the CheckRouterTask! ", ex);
+            }
+        }
+
+        protected void pushToUpdateQueue(final List<NetworkVO> networks) throws InterruptedException {
+            for (final NetworkVO network : networks) {
+                if (!_vrUpdateQueue.offer(network.getId(), 500, TimeUnit.MILLISECONDS)) {
+                    s_logger.warn("Cannot insert into virtual router update queue! Adjustment of router.check.interval and router.check.poolsize maybe needed.");
+                    break;
+                }
             }
         }
     }
