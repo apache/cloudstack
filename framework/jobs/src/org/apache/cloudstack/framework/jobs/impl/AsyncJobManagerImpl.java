@@ -673,7 +673,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             while (timeoutInMiliseconds < 0 || System.currentTimeMillis() - startTick < timeoutInMiliseconds) {
                 msgDetector.waitAny(checkIntervalInMilliSeconds);
                 job = _jobDao.findById(job.getId());
-                if (job.getStatus().done()) {
+                if (job != null && job.getStatus().done()) {
                     return true;
                 }
 
