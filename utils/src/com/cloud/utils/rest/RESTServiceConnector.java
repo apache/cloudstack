@@ -356,15 +356,19 @@ public class RESTServiceConnector {
 
         @Override
         public Socket createSocket(final String address, final int port, final InetAddress localAddress, final int localPort) throws IOException, UnknownHostException {
-            SSLSocket socket = (SSLSocket) ssf.createSocket(address, port, localAddress, localPort);
-            socket.setEnabledProtocols(SSLUtils.getSupportedProtocols(socket.getEnabledProtocols()));
+            Socket socket = ssf.createSocket(address, port, localAddress, localPort);
+            if (socket instanceof SSLSocket) {
+                ((SSLSocket)socket).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket)socket).getEnabledProtocols()));
+            }
             return socket;
         }
 
         @Override
         public Socket createSocket(final Socket socket, final String host, final int port, final boolean autoClose) throws IOException, UnknownHostException {
-            SSLSocket s = (SSLSocket) ssf.createSocket(socket, host, port, autoClose);
-            s.setEnabledProtocols(SSLUtils.getSupportedProtocols(s.getEnabledProtocols()));
+            Socket s = ssf.createSocket(socket, host, port, autoClose);
+            if (s instanceof SSLSocket) {
+                ((SSLSocket)s).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket)s).getEnabledProtocols()));
+            }
             return s;
         }
 
@@ -373,10 +377,16 @@ public class RESTServiceConnector {
                 throws IOException, UnknownHostException, ConnectTimeoutException {
             final int timeout = params.getConnectionTimeout();
             if (timeout == 0) {
-                return createSocket(host, port, localAddress, localPort);
+                Socket socket = createSocket(host, port, localAddress, localPort);
+                if (socket instanceof SSLSocket) {
+                    ((SSLSocket)socket).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket)socket).getEnabledProtocols()));
+                }
+                return socket;
             } else {
-                final SSLSocket s = (SSLSocket) ssf.createSocket();
-                s.setEnabledProtocols(SSLUtils.getSupportedProtocols(s.getEnabledProtocols()));
+                final Socket s = ssf.createSocket();
+                if (s instanceof SSLSocket) {
+                    ((SSLSocket)s).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket)s).getEnabledProtocols()));
+                }
                 s.bind(new InetSocketAddress(localAddress, localPort));
                 s.connect(new InetSocketAddress(host, port), timeout);
                 return s;
