@@ -451,7 +451,7 @@ public class Ovm3Configuration {
      */
     private String validateParam(String name, String param) throws ConfigurationException {
         if (param == null) {
-            String msg = "Unable to get " + name + " param is:" + param;
+            String msg = "Unable to get " + name + " params are null";
             LOGGER.debug(msg);
             throw new ConfigurationException(msg);
         }

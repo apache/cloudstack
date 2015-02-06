@@ -220,6 +220,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             return virtualroutingsupport.execute((CheckSshCommand) cmd);
         } else if (clazz == NetworkUsageCommand.class) {
             return virtualroutingsupport.execute((NetworkUsageCommand) cmd);
+        /* double check order! */
         } else if (clazz == CopyCommand.class) {
             return storageprocessor.execute((CopyCommand) cmd);
         } else if (cmd instanceof StorageSubSystemCommand) {

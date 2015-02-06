@@ -36,10 +36,10 @@ import com.cloud.utils.ExecutionResult;
 
 @Local(value = VirtualRouterDeployer.class)
 public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
-    private final Logger LOGGER = Logger
+    private final Logger logger = Logger
             .getLogger(Ovm3VirtualRoutingResource.class);
     private String domRCloudPath = "/opt/cloud/bin/";
-    private int VRTIMEOUT = 600;
+    private int vrTimeout = 600;
     private Connection c;
     private String agentName;
     public Ovm3VirtualRoutingResource() {
@@ -54,7 +54,7 @@ public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
     @Override
     public ExecutionResult executeInVR(String routerIp, String script,
             String args) {
-        return executeInVR(routerIp, script, args, VRTIMEOUT);
+        return executeInVR(routerIp, script, args, vrTimeout);
     }
 
     @Override
@@ -64,7 +64,7 @@ public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
             script = domRCloudPath + "/" + script;
         }
         String cmd = script + " " + args;
-        LOGGER.debug("executeInVR via " + agentName + " on " + routerIp + ": "
+        logger.debug("executeInVR via " + agentName + " on " + routerIp + ": "
                 + cmd);
         try {
             CloudstackPlugin cSp = new CloudstackPlugin(c);
@@ -72,7 +72,7 @@ public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
             result = cSp.domrExec(routerIp, cmd);
             return new ExecutionResult(result.getRc(), result.getStdOut());
         } catch (Exception e) {
-            LOGGER.error("executeInVR FAILED via " + agentName + " on "
+            logger.error("executeInVR FAILED via " + agentName + " on "
                     + routerIp + ":" + cmd + ", " + e.getMessage(), e);
         }
         return new ExecutionResult(false, "");
@@ -82,7 +82,7 @@ public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
     public ExecutionResult createFileInVR(String routerIp, String path,
             String filename, String content) {
         String error = null;
-        LOGGER.debug("createFileInVR via " + agentName + " on " + routerIp
+        logger.debug("createFileInVR via " + agentName + " on " + routerIp
                 + ": " + path + "/" + filename + ", content: " + content);
         try {
             CloudstackPlugin cSp = new CloudstackPlugin(c);
@@ -91,7 +91,7 @@ public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
             return new ExecutionResult(result, "");
         } catch (Exception e) {
             error = e.getMessage();
-            LOGGER.warn(
+            logger.warn(
                     "createFileInVR failed for " + path + "/" + filename
                             + " in VR " + routerIp + " via " + agentName + ": "
                             + error, e);
@@ -131,35 +131,15 @@ public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
         return new ExecutionResult(true, null);
     }
 
-    /* TODO: fill in these so we can get rid of the VR/SVM/etc specifics */
     private ExecutionResult prepareNetworkElementCommand(
             SetupGuestNetworkCommand cmd) {
         return new ExecutionResult(true, null);
     }
 
     private ExecutionResult prepareNetworkElementCommand(IpAssocVpcCommand cmd) {
-        String routerName = cmd
-                .getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-        Xen xen = new Xen(c);
-        try {
-            Xen.Vm vm = xen.getVmConfig(routerName);
-            IpAddressTO[] ips = cmd.getIpAddresses();
-            for (IpAddressTO ip : ips) {
-                Integer devId = vm.getVifIdByMac(ip.getVifMacAddress());
-                if (devId < 0) {
-                    LOGGER.error("No valid devId found for " + vm.getVmName()
-                            + " with " + ip.getVifMacAddress());
-                    return new ExecutionResult(false, null);
-                }
-                ip.setNicDevId(devId);
-            }
-        } catch (Exception e) {
-            LOGGER.error(
-                    "Ip Assoc failure on applying one ip due to exception:  ",
-                    e);
-            return new ExecutionResult(false, null);
-        }
-        return new ExecutionResult(true, null);
+        return prepNetBoth(cmd
+                .getAccessDetail(NetworkElementCommand.ROUTER_NAME),
+                cmd.getIpAddresses(), "IpAssocVpcCommand");
     }
 
     private ExecutionResult prepareNetworkElementCommand(SetSourceNatCommand cmd) {
@@ -167,28 +147,30 @@ public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
     }
 
     private ExecutionResult prepareNetworkElementCommand(IpAssocCommand cmd) {
-        String routerName = cmd
-                .getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        return prepNetBoth(cmd
+                .getAccessDetail(NetworkElementCommand.ROUTER_NAME),
+                cmd.getIpAddresses(), "IpAssocCommand");
+    }
+
+    private ExecutionResult prepNetBoth(String routerName, IpAddressTO[] ips, String type) {
         Xen xen = new Xen(c);
         try {
             Xen.Vm vm = xen.getVmConfig(routerName);
-            IpAddressTO[] ips = cmd.getIpAddresses();
             for (IpAddressTO ip : ips) {
                 Integer devId = vm.getVifIdByMac(ip.getVifMacAddress());
                 if (devId < 0) {
-                    LOGGER.error("No valid devId found for " + vm.getVmName()
+                    logger.error("No valid devId found for " + vm.getVmName()
                             + " with " + ip.getVifMacAddress());
                     return new ExecutionResult(false, null);
                 }
                 ip.setNicDevId(devId);
             }
         } catch (Exception e) {
-            LOGGER.error(
-                    "Ip Assoc failure on applying one ip due to exception:  ",
+            logger.error(
+                    type + " failure on applying one ip due to exception:  ",
                     e);
             return new ExecutionResult(false, null);
         }
         return new ExecutionResult(true, null);
     }
-
 }

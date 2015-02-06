@@ -471,7 +471,7 @@ public class Ovm3StoragePool {
             if (store == null || propUuid == null || mntUuid == null || fs == null) {
                 String msg = "GetStorageStatsCommand on pool " + cmd.getStorageId()
                         + " failed, we got a null somewhere";
-                LOGGER.debug(msg);
+                LOGGER.error(msg);
                 return new GetStorageStatsAnswer(cmd, msg);
             }
             /* or is it mntUuid ish ? */
