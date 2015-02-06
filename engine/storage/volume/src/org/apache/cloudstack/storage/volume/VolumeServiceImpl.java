@@ -558,14 +558,12 @@ public class VolumeServiceImpl implements VolumeService {
         DataObject templateOnPrimaryStoreObj = context.destObj;
         if (!result.isSuccess()) {
             templateOnPrimaryStoreObj.processEvent(Event.OperationFailed);
-            _tmpltPoolDao.releaseFromLockTable(context.getTemplatePoolId());
             res.setResult(result.getResult());
             future.complete(res);
             return null;
         }
 
         templateOnPrimaryStoreObj.processEvent(Event.OperationSuccessed, result.getAnswer());
-        _tmpltPoolDao.releaseFromLockTable(context.getTemplatePoolId());
         createVolumeFromBaseImageAsync(context.volume, templateOnPrimaryStoreObj, context.dataStore, future);
         return null;
     }
