@@ -39,6 +39,7 @@ import CsHelper
 from CsFile import CsFile
 from CsConfig import CsConfig
 from CsProcess import CsProcess
+from CsApp import CsPasswdSvc
 
 
 class CsRedundant(object):
@@ -161,15 +162,17 @@ class CsRedundant(object):
             logging.error("Set fault called on non-redundant router")
             return
         logging.info("Router switched to fault mode")
-        ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
+        ads = [o for o in self.address.get_ips() if o.is_public()]
         for o in ads:
             CsHelper.execute("ifconfig %s down" % o.get_device())
         cmd = "%s -C %s" % (self.CONNTRACKD_BIN, self.CONNTRACKD_CONF)
         CsHelper.execute("%s -s" % cmd)
         CsHelper.service("ipsec", "stop")
         CsHelper.service("xl2tpd", "stop")
-        CsHelper.service("cloud-passwd-srvr", "stop")
         CsHelper.service("dnsmasq", "stop")
+        ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
+        for o in ads:
+            pwdsvc = CsPasswdSvc(o.get_gateway()).stop()
         cl.dbag['config']['redundant_master'] = "false"
         cl.save()
         logging.info("Router switched to fault mode")
@@ -192,7 +195,9 @@ class CsRedundant(object):
         CsHelper.execute("%s -d" % cmd)
         CsHelper.service("ipsec", "stop")
         CsHelper.service("xl2tpd", "stop")
-        CsHelper.service("cloud-passwd-srvr", "stop")
+        ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
+        for o in ads:
+            pwdsvc = CsPasswdSvc(o.get_gateway()).stop()
         CsHelper.service("dnsmasq", "stop")
         # self._set_priority(self.CS_PRIO_DOWN)
         self.cl.dbag['config']['redundant_master'] = "false"
@@ -225,7 +230,9 @@ class CsRedundant(object):
         CsHelper.execute("%s -B" % cmd)
         CsHelper.service("ipsec", "restart")
         CsHelper.service("xl2tpd", "restart")
-        CsHelper.service("cloud-passwd-srvr", "restart")
+        ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
+        for o in ads:
+            pwdsvc = CsPasswdSvc(o.get_gateway()).restart()
         CsHelper.service("dnsmasq", "restart")
         self.cl.dbag['config']['redundant_master'] = "true"
         self.cl.save()

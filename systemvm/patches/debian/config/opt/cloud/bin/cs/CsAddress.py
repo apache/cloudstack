@@ -341,9 +341,8 @@ class CsIP:
             self.fw.append(["filter", "", "-A INPUT -i %s -p udp -m udp --dport 67 -j ACCEPT" % self.dev])
             self.fw.append(["filter", "", "-A INPUT -i %s -p udp -m udp --dport 53 -j ACCEPT" % self.dev])
             self.fw.append(["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 53 -j ACCEPT" % self.dev])
-            self.fw.append(["filter", "",
-                            "-A INPUT -s %s -i %s -p tcp -m state --state NEW -m tcp --dport 8080 -j ACCEPT" % (self.address['network'], self.dev)])
             self.fw.append(["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 80 -m state --state NEW -j ACCEPT" % self.dev])
+            self.fw.append(["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 8080 -m state --state NEW -j ACCEPT" % self.dev])
             self.fw.append(["filter", "", "-A FORWARD -i %s -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.dev])
             self.fw.append(["filter", "", "-A FORWARD -i %s -o %s -m state --state NEW -j ACCEPT" % (self.dev, self.dev)])
             self.fw.append(["filter", "", "-A FORWARD -i eth2 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT"])
@@ -367,6 +366,8 @@ class CsIP:
             self.fw.append(["filter", "", "-A INPUT -i %s -p udp -m udp --dport 67 -j ACCEPT" % self.dev])
             self.fw.append(["filter", "", "-A INPUT -i %s -p udp -m udp --dport 53 -j ACCEPT" % self.dev])
             self.fw.append(["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 53 -j ACCEPT" % self.dev])
+            self.fw.append(["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 80 -m state --state NEW -j ACCEPT" % self.dev])
+            self.fw.append(["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 8080 -m state --state NEW -j ACCEPT" % self.dev])
             self.fw.append(["mangle", "",
                             "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
                             (self.dev, self.address['network'], self.address['gateway'], self.dev)
@@ -417,7 +418,10 @@ class CsIP:
             dns.add_firewall_rules()
             app = CsApache(self)
             app.setup()
-            pwdsvc = CsPasswdSvc(self).setup()
+
+        # If redundant then this is dealt with by the master backup functions
+        if self.get_type() in ["guest"] and not self.config.cl.is_redundant():
+            pwdsvc = CsPasswdSvc(self.address['public_ip']).start()
 
         if self.get_type() == "public" and self.config.is_vpc():
             if self.address["source_nat"]:

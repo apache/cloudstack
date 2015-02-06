@@ -36,7 +36,7 @@ from cs.CsNetfilter import CsNetfilters
 from cs.CsDhcp import CsDhcp
 from cs.CsRedundant import *
 from cs.CsFile import CsFile
-from cs.CsApp import CsApache, CsPasswdSvc, CsDnsmasq
+from cs.CsApp import CsApache, CsDnsmasq
 from cs.CsMonitor import CsMonitor
 from cs.CsLoadBalancer import CsLoadBalancer
 
