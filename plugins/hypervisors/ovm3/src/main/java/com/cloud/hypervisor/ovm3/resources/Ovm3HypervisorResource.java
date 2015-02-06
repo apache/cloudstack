@@ -220,10 +220,10 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             return virtualroutingsupport.execute((CheckSshCommand) cmd);
         } else if (clazz == NetworkUsageCommand.class) {
             return virtualroutingsupport.execute((NetworkUsageCommand) cmd);
-        } else if (cmd instanceof StorageSubSystemCommand) {
-            return storageHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
         } else if (clazz == CopyCommand.class) {
             return storageprocessor.execute((CopyCommand) cmd);
+        } else if (cmd instanceof StorageSubSystemCommand) {
+            return storageHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
         } else if (clazz == DeleteCommand.class) {
             return storageprocessor.execute((DeleteCommand) cmd);
         } else if (clazz == CreateCommand.class) {
@@ -445,6 +445,8 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             vmsupport.createVbds(vm, vmSpec);
 
             if (vmSpec.getType() != VirtualMachine.Type.User) {
+                // double check control network if we run a non user VM
+                hypervisornetwork.configureNetworking();
                 vm.setVmExtra(vmSpec.getBootArgs().replace(" ", "%"));
                 String svmPath = configuration.getAgentOvmRepoPath() + "/"
                         + ovmObject.deDash(vm.getPrimaryPoolUuid()) + "/ISOs";

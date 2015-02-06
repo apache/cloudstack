@@ -126,11 +126,11 @@ public class Ovm3StorageProcessorTest {
                 ovmObject.newUuid(), linux.getRepoId(), linux.getTemplatesDir());
         VolumeObjectTO dest = volume(voluuid, ovmObject.newUuid(),
                 linux.getRepoId(), linux.getVirtualDisksDir());
-        CopyCommand copy = new CopyCommand(src, dest, 0, false);
+        CopyCommand copy = new CopyCommand(src, dest, 0, true);
         CopyCmdAnswer ra = (CopyCmdAnswer) hypervisor.executeRequest(copy);
         VolumeObjectTO vol = (VolumeObjectTO) ra.getNewData();
         results.basicStringTest(vol.getUuid(), voluuid);
-        results.basicStringTest(vol.getPath(), linux.getVirtualDisksDir());
+        results.basicStringTest(vol.getPath(), voluuid);
         results.basicBooleanTest(ra.getResult());
     }
 
@@ -151,18 +151,19 @@ public class Ovm3StorageProcessorTest {
          * -sigh-
          */
         String templateid = ovmObject.newUuid();
+        String targetid = ovmObject.newUuid();
         String templatedir = "template/tmpl/1/11" + templateid + ".raw";
         String storeUrl = "nfs://" + linux.getRemoteHost() + "/"
                 + linux.getRemoteDir();
         TemplateObjectTO src = template(templateid, linux.getRepoId(),
                 storeUrl, templatedir);
-        TemplateObjectTO dest = template(ovmObject.newUuid(),
+        TemplateObjectTO dest = template(targetid,
                 linux.getRepoId(), linux.getRepoId(), linux.getTemplatesDir());
-        CopyCommand copy = new CopyCommand(src, dest, 0, false);
+        CopyCommand copy = new CopyCommand(src, dest, 0, true);
         CopyCmdAnswer ra = (CopyCmdAnswer) hypervisor.executeRequest(copy);
         TemplateObjectTO vol = (TemplateObjectTO) ra.getNewData();
-        results.basicStringTest(vol.getUuid(), templateid);
-        results.basicStringTest(vol.getPath(), linux.getTemplatesDir());
+        results.basicStringTest(vol.getUuid(), targetid);
+        results.basicStringTest(vol.getPath(), targetid);
         results.basicBooleanTest(ra.getResult());
     }
 

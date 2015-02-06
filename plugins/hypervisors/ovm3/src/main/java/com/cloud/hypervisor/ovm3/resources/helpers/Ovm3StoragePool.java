@@ -468,6 +468,12 @@ public class Ovm3StoragePool {
             StoragePlugin store = new StoragePlugin(c);
             String propUuid = store.deDash(cmd.getStorageId());
             String mntUuid = cmd.getStorageId();
+            if (store == null || propUuid == null || mntUuid == null || fs == null) {
+                String msg = "GetStorageStatsCommand on pool " + cmd.getStorageId()
+                        + " failed, we got a null somewhere";
+                LOGGER.debug(msg);
+                return new GetStorageStatsAnswer(cmd, msg);
+            }
             /* or is it mntUuid ish ? */
             StorageDetails sd = store.storagePluginGetFileSystemInfo(propUuid,
                     mntUuid, fs.getHost(), fs.getDevice());

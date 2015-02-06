@@ -817,7 +817,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     @Override
     public Answer snapshotAndCopy(SnapshotAndCopyCommand cmd) {
-        LOGGER.debug("execute forgetObject: "+ cmd.getClass());
+        LOGGER.debug("execute snapshotAndCopy: "+ cmd.getClass());
         return new SnapshotAndCopyAnswer("not implemented yet");
     }
 

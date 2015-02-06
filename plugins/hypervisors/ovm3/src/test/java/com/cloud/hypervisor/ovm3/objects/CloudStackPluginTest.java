@@ -46,6 +46,7 @@ public class CloudStackPluginTest {
     Integer domrPort = 3922;
     String host = "ovm-1";
     String path = "/tmp";
+    String dirpath = "/tmp/testing";
     String filename = "test.txt";
     String content = "This is some content";
     String bridge = "xenbr0";
@@ -53,6 +54,7 @@ public class CloudStackPluginTest {
     Integer port = 8899;
     Integer retries = 1;
     Integer interval = 1;
+    Integer timeout = 120;
 
     ConnectionTest con = new ConnectionTest();
     CloudstackPlugin cSp = new CloudstackPlugin(con);
@@ -182,7 +184,7 @@ public class CloudStackPluginTest {
     }
 
     @Test
-    public void testDom0CheckStorage() throws Ovm3ResourceException {
+    public void testDom0CheckStorageHealthCheck() throws Ovm3ResourceException {
         con.setResult(dom0StorageCheckXml);
         results.basicBooleanTest(cSp.dom0CheckStorageHealthCheck("", "", "", 120, 1));
         results.basicBooleanTest(cSp.dom0CheckStorageHealthCheck(), false);
@@ -294,4 +296,28 @@ public class CloudStackPluginTest {
         con.setResult(results.getBoolean(true));
         results.basicBooleanTest(cSp.ovsCheckFile(filename));
     }
+
+    @Test
+    public void dom0CheckStorageHealth() throws Ovm3ResourceException {
+        con.setResult(results.getBoolean(true));
+        results.basicBooleanTest(cSp.dom0CheckStorageHealth("", "", "", 120));
+        con.setResult(results.getBoolean(false));
+        results.basicBooleanTest(cSp.dom0CheckStorageHealth("", "", "", 120), false);
+    }
+    @Test
+    public void TestovsMkdirs() throws Ovm3ResourceException {
+        con.setResult(results.getNil());
+        results.basicBooleanTest(cSp.ovsMkdirs(dirpath));
+    }
+    @Test
+    public void TestovsMkdirsDirExists() throws Ovm3ResourceException {
+        con.setResult(results.getBoolean(true));
+        results.basicBooleanTest(cSp.ovsMkdirs(dirpath), false);
+    }
+    @Test
+    public void TestovsMkdirs2() throws Ovm3ResourceException {
+            con.setResult(results.getNil());
+            results.basicBooleanTest(cSp.ovsMkdirs(dirpath, 755));
+    }
+
 }
