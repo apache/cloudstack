@@ -300,8 +300,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     }
 
     public List<Long> getNetworkIds() {
-       if (ipToNetworkList != null) {
-           if (networkIds != null || ipAddress != null || getIp6Address() != null) {
+       if (ipToNetworkList != null && !ipToNetworkList.isEmpty()) {
+           if ((networkIds != null && !newtworkIds.isEmpty()) || ipAddress != null || getIp6Address() != null) {
                throw new InvalidParameterValueException("ipToNetworkMap can't be specified along with networkIds or ipAddress");
            } else {
                List<Long> networks = new ArrayList<Long>();
