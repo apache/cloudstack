@@ -1077,10 +1077,19 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                         continue;
                     }
                     checkedNetwork.add(routerGuestNtwkId);
-                    final List<DomainRouterVO> checkingRouters = _routerDao.listByNetworkAndRole(routerGuestNtwkId, Role.VIRTUAL_ROUTER);
+                    
+                    final List<DomainRouterVO> checkingRouters;
+                    Long vpcId = router.getVpcId();
+                    if (vpcId != null) {
+                        checkingRouters = _routerDao.listByVpcId(vpcId);
+                    } else {
+                        checkingRouters = _routerDao.listByNetworkAndRole(routerGuestNtwkId, Role.VIRTUAL_ROUTER);
+                    }
+                    
                     if (checkingRouters.size() != 2) {
                         continue;
                     }
+                    
                     DomainRouterVO masterRouter = null;
                     DomainRouterVO backupRouter = null;
                     for (final DomainRouterVO r : checkingRouters) {
@@ -1088,21 +1097,20 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                             if (masterRouter == null) {
                                 masterRouter = r;
                             } else {
-                                // Duplicate master! We give up, until the admin
-                                // fix duplicate MASTER issue
+                                // Wilder Rodrigues (wrodrigues@schubergphilis.com
+                                // Force a restart in order to fix the conflict
+                                recoverRedundantNetwork(masterRouter, r);
                                 break;
                             }
                         } else if (r.getRedundantState() == RedundantState.BACKUP) {
                             if (backupRouter == null) {
                                 backupRouter = r;
                             } else {
+                                // Wilder Rodrigues (wrodrigues@schubergphilis.com
+                                // Do we have 2 routers in Backup state? Perhaps a restart of 1 router is needed.
+                                recoverRedundantNetwork(backupRouter, r);
                                 break;
                             }
-                        }
-                    }
-                    if (masterRouter != null && backupRouter != null) {
-                        if (_nwHelper.getRealPriority(masterRouter) - DEFAULT_DELTA + 1 != _nwHelper.getRealPriority(backupRouter) || backupRouter.getIsPriorityBumpUp()) {
-                            recoverRedundantNetwork(masterRouter, backupRouter);
                         }
                     }
                 }
