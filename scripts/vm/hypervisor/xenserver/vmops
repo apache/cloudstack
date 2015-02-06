@@ -791,6 +791,8 @@ def default_network_rules(session, args):
         util.pread2(['iptables', '-F', vmchain_default])        
 
     vmipset = vm_name
+    if len(vmipset) > 28:
+        vmipset = vmipset[0:27]
     #create ipset and add vm ips to that ip set
     if create_ipset_forvm(vmipset) == False:
        logging.debug(" failed to create ipset for rule " + str(tokens))
