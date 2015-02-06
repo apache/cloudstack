@@ -59,19 +59,29 @@ class CsApache(CsApp):
                         ])
 
 
-class CsPasswdSvc(CsApp):
+class CsPasswdSvc():
     """
       nohup bash /opt/cloud/bin/vpc_passwd_server $ip >/dev/null 2>&1 &
     """
 
-    def setup(self):
-        self.fw.append(["", "front",
-                        "-A INPUT -i %s -d %s/32 -p tcp -m tcp -m state --state NEW --dport 8080 -j ACCEPT" % (self.dev, self.ip)
-                        ])
+    def __init__(self, ip):
+        self.ip = ip
 
-        proc = CsProcess(['/opt/cloud/bin/vpc_passwd_server', self.ip])
-        if not proc.find():
-            proc.start("/usr/bin/nohup", ">/dev/null 2>&1 &")
+    def start(self):
+        proc = CsProcess(["dummy"])
+        if proc.grep("passwd_service %s" % self.ip) == -1:
+            proc.start("/opt/cloud/bin/passwd_server_ip %s >> /var/log/cloud.log 2>&1" % self.ip, "&")
+
+    def stop(self):
+        proc = CsProcess(["Password Service"])
+        pid = proc.grep("passwd_server_ip %s" % self.ip)
+        proc.kill(pid)
+        pid = proc.grep("8080,reuseaddr,fork,crnl,bind=%s" % self.ip)
+        proc.kill(pid)
+
+    def restart(self):
+        self.stop()
+        self.start()
 
 
 class CsDnsmasq(CsApp):
