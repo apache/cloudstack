@@ -94,8 +94,6 @@ public class LibvirtComputingResourceTest {
         vmStr += "<uuid>b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9</uuid>\n";
         vmStr += "<description>" + os + "</description>\n";
         vmStr += "<clock offset='utc'>\n";
-        vmStr += "<timer name='kvmclock' >\n";
-        vmStr += "</timer>\n";
         vmStr += "</clock>\n";
         vmStr += "<features>\n";
         vmStr += "<pae/>\n";
@@ -168,8 +166,6 @@ public class LibvirtComputingResourceTest {
         vmStr += "<uuid>b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9</uuid>\n";
         vmStr += "<description>" + os + "</description>\n";
         vmStr += "<clock offset='utc'>\n";
-        vmStr += "<timer name='kvmclock' >\n";
-        vmStr += "</timer>\n";
         vmStr += "</clock>\n";
         vmStr += "<features>\n";
         vmStr += "<pae/>\n";
@@ -240,8 +236,6 @@ public class LibvirtComputingResourceTest {
         vmStr += "<uuid>b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9</uuid>\n";
         vmStr += "<description>" + os + "</description>\n";
         vmStr += "<clock offset='utc'>\n";
-        vmStr += "<timer name='kvmclock' >\n";
-        vmStr += "</timer>\n";
         vmStr += "</clock>\n";
         vmStr += "<features>\n";
         vmStr += "<pae/>\n";
@@ -317,8 +311,6 @@ public class LibvirtComputingResourceTest {
         vmStr += "<uuid>b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9</uuid>\n";
         vmStr += "<description>" + os + "</description>\n";
         vmStr += "<clock offset='utc'>\n";
-        vmStr += "<timer name='kvmclock' >\n";
-        vmStr += "</timer>\n";
         vmStr += "</clock>\n";
         vmStr += "<features>\n";
         vmStr += "<pae/>\n";
