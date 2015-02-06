@@ -1346,9 +1346,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (vmSpec.isEnableDynamicallyScaleVm() && !isDmcEnabled(conn, host)) {
                 s_logger.warn("Host " + host.getHostname(conn) + " does not support dynamic scaling, so the vm " + vmSpec.getName() + " is not dynamically scalable");
             }
-            vmr.memoryStaticMin = vmSpec.getMaxRam();
+            vmr.memoryStaticMin = vmSpec.getMinRam();
             vmr.memoryStaticMax = vmSpec.getMaxRam();
-            vmr.memoryDynamicMin = vmSpec.getMaxRam();;
+            vmr.memoryDynamicMin = vmSpec.getMinRam();;
             vmr.memoryDynamicMax = vmSpec.getMaxRam();
 
             vmr.VCPUsMax = (long) vmSpec.getCpus();
