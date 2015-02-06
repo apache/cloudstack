@@ -44,10 +44,14 @@ then
     bumped="Bumped: YES"
 fi
 
-stat=`tail -n 1 [RROUTER_LOG] | grep "Status"`
+state="Status: BACKUP"
+isMaster=`grep -Po '(?<="redundant_master": ")[^"]*' /etc/cloudstack/cmdline.json`
 if [ $? -eq 0 ]
 then
-    echo "$stat&$bumped"
+    if [ "$isMaster" = true ] ; then
+        state="Status: MASTER"
+    fi
+    echo "$state&$bumped"
 fi
 
 if [ $nolock -eq 0 ]
