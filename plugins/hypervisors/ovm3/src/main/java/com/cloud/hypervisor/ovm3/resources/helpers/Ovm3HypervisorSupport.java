@@ -206,7 +206,7 @@ public class Ovm3HypervisorSupport {
                     .longValue());
             cmd.setDom0MinMemory(totalmem.subtract(freemem).longValue());
             // setPoolSync and setCaps.
-            cmd.setGuid(config.getCsGuid());
+            cmd.setGuid(config.getCsHostGuid());
             cmd.setDataCenter(config.getAgentZoneId().toString());
             cmd.setPod(config.getAgentPodId().toString());
             /* TODO: cmd.setOwner(host.getManagerUuid()); */
@@ -307,8 +307,9 @@ public class Ovm3HypervisorSupport {
             CloudstackPlugin cSp = new CloudstackPlugin(c);
             cSp.ovsUploadSshKey(config.getAgentSshKeyFileName(),
                     FileUtils.readFileToString(getSystemVMKeyFile(key)));
-            cSp.dom0CheckStorageHealth(config.getAgentScriptsDir(),
+            cSp.dom0CheckStorageHealthCheck(config.getAgentScriptsDir(),
                     config.getAgentCheckStorageScript(),
+                    config.getCsHostGuid(),
                     config.getAgentStorageCheckTimeout(),
                     config.getAgentStorageCheckInterval());
         } catch (Exception es) {
@@ -728,17 +729,24 @@ public class Ovm3HypervisorSupport {
 
     public CheckOnHostAnswer execute(CheckOnHostCommand cmd) {
         LOGGER.debug("CheckOnHostCommand");
-        Boolean alive = true;
-        // check_heartbeat(cmd.getHost().getGuid());
-        String msg = "";
-        if (alive == null) {
-                msg = " cannot determine ";
-        } else if ( alive == true) {
-                msg = "Heart beat is still going";
-        } else {
-                msg = "Heart beat is gone so dead.";
+        CloudstackPlugin csp = new CloudstackPlugin(c);
+        try {
+            Boolean alive = csp.dom0CheckStorageHealth(config.getAgentScriptsDir(),
+                    config.getAgentCheckStorageScript(),
+                    cmd.getHost().getGuid(),
+                    config.getAgentStorageCheckTimeout());
+            String msg = "";
+            if (alive == null) {
+                    msg = "storage check failed for " + cmd.getHost().getGuid();
+            } else if ( alive == true) {
+                    msg = "storage check ok for " + cmd.getHost().getGuid();
+            } else {
+                    msg = "storage dead for " + cmd.getHost().getGuid();
+            }
+            LOGGER.debug(msg);
+            return new CheckOnHostAnswer(cmd, alive, msg);
+        } catch (Ovm3ResourceException e) {
+            return new CheckOnHostAnswer(cmd, false, "Error while checking storage for " +cmd.getHost().getGuid() +": " + e.getMessage());
         }
-        LOGGER.debug(msg);
-        return new CheckOnHostAnswer(cmd, alive, msg);
     }
 }

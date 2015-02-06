@@ -178,14 +178,15 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             if (pong.contains(ping)) {
                 hypervisorsupport.syncState();
                 CloudstackPlugin cSp = new CloudstackPlugin(c);
-                if (!cSp.dom0CheckStorageHealth(configuration .getAgentScriptsDir(),
+                if (!cSp.dom0CheckStorageHealthCheck(configuration .getAgentScriptsDir(),
                         configuration.getAgentCheckStorageScript(),
+                        configuration.getCsHostGuid(),
                         configuration.getAgentStorageCheckTimeout(),
                         configuration.getAgentStorageCheckInterval())
-                        && !cSp.dom0StorageCheckStarted()) {
+                        && !cSp.dom0CheckStorageHealthCheck()) {
                     LOGGER.error("Storage health check not running on "
                             + configuration.getAgentHostname());
-                } else if (cSp.dom0StorageCheckStarted()) {
+                } else if (cSp.dom0CheckStorageHealthCheck()) {
                     LOGGER.error("Storage health check started on "
                             + configuration.getAgentHostname());
                 } else {

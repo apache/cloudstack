@@ -86,10 +86,10 @@ public class Ovm3VmSupportTest {
         Ovm3Configuration configuration = new Ovm3Configuration(configTest.getParams());
         List<String> vms = new ArrayList<String>();
         vms.add(xen.getVmName());
-        GetVmStatsCommand cmd = new GetVmStatsCommand(vms, configuration.getCsGuid(), hypervisor.getName());
+        GetVmStatsCommand cmd = new GetVmStatsCommand(vms, configuration.getCsHostGuid(), hypervisor.getName());
         Answer ra = hypervisor.executeRequest(cmd);
         results.basicBooleanTest(ra.getResult());
-        cmd = new GetVmStatsCommand(vms, configuration.getCsGuid(), hypervisor.getName());
+        cmd = new GetVmStatsCommand(vms, configuration.getCsHostGuid(), hypervisor.getName());
         ra = hypervisor.executeRequest(cmd);
         results.basicBooleanTest(ra.getResult());
     }

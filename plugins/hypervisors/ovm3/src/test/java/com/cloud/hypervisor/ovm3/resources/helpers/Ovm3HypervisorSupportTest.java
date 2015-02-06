@@ -202,7 +202,7 @@ public class Ovm3HypervisorSupportTest {
     public void GetHostStatsCommandTest() throws ConfigurationException {
         con = prepare();
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
-        GetHostStatsCommand cmd = new GetHostStatsCommand(config.getCsGuid(),
+        GetHostStatsCommand cmd = new GetHostStatsCommand(config.getCsHostGuid(),
                 config.getAgentName(), 1L);
         con.setResult(this.dom0stats);
         Answer ra = hypervisor.executeRequest(cmd);
@@ -213,7 +213,7 @@ public class Ovm3HypervisorSupportTest {
     public void GetHostStatsCommandFailTest() throws ConfigurationException {
         con = prepare();
         Ovm3Configuration config = new Ovm3Configuration(configTest.getParams());
-        GetHostStatsCommand cmd = new GetHostStatsCommand(config.getCsGuid(),
+        GetHostStatsCommand cmd = new GetHostStatsCommand(config.getCsHostGuid(),
                 config.getAgentName(), 1L);
         con.setNull();
         Answer ra = hypervisor.executeRequest(cmd);

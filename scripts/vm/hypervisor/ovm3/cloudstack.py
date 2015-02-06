@@ -51,7 +51,10 @@ class CloudStack(Agent):
             'check_domr_port': domrCheckPort,
             'check_domr_ssh': domrCheckSsh,
             'check_dom0_ip': dom0CheckIp,
-            'check_dom0_storage_status': dom0CheckStorageStatus,
+            # rename to dom0StorageStatusCheck
+            'check_dom0_storage_health_check': dom0CheckStorageHealthCheck,
+            # dom0StorageStatus
+            'check_dom0_storage_health': dom0CheckStorageHealth,
             'ovs_domr_upload_file': ovsDomrUploadFile,
             'ovs_control_interface': ovsControlInterface,
             'ovs_mkdirs': ovsMkdirs,
@@ -72,14 +75,13 @@ class CloudStack(Agent):
     def getName(self):
         return self.__class__.__name__
 
-
 domrPort = 3922
 domrKeyFile = os.path.expanduser("~/.ssh/id_rsa.cloud")
 domrRoot = "root"
 domrTimeout = 10
 
 """ The logger is here """
-def Logger(level=logging.WARNING):
+def Logger(level=logging.DEBUG):
     logger = logging.getLogger('cloudstack-agent')
     logger.setLevel(level)
     handler = logging.handlers.SysLogHandler(address = '/dev/log')
@@ -212,16 +214,16 @@ def _replaceInFile(file, orig, set, full=False):
     if os.path.isfile(file):
         import fileinput
         for line in fileinput.FileInput(file, inplace=1):
-                line = line.rstrip('\n')
-                if full == False:
-                    if re.search("%s=" % orig, line):
-                        line = "%s=%s" % (orig, set)
-                        replaced = True
-                else:
-                    if re.search(orig, line):
-                        line = line.replace(orig, set)
-                        replaced = True
-                print line
+            line = line.rstrip('\n')
+            if full == False:
+                if re.search("%s=" % orig, line):
+                    line = "%s=%s" % (orig, set)
+                    replaced = True
+            else:
+                if re.search(orig, line):
+                    line = line.replace(orig, set)
+                    replaced = True
+            print line
     return replaced
 
 def _ovsIni(setting, change):
@@ -291,7 +293,7 @@ def dom0CheckIp(ip):
             break
     return False
 
-def dom0CheckStorageStatus(path, script, timeout, interval):
+def dom0CheckStorageHealthCheck(path, script, guid, timeout, interval):
     storagehealth="storagehealth.py"
     path="/opt/cloudstack/bin"
     running = False
@@ -308,12 +310,36 @@ def dom0CheckStorageStatus(path, script, timeout, interval):
             c = c + 1 
     if c < 1:
         started = True
-        command = ["%s/%s -t %d -i %d" % (path, storagehealth, timeout, interval)]
-        log.warning("%s started: %s/%s" % (storagehealth, path, storagehealth))
+        command = ["%s/%s -g %s -t %d -i %d" % (path, storagehealth, guid, timeout, interval)]
+        log.warning("%s started: %s/%s for %s with timeout %d and interval %d"
+                    % (storagehealth, path, storagehealth, guid, timeout, interval))
         subprocess.call(command, shell=True, close_fds=True)
     
     return [running, started]
-        
+
+def dom0CheckStorageHealth(path, script, guid, timeout):
+    response = None
+    delay = timeout
+    log = Logger()
+    command = ["%s/%s -g %s -t %s -s" % (path, script, guid, timeout)]
+    p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    p.wait()
+    if p.returncode == 0:
+        log.warning("primary storage is accessible for %s" % (guid))
+        return True
+    else:
+        log.warning("primary storage NOT is accessible for %s" % (guid))
+        return False
+    # while True:
+    #    line = p.stdout.readline()
+    #   if line != '':
+    #        if re.search("False", line):
+    #            log.debug("primary storage NOT is accessible for %s, %s" % (guid, line))
+    #            return False
+    #    else:
+    #        break
+    # return True
+
 # create a dir if we need it
 def ovsMkdirs(dir, mode=0700):
     if not os.path.exists(dir):

@@ -184,8 +184,8 @@ public class CloudStackPluginTest {
     @Test
     public void testDom0CheckStorage() throws Ovm3ResourceException {
         con.setResult(dom0StorageCheckXml);
-        results.basicBooleanTest(cSp.dom0CheckStorageHealth("", "", 120, 1));
-        results.basicBooleanTest(cSp.dom0StorageCheckStarted(), false);
+        results.basicBooleanTest(cSp.dom0CheckStorageHealthCheck("", "", "", 120, 1));
+        results.basicBooleanTest(cSp.dom0CheckStorageHealthCheck(), false);
     }
     @Test
     public void testOvsUploadFile() throws Ovm3ResourceException {

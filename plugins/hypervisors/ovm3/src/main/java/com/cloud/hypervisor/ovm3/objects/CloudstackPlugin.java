@@ -146,14 +146,18 @@ public class CloudstackPlugin extends OvmObject {
     public boolean dom0HasIp(String ovm3PoolVip) throws Ovm3ResourceException {
         return (Boolean) callWrapper("check_dom0_ip", ovm3PoolVip);
     }
-    public boolean dom0CheckStorageHealth(String path, String script, Integer timeout, Integer interval) throws Ovm3ResourceException {
-        Object[] x = (Object[]) callWrapper("check_dom0_storage_status", path, script, timeout, interval);
+    public boolean dom0CheckStorageHealthCheck(String path, String script, String guid, Integer timeout, Integer interval) throws Ovm3ResourceException {
+        Object[] x = (Object[]) callWrapper("check_dom0_storage_health_check", path, script, timeout, interval);
         Boolean running = (Boolean) x[0];
         checkstoragestarted = (Boolean) x[1];
         return running;
     }
-    public boolean dom0StorageCheckStarted() {
+    public boolean dom0CheckStorageHealthCheck() {
         return checkstoragestarted;
+    }
+    /* return something else in the future */
+    public boolean dom0CheckStorageHealth(String path, String script, String guid, Integer timeout) throws Ovm3ResourceException {
+        return (Boolean) callWrapper("check_dom0_storage_health", path, script, guid, timeout);
     }
     public boolean ovsMkdirs(String dir) throws Ovm3ResourceException{
         return (Boolean) nullIsTrueCallWrapper("ovs_mkdirs", dir);

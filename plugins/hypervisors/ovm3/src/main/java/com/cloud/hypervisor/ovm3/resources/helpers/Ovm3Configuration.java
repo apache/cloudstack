@@ -43,7 +43,7 @@ public class Ovm3Configuration {
     private String agentPoolId;
     private Long agentClusterId;
     private String agentHostname;
-    private String csGuid;
+    private String csHostGuid;
     private String agentSshUserName = "root";
     private String agentSshPassword;
     private String agentOvsAgentUser = "oracle";
@@ -99,7 +99,7 @@ public class Ovm3Configuration {
                 (String) params.get("username")));
         setAgentSshPassword(validateParam("Password",
                 (String) params.get("password")));
-        setCsGuid(validateParam("Cloudstack GUID", (String) params.get("guid")));
+        setCsHostGuid(validateParam("Cloudstack Host GUID", (String) params.get("guid")));
         setAgentOvsAgentUser(validateParam("OVS Username",
                 (String) params.get("agentusername")));
         setAgentOvsAgentPassword(validateParam("OVS Password",
@@ -196,12 +196,12 @@ public class Ovm3Configuration {
         this.agentHostname = agentHostname;
     }
 
-    public String getCsGuid() {
-        return csGuid;
+    public String getCsHostGuid() {
+        return csHostGuid;
     }
 
-    public void setCsGuid(String csGuid) {
-        this.csGuid = csGuid;
+    public void setCsHostGuid(String csHostGuid) {
+        this.csHostGuid = csHostGuid;
     }
 
     public String getAgentSshUserName() {
