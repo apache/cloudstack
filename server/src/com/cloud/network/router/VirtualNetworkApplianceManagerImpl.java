@@ -1077,19 +1077,19 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                         continue;
                     }
                     checkedNetwork.add(routerGuestNtwkId);
-                    
+
                     final List<DomainRouterVO> checkingRouters;
-                    Long vpcId = router.getVpcId();
+                    final Long vpcId = router.getVpcId();
                     if (vpcId != null) {
                         checkingRouters = _routerDao.listByVpcId(vpcId);
                     } else {
                         checkingRouters = _routerDao.listByNetworkAndRole(routerGuestNtwkId, Role.VIRTUAL_ROUTER);
                     }
-                    
+
                     if (checkingRouters.size() != 2) {
                         continue;
                     }
-                    
+
                     DomainRouterVO masterRouter = null;
                     DomainRouterVO backupRouter = null;
                     for (final DomainRouterVO r : checkingRouters) {
