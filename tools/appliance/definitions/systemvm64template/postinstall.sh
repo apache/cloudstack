@@ -243,7 +243,7 @@ configure_services() {
   mkdir -p /var/lib/haproxy
 
   # Get config files from master
-  snapshot_url="https://git-wip-us.apache.org/repos/asf?p=cloudstack.git;a=snapshot;refs/heads/4.5;sf=tgz"
+  snapshot_url="https://git-wip-us.apache.org/repos/asf?p=cloudstack.git;a=snapshot;h=refs/heads/4.5;sf=tgz"
   snapshot_dir="/opt/cloudstack*"
   cd /opt
   wget --no-check-certificate $snapshot_url -O cloudstack.tar.gz
