@@ -51,3 +51,13 @@ class CsProcess(object):
     def find(self):
         has_pid = len(self.find_pid()) > 0
         return has_pid
+
+    def kill(self, pid):
+        if pid > 1:
+            CsHelper.execute("kill -9 %s" % pid)
+
+    def grep(self, str):
+        for i in CsHelper.execute("ps aux"):
+            if i.find(str) != -1:
+                return re.split("\s+", i)[1]
+        return -1
