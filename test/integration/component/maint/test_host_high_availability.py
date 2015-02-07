@@ -390,6 +390,10 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         # create and verify the virtual machine with HA enabled service
         # offering
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
+
         virtual_machine_with_ha = VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
@@ -501,6 +505,9 @@ class TestHostHighAvailability(cloudstackTestCase):
         #By design, The Guest VM can STILL can be migrated to host3 if the admin chooses to do so.
 
         #create and verify virtual machine with HA enabled service offering
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
         virtual_machine_with_ha = VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
@@ -611,6 +618,9 @@ class TestHostHighAvailability(cloudstackTestCase):
         #2. Putting host1 into maintenance mode should trigger a live migration. Make sure the VMs are not migrated to HA enabled host3.
 
         # create and verify virtual machine with HA disabled service offering
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
         virtual_machine_with_ha = VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
@@ -739,6 +749,9 @@ class TestHostHighAvailability(cloudstackTestCase):
         #2. Putting host1 into maintenance mode should trigger a live migration. Make sure the VMs are not migrated to HA enabled host3.
 
         # create and verify virtual machine with HA disabled service offering
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
         virtual_machine_without_ha = VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],

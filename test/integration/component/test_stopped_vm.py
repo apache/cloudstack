@@ -626,6 +626,9 @@ class TestDeployVM(cloudstackTestCase):
         # 4. Stop the vm
         # 5.list primary storages in the cluster , should be more than one
         # 6.Migrate voluem to another available primary storage
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
         clusters = Cluster.list(
                                 self.apiclient,
                                 zoneid = self.zone.id

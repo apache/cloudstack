@@ -2084,7 +2084,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         #Create admin account
         self.hypervisor = self.testClient.getHypervisorInfo()
         if self.hypervisor.lower() in ['lxc']:
-            self.skipTest("vm migrate is not supported in LXC")
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
 
         hosts = Host.list(self.api_client, zoneid=self.zone.id)
         self.assertEqual(validateList(hosts)[0], PASS, "hosts list validation failed, list is %s" % hosts)

@@ -798,6 +798,9 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         # 3. Make sure that all the PF,LB and Static NAT rules on this VM
         #    works as expected.
         # 3. Make sure that we are able to access google.com from this user Vm
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
 
         self.debug("Validating if the network rules work properly or not?")
         self.validate_network_rules()
@@ -1548,6 +1551,9 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         # 3. Make sure that all the PF,LB and Static NAT rules on this VM
         #    works as expected.
         # 3. Make sure that we are able to access google.com from this user Vm
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
 
         self.debug("Validating if network rules are coonfigured properly?")
         self.validate_network_rules()
@@ -3388,6 +3394,9 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         # 3. Make sure that all the PF,LB and Static NAT rules on this VM
         #    works as expected.
         # 3. Make sure that we are able to access google.com from this user Vm
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
 
         self.debug("Validating if the network rules work properly or not?")
         self.validate_network_rules()

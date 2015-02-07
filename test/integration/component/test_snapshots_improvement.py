@@ -557,6 +557,9 @@ class TestCreateSnapshot(cloudstackTestCase):
         # Validate the following
         # a. Check all snapshots jobs are running concurrently on backgrounds
         # b. listSnapshots should list this newly created snapshot.
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
 
         self.debug("Create virtual machine and snapshot on ROOT disk volume")
         self.create_Snapshot_VM()
