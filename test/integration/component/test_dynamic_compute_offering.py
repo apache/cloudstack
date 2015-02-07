@@ -1262,7 +1262,7 @@ class TestAccountLimits(cloudstackTestCase):
 
         # Fill services from the external config file
         cls.services = cloudstackTestClient.getParsedTestDataConfig()
-        cls.hypervisor = self.testClient.getHypervisorInfo()
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         if cls.hypervisor.lower() in ['lxc']:
             raise unittest.SkipTest("dynamic scaling feature is not supported on %s" % cls.hypervisor.lower())
 
@@ -1602,7 +1602,7 @@ class TestAffinityGroup(cloudstackTestCase):
 
         # Fill services from the external config file
         cls.services = cloudstackTestClient.getParsedTestDataConfig()
-        cls.hypervisor = self.testClient.getHypervisorInfo()
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         if cls.hypervisor.lower() in ['lxc']:
             raise unittest.SkipTest("dynamic scaling feature is not supported on %s" % cls.hypervisor.lower())
 

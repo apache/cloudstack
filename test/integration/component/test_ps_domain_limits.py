@@ -39,7 +39,8 @@ from marvin.lib.common import (get_domain,
                                get_template,
                                createSnapshotFromVirtualMachineVolume,
                                isVmExpunged,
-                               isDomainResourceCountEqualToExpectedCount)
+                               isDomainResourceCountEqualToExpectedCount,
+                               find_storage_pool_type)
 from marvin.lib.utils import (cleanup_resources)
 from marvin.codes import (PASS,
                           FAIL,

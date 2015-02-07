@@ -2687,7 +2687,7 @@ class TestInstances(cloudstackTestCase):
         """
         self.hypervisor = self.testClient.getHypervisorInfo()
         if self.hypervisor.lower() == 'lxc':
-            if not find_storage_pool_type(cls.api_client, storagetype='rbd'):
+            if not find_storage_pool_type(self.api_client, storagetype='rbd'):
                 self.skipTest("RBD storage type is required for data volumes for LXC")
         # Listing all the VM's for a User
         list_vms_before = VirtualMachine.list(

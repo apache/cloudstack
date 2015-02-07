@@ -2082,9 +2082,9 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         #  1. VM migration should be successful
 
         #Create admin account
-
-        if cls.hypervisor.lower() in ['lxc']:
-            raise unittest.SkipTest("Template creation from root volume is not supported in LXC")
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in LXC")
 
         hosts = Host.list(self.api_client, zoneid=self.zone.id)
         self.assertEqual(validateList(hosts)[0], PASS, "hosts list validation failed, list is %s" % hosts)

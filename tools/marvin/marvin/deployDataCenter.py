@@ -243,8 +243,12 @@ class DeployDataCenters(object):
                 primarycmd.podid = podId
                 primarycmd.tags = primary.tags
                 primarycmd.url = primary.url
+                if primary.scope.lower() == 'zone':
+                    primarycmd.scope = primary.scope
+                else:
+                    primarycmd.clusterid = clusterId
                 primarycmd.zoneid = zoneId
-                primarycmd.clusterid = clusterId
+
                 ret = self.__apiClient.createStoragePool(primarycmd)
                 if ret.id:
                     self.__tcRunLogger.debug(

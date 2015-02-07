@@ -17,7 +17,7 @@
 """Utilities functions
 """
 # All tests inherit from cloudstackTestCase
-from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 # Import Integration Libraries
 from marvin.codes import FAILED, PASS
 # base - contains all resources as entities and defines create, delete,

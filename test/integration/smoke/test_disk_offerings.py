@@ -24,6 +24,7 @@ from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
 from nose.plugins.attrib import attr
+import pdb
 
 _multiprocess_shared_ = True
 
@@ -45,7 +46,7 @@ class TestCreateDiskOffering(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke"], required_hardware="false")
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "smoke", "test"], required_hardware="false")
     def test_01_create_disk_offering(self):
         """Test to create disk offering
 
@@ -65,6 +66,7 @@ class TestCreateDiskOffering(cloudstackTestCase):
                                                 self.apiclient,
                                                 id=disk_offering.id
                                                 )
+        pdb.set_trace()
         self.assertEqual(
                             isinstance(list_disk_response, list),
                             True,
