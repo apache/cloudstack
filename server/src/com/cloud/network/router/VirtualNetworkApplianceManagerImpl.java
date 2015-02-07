@@ -1173,6 +1173,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     } else {
                         router = router1;
                     }
+                    // && router.getState() == State.Stopped
                     if (router.getHostId() == null) {
                         s_logger.debug("Skip router pair (" + router0.getInstanceName() + "," + router1.getInstanceName() + ") due to can't find host");
                         continue;
