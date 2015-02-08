@@ -40,7 +40,6 @@ public class Pool extends OvmObject {
     };
     private List<String> poolHosts = new ArrayList<String>();
     private final List<String> poolRoles = new ArrayList<String>();
-    private final List<String> poolMembers = new ArrayList<String>();
     private String poolMasterVip;
     private String poolAlias;
     private String poolId = null;
@@ -158,7 +157,6 @@ public class Pool extends OvmObject {
         poolAlias = xmlToString(path + "/Pool_Alias", xmlDocument);
         poolMasterVip = xmlToString(path + "/Master_Virtual_Ip",
                 xmlDocument);
-        // this.setPoolMembers(xmlToList(path + "/Member_List", xmlDocument));
         poolHosts.addAll(xmlToList(path + "//Registered_IP", xmlDocument));
         if (poolId == null) {
             return false;
@@ -166,7 +164,7 @@ public class Pool extends OvmObject {
         return true;
     }
 
-    public Boolean setServerRoles() throws Ovm3ResourceException{
+    private Boolean setServerRoles() throws Ovm3ResourceException{
         String roles = StringUtils.join(poolRoles.toArray(), ",");
         return nullIsTrueCallWrapper("update_server_roles", roles);
     }
@@ -177,7 +175,7 @@ public class Pool extends OvmObject {
         return setServerRoles();
     }
 
-    public Boolean joinServerPool(String alias, String id, String vip, int num,
+    private Boolean joinServerPool(String alias, String id, String vip, int num,
             String name, String host, List<String> roles) throws Ovm3ResourceException{
         String role = StringUtils.join(roles.toArray(), ",");
         if (!isInAPool()) {

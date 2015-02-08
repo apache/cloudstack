@@ -20,7 +20,7 @@ package com.cloud.hypervisor.ovm3.objects;
 
 public class Ovm3ResourceException extends Exception {
     private static final long serialVersionUID = 1L;
-    private static final Throwable cause = null;
+    private static final Throwable CAUSE = null;
     public Ovm3ResourceException() {
         super();
     }
@@ -35,6 +35,6 @@ public class Ovm3ResourceException extends Exception {
 
     @Override
     public Throwable getCause() {
-        return cause;
+        return CAUSE;
     }
 }

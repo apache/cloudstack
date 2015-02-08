@@ -29,6 +29,10 @@ import org.w3c.dom.Document;
 
 public class Network extends OvmObject {
     private static final Logger LOGGER = Logger.getLogger(Network.class);
+    private static final String START = "start";
+    private static final String BRIDGE = "Bridge";
+    private static final String ADDRESS = "Address";
+    private static final String PHYSICAL = "Physical";
     private Map<String, Interface> interfaceList = null;
     private Object postDiscovery = null;
     private List<String> netInterfaces = new ArrayList<String>();
@@ -43,18 +47,13 @@ public class Network extends OvmObject {
         return interfaceList;
     }
 
-    /*
-     * public void setBridgeList(Map<String, Interface> list) { interfaceList =
-     * list; }
-     */
-
     public static class Interface {
         private final Map<String, String> iFace = new HashMap<String, String>() {
             {
                 put("Type", null);
-                put("Physical", null);
+                put(PHYSICAL, null);
                 put("Name", null);
-                put("Address", null);
+                put(ADDRESS, null);
                 put("Broadcast", null);
                 put("MAC", null);
                 put("Vlan", null);
@@ -81,11 +80,11 @@ public class Network extends OvmObject {
         }
 
         public String getPhysical() {
-            return iFace.get("Physical");
+            return iFace.get(PHYSICAL);
         }
 
         public String getAddress() {
-            return iFace.get("Address");
+            return iFace.get(ADDRESS);
         }
 
         public String getBroadcast() {
@@ -101,7 +100,7 @@ public class Network extends OvmObject {
         }
 
         public String setPhysical(String ph) {
-            return iFace.put("Physical", ph);
+            return iFace.put(PHYSICAL, ph);
         }
 
         public String setMac(String mac) {
@@ -114,7 +113,7 @@ public class Network extends OvmObject {
         Map<String, Network.Interface> ifaces = getInterfaceList();
         for (final Entry<String, Interface> iface : ifaces.entrySet()) {
             String match = "default";
-            if ("Address".equals(key)) {
+            if (ADDRESS.equals(key)) {
                 match = iface.getValue().getAddress();
             }
             if ("Name".equals(key)) {
@@ -131,7 +130,7 @@ public class Network extends OvmObject {
 
     public Network.Interface getInterfaceByIp(String ip)
             throws Ovm3ResourceException {
-        return getNetIface("Address", ip);
+        return getNetIface(ADDRESS, ip);
     }
 
     public Network.Interface getInterfaceByName(String name)
@@ -148,8 +147,7 @@ public class Network extends OvmObject {
     public Network.Interface getBridgeByName(String name)
             throws Ovm3ResourceException {
         if (getNetIface("Name", name) != null
-                && getNetIface("Name", name).getIfType()
-                .contentEquals("Bridge")) {
+                && getNetIface("Name", name).getIfType().contentEquals(BRIDGE)) {
             return getNetIface("Name", name);
         }
         LOGGER.debug("Unable to find bridge by name: " + name);
@@ -159,10 +157,9 @@ public class Network extends OvmObject {
 
     public Network.Interface getBridgeByIp(String ip)
             throws Ovm3ResourceException {
-        if (getNetIface("Address", ip) != null
-                && getNetIface("Address", ip).getIfType().contentEquals(
-                        "Bridge")) {
-            return getNetIface("Address", ip);
+        if (getNetIface(ADDRESS, ip) != null
+                && getNetIface(ADDRESS, ip).getIfType().contentEquals(BRIDGE)) {
+            return getNetIface(ADDRESS, ip);
         }
         LOGGER.debug("Unable to find bridge by ip: " + ip);
         setSuccess(false);
@@ -179,7 +176,6 @@ public class Network extends OvmObject {
             throws Ovm3ResourceException {
         return nullIsTrueCallWrapper("configure_virtual_ip", vip, baseip);
     }
-
 
     public Boolean ovsIpConfig(String net, String optype, String ip,
             String netmask) throws Ovm3ResourceException {
@@ -210,11 +206,11 @@ public class Network extends OvmObject {
             /* vifs are here too */
             String phyInt = (String) this.xmlToMap(
                     bpath + "[@Name='" + b + "']/Interfaces", xmlDocument).get(
-                            "PhyInterface");
+                    "PhyInterface");
             Interface iface = new Interface();
             iface.setInterface(br);
             iface.setName(b);
-            iface.setIfType("Bridge");
+            iface.setIfType(BRIDGE);
             if (phyInt == null) {
                 iface.setIfType("Local");
             }
@@ -232,7 +228,7 @@ public class Network extends OvmObject {
             iface.setPhysical(nf.get("Basename"));
             iface.setName(p);
             iface.setMac(nf.get("MAC"));
-            iface.setIfType("Physical");
+            iface.setIfType(PHYSICAL);
             interfaceList.put(p, iface);
         }
         /* add virtual interfaces ? */
@@ -240,11 +236,10 @@ public class Network extends OvmObject {
     }
 
     public Boolean startOvsLocalConfig(String br) throws Ovm3ResourceException {
-        String s = (String) ovsLocalConfig("start", br);
-        if (s.startsWith("start")) {
+        String s = (String) ovsLocalConfig(START, br);
+        if (s.startsWith(START)) {
             return true;
         }
-        ;
         return false;
     }
 
@@ -253,7 +248,6 @@ public class Network extends OvmObject {
         if (s.startsWith("stop")) {
             return true;
         }
-        ;
         return false;
     }
 
@@ -283,11 +277,10 @@ public class Network extends OvmObject {
 
     public Boolean startOvsBrConfig(String br, String dev)
             throws Ovm3ResourceException {
-        String s = (String) ovsBrConfig("start", br, dev);
-        if (s.startsWith("start")) {
+        String s = (String) ovsBrConfig(START, br, dev);
+        if (s.startsWith(START)) {
             return true;
         }
-        ;
         return false;
     }
 
@@ -297,14 +290,12 @@ public class Network extends OvmObject {
         if (s.startsWith("stop")) {
             return true;
         }
-        ;
         return false;
     }
 
     public Object ovsBrConfig(String action, String br, String net)
             throws Ovm3ResourceException {
-        Object x = callWrapper("ovs_br_config", action, br, net);
-        return x;
+        return (Object) callWrapper("ovs_br_config", action, br, net);
     }
 
     /* 1 is untagged, goes till 4095 */
@@ -314,24 +305,21 @@ public class Network extends OvmObject {
         if (s.startsWith("stop")) {
             return true;
         }
-        ;
         return false;
     }
 
     public Boolean startOvsVlanBridge(String br, String net, int vlan)
             throws Ovm3ResourceException {
-        String s = (String) ovsVlanBridge("start", br, net, vlan);
-        if (s.startsWith("start")) {
+        String s = (String) ovsVlanBridge(START, br, net, vlan);
+        if (s.startsWith(START)) {
             return true;
         }
-        ;
         return false;
     }
 
     private Object ovsVlanBridge(String action, String br, String net, int vlan)
             throws Ovm3ResourceException {
-        Object x = callWrapper("ovs_vlan_bridge", action, br, net, vlan);
-        return x;
+        return (Object) callWrapper("ovs_vlan_bridge", action, br, net, vlan);
     }
 
     /*

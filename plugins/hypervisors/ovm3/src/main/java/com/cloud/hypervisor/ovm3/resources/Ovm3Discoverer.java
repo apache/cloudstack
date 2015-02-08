@@ -346,7 +346,6 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
     public void processConnect(Host host, StartupCommand cmd,
             boolean forRebalance) {
         LOGGER.debug("processConnect");
-        // Should we check the connect status here or something ?
     }
 
     @Override
@@ -357,7 +356,6 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
 
     @Override
     public boolean isRecurring() {
-        // TODO Auto-generated method stub
         return false;
     }
 
@@ -388,12 +386,10 @@ public class Ovm3Discoverer extends DiscovererBase implements Discoverer,
             return null;
         }
 
-        // TODO: Double check this
         return resourceMgr.fillRoutingHostVO(host, ssCmd, HypervisorType.Ovm3,
                 details, hostTags);
     }
 
-    // TODO: Make sure that we cleanup when the host is removed
     @Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced,
             boolean isForceDeleteStorage) throws UnableDeleteHostException {

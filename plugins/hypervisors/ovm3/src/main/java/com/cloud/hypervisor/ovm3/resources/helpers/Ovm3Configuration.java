@@ -34,9 +34,8 @@ import com.cloud.utils.net.NetUtils;
 
 /* holds config data for the Ovm3 Hypervisor */
 public class Ovm3Configuration {
-    private final Logger LOGGER = Logger
+    private static final Logger LOGGER = Logger
             .getLogger(Ovm3Configuration.class);
-    private String agentName;
     private String agentIp;
     private Long agentZoneId;
     private Long agentPodId;

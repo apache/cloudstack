@@ -215,11 +215,8 @@ public class Ovm3HypervisorSupport {
             cmd.setVersion(host.getAgentVersion());
             cmd.setHypervisorType(HypervisorType.Ovm3);
             cmd.setCaps(host.getCapabilities());
-            // TODO: Control ip, for now cheat ?
             cmd.setPrivateIpAddress(c.getIp());
             cmd.setStorageIpAddress(c.getIp());
-            /* do we need the state report here now ? */
-            // cmd.setHostVmStateReport(hostVmStateReport());
             Network net = new Network(c);
             String defaultBridge = net.getBridgeByIp(c.getIp()).getName();
             if (defaultBridge == null) {
@@ -301,8 +298,8 @@ public class Ovm3HypervisorSupport {
                     + config.getAgentScript() + " --ssl=" + c.getUseSsl() + " "
                     + "--port=" + c.getPort());
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, prepareCmd)) {
-                throw new ConfigurationException("Module insertion at "
-                        + config.getAgentHostname() + " failed");
+                throw new ConfigurationException("Failed to insert module on "
+                        + config.getAgentHostname());
             }
             CloudstackPlugin cSp = new CloudstackPlugin(c);
             cSp.ovsUploadSshKey(config.getAgentSshKeyFileName(),
@@ -367,7 +364,6 @@ public class Ovm3HypervisorSupport {
                 ns = State.Running;
                 /* The guest has requested to be shutdown, still migrating... */
             } else if (as.contains("s")) {
-                /* TODO: Double check this, as the change might hurt us */
                 if (vmStateMap.get(vm.getVmName()) == State.Migrating) {
                     ns = State.Migrating;
                 } else {
@@ -469,7 +465,7 @@ public class Ovm3HypervisorSupport {
                 } else if (oldState != newState) {
                     vmStateMap.put(vmName, newState);
                     if (newState == State.Stopped) {
-                        // TODO: need to state.error here ?
+                        // For now leave it be.
                     }
                     changes.put(vmName, newState);
                 }
@@ -573,7 +569,6 @@ public class Ovm3HypervisorSupport {
      *
      * @return
      */
-    /* TODO: move the connection elsewhere.... */
     public boolean masterCheck() {
         if ("".equals(config.getOvm3PoolVip())) {
             LOGGER.debug("No cluster vip, not checking for master");
@@ -583,23 +578,23 @@ public class Ovm3HypervisorSupport {
         try {
             CloudstackPlugin cSp = new CloudstackPlugin(c);
             if (cSp.dom0HasIp(config.getOvm3PoolVip())) {
-                LOGGER.debug("Host " + config.getAgentHostname()
+                LOGGER.debug(config.getAgentHostname()
                         + " is a master, already has vip "
                         + config.getOvm3PoolVip());
                 config.setAgentIsMaster(true);
             } else if (cSp.ping(config.getOvm3PoolVip())) {
-                LOGGER.debug("Host " + config.getAgentHostname()
+                LOGGER.debug(config.getAgentHostname()
                         + " has a master, someone has vip "
                         + config.getOvm3PoolVip());
                 config.setAgentHasMaster(true);
             } else {
-                LOGGER.debug("Host " + config.getAgentHostname()
+                LOGGER.debug(config.getAgentHostname()
                         + " becomes a master, no one has vip "
                         + config.getOvm3PoolVip());
                 config.setAgentIsMaster(true);
             }
         } catch (Ovm3ResourceException e) {
-            LOGGER.debug("Host " + config.getAgentHostname()
+            LOGGER.debug(config.getAgentHostname()
                     + " can't reach master: " + e.getMessage());
             config.setAgentHasMaster(false);
         }
@@ -674,6 +669,7 @@ public class Ovm3HypervisorSupport {
     /*
      * TODO: leave cluster, leave pool, release ownership, cleanout and
      * start over ?
+     * For now leave it as we're not clustering in OVM terms.
      */
     public MaintainAnswer execute(MaintainCommand cmd) {
         LOGGER.debug("MaintainCommand");
@@ -704,17 +700,14 @@ public class Ovm3HypervisorSupport {
                     0, 0);
             return new GetHostStatsAnswer(cmd, hostStats);
         } catch (Exception e) {
-            LOGGER.debug("Get host stats of " + cmd.getHostName() + " failed",
+            LOGGER.debug("Unable to get host stats for: " + cmd.getHostName(),
                     e);
             return new Answer(cmd, false, e.getMessage());
         }
     }
 
     /*
-     * TODO: no heartbeat if no cluster, should we add a heartbeat ?
-     * cloudstack/plugins
-     * /hypervisors/ovm/scripts/vm/hypervisor/ovm/OvmHostModule.py contains
-     * fence
+     * We rely on storage health with CheckOnHostCommand....
      */
     public FenceAnswer execute(FenceCommand cmd) {
         LOGGER.debug("FenceCommand");
@@ -722,7 +715,7 @@ public class Ovm3HypervisorSupport {
             Boolean res = false;
             return new FenceAnswer(cmd, res, res.toString());
         } catch (Exception e) {
-            LOGGER.error("fencing of  " + cmd.getHostIp() + " failed: ", e);
+            LOGGER.error("Unable to fence" + cmd.getHostIp(), e);
             return new FenceAnswer(cmd, false, e.getMessage());
         }
     }
@@ -738,7 +731,7 @@ public class Ovm3HypervisorSupport {
             String msg = "";
             if (alive == null) {
                     msg = "storage check failed for " + cmd.getHost().getGuid();
-            } else if ( alive == true) {
+            } else if (alive) {
                     msg = "storage check ok for " + cmd.getHost().getGuid();
             } else {
                     msg = "storage dead for " + cmd.getHost().getGuid();

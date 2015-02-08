@@ -32,8 +32,10 @@ import com.cloud.hypervisor.ovm3.resources.Ovm3VirtualRoutingResource;
 import com.cloud.utils.ExecutionResult;
 
 public class Ovm3VirtualRoutingSupport {
-    private final Logger LOGGER = Logger
+    private static final Logger LOGGER = Logger
             .getLogger(Ovm3VirtualRoutingSupport.class);
+    private static final String CREATE = "create";
+    private static final String SUCCESS = "success";
     private Connection c;
     private Ovm3VirtualRoutingResource vrr;
     private Ovm3Configuration config;
@@ -51,8 +53,8 @@ public class Ovm3VirtualRoutingSupport {
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Executing resource NetworkUsageCommand " + cmd);
         }
-        if (cmd.getOption() != null && "create".equals(cmd.getOption())) {
-            String result = networkUsage(cmd.getPrivateIP(), "create", null);
+        if (cmd.getOption() != null && CREATE.equals(cmd.getOption())) {
+            String result = networkUsage(cmd.getPrivateIP(), CREATE, null);
             return new NetworkUsageAnswer(cmd, result, 0L, 0L);
         }
         long[] stats = getNetworkStats(cmd.getPrivateIP());
@@ -66,7 +68,7 @@ public class Ovm3VirtualRoutingSupport {
         String args = null;
         if ("get".equals(option)) {
             args = "-g";
-        } else if ("create".equals(option)) {
+        } else if (CREATE.equals(option)) {
             args = "-c";
         } else if ("reset".equals(option)) {
             args = "-r";
@@ -117,7 +119,7 @@ public class Ovm3VirtualRoutingSupport {
         String args = "-l " + publicIp + " ";
         if ("get".equals(option)) {
             args += "-g";
-        } else if ("create".equals(option)) {
+        } else if (CREATE.equals(option)) {
             args += "-c";
             String vpcCIDR = cmd.getVpcCIDR();
             args += " -v " + vpcCIDR;
@@ -128,7 +130,7 @@ public class Ovm3VirtualRoutingSupport {
         } else if ("remove".equals(option)) {
             args += "-d";
         } else {
-            return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
+            return new NetworkUsageAnswer(cmd, SUCCESS, 0L, 0L);
         }
 
         ExecutionResult callResult = vrr.executeInVR(privateIp, "vpc_netusage.sh",
@@ -154,11 +156,11 @@ public class Ovm3VirtualRoutingSupport {
                     stats[0] += (Long.valueOf(splitResult[i++])).longValue();
                     stats[1] += (Long.valueOf(splitResult[i++])).longValue();
                 }
-                return new NetworkUsageAnswer(cmd, "success", stats[0],
+                return new NetworkUsageAnswer(cmd, SUCCESS, stats[0],
                         stats[1]);
             }
         }
-        return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
+        return new NetworkUsageAnswer(cmd, SUCCESS, 0L, 0L);
     }
 
     /*
@@ -180,20 +182,20 @@ public class Ovm3VirtualRoutingSupport {
             CloudstackPlugin cSp = new CloudstackPlugin(c);
             if (!cSp.domrCheckPort(privateIp, cmdPort, retries, interval)) {
                 String msg = "Port " + cmdPort + " not reachable for " + vmName
-                        + " via " + config.getAgentHostname();
+                        + ": " + config.getAgentHostname();
                 LOGGER.info(msg);
                 return new CheckSshAnswer(cmd, msg);
             }
         } catch (Exception e) {
             String msg = "Can not reach port " + cmdPort + " on System vm "
-                    + vmName + " via " + config.getAgentHostname()
+                    + vmName + ": " + config.getAgentHostname()
                     + " due to exception: " + e;
             LOGGER.error(msg);
             return new CheckSshAnswer(cmd, msg);
         }
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Ping " + cmdPort + " succeeded for vm " + vmName
-                    + " via " + config.getAgentHostname() + cmd);
+                    + ": " + config.getAgentHostname() + cmd);
         }
         return new CheckSshAnswer(cmd);
     }

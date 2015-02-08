@@ -88,10 +88,6 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         pool = ovm3pool;
     }
 
-    /*
-     * TODO: move to the override methods...
-     * size check on fs/checksum
-     */
     public final Answer execute(final CopyCommand cmd) {
         LOGGER.debug("execute: "+ cmd.getClass());
         DataTO srcData = cmd.getSrcTO();
@@ -154,7 +150,6 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         return new Answer(cmd, false, msg);
     }
 
-    /* TODO: Create a Disk from a template needs cleaning */
     public CreateAnswer execute(CreateCommand cmd) {
         LOGGER.debug("execute: "+ cmd.getClass());
         StorageFilerTO primaryStorage = cmd.getPool();
@@ -430,9 +425,8 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         DataStoreTO store = isoTO.getDataStore();
         NfsTO nfsStore = (NfsTO) store;
         String secPoolUuid = pool.setupSecondaryStorage(nfsStore.getUrl());
-        String isoPath = config.getAgentSecStoragePath() + File.separator
+        return config.getAgentSecStoragePath() + File.separator
                 + secPoolUuid + File.separator + isoTO.getPath();
-        return isoPath;
     }
 
     /**
@@ -657,10 +651,6 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             wait = 7200;
         }
 
-        /*
-         * TODO: we need to figure out what sec and prim really is for checks
-         * and balances
-         */
         try {
             Linux host = new Linux(c);
 
@@ -718,9 +708,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
                     + config.getTemplateDir() + File.separator
                     + accountId + File.separator + templateId;
             Linux host = new Linux(c);
-            /* check if VM is running or thrown an error, or pause it :P */
             host.copyFile(volumePath, installPath);
-            /* TODO: look at the original */
             return new CreatePrivateTemplateAnswer(cmd, true, installPath);
         } catch (Exception e) {
             LOGGER.debug("Create template failed", e);

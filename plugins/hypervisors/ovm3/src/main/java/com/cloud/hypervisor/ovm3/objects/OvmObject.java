@@ -52,9 +52,6 @@ public class OvmObject {
     public OvmObject() {
     }
 
-    /*
-     * public OvmObject(Connection c) { setClient(c); }
-     */
     public Connection getClient() {
         return client;
     }
@@ -218,7 +215,7 @@ public class OvmObject {
                     XPathConstants.NODESET);
             return nodeList.item(0).getTextContent();
         } catch (NullPointerException e) {
-            LOGGER.info("Got no items back from parsing, returning: " + e.getMessage());
+            LOGGER.info("Got no items back from parsing, returning null: " + e);
             return null;
         } catch (XPathExpressionException e) {
             throw new Ovm3ResourceException("Problem parsing XML to String: ", e);

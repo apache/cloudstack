@@ -30,6 +30,12 @@ import org.apache.log4j.Logger;
 
 public class Xen extends OvmObject {
     private static final Logger LOGGER = Logger.getLogger(Xen.class);
+    private static final String VNCLISTEN = "vnclisten";
+    private static final String MEMORY = "memory";
+    private static final String MAXVCPUS = "maxvcpus";
+    private static final String VCPUS = "vcpus";
+    private static final String DOMTYPE = "OVM_domain_type";
+    private static final String EXTRA = "extra";
     private Map<String, Vm> vmList = null;
     private Vm defVm = new Vm();
 
@@ -49,7 +55,7 @@ public class Xen extends OvmObject {
             {
                 put("type", "vnc");
                 put("vncunused", "1");
-                put("vnclisten", "127.0.0.1");
+                put(VNCLISTEN, "127.0.0.1");
                 put("keymap", "en-us");
             }
         };
@@ -74,9 +80,9 @@ public class Xen extends OvmObject {
         };
 
         /* 'vif': [ 'mac=00:21:f6:00:00:00,bridge=c0a80100'] */
-        private ArrayList<String> _vmVifs = new ArrayList<String>();
+        private ArrayList<String> vmVifs = new ArrayList<String>();
         private Integer maxVifs = 7;
-        private String[] _xvmVifs = new String[maxVifs -1];
+        private String[] xvmVifs = new String[maxVifs -1];
         private String vmSimpleName = "";
         private String vmName = "";
         private String vmUuid = "";
@@ -114,16 +120,16 @@ public class Xen extends OvmObject {
 
         private Map<String, Object> vmParams = new HashMap<String, Object>() {
             {
-                put("vif", _vmVifs);
+                put("vif", vmVifs);
                 put("OVM_simple_name", vmSimpleName);
                 put("disk", vmDisks);
                 put("bootargs", vmBootArgs);
                 put("uuid", vmUuid);
                 put("on_reboot", vmOnReboot);
                 put("cpu_weight", vmCpuWeight);
-                put("memory", vmMemory);
+                put(MEMORY, vmMemory);
                 put("cpu_cap", vmCpuCap);
-                put("maxvcpus", vmMaxVcpus);
+                put(MAXVCPUS, vmMaxVcpus);
                 put("OVM_high_availability", vmHa);
                 put("OVM_description", vmDescription);
                 put("on_poweroff", vmOnPoweroff);
@@ -132,15 +138,15 @@ public class Xen extends OvmObject {
                 put("name", vmName);
                 put("guest_os_type", vmOs);
                 put("vfb", vmVncElement);
-                put("vcpus", vmVcpus);
+                put(VCPUS, vmVcpus);
                 put("OVM_cpu_compat_group", vmCpuCompatGroup);
-                put("OVM_domain_type", vmDomainType);
-                put("extra", vmExtra);
+                put(DOMTYPE, vmDomainType);
+                put(EXTRA, vmExtra);
             }
         };
 
         public boolean isControlDomain() {
-            if (this.getVmName().equals("Domain-0")) {
+            if ("Domain-0".equals(this.getVmName())) {
                 return true;
             }
             return false;
@@ -168,12 +174,12 @@ public class Xen extends OvmObject {
         }
 
         public boolean setVmExtra(final String args) {
-            vmParams.put("extra", args);
+            vmParams.put(EXTRA, args);
             return true;
         }
 
         public String getVmExtra() {
-            return (String) vmParams.get("extra");
+            return (String) vmParams.get(EXTRA);
         }
 
         public String getVmBootArgs() {
@@ -181,43 +187,42 @@ public class Xen extends OvmObject {
         }
 
         public void setVmMaxCpus(Integer val) {
-            vmParams.put("maxvcpus", val);
+            vmParams.put(MAXVCPUS, val);
         }
 
         public Integer getVmMaxCpus() {
-            return (Integer) vmParams.get("maxvcpus");
+            return (Integer) vmParams.get(MAXVCPUS);
         }
 
         public void setVmCpus(Integer val) {
             if (getVmMaxCpus() == 0 || getVmMaxCpus() >= val) {
-                vmParams.put("vcpus", val);
+                vmParams.put(VCPUS, val);
             } else if (getVmMaxCpus() < val) {
                 setVmCpus(getVmMaxCpus());
             }
         }
 
         public Integer getVmCpus() {
-            return (Integer) vmParams.get("vcpus");
+            return (Integer) vmParams.get(VCPUS);
         }
 
         public Boolean setVmMemory(long memory) {
-            vmParams.put("memory", Long.toString(memory));
+            vmParams.put(MEMORY, Long.toString(memory));
             return true;
         }
 
         public long getVmMemory() {
-            // return (Integer) vmParams.get("memory");
-            return Integer.parseInt((String) vmParams.get("memory"));
+            return Integer.parseInt((String) vmParams.get(MEMORY));
         }
 
         public Boolean setVmDomainType(String domtype) {
-            vmParams.put("OVM_domain_type", domtype);
+            vmParams.put(DOMTYPE, domtype);
             return true;
         }
 
         /* iiiis this a good idea ? */
         public String getVmDomainType() {
-            String domType = (String) vmParams.get("OVM_domain_type");
+            String domType = (String) vmParams.get(DOMTYPE);
             if (domType.equals(vmDomainType)) {
                 String builder = (String) vmParams.get("builder");
                 if (builder == null || builder.contains("linux")) {
@@ -269,20 +274,20 @@ public class Xen extends OvmObject {
         }
 
         public void setVmVifs(List<String> vifs) {
-            this._vmVifs.addAll(vifs);
+            this.vmVifs.addAll(vifs);
         }
 
         public List<String> getVmVifs() {
-            return this._vmVifs;
+            return this.vmVifs;
         }
 
         public Integer getVifIdByMac(String mac) {
             Integer c = 0;
-            for (final String entry : _vmVifs) {
+            for (final String entry : vmVifs) {
                 final String[] parts = entry.split(",");
                 final String[] macpart = parts[0].split("=");
-                assert (macpart.length == 2) : "Invalid entry: " + entry;
-                if (macpart[0].equals("mac") && macpart[1].equals(mac)) {
+                assert macpart.length == 2 : "Invalid entry: " + entry;
+                if ("mac".equals(macpart[0]) && macpart[1].equals(mac)) {
                     return c;
                 }
                 c += 1;
@@ -296,17 +301,17 @@ public class Xen extends OvmObject {
                 return false;
             }
             String vif = "mac=" + mac + ",bridge=" + bridge;
-            _xvmVifs[id] = vif;
+            xvmVifs[id] = vif;
             return true;
         }
 
         public boolean setupVifs() {
-            for (String vif : _xvmVifs) {
-                if (vif != null && !_vmVifs.contains(vif)) {
-                    _vmVifs.add(vif);
+            for (String vif : xvmVifs) {
+                if (vif != null && !vmVifs.contains(vif)) {
+                    vmVifs.add(vif);
                 }
             }
-            vmParams.put("vif", _vmVifs);
+            vmParams.put("vif", vmVifs);
             return true;
         }
 
@@ -430,13 +435,7 @@ public class Xen extends OvmObject {
             return vmDisk.get(dest);
         }
 
-        /* TODO: Implement disk removal, usi removal works though.. */
-        public Boolean removeDisk(String file, String device) {
-            /* get index and remove */
-            return true;
-        }
-
-        public boolean setVnc() {
+        private boolean setVnc() {
             List<String> vfb = new ArrayList<String>();
             for (final String key : vmVnc.keySet()) {
                 vfb.add(key + "=" + vmVnc.get(key));
@@ -468,7 +467,7 @@ public class Xen extends OvmObject {
         }
 
         public void setVncAddress(String address) {
-            vmVnc.put("vnclisten", address);
+            vmVnc.put(VNCLISTEN, address);
         }
 
         public String getVncAddress() throws Ovm3ResourceException {
@@ -476,7 +475,7 @@ public class Xen extends OvmObject {
             if (port == null) {
                 return null;
             }
-            return vmVnc.get("vnclisten");
+            return vmVnc.get(VNCLISTEN);
         }
 
         public Integer getVncPort() throws Ovm3ResourceException {
@@ -486,7 +485,7 @@ public class Xen extends OvmObject {
             String vnc = getVncLocation();
             if (vnc != null && vnc.contains(":")) {
                 final String[] res = vnc.split(":");
-                vmVnc.put("vnclisten", res[0]);
+                vmVnc.put(VNCLISTEN, res[0]);
                 vmVnc.put("port", res[1]);
                 return Integer.parseInt(res[1]);
             }
@@ -511,19 +510,8 @@ public class Xen extends OvmObject {
             }
         }
 
-        /* Don't think we'll use this? */
-        public Boolean removeVfb(String type, String address, String map) {
-            /* get index and remove */
-            return true;
-        }
-
         private Object get(String key) {
             return vmParams.get(key);
-        }
-
-        public <T> boolean set(String key, T arg) {
-            vmParams.put(key, arg);
-            return true;
         }
     }
 

@@ -38,17 +38,15 @@ public class Connection extends XmlRpcClient {
     private String hostPass = null;
     private String hostIp;
     private String hostName;
-    private Boolean bogus = false;
     private Integer hostPort = 8899;
     private Boolean hostUseSsl = false;
     private String cert = "";
     private String key = "";
     /* default to 20 mins ? */
-    private final Integer timeoutMs = 1200;
-    private final Integer timeoutS = timeoutMs * 1000;
+    private Integer timeoutMs = 1200;
+    private Integer timeoutS = timeoutMs * 1000;
 
     public Connection() {
-        // xmlClient = setupXmlClient();
     }
 
     public Connection(String ip, Integer port, String username, String password) {
@@ -135,9 +133,6 @@ public class Connection extends XmlRpcClient {
         } catch (XmlRpcException e) {
             LOGGER.info("XML RPC Exception occured: ", e);
             throw e;
-        /* } catch (NullPointerException e) {
-            LOGGER.info("Nullpointer occured: ", e);
-            throw new XmlRpcException(e.getMessage()); */
         } catch (RuntimeException e) {
             LOGGER.info("Runtime Exception: ", e);
             throw new XmlRpcException(e.getMessage());

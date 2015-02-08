@@ -40,7 +40,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 public class Ovm3HypervisorNetwork {
-    private final Logger LOGGER = Logger
+    private static final Logger LOGGER = Logger
             .getLogger(Ovm3HypervisorNetwork.class);
     private Connection c;
     private Ovm3Configuration config;
@@ -49,7 +49,6 @@ public class Ovm3HypervisorNetwork {
         config = ovm3config;
     }
 
-    /* Configure the control network for system VMs */
     public void configureNetworking() throws ConfigurationException {
         /* TODO: setup meta tags for the management interface (probably
         * required with multiple interfaces)?
@@ -116,11 +115,7 @@ public class Ovm3HypervisorNetwork {
         return false;
     }
 
-    /* TODO: check getPhysicalNetworkInfoList */
-    /*
-     * need to refactor this bit, networksetupbyname makes no sense, and neither
-     * does the physical bit
-     */
+    /* this might have to change in the future, works for now... */
     public CheckNetworkAnswer execute(CheckNetworkCommand cmd) {
         LOGGER.debug("Checking if network name setup is done on "
                     + config.getAgentHostname());
@@ -143,7 +138,7 @@ public class Ovm3HypervisorNetwork {
             }
 
             if (!isNetworkSetupByName(info.getGuestNetworkName())) {
-                String msg = "For Physical Network id:"
+                String msg = "Guest Physical Network id:"
                         + info.getPhysicalNetworkId()
                         + ", Guest Network is not configured on the backend by name "
                         + info.getGuestNetworkName();
@@ -151,7 +146,7 @@ public class Ovm3HypervisorNetwork {
                 return new CheckNetworkAnswer(cmd, false, msg);
             }
             if (!isNetworkSetupByName(info.getPrivateNetworkName())) {
-                String msg = "For Physical Network id:"
+                String msg = "Private Physical Network id:"
                         + info.getPhysicalNetworkId()
                         + ", Private Network is not configured on the backend by name "
                         + info.getPrivateNetworkName();
@@ -159,7 +154,7 @@ public class Ovm3HypervisorNetwork {
                 return new CheckNetworkAnswer(cmd, false, msg);
             }
             if (!isNetworkSetupByName(info.getPublicNetworkName())) {
-                String msg = "For Physical Network id:"
+                String msg = "Public Physical Network id:"
                         + info.getPhysicalNetworkId()
                         + ", Public Network is not configured on the backend by name "
                         + info.getPublicNetworkName();
@@ -196,7 +191,7 @@ public class Ovm3HypervisorNetwork {
         if (vlanId < 1 || vlanId > 4094) {
             String msg = "Incorrect vlan " + vlanId
                     + ", needs to be between 1 and 4094";
-            LOGGER.info(msg);
+            LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }
         Network net = new Network(c);
@@ -212,7 +207,7 @@ public class Ovm3HypervisorNetwork {
         } catch (Ovm3ResourceException e) {
             String msg = "Unable to create vlan " + vlanId.toString()
                     + " bridge for " + networkName;
-            LOGGER.info(msg);
+            LOGGER.warn(msg + ": " + e);
             throw new CloudRuntimeException(msg + ":" + e.getMessage());
         }
         return brName;
@@ -246,7 +241,6 @@ public class Ovm3HypervisorNetwork {
         } else if (nic.getType() == TrafficType.Management) {
             bridgeName = config.getAgentPrivateNetworkName();
         } else if (nic.getType() == TrafficType.Storage) {
-            /* TODO: Add storage network */
             bridgeName = config.getAgentStorageNetworkName();
         } else {
             throw new CloudRuntimeException("Unknown network traffic type:"

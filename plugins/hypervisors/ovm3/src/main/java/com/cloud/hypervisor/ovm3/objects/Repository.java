@@ -18,7 +18,6 @@
  ******************************************************************************/
 package com.cloud.hypervisor.ovm3.objects;
 
-// import java.util.ArrayList;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,9 +27,11 @@ import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 
 public class Repository extends OvmObject {
+    private static final Logger LOGGER = Logger.getLogger(Repository.class);
+    private static final String VERSION = "Version";
+    private static final String NAMETAG = "[@Name='";
     private Object postDiscovery = null;
     private Object postDbDiscovery = null;
-    private static final Logger LOGGER = Logger.getLogger(Repository.class);
     private Map<String, RepoDbDetails> repoDbs = new HashMap<String, RepoDbDetails>();
     private Map<String, RepoDetails> repos = new HashMap<String, RepoDetails>();
     private List<String> repoDbList = new ArrayList<String>();
@@ -69,7 +70,7 @@ public class Repository extends OvmObject {
                 put("Fs_location", null);
                 put("Mount_point", null);
                 put("Filesystem_type", null);
-                put("Version", null);
+                put(VERSION, null);
                 put("Alias", null);
                 put("Manager_uuid", null);
                 put("Status", null);
@@ -100,7 +101,7 @@ public class Repository extends OvmObject {
         }
 
         public String getVersion() {
-            return dbEntry.get("Version");
+            return dbEntry.get(VERSION);
         }
 
         public String getFilesystemType() {
@@ -122,14 +123,14 @@ public class Repository extends OvmObject {
     }
 
     public static class RepoDetails {
-        private List<String> Templates = new ArrayList<String>();
-        private List<String> VirtualMachines = new ArrayList<String>();
-        private List<String> VirtualDisks = new ArrayList<String>();
-        private List<String> ISOs = new ArrayList<String>();
+        private List<String> templates = new ArrayList<String>();
+        private List<String> virtualMachines = new ArrayList<String>();
+        private List<String> virtualDisks = new ArrayList<String>();
+        private List<String> isos = new ArrayList<String>();
         private final Map<String, String> dbEntry = new HashMap<String, String>() {
             {
                 put("Repository_UUID", null);
-                put("Version", null);
+                put(VERSION, null);
                 put("Repository_Alias", null);
                 put("Manager_UUID", null);
             }
@@ -147,7 +148,7 @@ public class Repository extends OvmObject {
         }
 
         public String getVersion() {
-            return dbEntry.get("Version");
+            return dbEntry.get(VERSION);
         }
 
         public String getUuid() {
@@ -159,35 +160,35 @@ public class Repository extends OvmObject {
         }
 
         public void setRepoTemplates(List<String> temp) {
-            Templates.addAll(temp);
+            templates.addAll(temp);
         }
 
         public List<String> getRepoTemplates() {
-            return Templates;
+            return templates;
         }
 
         public void setRepoVirtualMachines(List<String> vms) {
-            VirtualMachines.addAll(vms);
+            virtualMachines.addAll(vms);
         }
 
         public List<String> getRepoVirtualMachines() {
-            return VirtualMachines;
+            return virtualMachines;
         }
 
         public void setRepoVirtualDisks(List<String> disks) {
-            VirtualDisks.addAll(disks);
+            virtualDisks.addAll(disks);
         }
 
         public List<String> getRepoVirtualDisks() {
-            return VirtualDisks;
+            return virtualDisks;
         }
 
-        public void setRepoISOs(List<String> isos) {
-            ISOs.addAll(isos);
+        public void setRepoISOs(List<String> isolist) {
+            isos.addAll(isolist);
         }
 
         public List<String> getRepoISOs() {
-            return ISOs;
+            return isos;
         }
     }
 
@@ -241,15 +242,15 @@ public class Repository extends OvmObject {
         repoList.addAll(xmlToList(path + "/@Name", xmlDocument));
         for (String name : repoList) {
             RepoDetails repo = new RepoDetails();
-            repo.setRepoTemplates(xmlToList(path + "[@Name='" + id
+            repo.setRepoTemplates(xmlToList(path + NAMETAG + id
                     + "']/Templates/Template/File", xmlDocument));
-            repo.setRepoVirtualMachines(xmlToList(path + "[@Name='" + id
+            repo.setRepoVirtualMachines(xmlToList(path + NAMETAG + id
                     + "']/VirtualMachines/VirtualMachine/@Name", xmlDocument));
-            repo.setRepoVirtualDisks(xmlToList(path + "[@Name='" + name
+            repo.setRepoVirtualDisks(xmlToList(path + NAMETAG + name
                     + "']/VirtualDisks/Disk", xmlDocument));
             repo.setRepoISOs(xmlToList(
-                    path + "[@Name='" + name + "']/ISOs/ISO", xmlDocument));
-            Map<String, String> details = xmlToMap(path + "[@Name='" + name
+                    path + NAMETAG + name + "']/ISOs/ISO", xmlDocument));
+            Map<String, String> details = xmlToMap(path + NAMETAG + name
                     + "']", xmlDocument);
             repo.setRepoDetails(details);
             repos.put(name, repo);

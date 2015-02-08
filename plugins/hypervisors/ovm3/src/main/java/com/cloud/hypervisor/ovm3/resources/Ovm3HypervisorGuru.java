@@ -108,10 +108,10 @@ public class Ovm3HypervisorGuru extends HypervisorGuruBase implements Hypervisor
                     hostDao.loadDetails(host);
                     // String snapshotHotFixVersion = host.getDetail(XenserverConfigs.XS620HotFix);
                     // if (snapshotHotFixVersion != null && snapshotHotFixVersion.equalsIgnoreCase(XenserverConfigs.XSHotFix62ESP1004)) {
-                    return new Pair<Boolean, Long>(Boolean.TRUE, new Long(ep.getId()));
+                    return new Pair<Boolean, Long>(Boolean.TRUE,  Long.valueOf(ep.getId()));
                 }
             }
         }
-        return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
+        return new Pair<Boolean, Long>(Boolean.FALSE, Long.valueOf(hostId));
     }
 }

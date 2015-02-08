@@ -108,7 +108,7 @@ public class CloudstackPlugin extends OvmObject {
                 Thread.sleep(sleep * 1000);
             }
         } catch (Exception e) {
-            LOGGER.info("Domr port check failed: " + e.getMessage());
+            LOGGER.info("Domr port check failed: " + e);
         }
         return x;
     }

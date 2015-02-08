@@ -37,7 +37,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
-import com.cloud.agent.api.AttachVolumeCommand;
+// import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
@@ -110,12 +110,11 @@ import com.cloud.vm.VirtualMachine.State;
 @Local(value = HypervisorResource.class)
 public class Ovm3HypervisorResource extends ServerResourceBase implements
         HypervisorResource {
-    private final Logger LOGGER = Logger
+    private static final Logger LOGGER = Logger
             .getLogger(Ovm3HypervisorResource.class);
     @Inject
     private VirtualRoutingResource vrResource;
-    protected StorageSubsystemCommandHandler storageHandler;
-
+    private StorageSubsystemCommandHandler storageHandler;
     private Connection c;
     private Ovm3StoragePool storagepool;
     private Ovm3StorageProcessor storageprocessor;
@@ -155,12 +154,11 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             /* here stuff gets completed, but where should state live ? */
             hypervisorsupport.fillHostInfo(srCmd);
             hypervisorsupport.vmStateMapClear();
-            if (configuration.getIsTest() == false) {
+            if (!configuration.getIsTest()) {
                 hypervisorsupport.setupServer(configuration
                         .getAgentSshKeyFileName());
             }
             LOGGER.debug("Ovm3 pool " + ssCmd + " " + srCmd);
-            // srCmd.setStateChanges(changes);
             return new StartupCommand[] { srCmd, ssCmd };
         } catch (Exception e) {
             LOGGER.debug("Ovm3 resource initializes failed", e);
@@ -274,8 +272,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             return hypervisornetwork.execute((CheckNetworkCommand) cmd);
         } else if (clazz == GetVmStatsCommand.class) {
             return vmsupport.execute((GetVmStatsCommand) cmd);
-        } else if (clazz == AttachVolumeCommand.class) {
-            return vmsupport.execute((AttachVolumeCommand) cmd);
         } else if (clazz == PrepareForMigrationCommand.class) {
             return vmsupport.execute((PrepareForMigrationCommand) cmd);
         } else if (clazz == MigrateCommand.class) {
@@ -299,19 +295,18 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
 
     @Override
     public void disconnected() {
-        // TODO Auto-generated method stub
+        LOGGER.debug("disconnected seems unused everywhere else");
     }
 
     @Override
     public IAgentControl getAgentControl() {
-        // TODO Auto-generated method stub
+        LOGGER.debug("we don't use IAgentControl");
         return null;
     }
 
     @Override
     public void setAgentControl(IAgentControl agentControl) {
-        // TODO Auto-generated method stub
-
+        LOGGER.debug("No use in setting IAgentControl");
     }
 
     @Override
@@ -336,13 +331,12 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
 
     @Override
     public int getRunLevel() {
-        // TODO Auto-generated method stub
         return 0;
     }
 
     @Override
     public void setRunLevel(int level) {
-        // TODO Auto-generated method stub
+        LOGGER.debug("runlevel seems unused in other hypervisors");
     }
 
     /**
@@ -355,7 +349,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
         /* check if we're master or not and if we can connect */
         try {
             configuration = new Ovm3Configuration(params);
-            if (configuration.getIsTest() == false) {
+            if (!configuration.getIsTest()) {
                 c = new Connection(configuration.getAgentIp(),
                         configuration.getAgentOvsAgentPort(),
                         configuration.getAgentOvsAgentUser(),
@@ -434,15 +428,13 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             }
             vm.setVmDomainType(domType);
 
-            /* TODO: booting from CD... */
             if (vmSpec.getBootloader() == BootloaderType.CD) {
-                // do something with this please...
+                LOGGER.warn("CD booting is not supported");
             }
             /*
              * officially CD boot is only supported on HVM, although there is a
              * simple way around it..
              */
-            /* TODO: pool uuid now comes from here should change! */
             vmsupport.createVbds(vm, vmSpec);
 
             if (vmSpec.getType() != VirtualMachine.Type.User) {
@@ -455,7 +447,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
                         + storagepool.getSystemVMPatchIsoFile().getName();
                 vm.addIso(svmIso);
             }
-            /* TODO: OVS should go here! */
+            /* OVS/Network stuff should go here! */
             vmsupport.createVifs(vm, vmSpec);
             vm.setupVifs();
 
@@ -502,7 +494,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
                 }
             }
             /*
-             * TODO: Can't remember if HA worked if we were only a pool ?
+             * Can't remember if HA worked if we were only a pool ?
              */
             if (configuration.getAgentInOvm3Pool()
                     && configuration.getAgentInOvm3Cluster()) {
@@ -599,7 +591,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
 
     @Override
     protected String getDefaultScriptsDir() {
-        // TODO Auto-generated method stub
         return null;
     }
 }

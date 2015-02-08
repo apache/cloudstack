@@ -30,8 +30,8 @@ import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.AttachVolumeAnswer;
-import com.cloud.agent.api.AttachVolumeCommand;
+// import com.cloud.agent.api.AttachVolumeAnswer;
+// import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -154,12 +154,12 @@ public class Ovm3VmSupport {
         }
         return true;
     }
-    /* TODO: Hot plugging harddisks... */
+/*
     public AttachVolumeAnswer execute(AttachVolumeCommand cmd) {
         return new AttachVolumeAnswer(cmd, "You must stop " + cmd.getVmName()
                 + " first, Ovm3 doesn't support hotplug datadisk");
     }
-
+*/
     /* Migration should make sure both HVs are the same ? */
     public PrepareForMigrationAnswer execute(PrepareForMigrationCommand cmd) {
         VirtualMachineTO vm = cmd.getVirtualMachine();
@@ -308,8 +308,7 @@ public class Ovm3VmSupport {
     }
     private Double doubleMin(String x, String y) {
         try {
-            double z = Double.parseDouble(x) - Double.parseDouble(y);
-            return z;
+            return (Double.parseDouble(x) - Double.parseDouble(y));
         } catch (NullPointerException e) {
             return 0D;
         }
@@ -325,7 +324,9 @@ public class Ovm3VmSupport {
         return new GetVmStatsAnswer(cmd,
                 (HashMap<String, VmStatsEntry>) vmStatsNameMap);
     }
+
     /* This is not create for us, but really start */
+/*
     public boolean startVm(String repoId, String vmId) throws XmlRpcException {
         Xen host = new Xen(c);
         try {
@@ -343,7 +344,7 @@ public class Ovm3VmSupport {
         }
         return true;
     }
-
+*/
     /*
      * TODO: OVM already cleans stuff up, just not the extra bridges which we
      * don't want right now, as we'd have to keep a state table of which vlans

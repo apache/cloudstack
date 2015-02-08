@@ -28,6 +28,9 @@ import org.w3c.dom.Document;
 public class Linux extends OvmObject {
     private static final Logger LOGGER = Logger
             .getLogger(Linux.class);
+    private static final String DEVICE = "Device";
+    private static final String REMOTEDIR = "Remote_Dir";
+    private static final String MOUNTPOINT = "Mount_Point";
     private Integer initMaps = 1;
 
     /**
@@ -224,7 +227,6 @@ public class Linux extends OvmObject {
         } else if (ovmCapabilities.containsKey(element)) {
             return ovmCapabilities.get(element);
         }
-
         return "";
     }
 
@@ -282,7 +284,7 @@ public class Linux extends OvmObject {
         for (final Map.Entry<String, FileSystem> fs : fsMap.entrySet()) {
             if (fs.getValue().getUuid().matches(uuid)) {
                 return fs.getValue();
-            };
+            }
         }
         return null;
     }
@@ -298,10 +300,10 @@ public class Linux extends OvmObject {
             {
                 put("Mount_Options", null);
                 put("Name", null);
-                put("Device", null);
+                put(DEVICE, null);
                 put("Host", null);
-                put("Remote_dir", null);
-                put("Mount_Point", null);
+                put(REMOTEDIR, null);
+                put(MOUNTPOINT, null);
                 put("Uuid", null);
             }
         };
@@ -322,11 +324,11 @@ public class Linux extends OvmObject {
         }
 
         public String getDevice() {
-            return (String) fileSys.get("Device");
+            return (String) fileSys.get(DEVICE);
         }
 
         public String setDevice(String dev) {
-            return (String) fileSys.put("Device", dev);
+            return (String) fileSys.put(DEVICE, dev);
         }
 
         public String getHost() {
@@ -345,21 +347,21 @@ public class Linux extends OvmObject {
         }
 
         public String setRemoteDir(String dir) {
-            return (String) fileSys.put("Remote_dir", dir);
+            return (String) fileSys.put(REMOTEDIR, dir);
         }
 
         public String getRemoteDir() {
             if (getHost() != null) {
-                return (String) fileSys.get("Remote_dir");
+                return (String) fileSys.get(REMOTEDIR);
             }
             return null;
         }
 
         public String setMountPoint(String pnt) {
-            return (String) fileSys.put("Mount_Point", pnt);
+            return (String) fileSys.put(MOUNTPOINT, pnt);
         }
         public String getMountPoint() {
-            return (String) fileSys.get("Mount_Point");
+            return (String) fileSys.get(MOUNTPOINT);
         }
     }
 
@@ -422,7 +424,7 @@ public class Linux extends OvmObject {
         return localTime;
     }
 
-    /* TODO: work out the statistics that is used here, returns a dict to a url */
+    /* Pushes the statistics out to a url, the statistics are in the form of a dict */
     public Boolean setStatisticsInterval(int val) throws Ovm3ResourceException {
         return nullIsTrueCallWrapper("set_statistics_interval", val);
     }
