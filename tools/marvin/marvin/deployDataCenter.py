@@ -196,7 +196,8 @@ class DeployDataCenters(object):
                 self.createPrimaryStorages(cluster.primaryStorages,
                                            zoneId,
                                            podId,
-                                           clusterId)
+                                           clusterId,
+                                           cluster.hypervisor)
         except Exception as e:
             print "Exception Occurred %s" % GetDetailExceptionInfo(e)
             self.__tcRunLogger.exception("====Cluster %s Creation Failed"
@@ -230,7 +231,8 @@ class DeployDataCenters(object):
                               primaryStorages,
                               zoneId,
                               podId,
-                              clusterId):
+                              clusterId,
+                              hypervisor):
         try:
             if primaryStorages is None:
                 return
@@ -243,8 +245,9 @@ class DeployDataCenters(object):
                 primarycmd.podid = podId
                 primarycmd.tags = primary.tags
                 primarycmd.url = primary.url
-                if primary.scope.lower() == 'zone':
+                if primary.scope == 'zone':
                     primarycmd.scope = primary.scope
+                    primarycmd.hypervisor = hypervisor
                 else:
                     primarycmd.clusterid = clusterId
                 primarycmd.zoneid = zoneId
