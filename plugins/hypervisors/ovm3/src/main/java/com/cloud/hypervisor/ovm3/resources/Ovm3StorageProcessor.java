@@ -460,7 +460,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      * @param isAttach
      * @return
      */
-    public AttachAnswer attachDetach(Command cmd, String vmName, DiskTO disk,
+    private AttachAnswer attachDetach(Command cmd, String vmName, DiskTO disk,
             boolean isAttach) {
         Xen xen = new Xen(c);
         String doThis = (isAttach) ? "Attach" : "Dettach";
