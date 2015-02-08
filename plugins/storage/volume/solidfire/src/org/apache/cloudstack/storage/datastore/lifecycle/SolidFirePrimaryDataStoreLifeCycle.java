@@ -46,6 +46,10 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotDetailsVO;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolAutomation;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -58,6 +62,8 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
     @Inject private PrimaryDataStoreDao storagePoolDao;
     @Inject private PrimaryDataStoreHelper dataStoreHelper;
     @Inject private ResourceManager _resourceMgr;
+    @Inject private SnapshotDao _snapshotDao;
+    @Inject private SnapshotDetailsDao _snapshotDetailsDao;
     @Inject private StorageManager _storageMgr;
     @Inject private StoragePoolAutomation storagePoolAutomation;
 
@@ -231,6 +237,19 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
     // invoked to delete primary storage that is based on the SolidFire plug-in
     @Override
     public boolean deleteDataStore(DataStore store) {
+        List<SnapshotVO> lstSnapshots = _snapshotDao.listAll();
+
+        if (lstSnapshots != null) {
+            for (SnapshotVO snapshot : lstSnapshots) {
+                SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(snapshot.getId(), SolidFireUtil.STORAGE_POOL_ID);
+
+                // if this snapshot belongs to the storagePool that was passed in
+                if (snapshotDetails != null && snapshotDetails.getValue() != null && Long.parseLong(snapshotDetails.getValue()) == store.getId()) {
+                    throw new CloudRuntimeException("This primary storage cannot be deleted because it currently contains one or more snapshots.");
+                }
+            }
+        }
+
         return dataStoreHelper.deletePrimaryDataStore(store);
     }
 

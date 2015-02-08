@@ -109,7 +109,6 @@ class TestCreateTemplate(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
-        self.hypervisor = self.testClient.getHypervisorInfo() 
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
         return
@@ -133,6 +132,9 @@ class TestCreateTemplate(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['lxc']:
+            raise unittest.SkipTest("Template creation from root volume is not supported in LXC")
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
         cls.service_offering = ServiceOffering.create(
@@ -290,6 +292,9 @@ class TestTemplates(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['lxc']:
+            raise unittest.SkipTest("Template creation from root volume is not supported in LXC")
         #populate second zone id for iso copy
         cmd = listZones.listZonesCmd()
         zones = cls.api_client.listZones(cmd)
@@ -495,8 +500,8 @@ class TestTemplates(cloudstackTestCase):
         # 4. Deploy Virtual machine using this template
         # 5. VM should be in running state
 
-        if self.hypervisor.lower() in ['hyperv']:
-            self.skipTest("Snapshots feature is not supported on Hyper-V")
+        if self.hypervisor.lower() in ['hyperv', 'lxc']:
+            self.skipTest("Snapshots feature is not supported on %s" % self.hypervisor.lower())
 
         userapiclient = self.testClient.getUserApiClient(
                                     UserName=self.account.name,

@@ -39,7 +39,8 @@ from marvin.lib.common import (get_domain,
                                get_template,
                                createSnapshotFromVirtualMachineVolume,
                                isVmExpunged,
-                               isDomainResourceCountEqualToExpectedCount)
+                               isDomainResourceCountEqualToExpectedCount,
+                               find_storage_pool_type)
 from marvin.lib.utils import (cleanup_resources)
 from marvin.codes import (PASS,
                           FAIL,
@@ -447,6 +448,10 @@ class TestMultipleChildDomain(cloudstackTestCase):
 
         """
         # Setting up account and domain hierarchy
+
+        if self.hypervisor.lower() == 'lxc':
+            if not find_storage_pool_type(self.apiclient, storagetype='rbd'):
+                self.skipTest("RBD storage type is required for data volumes for LXC")
         result = self.setupAccounts()
         if result[0] == FAIL:
             self.fail(
@@ -563,8 +568,8 @@ class TestMultipleChildDomain(cloudstackTestCase):
         # 5. Delete volume which was created from snapshot and verify primary storage
              resource count"""
 
-        if self.hypervisor.lower() in ['hyperv']:
-            self.skipTest("Snapshots feature is not supported on Hyper-V")
+        if self.hypervisor.lower() in ['hyperv', 'lxc']:
+            self.skipTest("Snapshots feature is not supported on %s" % self.hypervisor.lower())
 
         result = self.setupAccounts()
         if result[0] == FAIL:

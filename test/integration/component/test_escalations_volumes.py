@@ -30,7 +30,8 @@ from marvin.lib.base import (Account,
                              SnapshotPolicy)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template)
+                               get_template,
+                               find_storage_pool_type)
 from nose.plugins.attrib import attr
 from marvin.codes import PASS
 
@@ -45,6 +46,9 @@ class TestVolumes(cloudstackTestCase):
             cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
             cls.hypervisor = cls.testClient.getHypervisorInfo()
+            if cls.hypervisor.lower() == 'lxc':
+                if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
+                    raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
             # Get Domain, Zone, Template
             cls.domain = get_domain(cls.api_client)
             cls.zone = get_zone(

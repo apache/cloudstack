@@ -164,7 +164,7 @@ public class VolumeVO implements Volume {
     String reservationId;
 
     @Column(name = "hv_ss_reserve")
-    Integer hypervisorSnapshotReserve;
+    private Integer hypervisorSnapshotReserve;
 
     // Real Constructor
     public VolumeVO(Type type, String name, long dcId, long domainId,
@@ -628,7 +628,6 @@ public class VolumeVO implements Volume {
     @Override
     public Integer getHypervisorSnapshotReserve() {
         return hypervisorSnapshotReserve;
-
     }
 
     @Override

@@ -14,24 +14,33 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import marvin
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.sshClient import SshClient
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (Account,
+                             ServiceOffering,
+                             VirtualMachine,
+                             EgressFireWallRule,
+                             Template)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               list_virtual_machines,
+                               list_volumes)
 from nose.plugins.attrib import attr
+import time
 
 
 _multiprocess_shared_ = True
+
+
 class Services:
+
     """Test VM Life Cycle Services
     """
 
     def __init__(self):
         self.services = {
-            "disk_offering":{
+            "disk_offering": {
                 "displaytext": "Small",
                 "name": "Small",
                 "disksize": 1
@@ -44,26 +53,26 @@ class Services:
                 # Random characters are appended in create account to
                 # ensure unique username generated each time
                 "password": "password",
-                },
+            },
             "small":
             # Create a small virtual machine instance with disk offering
                 {
                     "displayname": "testserver",
-                    "username": "root", # VM creds for SSH
+                    "username": "root",  # VM creds for SSH
                     "password": "password",
                     "ssh_port": 22,
                     "hypervisor": 'XenServer',
                     "privateport": 22,
                     "publicport": 22,
                     "protocol": 'TCP',
-                    },
+            },
             "egress": {
                     "name": 'web',
                     "protocol": 'TCP',
                     "startport": 80,
                     "endport": 80,
                     "cidrlist": '0.0.0.0/0',
-                },
+            },
             "service_offerings":
                 {
                     "small":
@@ -75,18 +84,19 @@ class Services:
                             "cpunumber": 1,
                             "cpuspeed": 100,
                             "memory": 256,
-                            },
-                },
+                        },
+            },
             "template": {
                 "displaytext": "Cent OS Template",
                 "name": "Cent OS Template",
                 "passwordenabled": True,
-                },
+            },
             "sleep": 60,
             "timeout": 10,
             "ostype": 'CentOS 5.3 (64-bit)',
             # CentOS 5.3 (64-bit)
         }
+
 
 class TestVMPasswordEnabled(cloudstackTestCase):
 
@@ -132,33 +142,39 @@ class TestVMPasswordEnabled(cloudstackTestCase):
 
         networkid = cls.virtual_machine.nic[0].networkid
 
-        # create egress rule to allow wget of my cloud-set-guest-password script
+        # create egress rule to allow wget of my cloud-set-guest-password
+        # script
         if zone.networktype.lower() == 'advanced':
-            EgressFireWallRule.create(cls.api_client,
-                                  networkid=networkid,
-                                  protocol=cls.services["egress"]["protocol"],
-                                  startport=cls.services["egress"]["startport"],
-                                  endport=cls.services["egress"]["endport"],
-                                  cidrlist=cls.services["egress"]["cidrlist"])
+            EgressFireWallRule.create(
+                cls.api_client,
+                networkid=networkid,
+                protocol=cls.services["egress"]["protocol"],
+                startport=cls.services["egress"]["startport"],
+                endport=cls.services["egress"]["endport"],
+                cidrlist=cls.services["egress"]["cidrlist"])
 
         cls.virtual_machine.password = cls.services["small"]["password"]
         ssh = cls.virtual_machine.get_ssh_client()
 
-        #below steps are required to get the new password from VR(reset password)
-        #http://cloudstack.org/dl/cloud-set-guest-password
-        #Copy this file to /etc/init.d
-        #chmod +x /etc/init.d/cloud-set-guest-password
-        #chkconfig --add cloud-set-guest-password
+        # below steps are required to get the new password from VR
+        # (reset password)
+        # http://cloudstack.org/dl/cloud-set-guest-password
+        # Copy this file to /etc/init.d
+        # chmod +x /etc/init.d/cloud-set-guest-password
+        # chkconfig --add cloud-set-guest-password
 
         cmds = [
             "cd /etc/init.d;wget http://people.apache.org/~tsp/cloud-set-guest-password",
             "chmod +x /etc/init.d/cloud-set-guest-password",
             "chkconfig --add cloud-set-guest-password",
-            ]
+        ]
         for c in cmds:
-            result = ssh.execute(c)
+            ssh.execute(c)
 
-        #Stop virtual machine
+        # Adding delay of 120 sec to avoid data loss due to timing issue
+        time.sleep(120)
+
+        # Stop virtual machine
         cls.virtual_machine.stop(cls.api_client)
 
         # Poll listVM to ensure VM is stopped properly
@@ -200,7 +216,7 @@ class TestVMPasswordEnabled(cloudstackTestCase):
 
         cls.services["template"]["ostype"] = cls.services["ostype"]
         cls.services["template"]["ispublic"] = True
-        #Create templates for Edit, Delete & update permissions testcases
+        # Create templates for Edit, Delete & update permissions testcases
         cls.pw_enabled_template = Template.create(
             cls.api_client,
             cls.services["template"],
@@ -236,11 +252,18 @@ class TestVMPasswordEnabled(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        #Clean up, terminate the created instances
+        # Clean up, terminate the created instances
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
+    @attr(
+        tags=[
+            "advanced",
+            "advancedns",
+            "smoke",
+            "basic",
+            "sg"],
+        required_hardware="true")
     def test_11_get_vm_password(self):
         """Test get VM password for password enabled template"""
 
@@ -253,9 +276,6 @@ class TestVMPasswordEnabled(cloudstackTestCase):
 
         self.debug("Stopping VM: %s" % self.vm.name)
         self.vm.stop(self.apiclient)
-
-        # Sleep to ensure VM is stopped properly
-        time.sleep(self.services["sleep"])
 
         self.debug("Resetting VM password for VM: %s" % self.vm.name)
         password = self.vm.resetPassword(self.apiclient)
@@ -281,7 +301,8 @@ class TestVMPasswordEnabled(cloudstackTestCase):
         try:
             self.debug("SSHing into VM: %s" % self.vm.ssh_ip)
             self.vm.password = password
-            ssh = self.vm.get_ssh_client()
+            self.vm.get_ssh_client()
         except Exception as e:
-            self.fail("SSH into VM: %s failed" % self.vm.ssh_ip)
+            self.fail("SSH into VM: %s failed: %s" %
+                      (self.vm.ssh_ip, e))
         return

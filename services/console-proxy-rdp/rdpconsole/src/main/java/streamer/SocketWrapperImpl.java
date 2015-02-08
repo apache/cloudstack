@@ -32,6 +32,8 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 
+import org.apache.cloudstack.utils.security.SSLUtils;
+
 import streamer.debug.MockServer;
 import streamer.debug.MockServer.Packet;
 import streamer.ssl.SSLState;
@@ -45,8 +47,6 @@ public class SocketWrapperImpl extends PipelineImpl implements SocketWrapper {
     protected InetSocketAddress address;
 
     protected SSLSocket sslSocket;
-
-    protected String sslVersionToUse = "TLSv1.2";
 
     protected SSLState sslState;
 
@@ -132,13 +132,14 @@ public class SocketWrapperImpl extends PipelineImpl implements SocketWrapper {
             // Use most secure implementation of SSL available now.
             // JVM will try to negotiate TLS1.2, then will fallback to TLS1.0, if
             // TLS1.2 is not supported.
-            SSLContext sslContext = SSLContext.getInstance(sslVersionToUse);
+            SSLContext sslContext = SSLUtils.getSSLContext();
 
             // Trust all certificates (FIXME: insecure)
             sslContext.init(null, new TrustManager[] {new TrustAllX509TrustManager(sslState)}, null);
 
             SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
             sslSocket = (SSLSocket)sslSocketFactory.createSocket(socket, address.getHostName(), address.getPort(), true);
+            sslSocket.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslSocket.getEnabledProtocols()));
 
             sslSocket.startHandshake();
 

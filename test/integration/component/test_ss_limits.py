@@ -127,7 +127,7 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         except Exception as e:
             return [FAIL, e]
         return [PASS, None]
- 
+
     @data(ROOT_DOMAIN_ADMIN, CHILD_DOMAIN_ADMIN)
     @attr(tags = ["advanced"], required_hardware="true")
     def test_01_register_template(self, value):
@@ -206,8 +206,8 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         5. Verify that the secondary storage count of the account equals
            the size of the template"""
 
-        if self.hypervisor.lower() in ['hyperv']:
-            self.skipTest("Snapshots feature is not supported on Hyper-V")
+        if self.hypervisor.lower() in ['hyperv', 'lxc']:
+            self.skipTest("Snapshots feature is not supported on %s" % self.hypervisor.lower())
 
         response = self.setupAccount(value)
         self.assertEqual(response[0], PASS, response[1])
@@ -234,6 +234,8 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         self.assertEqual(response[0], PASS, response[1])
         snapshot = response[1]
 
+        snapshotSize = (snapshot.physicalsize / (1024 ** 3))
+
         try:
             template = Template.create_from_snapshot(apiclient,
                                         snapshot=snapshot,
@@ -249,7 +251,9 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
                         "templates list validation failed")
 
         templateSize = (templates[0].size / (1024**3))
-        response = matchResourceCount(self.apiclient, templateSize,
+
+        expectedSecondaryStorageCount = int(templateSize + snapshotSize)
+        response = matchResourceCount(self.apiclient, expectedSecondaryStorageCount,
                                       resourceType=RESOURCE_SECONDARY_STORAGE,
                                       accountid=self.account.id)
         self.assertEqual(response[0], PASS, response[1])

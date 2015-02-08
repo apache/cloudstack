@@ -98,6 +98,7 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services["mode"] = cls.zone.networktype
 
         cls.template = get_template(
@@ -282,6 +283,10 @@ class TestProjectsMemoryLimits(cloudstackTestCase):
         # 2. Deploy VM with the accounts added to the project
         # 3. Migrate VM of an accounts added to the project to a new host
         # 4. Resource count should list properly.
+
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate feature is not supported on %s" % self.hypervisor.lower())
+
 
         self.debug("Checking memory resource count for project: %s" % self.project.name)
         project_list = Project.list(self.apiclient, id=self.project.id, listall=True)

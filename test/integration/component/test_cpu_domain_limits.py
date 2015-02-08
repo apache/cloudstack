@@ -301,6 +301,9 @@ class TestDomainCPULimitsUpdateResources(cloudstackTestCase):
         # 3. Update Resource count for the domains
         # 4. Migrate instance to new host and check resource count
         # 5. Resource count should list properly.
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
 
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts()

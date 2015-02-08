@@ -980,7 +980,7 @@ public enum Config {
             String.class,
             "vm.allocation.algorithm",
             "random",
-            "'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit' : Order in which hosts within a cluster will be considered for VM/volume allocation.",
+            "'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', 'firstfitleastconsumed' : Order in which hosts within a cluster will be considered for VM/volume allocation.",
             null),
     VmDeploymentPlanner(
             "Advanced",
@@ -1400,14 +1400,6 @@ public enum Config {
             "saml2.enabled",
             "false",
             "Set it to true to enable SAML SSO plugin",
-            null),
-    SAMLUserAccountName(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "saml2.default.accountname",
-            "admin",
-            "The name of the default account to use when creating users from SAML SSO",
             null),
     SAMLUserDomain(
             "Advanced",

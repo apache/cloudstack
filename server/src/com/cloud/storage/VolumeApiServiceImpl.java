@@ -522,6 +522,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             size = snapshotCheck.getSize(); // ; disk offering is used for tags
             // purposes
 
+            minIops = snapshotCheck.getMinIops();
+            maxIops = snapshotCheck.getMaxIops();
+
             provisioningType = diskOffering.getProvisioningType();
             // check snapshot permissions
             _accountMgr.checkAccess(caller, null, true, snapshotCheck);
@@ -1171,6 +1174,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private Volume orchestrateAttachVolumeToVM(Long vmId, Long volumeId, Long deviceId) {
         VolumeInfo volumeToAttach = volFactory.getVolume(volumeId);
+
+        if (volumeToAttach.isAttachedVM()) {
+            throw new CloudRuntimeException("This volume is already attached to a VM.");
+        }
+
         UserVmVO vm = _userVmDao.findById(vmId);
         VolumeVO exstingVolumeOfVm = null;
         List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
@@ -1300,7 +1308,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("The specified VM already has the maximum number of data disks (" + maxDataVolumesSupported + "). Please specify another VM.");
             }
         }
-        deviceId = getDeviceId(vmId, deviceId);
 
         // If local storage is disabled then attaching a volume with local disk
         // offering not allowed
@@ -2297,6 +2304,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             DataTO volTO = volFactory.getVolume(volumeToAttach.getId()).getTO();
+
+            deviceId = getDeviceId(vm.getId(), deviceId);
+
             DiskTO disk = new DiskTO(volTO, deviceId, volumeToAttach.getPath(), volumeToAttach.getVolumeType());
 
             AttachCommand cmd = new AttachCommand(disk, vm.getInstanceName());

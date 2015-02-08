@@ -82,7 +82,7 @@
     <!--
     <Connector port="8443" protocol="HTTP/1.1" SSLEnabled="true"
                maxThreads="150" scheme="https" secure="true"
-               clientAuth="false" sslProtocol="TLS" 
+               clientAuth="false" sslProtocol="TLS" sslEnabledProtocols="TLSv1.2,TLSv1.1"
                keystoreType="PKCS12"
 	       keystoreFile="conf\cloud-localhost.pk12" 
 	       keystorePass="password"

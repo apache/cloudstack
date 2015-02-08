@@ -522,7 +522,7 @@ class TestIpAddresses(cloudstackTestCase):
         Step9: Verifying the details of the Listed IP Address
         """
         if self.hypervisor.lower() in ['hyperv']:
-            raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
+            self.skipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # Listing all the vpc's for a user
         list_vpc_before = VPC.list(self.userapiclient)
         # Verifying No VPCs are listed
@@ -857,7 +857,7 @@ class TestIpAddresses(cloudstackTestCase):
         Step11: Verifying that no Load Balancer Rules are listed
         """
         if self.hypervisor.lower() in ['hyperv']:
-            raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
+            self.skipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # Listing all the vpc's for a user
         list_vpc_before = VPC.list(self.userapiclient)
         # Verifying No VPCs are listed
@@ -3035,7 +3035,7 @@ class TestIpAddresses(cloudstackTestCase):
         Step8: Verifying that StaticNat is disabled
         """
         if self.hypervisor.lower() in ['hyperv']:
-            raise unittest.SkipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
+            self.skipTest("This feature is not supported on existing hypervisor. Hence, skipping the test")
         # Listing all the vpc's for a user
         list_vpc_before = VPC.list(self.userapiclient)
         # Verifying No VPCs are listed
@@ -3454,7 +3454,7 @@ class TestIpAddresses(cloudstackTestCase):
         Step18: Verifying Autoscale policy is updated with condition2
         """
         if self.hypervisor.lower() == 'kvm':
-            raise unittest.SkipTest(
+            self.skipTest(
                 "ScaleVM is not supported on KVM. Hence, skipping the test")
 
         list_physical_networks = PhysicalNetwork.list(
@@ -3733,7 +3733,7 @@ class TestIpAddresses(cloudstackTestCase):
         Step16: Verifying that Autoscale VM is updated
         """
         if self.hypervisor.lower() == 'kvm':
-            raise unittest.SkipTest(
+            self.skipTest(
                 "ScaleVM is not supported on KVM. Hence, skipping the test")
 
         list_physical_networks = PhysicalNetwork.list(
@@ -4060,7 +4060,7 @@ class TestIpAddresses(cloudstackTestCase):
         Step14: Enabling Autoscale VM group and verifying it was enabled
         """
         if self.hypervisor.lower() == 'kvm':
-            raise unittest.SkipTest(
+            self.skipTest(
                 "ScaleVM is not supported on KVM. Hence, skipping the test")
 
         list_physical_networks = PhysicalNetwork.list(

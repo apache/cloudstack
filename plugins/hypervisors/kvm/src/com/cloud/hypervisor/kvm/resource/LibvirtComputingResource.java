@@ -784,7 +784,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         _localStorageUUID = (String)params.get("local.storage.uuid");
         if (_localStorageUUID == null) {
-            _localStorageUUID = UUID.nameUUIDFromBytes(_localStoragePath.getBytes()).toString();
+            _localStorageUUID = UUID.randomUUID().toString();
         }
 
         value = (String)params.get("scripts.timeout");
@@ -3726,7 +3726,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             clock.setClockOffset(ClockDef.ClockOffset.LOCALTIME);
             clock.setTimer("rtc", "catchup", null);
         } else if (vmTO.getType() != VirtualMachine.Type.User || isGuestPVEnabled(vmTO.getOs())) {
-            clock.setTimer("kvmclock", "catchup", null, _noKvmClock);
+            clock.setTimer("kvmclock", null, null, _noKvmClock);
         }
 
         vm.addComp(clock);
@@ -4078,6 +4078,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return _storagePoolMgr.disconnectPhysicalDiskByPath(path);
+    }
+
+    protected KVMStoragePoolManager getPoolManager() {
+        return _storagePoolMgr;
     }
 
     protected synchronized String attachOrDetachISO(Connect conn, String vmName, String isoPath, boolean isAttach) throws LibvirtException, URISyntaxException,
@@ -4744,7 +4748,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 guestOSName.startsWith("CentOS 5.5") || guestOSName.startsWith("CentOS") || guestOSName.startsWith("Fedora") ||
                 guestOSName.startsWith("Red Hat Enterprise Linux 5.3") || guestOSName.startsWith("Red Hat Enterprise Linux 5.4") ||
                 guestOSName.startsWith("Red Hat Enterprise Linux 5.5") || guestOSName.startsWith("Red Hat Enterprise Linux 6") || guestOSName.startsWith("Debian GNU/Linux") ||
-                guestOSName.startsWith("FreeBSD 10") || guestOSName.startsWith("Other PV")) {
+                guestOSName.startsWith("FreeBSD 10") || guestOSName.startsWith("Oracle Enterprise Linux") || guestOSName.startsWith("Other PV")) {
             return true;
         } else {
             return false;

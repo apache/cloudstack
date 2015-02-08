@@ -53,6 +53,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.cloudstack.utils.security.SSLUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -505,6 +506,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                         SSLContext sslContext = Link.initSSLContext(true);
                         sslEngine = sslContext.createSSLEngine(ip, Port.value());
                         sslEngine.setUseClientMode(true);
+                        sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
 
                         Link.doHandshake(ch1, sslEngine, true);
                         s_logger.info("SSL: Handshake done");

@@ -204,6 +204,25 @@ def get_domain(apiclient, domain_id=None, domain_name=None):
     return cmd_out[0]
 
 
+def find_storage_pool_type(apiclient, storagetype='NetworkFileSystem'):
+    """
+    @name : find_storage_pool_type
+    @Desc : Returns true if the given storage pool type exists
+    @Input : type : type of the storage pool[NFS, RBD, etc.,]
+    @Output : True : if the type of storage is found
+              False : if the type of storage is not found
+              FAILED In case the cmd failed
+    """
+    cmd = listStoragePools.listStoragePoolsCmd()
+    cmd_out = apiclient.listStoragePools(cmd)
+    if validateList(cmd_out)[0] != PASS:
+        return FAILED
+    for storage_pool in cmd_out:
+        if storage_pool.type.lower() == storagetype:
+            return True
+    return False
+
+
 def get_zone(apiclient, zone_name=None, zone_id=None):
     '''
     @name : get_zone

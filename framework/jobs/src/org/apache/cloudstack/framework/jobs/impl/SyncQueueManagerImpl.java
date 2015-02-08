@@ -142,7 +142,7 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
                         for(SyncQueueItemVO item : l) {
                             SyncQueueVO queueVO = _syncQueueDao.findById(item.getQueueId());
                             SyncQueueItemVO itemVO = _syncQueueItemDao.findById(item.getId());
-                            if(queueReadyToProcess(queueVO) && itemVO.getLastProcessNumber() == null) {
+                            if(queueReadyToProcess(queueVO) && itemVO != null && itemVO.getLastProcessNumber() == null) {
                                 Long processNumber = queueVO.getLastProcessNumber();
                                 if (processNumber == null)
                                     processNumber = new Long(1);
@@ -220,6 +220,7 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
                         itemVO.setLastProcessTime(null);
                         _syncQueueItemDao.update(queueItemId, itemVO);
 
+                        queueVO.setQueueSize(queueVO.getQueueSize() - 1);
                         queueVO.setLastUpdated(DateUtil.currentGMTTime());
                         _syncQueueDao.update(queueVO.getId(), queueVO);
                     }

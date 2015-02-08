@@ -38,7 +38,7 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteIsoCmd.class.getName());
-    private static final String s_name = "deleteisosresponse";
+    private static final String s_name = "deleteisoresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

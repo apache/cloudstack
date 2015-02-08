@@ -817,12 +817,8 @@ class TestSSVMs(cloudstackTestCase):
             old_public_ip,
             "Check Public IP after reboot with that of before reboot"
         )
-
-        self.assertEqual(
-            ssvm_response.privateip,
-            old_private_ip,
-            "Check Private IP after reboot with that of before reboot"
-        )
+        
+        # Private IP Address of System VMs are allowed to change after reboot - CLOUDSTACK-7745
 
         # Wait for the agent to be up
         self.waitForSystemVMAgent(ssvm_response.name)
@@ -915,11 +911,8 @@ class TestSSVMs(cloudstackTestCase):
             "Check Public IP after reboot with that of before reboot"
         )
 
-        self.assertEqual(
-            cpvm_response.privateip,
-            old_private_ip,
-            "Check Private IP after reboot with that of before reboot"
-        )
+        # Private IP Address of System VMs are allowed to change after reboot - CLOUDSTACK-7745
+        
         # Wait for the agent to be up
         self.waitForSystemVMAgent(cpvm_response.name)
 

@@ -92,7 +92,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                         host=ghost.ipaddress,
                         port=cls.testdata['configurableData']['host']["publicport"],
                         user=cls.testdata['configurableData']['host']["username"],
-                        passwd=cls.testdata['configurabledata']['host']["password"])
+                        passwd=cls.testdata['configurableData']['host']["password"])
 
                     if ghost.hypervisorversion == "6.2.0":
                         res = len(
@@ -326,9 +326,9 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         )
         ssh_client = SshClient(
             host=vgpu_host[0].ipaddress,
-            port=self.testdata['configurabledata']['host']["publicport"],
-            user=self.testdata['configurabledata']['host']["username"],
-            passwd=self.testdata['configurabledata']['host']["password"])
+            port=self.testdata['configurableData']['host']["publicport"],
+            user=self.testdata['configurableData']['host']["username"],
+            passwd=self.testdata['configurableData']['host']["password"])
         """
         Get vGPU type model
         """
@@ -1051,9 +1051,9 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         )
         ssh_client = SshClient(
             host=vgpu_host[0].ipaddress,
-            port=self.testdata['configurabledata']['host']["publicport"],
-            user=self.testdata['configurabledata']['host']["username"],
-            passwd=self.testdata['configurabledata']['host']["password"])
+            port=self.testdata['configurableData']['host']["publicport"],
+            user=self.testdata['configurableData']['host']["username"],
+            passwd=self.testdata['configurableData']['host']["password"])
         """
         Get vGPU type model
         """
@@ -1192,9 +1192,9 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         )
         ssh_client = SshClient(
             host=vgpu_host[0].ipaddress,
-            port=self.testdata['configurabledata']['host']["publicport"],
-            user=self.testdata['configurabledata']['host']["username"],
-            passwd=self.testdata['configurabledata']['host']["password"])
+            port=self.testdata['configurableData']['host']["publicport"],
+            user=self.testdata['configurableData']['host']["username"],
+            passwd=self.testdata['configurableData']['host']["password"])
 
         vgpu_snapshot = ssh_client.execute(
             "xe snapshot-list name-label=" +
@@ -1265,9 +1265,9 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         )
         ssh_client = SshClient(
             host=vgpu_host[0].ipaddress,
-            port=self.testdata['configurabledata']['host']["publicport"],
-            user=self.testdata['configurabledata']['host']["username"],
-            passwd=self.testdata['configurabledata']['host']["password"])
+            port=self.testdata['configurableData']['host']["publicport"],
+            user=self.testdata['configurableData']['host']["username"],
+            passwd=self.testdata['configurableData']['host']["password"])
 
         vgpu_snapshot = ssh_client.execute(
             "xe snapshot-list name-label=" +
@@ -1636,9 +1636,9 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         sshClient1 = SshClient(
             host=lhosts[0].ipaddress,
-            port=self.testdata['configurabledata']['host']["publicport"],
-            user=self.testdata['configurabledata']['host']["username"],
-            passwd=self.testdata['configurabledata']['host']["password"])
+            port=self.testdata['configurableData']['host']["publicport"],
+            user=self.testdata['configurableData']['host']["username"],
+            passwd=self.testdata['configurableData']['host']["password"])
         totalxenhosts = len(sshClient1.execute("xe host-list | grep uuid"))
 
         for hostlist in lhosts:

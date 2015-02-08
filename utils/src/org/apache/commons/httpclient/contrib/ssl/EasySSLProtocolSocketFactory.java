@@ -19,6 +19,7 @@
 
 package org.apache.commons.httpclient.contrib.ssl;
 
+import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.apache.commons.httpclient.HttpClientError;
 import org.apache.commons.httpclient.params.HttpConnectionParams;
@@ -28,6 +29,7 @@ import org.apache.commons.logging.LogFactory;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -99,7 +101,7 @@ public class EasySSLProtocolSocketFactory implements ProtocolSocketFactory {
 
     private static SSLContext createEasySSLContext() {
         try {
-            SSLContext context = SSLContext.getInstance("SSL");
+            SSLContext context = SSLUtils.getSSLContext();
             context.init(null, new TrustManager[] {new EasyX509TrustManager(null)}, null);
             return context;
         } catch (Exception e) {
@@ -120,8 +122,11 @@ public class EasySSLProtocolSocketFactory implements ProtocolSocketFactory {
      */
     @Override
     public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort) throws IOException, UnknownHostException {
-
-        return getSSLContext().getSocketFactory().createSocket(host, port, clientHost, clientPort);
+        Socket socket = getSSLContext().getSocketFactory().createSocket(host, port, clientHost, clientPort);
+        if (socket instanceof SSLSocket) {
+            ((SSLSocket)socket).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket)socket).getEnabledProtocols()));
+        }
+        return socket;
     }
 
     /**
@@ -135,8 +140,8 @@ public class EasySSLProtocolSocketFactory implements ProtocolSocketFactory {
      *
      * @param host the host name/IP
      * @param port the port on the host
-     * @param clientHost the local host name/IP to bind the socket to
-     * @param clientPort the port on the local machine
+     * @param localAddress the local host name/IP to bind the socket to
+     * @param localPort the port on the local machine
      * @param params {@link HttpConnectionParams Http connection parameters}
      *
      * @return Socket a new socket
@@ -154,9 +159,16 @@ public class EasySSLProtocolSocketFactory implements ProtocolSocketFactory {
         int timeout = params.getConnectionTimeout();
         SocketFactory socketfactory = getSSLContext().getSocketFactory();
         if (timeout == 0) {
-            return socketfactory.createSocket(host, port, localAddress, localPort);
+            Socket socket = socketfactory.createSocket(host, port, localAddress, localPort);
+            if (socket instanceof SSLSocket) {
+                ((SSLSocket)socket).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket)socket).getEnabledProtocols()));
+            }
+            return socket;
         } else {
             Socket socket = socketfactory.createSocket();
+            if (socket instanceof SSLSocket) {
+                ((SSLSocket)socket).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket)socket).getEnabledProtocols()));
+            }
             SocketAddress localaddr = new InetSocketAddress(localAddress, localPort);
             SocketAddress remoteaddr = new InetSocketAddress(host, port);
             socket.bind(localaddr);
@@ -170,11 +182,19 @@ public class EasySSLProtocolSocketFactory implements ProtocolSocketFactory {
      */
     @Override
     public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
-        return getSSLContext().getSocketFactory().createSocket(host, port);
+        Socket socket = (Socket) getSSLContext().getSocketFactory().createSocket(host, port);
+        if (socket instanceof SSLSocket) {
+            ((SSLSocket)socket).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket)socket).getEnabledProtocols()));
+        }
+        return socket;
     }
 
     public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
-        return getSSLContext().getSocketFactory().createSocket(socket, host, port, autoClose);
+        Socket s = getSSLContext().getSocketFactory().createSocket(socket, host, port, autoClose);
+        if (s instanceof SSLSocket) {
+            ((SSLSocket)s).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket)s).getEnabledProtocols()));
+        }
+        return s;
     }
 
     @Override

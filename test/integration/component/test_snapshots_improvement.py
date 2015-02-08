@@ -133,6 +133,9 @@ class TestSnapshotOnRootVolume(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['lxc']:
+            raise unittest.SkipTest("snapshots are not supported on %s" % cls.hypervisor.lower())
         cls.template = get_template(
                                     cls.api_client,
                                     cls.zone.id,
@@ -304,8 +307,8 @@ class TestCreateSnapshot(cloudstackTestCase):
         cls.testClient = super(TestCreateSnapshot, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
         cls.hypervisor = cls.testClient.getHypervisorInfo()
-        if cls.hypervisor.lower() in ['hyperv']:
-            raise unittest.SkipTest("Snapshots feature is not supported on Hyper-V")
+        if cls.hypervisor.lower() in ['hyperv', 'lxc']:
+            raise unittest.SkipTest("Snapshots feature is not supported on %s" % cls.hypervisor.lower())
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
@@ -554,6 +557,9 @@ class TestCreateSnapshot(cloudstackTestCase):
         # Validate the following
         # a. Check all snapshots jobs are running concurrently on backgrounds
         # b. listSnapshots should list this newly created snapshot.
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
 
         self.debug("Create virtual machine and snapshot on ROOT disk volume")
         self.create_Snapshot_VM()

@@ -16,56 +16,31 @@
 // under the License.
 package com.cloud.usage;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
+import com.cloud.configuration.Config;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.VpnUserVO;
-import com.cloud.network.dao.LoadBalancerVO;
-import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
-import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
-import org.apache.cloudstack.api.response.UsageTypeResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.usage.Usage;
-import org.apache.cloudstack.usage.UsageService;
-import org.apache.cloudstack.usage.UsageTypes;
-
-import com.cloud.configuration.Config;
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.projects.Project;
-import com.cloud.projects.ProjectManager;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageJobDao;
 import com.cloud.user.Account;
@@ -78,6 +53,29 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
+import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
+import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
+import org.apache.cloudstack.api.response.UsageTypeResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.usage.Usage;
+import org.apache.cloudstack.usage.UsageService;
+import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 
 @Component
 @Local(value = {UsageService.class})
@@ -373,6 +371,41 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
     @Override
     public TimeZone getUsageTimezone() {
         return _usageTimezone;
+    }
+
+    @Override
+    public boolean removeRawUsageRecords(RemoveRawUsageRecordsCmd cmd) throws InvalidParameterValueException {
+        Integer interval = cmd.getInterval();
+        if (interval != null && interval > 0 ) {
+            String jobExecTime = _configDao.getValue(Config.UsageStatsJobExecTime.toString());
+            if (jobExecTime != null ) {
+                String[] segments = jobExecTime.split(":");
+                if (segments.length == 2) {
+                    String timeZoneStr = _configDao.getValue(Config.UsageExecutionTimezone.toString());
+                    if (timeZoneStr == null) {
+                        timeZoneStr = "GMT";
+                    }
+                    TimeZone tz = TimeZone.getTimeZone(timeZoneStr);
+                    Calendar cal = Calendar.getInstance(tz);
+                    cal.setTime(new Date());
+                    long curTS = cal.getTimeInMillis();
+                    cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(segments[0]));
+                    cal.set(Calendar.MINUTE, Integer.parseInt(segments[1]));
+                    cal.set(Calendar.SECOND, 0);
+                    cal.set(Calendar.MILLISECOND, 0);
+                    long execTS = cal.getTimeInMillis();
+                    s_logger.debug("Trying to remove old raw cloud_usage records older than " + interval + " day(s), current time=" + curTS + " next job execution time=" + execTS);
+                    // Let's avoid cleanup when job runs and around a 15 min interval
+                    if (Math.abs(curTS - execTS) < 15 * 60 * 1000) {
+                        return false;
+                    }
+                }
+            }
+            _usageDao.removeOldUsageRecords(interval);
+        } else {
+            throw new InvalidParameterValueException("Invalid interval value. Interval to remove cloud_usage records should be greater than 0");
+        }
+        return true;
     }
 
     private Date computeAdjustedTime(Date initialDate, TimeZone targetTZ, boolean adjustToDayStart) {

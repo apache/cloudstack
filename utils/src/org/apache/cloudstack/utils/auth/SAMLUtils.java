@@ -20,10 +20,12 @@
 package org.apache.cloudstack.utils.auth;
 
 import com.cloud.utils.HttpUtils;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.x509.X509V1CertificateGenerator;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.opensaml.Configuration;
 import org.opensaml.common.SAMLVersion;
 import org.opensaml.common.xml.SAMLConstants;
@@ -88,7 +90,6 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Date;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 
@@ -96,18 +97,26 @@ public class SAMLUtils {
     public static final Logger s_logger = Logger.getLogger(SAMLUtils.class);
 
     public static final String SAML_RESPONSE = "SAMLResponse";
-    public static final String SAML_NS = "saml://";
+    public static final String SAML_NS = "SAML-";
     public static final String SAML_NAMEID = "SAML_NAMEID";
     public static final String SAML_SESSION = "SAML_SESSION";
-    public static final String CERTIFICATE_NAME = "SAMLSP_CERTIFICATE";
+    public static final String SAMLSP_KEYPAIR = "SAMLSP_KEYPAIR";
+    public static final String SAMLSP_X509CERT = "SAMLSP_X509CERT";
 
     public static String createSAMLId(String uid) {
-        String samlUuid = SAML_NS + uid;
-        return samlUuid.length() > 40 ? samlUuid.substring(0, 40) : samlUuid;
+        if (uid == null)  {
+            return null;
+        }
+        String hash = DigestUtils.sha256Hex(uid);
+        String samlUuid = SAML_NS + hash;
+        return samlUuid.substring(0, 40);
     }
 
-    public static Boolean checkSAMLUserId(String uuid) {
-        return uuid.startsWith(SAML_NS);
+    public static boolean checkSAMLUser(String uuid, String username) {
+        if (uuid == null || uuid.isEmpty() || username == null || username.isEmpty()) {
+            return false;
+        }
+        return uuid.startsWith(SAML_NS) && createSAMLId(username).equals(uuid);
     }
 
     public static String generateSecureRandomId() {
@@ -139,7 +148,7 @@ public class SAMLUtils {
         RequestedAuthnContextBuilder requestedAuthnContextBuilder = new RequestedAuthnContextBuilder();
         RequestedAuthnContext requestedAuthnContext = requestedAuthnContextBuilder.buildObject();
         requestedAuthnContext
-                .setComparison(AuthnContextComparisonTypeEnumeration.MINIMUM);
+                .setComparison(AuthnContextComparisonTypeEnumeration.EXACT);
         requestedAuthnContext.getAuthnContextClassRefs().add(
                 authnContextClassRef);
 
@@ -157,7 +166,7 @@ public class SAMLUtils {
         authnRequest.setAssertionConsumerServiceURL(consumerUrl);
         authnRequest.setProviderName(spId);
         authnRequest.setNameIDPolicy(nameIdPolicy);
-        //authnRequest.setRequestedAuthnContext(requestedAuthnContext);
+        authnRequest.setRequestedAuthnContext(requestedAuthnContext);
 
         return authnRequest;
     }
@@ -300,23 +309,21 @@ public class SAMLUtils {
     public static KeyPair generateRandomKeyPair() throws NoSuchProviderException, NoSuchAlgorithmException {
         Security.addProvider(new BouncyCastleProvider());
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", "BC");
-        keyPairGenerator.initialize(2048, new SecureRandom());
+        keyPairGenerator.initialize(4096, new SecureRandom());
         return keyPairGenerator.generateKeyPair();
     }
 
     public static X509Certificate generateRandomX509Certificate(KeyPair keyPair) throws NoSuchAlgorithmException, NoSuchProviderException, CertificateEncodingException, SignatureException, InvalidKeyException {
-        Date validityBeginDate = new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000);
-        Date validityEndDate = new Date(System.currentTimeMillis() + 365 * 24 * 60 * 60 * 1000);
-        X500Principal dnName = new X500Principal("CN=Apache CloudStack");
+        DateTime now = DateTime.now(DateTimeZone.UTC);
+        X500Principal dnName = new X500Principal("CN=ApacheCloudStack");
         X509V1CertificateGenerator certGen = new X509V1CertificateGenerator();
         certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
         certGen.setSubjectDN(dnName);
         certGen.setIssuerDN(dnName);
-        certGen.setNotBefore(validityBeginDate);
-        certGen.setNotAfter(validityEndDate);
+        certGen.setNotBefore(now.minusDays(1).toDate());
+        certGen.setNotAfter(now.plusYears(3).toDate());
         certGen.setPublicKey(keyPair.getPublic());
         certGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
-
         return certGen.generate(keyPair.getPrivate(), "BC");
     }
 

@@ -179,7 +179,7 @@ version="1.0">
                     <li> <a href="#"> Contacts</a> </li>
 
                 </ul>
-                <p>Copyright © 2014 The Apache Software Foundation, Licensed under the
+                <p>Copyright © 2015 The Apache Software Foundation, Licensed under the
                    <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0.</a> <br />
                 Apache, CloudStack, Apache CloudStack, the Apache CloudStack logo, the CloudMonkey logo  and the Apache feather logo are trademarks of The Apache Software Foundation.</p>
 

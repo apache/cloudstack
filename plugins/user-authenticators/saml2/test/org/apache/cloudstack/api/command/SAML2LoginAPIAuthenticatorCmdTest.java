@@ -22,10 +22,9 @@ package org.apache.cloudstack.api.command;
 import com.cloud.domain.Domain;
 import com.cloud.user.AccountService;
 import com.cloud.user.DomainManager;
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
+import com.cloud.user.UserAccountVO;
+import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.HttpUtils;
-import com.cloud.utils.db.EntityManager;
 import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
@@ -80,13 +79,13 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
     ConfigurationDao configDao;
 
     @Mock
-    EntityManager entityMgr;
-
-    @Mock
     DomainManager domainMgr;
 
     @Mock
     AccountService accountService;
+
+    @Mock
+    UserAccountDao userAccountDao;
 
     @Mock
     Domain domain;
@@ -139,10 +138,6 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
         accountServiceField.setAccessible(true);
         accountServiceField.set(cmd, accountService);
 
-        Field entityMgrField = SAML2LoginAPIAuthenticatorCmd.class.getDeclaredField("_entityMgr");
-        entityMgrField.setAccessible(true);
-        entityMgrField.set(cmd, entityMgr);
-
         Field domainMgrField = SAML2LoginAPIAuthenticatorCmd.class.getDeclaredField("_domainMgr");
         domainMgrField.setAccessible(true);
         domainMgrField.set(cmd, domainMgr);
@@ -150,6 +145,10 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
         Field configDaoField = SAML2LoginAPIAuthenticatorCmd.class.getDeclaredField("_configDao");
         configDaoField.setAccessible(true);
         configDaoField.set(cmd, configDao);
+
+        Field userAccountDaoField = SAML2LoginAPIAuthenticatorCmd.class.getDeclaredField("_userAccountDao");
+        userAccountDaoField.setAccessible(true);
+        userAccountDaoField.set(cmd, userAccountDao);
 
         String spId = "someSPID";
         String url = "someUrl";
@@ -164,9 +163,10 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
 
         Mockito.when(domain.getId()).thenReturn(1L);
         Mockito.when(domainMgr.getDomain(Mockito.anyString())).thenReturn(domain);
-        UserVO user = new UserVO();
-        user.setUuid(SAMLUtils.createSAMLId("someUID"));
-        Mockito.when(entityMgr.findByUuid(Mockito.eq(User.class), Mockito.anyString())).thenReturn((User) user);
+        UserAccountVO user = new UserAccountVO();
+        user.setUsername(SAMLUtils.createSAMLId("someUID"));
+        user.setId(1000L);
+        Mockito.when(userAccountDao.getUserAccount(Mockito.anyString(), Mockito.anyLong())).thenReturn(user);
         Mockito.when(apiServer.verifyUser(Mockito.anyLong())).thenReturn(false);
 
         Map<String, Object[]> params = new HashMap<String, Object[]>();
@@ -184,7 +184,7 @@ public class SAML2LoginAPIAuthenticatorCmdTest {
         }
         Mockito.verify(configDao, Mockito.atLeastOnce()).getValue(Mockito.anyString());
         Mockito.verify(domainMgr, Mockito.times(1)).getDomain(Mockito.anyString());
-        Mockito.verify(entityMgr, Mockito.times(1)).findByUuid(Mockito.eq(User.class), Mockito.anyString());
+        Mockito.verify(userAccountDao, Mockito.times(1)).getUserAccount(Mockito.anyString(), Mockito.anyLong());
         Mockito.verify(apiServer, Mockito.times(1)).verifyUser(Mockito.anyLong());
     }
 

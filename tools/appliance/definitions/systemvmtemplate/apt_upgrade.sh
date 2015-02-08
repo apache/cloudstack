@@ -30,6 +30,7 @@ function apt_upgrade() {
 
   add_backports
 
+  apt-get clean
   apt-get -q -y --force-yes update
   apt-get -q -y --force-yes upgrade
 }

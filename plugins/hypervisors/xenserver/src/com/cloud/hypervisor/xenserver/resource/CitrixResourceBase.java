@@ -1325,6 +1325,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         vmr.actionsAfterCrash = Types.OnCrashBehaviour.DESTROY;
         vmr.actionsAfterShutdown = Types.OnNormalExit.DESTROY;
         vmr.otherConfig.put("vm_uuid", vmSpec.getUuid());
+        vmr.VCPUsMax = (long) vmSpec.getCpus(); // FIX ME: In case of dynamic scaling this VCPU max should be the minumum of
+                                                // recommended value for that template and capacity remaining on host
 
         if (isDmcEnabled(conn, host) && vmSpec.isEnableDynamicallyScaleVm()) {
             //scaling is allowed
@@ -1333,13 +1335,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vmr.memoryDynamicMin = vmSpec.getMinRam();
             vmr.memoryDynamicMax = vmSpec.getMaxRam();
             if (guestOsTypeName.toLowerCase().contains("windows")) {
-                vmr.VCPUsMax = (long)vmSpec.getCpus();
+                vmr.VCPUsMax = (long) vmSpec.getCpus();
             } else {
-                // XenServer has a documented limit of 16 vcpus per vm
-                vmr.VCPUsMax = 2L * vmSpec.getCpus();
-                if (vmr.VCPUsMax > 16)
-                {
-                    vmr.VCPUsMax = 16L;
+                if (vmSpec.getVcpuMaxLimit() != null) {
+                    vmr.VCPUsMax = (long) vmSpec.getVcpuMaxLimit();
                 }
             }
         } else {
@@ -1347,15 +1346,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (vmSpec.isEnableDynamicallyScaleVm() && !isDmcEnabled(conn, host)) {
                 s_logger.warn("Host " + host.getHostname(conn) + " does not support dynamic scaling, so the vm " + vmSpec.getName() + " is not dynamically scalable");
             }
-            vmr.memoryStaticMin = vmSpec.getMaxRam();
+            vmr.memoryStaticMin = vmSpec.getMinRam();
             vmr.memoryStaticMax = vmSpec.getMaxRam();
-            vmr.memoryDynamicMin = vmSpec.getMaxRam();;
+            vmr.memoryDynamicMin = vmSpec.getMinRam();;
             vmr.memoryDynamicMax = vmSpec.getMaxRam();
-            vmr.VCPUsMax = (long)vmSpec.getCpus();
+
+            vmr.VCPUsMax = (long) vmSpec.getCpus();
         }
 
-
-        vmr.VCPUsAtStartup = (long)vmSpec.getCpus();
+        vmr.VCPUsAtStartup = (long) vmSpec.getCpus();
         vmr.consoles.clear();
 
         VM vm = VM.create(conn, vmr);
@@ -2869,6 +2868,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (sr == null) {
             return;
         }
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(logX(sr, "Removing SR"));
         }
@@ -2876,34 +2876,49 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         for (int i = 0; i < 2; i++) {
             try {
                 Set<VDI> vdis = sr.getVDIs(conn);
+
                 for (VDI vdi : vdis) {
+                    Set<VBD> vbds = vdi.getVBDs(conn);
+
+                    for (VBD vbd : vbds) {
+                        vbd.unplug(conn);
+                    }
+
                     vdi.forget(conn);
                 }
+
                 Set<PBD> pbds = sr.getPBDs(conn);
+
                 for (PBD pbd : pbds) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug(logX(pbd, "Unplugging pbd"));
                     }
-                    if (pbd.getCurrentlyAttached(conn)) {
-                        pbd.unplug(conn);
-                    }
+
+//                    if (pbd.getCurrentlyAttached(conn)) {
+                    pbd.unplug(conn);
+//                    }
+
                     pbd.destroy(conn);
                 }
 
                 pbds = sr.getPBDs(conn);
+
                 if (pbds.size() == 0) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug(logX(sr, "Forgetting"));
                     }
+
                     sr.forget(conn);
+
                     return;
                 }
 
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(logX(sr, "There are still pbd attached"));
+                    s_logger.debug(logX(sr, "There is still one or more PBDs attached."));
+
                     if (s_logger.isTraceEnabled()) {
                         for (PBD pbd : pbds) {
-                            s_logger.trace(logX(pbd, " Still attached"));
+                            s_logger.trace(logX(pbd, "Still attached"));
                         }
                     }
                 }
@@ -2913,6 +2928,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.debug(logX(sr, "Catch Exception: " + e.getMessage()));
             }
         }
+
         s_logger.warn(logX(sr, "Unable to remove SR"));
     }
 

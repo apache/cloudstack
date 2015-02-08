@@ -321,6 +321,7 @@
                                                 data: items
                                             });
                                         }
+
                                     },
                                     url: {
                                         label: 'label.url',
@@ -328,7 +329,37 @@
                                         validation: {
                                             required: true
                                         }
-                                    },
+                                    },                                                                         
+                                    diskOffering: {
+                                        label: 'Custom Disk Offering',
+                                        docID: 'helpVolumeDiskOffering',
+                                        select: function(args) {
+                                        	var diskofferingObjs;
+                                        	$.ajax({
+                                                url: createURL("listDiskOfferings"),
+                                                dataType: "json",
+                                                async: false,
+                                                success: function(json) {
+                                                    diskofferingObjs = json.listdiskofferingsresponse.diskoffering;
+                                                    var items = [{
+                                                    	id: '',
+                                                        description: ''
+                                                    }];
+                                                    $(diskofferingObjs).each(function() {
+                                                    	if (this.iscustomized == true) {                                                    	
+	                                                        items.push({
+	                                                            id: this.id,
+	                                                            description: this.displaytext
+	                                                        });
+                                                    	}
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    },      
                                     checksum: {
                                         docID: 'helpUploadVolumeChecksum',
                                         label: 'label.md5.checksum'
@@ -344,6 +375,12 @@
                                     url: args.data.url
                                 };
 
+                                if (args.data.diskOffering != '' && args.data.diskOffering.length > 0) {                                	
+                                	$.extend(data, {
+                                		diskofferingid: args.data.diskOffering
+                                    });
+                                }
+                                                                
                                 if (args.data.checksum != null && args.data.checksum.length > 0) {
                                     $.extend(data, {
                                         checksum: args.data.checksum

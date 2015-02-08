@@ -18,7 +18,7 @@
 """
 # Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 
 from marvin.lib.base import (Snapshot,
                              Template,
@@ -167,6 +167,9 @@ class TestSnapshots(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['lxc']:
+            raise unittest.SkipTest("snapshots are not supported on %s" % cls.hypervisor.lower())
         cls.disk_offering = DiskOffering.create(
             cls.api_client,
             cls.services["disk_offering"]
@@ -249,6 +252,8 @@ class TestSnapshots(cloudstackTestCase):
     def test_02_snapshot_data_disk(self):
         """Test Snapshot Data Disk
         """
+        if self.hypervisor.lower() in ['hyperv']:
+            self.skipTest("Snapshots feature is not supported on Hyper-V")
 
         volume = list_volumes(
             self.apiclient,
@@ -317,6 +322,9 @@ class TestSnapshots(cloudstackTestCase):
         # 5. Create another Volume from snapshot
         # 6. Mount/Attach volume to another virtual machine
         # 7. Compare data, data should match
+
+        if self.hypervisor.lower() in ['hyperv']:
+            self.skipTest("Snapshots feature is not supported on Hyper-V")
 
         random_data_0 = random_gen(size=100)
         random_data_1 = random_gen(size=100)
@@ -560,6 +568,9 @@ class TestSnapshots(cloudstackTestCase):
         # 3. Verify snapshot is removed by calling List Snapshots API
         # 4. Verify snapshot was removed from image store
 
+        if self.hypervisor.lower() in ['hyperv']:
+            self.skipTest("Snapshots feature is not supported on Hyper-V")
+
         self.debug("Creating volume under account: %s" % self.account.name)
         volume = Volume.create(
             self.apiclient,
@@ -634,6 +645,9 @@ class TestSnapshots(cloudstackTestCase):
         # 4. listvolumes with VM id shouldn't show the detached volume
         # 5. listSnapshots should list the snapshot that was created
         # 6. verify backup_snap_id was non null in the `snapshots` table
+
+        if self.hypervisor.lower() in ['hyperv']:
+            self.skipTest("Snapshots feature is not supported on Hyper-V")
 
         volumes = list_volumes(
             self.apiclient,
@@ -764,6 +778,9 @@ class TestSnapshots(cloudstackTestCase):
         # 5. Login to newly created virtual machine
         # 6. Compare data in the root disk with the one that was written on the
         # volume, it should match
+
+        if self.hypervisor.lower() in ['hyperv']:
+            self.skipTest("Snapshots feature is not supported on Hyper-V")
 
         userapiclient = self.testClient.getUserApiClient(
             UserName=self.account.name,
@@ -955,6 +972,9 @@ class TestCreateVMSnapshotTemplate(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['lxc']:
+            raise unittest.SkipTest("snapshots are not supported on %s" % cls.hypervisor.lower())
 
         cls.template = get_template(
             cls.api_client,
@@ -1169,6 +1189,9 @@ class TestSnapshotEvents(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['lxc']:
+            raise unittest.SkipTest("snapshots are not supported on %s" % cls.hypervisor.lower())
 
         template = get_template(
             cls.api_client,

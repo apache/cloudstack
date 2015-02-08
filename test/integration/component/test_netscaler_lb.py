@@ -2478,6 +2478,9 @@ class TestVmWithLb(cloudstackTestCase):
         # 2. migrate one Vm to another host.
         # 3. Test whether the request are sent to stopped user VM after migrate
         # 4. In netscaler, the LB rules are still configured.
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
 
         hosts = Host.list(
             self.apiclient,

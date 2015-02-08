@@ -25,7 +25,7 @@ version="1.0">
 <body>
 <table border="1" cellpadding="1" cellspacing="0.5">
 <tr>
-<h1 ALIGN='CENTER'>Cloudstack API Version 4.5.0</h1>
+<h1 ALIGN='CENTER'>Cloudstack API Version 4.6.0</h1>
 <br/>
 <h2 ALIGN='CENTER'>Table of Contents</h2>
 <th><h3>Name</h3></th>

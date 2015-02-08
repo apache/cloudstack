@@ -44,6 +44,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.PropertiesUtil;
@@ -65,7 +66,7 @@ public class Link {
     private boolean _gotFollowingPacket;
 
     private SSLEngine _sslEngine;
-    public static String keystoreFile = "/cloud.keystore";
+    public static String keystoreFile = "/cloudmanagementserver.keystore";
 
     public Link(InetSocketAddress addr, NioConnection connection) {
         _addr = addr;
@@ -443,7 +444,7 @@ public class Link {
             tms[0] = new TrustAllManager();
         }
 
-        sslContext = SSLContext.getInstance("TLS");
+        sslContext = SSLUtils.getSSLContext();
         sslContext.init(kmf.getKeyManagers(), tms, null);
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("SSL: SSLcontext has been initialized");

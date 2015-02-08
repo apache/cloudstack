@@ -82,7 +82,7 @@ public class VMSnapshotHelperImpl implements VMSnapshotHelper {
 
         // check if lastHostId is available
         if (vm.getLastHostId() != null) {
-            HostVO lastHost = hostDao.findById(vm.getLastHostId());
+            HostVO lastHost = hostDao.findByIdIncludingRemoved(vm.getLastHostId());
             if (lastHost.getStatus() == com.cloud.host.Status.Up && !lastHost.isInMaintenanceStates())
                 return lastHost.getId();
         }
@@ -138,6 +138,9 @@ public class VMSnapshotHelperImpl implements VMSnapshotHelper {
         VMSnapshotVO current = snapshot;
         while (current.getParent() != null) {
             VMSnapshotVO parent = snapshotMap.get(current.getParent());
+            if (parent == null) {
+                break;
+            }
             currentTO.setParent(convert2VMSnapshotTO(parent));
             current = snapshotMap.get(current.getParent());
             currentTO = currentTO.getParent();

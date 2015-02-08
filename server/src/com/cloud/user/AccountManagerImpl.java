@@ -135,6 +135,7 @@ import com.cloud.user.Account.State;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -488,6 +489,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public void checkAccess(Account caller, AccessType accessType, boolean sameOwner, String apiName, ControlledEntity... entities) {
+
         //check for the same owner
         Long ownerId = null;
         ControlledEntity prevEntity = null;
@@ -1015,7 +1017,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("The user " + userName + " already exists in domain " + domainId);
         }
 
-        if (networkDomain != null) {
+        if (networkDomain != null && networkDomain.length() > 0) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
                         "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
@@ -2061,7 +2063,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 mac.update(unsignedRequest.getBytes());
                 byte[] encryptedBytes = mac.doFinal();
                 String computedSignature = new String(Base64.encodeBase64(encryptedBytes));
-                boolean equalSig = signature.equals(computedSignature);
+                boolean equalSig = ConstantTimeComparator.compareStrings(signature, computedSignature);
                 if (!equalSig) {
                     s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
                 } else {

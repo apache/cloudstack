@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
@@ -41,6 +42,8 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
 import com.cloud.utils.exception.CloudRuntimeException;
+
+import org.reflections.Reflections;
 
 public class KVMStoragePoolManager {
     private static final Logger s_logger = Logger.getLogger(KVMStoragePoolManager.class);
@@ -95,8 +98,29 @@ public class KVMStoragePoolManager {
         this._storageMapper.put("libvirt", new LibvirtStorageAdaptor(storagelayer));
         // add other storage adaptors here
         // this._storageMapper.put("newadaptor", new NewStorageAdaptor(storagelayer));
-        this._storageMapper.put(StoragePoolType.Iscsi.toString(), new IscsiAdmStorageAdaptor());
         this._storageMapper.put(StoragePoolType.ManagedNFS.toString(), new ManagedNfsStorageAdaptor(storagelayer));
+
+        // add any adaptors that wish to register themselves via annotation
+        Reflections reflections = new Reflections("com.cloud.hypervisor.kvm.storage");
+        Set<Class<? extends StorageAdaptor>> storageAdaptors = reflections.getSubTypesOf(StorageAdaptor.class);
+        for (Class<? extends StorageAdaptor> storageAdaptor : storageAdaptors) {
+            StorageAdaptorInfo info = storageAdaptor.getAnnotation(StorageAdaptorInfo.class);
+            if (info != null && info.storagePoolType() != null) {
+                if (this._storageMapper.containsKey(info.storagePoolType().toString())) {
+                    s_logger.error("Duplicate StorageAdaptor type " + info.storagePoolType().toString() + ", not loading " + storageAdaptor.getName());
+                } else {
+                    try {
+                        this._storageMapper.put(info.storagePoolType().toString(), storageAdaptor.newInstance());
+                    } catch (Exception ex) {
+                       throw new CloudRuntimeException(ex.toString());
+                    }
+                }
+            }
+        }
+
+        for (Map.Entry<String, StorageAdaptor> adaptors : this._storageMapper.entrySet()) {
+            s_logger.debug("Registered a StorageAdaptor for " + adaptors.getKey());
+        }
     }
 
     public boolean connectPhysicalDisk(StoragePoolType type, String poolUuid, String volPath, Map<String, String> details) {

@@ -2082,6 +2082,9 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         #  1. VM migration should be successful
 
         #Create admin account
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
 
         hosts = Host.list(self.api_client, zoneid=self.zone.id)
         self.assertEqual(validateList(hosts)[0], PASS, "hosts list validation failed, list is %s" % hosts)
@@ -2159,7 +2162,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
             name=self.services["test_34_DeployVM_in_SecondSGNetwork"]["zone"]
         )
         status = validateList(zone_list)
-        self.assertEquals(status[0],PASS,"Failed to list the zones")
+        self.assertEquals(status[0], PASS, "Failed to list the zones")
         count = 0
         """
         In simulator environment default guest os template should be in ready state immediately after the ssvm is up.

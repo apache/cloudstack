@@ -240,6 +240,9 @@ class TestCPULimits(cloudstackTestCase):
         # 1. Deploy VM with multiple core CPU & verify the usage
         # 2. Migrate VM & verify updated resource count of Root Admin Account
         # 3. Resource count should list properly.
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
 
         account_list = Account.list(self.apiclient, id=self.account.id)
         self.assertIsInstance(account_list,
@@ -546,6 +549,9 @@ class TestDomainCPULimitsConfiguration(cloudstackTestCase):
         # 2. List Resource count
         # 3. Migrate instance to another host
         # 4. Resource count should list properly.
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
 
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts()

@@ -55,6 +55,8 @@ service apache2 restart
 
 releaseLockFile $lock $locked
 
+iptables -F dnsIpAlias_allow
+
 #recreating the active ip aliases
 /opt/cloud/bin/createIpAlias.sh $2
 unlock_exit $? $lock $locked

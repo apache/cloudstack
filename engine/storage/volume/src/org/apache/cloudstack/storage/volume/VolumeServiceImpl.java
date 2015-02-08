@@ -26,6 +26,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.offering.DiskOffering;
 import com.cloud.storage.RegisterVolumePayload;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
@@ -79,6 +80,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -1567,4 +1569,28 @@ public class VolumeServiceImpl implements VolumeService {
         return snapshot;
     }
 
+    // For managed storage on Xen and VMware, we need to potentially make space for hypervisor snapshots.
+    // The disk offering can collect this information and pass it on to the volume that's about to be created.
+    // Ex. if you want a 10 GB CloudStack volume to reside on managed storage on Xen, this leads to an SR
+    // that is a total size of (10 GB * (hypervisorSnapshotReserveSpace / 100) + 10 GB).
+    @Override
+    public VolumeInfo updateHypervisorSnapshotReserveForVolume(DiskOffering diskOffering, long volumeId, HypervisorType hyperType) {
+        if (diskOffering != null && hyperType != null) {
+            Integer hypervisorSnapshotReserve = diskOffering.getHypervisorSnapshotReserve();
+
+            if (hyperType == HypervisorType.KVM) {
+                hypervisorSnapshotReserve = null;
+            } else if (hypervisorSnapshotReserve == null || hypervisorSnapshotReserve < 0) {
+                hypervisorSnapshotReserve = 0;
+            }
+
+            VolumeVO volume = volDao.findById(volumeId);
+
+            volume.setHypervisorSnapshotReserve(hypervisorSnapshotReserve);
+
+            volDao.update(volume.getId(), volume);
+        }
+
+        return volFactory.getVolume(volumeId);
+    }
 }

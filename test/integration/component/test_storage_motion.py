@@ -97,6 +97,7 @@ class TestStorageMotion(cloudstackTestCase):
         domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
 
         template = get_template(
                             cls.api_client,
@@ -160,6 +161,8 @@ class TestStorageMotion(cloudstackTestCase):
         # 3. listVM command should return this VM.State of this VM
         #    should be "Running" and the host should be the host
         #    to which the VM was migrated to in a different cluster
+        if self.hypervisor.lower() in ["lxc"]:
+            self.skipTest("Migration across clusters is not supported on LXC")
 
         hosts = Host.listForMigration(
                           self.apiclient,
@@ -177,6 +180,7 @@ class TestStorageMotion(cloudstackTestCase):
 
         if hosts is None or len(hosts) == 0:
             self.skipTest("No valid hosts for storage motion. Skipping")
+
 
 
         host = hosts[0]
@@ -237,6 +241,8 @@ class TestStorageMotion(cloudstackTestCase):
         #    storage pools should be present in the cluster.
         # 3. Migrate volume of the vm to another pool.
         # 4. Check volume is present in the new pool and is in Ready state.
+
+        # TODO: add test case for data volume migrate and handle it for LXC
 
         list_volumes_response = list_volumes(
                                     self.apiclient,

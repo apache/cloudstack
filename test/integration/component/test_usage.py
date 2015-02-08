@@ -37,7 +37,8 @@ from marvin.lib.base import (Account,
                              Volume)
 from marvin.lib.common import (get_zone,
                                get_domain,
-                               get_template)
+                               get_template,
+                               find_storage_pool_type)
 
 
 class Services:
@@ -492,6 +493,10 @@ class TestVolumeUsage(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() == 'lxc':
+            if not find_storage_pool_type(cls.api_client, storagetype='rbd'):
+                raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
         cls.disk_offering = DiskOffering.create(
             cls.api_client,
             cls.services["disk_offering"]
@@ -678,6 +683,7 @@ class TestTemplateUsage(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services["server"]["zoneid"] = cls.zone.id
         template = get_template(
             cls.api_client,
@@ -775,6 +781,9 @@ class TestTemplateUsage(cloudstackTestCase):
         # 4. Destroy the account
 
         # Create template from Virtual machine and Volume ID
+        if self.hypervisor.lower() == 'lxc':
+            self.skipTest(
+                "template create from volume is not supported on %s . Hence, skipping the test" % self.hypervisor)
         self.template = Template.create(
             self.userapiclient,
             self.services["templates"],
@@ -1174,6 +1183,8 @@ class TestSnapshotUsage(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        if cls.hypervisor.lower() == 'lxc':
+            raise unittest.SkipTest("snapshots are not supported on LXC")
 
         template = get_template(
             cls.api_client,

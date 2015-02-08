@@ -553,6 +553,12 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
+    public List<HostVO> listAllUpAndEnabledHostsInOneZone(long dcId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public boolean releaseHostReservation(Long hostId) {
         // TODO Auto-generated method stub
         return false;

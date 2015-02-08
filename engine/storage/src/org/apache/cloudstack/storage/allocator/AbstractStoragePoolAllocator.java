@@ -35,6 +35,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
+import com.cloud.capacity.Capacity;
+import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentPlan;
@@ -72,6 +74,8 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     protected String _allocationAlgorithm = "random";
     @Inject
     DiskOfferingDao _diskOfferingDao;
+    @Inject
+    CapacityDao _capacityDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -98,6 +102,39 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
         List<StoragePool> pools = select(dskCh, vmProfile, plan, avoid, returnUpTo);
         return reOrder(pools, vmProfile, plan);
+    }
+
+    protected List<StoragePool> reorderPoolsByCapacity(DeploymentPlan plan,
+        List<StoragePool> pools) {
+        Long clusterId = plan.getClusterId();
+        short capacityType;
+        if(pools != null && pools.size() != 0){
+            capacityType = pools.get(0).getPoolType().isShared() == true ?
+                    Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED : Capacity.CAPACITY_TYPE_LOCAL_STORAGE;
+        } else{
+            return null;
+        }
+
+        List<Long> poolIdsByCapacity = _capacityDao.orderHostsByFreeCapacity(clusterId, capacityType);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("List of pools in descending order of free capacity: "+ poolIdsByCapacity);
+        }
+
+      //now filter the given list of Pools by this ordered list
+      Map<Long, StoragePool> poolMap = new HashMap<Long, StoragePool>();
+      for (StoragePool pool : pools) {
+          poolMap.put(pool.getId(), pool);
+      }
+      List<Long> matchingPoolIds = new ArrayList<Long>(poolMap.keySet());
+
+      poolIdsByCapacity.retainAll(matchingPoolIds);
+
+      List<StoragePool> reorderedPools = new ArrayList<StoragePool>();
+      for(Long id: poolIdsByCapacity){
+          reorderedPools.add(poolMap.get(id));
+      }
+
+      return reorderedPools;
     }
 
     protected List<StoragePool> reorderPoolsByNumberOfVolumes(DeploymentPlan plan, List<StoragePool> pools, Account account) {
@@ -144,6 +181,8 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             Collections.shuffle(pools);
         } else if (_allocationAlgorithm.equals("userdispersing")) {
             pools = reorderPoolsByNumberOfVolumes(plan, pools, account);
+        } else if(_allocationAlgorithm.equals("firstfitleastconsumed")){
+            pools = reorderPoolsByCapacity(plan, pools);
         }
         return pools;
     }

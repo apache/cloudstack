@@ -64,6 +64,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         pendingAsyncJobsSearch.done();
 
         expiringUnfinishedAsyncJobSearch = createSearchBuilder();
+        expiringUnfinishedAsyncJobSearch.and("jobDispatcher", expiringUnfinishedAsyncJobSearch.entity().getDispatcher(), SearchCriteria.Op.NEQ);
         expiringUnfinishedAsyncJobSearch.and("created", expiringUnfinishedAsyncJobSearch.entity().getCreated(), SearchCriteria.Op.LTEQ);
         expiringUnfinishedAsyncJobSearch.and("completeMsId", expiringUnfinishedAsyncJobSearch.entity().getCompleteMsid(), SearchCriteria.Op.NULL);
         expiringUnfinishedAsyncJobSearch.and("jobStatus", expiringUnfinishedAsyncJobSearch.entity().getStatus(), SearchCriteria.Op.EQ);
@@ -159,6 +160,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
     @Override
     public List<AsyncJobVO> getExpiredUnfinishedJobs(Date cutTime, int limit) {
         SearchCriteria<AsyncJobVO> sc = expiringUnfinishedAsyncJobSearch.create();
+        sc.setParameters("jobDispatcher", AsyncJobVO.JOB_DISPATCHER_PSEUDO);
         sc.setParameters("created", cutTime);
         sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
         Filter filter = new Filter(AsyncJobVO.class, "created", true, 0L, (long)limit);

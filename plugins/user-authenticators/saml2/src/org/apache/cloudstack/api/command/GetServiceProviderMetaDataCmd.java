@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command;
 
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.user.Account;
+import com.cloud.utils.HttpUtils;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
@@ -122,7 +123,7 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
 
         SPSSODescriptor spSSODescriptor = new SPSSODescriptorBuilder().buildObject();
         spSSODescriptor.setWantAssertionsSigned(true);
-        spSSODescriptor.setAuthnRequestsSigned(false);
+        spSSODescriptor.setAuthnRequestsSigned(true);
 
         X509KeyInfoGeneratorFactory keyInfoGeneratorFactory = new X509KeyInfoGeneratorFactory();
         keyInfoGeneratorFactory.setEmitEntityCertificate(true);
@@ -135,7 +136,7 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
         signKeyDescriptor.setUse(UsageType.SIGNING);
 
         BasicX509Credential credential = new BasicX509Credential();
-        credential.setEntityCertificate(_samlAuthManager.getSpX509Key());
+        credential.setEntityCertificate(_samlAuthManager.getSpX509Certificate());
         try {
             encKeyDescriptor.setKeyInfo(keyInfoGenerator.generate(credential));
             signKeyDescriptor.setKeyInfo(keyInfoGenerator.generate(credential));
@@ -148,6 +149,14 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
         NameIDFormat nameIDFormat = new NameIDFormatBuilder().buildObject();
         nameIDFormat.setFormat(NameIDType.PERSISTENT);
         spSSODescriptor.getNameIDFormats().add(nameIDFormat);
+
+        NameIDFormat emailNameIDFormat = new NameIDFormatBuilder().buildObject();
+        emailNameIDFormat.setFormat(NameIDType.EMAIL);
+        spSSODescriptor.getNameIDFormats().add(emailNameIDFormat);
+
+        NameIDFormat transientNameIDFormat = new NameIDFormatBuilder().buildObject();
+        transientNameIDFormat.setFormat(NameIDType.TRANSIENT);
+        spSSODescriptor.getNameIDFormats().add(transientNameIDFormat);
 
         AssertionConsumerService assertionConsumerService = new AssertionConsumerServiceBuilder().buildObject();
         assertionConsumerService.setIndex(0);
@@ -163,6 +172,7 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
         spSSODescriptor.addSupportedProtocol(SAMLConstants.SAML20P_NS);
         spEntityDescriptor.getRoleDescriptors().add(spSSODescriptor);
 
+        StringWriter stringWriter = new StringWriter();
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
@@ -171,17 +181,24 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
             out.marshall(spEntityDescriptor, document);
 
             Transformer transformer = TransformerFactory.newInstance().newTransformer();
-            StringWriter stringWriter = new StringWriter();
             StreamResult streamResult = new StreamResult(stringWriter);
             DOMSource source = new DOMSource(document);
             transformer.transform(source, streamResult);
             stringWriter.close();
             response.setMetadata(stringWriter.toString());
         } catch (ParserConfigurationException | IOException | MarshallingException | TransformerException e) {
-            response.setMetadata("Error creating Service Provider MetaData XML: " + e.getMessage());
+            if (responseType.equals(HttpUtils.JSON_CONTENT_TYPE)) {
+                response.setMetadata("Error creating Service Provider MetaData XML: " + e.getMessage());
+            } else {
+                return "Error creating Service Provider MetaData XML: " + e.getMessage();
+            }
         }
-
-        return ApiResponseSerializer.toSerializedString(response, responseType);
+        // For JSON type return serialized response object
+        if (responseType.equals(HttpUtils.RESPONSE_TYPE_JSON)) {
+            return ApiResponseSerializer.toSerializedString(response, responseType);
+        }
+        // For other response types return XML
+        return stringWriter.toString();
     }
 
     @Override

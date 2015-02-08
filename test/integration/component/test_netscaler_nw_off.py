@@ -424,11 +424,9 @@ class TestAddMultipleNSDiffZone(cloudstackTestCase):
         for zone in zones:
             if zone.networktype == 'Advanced':
                 zone_list.append(zone)
-        self.assertGreater(
-                           len(zone_list),
-                           1,
-                           "Atleast 2 advanced mode zones should be present for this test"
-                           )
+        if len(zone_list) < 2:
+            self.skipTest("Atleast 2 advanced mode zones should be present for this test")
+
         zoneid=zone_list[0].id
         physical_networks = PhysicalNetwork.list(
                                                  self.apiclient,
