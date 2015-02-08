@@ -24,7 +24,7 @@ import java.util.List;
 public class Storage {
     public static enum ImageFormat {
         QCOW2(true, true, false, "qcow2"),
-        RAW(false, false, false, "raw"),
+        RAW(false, true, false, "raw"),
         VHD(true, true, true, "vhd"),
         ISO(false, false, false, "iso"),
         OVA(true, true, true, "ova"),
