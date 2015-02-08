@@ -495,7 +495,7 @@ class TestVolumeUsage(cloudstackTestCase):
         cls.services['mode'] = cls.zone.networktype
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         if cls.hypervisor.lower() == 'lxc':
-            if not find_storage_pool_type(cls.apiclient, storagetype='rbd'):
+            if not find_storage_pool_type(cls.api_client, storagetype='rbd'):
                 raise unittest.SkipTest("RBD storage type is required for data volumes for LXC")
         cls.disk_offering = DiskOffering.create(
             cls.api_client,
