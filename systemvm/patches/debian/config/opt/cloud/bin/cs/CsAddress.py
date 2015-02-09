@@ -355,13 +355,13 @@ class CsIP:
         if self.get_type() in ["control"]:
             self.fw.append(["filter", "", "-A FW_OUTBOUND -m state --state RELATED,ESTABLISHED -j ACCEPT"])
             self.fw.append(["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 3922 -m state --state NEW -j ACCEPT" % self.dev])
-  		self.fw.append(['', 'front', '-A FORWARD -j NETWORK_STATS'])
-  		self.fw.append(['', 'front', '-A INPUT -j NETWORK_STATS'])
-  		self.fw.append(['', 'front', '-A OUTPUT -j NETWORK_STATS'])
-  		self.fw.append(['', '', '-A NETWORK_STATS -i eth0 -o eth2'])
-  		self.fw.append(['', '', '-A NETWORK_STATS -i eth2 -o eth0'])
-  		self.fw.append(['', '', '-A NETWORK_STATS -o eth2 ! -i eth0 -p tcp'])
-  		self.fw.append(['', '', '-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp'])
+        self.fw.append(['', 'front', '-A FORWARD -j NETWORK_STATS'])
+        self.fw.append(['', 'front', '-A INPUT -j NETWORK_STATS'])
+        self.fw.append(['', 'front', '-A OUTPUT -j NETWORK_STATS'])
+        self.fw.append(['', '', '-A NETWORK_STATS -i eth0 -o eth2'])
+        self.fw.append(['', '', '-A NETWORK_STATS -i eth2 -o eth0'])
+        self.fw.append(['', '', '-A NETWORK_STATS -o eth2 ! -i eth0 -p tcp'])
+        self.fw.append(['', '', '-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp'])
 
     def fw_vpcrouter(self):
         if not self.config.is_vpc():
