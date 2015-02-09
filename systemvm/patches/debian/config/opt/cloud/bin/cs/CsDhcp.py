@@ -130,7 +130,7 @@ class CsDhcp(CsDataBag):
     def write_hosts(self):
         file = CsFile("/etc/hosts")
         for ip in self.hosts:
-            file.search("%s" % ip, "%s\t%s" % (ip, self.hosts[ip]))
+            file.search("^%s" % ip, "%s\t%s" % (ip, self.hosts[ip]))
         file.commit()
         if file.is_changed():
             logging.info("Updated hosts file")
@@ -155,4 +155,4 @@ class CsDhcp(CsDataBag):
                 v['gateway'] = entry['default_gateway']
 
     def add_host(self, ip, hosts):
-        self.hosts.update({ip: hosts})
+        self.hosts[ip] = hosts
