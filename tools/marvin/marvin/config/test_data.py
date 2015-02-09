@@ -62,14 +62,6 @@ test_data = {
         "username": "test-account2",
         "password": "password"
     },
-    "vmware_cluster" : {
-            "hypervisor": 'VMware',
-            "clustertype": 'ExternalManaged',
-            "username": 'administrator',
-            "password": 'password_123',
-            "url": 'http://10.147.60.15/42xescauto spaces/42xesc Clusters',
-            "clustername": 'VMWare Cluster with Space in DC name',
-        },
     "small": {
         "displayname": "testserver",
         "username": "root",
@@ -931,6 +923,13 @@ test_data = {
         "customdisksize": 1,
         "diskname": "Custom disk",
     },
+    "upload_volume": {
+        "diskname": "UploadVol",
+        "format": "VHD",
+        "url":
+        "http://10.147.28.7/templates/393d3550-05ef-330f-9b8c-745b0e699759.vhd",
+        "checksum": "",
+    },
     "recurring_snapshot": {
         "maxsnaps": 2,
         "timezone": "US/Arizona",
@@ -1513,11 +1512,13 @@ test_data = {
             "ldapPassword": ""
         },
         "systemVmDelay": 120,
-        "upload_volume": {
-            "diskname": "UploadVol",
-            "format": "VHD",
-            "url": "",
-            "checksum": "",
+        "vmware_cluster" : {
+            "hypervisor": 'VMware',
+            "clustertype": 'ExternalManaged',
+            "username": '',
+            "password": '',
+            "url": '',
+            "clustername": 'VMWare Cluster with Space in DC name',
         },
     }
 }
