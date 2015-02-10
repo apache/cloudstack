@@ -79,7 +79,7 @@ public class Ovm3FenceBuilder extends AdapterBase implements FenceBuilder {
         if (host.getHypervisorType() != HypervisorType.Ovm3) {
             LOGGER.debug("Don't know how to fence non Ovm3 hosts "
                     + host.getHypervisorType());
-            return false;
+            return null;
         } else {
             LOGGER.debug("Fencing " + vm + " on host " + host
                     + " with params: "+ fenceParams );
