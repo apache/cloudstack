@@ -15,6 +15,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+import hashlib
 from merge import DataBag
 
 
@@ -131,4 +132,14 @@ class CsCmdLine(CsDataBag):
     def get_router_password(self):
         if "router_password" in self.idata():
             return self.idata()['router_password']
-        return "k3ep@liv3D"
+        
+        '''
+        Generate a password based on the router id just to avoid hard-coded passwd.
+        Remark: if for some reason 1 router gets configured, the other one will have a different password.
+        This is slightly difficult to happen, but if it does, destroy the router with the password generated with the
+        code below and restart the VPC with out the clean up option.
+        '''
+        passwd = "%s-%s" % (self.get_vpccidr, self.get_router_id())
+        md5 = hashlib.md5()
+        md5.update(passwd)
+        return md5.hexdigest()
