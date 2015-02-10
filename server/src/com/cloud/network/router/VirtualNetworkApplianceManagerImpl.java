@@ -17,6 +17,9 @@
 
 package com.cloud.network.router;
 
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -177,6 +180,8 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatImpl;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -355,6 +360,8 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     MonitoringServiceDao _monitorServiceDao;
     @Inject
     AsyncJobManager _asyncMgr;
+    @Inject
+    protected VpcDao _vpcDao;
     @Inject
     protected ApiAsyncJobDispatcher _asyncDispatcher;
     @Inject
@@ -1174,7 +1181,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                         router = router1;
                     }
                     // && router.getState() == State.Stopped
-                    if (router.getHostId() == null) {
+                    if (router.getHostId() == null && router.getState() == State.Running) {
                         s_logger.debug("Skip router pair (" + router0.getInstanceName() + "," + router1.getInstanceName() + ") due to can't find host");
                         continue;
                     }
@@ -1623,6 +1630,23 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 // For a redundant VPC router, both shall have the same router id. It will be used by the VRRP virtural_router_id attribute.
                 // So we use the VPC id to avoid group problems.
                 buf.append(" router_id=").append(vpcId);
+
+                // Will build the routers password based on the VPC ID and UUID.
+                final Vpc vpc = _vpcDao.findById(vpcId);
+
+                try {
+                    final MessageDigest digest = MessageDigest.getInstance("SHA-512");
+                    final byte [] rawDigest = vpc.getUuid().getBytes();
+                    digest.update(rawDigest);
+
+                    final BigInteger password = new BigInteger(1, digest.digest());
+                    buf.append(" router_password=").append(password);
+
+                } catch (final NoSuchAlgorithmException e) {
+                    s_logger.error("Failed to pssword! Will use the plan B instead.");
+                    buf.append(" router_password=").append(vpc.getUuid());
+                }
+
             } else {
                 routers = _routerDao.listByNetworkAndRole(nic.getNetworkId(), Role.VIRTUAL_ROUTER);
             }
