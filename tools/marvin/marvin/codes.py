@@ -110,3 +110,10 @@ CHILD_DOMAIN_ADMIN="child domain admin"
 Network states
 '''
 ALLOCATED = "Allocated"
+'''
+Storage Tags
+'''
+ZONETAG1 = "zwps1"
+ZONETAG2 = "zwps2"
+CLUSTERTAG1 = "cwps1"
+CLUSTERTAG2 = "cwps2"

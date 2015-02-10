@@ -1881,7 +1881,7 @@ class ServiceOffering:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, domainid=None, **kwargs):
+    def create(cls, apiclient, services, tags=None, domainid=None, **kwargs):
         """Create Service offering"""
         cmd = createServiceOffering.createServiceOfferingCmd()
         cmd.cpunumber = services["cpunumber"]
@@ -1897,9 +1897,6 @@ class ServiceOffering:
 
         if "issystem" in services:
             cmd.issystem = services['issystem']
-
-        if "tags" in services:
-            cmd.tags = services["tags"]
 
         if "hosttags" in services:
             cmd.hosttags = services["hosttags"]
@@ -1934,6 +1931,11 @@ class ServiceOffering:
         if domainid:
             cmd.domainid = domainid
 
+	if tags:
+	    cmd.tags = tags
+	elif "tags" in services:
+	    cmd.tags = services["tags"]
+
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return ServiceOffering(apiclient.createServiceOffering(cmd).__dict__)
 
@@ -1962,7 +1964,7 @@ class DiskOffering:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, custom=False, domainid=None):
+    def create(cls, apiclient, services, tags=None, custom=False, domainid=None):
         """Create Disk offering"""
         cmd = createDiskOffering.createDiskOfferingCmd()
         cmd.displaytext = services["displaytext"]
@@ -1975,6 +1977,11 @@ class DiskOffering:
         if domainid:
             cmd.domainid = domainid
 
+	if tags:
+	    cmd.tags = tags
+	elif "tags" in services:
+	    cmd.tags = services["tags"]
+
         if "storagetype" in services:
             cmd.storagetype = services["storagetype"]
 
@@ -1986,9 +1993,6 @@ class DiskOffering:
 
         if "miniops" in services:
             cmd.miniops = services["miniops"]
-
-        if "tags" in services:
-            cmd.tags = services["tags"]
 
         if "provisioningtype" in services:
             cmd.provisioningtype = services["provisioningtype"]

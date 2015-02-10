@@ -872,7 +872,32 @@ test_data = {
         "iscsi://192.168.100.21/iqn.2012-01.localdomain.clo-cstack-cos6:iser/1",
         "name": "Primary iSCSI"
     },
-    "volume": {"diskname": "Test Volume"},
+    "volume": {"diskname": "Test Volume",
+               "size": 1
+    },
+    "volume_write_path": {
+        "diskname": "APP Data Volume",
+        "size": 1,   # in GBs
+        "xenserver": {"rootdiskdevice":"/dev/xvda",
+                     "datadiskdevice_1": '/dev/xvdb',
+                    "datadiskdevice_2": '/dev/xvdc',   # Data Disk
+                    },
+        "KVM":       {"rootdiskdevice": "/dev/vda",
+                    "datadiskdevice_1": "/dev/vdb",
+                    "datadiskdevice_2": "/dev/vdc"
+                    },
+        "vmware":    {"rootdiskdevice": "/dev/hda",
+                    "datadiskdevice_1": "/dev/hdb",
+                    "datadiskdevice_2": "/dev/hdc"
+                    }
+    },
+    "data_write_paths": {
+                "mount_dir": "/mnt/tmp",
+                "sub_dir": "test",
+                "sub_lvl_dir1": "test1",
+                "sub_lvl_dir2": "test2",
+                "random_data": "random.data",
+    },
     "custom_volume": {
         "customdisksize": 1,
         "diskname": "Custom disk",
