@@ -127,3 +127,8 @@ class CsCmdLine(CsDataBag):
         if "router_id" in self.idata():
             return self.idata()['router_id']
         return 1
+
+    def get_router_password(self):
+        if "router_password" in self.idata():
+            return self.idata()['router_password']
+        return "k3ep@liv3D"
