@@ -456,7 +456,7 @@
                                                     url: uploadparams.postURL,
                                                     data: {
                                                         signature: uploadparams.signature,
-                                                        expires: uploadparams.timeout,
+                                                        expires: uploadparams.expires,
                                                         metadata: uploadparams.metadata
                                                     }
                                                 });
