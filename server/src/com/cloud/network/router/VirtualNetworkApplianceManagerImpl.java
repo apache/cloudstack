@@ -1174,6 +1174,15 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                      */
                     final DomainRouterVO router0 = routers.get(0);
                     final DomainRouterVO router1 = routers.get(1);
+
+                    if (router0.getState() != State.Running || router1.getState() != State.Running) {
+                        updateRoutersRedundantState(routers);
+                        // Wilder Rodrigues (wrodrigues@schubergphilis.com) - One of the routers is not running,
+                        // so we don't have to continue here since the host will be null any way. Also, there is no need
+                        // To check either for sanity of duplicate master. Thus, just update the state and get lost.
+                        continue;
+                    }
+
                     DomainRouterVO router = router0;
                     if (router0.getId() < router1.getId()) {
                         router = router0;
