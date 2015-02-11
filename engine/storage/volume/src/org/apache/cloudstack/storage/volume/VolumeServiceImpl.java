@@ -829,6 +829,7 @@ public class VolumeServiceImpl implements VolumeService {
         VolumeVO newVol = new VolumeVO(volume);
         newVol.setInstanceId(null);
         newVol.setChainInfo(null);
+        newVol.setPath(null);
         newVol.setFolder(folder);
         newVol.setPodId(pool.getPodId());
         newVol.setPoolId(pool.getId());
