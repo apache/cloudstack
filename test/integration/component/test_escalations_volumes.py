@@ -1784,13 +1784,13 @@ class TestVolumes(cloudstackTestCase):
         # Uploading a Volume
         volume_uploaded = Volume.upload(
             self.userapiclient,
-            self.services["upload_volume"],
+            self.services["configurableData"]["upload_volume"],
             self.zone.id
         )
         self.assertIsNotNone(volume_uploaded, "volume uploading failed")
 
         self.assertEquals(
-            self.services["upload_volume"]["diskname"],
+            self.services["configurableData"]["upload_volume"]["diskname"],
             volume_uploaded.name,
             "Uploaded volume name is not matching with name provided\
             while uploading")

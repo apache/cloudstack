@@ -520,15 +520,15 @@ class TestPathVolume(cloudstackTestCase):
         # checking  format of  downloaded volume and assigning to
         # testdata["volume_upload"]
         if "OVA" in self.extract_volume.url.upper():
-            self.testdata["upload_volume"]["format"] = "OVA"
+            self.testdata["configurableData"]["upload_volume"]["format"] = "OVA"
         if "QCOW2" in self.extract_volume.url.upper():
-            self.testdata["upload_volume"]["format"] = "QCOW2"
+            self.testdata["configurableData"]["upload_volume"]["format"] = "QCOW2"
         # 6. Upload volume by providing url of downloaded volume in step 5
         self.upload_response = Volume.upload(
             self.userapiclient,
             zoneid=self.zone.id,
             url=self.extract_volume.url,
-            services=self.testdata["upload_volume"])
+            services=self.testdata["configurableData"]["upload_volume"])
         self.upload_response.wait_for_upload(self.userapiclient
                                              )
         self.debug("uploaded volume id is %s" % self.upload_response.id)
@@ -788,9 +788,9 @@ class TestPathVolume(cloudstackTestCase):
                 raise Exception("Volume deletion failed with error %s" % e)
         # 16.Upload volume of size smaller  than
         # storage.max.volume.upload.size(leaving the negative case)
-        self.testdata["upload_volume"]["format"] = "VHD"
+        self.testdata["configurableData"]["upload_volume"]["format"] = "VHD"
         volume_upload = Volume.upload(self.userapiclient,
-                                      self.testdata["upload_volume"],
+                                      self.testdata["configurableData"]["upload_volume"],
                                       zoneid=self.zone.id
                                       )
         volume_upload.wait_for_upload(self.userapiclient
@@ -984,24 +984,24 @@ class TestPathVolume(cloudstackTestCase):
         # 11.Upload the volume  by providing the URL of the downloaded
         # volume, but specify a wrong format (not supported by the hypervisor)
         if "OVA" in self.extract_volume.url.upper():
-            self.testdata["upload_volume"]["format"] = "VHD"
+            self.testdata["configurableData"]["upload_volume"]["format"] = "VHD"
         else:
-            self.testdata["upload_volume"]["format"] = "OVA"
+            self.testdata["configurableData"]["upload_volume"]["format"] = "OVA"
         try:
             self.upload_response = Volume.upload(
                 self.userapiclient,
                 zoneid=self.zone.id,
                 url=self.extract_volume.url,
-                services=self.testdata["upload_volume"])
+                services=self.testdata["configurableData"]["upload_volume"])
             self.fail("Volume got uploaded with invalid format")
         except Exception as e:
             self.debug("upload volume failed due %s" % e)
         # 12. Upload the same volume from T4 by providing a wrong URL
-        self.testdata["upload_volume"]["format"] = "VHD"
+        self.testdata["configurableData"]["upload_volume"]["format"] = "VHD"
         if "OVA" in self.extract_volume.url.upper():
-            self.testdata["upload_volume"]["format"] = "OVA"
+            self.testdata["configurableData"]["upload_volume"]["format"] = "OVA"
         if "QCOW2" in self.extract_volume.url.upper():
-            self.testdata["upload_volume"]["format"] = "QCOW2"
+            self.testdata["configurableData"]["upload_volume"]["format"] = "QCOW2"
         u1 = self.extract_volume.url.split('.')
         u1[-2] = "wrong"
         wrong_url = ".".join(u1)
@@ -1010,7 +1010,7 @@ class TestPathVolume(cloudstackTestCase):
                 self.userapiclient,
                 zoneid=self.zone.id,
                 url=wrong_url,
-                services=self.testdata["upload_volume"])
+                services=self.testdata["configurableData"]["upload_volume"])
             self.upload_response.wait_for_upload(self.userapiclient
                                                  )
             self.fail("volume got uploaded with wrong url")
@@ -1022,7 +1022,7 @@ class TestPathVolume(cloudstackTestCase):
                 self.userapiclient,
                 zoneid=self.zone.id,
                 url=self.extract_volume.url,
-                services=self.testdata["upload_volume"],
+                services=self.testdata["configurableData"]["upload_volume"],
                 checksome="123456")
             self.upload_response.wait_for_upload(self.userapiclient
                                                  )
@@ -1061,7 +1061,7 @@ class TestPathVolume(cloudstackTestCase):
                 self.userapiclient,
                 zoneid=self.zone.id,
                 url=self.extract_volume.url,
-                services=self.testdata["upload_volume"])
+                services=self.testdata["configurableData"]["upload_volume"])
             self.upload_response.wait_for_upload(self.userapiclient
                                                  )
             self.fail("volume got uploaded after account reached max limit for\
