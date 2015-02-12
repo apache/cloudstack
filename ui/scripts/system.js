@@ -534,6 +534,7 @@
                         }
                     }
                 },
+                disableInfiniteScrolling: true,
                 dataProvider: function (args) {
                     refreshNspData();
                     args.response.success({
