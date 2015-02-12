@@ -14186,7 +14186,7 @@
                                     },
                                     
                                     vSwitchGuestName: {
-                                        label: ' label.guest.traffic.vswitch.name',
+                                        label: 'label.guest.traffic.vswitch.name',
                                         isHidden: true
                                     },
                                     
