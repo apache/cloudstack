@@ -81,11 +81,11 @@ class Services:
                                                "privateport" : 22,
                                                "publicport"  : 22,
                                                "protocol"    : 'TCP',},
-                         "service_offering" : {"name"        : "Tiny Instance",
-                                               "displaytext" : "Tiny Instance",
-                                               "cpunumber"   : 1,
-                                               "cpuspeed"    : 100,# in MHz
-                                               "memory"      : 128},
+                         "service_offering" : {"name"        : "Medium Instance",
+                                               "displaytext" : "Medium Instance",
+                                               "cpunumber"   : 2,
+                                               "cpuspeed"    : 128,# in MHz
+                                               "memory"      : 256},
                          "network_offering":  {
                                                "name": 'Network offering-VR services',
                                                "displaytext": 'Network offering-VR services',
@@ -144,6 +144,16 @@ class TestEgressFWRules(cloudstackTestCase):
                                     cls.services["ostype"])
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
+
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+
+        # As Hyperv is GUI based VM, it requires more resources to be
+        # able to SSH properly to it
+        if cls.hypervisor.lower()  == 'hyperv':
+            cls.services["service_offering"]["name"] = "Medium Instance"
+            cls.services["service_offering"]["memory"] = "1024"
+            cls.services["service_offering"]["cpuspeed"] = "1024"
+
         # Create service offerings.
         cls.service_offering = ServiceOffering.create(cls.api_client,
                                                       cls.services["service_offering"])
