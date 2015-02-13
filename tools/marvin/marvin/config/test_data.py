@@ -1517,7 +1517,7 @@ test_data = {
             "ldapPassword": ""
         },
         "systemVmDelay": 120,
-	"setUsageConfigurationThroughTestCase": True
+	"setUsageConfigurationThroughTestCase": True,
 	"vmware_cluster" : {
             "hypervisor": 'VMware',
             "clustertype": 'ExternalManaged',
