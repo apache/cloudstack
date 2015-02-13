@@ -54,16 +54,12 @@
       <version>${project.version}</version>
     </dependency>
     <!-- dependencies for starting a post upload server on ssvm -->
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpcore</artifactId>
-      <version>${cs.httpcore.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpcore-nio</artifactId>
-      <version>${cs.httpcore.version}</version>
-    </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-all</artifactId>
+        <version>4.0.25.Final</version>
+        <scope>compile</scope>
+      </dependency>
   </dependencies>
   <build>
     <plugins>

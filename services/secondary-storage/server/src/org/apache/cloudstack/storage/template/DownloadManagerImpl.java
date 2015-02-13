@@ -104,7 +104,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     @Override
-    public Map getProcessesors() {
+    public Map<String, Processor> getProcessors() {
         return _processors;
     }
 

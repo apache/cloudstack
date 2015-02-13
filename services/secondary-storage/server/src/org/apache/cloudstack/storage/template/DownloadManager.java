@@ -18,6 +18,7 @@ package org.apache.cloudstack.storage.template;
 
 import java.util.Map;
 
+import com.cloud.storage.template.Processor;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
@@ -52,7 +53,7 @@ public interface DownloadManager extends Manager {
     public String downloadS3Template(S3TO s3, long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
         String installPathPrefix, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType);
 
-    Map getProcessesors();
+    Map<String, Processor> getProcessors();
 
     /**
      * Get the status of a download job

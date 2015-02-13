@@ -19,11 +19,8 @@ package org.apache.cloudstack.storage.template;
 
 
 import com.cloud.storage.Storage;
-import java.io.File;
-import java.io.FileOutputStream;
 
 public class UploadEntity {
-    private long filesize;
     private long downloadedsize;
     private String filename;
     private String installPathPrefix;
@@ -33,8 +30,7 @@ public class UploadEntity {
     private String uuid;
     private long entityId;
     private String chksum;
-
-
+    private long physicalSize;
 
     public static enum ResourceType {
         VOLUME, TEMPLATE
@@ -45,17 +41,15 @@ public class UploadEntity {
     }
 
     private Status uploadState;
-    private FileOutputStream filewriter = null;
     private String errorMessage=null;
-    private File file;
     private ResourceType resourceType;
     private long virtualSize;
+    private boolean isMetaDataPopulated;
 
     public static long s_maxTemplateSize = 50L * 1024L * 1024L * 1024L;
 
-    public UploadEntity(String uuid,long entityId,long filesize, Status status, String filename, String installPathPrefix){
+    public UploadEntity(String uuid, long entityId, Status status, String filename, String installPathPrefix){
         this.uuid=uuid;
-        this.filesize=filesize;
         this.uploadState=status;
         this.downloadedsize=0l;
         this.filename=filename;
@@ -63,8 +57,8 @@ public class UploadEntity {
         this.entityId=entityId;
     }
 
-    public void setEntitysize(long filesize) {
-         this.filesize=filesize;
+    public UploadEntity(){
+
     }
 
     public void setStatus(Status status) {
@@ -73,14 +67,6 @@ public class UploadEntity {
 
     public void setErrorMessage(String errorMessage) {
         this.errorMessage=errorMessage;
-    }
-
-    public FileOutputStream getFilewriter() {
-        return filewriter;
-    }
-
-    public long getEntitysize() {
-        return filesize;
     }
 
     public long getDownloadedsize() {
@@ -95,20 +81,8 @@ public class UploadEntity {
         return uploadState;
     }
 
-    public void setFilewriter(FileOutputStream filewriter) {
-        this.filewriter = filewriter;
-    }
-
     public void incremetByteCount(long numberOfBytes) {
            this.downloadedsize+= numberOfBytes;
-    }
-
-    public File getFile() {
-        return file;
-    }
-
-    public void setFile(File file) {
-        this.file = file;
     }
 
     public String getFilename() {
@@ -181,4 +155,22 @@ public class UploadEntity {
     public void setVirtualSize(long virtualSize) {
         this.virtualSize = virtualSize;
     }
+
+    public boolean isMetaDataPopulated() {
+        return isMetaDataPopulated;
+    }
+
+    public void setMetaDataPopulated(boolean isMetaDataPopulated) {
+        this.isMetaDataPopulated = isMetaDataPopulated;
+    }
+
+    public void setPhysicalSize(long physicalSize) {
+        this.physicalSize = physicalSize;
+    }
+
+    public long getPhysicalSize() {
+        return physicalSize;
+    }
+
+
 }
