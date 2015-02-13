@@ -20,98 +20,25 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (
-                                        Account,
-                                        ServiceOffering,
-                                        VirtualMachine,
-                                        PublicIPAddress,
-                                        Network,
-                                        LoadBalancerRule,
-                                        Alert,
-                                        Router,
-                                        Vpn,
-                                        NATRule
-                                        )
+    Account,
+    ServiceOffering,
+    VirtualMachine,
+    PublicIPAddress,
+    Network,
+    LoadBalancerRule,
+    Alert,
+    Router,
+    Vpn,
+    FireWallRule
+)
 from marvin.lib.common import (get_domain,
-                                        get_zone,
-                                        get_template
-                                        )
+                               get_zone,
+                               get_template
+                               )
 from marvin.lib.utils import (cleanup_resources,
-                                          random_gen)
+                              random_gen)
 from marvin.cloudstackAPI import createLBStickinessPolicy
 from marvin.sshClient import SshClient
-
-
-class Services:
-    """Test VPN users Services
-    """
-
-    def __init__(self):
-        self.services = {
-                        "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    # Random characters are appended for unique
-                                    # username
-                                    "password": "password",
-                         },
-                         "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100,    # in MHz
-                                    "memory": 128,    # In MBs
-                        },
-                        "disk_offering": {
-                                    "displaytext": "Small Disk Offering",
-                                    "name": "Small Disk Offering",
-                                    "disksize": 1
-                        },
-                        "virtual_machine": {
-                                    "displayname": "TestVM",
-                                    "username": "root",
-                                    "password": "password",
-                                    "ssh_port": 22,
-                                    "hypervisor": 'XenServer',
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "protocol": 'TCP',
-                                },
-                         "vpn_user": {
-                                   "username": "test",
-                                   "password": "test",
-                                },
-                         "natrule": {
-                                   "privateport": 22,
-                                   "publicport": 22,
-                                   "protocol": "TCP",
-                                   "username":"root",
-                                   "password": "password"
-                                },
-                         "network": {
-                                "name": "Test Network",
-                                "displaytext": "Test Network",
-                                "netmask": '255.255.255.0'
-                                },
-                         "lbrule": {
-                                    "name": "SSH",
-                                    "alg": "roundrobin",
-                                    # Algorithm used for load balancing
-                                    "privateport": 22,
-                                    "publicport": 2222,
-                                    "openfirewall": False,
-                                    "startport": 22,
-                                    "endport": 2222,
-                                    "protocol": "TCP",
-                                    "cidrlist": '0.0.0.0/0',
-                                },
-                        "ostype": 'CentOS 5.3 (64-bit)',
-                        "sleep": 60,
-                        "timeout": 10,
-                        "mode": 'advanced',
-                        # Networking mode: Advanced, Basic
-                    }
 
 
 class TestHAProxyStickyness(cloudstackTestCase):
@@ -121,23 +48,25 @@ class TestHAProxyStickyness(cloudstackTestCase):
         cls.testClient = super(TestHAProxyStickyness, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.services = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         cls.template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
+            cls.api_client,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["service_offering"]["name"] = "Medium Instance"
+        cls.services["service_offering"]["cpuspeed"] = "1024"
+        cls.services["service_offering"]["memory"] = "1024"
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
-
+            cls.api_client,
+            cls.services["service_offering"]
+        )
         cls._cleanup = [cls.service_offering, ]
         return
 
@@ -146,6 +75,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
         try:
             # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
+            pass
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -154,42 +84,42 @@ class TestHAProxyStickyness(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.account = Account.create(
-                            self.apiclient,
-                            self.services["account"],
-                            domainid=self.domain.id
-                            )
+            self.apiclient,
+            self.services["account"],
+            domainid=self.domain.id
+        )
         self.virtual_machine = VirtualMachine.create(
-                                self.apiclient,
-                                self.services["virtual_machine"],
-                                templateid=self.template.id,
-                                accountid=self.account.name,
-                                domainid=self.account.domainid,
-                                serviceofferingid=self.service_offering.id
-                                )
+            self.apiclient,
+            self.services["virtual_machine"],
+            templateid=self.template.id,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id
+        )
 
         self.virtual_machine_2 = VirtualMachine.create(
-                                self.apiclient,
-                                self.services["virtual_machine"],
-                                templateid=self.template.id,
-                                accountid=self.account.name,
-                                domainid=self.account.domainid,
-                                serviceofferingid=self.service_offering.id
-                                )
+            self.apiclient,
+            self.services["virtual_machine"],
+            templateid=self.template.id,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id
+        )
         self.public_ip = PublicIPAddress.create(
-                                           self.apiclient,
-                                           self.virtual_machine.account,
-                                           self.virtual_machine.zoneid,
-                                           self.virtual_machine.domainid,
-                                           self.services["virtual_machine"]
-                                           )
-
-        NATRule.create(
-                        self.apiclient,
-                        self.virtual_machine,
-                        self.services["natrule"],
-                        ipaddressid=self.public_ip.ipaddress.id
-                        )
-
+            self.apiclient,
+            self.virtual_machine.account,
+            self.virtual_machine.zoneid,
+            self.virtual_machine.domainid,
+            self.services["virtual_machine"]
+        )
+        FireWallRule.create(
+            self.apiclient,
+            ipaddressid=self.public_ip.ipaddress.id,
+            protocol='TCP',
+            cidrlist=[self.services["fwrule"]["cidr"]],
+            startport=self.services["fwrule"]["startport"],
+            endport=self.services["fwrule"]["endport"]
+        )
         self.cleanup = [self.account, ]
         return
 
@@ -197,7 +127,6 @@ class TestHAProxyStickyness(cloudstackTestCase):
         try:
             # Clean up, terminate the created instance, volumes and snapshots
             cleanup_resources(self.apiclient, self.cleanup)
-            pass
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -206,11 +135,11 @@ class TestHAProxyStickyness(cloudstackTestCase):
         """Returns a network for account"""
 
         networks = Network.list(
-                                self.apiclient,
-                                account=account.name,
-                                domainid=account.domainid,
-                                listall=True
-                                )
+            self.apiclient,
+            account=account.name,
+            domainid=account.domainid,
+            listall=True
+        )
         self.assertIsInstance(networks,
                               list,
                               "List networks should return a valid response")
@@ -220,21 +149,24 @@ class TestHAProxyStickyness(cloudstackTestCase):
         """Create and validate the load balancing rule"""
 
         self.debug("Creating LB rule for IP address: %s" %
-                                        public_ip.ipaddress.ipaddress)
+                   public_ip.ipaddress.ipaddress)
         objservices = None
         if services:
             objservices = services
         else:
             objservices = self.services["lbrule"]
 
+        self.services["lbrule"]["publicport"] = 22
+        self.services["lbrule"]["privateport"] = 22
+
         lb_rule = LoadBalancerRule.create(
-                                    self.apiclient,
-                                    objservices,
-                                    ipaddressid=public_ip.ipaddress.id,
-                                    accountid=self.account.name,
-                                    networkid=network.id,
-                                    domainid=self.account.domainid
-                                )
+            self.apiclient,
+            objservices,
+            ipaddressid=public_ip.ipaddress.id,
+            accountid=self.account.name,
+            networkid=network.id,
+            domainid=self.account.domainid
+        )
         self.debug("Adding virtual machines %s to LB rule" % str(vmarray))
         lb_rule.assign(self.apiclient, vmarray)
         return lb_rule
@@ -243,11 +175,11 @@ class TestHAProxyStickyness(cloudstackTestCase):
         """Configure the stickiness policy on lb rule"""
         try:
             result = lb_rule.createSticky(
-                             self.apiclient,
-                             methodname=method,
-                             name="-".join([method, random_gen()]),
-                             param=paramDict
-                             )
+                self.apiclient,
+                methodname=method,
+                name="-".join([method, random_gen()]),
+                param=paramDict
+            )
             self.debug("Response: %s" % result)
             return result
         except Exception as e:
@@ -259,16 +191,19 @@ class TestHAProxyStickyness(cloudstackTestCase):
         sticky_policies = lb_rule.listStickyPolicies(self.apiclient,
                                                      lbruleid=lb_rule.id,
                                                      listall=True)
-        self.assertIsInstance(sticky_policies,
-                            list,
-                            "List sticky policies should return a valid list")
+        self.assertIsInstance(
+            sticky_policies,
+            list,
+            "List sticky policies should return a valid list")
         sticky_policy = sticky_policies[0]
 
         self.debug("Stickiness policy method: %s" %
-                                sticky_policy.stickinesspolicy[0].methodname)
-        self.assertEqual(sticky_policy.stickinesspolicy[0].methodname,
-                    method,
-                    "Stickiness policy should have method as - %s" % method)
+                   sticky_policy.stickinesspolicy[0].methodname)
+        self.assertEqual(
+            sticky_policy.stickinesspolicy[0].methodname,
+            method,
+            "Stickiness policy should have method as - %s" %
+            method)
 
         hostnames = []
 
@@ -278,10 +213,12 @@ class TestHAProxyStickyness(cloudstackTestCase):
         self.debug("hostnames: %s" % hostnames)
         self.debug("set(hostnames): %s" % set(hostnames))
 
-        #For each ssh, host should be the same, else stickiness policy is not working properly
+        # For each ssh, host should be the same, else stickiness policy is not
+        # working properly
         if len(hostnames) == len(set(hostnames)):
-            raise Exception("Stickyness policy: %s not working properly, got hostnames %s"
-                            % (method, hostnames))
+            raise Exception(
+                "Stickyness policy: %s not working properly, got hostnames %s" %
+                (method, hostnames))
         return
 
     def delete_Stickiness_policy(self, policy, lb_rule):
@@ -295,8 +232,10 @@ class TestHAProxyStickyness(cloudstackTestCase):
         sticky_policies = lb_rule.listStickyPolicies(self.apiclient,
                                                      lbruleid=lb_rule.id,
                                                      listall=True)
-        self.assertIsInstance(sticky_policies, list,
-                "List stickiness policies shall return a valid response")
+        self.assertIsInstance(
+            sticky_policies,
+            list,
+            "List stickiness policies shall return a valid response")
 
         policy = sticky_policies[0]
 
@@ -317,26 +256,25 @@ class TestHAProxyStickyness(cloudstackTestCase):
 
         try:
             self.debug("Acquiring public IP for account: %s" %
-                                                    self.account.name)
+                       self.account.name)
             public_ip = PublicIPAddress.create(
-                                           self.apiclient,
-                                           self.virtual_machine.account,
-                                           self.virtual_machine.zoneid,
-                                           self.virtual_machine.domainid,
-                                           self.services["virtual_machine"]
-                                           )
+                self.apiclient,
+                self.virtual_machine.account,
+                self.virtual_machine.zoneid,
+                self.virtual_machine.domainid,
+                self.services["virtual_machine"]
+            )
             self.debug("Acquired public IP: %s" %
-                                                public_ip.ipaddress.ipaddress)
+                       public_ip.ipaddress.ipaddress)
 
-            self.debug("Configuring NAT rule for the acquired public ip")
-
-            NATRule.create(
-                        self.apiclient,
-                        self.virtual_machine,
-                        self.services["natrule"],
-                        ipaddressid=public_ip.ipaddress.id
-                        )
-
+            FireWallRule.create(
+                self.apiclient,
+                ipaddressid=public_ip.ipaddress.id,
+                protocol='TCP',
+                cidrlist=[self.services["fwrule"]["cidr"]],
+                startport=self.services["fwrule"]["startport"],
+                endport=self.services["fwrule"]["endport"]
+            )
             return public_ip
         except Exception as e:
             self.fail("Failed to acquire new public IP: %s" % e)
@@ -359,19 +297,19 @@ class TestHAProxyStickyness(cloudstackTestCase):
         try:
             # Assign VPN to Public IP
             vpn = Vpn.create(self.apiclient,
-                         self.public_ip.ipaddress.id,
-                         account=self.account.name,
-                         domainid=self.account.domainid)
+                             self.public_ip.ipaddress.id,
+                             account=self.account.name,
+                             domainid=self.account.domainid)
 
             self.debug("Verifying the remote VPN access")
             vpns = Vpn.list(self.apiclient,
-                        publicipid=public_ip.ipaddress.id,
-                        listall=True)
+                            publicipid=public_ip.ipaddress.id,
+                            listall=True)
             self.assertEqual(
-                         isinstance(vpns, list),
-                         True,
-                         "List VPNs shall return a valid response"
-                         )
+                isinstance(vpns, list),
+                True,
+                "List VPNs shall return a valid response"
+            )
             return vpn
         except Exception as e:
             self.fail("Failed to create remote VPN access: %s" % e)
@@ -379,25 +317,25 @@ class TestHAProxyStickyness(cloudstackTestCase):
     def try_ssh(self, ip_addr, hostnames):
         try:
             self.debug(
-                "SSH into NAT Rule (Public IP: %s)" % ip_addr)
+                "SSH into (Public IP: %s)" % ip_addr)
 
             # If Round Robin Algorithm is chosen,
             # each ssh command should alternate between VMs
 
-            ssh_1  = SshClient(
-                                    ip_addr,
-                                    22,
-                                    self.services["natrule"]["username"],
-                                    self.services["natrule"]["password"]
-                                    )
+            ssh_1 = SshClient(
+                ip_addr,
+                22,
+                self.services["configurableData"]["host"]["username"],
+                self.services["configurableData"]["host"]["password"]
+            )
             hostnames.append(ssh_1.execute("hostname")[0])
             self.debug(hostnames)
         except Exception as e:
             self.fail("%s: SSH failed for VM with IP Address: %s" %
-                                    (e, ip_addr))
+                      (e, ip_addr))
         return hostnames
 
-    @attr(tags=["advanced", "advancedns"],required_hardware="true")
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     @attr(speed="slow")
     def test_01_create_sticky_policy_default_values(self):
         """Test Configure stickiness policies with default values"""
@@ -409,29 +347,36 @@ class TestHAProxyStickyness(cloudstackTestCase):
         #   listLBStickinessPolicies should show newly created stickiness
 
         self.debug("Creating a load balancing rule on IP: %s" %
-                                        self.public_ip.ipaddress.ipaddress)
+                   self.public_ip.ipaddress.ipaddress)
 
-        lb_rule = self.create_LB_Rule(self.public_ip,
-                            network=self.get_Network(self.account),
-                            vmarray=[self.virtual_machine, self.virtual_machine_2])
+        lb_rule = self.create_LB_Rule(
+            self.public_ip,
+            network=self.get_Network(
+                self.account),
+            vmarray=[
+                self.virtual_machine,
+                self.virtual_machine_2])
 
         methods = ["SourceBased", "AppCookie", "LBCookie"]
         for method in methods:
             self.debug("Creating stickiness policy for the LB rule: %s" %
-                                                                lb_rule.id)
+                       lb_rule.id)
             policies = self.configure_Stickiness_Policy(lb_rule, method=method)
 
             policy = policies.stickinesspolicy[0]
 
             self.debug("Policy: %s" % str(policy))
             self.debug("Validating the stickiness policy")
-            self.validate_Stickiness_Policy(lb_rule, method, self.public_ip.ipaddress.ipaddress)
+            self.validate_Stickiness_Policy(
+                lb_rule,
+                method,
+                self.public_ip.ipaddress.ipaddress)
             self.debug("Deleting the stickiness policy for lb rule: %s" %
-                                                                lb_rule.name)
+                       lb_rule.name)
             self.delete_Stickiness_policy(policy, lb_rule)
         return
 
-    @attr(tags=["advanced", "advancedns"],required_hardware="true")
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     @attr(speed="slow")
     def test_02_create_sticky_policy_custom_values(self):
         """Test Configure stickiness policies with custom values"""
@@ -451,30 +396,37 @@ class TestHAProxyStickyness(cloudstackTestCase):
 
         for lb_method in lb_methods:
             self.debug("Creating a load balancing rule on IP %s and algo %s" %
-                            (self.public_ip.ipaddress.ipaddress, lb_method))
+                       (self.public_ip.ipaddress.ipaddress, lb_method))
 
             services = self.services["lbrule"]
             services["alg"] = lb_method
 
-            lb_rule = self.create_LB_Rule(self.public_ip,
-                            network=self.get_Network(self.account),
-                            vmarray=[self.virtual_machine, self.virtual_machine_2],
-                            services=services)
+            lb_rule = self.create_LB_Rule(
+                self.public_ip,
+                network=self.get_Network(
+                    self.account),
+                vmarray=[
+                    self.virtual_machine,
+                    self.virtual_machine_2],
+                services=services)
 
             for method, params in configs.items():
                 self.debug("Creating stickiness policy for the LB rule: %s" %
-                                                                lb_rule.id)
+                           lb_rule.id)
                 policies = self.configure_Stickiness_Policy(lb_rule,
-                                                          method=method,
-                                                          paramDict=params)
+                                                            method=method,
+                                                            paramDict=params)
 
                 policy = policies.stickinesspolicy[0]
                 self.debug("Policy: %s" % str(policy))
 
                 self.debug("Validating the stickiness policy")
-                self.validate_Stickiness_Policy(lb_rule, method, self.public_ip.ipaddress.ipaddress)
+                self.validate_Stickiness_Policy(
+                    lb_rule,
+                    method,
+                    self.public_ip.ipaddress.ipaddress)
                 self.debug("Deleting the stickiness policy for lb rule: %s" %
-                                                                lb_rule.name)
+                           lb_rule.name)
                 self.delete_Stickiness_policy(policy, lb_rule)
             self.debug("Deleting the LB rule: %s" % lb_rule.name)
             lb_rule.delete(self.apiclient)
@@ -501,25 +453,28 @@ class TestHAProxyStickyness(cloudstackTestCase):
                               "List network should return a valid response")
         network = networks[0]
         self.debug("Network: %s" % network)
-        self.assertEqual(hasattr(network, "SupportedStickinessMethods"),
-                        True,
-                        "Network should have SupportedStickinessMethods param")
+        self.assertEqual(
+            hasattr(
+                network,
+                "SupportedStickinessMethods"),
+            True,
+            "Network should have SupportedStickinessMethods param")
 
         self.assertEqual(hasattr(network, "LbCookie"),
-                        True,
-                        "Network should have LbCookie LB method param")
+                         True,
+                         "Network should have LbCookie LB method param")
 
         self.assertEqual(hasattr(network, "AppCookie"),
-                        True,
-                        "Network should have AppCookie LB method param")
+                         True,
+                         "Network should have AppCookie LB method param")
 
         self.assertEqual(hasattr(network, "SourceBased"),
-                        True,
-                        "Network should have SourceBased LB method param")
+                         True,
+                         "Network should have SourceBased LB method param")
 
         return
 
-    @attr(tags=["advanced", "advancedns"],required_hardware="true")
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     @attr(speed="slow")
     def test_04_delete_lb_rule(self):
         """Test LB rule before/after stickiness policy creation"""
@@ -542,39 +497,50 @@ class TestHAProxyStickyness(cloudstackTestCase):
         for lb_method in lb_methods:
             for method, params in configs.items():
                 self.debug("Creating load balancing rule on IP %s & algo %s" %
-                            (self.public_ip.ipaddress.ipaddress, lb_method))
+                           (self.public_ip.ipaddress.ipaddress, lb_method))
 
                 services = self.services["lbrule"]
                 services["alg"] = lb_method
 
-                lb_rule = self.create_LB_Rule(self.public_ip,
-                            network=self.get_Network(self.account),
-                            vmarray=[self.virtual_machine, self.virtual_machine_2],
-                            services=services)
+                lb_rule = self.create_LB_Rule(
+                    self.public_ip,
+                    network=self.get_Network(
+                        self.account),
+                    vmarray=[
+                        self.virtual_machine,
+                        self.virtual_machine_2],
+                    services=services)
                 self.debug(
                     "Deleting the LB rule before stickiness policy creation")
                 lb_rule.delete(self.apiclient)
 
                 with self.assertRaises(Exception):
                     LoadBalancerRule.list(self.apiclient,
-                                        id=lb_rule.id,
-                                        listall=True)
+                                          id=lb_rule.id,
+                                          listall=True)
 
-                lb_rule = self.create_LB_Rule(self.public_ip,
-                            network=self.get_Network(self.account),
-                            vmarray=[self.virtual_machine, self.virtual_machine_2],
-                            services=services)
+                lb_rule = self.create_LB_Rule(
+                    self.public_ip,
+                    network=self.get_Network(
+                        self.account),
+                    vmarray=[
+                        self.virtual_machine,
+                        self.virtual_machine_2],
+                    services=services)
                 self.debug("Creating stickiness policy for the LB rule: %s" %
-                                                                lb_rule.id)
+                           lb_rule.id)
                 policies = self.configure_Stickiness_Policy(lb_rule,
-                                                          method=method,
-                                                          paramDict=params)
+                                                            method=method,
+                                                            paramDict=params)
 
                 policy = policies.stickinesspolicy[0]
 
                 self.debug("Policy: %s" % str(policy))
                 self.debug("Validating the stickiness policy")
-                self.validate_Stickiness_Policy(lb_rule, method, self.public_ip.ipaddress.ipaddress)
+                self.validate_Stickiness_Policy(
+                    lb_rule,
+                    method,
+                    self.public_ip.ipaddress.ipaddress)
 
                 self.debug("Deleting the LB rule: %s" % lb_rule.name)
                 lb_rule.delete(self.apiclient)
@@ -582,7 +548,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
                     LoadBalancerRule.list(self.apiclient, id=lb_rule.id)
         return
 
-    @attr(tags=["advanced", "advancedns"],required_hardware="true")
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     @attr(speed="slow")
     def test_05_error_alerts_after_create(self):
         """Test error/alerts after creating stickiness policy"""
@@ -602,44 +568,53 @@ class TestHAProxyStickyness(cloudstackTestCase):
         for lb_method in lb_methods:
             for method, params in configs.items():
                 self.debug("Creating load balancing rule on IP %s & algo %s" %
-                            (self.public_ip.ipaddress.ipaddress, lb_method))
+                           (self.public_ip.ipaddress.ipaddress, lb_method))
 
                 services = self.services["lbrule"]
                 services["alg"] = lb_method
 
-                lb_rule = self.create_LB_Rule(self.public_ip,
-                            network=self.get_Network(self.account),
-                            vmarray=[self.virtual_machine, self.virtual_machine_2],
-                            services=services)
+                lb_rule = self.create_LB_Rule(
+                    self.public_ip,
+                    network=self.get_Network(
+                        self.account),
+                    vmarray=[
+                        self.virtual_machine,
+                        self.virtual_machine_2],
+                    services=services)
 
                 self.debug("Creating stickiness policy for the LB rule: %s" %
-                                                                lb_rule.id)
+                           lb_rule.id)
                 policies = self.configure_Stickiness_Policy(lb_rule,
-                                                          method=method,
-                                                          paramDict=params)
+                                                            method=method,
+                                                            paramDict=params)
 
                 policy = policies.stickinesspolicy[0]
 
                 self.debug("Policy: %s" % str(policy))
                 self.debug("Validating the stickiness policy")
-                self.validate_Stickiness_Policy(lb_rule, method, self.public_ip.ipaddress.ipaddress)
+                self.validate_Stickiness_Policy(
+                    lb_rule,
+                    method,
+                    self.public_ip.ipaddress.ipaddress)
 
                 self.debug("Deleting the LB rule: %s" % lb_rule.name)
                 lb_rule.delete(self.apiclient)
 
                 with self.assertRaises(Exception):
                     LoadBalancerRule.list(self.apiclient,
-                                        id=lb_rule.id,
-                                        listall=True)
+                                          id=lb_rule.id,
+                                          listall=True)
                 alerts = Alert.list(self.apiclient, keyword="stickiness",
-                                listall=True)
+                                    listall=True)
                 self.debug(
                     "Create/update/delete should not produce any alert/error")
-                self.assertEqual(alerts, None,
+                self.assertEqual(
+                    alerts,
+                    None,
                     "Create/update/delete should not produce any alert/error")
         return
 
-    @attr(tags=["advanced", "advancedns"],required_hardware="true")
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     @attr(speed="slow")
     def test_06_release_ip(self):
         """Test release public IP with stickiness policy"""
@@ -664,35 +639,42 @@ class TestHAProxyStickyness(cloudstackTestCase):
 
                 self.debug(
                     "Creating a load balancing rule on IP %s and algo %s" %
-                                (public_ip.ipaddress.ipaddress, lb_method))
+                    (public_ip.ipaddress.ipaddress, lb_method))
 
                 services = self.services["lbrule"]
                 services["alg"] = lb_method
 
-                lb_rule = self.create_LB_Rule(public_ip,
-                            network=self.get_Network(self.account),
-                            vmarray=[self.virtual_machine, self.virtual_machine_2],
-                            services=services)
+                lb_rule = self.create_LB_Rule(
+                    public_ip,
+                    network=self.get_Network(
+                        self.account),
+                    vmarray=[
+                        self.virtual_machine,
+                        self.virtual_machine_2],
+                    services=services)
 
                 policies = self.configure_Stickiness_Policy(lb_rule,
-                                                          method=method,
-                                                          paramDict=params)
+                                                            method=method,
+                                                            paramDict=params)
                 policy = policies.stickinesspolicy[0]
 
                 self.debug("Policy: %s" % str(policy))
                 self.debug("Validating the stickiness policy")
-                self.validate_Stickiness_Policy(lb_rule, method, public_ip.ipaddress.ipaddress)
+                self.validate_Stickiness_Policy(
+                    lb_rule,
+                    method,
+                    public_ip.ipaddress.ipaddress)
 
                 self.debug("Releasing public Ip: %s" %
-                                            public_ip.ipaddress.ipaddress)
+                           public_ip.ipaddress.ipaddress)
                 public_ip.delete(self.apiclient)
 
                 self.debug("Checking the response of liststickiness policies")
 
                 with self.assertRaises(Exception):
                     lb_rule.listStickyPolicies(self.apiclient,
-                                                     lbruleid=lb_rule.id,
-                                                     listall=True)
+                                               lbruleid=lb_rule.id,
+                                               listall=True)
         return
 
     @attr(tags=["advanced", "advancedns"], required_hardware="true")
@@ -708,17 +690,24 @@ class TestHAProxyStickyness(cloudstackTestCase):
         # listLBStickinessPolicies Api shouldnot show deleted stikiness policy
 
         self.debug("Creating LB rule for account: %s" %
-                                                self.account.name)
-        lb_rule = self.create_LB_Rule(self.public_ip,
-                                      network=self.get_Network(self.account),
-                                      vmarray=[self.virtual_machine, self.virtual_machine_2])
+                   self.account.name)
+        lb_rule = self.create_LB_Rule(
+            self.public_ip,
+            network=self.get_Network(
+                self.account),
+            vmarray=[
+                self.virtual_machine,
+                self.virtual_machine_2])
 
         policies = self.configure_Stickiness_Policy(lb_rule, method="LbCookie")
         policy = policies.stickinesspolicy[0]
 
         self.debug("Policy: %s" % str(policy))
         self.debug("Validating the stickiness policy")
-        self.validate_Stickiness_Policy(lb_rule, "LbCookie", self.public_ip.ipaddress.ipaddress)
+        self.validate_Stickiness_Policy(
+            lb_rule,
+            "LbCookie",
+            self.public_ip.ipaddress.ipaddress)
 
         # removing account from cleanup list as we're deleting account
         self.cleanup.pop()
@@ -747,12 +736,16 @@ class TestHAProxyStickyness(cloudstackTestCase):
         #    stikiness policy
 
         self.debug("Creating LB rule for account: %s" % self.account.name)
-        lb_rule = self.create_LB_Rule(self.public_ip,
-                                      network=self.get_Network(self.account),
-                                      vmarray=[self.virtual_machine, self.virtual_machine_2])
+        lb_rule = self.create_LB_Rule(
+            self.public_ip,
+            network=self.get_Network(
+                self.account),
+            vmarray=[
+                self.virtual_machine,
+                self.virtual_machine_2])
 
         self.debug("Fetching routers for the account: %s" %
-                                                    self.account.name)
+                   self.account.name)
         router = self.get_router(self.account)
 
         self.debug("Stopping the router: %s" % router.name)
@@ -766,7 +759,10 @@ class TestHAProxyStickyness(cloudstackTestCase):
 
         self.debug("Policy: %s" % str(policy))
         self.debug("Validating the stickiness policy")
-        self.validate_Stickiness_Policy(lb_rule, "LbCookie", self.public_ip.ipaddress.ipaddress)
+        self.validate_Stickiness_Policy(
+            lb_rule,
+            "LbCookie",
+            self.public_ip.ipaddress.ipaddress)
         return
 
     @attr(tags=["advanced", "advancedns"], required_hardware="true")
@@ -780,12 +776,16 @@ class TestHAProxyStickyness(cloudstackTestCase):
         # 4. destroy the router.
 
         self.debug("Creating LB rule for account: %s" % self.account.name)
-        lb_rule = self.create_LB_Rule(self.public_ip,
-                                      network=self.get_Network(self.account),
-                                      vmarray=[self.virtual_machine, self.virtual_machine_2])
+        lb_rule = self.create_LB_Rule(
+            self.public_ip,
+            network=self.get_Network(
+                self.account),
+            vmarray=[
+                self.virtual_machine,
+                self.virtual_machine_2])
 
         self.debug("Fetching routers for the account: %s" %
-                                                    self.account.name)
+                   self.account.name)
         router = self.get_router(self.account)
 
         policies = self.configure_Stickiness_Policy(lb_rule, method="LbCookie")
@@ -793,7 +793,10 @@ class TestHAProxyStickyness(cloudstackTestCase):
 
         self.debug("Policy: %s" % str(policy))
         self.debug("Validating the stickiness policy")
-        self.validate_Stickiness_Policy(lb_rule, "LbCookie", self.public_ip.ipaddress.ipaddress)
+        self.validate_Stickiness_Policy(
+            lb_rule,
+            "LbCookie",
+            self.public_ip.ipaddress.ipaddress)
 
         self.debug("Destroying the router: %s" % router.name)
         Router.destroy(self.apiclient, id=router.id)
@@ -812,23 +815,33 @@ class TestHAProxyStickyness(cloudstackTestCase):
         #    listLBStickinessPolicies Api should show created stikiness policy
 
         self.debug("Creating LB rule for account: %s" % self.account.name)
-        lb_rule = self.create_LB_Rule(self.public_ip,
-                                      network=self.get_Network(self.account),
-                                      vmarray=[self.virtual_machine, self.virtual_machine_2])
+        lb_rule = self.create_LB_Rule(
+            self.public_ip,
+            network=self.get_Network(
+                self.account),
+            vmarray=[
+                self.virtual_machine,
+                self.virtual_machine_2])
 
         policies = self.configure_Stickiness_Policy(lb_rule, method="LbCookie")
         policy = policies.stickinesspolicy[0]
 
         self.debug("Policy: %s" % str(policy))
         self.debug("Validating the stickiness policy")
-        self.validate_Stickiness_Policy(lb_rule, "LbCookie", self.public_ip.ipaddress.ipaddress)
+        self.validate_Stickiness_Policy(
+            lb_rule,
+            "LbCookie",
+            self.public_ip.ipaddress.ipaddress)
 
         self.debug("Enabling VPN on Public Ip: %s" %
-                                        self.public_ip.ipaddress.ipaddress)
+                   self.public_ip.ipaddress.ipaddress)
         self.create_VPN(self.public_ip)
 
         self.debug("Validating the stickiness policy after enabling VPN")
-        self.validate_Stickiness_Policy(lb_rule, "LbCookie", self.public_ip.ipaddress.ipaddress)
+        self.validate_Stickiness_Policy(
+            lb_rule,
+            "LbCookie",
+            self.public_ip.ipaddress.ipaddress)
         return
 
     @attr(tags=["advanced", "advancedns"], required_hardware="false")
@@ -844,9 +857,13 @@ class TestHAProxyStickyness(cloudstackTestCase):
         # * passing invalid values to valid paramters.
 
         self.debug("Creating LB rule for account: %s" % self.account.name)
-        lb_rule = self.create_LB_Rule(self.public_ip,
-                                      network=self.get_Network(self.account),
-                                      vmarray=[self.virtual_machine, self.virtual_machine_2])
+        lb_rule = self.create_LB_Rule(
+            self.public_ip,
+            network=self.get_Network(
+                self.account),
+            vmarray=[
+                self.virtual_machine,
+                self.virtual_machine_2])
 
         self.debug("Creating stickiness policy with invalid method")
         with self.assertRaises(Exception):
