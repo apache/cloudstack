@@ -142,57 +142,6 @@ test_data = {
             "hosttags": "vmsync",
         },
     },
-    "service_offering_h1": {
-                             "name": "Tiny Instance H1",
-                             "displaytext": "Tiny Instance H1",
-                             "cpunumber": 1,
-                             "cpuspeed": 100,
-                             "memory": 128,
-			     "hosttags": "h1"
-                            },
-    "service_offering_h2": {
-                             "name": "Tiny Instance H2",
-                             "displaytext": "Tiny Instance H2",
-                             "cpunumber": 1,
-                             "cpuspeed": 100,
-                             "memory": 128,
-                             "hosttags": "h2"
-                            },
-    "disk_offering_shared_5GB": {
-                             "name": "5GB",
-                             "displaytext": "5GB",
-                             "disksize": 5,
-                             "storagetype": "shared"
-                            },
-        "windows_2008_R2_iso":{
-                        "name":"Windows2008R2ISO1",
-                        "displaytext":"Windows2008R2ISO1",
-                        "ostype":"Windows Server 2008 R2 (64-bit)",
-                        "url":"http://nfs1.lab.vmops.com/isos_64bit/Windows-Server-2008/en_windows_server_2008_r2_standard_enterprise_datacenter_web_vl_build_x64_dvd_x15-59754.iso",
-                        "isfeatured":"True",
-                        "ispublic":"True",
-                        "isextractable":"True"
-    },
-    "disk_offering_shared_15GB": {
-                             "name": "15GB",
-                             "displaytext": "15GB",
-                             "disksize": 15,
-                             "storagetype": "shared"
-                            },
-    "zone": {
-        "name" : "Adv-Xen-Zone1"
-        },
-        "template_from_root_volume": {
-                        "name": "Template_From_Root_Volume",
-                        "displaytext": "Template_From_Root_Volume",
-                        "format": "VHD",
-                        "ostype": "CentOS 5.6 (64-bit)",
-                        "isfeatured": "True",
-                        "ispublic": "True",
-                        "isextractable": "True"
-        },
-    "ug_stp_obj_file":"/usr/lib/python2.7/site-packages/marvin/config/ug_file.json",
-    "write_obj_file":"/usr/lib/python2.7/site-packages/marvin/config/write.json",
     "disk_offering": {
         "name": "Disk offering",
         "displaytext": "Disk offering",
