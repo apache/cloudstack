@@ -110,14 +110,7 @@ public class Connection extends XmlRpcClient {
             boolean debug) throws XmlRpcException {
         TimingOutCallback callback = new TimingOutCallback(timeout * 1000);
         if (debug) {
-            /*
-             * some parameters including hostUser password should not be printed
-             * in log
-             */
-            if ("".equals(hostName)) {
-                hostName = hostIp;
-            }
-            LOGGER.debug("Call Ovm3 agent " + hostName + ": " + method
+            LOGGER.debug("Call Ovm3 agent " + hostName + "(" + hostIp +"): " + method
                     + " with " + params);
         }
         long startTime = System.currentTimeMillis();

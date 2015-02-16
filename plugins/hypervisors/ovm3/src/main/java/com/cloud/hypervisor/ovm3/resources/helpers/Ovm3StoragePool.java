@@ -26,8 +26,10 @@ import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
+
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
@@ -38,6 +40,7 @@ import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.hypervisor.ovm3.objects.CloudstackPlugin;
 import com.cloud.hypervisor.ovm3.objects.Connection;
 import com.cloud.hypervisor.ovm3.objects.Linux;
 import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
@@ -69,6 +72,7 @@ public class Ovm3StoragePool {
 
     /**
      * Setting up the roles on a host, we set all roles on all hosts!
+     *
      * @param pool
      * @throws ConfigurationException
      */
@@ -77,21 +81,21 @@ public class Ovm3StoragePool {
             pool.setServerRoles(pool.getValidRoles());
         } catch (Ovm3ResourceException e) {
             String msg = "Failed to set server role for host "
-                            + config.getAgentHostname() + ": "
-                            + e.getMessage();
+                    + config.getAgentHostname() + ": " + e.getMessage();
             LOGGER.error(msg);
             throw new ConfigurationException(msg);
         }
     }
+
     /**
      * If you don't own the host you can't fiddle with it.
+     *
      * @param pool
      * @throws ConfigurationException
      */
     private void takeOwnership(Pool pool) throws ConfigurationException {
         try {
-            LOGGER.debug("Take ownership of host "
-                    + config.getAgentHostname());
+            LOGGER.debug("Take ownership of host " + config.getAgentHostname());
             pool.takeOwnership(config.getAgentOwnedByUuid(), "");
         } catch (Ovm3ResourceException e) {
             String msg = "Failed to take ownership of host "
@@ -100,9 +104,11 @@ public class Ovm3StoragePool {
             throw new ConfigurationException(msg);
         }
     }
+
     /**
      * Prepare a host to become part of a pool, the roles and ownership are
      * important here.
+     *
      * @return
      * @throws ConfigurationException
      */
@@ -115,8 +121,8 @@ public class Ovm3StoragePool {
             /* setup pool and role, needs utility to be able to do things */
             if (host.getServerRoles().contentEquals(
                     pool.getValidRoles().toString())) {
-                LOGGER.info("Server role for host "
-                        + config.getAgentHostname() + " is ok");
+                LOGGER.info("Server role for host " + config.getAgentHostname()
+                        + " is ok");
             } else {
                 setRoles(pool);
             }
@@ -145,8 +151,9 @@ public class Ovm3StoragePool {
     }
 
     /**
-     * Setup a pool in general, this creates a repo if it doesn't exist yet,
-     * if it does however we mount it.
+     * Setup a pool in general, this creates a repo if it doesn't exist yet, if
+     * it does however we mount it.
+     *
      * @param cmd
      * @return
      * @throws Ovm3ResourceException
@@ -192,17 +199,56 @@ public class Ovm3StoragePool {
             }
         }
         try {
+            /* should contain check if we're in an OVM pool or not */
+            Boolean vip = checkOvm3VipAvailable(config.getOvm3PoolVip(), 1000,
+                    60);
+            if (!vip) {
+                throw new Ovm3ResourceException(
+                        "Unable to reach Ovm3 Pool VIP "
+                                + config.getOvm3PoolVip());
+            }
+            /*
+             * should also throw exception, we need to stop pool creation here,
+             * or is the manual addition fine?
+             */
             if (!addMembers()) {
                 return false;
             }
-        } catch (Ovm3ResourceException e) {
-            throw e;
+        } catch (Ovm3ResourceException | InterruptedException e) {
+            throw new Ovm3ResourceException("Unable to add members to pool"
+                    + e.getMessage());
         }
         return true;
     }
 
     /**
-     * Adding members to a pool, this is seperate from cluster configuration in OVM.
+     * @return
+     * @throws InterruptedException
+     */
+    private Boolean checkOvm3VipAvailable(String host, Integer timer,
+            Integer counter) throws InterruptedException {
+        for (int count = 0; count < counter; count++) {
+            CloudstackPlugin cSp = new CloudstackPlugin(c);
+            try {
+                Boolean res = cSp.domrCheckSsh(host);
+                LOGGER.debug("connected to " + host + " on attempt " + count
+                        + " result: " + res);
+                if (res) {
+                    return true;
+                }
+            } catch (Exception x) {
+                LOGGER.trace("unable to connect to " + host + " on attempt "
+                        + count + " " + x.getMessage(), x);
+                Thread.sleep(timer);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Adding members to a pool, this is seperate from cluster configuration in
+     * OVM.
+     *
      * @return
      * @throws Ovm3ResourceException
      */
@@ -247,6 +293,7 @@ public class Ovm3StoragePool {
 
     /**
      * Get a host out of a pool/cluster, this should unmount all FSs though.
+     *
      * @param cmd
      * @return
      */
@@ -267,8 +314,9 @@ public class Ovm3StoragePool {
     }
 
     /**
-     * Create primary storage, which is a repository in OVM. Pooling is part of this too
-     * and clustering should be in the future.
+     * Create primary storage, which is a repository in OVM. Pooling is part of
+     * this too and clustering should be in the future.
+     *
      * @param cmd
      * @return
      * @throws XmlRpcException
@@ -383,6 +431,7 @@ public class Ovm3StoragePool {
 
     /**
      * Copy the systemvm.iso in if it doesn't exist or the size differs.
+     *
      * @param storageUrl
      * @param poolUuid
      * @param host
@@ -449,7 +498,9 @@ public class Ovm3StoragePool {
     }
 
     /**
-     * The secondary storage mountpoint is a uuid based on the host combined with the path.
+     * The secondary storage mountpoint is a uuid based on the host combined
+     * with the path.
+     *
      * @param url
      * @return
      * @throws Ovm3ResourceException
@@ -458,7 +509,8 @@ public class Ovm3StoragePool {
             throws Ovm3ResourceException {
         URI uri = URI.create(url);
         if (uri.getHost() == null) {
-            throw new Ovm3ResourceException("Secondary storage host can not be empty!");
+            throw new Ovm3ResourceException(
+                    "Secondary storage host can not be empty!");
         }
         String uuid = ovmObject.newUuid(uri.getHost() + ":" + uri.getPath());
         LOGGER.info("Secondary storage with uuid: " + uuid);
@@ -467,6 +519,7 @@ public class Ovm3StoragePool {
 
     /**
      * Sets up NFS Storage
+     *
      * @param uri
      * @param uuid
      * @return
@@ -502,6 +555,7 @@ public class Ovm3StoragePool {
 
     /**
      * Gets statistics for storage.
+     *
      * @param cmd
      * @return
      */
@@ -514,22 +568,26 @@ public class Ovm3StoragePool {
             StoragePlugin store = new StoragePlugin(c);
             String propUuid = store.deDash(cmd.getStorageId());
             String mntUuid = cmd.getStorageId();
-            if (store == null || propUuid == null || mntUuid == null || fs == null) {
-                String msg = "Null returned when retrieving stats for " + cmd.getStorageId();
+            if (store == null || propUuid == null || mntUuid == null
+                    || fs == null) {
+                String msg = "Null returned when retrieving stats for "
+                        + cmd.getStorageId();
                 LOGGER.error(msg);
                 return new GetStorageStatsAnswer(cmd, msg);
             }
             /* or is it mntUuid ish ? */
             StorageDetails sd = store.storagePluginGetFileSystemInfo(propUuid,
                     mntUuid, fs.getHost(), fs.getDevice());
-            /* FIXME: cure me or kill me, this needs to trigger a reinit of
-             * primary storage, actually the problem is more deeprooted, as
-             * when the hypervisor reboots it looses partial context and needs
-             * to be reinitiated.... actually a full configure round... how
-             * to trigger that ?
+            /*
+             * FIXME: cure me or kill me, this needs to trigger a reinit of
+             * primary storage, actually the problem is more deeprooted, as when
+             * the hypervisor reboots it looses partial context and needs to be
+             * reinitiated.... actually a full configure round... how to trigger
+             * that ?
              */
             if ("".equals(sd.getSize())) {
-                String msg = "No size when retrieving stats for " + cmd.getStorageId();
+                String msg = "No size when retrieving stats for "
+                        + cmd.getStorageId();
                 LOGGER.debug(msg);
                 return new GetStorageStatsAnswer(cmd, msg);
             }
@@ -544,8 +602,9 @@ public class Ovm3StoragePool {
     }
 
     /**
-     * Try to figure out where the systemvm.iso resides on the
-     * fs of the management server
+     * Try to figure out where the systemvm.iso resides on the fs of the
+     * management server
+     *
      * @return
      */
     public File getSystemVMPatchIsoFile() {
@@ -572,6 +631,7 @@ public class Ovm3StoragePool {
 
     /**
      * Create and OCFS2 filesystem (not implemented)
+     *
      * @param pool
      * @return
      * @throws XmlRpcException
@@ -583,6 +643,7 @@ public class Ovm3StoragePool {
 
     /**
      * Gets the details of a storage pool, size etc
+     *
      * @param cmd
      * @return
      */
@@ -591,7 +652,8 @@ public class Ovm3StoragePool {
         LOGGER.debug("modifying pool " + pool);
         try {
             if (config.getAgentInOvm3Cluster()) {
-                // no native ovm cluster for now, I got to break it in horrible ways
+                // no native ovm cluster for now, I got to break it in horrible
+                // ways
             }
             if (pool.getType() == StoragePoolType.NetworkFilesystem) {
                 createRepo(pool);
@@ -600,18 +662,17 @@ public class Ovm3StoragePool {
                 String mntUuid = pool.getUuid();
                 String nfsHost = pool.getHost();
                 String nfsPath = pool.getPath();
-                StorageDetails ss = store.storagePluginGetFileSystemInfo(propUuid,
-                        mntUuid, nfsHost, nfsPath);
+                StorageDetails ss = store.storagePluginGetFileSystemInfo(
+                        propUuid, mntUuid, nfsHost, nfsPath);
 
                 Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
-                return new ModifyStoragePoolAnswer(cmd,
-                        Long.parseLong(ss.getSize()), Long.parseLong(ss
-                                .getFreeSize()), tInfo);
+                return new ModifyStoragePoolAnswer(cmd, Long.parseLong(ss
+                        .getSize()), Long.parseLong(ss.getFreeSize()), tInfo);
             } else if (pool.getType() == StoragePoolType.OCFS2) {
                 createOCFS2Sr(pool);
             }
             return new Answer(cmd, false, "The pool type: "
-                   + pool.getType().name() + " is not supported.");
+                    + pool.getType().name() + " is not supported.");
         } catch (Exception e) {
             LOGGER.debug("ModifyStoragePoolCommand failed", e);
             return new Answer(cmd, false, e.getMessage());
@@ -620,6 +681,7 @@ public class Ovm3StoragePool {
 
     /**
      * Create the primary storage pool, should add iSCSI and OCFS2
+     *
      * @param cmd
      * @return
      */
@@ -633,9 +695,8 @@ public class Ovm3StoragePool {
                 return new Answer(cmd, false,
                         "iSCSI is unsupported at the moment");
                 /*
-                 * iScsi like so: getIscsiSR(conn,
-                 * pool.getUuid(), pool.getHost(), pool.getPath(), null, null,
-                 * false);
+                 * iScsi like so: getIscsiSR(conn, pool.getUuid(),
+                 * pool.getHost(), pool.getPath(), null, null, false);
                  */
             } else if (pool.getType() == StoragePoolType.OCFS2) {
                 return new Answer(cmd, false,
@@ -659,6 +720,7 @@ public class Ovm3StoragePool {
 
     /**
      * Download from template url into primary storage ?.. is this relevant ?
+     *
      * @param cmd
      * @return
      */

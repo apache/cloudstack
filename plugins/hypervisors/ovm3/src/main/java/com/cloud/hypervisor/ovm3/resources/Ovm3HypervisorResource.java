@@ -154,10 +154,6 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             /* here stuff gets completed, but where should state live ? */
             hypervisorsupport.fillHostInfo(srCmd);
             hypervisorsupport.vmStateMapClear();
-            if (!configuration.getIsTest()) {
-                hypervisorsupport.setupServer(configuration
-                        .getAgentSshKeyFileName());
-            }
             LOGGER.debug("Ovm3 pool " + ssCmd + " " + srCmd);
             return new StartupCommand[] { srCmd, ssCmd };
         } catch (Exception e) {
@@ -356,8 +352,11 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
                         configuration.getAgentOvsAgentPassword());
                 c.setHostName(configuration.getAgentHostname());
             }
-
             hypervisorsupport = new Ovm3HypervisorSupport(c, configuration);
+            if (!configuration.getIsTest()) {
+                hypervisorsupport.setupServer(configuration
+                        .getAgentSshKeyFileName());
+            }
             hypervisorsupport.masterCheck();
         } catch (Exception e) {
             throw new CloudRuntimeException("Base checks failed for "
