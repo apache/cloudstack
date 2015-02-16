@@ -3,7 +3,7 @@ Section: libs
 Priority: extra
 Maintainer: Wido den Hollander <wido@widodh.nl>
 Build-Depends: debhelper (>= 7), openjdk-7-jdk, genisoimage,
- python-mysqldb, maven3 | maven (>= 3), python (>= 2.6.6-3~)
+ python-mysqldb, maven (>= 3) | maven3, python (>= 2.6.6-3~)
 Standards-Version: 3.8.1
 Homepage: http://www.cloudstack.org/
 
