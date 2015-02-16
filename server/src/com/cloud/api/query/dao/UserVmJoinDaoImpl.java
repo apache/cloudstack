@@ -48,6 +48,8 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.User;
+import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -70,6 +72,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
     public AccountManager _accountMgr;
     @Inject
     private UserVmDetailsDao _userVmDetailsDao;
+    @Inject
+    private UserDao _userDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
@@ -121,6 +125,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
             userVmResponse.setAccountName(userVm.getAccountName());
         }
 
+        User user = _userDao.getUser(userVm.getUserId());
+        if (user != null) {
+            userVmResponse.setUserId(user.getUuid());
+            userVmResponse.setUserName(user.getUsername());
+        }
         userVmResponse.setDomainId(userVm.getDomainUuid());
         userVmResponse.setDomainName(userVm.getDomainName());
 
