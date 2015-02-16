@@ -114,8 +114,8 @@ override_dh_auto_install:
 	install -D agent/target/dependencies/jasypt-1.9.2.jar $(DESTDIR)/usr/share/$(PACKAGE)-common/lib
 
 	# cloudstack-python
-	mkdir -p $(DESTDIR)/usr/lib/python2.7/dist-packages
-	cp -r python/lib/cloud* $(DESTDIR)/usr/lib/python2.7/dist-packages
+	mkdir -p $(DESTDIR)/usr/share/pyshared
+	cp -r python/lib/cloud* $(DESTDIR)/usr/share/pyshared
 
 	# cloudstack-usage
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage
