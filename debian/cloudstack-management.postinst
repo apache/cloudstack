@@ -56,3 +56,5 @@ if [ "$1" = configure ]; then
     chgrp cloud /etc/cloudstack/management/db.properties
     service tomcat6 stop || true
 fi
+
+#DEBHELPER#
