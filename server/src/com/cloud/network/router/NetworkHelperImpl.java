@@ -144,6 +144,7 @@ public class NetworkHelperImpl implements NetworkHelper {
     protected NetworkOrchestrationService _networkMgr;
     @Inject
     private UserDao _userDao;
+    @Inject
     protected ServiceOfferingDao _serviceOfferingDao;
     @Inject
     protected VirtualMachineManager _itMgr;
