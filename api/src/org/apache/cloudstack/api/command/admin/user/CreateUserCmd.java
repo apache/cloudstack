@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
@@ -149,6 +150,9 @@ public class CreateUserCmd extends BaseCmd {
 
     @Override
     public void execute() {
+        if (StringUtils.isEmpty(getPassword())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Empty passwords are not allowed");
+        }
         CallContext.current().setEventDetails("UserName: " + getUserName() + ", FirstName :" + getFirstName() + ", LastName: " + getLastName());
         User user =
             _accountService.createUser(getUserName(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimezone(), getAccountName(), getDomainId(),
