@@ -9,20 +9,20 @@ Homepage: http://www.cloudstack.org/
 
 Package: cloudstack-common
 Architecture: all
-Depends: ${python:Depends}, bash, genisoimage, nfs-common
+Depends: ${misc:Depends}, ${python:Depends}, bash, genisoimage, nfs-common
 Conflicts: cloud-scripts, cloud-utils, cloud-system-iso, cloud-console-proxy, cloud-daemonize, cloud-deps, cloud-python, cloud-setup
 Description: A common package which contains files which are shared by several CloudStack packages
 
 Package: cloudstack-management
 Architecture: all
-Depends: ${python:Depends}, cloudstack-common (= ${source:Version}), tomcat6, sysvinit-utils, sudo, jsvc, python-mysqldb, libmysql-java, python-paramiko, augeas-tools, mysql-client, adduser
+Depends: ${misc:Depends}, ${python:Depends}, cloudstack-common (= ${source:Version}), tomcat6, sysvinit-utils, sudo, jsvc, python-mysqldb, libmysql-java, python-paramiko, augeas-tools, mysql-client, adduser
 Conflicts: cloud-server, cloud-client, cloud-client-ui
 Description: CloudStack server library
  The CloudStack management server
 
 Package: cloudstack-agent
 Architecture: all
-Depends: ${python:Depends}, openjdk-7-jre, cloudstack-common (= ${source:Version}), lsb-base (>= 3.2), libcommons-daemon-java, openssh-client, libvirt0, sysvinit-utils, qemu-system-x86 | qemu-kvm, libvirt-bin, uuid-runtime, rsync, grep, iproute, perl-base, perl-modules, ebtables, vlan, wget, jsvc, ipset, python-libvirt, ethtool, iptables
+Depends: ${misc:Depends}, ${python:Depends}, openjdk-7-jre, cloudstack-common (= ${source:Version}), lsb-base (>= 3.2), libcommons-daemon-java, openssh-client, libvirt0, sysvinit-utils, qemu-system-x86 | qemu-kvm, libvirt-bin, uuid-runtime, rsync, grep, iproute, perl-base, perl-modules, ebtables, vlan, wget, jsvc, ipset, python-libvirt, ethtool, iptables
 Conflicts: cloud-agent, cloud-agent-libs, cloud-agent-deps, cloud-agent-scripts
 Description: CloudStack agent
  The CloudStack agent is in charge of managing shared computing resources in
@@ -31,21 +31,22 @@ Description: CloudStack agent
 
 Package: cloudstack-usage
 Architecture: all
-Depends: openjdk-7-jre, cloudstack-common (= ${source:Version}), jsvc, libmysql-java
+Depends: ${misc:Depends}, openjdk-7-jre, cloudstack-common (= ${source:Version}), jsvc, libmysql-java
 Description: CloudStack usage monitor
  The CloudStack usage monitor provides usage accounting across the entire cloud for
  cloud operators to charge based on usage parameters.
 
 Package: cloudstack-awsapi
 Architecture: all
-Depends: ${python:Depends}, cloudstack-common (= ${source:Version}),  cloudstack-management (= ${source:Version})
+Depends: ${misc:Depends}, ${python:Depends}, cloudstack-common (= ${source:Version}),  cloudstack-management (= ${source:Version})
 Description: CloudStack Amazon EC2 API
 
 Package: cloudstack-cli
 Architecture: all
-Depends: cloudstack-common (= ${source:Version})
+Depends: ${misc:Depends}, cloudstack-common (= ${source:Version})
 Description: The CloudStack CLI called CloudMonkey
 
 Package: cloudstack-docs
 Architecture: all
+Depends: ${misc:Depends}
 Description: The CloudStack documentation
