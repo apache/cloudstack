@@ -208,13 +208,6 @@ class TestVolumes(cloudstackTestCase):
                 "Volume is not created"
             )
 
-            self.assertEqual(
-                self.services["volume"]["diskname"],
-                volume_created.name,
-                "Newly created volume name and the test data\
-                volume name are not matching"
-            )
-
         # Listing all the volumes again after creation of volumes
         list_volumes_after = Volume.list(
             self.userapiclient,
@@ -335,12 +328,7 @@ class TestVolumes(cloudstackTestCase):
             volume_created,
             "Volume is not created"
         )
-        self.assertEqual(
-            self.services["volume"]["diskname"],
-            volume_created.name,
-            "Newly created volume name and\
-            the test data volume name are not matching"
-        )
+
         # Listing all the volumes for a user after creating a data volume
         list_volumes_after = Volume.list(
             self.userapiclient,
@@ -1788,12 +1776,6 @@ class TestVolumes(cloudstackTestCase):
             self.zone.id
         )
         self.assertIsNotNone(volume_uploaded, "volume uploading failed")
-
-        self.assertEquals(
-            self.services["configurableData"]["upload_volume"]["diskname"],
-            volume_uploaded.name,
-            "Uploaded volume name is not matching with name provided\
-            while uploading")
 
         # Listing the volumes for a user after uploading data volume
         list_volumes_after = Volume.list(
