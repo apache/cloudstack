@@ -142,13 +142,13 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                 } catch (InvalidParameterValueException ex) {
                     logger.error("post request validation failed", ex);
                     responseContent.append(ex.getMessage());
-                    writeResponse(ctx.channel());
+                    writeResponse(ctx.channel(), HttpResponseStatus.BAD_REQUEST);
                     return;
                 }
                 if (uploadEntity == null) {
                     logger.error("Unable to create upload entity. An exception occurred.");
                     responseContent.append("Internal Server Error");
-                    writeResponse(ctx.channel());
+                    writeResponse(ctx.channel(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
                     return;
                 }
                 //set the base directory to download the file
@@ -160,13 +160,13 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                 } catch (ErrorDataDecoderException | IncompatibleDataDecoderException e) {
                     logger.error("exception while initialising the decoder", e);
                     responseContent.append(e.getMessage());
-                    writeResponse(ctx.channel());
+                    writeResponse(ctx.channel(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
                     return;
                 }
             } else {
                 logger.warn("received a get request");
                 responseContent.append("only post requests are allowed");
-                writeResponse(ctx.channel());
+                writeResponse(ctx.channel(), HttpResponseStatus.BAD_REQUEST);
                 return;
             }
 
@@ -181,12 +181,12 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                 } catch (ErrorDataDecoderException e) {
                     logger.error("data decoding exception", e);
                     responseContent.append(e.getMessage());
-                    writeResponse(ctx.channel());
+                    writeResponse(ctx.channel(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
                     return;
                 }
                 if (chunk instanceof LastHttpContent) {
                     readFileUploadData();
-                    writeResponse(ctx.channel());
+                    writeResponse(ctx.channel(), HttpResponseStatus.OK);
                     reset();
                 }
             }
@@ -221,7 +221,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
         }
     }
 
-    private void writeResponse(Channel channel) {
+    private void writeResponse(Channel channel, HttpResponseStatus statusCode) {
         // Convert the response content to a ChannelBuffer.
         ByteBuf buf = copiedBuffer(responseContent.toString(), CharsetUtil.UTF_8);
         responseContent.setLength(0);
@@ -229,7 +229,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
         boolean close = HttpHeaders.Values.CLOSE.equalsIgnoreCase(request.headers().get(CONNECTION)) ||
             request.getProtocolVersion().equals(HttpVersion.HTTP_1_0) && !HttpHeaders.Values.KEEP_ALIVE.equalsIgnoreCase(request.headers().get(CONNECTION));
         // Build the response object.
-        FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK, buf);
+        FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, statusCode, buf);
         response.headers().set(CONTENT_TYPE, "text/plain; charset=UTF-8");
         if (!close) {
             // There's no need to add 'Content-Length' header if this is the last response.
@@ -247,7 +247,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         logger.warn(responseContent.toString(), cause);
         responseContent.append("\r\nException occurred: ").append(cause.getMessage());
-        writeResponse(ctx.channel());
+        writeResponse(ctx.channel(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
         ctx.channel().close();
     }
 }
