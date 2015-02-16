@@ -150,5 +150,8 @@ override_dh_auto_install:
 	rm $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi/WEB-INF/classes/services.xml
 	rm -rf $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi/WEB-INF/classes/META-INF
 
+override_dh_installinit:
+	dh_installinit -pcloudstack-management -pcloudstack-agent -pcloudstack-usage --onlyscripts --no-start
+
 override_dh_installdocs:
 	dh_installdocs -A tools/whisker/LICENSE tools/whisker/NOTICE INSTALL.md
