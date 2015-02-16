@@ -19,7 +19,9 @@
 package com.cloud.hypervisor.ovm3.objects;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -119,9 +121,50 @@ public class Pool extends OvmObject {
     public Boolean leaveServerPool(String uuid) throws Ovm3ResourceException{
         return nullIsTrueCallWrapper("leave_server_pool", uuid);
     }
-
+    /**
+     * Ownership prior to 3.3.x used to be simpler....
+     * @param uuid
+     * @param apiurl
+     * @return
+     * @throws Ovm3ResourceException
+     */
     public Boolean takeOwnership(String uuid, String apiurl) throws Ovm3ResourceException {
         return nullIsTrueCallWrapper("take_ownership", uuid, apiurl);
+    }
+    /**
+     * New style ownership, we need a dict to go in.
+     *  manager_uuid
+     *  manager_event_url
+     *  manager_statistic_url
+     *  manager_certificate
+     *  signed_server_certificate
+     * @param uuid
+     * @param apiurl
+     * @return
+     * @throws Ovm3ResourceException
+     */
+    public Boolean takeOwnership33x(final String uuid,
+            final String eventUrl,
+            final String statUrl,
+            final String managerCert,
+            final String signedCert) throws Ovm3ResourceException {
+        final Map<String, String> mgrConfig = new HashMap<String, String>() {
+            {
+                put("manager_uuid", uuid);
+                put("manager_event_url", eventUrl);
+                put("manager_statistic_url", statUrl);
+                put("manager_certificate", managerCert);
+                put("signed_server_certificate", signedCert);
+            }
+        };
+        Boolean rc = nullIsTrueCallWrapper("take_ownership", mgrConfig);
+        /* because it restarts when it's done.... 2000? -sigh- */
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            throw new Ovm3ResourceException(e.getMessage());
+        }
+        return rc;
     }
 
     /*

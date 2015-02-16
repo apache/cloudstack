@@ -106,6 +106,32 @@ public class Ovm3StoragePool {
     }
 
     /**
+     * If you don't own the host you can't fiddle with it.
+     *
+     * @param pool
+     * @throws ConfigurationException
+     */
+    /* FIXME: Placeholders for now, implement later!!!! */
+    private void takeOwnership33x(Pool pool) throws ConfigurationException {
+        try {
+            LOGGER.debug("Take ownership of host " + config.getAgentHostname());
+            String event = "http://localhost:10024/event";
+            String stats = "http://localhost:10024/stats";
+            String mgrCert = "None";
+            String signCert = "None";
+            pool.takeOwnership33x(config.getAgentOwnedByUuid(),
+                    event,
+                    stats,
+                    mgrCert,
+                    signCert);
+        } catch (Ovm3ResourceException e) {
+            String msg = "Failed to take ownership of host "
+                    + config.getAgentHostname();
+            LOGGER.error(msg);
+            throw new ConfigurationException(msg);
+        }
+    }
+    /**
      * Prepare a host to become part of a pool, the roles and ownership are
      * important here.
      *
@@ -127,7 +153,11 @@ public class Ovm3StoragePool {
                 setRoles(pool);
             }
             if (host.getMembershipState().contentEquals("Unowned")) {
-                takeOwnership(pool);
+                if (host.getOvmVersion().startsWith("3.2.")) {
+                    takeOwnership(pool);
+                } else if (host.getOvmVersion().startsWith("3.3.")) {
+                    takeOwnership33x(pool);
+                }
             } else {
                 if (host.getManagerUuid().equals(config.getAgentOwnedByUuid())) {
                     String msg = "Host " + config.getAgentHostname()

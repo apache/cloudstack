@@ -190,11 +190,13 @@ public class Ovm3HypervisorSupport {
         try {
             /* get data we need from parts */
             Linux host = new Linux(c);
-            if (!host.getOvmVersion().startsWith("3.2.") || host.getOvmVersion().startsWith("3.3.")) {
+            if (!host.getOvmVersion().startsWith("3.2.") && !host.getOvmVersion().startsWith("3.3.")) {
                 LOGGER.error("Hypervisor not supported: " + host.getOvmVersion());
                 throw new CloudRuntimeException(
                         "OVM 3.2. or 3.3. are only supported, not "
                                 + host.getOvmVersion());
+            } else {
+                LOGGER.debug("Hypervisor version: " + host.getOvmVersion());
             }
             cmd.setName(host.getHostName());
             cmd.setSpeed(host.getCpuKhz());
@@ -301,6 +303,9 @@ public class Ovm3HypervisorSupport {
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, prepareCmd)) {
                 throw new ConfigurationException("Failed to insert module on "
                         + config.getAgentHostname());
+            } else {
+                /* because of OVM 3.3.1 (might be 2000) */
+                Thread.sleep(5000);
             }
             CloudstackPlugin cSp = new CloudstackPlugin(c);
             cSp.ovsUploadSshKey(config.getAgentSshKeyFileName(),
