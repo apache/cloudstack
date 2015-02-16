@@ -57,7 +57,7 @@ if [ "$1" = configure ]; then
 
     chmod 0640 /etc/cloudstack/management/db.properties
     chgrp cloud /etc/cloudstack/management/db.properties
-    service tomcat6 stop || true
+    invoke-rc.d tomcat6 stop || true
 fi
 
 #DEBHELPER#
