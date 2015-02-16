@@ -1,14 +1,5 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
-# Sample debian/rules that uses debhelper.
-#
-# This file was originally written by Joey Hess and Craig Small.
-# As a special exception, when this file is copied by dh-make into a
-# dh-make output file, you may use that output file without restriction.
-# This special exception was added by Craig Small in version 0.37 of dh-make.
-#
-# Modified to make a template file for a multi-binary package with separated
-# build-arch and build-indep targets  by Bill Allombert 2001
 
 DEBVERS := $(shell dpkg-parsechangelog | sed -n -e 's/^Version: //p')
 VERSION := $(shell echo '$(DEBVERS)' | sed -e 's/^[[:digit:]]*://' -e 's/[~-].*//')
@@ -17,43 +8,26 @@ PACKAGE = $(shell dh_listpackages|head -n 1|cut -d '-' -f 1)
 SYSCONFDIR = "/etc"
 DESTDIR = "debian/tmp"
 
-# Uncomment this to turn on verbose mode.
-export DH_VERBOSE=1
 
-# This has to be exported to make some magic below work.
-export DH_OPTIONS
+%:
+	dh $@ --with python2
 
-configure: configure-stamp
-configure-stamp:
-	dh_testdir
+override_dh_auto_configure:
 	cp packaging/debian/replace.properties replace.properties.tmp
 	echo VERSION=${VERSION} >> replace.properties.tmp
-	touch configure-stamp
 
-build: build-indep
-
-build-indep: build-indep-stamp
-
-build-indep-stamp: configure
+override_dh_auto_build:
 	mvn -T C1.5 clean package -Pawsapi -DskipTests -Dsystemvm \
-        -Dcs.replace.properties=replace.properties.tmp \
-		-Dmaven.repo.local=$(CURDIR)/mavenrepo \
-		${ACS_BUILD_OPTS}
-	touch $@
+	    -Dcs.replace.properties=replace.properties.tmp \
+	    -Dmaven.repo.local=$(CURDIR)/mavenrepo \
+	     ${ACS_BUILD_OPTS}
 
-clean:
-	dh_testdir
-	dh_testroot
-	rm -f build-arch-stamp build-indep-stamp configure-stamp
+override_dh_auto_clean:
+	dh_auto_clean
 	rm -f replace.properties.tmp
 	rm -rf mavenrepo
-	dh_clean
 
-install:
-	dh_testdir
-	dh_testroot
-	dh_prep -s
-
+override_dh_auto_install:
 	# Common packages
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/init.d
@@ -176,21 +150,5 @@ install:
 	rm $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi/WEB-INF/classes/services.xml
 	rm -rf $(DESTDIR)/usr/share/$(PACKAGE)-bridge/webapps/awsapi/WEB-INF/classes/META-INF
 
-	dh_installdirs
-	dh_install
-	dh_python2
-
-binary: install
-	dh_install
-	dh_installchangelogs
+override_dh_installdocs:
 	dh_installdocs -A tools/whisker/LICENSE tools/whisker/NOTICE INSTALL.md
-	dh_installman
-	dh_link
-	dh_strip
-	dh_compress
-	dh_fixperms
-	dh_makeshlibs
-	dh_installdeb
-	dh_gencontrol
-	dh_md5sums
-	dh_builddeb
