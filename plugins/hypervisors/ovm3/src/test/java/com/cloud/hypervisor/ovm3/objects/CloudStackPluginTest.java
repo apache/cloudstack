@@ -214,13 +214,13 @@ public class CloudStackPluginTest {
     }
 
     @Test
-    public void testDomrCheckPort() throws Ovm3ResourceException {
+    public void testDom0CheckPort() throws Ovm3ResourceException {
         con.setResult(results.getBoolean(true));
-        results.basicBooleanTest(cSp.domrCheckPort(host, port, retries, interval));
+        results.basicBooleanTest(cSp.dom0CheckPort(host, port, retries, interval));
         /* test nothing */
         con.setNull();
         results.basicBooleanTest(
-                cSp.domrCheckPort(host, port, retries, interval), false);
+                cSp.dom0CheckPort(host, port, retries, interval), false);
         /* for the last test we need to fake the timeout... */
     }
 

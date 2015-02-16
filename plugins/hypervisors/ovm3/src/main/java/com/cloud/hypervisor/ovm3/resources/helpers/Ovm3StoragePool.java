@@ -200,8 +200,8 @@ public class Ovm3StoragePool {
         }
         try {
             /* should contain check if we're in an OVM pool or not */
-            Boolean vip = checkOvm3VipAvailable(config.getOvm3PoolVip(), 1000,
-                    60);
+            CloudstackPlugin csp = new CloudstackPlugin(c);
+            Boolean vip = csp.dom0CheckPort(config.getOvm3PoolVip(), 22, 60, 1);
             if (!vip) {
                 throw new Ovm3ResourceException(
                         "Unable to reach Ovm3 Pool VIP "
@@ -214,35 +214,11 @@ public class Ovm3StoragePool {
             if (!addMembers()) {
                 return false;
             }
-        } catch (Ovm3ResourceException | InterruptedException e) {
+        } catch (Ovm3ResourceException e) {
             throw new Ovm3ResourceException("Unable to add members to pool"
                     + e.getMessage());
         }
         return true;
-    }
-
-    /**
-     * @return
-     * @throws InterruptedException
-     */
-    private Boolean checkOvm3VipAvailable(String host, Integer timer,
-            Integer counter) throws InterruptedException {
-        for (int count = 0; count < counter; count++) {
-            CloudstackPlugin cSp = new CloudstackPlugin(c);
-            try {
-                Boolean res = cSp.domrCheckSsh(host);
-                LOGGER.debug("connected to " + host + " on attempt " + count
-                        + " result: " + res);
-                if (res) {
-                    return true;
-                }
-            } catch (Exception x) {
-                LOGGER.trace("unable to connect to " + host + " on attempt "
-                        + count + " " + x.getMessage(), x);
-                Thread.sleep(timer);
-            }
-        }
-        return false;
     }
 
     /**

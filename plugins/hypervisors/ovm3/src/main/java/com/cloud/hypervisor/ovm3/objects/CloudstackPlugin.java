@@ -96,19 +96,28 @@ public class CloudstackPlugin extends OvmObject {
         return rc;
     }
 
-    public boolean domrCheckPort(String ip, Integer port, Integer retries,
+    /**
+     * Checks a tcp port of a host reachable from dom0
+     * @param ip
+     * @param port
+     * @param retries
+     * @param interval
+     * @return
+     * @throws Ovm3ResourceException
+     */
+    public boolean dom0CheckPort(String ip, Integer port, Integer retries,
             Integer interval) throws Ovm3ResourceException {
         Boolean x = false;
         /* should deduct the interval from the timeout and sleep on it */
         Integer sleep = interval;
         try {
             while (!x && retries > 0) {
-                x = (Boolean) nullIsFalseCallWrapper("check_domr_port", ip, port, interval);
+                x = (Boolean) nullIsFalseCallWrapper("check_dom0_port", ip, port, interval);
                 retries--;
                 Thread.sleep(sleep * 1000);
             }
         } catch (Exception e) {
-            LOGGER.info("Domr port check failed: " + e);
+            LOGGER.error("Dom0 port check failed: " + e);
         }
         return x;
     }

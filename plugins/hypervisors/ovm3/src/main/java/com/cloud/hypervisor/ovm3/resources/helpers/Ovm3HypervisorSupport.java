@@ -190,9 +190,10 @@ public class Ovm3HypervisorSupport {
         try {
             /* get data we need from parts */
             Linux host = new Linux(c);
-            if (!host.getOvmVersion().startsWith("3.2.")) {
+            if (!host.getOvmVersion().startsWith("3.2.") || host.getOvmVersion().startsWith("3.3.")) {
+                LOGGER.error("Hypervisor not supported: " + host.getOvmVersion());
                 throw new CloudRuntimeException(
-                        "OVM 3.2.X is only supported, not "
+                        "OVM 3.2. or 3.3. are only supported, not "
                                 + host.getOvmVersion());
             }
             cmd.setName(host.getHostName());

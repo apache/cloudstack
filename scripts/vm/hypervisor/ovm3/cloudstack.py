@@ -49,6 +49,7 @@ class CloudStack(Agent):
             'get_vncport': getVncPort,
             'exec_domr': domrExec,
             'check_domr_port': domrCheckPort,
+            'check_dom0_port': dom0CheckPort,
             'check_domr_ssh': domrCheckSsh,
             'check_dom0_ip': dom0CheckIp,
             # rename to dom0StorageStatusCheck
@@ -152,8 +153,8 @@ def domrScp(host, localfile, remotefile, timeout=10, username=domrRoot, port=dom
         raise e
     return False
 
-# check a port on domr
-def domrCheckPort(ip, port=domrPort, timeout=3):
+# check a port on dom0
+def dom0CheckPort(ip, port=domrPort, timeout=3):
     return domrCheckPort(ip, port, timeout=timeout)
 
 # check a port on domr

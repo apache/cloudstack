@@ -180,7 +180,7 @@ public class Ovm3VirtualRoutingSupport {
 
         try {
             CloudstackPlugin cSp = new CloudstackPlugin(c);
-            if (!cSp.domrCheckPort(privateIp, cmdPort, retries, interval)) {
+            if (!cSp.dom0CheckPort(privateIp, cmdPort, retries, interval)) {
                 String msg = "Port " + cmdPort + " not reachable for " + vmName
                         + ": " + config.getAgentHostname();
                 LOGGER.info(msg);
