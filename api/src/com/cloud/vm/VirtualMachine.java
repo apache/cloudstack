@@ -145,7 +145,10 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
         }
 
         public static boolean isVmStopped(State oldState, Event e, State newState) {
-            if (oldState == State.Stopping && newState == State.Stopped) {
+            if ((oldState == State.Stopping && newState == State.Stopped) ||
+                (oldState == State.Running &&
+                 newState == State.Stopped &&
+                 e == Event.FollowAgentPowerOffReport)) {
                 return true;
             }
             return false;
