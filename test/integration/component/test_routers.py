@@ -23,8 +23,7 @@ from marvin.cloudstackAPI import (stopVirtualMachine,
                                   stopRouter,
                                   startRouter)
 from marvin.lib.utils import (cleanup_resources,
-                              get_process_status,
-                              get_host_credentials)
+                              get_process_status)
 from marvin.lib.base import (ServiceOffering,
                              VirtualMachine,
                              Account,
@@ -47,72 +46,6 @@ from marvin.lib.common import (get_zone,
 # Import System modules
 import time
 
-
-class Services:
-
-    """Test router Services
-    """
-
-    def __init__(self):
-        self.services = {
-            "service_offering": {
-                "name": "Tiny Instance",
-                "displaytext": "Tiny Instance",
-                "cpunumber": 1,
-                "cpuspeed": 100,    # in MHz
-                                    "memory": 128,       # In MBs
-            },
-            "virtual_machine":
-            {
-                "displayname": "Test VM",
-                "username": "root",
-                "password": "password",
-                "ssh_port": 22,
-                "hypervisor": 'XenServer',
-                # Hypervisor type should be same as
-                # hypervisor type of cluster
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": 'TCP',
-            },
-            "host": {
-                "username": "root",
-                "password": "password",
-                "publicport": 22,
-            },
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "testuser",
-                "password": "password",
-            },
-            "natrule":
-            {
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": "TCP"
-            },
-            "lbrule":
-            {
-                "name": "SSH",
-                "alg": "roundrobin",
-                # Algorithm used for load balancing
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": 'TCP',
-            },
-            "fw_rule": {
-                "startport": 1,
-                "endport": 6000,
-                "cidr": '55.55.0.0/11',
-                # Any network (For creating FW rule
-            },
-            "ostype": 'CentOS 5.3 (64-bit)',
-            # Used for Get_Template : CentOS 5.3 (64 bit)
-        }
-
-
 class TestRouterServices(cloudstackTestCase):
 
     @classmethod
@@ -121,7 +54,7 @@ class TestRouterServices(cloudstackTestCase):
         cls.testClient = super(TestRouterServices, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.services = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -670,7 +603,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
         cls.testClient = super(TestRouterStopCreatePF, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.services = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -888,7 +821,7 @@ class TestRouterStopCreateLB(cloudstackTestCase):
         cls.testClient = super(TestRouterStopCreateLB, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.services = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -1104,7 +1037,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         cls.testClient = super(TestRouterStopCreateFW, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.services = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -1238,9 +1171,9 @@ class TestRouterStopCreateFW(cloudstackTestCase):
             self.apiclient,
             ipaddressid=public_ip.id,
             protocol='TCP',
-            cidrlist=[self.services["fw_rule"]["cidr"]],
-            startport=self.services["fw_rule"]["startport"],
-            endport=self.services["fw_rule"]["endport"]
+            cidrlist=[self.services["fwrule"]["cidr"]],
+            startport=self.services["fwrule"]["startport"],
+            endport=self.services["fwrule"]["endport"]
         )
         self.debug("Created firewall rule: %s" % fw_rule.id)
 
@@ -1286,13 +1219,13 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         )
         self.assertEqual(
             fw_rules[0].startport,
-            str(self.services["fw_rule"]["startport"]),
+            str(self.services["fwrule"]["startport"]),
             "Check start port of firewall rule"
         )
 
         self.assertEqual(
             fw_rules[0].endport,
-            str(self.services["fw_rule"]["endport"]),
+            str(self.services["fwrule"]["endport"]),
             "Check end port of firewall rule"
         )
         # For DNS and DHCP check 'dnsmasq' process status
@@ -1318,8 +1251,8 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                 "Check for list hosts response return valid data"
             )
             host = hosts[0]
-            host.user, host.passwd = get_host_credentials(
-                self.config, host.ipaddress)
+            host.user = self.services["configurableData"]["host"]["username"]
+            host.passwd = self.services["configurableData"]["host"]["password"]
             try:
                 result = get_process_status(
                     host.ipaddress,

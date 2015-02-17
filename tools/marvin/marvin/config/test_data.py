@@ -86,8 +86,8 @@ test_data = {
         "name": "Tiny Instance",
         "displaytext": "Tiny Instance",
         "cpunumber": 1,
-        "cpuspeed": 100,  # in MHz
-        "memory": 128,  # In MBs
+        "cpuspeed": 256,  # in MHz
+        "memory": 256,  # In MBs
     },
     "service_offerings": {
         "name": "Tiny Instance",
