@@ -1852,6 +1852,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String vmInstanceName = cmd.getInstanceName();
         boolean shrinkOk = cmd.getShrinkOk();
         StorageFilerTO spool = cmd.getPool();
+        final String notifyOnlyType = "NOTIFYONLY";
 
         if ( currentSize == newSize) {
             // nothing to do
@@ -1893,21 +1894,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     }
 
                     v.resize(newSize, flags);
+                    type = notifyOnlyType;
                 } catch (LibvirtException e) {
                     return new ResizeVolumeAnswer(cmd, false, e.toString());
                 }
-            } else {
-                s_logger.debug("Volume " + path + " is of the type LVM and can not be resized using libvirt. Invoking resize script.");
-                final Script resizecmd = new Script(_resizeVolumePath, _cmdsTimeout, s_logger);
-                resizecmd.add("-s", String.valueOf(newSize));
-                resizecmd.add("-c", String.valueOf(currentSize));
-                resizecmd.add("-p", path);
-                resizecmd.add("-t", type);
-                resizecmd.add("-r", String.valueOf(shrinkOk));
-                resizecmd.add("-v", vmInstanceName);
-                String result = resizecmd.execute();
+            }
+            s_logger.debug("Invoking resize script to handle type " + type);
+            final Script resizecmd = new Script(_resizeVolumePath, _cmdsTimeout, s_logger);
+            resizecmd.add("-s", String.valueOf(newSize));
+            resizecmd.add("-c", String.valueOf(currentSize));
+            resizecmd.add("-p", path);
+            resizecmd.add("-t", type);
+            resizecmd.add("-r", String.valueOf(shrinkOk));
+            resizecmd.add("-v", vmInstanceName);
+            String result = resizecmd.execute();
 
-                if (result != null) {
+            if (result != null) {
+                if(type.equals(notifyOnlyType)) {
+                    return new ResizeVolumeAnswer(cmd, true, "Resize succeeded, but need reboot to notify guest");
+                } else {
                     return new ResizeVolumeAnswer(cmd, false, result);
                 }
             }
