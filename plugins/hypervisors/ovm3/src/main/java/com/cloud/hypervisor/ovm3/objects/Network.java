@@ -311,7 +311,8 @@ public class Network extends OvmObject {
     public Boolean startOvsVlanBridge(String br, String net, int vlan)
             throws Ovm3ResourceException {
         String s = (String) ovsVlanBridge(START, br, net, vlan);
-        if (s.startsWith(START)) {
+        /* 3.2.1 uses start, 3.3.1 and up uses added... */
+        if (s.startsWith(START) || s.startsWith("Added")) {
             return true;
         }
         return false;
