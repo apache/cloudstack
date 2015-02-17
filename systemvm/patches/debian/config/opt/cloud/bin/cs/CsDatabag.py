@@ -132,7 +132,7 @@ class CsCmdLine(CsDataBag):
     def get_router_password(self):
         if "router_password" in self.idata():
             return self.idata()['router_password']
-        
+
         '''
         Generate a password based on the router id just to avoid hard-coded passwd.
         Remark: if for some reason 1 router gets configured, the other one will have a different password.

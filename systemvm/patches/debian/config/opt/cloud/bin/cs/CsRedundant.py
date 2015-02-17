@@ -122,7 +122,7 @@ class CsRedundant(object):
         file.search(" state ", "    state %s" % "EQUAL")
         file.search(" virtual_router_id ", "    virtual_router_id %s" % self.cl.get_router_id())
         file.greplace("[RROUTER_BIN_PATH]", self.CS_ROUTER_DIR)
-        file.section("authentication {", "}", [ "        auth_type AH \n", "        auth_pass %s\n" % self.cl.get_router_password()] )
+        file.section("authentication {", "}", ["        auth_type AH \n", "        auth_pass %s\n" % self.cl.get_router_password()])
         file.section("virtual_ipaddress {", "}", self._collect_ips())
         file.commit()
 

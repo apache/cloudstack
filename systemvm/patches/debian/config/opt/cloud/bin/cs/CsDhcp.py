@@ -47,11 +47,10 @@ class CsDhcp(CsDataBag):
         self.configure_server()
         self.conf.commit()
         self.cloud.commit()
-        if self.cloud.is_changed():
-            if length < 2:
-                CsHelper.service("dnsmasq", "restart")
-            else:
-                CsHelper.hup_dnsmasq("dnsmasq", "dnsmasq")
+        if self.conf.is_changed():
+            CsHelper.service("dnsmasq", "restart")
+        elif self.cloud.is_changed():
+            CsHelper.hup_dnsmasq("dnsmasq", "dnsmasq")
 
     def configure_server(self):
         # self.conf.addeq("dhcp-hostsfile=%s" % DHCP_HOSTS)
