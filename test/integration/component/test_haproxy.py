@@ -357,7 +357,8 @@ class TestHAProxyStickyness(cloudstackTestCase):
                 self.virtual_machine,
                 self.virtual_machine_2])
 
-        methods = ["SourceBased", "AppCookie", "LBCookie"]
+        #TODO: Add code to check the AppCookie and LbCookie Stickiness policies
+        methods = ["SourceBased"]
         for method in methods:
             self.debug("Creating stickiness policy for the LB rule: %s" %
                        lb_rule.id)
@@ -390,10 +391,9 @@ class TestHAProxyStickyness(cloudstackTestCase):
 
         lb_methods = ["roundrobin", "leastconn", "source"]
 
-        configs = {"SourceBased": {"tablesize": '100k'},
-                   "AppCookie": {"request-learn": "true"},
-                   "LBCookie": {"nocache": "true"}}
+        configs = {"SourceBased": {"tablesize": '100k'}}
 
+        #TODO: Add code to check the AppCookie and LbCookie Stickiness policies
         for lb_method in lb_methods:
             self.debug("Creating a load balancing rule on IP %s and algo %s" %
                        (self.public_ip.ipaddress.ipaddress, lb_method))
@@ -491,9 +491,8 @@ class TestHAProxyStickyness(cloudstackTestCase):
 
         lb_methods = ["roundrobin", "leastconn", "source"]
 
-        configs = {"SourceBased": {"tablesize": '100k'},
-                   "AppCookie": {"request-learn": "true"},
-                   "LBCookie": {"nocache": "true"}}
+        #TODO: Add code to check the AppCookie and LbCookie Stickiness policies
+        configs = {"SourceBased": {"tablesize": '100k'}}
         for lb_method in lb_methods:
             for method, params in configs.items():
                 self.debug("Creating load balancing rule on IP %s & algo %s" %
@@ -562,9 +561,8 @@ class TestHAProxyStickyness(cloudstackTestCase):
         # 4. No errors should be shown in the logs and alerts
 
         lb_methods = ["roundrobin", "leastconn", "source"]
-        configs = {"SourceBased": {"tablesize": '100k'},
-                   "AppCookie": {"request-learn": "true"},
-                   "LBCookie": {"nocache": "true"}}
+        #TODO: Add code to check the AppCookie and LbCookie Stickiness policies
+        configs = {"SourceBased": {"tablesize": '100k'}}
         for lb_method in lb_methods:
             for method, params in configs.items():
                 self.debug("Creating load balancing rule on IP %s & algo %s" %
@@ -628,9 +626,8 @@ class TestHAProxyStickyness(cloudstackTestCase):
 
         lb_methods = ["roundrobin", "leastconn", "source"]
 
-        configs = {"SourceBased": {"tablesize": '100k'},
-                   "AppCookie": {"request-learn": "true"},
-                   "LBCookie": {"nocache": "true"}}
+        #TODO: Add code to check the AppCookie and LbCookie Stickiness policies
+        configs = {"SourceBased": {"tablesize": '100k'}}
 
         for lb_method in lb_methods:
             for method, params in configs.items():
@@ -699,14 +696,14 @@ class TestHAProxyStickyness(cloudstackTestCase):
                 self.virtual_machine,
                 self.virtual_machine_2])
 
-        policies = self.configure_Stickiness_Policy(lb_rule, method="LbCookie")
+        policies = self.configure_Stickiness_Policy(lb_rule, method="SourceBased")
         policy = policies.stickinesspolicy[0]
 
         self.debug("Policy: %s" % str(policy))
         self.debug("Validating the stickiness policy")
         self.validate_Stickiness_Policy(
             lb_rule,
-            "LbCookie",
+            "SourceBased",
             self.public_ip.ipaddress.ipaddress)
 
         # removing account from cleanup list as we're deleting account
@@ -751,7 +748,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
         self.debug("Stopping the router: %s" % router.name)
         Router.stop(self.apiclient, id=router.id)
 
-        policies = self.configure_Stickiness_Policy(lb_rule, method="LbCookie")
+        policies = self.configure_Stickiness_Policy(lb_rule, method="SourceBased")
         policy = policies.stickinesspolicy[0]
 
         self.debug("Starting the router: %s" % router.name)
@@ -761,7 +758,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
         self.debug("Validating the stickiness policy")
         self.validate_Stickiness_Policy(
             lb_rule,
-            "LbCookie",
+            "SourceBased",
             self.public_ip.ipaddress.ipaddress)
         return
 
@@ -788,14 +785,14 @@ class TestHAProxyStickyness(cloudstackTestCase):
                    self.account.name)
         router = self.get_router(self.account)
 
-        policies = self.configure_Stickiness_Policy(lb_rule, method="LbCookie")
+        policies = self.configure_Stickiness_Policy(lb_rule, method="SourceBased")
         policy = policies.stickinesspolicy[0]
 
         self.debug("Policy: %s" % str(policy))
         self.debug("Validating the stickiness policy")
         self.validate_Stickiness_Policy(
             lb_rule,
-            "LbCookie",
+            "SourceBased",
             self.public_ip.ipaddress.ipaddress)
 
         self.debug("Destroying the router: %s" % router.name)
@@ -823,14 +820,14 @@ class TestHAProxyStickyness(cloudstackTestCase):
                 self.virtual_machine,
                 self.virtual_machine_2])
 
-        policies = self.configure_Stickiness_Policy(lb_rule, method="LbCookie")
+        policies = self.configure_Stickiness_Policy(lb_rule, method="SourceBased")
         policy = policies.stickinesspolicy[0]
 
         self.debug("Policy: %s" % str(policy))
         self.debug("Validating the stickiness policy")
         self.validate_Stickiness_Policy(
             lb_rule,
-            "LbCookie",
+            "SourceBased",
             self.public_ip.ipaddress.ipaddress)
 
         self.debug("Enabling VPN on Public Ip: %s" %
@@ -840,7 +837,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
         self.debug("Validating the stickiness policy after enabling VPN")
         self.validate_Stickiness_Policy(
             lb_rule,
-            "LbCookie",
+            "SourceBased",
             self.public_ip.ipaddress.ipaddress)
         return
 
