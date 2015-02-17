@@ -245,6 +245,9 @@ then
 elif [ "$ptype" == "QCOW2" ]
 then
   resizeqcow2
+elif [ "$ptype" == "NOTIFYONLY" ]
+then
+  notifyqemu
 else
   echo "unsupported type $ptype"
   exit 1;
