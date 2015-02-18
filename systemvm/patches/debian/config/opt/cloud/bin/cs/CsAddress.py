@@ -382,16 +382,16 @@ class CsIP:
                             ])
             self.fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -s %s" % ("eth1", "eth1", self.address['network'])])
             self.fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -d %s" % ("eth1", "eth1", self.address['network'])])
+            self.fw.append(["nat", "front",
+                            "-A POSTROUTING -s %s -o %s -j SNAT --to-source %s" %
+                           (self.address['network'], self.dev,
+                            self.address['public_ip'])
+                            ])
 
         if self.get_type() in ["public"]:
             self.fw.append(["nat", "front",
                             "-A POSTROUTING -o %s -j SNAT --to-source %s" %
                            (self.dev, self.address['public_ip'])
-                            ])
-            self.fw.append(["nat", "front",
-                            "-A POSTROUTING -s %s -o %s -j SNAT --to-source %s" %
-                           (self.address['network'], self.dev,
-                            self.address['public_ip'])
                             ])
             self.fw.append(["", "front",
                             "-A FORWARD -o %s -d %s -j ACL_INBOUND_%s" % (self.dev, self.address['network'], self.dev)
