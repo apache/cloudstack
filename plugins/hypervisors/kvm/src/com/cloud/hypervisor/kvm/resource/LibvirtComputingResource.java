@@ -1878,8 +1878,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             s_logger.debug("Resizing volume: " + path + "," + currentSize + "," + newSize + "," + type + "," + vmInstanceName + "," + shrinkOk);
 
-            /* libvirt doesn't support resizing (C)LVM devices, so we have to do that via a Bash script */
-            if (pool.getType() != StoragePoolType.CLVM) {
+            /* libvirt doesn't support resizing (C)LVM devices, and corrupts QCOW2 in some scenarios, so we have to do these via Bash script */
+            if (pool.getType() != StoragePoolType.CLVM && vol.getFormat() != PhysicalDiskFormat.QCOW2) {
                 s_logger.debug("Volume " + path +  " can be resized by libvirt. Asking libvirt to resize the volume.");
                 try {
                     Connect conn = LibvirtConnection.getConnection();
