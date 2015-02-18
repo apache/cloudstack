@@ -16,7 +16,7 @@
 # under the License.
 
 [Unit]
-Description=Apache CloudStack
+Description=CloudStack Management Server
 After=syslog.target network.target
 
 [Service]
