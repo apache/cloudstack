@@ -877,13 +877,6 @@ test_data = {
         "customdisksize": 1,
         "diskname": "Custom disk",
     },
-    "upload_volume": {
-        "diskname": "UploadVol",
-        "format": "VHD",
-        "url":
-        "http://10.147.28.7/templates/393d3550-05ef-330f-9b8c-745b0e699759.vhd",
-        "checksum": "",
-    },
     "recurring_snapshot": {
         "maxsnaps": 2,
         "timezone": "US/Arizona",
@@ -1474,6 +1467,12 @@ test_data = {
             "password": '',
             "url": '',
             "clustername": 'VMWare Cluster with Space in DC name',
+        },
+        "upload_volume": {
+            "diskname": "UploadVol",
+            "format": "VHD",
+            "url": "",
+            "checksum": "",
         },
     }
 }
