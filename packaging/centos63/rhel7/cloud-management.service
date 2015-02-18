@@ -16,7 +16,7 @@
 # under the License.
 
 [Unit]
-Description=Citrix Cloud Plaltform
+Description=Apache CloudStack
 After=syslog.target network.target
 
 [Service]
