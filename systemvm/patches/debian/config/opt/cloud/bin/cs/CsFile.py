@@ -53,6 +53,9 @@ class CsFile:
         self.config = []
         self.new_config = []
 
+    def repopulate(self):
+        self.new_config = []
+
     def commit(self):
         if not self.is_changed():
             return

@@ -128,8 +128,9 @@ class CsDhcp(CsDataBag):
 
     def write_hosts(self):
         file = CsFile("/etc/hosts")
+        file.repopulate()
         for ip in self.hosts:
-            file.search("^%s" % ip, "%s\t%s" % (ip, self.hosts[ip]))
+            file.add("%s\t%s" % (ip, self.hosts[ip]))
         file.commit()
         if file.is_changed():
             logging.info("Updated hosts file")
@@ -138,13 +139,9 @@ class CsDhcp(CsDataBag):
 
     def add(self, entry):
         self.add_host(entry['ipv4_adress'], entry['host_name'])
-        if self.cloud.search("%s," % entry['mac_address'],
-                             "%s,%s,%s,infinite" % (entry['mac_address'],
-                                                    entry['ipv4_adress'],
-                                                    entry['host_name'])):
-                        self.changed.append({'mac': entry['mac_address'],
-                                             'ip4': entry['ipv4_adress'],
-                                             'host': entry['host_name']})
+        self.cloud.add("%s,%s,%s,infinite" % (entry['mac_address'],
+                                              entry['ipv4_adress'],
+                                              entry['host_name']))
         i = IPAddress(entry['ipv4_adress'])
         # Calculate the device
         for v in self.devinfo:
