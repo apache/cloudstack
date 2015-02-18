@@ -1918,6 +1918,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             /* fetch new size as seen from libvirt, don't want to assume anything */
             pool = _storagePoolMgr.getStoragePool(spool.getType(), spool.getUuid());
+            pool.refresh();
             long finalSize = pool.getPhysicalDisk(volid).getVirtualSize();
             s_logger.debug("after resize, size reports as " + finalSize + ", requested " + newSize);
             return new ResizeVolumeAnswer(cmd, true, "success", finalSize);
