@@ -1252,9 +1252,7 @@
                                     });
                                 },
                                 notification: {
-                                    poll: function(args) {
-                                        args.complete();
-                                    }
+                                    poll: pollAsyncJobResult
                                 }
                             },
 
@@ -1902,9 +1900,7 @@
                                     });
                                 },
                                 notification: {
-                                    poll: function(args) {
-                                        args.complete();
-                                    }
+                                    poll: pollAsyncJobResult
                                 }
                             }
                         },
