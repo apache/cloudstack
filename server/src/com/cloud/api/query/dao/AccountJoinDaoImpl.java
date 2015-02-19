@@ -162,8 +162,8 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         response.setTemplateAvailable(templateAvail);
 
         // Get stopped and running VMs
-        response.setVmStopped(account.getVmStopped());
-        response.setVmRunning(account.getVmRunning());
+        response.setVmStopped(account.getVmStopped()!=null ? account.getVmStopped() : 0);
+        response.setVmRunning(account.getVmRunning()!=null ? account.getVmRunning() : 0);
 
         //get resource limits for networks
         long networkLimit = ApiDBUtils.findCorrectResourceLimit(account.getNetworkLimit(), account.getId(), ResourceType.network);
