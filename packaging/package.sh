@@ -56,7 +56,7 @@ function packaging() {
             exit 2
         fi
     fi
-    VERSION=`(cd ../; mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version) | grep --color=none '^[0-9]\.'`
+    VERSION=`(cd ../; $MVN org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version) | grep --color=none '^[0-9]\.'`
     if echo $VERSION | grep -q SNAPSHOT ; then
         REALVER=`echo $VERSION | cut -d '-' -f 1`
         DEFVER="-D_ver $REALVER"
