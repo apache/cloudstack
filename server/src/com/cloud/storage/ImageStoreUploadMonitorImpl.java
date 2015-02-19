@@ -280,7 +280,12 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             tmpVolumeDataStore.setPhysicalSize(answer.getPhysicalSize());
                             tmpVolumeDataStore.setSize(answer.getVirtualSize());
                             tmpVolumeDataStore.setDownloadPercent(100);
+
+                            VolumeVO volumeUpdate = _volumeDao.createForUpdate();
+                            volumeUpdate.setSize(answer.getVirtualSize());
+                            _volumeDao.update(tmpVolume.getId(), volumeUpdate);
                             stateMachine.transitTo(tmpVolume, Event.OperationSucceeded, null, _volumeDao);
+
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Volume " + tmpVolume.getUuid() + " uploaded successfully");
                             }
@@ -344,7 +349,12 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             tmpTemplateDataStore.setPhysicalSize(answer.getPhysicalSize());
                             tmpTemplateDataStore.setSize(answer.getVirtualSize());
                             tmpTemplateDataStore.setDownloadPercent(100);
+
+                            VMTemplateVO templateUpdate = _templateDao.createForUpdate();
+                            templateUpdate.setSize(answer.getVirtualSize());
+                            _templateDao.update(tmpTemplate.getId(), templateUpdate);
                             stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationSucceeded, null, _templateDao);
+
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Template " + tmpTemplate.getUuid() + " uploaded successfully");
                             }
