@@ -34,4 +34,5 @@ public interface ResourceTagDao extends GenericDao<ResourceTagVO, Long> {
 
     List<? extends ResourceTag> listBy(long resourceId, ResourceObjectType resourceType);
 
+    void updateResourceId(long srcId, long destId, ResourceObjectType resourceType);
 }

@@ -143,6 +143,10 @@ public class ResourceTagVO implements ResourceTag {
         return resourceId;
     }
 
+    @Override public void setResourceId(long resourceId) {
+        this.resourceId = resourceId;
+    }
+
     @Override
     public ResourceObjectType getResourceType() {
         return resourceType;

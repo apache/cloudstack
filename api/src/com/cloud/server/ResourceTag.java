@@ -92,6 +92,8 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
      */
     long getResourceId();
 
+    void setResourceId(long resourceId);
+
     /**
      * @return
      */
