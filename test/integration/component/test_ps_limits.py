@@ -433,7 +433,7 @@ class TestVolumeLimits(cloudstackTestCase):
         self.assertTrue(isVmExpunged(self.apiclient, self.virtualMachine_2.id), "VM not expunged \
                 in allotted time")
 
-        expectedCount = (self.initialResourceCount * 2) #Total 2 vms
+        expectedCount -= (self.template.size / (1024 ** 3))
         response = matchResourceCount(
                         self.apiclient, expectedCount,
                         RESOURCE_PRIMARY_STORAGE,
@@ -568,12 +568,6 @@ class TestVolumeLimits(cloudstackTestCase):
             self.virtualMachine.detach_volume(apiclient, volume)
         except Exception as e:
             self.fail("Failure in detach volume operation: %s" % e)
-
-        response = matchResourceCount(
-                        self.apiclient, expectedCount,
-                        RESOURCE_PRIMARY_STORAGE,
-                        accountid=self.account.id)
-        self.assertEqual(response[0], PASS, response[1])
 
         try:
             self.debug("deleting the volume: %s" % volume.name)

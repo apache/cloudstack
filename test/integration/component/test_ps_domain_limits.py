@@ -333,7 +333,7 @@ class TestMultipleChildDomain(cloudstackTestCase):
         self.assertTrue(isVmExpunged(self.apiclient, vm_2.id), "VM not expunged \
                 in allotted time")
 
-        expectedCount = 0
+        expectedCount -= templatesize
         result = isDomainResourceCountEqualToExpectedCount(
             self.apiclient, self.parent_domain.id,
             expectedCount, RESOURCE_PRIMARY_STORAGE)
@@ -414,14 +414,6 @@ class TestMultipleChildDomain(cloudstackTestCase):
                 expectedCount += volumeSize
 
                 vm.attach_volume(apiclient, volume=volume)
-                result = isDomainResourceCountEqualToExpectedCount(
-                    self.apiclient, self.domain.id,
-                    expectedCount, RESOURCE_PRIMARY_STORAGE)
-                self.assertFalse(result[0], result[1])
-                self.assertTrue(result[2], "Resource count does not match")
-
-                expectedCount -= volumeSize
-                vm.detach_volume(apiclient, volume=volume)
                 result = isDomainResourceCountEqualToExpectedCount(
                     self.apiclient, self.domain.id,
                     expectedCount, RESOURCE_PRIMARY_STORAGE)
@@ -540,14 +532,6 @@ class TestMultipleChildDomain(cloudstackTestCase):
                     expectedCount, RESOURCE_PRIMARY_STORAGE)
                 self.assertFalse(result[0], result[1])
                 self.assertTrue(result[2], "Resource count does not match")
-
-                expectedCount -= volume2size
-                vm.detach_volume(apiclient, volume=volume_2)
-                result = isDomainResourceCountEqualToExpectedCount(
-                    self.apiclient, self.domain.id,
-                    expectedCount, RESOURCE_PRIMARY_STORAGE)
-                self.assertFalse(result[0], result[1])
-                self.assertTrue(result[2], "Resource count does not match")
             except Exception as e:
                 self.fail("Failure: %s" % e)
         return
@@ -643,12 +627,6 @@ class TestMultipleChildDomain(cloudstackTestCase):
 
                 expectedCount -= volumeSize
                 vm.detach_volume(apiclient, volume)
-                result = isDomainResourceCountEqualToExpectedCount(
-                    self.apiclient, self.domain.id,
-                    expectedCount, RESOURCE_PRIMARY_STORAGE)
-                self.assertFalse(result[0], result[1])
-                self.assertTrue(result[2], "Resource count does not match")
-
                 volume.delete(apiclient)
                 result = isDomainResourceCountEqualToExpectedCount(
                     self.apiclient, self.domain.id,
