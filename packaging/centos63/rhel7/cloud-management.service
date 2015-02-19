@@ -21,6 +21,7 @@ After=syslog.target network.target
 
 [Service]
 Type=forking
+ExecStartPre=/usr/bin/systemd-tmpfiles --create
 ExecStart=/usr/sbin/cloudstack-management start
 ExecStop=/usr/sbin/cloudstack-management stop
 SuccessExitStatus=143
