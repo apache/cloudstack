@@ -1471,8 +1471,29 @@ test_data = {
         "upload_volume": {
             "diskname": "UploadVol",
             "format": "VHD",
-            "url": "",
+            "url":"http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
             "checksum": "",
         },
+        "bootableIso":
+                {
+                    "displaytext": "Test ISO",
+                    "name": "testISO",
+                    "bootable": True,
+                    "ispublic": False,
+                    "kvm": {
+                            "url": ""
+                           },
+                    "vmware": {
+                            "url": ""
+                           },
+                    "xenserver": {
+                            "url": ""
+                           },
+                    "hyperv": {
+                               "url": ""
+                           },
+                    "ostype": 'CentOS 5.3 (64-bit)',
+                    "mode": 'HTTP_DOWNLOAD'
+        }
     }
 }
