@@ -804,7 +804,7 @@
                                             'day-of-month': function(args) {
                                                 var time = [];
 
-                                                for (var i = 1; i <= 31; i++) {
+                                                for (var i = 1; i <= 28; i++) {
                                                     time.push({
                                                         id: i,
                                                         name: i
