@@ -59,4 +59,14 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
         sc.setParameters("resourceType", resourceType);
         return listBy(sc);
     }
+
+    @Override public void updateResourceId(long srcId, long destId, ResourceObjectType resourceType) {
+        SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
+        sc.setParameters("resourceId", srcId);
+        sc.setParameters("resourceType", resourceType);
+        for( ResourceTagVO tag : listBy(sc)) {
+            tag.setResourceId(destId);
+            update(tag.getId(), tag);
+        }
+    }
 }
