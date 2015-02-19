@@ -48,7 +48,14 @@ function packaging() {
     fi
 
     DISTRO=$3
-
+    MVN=`which mvn`
+    if [ -z "$MVN" ] ; then
+        MVN=`locate bin/mvn | grep -e mvn$ | tail -1`
+        if [ -z "$MVN" ] ; then
+            echo "mvn not found\n cannot retrieve version to package\n RPM Build Failed"
+            exit 2
+        fi
+    fi
     VERSION=`(cd ../; mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version) | grep --color=none '^[0-9]\.'`
     if echo $VERSION | grep -q SNAPSHOT ; then
         REALVER=`echo $VERSION | cut -d '-' -f 1`
