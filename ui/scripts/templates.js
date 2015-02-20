@@ -636,48 +636,30 @@
                                             data: data,
                                             async: false,
                                             success: function(json) {                                                
-                                                /*                        						
-												{
-												    "postuploadtemplateresponse": {
-												        "getuploadparams": {
-												            "id": "d5bdaf23-dcb9-4eef-9b94-81870490f457",
-												            "postURL": "https://10.223.67.4/upload/d5bdaf23-dcb9-4eef-9b94-81870490f457",
-												            "metadata": "7jCvmzKuMBStM/qEjx9HjSAISd+f3VAUqC9CkYmq92O+SznYov415LUndZ4KuLAtGNY37VeePs8X+0oyaVSj+cjD+KKoBJuynjBJViAQQYKT/amcOdrkloBA4DgNEAn16p32Z2qI4+Ky1ecDAtg1vkYNoz9ReaKbehM3n5MIFPonhnYBEmbVSZkCIbVbJeh+vmYs9Y3SHtcG+0gWiU06YQ4KGl7Wc03wp3wusAlj7+L+fEBha54Rx+C7aS6UPZgm8/+atUUric6xiGMsx603NUElcLWE+gQ7PTimsIr6ySvcmc3D0n6JK6A7bc72sfPrHEbnNPD+5+qXJsBcXPLtEAG2WwduarwZ",
-												            "timeout": "2015-01-20T01:01:02.548Z",
-												            "signature": "NLXv5YsNuUn7NKC+ZP5JtSM26MY="
-												        }
-												    }
-												}
-                                                */
-
-                                                var uploadparams = json.postuploadtemplateresponse.getuploadparams; //son.postuploadtemplateresponse.getuploadparams is an object, not an array of object.
+                                                var uploadparams = json.postuploadtemplateresponse.getuploadparams;
                                                 var templateId = uploadparams.id;
                                                
                                                 args.response.success({
                                                     url: uploadparams.postURL,
+                                                    ajaxPost: true,
                                                     data: {
-                                                        signature: uploadparams.signature,
-                                                        expires: uploadparams.timeout,
-                                                        metadata: uploadparams.metadata
+                                                        'X-signature': uploadparams.signature,
+                                                        'X-expires': uploadparams.expires,
+                                                        'X-metadata': uploadparams.metadata
                                                     }
                                                 });   
-                                                   
-                                                cloudStack.dialog.notice({ 
-                                                	message: "This template file has been uploaded. Please check its status at Templates menu > " + args.data.name + " > Zones tab > click a zone > Status field and Ready field."
-                                                });
-                                                
                                             }
                                         });                                        
                                     },
                                     postUpload: function(args) {
-                                        console.log("postUpload() is hit");
-                                        // Called when upload is done to do 
-                                        // verification checks;
-                                        // i.e., poll the server to verify successful upload
-                                        //
-                                        // success() will close the dialog and call standard action
-                                        // error() will keep dialog open if user wants to re-submit
-                                        args.response.success();
+                                        if(args.error) {
+                                            args.response.error(args.errorMsg);
+                                        } else {
+                                            cloudStack.dialog.notice({
+                                                message: "This template file has been uploaded. Please check its status at Templates menu > " + args.data.name + " > Zones tab > click a zone > Status field and Ready field."
+                                            });
+                                            args.response.success();
+                                        }
                                     }
                                 },
                                 fields: {

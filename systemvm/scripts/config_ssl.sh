@@ -61,6 +61,7 @@ config_apache2_conf() {
 
   SSL_FILE="/etc/apache2/sites-available/default-ssl"
   PATTERN="RewriteRule ^\/upload\/(.*)"
+  CORS_PATTERN="Header set Access-Control-Allow-Origin"
   if [ -f $SSL_FILE ]; then
     if grep -q "$PATTERN" $SSL_FILE ; then
       echo "rewrite rules already exist in file $SSL_FILE"
@@ -70,6 +71,14 @@ config_apache2_conf() {
         sed -i -e "s/<\/VirtualHost>/RewriteCond %{HTTPS} =on \n&/" $SSL_FILE
         sed -i -e "s/<\/VirtualHost>/RewriteCond %{REQUEST_METHOD} =POST \n&/" $SSL_FILE
         sed -i -e "s/<\/VirtualHost>/RewriteRule ^\/upload\/(.*) http:\/\/127.0.0.1:8210\/upload?uuid=\$1 [P,L] \n&/" $SSL_FILE
+    fi
+    if grep -q "$CORS_PATTERN" $SSL_FILE ; then
+      echo "cors rules already exist in file $SSL_FILE"
+    else
+        echo "adding cors rules to file: $SSL_FILE"
+        sed -i -e "s/<\/VirtualHost>/Header always set Access-Control-Allow-Origin \"*\" \n&/" $SSL_FILE
+        sed -i -e "s/<\/VirtualHost>/Header always set Access-Control-Allow-Methods \"POST, OPTIONS\" \n&/" $SSL_FILE
+        sed -i -e "s/<\/VirtualHost>/Header always set Access-Control-Allow-Headers \"x-requested-with, Content-Type, origin, authorization, accept, client-security-token, x-signature, x-metadata, x-expires\" \n&/" $SSL_FILE
     fi
   fi
 

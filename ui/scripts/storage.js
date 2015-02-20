@@ -454,28 +454,25 @@
 
                                                 args.response.success({
                                                     url: uploadparams.postURL,
+                                                    ajaxPost: true,
                                                     data: {
-                                                        signature: uploadparams.signature,
-                                                        expires: uploadparams.expires,
-                                                        metadata: uploadparams.metadata
+                                                        'X-signature': uploadparams.signature,
+                                                        'X-expires': uploadparams.expires,
+                                                        'X-metadata': uploadparams.metadata
                                                     }
-                                                });
-                                                
-                                                cloudStack.dialog.notice({
-                                                    message: "This volume file has been uploaded. Please check its status at Stroage menu > Volumes > " + args.data.name + " > Status field."
                                                 });
                                             }
                                         });
                                     },
                                     postUpload: function(args) {
-                                        console.log("postUpload() is hit");
-                                        // Called when upload is done to do 
-                                        // verification checks;
-                                        // i.e., poll the server to verify successful upload
-                                        //
-                                        // success() will close the dialog and call standard action
-                                        // error() will keep dialog open if user wants to re-submit
-                                        args.response.success();
+                                        if(args.error) {
+                                            args.response.error(args.errorMsg);
+                                        } else {
+                                            cloudStack.dialog.notice({
+                                                message: "This volume file has been uploaded. Please check its status at Stroage menu > Volumes > " + args.data.name + " > Status field."
+                                            });
+                                            args.response.success();
+                                        }
                                     }
                                 },                                
                                 fields: {
