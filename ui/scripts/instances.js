@@ -748,7 +748,7 @@
                             },
                             complete: function(args) {
                             	if (args.password != null && args.password.length > 0)
-                                    return 'label.password.reset.confirm' + args.password;
+                                    return _l('label.password.reset.confirm') + args.password;
                             	else
                             		return null;
                             }
