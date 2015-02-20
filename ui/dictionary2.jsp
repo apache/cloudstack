@@ -822,6 +822,7 @@ $.extend(dictionary, {
 'label.health.check': '<fmt:message key="label.health.check" />',
 'label.public.load.balancer.provider': '<fmt:message key="label.public.load.balancer.provider" />',
 'label.add.isolated.network': '<fmt:message key="label.add.isolated.network" />',
+'label.add.isolated.guest.network': '<fmt:message key="label.add.isolated.guest.network" />',
 'label.secondary.isolated.vlan.id': '<fmt:message key="label.secondary.isolated.vlan.id" />',
 'label.ipv4.netmask': '<fmt:message key="label.ipv4.netmask" />',
 'label.custom': '<fmt:message key="label.custom" />',
