@@ -4745,14 +4745,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         } else {
                             f = path + k;
                         }
-                        String d = tokens[tokens.length - 1];
+                        String directoryPath = tokens[tokens.length - 1];
                         f = f.replace('/', File.separatorChar);
 
-                        String p = "0755";
+                        String permissions = "0755";
                         if (tokens.length == 3) {
-                            p = tokens[1];
+                            permissions = tokens[1];
                         } else if (tokens.length == 2) {
-                            p = tokens[0];
+                            permissions = tokens[0];
                         }
 
                         if (!new File(f).exists()) {
@@ -4760,16 +4760,20 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                             continue;
                         }
                         if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Copying " + f + " to " + d + " on " + hr.address + " with permission " + p);
+                            s_logger.debug("Copying " + f + " to " + directoryPath + " on " + hr.address + " with permission " + permissions);
                         }
                         try {
-                            session.execCommand("mkdir -m 700 -p " + d);
+                            session.execCommand("mkdir -m 700 -p " + directoryPath);
                         } catch (IOException e) {
-                            s_logger.debug("Unable to create destination path: " + d + " on " + hr.address + " but trying anyway");
-
+                            s_logger.debug("Unable to create destination path: " + directoryPath + " on " + hr.address + " but trying anyway");
                         }
-                        scp.put(f, d, p);
-
+                        try {
+                            scp.put(f, directoryPath, permissions);
+                        } catch (IOException e) {
+                            String msg = "Unable to copy file " + f + " to path " + directoryPath + " with permissions  " + permissions;
+                            s_logger.debug(msg);
+                            throw new CloudRuntimeException("Unable to setup the server: " + msg, e);
+                        }
                     }
                 }
 
