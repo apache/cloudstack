@@ -16,6 +16,7 @@
 -- under the License.
 
 SET foreign_key_checks = 0;
+USE `cloud_usage`;
 DROP TABLE IF EXISTS `cloud_usage`.`cloud_usage`;
 DROP TABLE IF EXISTS `cloud_usage`.`usage_vm_instance`;
 DROP TABLE IF EXISTS `cloud_usage`.`usage_ip_address`;
@@ -281,6 +282,8 @@ CREATE TABLE  `cloud_usage`.`usage_security_group` (
 ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__account_id`(`account_id`);
 ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__deleted`(`deleted`);
+
+USE `cloud`;
 
 CREATE TABLE `cloud`.`netapp_volume` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
