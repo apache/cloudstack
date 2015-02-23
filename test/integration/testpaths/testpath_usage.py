@@ -91,6 +91,10 @@ class TestUsage(cloudstackTestCase):
                 "setUsageConfigurationThroughTestCase"]:
             cls.setUsageConfiguration()
             cls.RestartServers()
+        else:
+            currentMgtSvrTime = cls.getCurrentMgtSvrTime()
+            dateTimeSplit = currentMgtSvrTime.split("/")
+            cls.curDate = dateTimeSplit[0]
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
@@ -2966,6 +2970,10 @@ class TestUsageDirectMeteringBasicZone(cloudstackTestCase):
                 "setUsageConfigurationThroughTestCase"]:
             cls.setUsageConfiguration()
             cls.RestartServers()
+        else:
+            currentMgtSvrTime = cls.getCurrentMgtSvrTime()
+            dateTimeSplit = currentMgtSvrTime.split("/")
+            cls.curDate = dateTimeSplit[0]
 
         cls.template = get_template(
             cls.apiclient,
