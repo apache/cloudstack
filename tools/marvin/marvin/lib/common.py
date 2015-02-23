@@ -977,9 +977,9 @@ def get_free_vlan(apiclient, zoneid):
 
     if isinstance(networks, list) and len(networks) > 0:
         usedVlanIds = [int(nw.vlan)
-                       for nw in networks if nw.vlan != "untagged"]
+                       for nw in networks if (nw.vlan and str(nw.vlan).lower() != "untagged")]
 
-    if hasattr(physical_network, "vlan") is False:
+    if not hasattr(physical_network, "vlan"):
         while True:
             shared_ntwk_vlan = random.randrange(1, 4095)
             if shared_ntwk_vlan in usedVlanIds:
