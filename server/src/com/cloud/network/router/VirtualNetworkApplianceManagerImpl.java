@@ -991,7 +991,6 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             final RedundantState prevState = router.getRedundantState();
             if (router.getState() != State.Running) {
                 router.setRedundantState(RedundantState.UNKNOWN);
-                router.setIsPriorityBumpUp(false);
                 updated = true;
             } else {
                 final String privateIP = router.getPrivateIpAddress();
@@ -1012,13 +1011,12 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                         s_logger.warn("Unable to update router " + router.getHostName() + "'s status");
                     }
                     RedundantState state = RedundantState.UNKNOWN;
-                    boolean isBumped = router.getIsPriorityBumpUp();
                     if (answer != null && answer.getResult()) {
                         state = answer.getState();
-                        isBumped = answer.isBumped();
+                    } else {
+                        s_logger.info("Agent response doesn't seem to be correct ==> " + answer.getResult());
                     }
                     router.setRedundantState(state);
-                    router.setIsPriorityBumpUp(isBumped);
                     updated = true;
                 }
             }
