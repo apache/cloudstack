@@ -1840,7 +1840,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 && volFormat == PhysicalDiskFormat.QCOW2 ) {
             return "QCOW2";
         }
-        return null;
+        throw new CloudRuntimeException("Cannot determine resize type from pool type " + pool.getType());
     }
 
     /* uses a local script now, eventually support for virStorageVolResize() will maybe work on
@@ -1867,9 +1867,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             String type = getResizeScriptType(pool, vol);
 
             if (pool.getType() != StoragePoolType.RBD) {
-                if (type == null) {
-                    return new ResizeVolumeAnswer(cmd, false, "Unsupported volume format: pool type '" + pool.getType() + "' and volume format '" + vol.getFormat() + "'");
-                } else if (type.equals("QCOW2") && shrinkOk) {
+                if (type.equals("QCOW2") && shrinkOk) {
                     return new ResizeVolumeAnswer(cmd, false, "Unable to shrink volumes of type " + type);
                 }
             } else {
