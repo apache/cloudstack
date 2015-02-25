@@ -23,7 +23,7 @@ function usage() {
     echo "The commonly used Arguments are:"
     echo "-p|--pack oss|OSS             To package with only redistributable libraries (default)"
     echo "-p|--pack noredist|NOREDIST   To package with non-redistributable libraries"
-    echo "-d centos7|centos63           To build a package for a distribution"
+    echo "-d centos7|centos63|fedora20  To build a package for a distribution"
     echo "-s simulator|SIMULATOR        To build for Simulator"
     echo ""
     echo "Examples: ./package.sh -p|--pack oss|OSS"
