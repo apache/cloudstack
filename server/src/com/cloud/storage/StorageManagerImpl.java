@@ -927,39 +927,32 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         s_logger.debug("Total over provisioned capacity of the pool " + storagePool.getName() + " id: " + storagePool.getId() + " is " + totalOverProvCapacity);
+        CapacityState capacityState = CapacityState.Enabled;
+        if (storagePool.getScope() == ScopeType.ZONE) {
+            DataCenterVO dc = ApiDBUtils.findZoneById(storagePool.getDataCenterId());
+            AllocationState allocationState = dc.getAllocationState();
+            capacityState = (allocationState == AllocationState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
+        } else {
+            if (storagePool.getClusterId() != null) {
+                ClusterVO cluster = ApiDBUtils.findClusterById(storagePool.getClusterId());
+                if (cluster != null) {
+                    AllocationState allocationState = _configMgr.findClusterAllocationState(cluster);
+                    capacityState = (allocationState == AllocationState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
+                }
+            }
+        }
         if (capacities.size() == 0) {
             CapacityVO capacity =
                     new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(), allocated, totalOverProvCapacity,
                             capacityType);
-
-            if (storagePool.getScope() == ScopeType.ZONE) {
-                DataCenterVO dc = ApiDBUtils.findZoneById(storagePool.getDataCenterId());
-                AllocationState allocationState = dc.getAllocationState();
-                CapacityState capacityState = (allocationState == AllocationState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
-                capacity.setCapacityState(capacityState);
-            } else {
-                if (storagePool.getClusterId() != null) {
-                    ClusterVO cluster = ApiDBUtils.findClusterById(storagePool.getClusterId());
-                    if (cluster != null) {
-                        AllocationState allocationState = _configMgr.findClusterAllocationState(cluster);
-                        CapacityState capacityState = (allocationState == AllocationState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
-                        capacity.setCapacityState(capacityState);
-                    }
-                }
-            }
+            capacity.setCapacityState(capacityState);
             _capacityDao.persist(capacity);
         } else {
             CapacityVO capacity = capacities.get(0);
-            boolean update = false;
-            if (capacity.getTotalCapacity() != totalOverProvCapacity) {
+            if (capacity.getTotalCapacity() != totalOverProvCapacity || allocated != 0L || capacity.getCapacityState() != capacityState) {
                 capacity.setTotalCapacity(totalOverProvCapacity);
-                update = true;
-            }
-            if (allocated != 0) {
                 capacity.setUsedCapacity(allocated);
-                update = true;
-            }
-            if (update) {
+                capacity.setCapacityState(capacityState);
                 _capacityDao.update(capacity.getId(), capacity);
             }
         }

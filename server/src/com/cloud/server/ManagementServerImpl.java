@@ -2390,11 +2390,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
         Long clusterId = cmd.getClusterId();
+        Boolean fetchLatest = cmd.getFetchLatest();
 
         if (clusterId != null) {
             throw new InvalidParameterValueException("Currently clusterId param is not suppoerted");
         }
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
+
+        if (fetchLatest != null && fetchLatest) {
+            _alertMgr.recalculateCapacity();
+        }
         List<SummedCapacity> summedCapacities = new ArrayList<SummedCapacity>();
 
         if (zoneId == null && podId == null) {// Group by Zone, capacity type
