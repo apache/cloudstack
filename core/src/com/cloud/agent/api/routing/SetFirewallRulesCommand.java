@@ -77,7 +77,7 @@ public class SetFirewallRulesCommand extends NetworkElementCommand {
             if (cidr == null || cidr.isEmpty()) {
                 sb.append("0.0.0.0/0");
             } else {
-                Boolean firstEntry = true;
+                boolean firstEntry = true;
                 for (String tag : cidr) {
                     if (!firstEntry)
                         sb.append("-");
