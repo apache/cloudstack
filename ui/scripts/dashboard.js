@@ -141,20 +141,12 @@
                         });
                     },
                     capacity: function(data) {
-                        var latestData = null;
                         if (window.fetchLatestflag == 1) {
-                            latestData = {
-
-                                fetchLatest: true
-                            }
+                            data.fetchLastest = true;
                         } else {
-                            latestData = {
-                                fetchLatest: false
-                            }
+                            data.fetchLastest = false;
                         }
-
                         window.fetchLatestflag = 0;
-
                         dataFns.alerts(data);
                     },
 
@@ -210,7 +202,7 @@
                         $.ajax({
                             url: createURL('listCapacity'),
                             data: {
-                                fetchLatest: false,
+                                fetchLatest: data.fetchLatest,
                                 sortBy: 'usage',
                                 page: 0,
                                 pagesize: 8
