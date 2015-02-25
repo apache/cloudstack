@@ -40,7 +40,7 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
 
     public void resumeLastManagementState();
 
-    public ConsoleProxyVO startProxy(long proxyVmId);
+    public ConsoleProxyVO startProxy(long proxyVmId, boolean ignoreRestartSetting);
 
     public boolean stopProxy(long proxyVmId);
 

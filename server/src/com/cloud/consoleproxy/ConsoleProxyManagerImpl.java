@@ -520,7 +520,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public ConsoleProxyVO startProxy(long proxyVmId) {
+    public ConsoleProxyVO startProxy(long proxyVmId, boolean ignoreRestartSetting) {
         try {
             ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
             if (proxy.getState() == VirtualMachine.State.Running) {
@@ -528,7 +528,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
 
             String restart = _configDao.getValue(Config.ConsoleProxyRestart.key());
-            if (restart != null && restart.equalsIgnoreCase("false")) {
+            if (!ignoreRestartSetting && restart != null && restart.equalsIgnoreCase("false")) {
                 return null;
             }
 
@@ -912,7 +912,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
             if (proxy != null) {
                 long proxyVmId = proxy.getId();
-                proxy = startProxy(proxyVmId);
+                proxy = startProxy(proxyVmId, false);
 
                 if (proxy != null) {
                     if (s_logger.isInfoEnabled()) {
@@ -1134,7 +1134,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 return false;
             }
         } else {
-            return startProxy(proxyVmId) != null;
+            return startProxy(proxyVmId, false) != null;
         }
     }
 
