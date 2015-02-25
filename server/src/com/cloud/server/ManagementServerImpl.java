@@ -2183,7 +2183,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     private ConsoleProxyVO startConsoleProxy(long instanceId) {
-        return _consoleProxyMgr.startProxy(instanceId);
+        return _consoleProxyMgr.startProxy(instanceId, true);
     }
 
     private ConsoleProxyVO stopConsoleProxy(VMInstanceVO systemVm, boolean isForced) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
