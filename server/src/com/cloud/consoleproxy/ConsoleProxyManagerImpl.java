@@ -539,7 +539,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
     }
 
     @Override
-    public ConsoleProxyVO startProxy(long proxyVmId) {
+    public ConsoleProxyVO startProxy(long proxyVmId, boolean ignoreRestartSetting) {
         try {
             ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
             if (proxy.getState() == VirtualMachine.State.Running) {
@@ -547,7 +547,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
             }
 
             String restart = _configDao.getValue(Config.ConsoleProxyRestart.key());
-            if (restart != null && restart.equalsIgnoreCase("false")) {
+            if (!ignoreRestartSetting && restart != null && restart.equalsIgnoreCase("false")) {
                 return null;
             }
 
@@ -938,7 +938,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
 
         if (proxy != null) {
             long proxyVmId = proxy.getId();
-            proxy = startProxy(proxyVmId);
+            proxy = startProxy(proxyVmId, false);
 
             if (proxy != null) {
                 if (s_logger.isInfoEnabled()) {
@@ -1152,7 +1152,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
                 return false;
             }
         } else {
-            return startProxy(proxyVmId) != null;
+            return startProxy(proxyVmId, false) != null;
         }
     }
 

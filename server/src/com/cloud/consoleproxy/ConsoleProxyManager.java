@@ -37,7 +37,7 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     public ConsoleProxyManagementState getManagementState();
     public void resumeLastManagementState();
 	
-	public ConsoleProxyVO startProxy(long proxyVmId);
+	public ConsoleProxyVO startProxy(long proxyVmId, boolean ignoreRestartSetting);
 	public boolean stopProxy(long proxyVmId);
 	public boolean rebootProxy(long proxyVmId);
 	public boolean destroyProxy(long proxyVmId);
