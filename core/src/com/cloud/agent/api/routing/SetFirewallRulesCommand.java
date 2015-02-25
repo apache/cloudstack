@@ -53,7 +53,7 @@ public class SetFirewallRulesCommand extends NetworkElementCommand {
              *  each entry format      <ip>:protocol:srcport:destport:scidr:
              *  reverted entry format  <ip>:reverted:0:0:0:
              */
-            if (fwTO.revoked() == true) {
+            if (fwTO.revoked()) {
                 StringBuilder sb = new StringBuilder();
                 /* This entry is added just to make sure atleast there will one entry in the list to get the ipaddress */
                 sb.append(fwTO.getSrcIp()).append(":reverted:0:0:0:");
