@@ -30,6 +30,7 @@ import javax.inject.Inject;
 
 import com.cloud.utils.EncryptionUtil;
 import com.cloud.utils.ImageStoreUtil;
+import com.cloud.utils.db.TransactionCallbackWithException;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -276,70 +277,77 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     @Override
-    @DB
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPLOAD, eventDescription = "uploading volume for post upload", async = true)
-    public GetUploadParamsResponse uploadVolume(GetUploadParamsForVolumeCmd cmd) throws ResourceAllocationException, MalformedURLException {
+    public GetUploadParamsResponse uploadVolume(final GetUploadParamsForVolumeCmd cmd) throws ResourceAllocationException, MalformedURLException {
         Account caller = CallContext.current().getCallingAccount();
         long ownerId = cmd.getEntityOwnerId();
-        Account owner = _entityMgr.findById(Account.class, ownerId);
-        Long zoneId = cmd.getZoneId();
-        String volumeName = cmd.getName();
+        final Account owner = _entityMgr.findById(Account.class, ownerId);
+        final Long zoneId = cmd.getZoneId();
+        final String volumeName = cmd.getName();
         String format = cmd.getFormat();
-        Long diskOfferingId = cmd.getDiskOfferingId();
+        final Long diskOfferingId = cmd.getDiskOfferingId();
         String imageStoreUuid = cmd.getImageStoreUuid();
-        DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId);
+        final DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId);
 
         validateVolume(caller, ownerId, zoneId, volumeName, null, format, diskOfferingId);
 
-        VolumeVO volume = persistVolume(owner, zoneId, volumeName, null, cmd.getFormat(), diskOfferingId, Volume.State.NotUploaded);
+        return Transaction.execute(new TransactionCallbackWithException<GetUploadParamsResponse, MalformedURLException>() {
+            @Override
+            public GetUploadParamsResponse doInTransaction(TransactionStatus status) throws MalformedURLException {
 
-        VolumeInfo vol = volFactory.getVolume(volume.getId());
+                VolumeVO volume = persistVolume(owner, zoneId, volumeName, null, cmd.getFormat(), diskOfferingId, Volume.State.NotUploaded);
 
-        RegisterVolumePayload payload = new RegisterVolumePayload(null, cmd.getChecksum(), cmd.getFormat());
-        vol.addPayload(payload);
+                VolumeInfo vol = volFactory.getVolume(volume.getId());
 
-        Pair<EndPoint, DataObject> pair = volService.registerVolumeForPostUpload(vol, store);
-        EndPoint ep = pair.first();
-        DataObject dataObject = pair.second();
+                RegisterVolumePayload payload = new RegisterVolumePayload(null, cmd.getChecksum(), cmd.getFormat());
+                vol.addPayload(payload);
+
+                Pair<EndPoint, DataObject> pair = volService.registerVolumeForPostUpload(vol, store);
+                EndPoint ep = pair.first();
+                DataObject dataObject = pair.second();
 
 
-        GetUploadParamsResponse response = new GetUploadParamsResponse();
+                GetUploadParamsResponse response = new GetUploadParamsResponse();
 
-        String ssvmUrlDomain = _configDao.getValue(Config.SecStorageSecureCopyCert.key());
+                String ssvmUrlDomain = _configDao.getValue(Config.SecStorageSecureCopyCert.key());
 
-        String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, ep.getPublicAddr(), vol.getUuid());
-        response.setPostURL(new URL(url));
+                String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, ep.getPublicAddr(), vol.getUuid());
+                response.setPostURL(new URL(url));
 
-        // set the post url, this is used in the monitoring thread to determine the SSVM
-        VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(volume.getId());
-        if (volumeStore != null) {
-            volumeStore.setExtractUrl(url);
-            _volumeStoreDao.persist(volumeStore);
-        }
+                // set the post url, this is used in the monitoring thread to determine the SSVM
+                VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(vol.getId());
+                if (volumeStore != null) {
+                    volumeStore.setExtractUrl(url);
+                    _volumeStoreDao.persist(volumeStore);
+                }
 
-        response.setId(UUID.fromString(vol.getUuid()));
+                response.setId(UUID.fromString(vol.getUuid()));
 
-        int timeout = ImageStoreUploadMonitorImpl.getUploadOperationTimeout();
-        DateTime currentDateTime = new DateTime(DateTimeZone.UTC);
-        String expires = currentDateTime.plusMinutes(timeout).toString();
-        response.setTimeout(expires);
+                int timeout = ImageStoreUploadMonitorImpl.getUploadOperationTimeout();
+                DateTime currentDateTime = new DateTime(DateTimeZone.UTC);
+                String expires = currentDateTime.plusMinutes(timeout).toString();
+                response.setTimeout(expires);
 
-        String key = _configDao.getValue(Config.SSVMPSK.key());
-         /*
-          * encoded metadata using the post upload config key
-          */
-        TemplateOrVolumePostUploadCommand command = new TemplateOrVolumePostUploadCommand(vol.getId(), vol.getUuid(), volumeStore.getInstallPath(), volumeStore.getChecksum(), vol
-                .getType().toString(), vol.getName(), vol.getFormat().toString(), dataObject.getDataStore().getUri(), dataObject.getDataStore().getRole().toString());
-        command.setLocalPath(volumeStore.getLocalDownloadPath());
-        Gson gson = new GsonBuilder().create();
-        String metadata = EncryptionUtil.encodeData(gson.toJson(command), key);
-        response.setMetadata(metadata);
+                String key = _configDao.getValue(Config.SSVMPSK.key());
+                 /*
+                  * encoded metadata using the post upload config key
+                  */
+                TemplateOrVolumePostUploadCommand command =
+                    new TemplateOrVolumePostUploadCommand(vol.getId(), vol.getUuid(), volumeStore.getInstallPath(), volumeStore.getChecksum(), vol.getType().toString(),
+                                                          vol.getName(), vol.getFormat().toString(), dataObject.getDataStore().getUri(),
+                                                          dataObject.getDataStore().getRole().toString());
+                command.setLocalPath(volumeStore.getLocalDownloadPath());
+                Gson gson = new GsonBuilder().create();
+                String metadata = EncryptionUtil.encodeData(gson.toJson(command), key);
+                response.setMetadata(metadata);
 
-        /*
-         * signature calculated on the url, expiry, metadata.
-         */
-        response.setSignature(EncryptionUtil.generateSignature(metadata + url + expires, key));
-        return response;
+                /*
+                 * signature calculated on the url, expiry, metadata.
+                 */
+                response.setSignature(EncryptionUtil.generateSignature(metadata + url + expires, key));
+                return response;
+            }
+        });
     }
 
     private boolean validateVolume(Account caller, long ownerId, Long zoneId, String volumeName, String url,
