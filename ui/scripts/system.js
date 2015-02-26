@@ -534,6 +534,7 @@
                         }
                     }
                 },
+                disableInfiniteScrolling: true,
                 dataProvider: function (args) {
                     refreshNspData();
                     args.response.success({
@@ -14213,7 +14214,7 @@
                                     },
                                     
                                     vSwitchGuestName: {
-                                        label: ' label.guest.traffic.vswitch.name',
+                                        label: 'label.guest.traffic.vswitch.name',
                                         isHidden: true
                                     },
                                     

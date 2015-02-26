@@ -14,7 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.lib.utils import cleanup_resources
 from marvin.lib.base import (Account,
                              ServiceOffering,
@@ -141,6 +141,9 @@ class TestVMPasswordEnabled(cloudstackTestCase):
         )
 
         networkid = cls.virtual_machine.nic[0].networkid
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['lxc']:
+            raise unittest.SkipTest("template creation is not supported on %s" % cls.hypervisor)
 
         # create egress rule to allow wget of my cloud-set-guest-password
         # script

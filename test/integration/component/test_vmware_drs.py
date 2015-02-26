@@ -171,7 +171,9 @@ class TestVMPlacement(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "vmware", "multihost"], required_hardware="true")
+    @unittest.skip("Test case is not testable as the VM is being deployed with\
+    too high memory - above account capacity")
+    @attr(tags=["invalid"], required_hardware="true")
     def test_vm_creation_in_fully_automated_mode(self):
         """ Test VM Creation in  automation mode = Fully automated
             This test requires following preconditions:

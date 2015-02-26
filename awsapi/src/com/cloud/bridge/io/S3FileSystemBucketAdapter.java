@@ -152,7 +152,7 @@ public class S3FileSystemBucketAdapter implements S3BucketAdapter {
             file.delete();
             file.createNewFile();
 
-            try(final FileOutputStream fos = new FileOutputStream(file);) {
+            try(FileOutputStream fos = new FileOutputStream(file);) {
                 byte[] buffer = new byte[4096];
 
                 // -> get the input stream for the next file part

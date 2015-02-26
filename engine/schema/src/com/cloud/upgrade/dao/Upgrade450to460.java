@@ -19,6 +19,9 @@ package com.cloud.upgrade.dao;
 
 import java.io.File;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
 
@@ -55,6 +58,42 @@ public class Upgrade450to460 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
+        updateVMInstanceUserId(conn);
+    }
+
+    public void updateVMInstanceUserId(Connection conn) {
+        // For schemas before this, copy first user from an account_id which deployed already running VMs
+        s_logger.debug("Updating vm_instance column user_id using first user in vm_instance's account_id");
+        String vmInstanceSql = "SELECT id, account_id FROM `cloud`.`vm_instance`";
+        String userSql = "SELECT id FROM `cloud`.`user` where account_id=?";
+        String userIdUpdateSql = "update `cloud`.`vm_instance` set user_id=? where id=?";
+        try(PreparedStatement selectStatement = conn.prepareStatement(vmInstanceSql)) {
+            ResultSet results = selectStatement.executeQuery();
+            while (results.next()) {
+                long vmId = results.getLong(1);
+                long accountId = results.getLong(2);
+                try (PreparedStatement selectUserStatement = conn.prepareStatement(userSql)) {
+                    selectUserStatement.setLong(1, accountId);
+                    ResultSet userResults = selectUserStatement.executeQuery();
+                    if (userResults.next()) {
+                        long userId = userResults.getLong(1);
+                        try (PreparedStatement updateStatement = conn.prepareStatement(userIdUpdateSql)) {
+                            updateStatement.setLong(1, userId);
+                            updateStatement.setLong(2, vmId);
+                            updateStatement.executeUpdate();
+                        } catch (SQLException e) {
+                            throw new CloudRuntimeException("Unable to update user ID " + userId + " on vm_instance id=" + vmId, e);
+                        }
+                    }
+
+                } catch (SQLException e) {
+                    throw new CloudRuntimeException("Unable to update user ID using accountId " + accountId + " on vm_instance id=" + vmId, e);
+                }
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to update user Ids for previously deployed VMs", e);
+        }
+        s_logger.debug("Done updating user Ids for previously deployed VMs");
     }
 
 

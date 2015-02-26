@@ -62,14 +62,6 @@ test_data = {
         "username": "test-account2",
         "password": "password"
     },
-    "vmware_cluster" : {
-            "hypervisor": 'VMware',
-            "clustertype": 'ExternalManaged',
-            "username": 'administrator',
-            "password": 'password_123',
-            "url": 'http://10.147.60.15/42xescauto spaces/42xesc Clusters',
-            "clustername": 'VMWare Cluster with Space in DC name',
-        },
     "small": {
         "displayname": "testserver",
         "username": "root",
@@ -94,8 +86,8 @@ test_data = {
         "name": "Tiny Instance",
         "displaytext": "Tiny Instance",
         "cpunumber": 1,
-        "cpuspeed": 100,  # in MHz
-        "memory": 128,  # In MBs
+        "cpuspeed": 256,  # in MHz
+        "memory": 256,  # In MBs
     },
     "service_offerings": {
         "name": "Tiny Instance",
@@ -785,6 +777,11 @@ test_data = {
         "mode": "HTTP_DOWNLOAD",
         "templatefilter": "self"
     },
+    "volume_from_snapshot": {
+        "diskname": 'Volume from snapshot',
+        "size": "1",
+        "zoneid": ""
+    },
     "templatefilter": 'self',
     "templates": {
         "displaytext": 'Template',
@@ -879,13 +876,6 @@ test_data = {
     "custom_volume": {
         "customdisksize": 1,
         "diskname": "Custom disk",
-    },
-    "upload_volume": {
-        "diskname": "UploadVol",
-        "format": "VHD",
-        "url":
-        "http://10.147.28.7/templates/393d3550-05ef-330f-9b8c-745b0e699759.vhd",
-        "checksum": "",
     },
     "recurring_snapshot": {
         "maxsnaps": 2,
@@ -1468,6 +1458,42 @@ test_data = {
             "ldapUsername": "",
             "ldapPassword": ""
         },
-        "systemVmDelay": 120
+        "systemVmDelay": 120,
+	"setUsageConfigurationThroughTestCase": True,
+	"vmware_cluster" : {
+            "hypervisor": 'VMware',
+            "clustertype": 'ExternalManaged',
+            "username": '',
+            "password": '',
+            "url": '',
+            "clustername": 'VMWare Cluster with Space in DC name',
+        },
+        "upload_volume": {
+            "diskname": "UploadVol",
+            "format": "VHD",
+            "url":"http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
+            "checksum": "",
+        },
+        "bootableIso":
+                {
+                    "displaytext": "Test ISO",
+                    "name": "testISO",
+                    "bootable": True,
+                    "ispublic": False,
+                    "kvm": {
+                            "url": ""
+                           },
+                    "vmware": {
+                            "url": ""
+                           },
+                    "xenserver": {
+                            "url": ""
+                           },
+                    "hyperv": {
+                               "url": ""
+                           },
+                    "ostype": 'CentOS 5.3 (64-bit)',
+                    "mode": 'HTTP_DOWNLOAD'
+        }
     }
 }

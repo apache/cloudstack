@@ -143,7 +143,6 @@ class TestSnapshotOnRootVolume(cloudstackTestCase):
         cls.account = Account.create(cls.api_client,
                                      cls.services["account"],
                                      domainid=cls.domain.id)
-        # pdb.set_trace()
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"])

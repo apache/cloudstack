@@ -35,7 +35,7 @@ class DbConnection(object):
         self.passwd = passwd
         self.database = db
 
-    def execute(self, sql=None, params=None):
+    def execute(self, sql=None, params=None, db=None):
         if sql is None:
             return None
 
@@ -45,7 +45,7 @@ class DbConnection(object):
                                             port=int(self.port),
                                             user=str(self.user),
                                             password=str(self.passwd),
-                                            db=str(self.database))) as conn:
+                                            db=str(self.database) if not db else db)) as conn:
             conn.autocommit = True
             with contextlib.closing(conn.cursor(buffered=True)) as cursor:
                 cursor.execute(sql, params)

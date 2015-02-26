@@ -28,6 +28,8 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.user.dao.UserDao;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.log4j.Logger;
@@ -146,6 +148,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     private RouterControlHelper _routerControlHelper;
     @Inject
     protected NetworkOrchestrationService _networkMgr;
+    @Inject
+    private UserDao _userDao;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -513,9 +517,14 @@ public class NetworkHelperImpl implements NetworkHelper {
                 // VPC because it is not a VPC offering.
                 Long vpcId = routerDeploymentDefinition.getVpc() != null ? routerDeploymentDefinition.getVpc().getId() : null;
 
+                long userId = CallContext.current().getCallingUserId();
+                if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
+                    userId =  _userDao.listByAccount(owner.getAccountId()).get(0).getId();
+                }
+
                 router = new DomainRouterVO(id, routerOffering.getId(), routerDeploymentDefinition.getVirtualProvider().getId(), VirtualMachineName.getRouterName(id,
                         s_vmInstanceName), template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(),
-                        routerDeploymentDefinition.isRedundant(), 0, false, RedundantState.UNKNOWN, offerHA, false, vpcId);
+                        userId, routerDeploymentDefinition.isRedundant(), 0, false, RedundantState.UNKNOWN, offerHA, false, vpcId);
 
                 router.setDynamicallyScalable(template.isDynamicallyScalable());
                 router.setRole(Role.VIRTUAL_ROUTER);

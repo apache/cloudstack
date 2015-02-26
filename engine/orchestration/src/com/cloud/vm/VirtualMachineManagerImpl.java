@@ -1075,7 +1075,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         }
                     }
                     s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + (startAnswer == null ? " no start answer" : startAnswer.getDetails()));
-                    if (startAnswer.getContextParam("stopRetry") != null) {
+                    if (startAnswer != null && startAnswer.getContextParam("stopRetry") != null) {
                         break;
                     }
 
@@ -1761,7 +1761,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 // unregister the VM from the source host and cleanup the associated VM files.
                 if (vm.getHypervisorType().equals(HypervisorType.VMware)) {
                     Long destClusterId = destPool.getClusterId();
-                    if (srcClusterId != null && destClusterId != null && srcClusterId != destClusterId) {
+                    if (srcClusterId != null && destClusterId != null && !srcClusterId.equals(destClusterId)) {
                         String srcDcName = _clusterDetailsDao.getVmwareDcName(srcClusterId);
                         String destDcName = _clusterDetailsDao.getVmwareDcName(destClusterId);
                         if (srcDcName != null && destDcName != null && !srcDcName.equals(destDcName)) {

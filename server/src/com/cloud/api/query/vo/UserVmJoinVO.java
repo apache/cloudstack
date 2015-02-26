@@ -52,6 +52,9 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "display_name", updatable = false, nullable = false, length = 255)
     private String displayName = null;
 
+    @Column(name = "user_id")
+    private long userId;
+
     @Column(name = "account_id")
     private long accountId;
 
@@ -437,6 +440,10 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public String getDisplayName() {
         return displayName;
+    }
+
+    public long getUserId() {
+        return userId;
     }
 
     @Override

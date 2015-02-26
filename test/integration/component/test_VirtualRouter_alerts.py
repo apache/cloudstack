@@ -23,8 +23,8 @@ from marvin.lib.utils import (get_process_status,
                               cleanup_resources)
 from marvin.lib.base import (Account,
                              ServiceOffering,
-                             VirtualMachine)
-
+                             VirtualMachine,
+                             Configurations)
 from marvin.lib.common import (list_hosts,
                                list_routers,
                                get_zone,
@@ -150,7 +150,7 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
                 self.apiclient.connection.user,
                 self.apiclient.connection.passwd,
                 router.linklocalip,
-                "service dnsmasq status",
+                "service dnsmasq stop",
                 hypervisor=self.hypervisor
             )
         else:
@@ -186,8 +186,18 @@ class TestVRServiceFailureAlerting(cloudstackTestCase):
         res = str(result)
         self.debug("apache process status: %s" % res)
 
-        time.sleep(2400)
-        # wait for 40 minutes meanwhile monitor service on
+        configs = Configurations.list(
+                self.apiclient,
+                name='router.alerts.check.interval'
+            )
+
+        # Set the value for one more minute than
+        # actual range to be on safer side
+        waitingPeriod = (
+                int(configs[0].value) + 600)  # in seconds
+
+        time.sleep(waitingPeriod)
+        # wait for (router.alerts.check.interval + 10) minutes meanwhile monitor service on
         # VR starts the apache service (
         # router.alerts.check.interval default value is
         # 30minutes)

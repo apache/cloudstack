@@ -27,6 +27,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.user.dao.UserDao;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
@@ -164,6 +166,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     VMTemplateDao _templateDao;
     @Inject
     ResourceManager _resourceMgr;
+    @Inject
+    UserDao _userDao;
 
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
@@ -760,9 +764,14 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                     continue;
                 }
 
+                long userId = CallContext.current().getCallingUserId();
+                if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
+                    userId =  _userDao.listByAccount(owner.getAccountId()).get(0).getId();
+                }
+
                 internalLbVm =
                     new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId, VirtualMachineName.getSystemVmName(id, _instance, InternalLbVmNamePrefix),
-                        template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), false, 0, false,
+                        template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), userId, false, 0, false,
                         RedundantState.UNKNOWN, false, false, VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
                 internalLbVm.setRole(Role.INTERNAL_LB_VM);
                 internalLbVm = _internalLbVmDao.persist(internalLbVm);

@@ -52,6 +52,14 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @Param(description = "the account associated with the virtual machine")
     private String accountName;
 
+    @SerializedName(ApiConstants.USER_ID)
+    @Param(description = "the user's ID who deployed the virtual machine")
+    private String userId;
+
+    @SerializedName(ApiConstants.USERNAME)
+    @Param(description = "the user's name who deployed the virtual machine")
+    private String userName;
+
     @SerializedName(ApiConstants.PROJECT_ID)
     @Param(description = "the project id of the vm")
     private String projectId;
@@ -315,6 +323,14 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         return accountName;
     }
 
+    public String getUserId() {
+        return userId;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
     public String getProjectId() {
         return projectId;
     }
@@ -533,6 +549,14 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
     }
 
     @Override

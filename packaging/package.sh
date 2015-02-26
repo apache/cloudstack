@@ -23,7 +23,7 @@ function usage() {
     echo "The commonly used Arguments are:"
     echo "-p|--pack oss|OSS             To package with only redistributable libraries (default)"
     echo "-p|--pack noredist|NOREDIST   To package with non-redistributable libraries"
-    echo "-d centos7|centos63           To build a package for a distribution"
+    echo "-d centos7|centos63|fedora20  To build a package for a distribution"
     echo "-s simulator|SIMULATOR        To build for Simulator"
     echo ""
     echo "Examples: ./package.sh -p|--pack oss|OSS"
@@ -48,8 +48,15 @@ function packaging() {
     fi
 
     DISTRO=$3
-
-    VERSION=`(cd ../; mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version) | grep --color=none '^[0-9]\.'`
+    MVN=`which mvn`
+    if [ -z "$MVN" ] ; then
+        MVN=`locate bin/mvn | grep -e mvn$ | tail -1`
+        if [ -z "$MVN" ] ; then
+            echo "mvn not found\n cannot retrieve version to package\n RPM Build Failed"
+            exit 2
+        fi
+    fi
+    VERSION=`(cd ../; $MVN org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version) | grep --color=none '^[0-9]\.'`
     if echo $VERSION | grep -q SNAPSHOT ; then
         REALVER=`echo $VERSION | cut -d '-' -f 1`
         DEFVER="-D_ver $REALVER"

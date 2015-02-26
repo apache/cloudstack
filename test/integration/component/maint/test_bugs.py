@@ -16,18 +16,34 @@
 # under the License.
 
 # Import Local Modules
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackException import *
-from marvin.cloudstackAPI import *
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackAPI import (updateStoragePool,
+                                  resizeVolume,
+                                  listCapacity,
+                                  addCluster)
 from marvin.sshClient import SshClient
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
-from marvin.codes import *
+from marvin.lib.common import (get_zone,
+                               get_template,
+                               get_domain,
+                               list_volumes,
+                               get_pod,
+                               is_config_suitable)
+from marvin.lib.base import (Domain,
+                             Account,
+                             Template,
+                             VirtualMachine,
+                             Volume,
+                             DiskOffering,
+                             StoragePool,
+                             ServiceOffering,
+                             Configurations)
+from marvin.lib.utils import cleanup_resources
 from nose.plugins.attrib import attr
+import time
 
 
 class Test42xBugsMgmtSvr(cloudstackTestCase):
+
     @classmethod
     def setUpClass(cls):
         try:
@@ -135,7 +151,7 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
-            )
+        )
         self.cleanup.append(virtual_machine)
         # Verify VM state
         self.assertEqual(
@@ -281,7 +297,7 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
             self.apiClient.connection.user,
             self.apiClient.connection.passwd
         )
-        res = mgmt_ssh.execute("cloudstack-sccs")
+        mgmt_ssh.execute("cloudstack-sccs")
         # Step2: It should return a commit hash
         return
 
@@ -444,7 +460,7 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
-            )
+        )
         self.cleanup.append(virtual_machine)
         # Verify VM state
         self.assertEqual(
@@ -519,7 +535,9 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         # register windows 2012 VM template as windows 8 template
         self.hypervisor = self.testClient.getHypervisorInfo()
         if self.hypervisor.lower() in ['lxc']:
-            self.skipTest("windows VM is not supported on %s" % self.hypervisor.lower())
+            self.skipTest(
+                "windows VM is not supported on %s" %
+                self.hypervisor.lower())
         self.win2012_template = Template.register(
             self.apiClient,
             self.services["win2012template"],
@@ -602,7 +620,7 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
             self.apiClient.connection.user,
             self.apiClient.connection.passwd
         )
-        res = mgmt_ssh.execute("time telnet localhost 8250")
+        mgmt_ssh.execute("time telnet localhost 8250")
 
         # Step2: It should return a commit hash
         return
@@ -622,15 +640,17 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         cmd = addCluster.addClusterCmd()
         cmd.zoneid = self.zone.id
         cmd.hypervisor = self.hypervisor
-        cmd.clustertype = self.services["vmware_cluster"]["clustertype"]
-        cmd.podId = self.pod.id
-        cmd.username = self.services["vmware_cluster"]["username"]
-        cmd.password = self.services["vmware_cluster"]["password"]
+        cmd.clustertype = self.services["configurableData"][
+            "vmware_cluster"]["clustertype"]
+        cmd.podid = self.pod.id
+        cmd.username = self.services["configurableData"][
+            "vmware_cluster"]["username"]
+        cmd.password = self.services["configurableData"][
+            "vmware_cluster"]["password"]
         cmd.publicswitchtype = 'vmwaredvs'
         cmd.guestswitchtype = 'vmwaredvs'
-        cmd.url = self.services["vmware_cluster"]["url"]
-        cmd.clustername = self.services["vmware_cluster"]["url"]
-
+        cmd.url = self.services["configurableData"]["vmware_cluster"]["url"]
+        cmd.clustername = self.services[
+            "configurableData"]["vmware_cluster"]["url"]
         self.apiClient.addCluster(cmd)
-
         return

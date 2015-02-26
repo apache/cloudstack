@@ -175,7 +175,7 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     }
 
     @Override
-    public ConsoleProxyVO startProxy(long proxyVmId) {
+    public ConsoleProxyVO startProxy(long proxyVmId, boolean ignoreRestartSetting) {
         return null;
     }
 

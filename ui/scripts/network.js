@@ -1872,7 +1872,7 @@
                             },
                             messages: {
                                 notification: function(args) {
-                                    return 'label.acquire.new.secondary.ip';
+                                    return _l('label.acquire.new.secondary.ip');
                                 }
                             },
                             action: function(args) {

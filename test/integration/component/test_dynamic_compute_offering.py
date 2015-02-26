@@ -902,7 +902,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         # 1. Scaling operation should be successful
 
         hypervisor = get_hypervisor_type(self.apiclient)
-        if hypervisor.lower() in ["kvm", "hyperv"]:
+        if hypervisor.lower() in ["kvm", "hyperv", 'lxc']:
             self.skipTest(
                 "Scaling VM in running state is not supported on %s" % hypervisor)
 
@@ -979,7 +979,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         # 2. Scale operation in step 6 should fail
 
         hypervisor = get_hypervisor_type(self.apiclient)
-        if hypervisor.lower() in ["kvm", "hyperv"]:
+        if hypervisor.lower() in ["kvm", "hyperv", 'lxc']:
             self.skipTest(
                 "Scaling VM in running state is not supported on %s" % hypervisor)
 
@@ -1079,7 +1079,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
         # Validations:
         # 1. Scale operation in step 4 should be successful
         hypervisor = get_hypervisor_type(self.apiclient)
-        if hypervisor.lower() in ["kvm", "hyperv"]:
+        if hypervisor.lower() in ["kvm", "hyperv", 'lxc']:
             self.skipTest(
                 "Scaling VM in running state is not supported on %s" % hypervisor)
 
