@@ -50,10 +50,12 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.Proxy;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.alert.AlertManager;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
 
@@ -73,6 +75,10 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     EndPointSelector _epSelector;
     @Inject
     ConfigurationDao configDao;
+    @Inject
+    VMTemplateZoneDao _vmTemplateZoneDao;
+    @Inject
+    AlertManager _alertMgr;
     protected String _proxy = null;
 
     protected Proxy getHttpProxy() {
@@ -177,6 +183,9 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             result.setSuccess(false);
             result.setResult(answer.getErrorString());
             caller.complete(result);
+            String msg = "Failed to register template: " + obj.getUuid() + " with error: " + answer.getErrorString();
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED, _vmTemplateZoneDao.listByTemplateId(obj.getId()).get(0).getZoneId(), null, msg, msg);
+            s_logger.error(msg);
         } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
             if (answer.getCheckSum() != null) {
                 VMTemplateVO templateDaoBuilder = _templateDao.createForUpdate();
@@ -229,6 +238,9 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             result.setSuccess(false);
             result.setResult(answer.getErrorString());
             caller.complete(result);
+            String msg = "Failed to upload volume: " + obj.getUuid() + " with error: " + answer.getErrorString();
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED, volStoreVO.getZoneId(), null, msg, msg);
+            s_logger.error(msg);
         } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
             CreateCmdResult result = new CreateCmdResult(null, null);
             caller.complete(result);
