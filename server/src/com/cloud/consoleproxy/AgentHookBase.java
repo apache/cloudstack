@@ -146,7 +146,7 @@ public abstract class AgentHookBase implements AgentHook {
 
         String sid = cmd.getSid();
         if (sid == null || !sid.equals(vm.getVncPassword())) {
-            s_logger.warn("sid " + sid + " in url does not match stored sid " + vm.getVncPassword());
+            s_logger.warn("sid " + sid + " in url does not match stored sid.");
             return new ConsoleAccessAuthenticationAnswer(cmd, false);
         }
 
