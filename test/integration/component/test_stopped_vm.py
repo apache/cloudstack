@@ -857,20 +857,12 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
                 "vm deploy from ISO feature is not supported on %s" %
                 self.hypervisor.lower())
 
-        if not self.testdata["configurableData"][
-                "bootableIso"][self.hypervisor.lower()]["url"]:
-            self.skipTest(
-                "Bootable Iso URL not present in test data for %s" %
-                self.hypervisor)
-
-        self.testdata["configurableData"]["bootableIso"]["url"] = self.testdata[
-            "configurableData"]["bootableIso"][self.hypervisor.lower()]["url"]
-
         self.iso = Iso.create(
             self.apiclient,
             self.testdata["configurableData"]["bootableIso"],
             account=self.account.name,
-            domainid=self.account.domainid
+            domainid=self.account.domainid,
+            zoneid=self.zone.id
         )
         try:
             # Download the ISO

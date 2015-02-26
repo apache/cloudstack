@@ -1501,23 +1501,12 @@ test_data = {
         },
         "bootableIso":
                 {
-                    "displaytext": "Test ISO",
+                    "displaytext": "Test Bootable ISO",
                     "name": "testISO",
                     "bootable": True,
                     "ispublic": False,
-                    "kvm": {
-                            "url": ""
-                           },
-                    "vmware": {
-                            "url": ""
-                           },
-                    "xenserver": {
-                            "url": ""
-                           },
-                    "hyperv": {
-                               "url": ""
-                           },
-                    "ostype": 'CentOS 5.3 (64-bit)',
+                    "url": "http://10.147.40.145/ISO/CentOS-6.3-x86_64-bin-DVD1.iso",
+                    "ostype": 'CentOS 6.3 (64-bit)',
                     "mode": 'HTTP_DOWNLOAD'
         },
      "setHostConfigurationForIngressRule": False
