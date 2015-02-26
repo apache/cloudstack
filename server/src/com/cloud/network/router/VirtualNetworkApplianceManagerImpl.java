@@ -1104,7 +1104,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                             } else {
                                 // Wilder Rodrigues (wrodrigues@schubergphilis.com
                                 // Force a restart in order to fix the conflict
-                                recoverRedundantNetwork(masterRouter, r);
+                                // recoverRedundantNetwork(masterRouter, r);
                                 break;
                             }
                         } else if (r.getRedundantState() == RedundantState.BACKUP) {
@@ -1113,7 +1113,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
                             } else {
                                 // Wilder Rodrigues (wrodrigues@schubergphilis.com
                                 // Do we have 2 routers in Backup state? Perhaps a restart of 1 router is needed.
-                                recoverRedundantNetwork(backupRouter, r);
+                                // recoverRedundantNetwork(backupRouter, r);
                                 break;
                             }
                         }
