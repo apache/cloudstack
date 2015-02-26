@@ -21,9 +21,11 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.vmware.vim25.DatastoreHostMount;
 import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.FileInfo;
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
+import com.vmware.vim25.HostMountInfo;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.ObjectSpec;
@@ -64,6 +66,10 @@ public class DatastoreMO extends BaseMO {
 
     public HostDatastoreBrowserMO getHostDatastoreBrowserMO() throws Exception {
         return new HostDatastoreBrowserMO(_context, (ManagedObjectReference)_context.getVimClient().getDynamicProperty(_mor, "browser"));
+    }
+
+    public List<DatastoreHostMount> getHostMounts() throws Exception {
+        return _context.getVimClient().getDynamicProperty(_mor, "host");
     }
 
     public String getInventoryPath() throws Exception {
@@ -379,5 +385,19 @@ public class DatastoreMO extends BaseMO {
             }
         }
         return absoluteFileName;
+    }
+
+    public boolean isAccessibleToHost(String hostValue) throws Exception {
+        boolean isAccessible = true;
+        List<DatastoreHostMount> hostMounts = getHostMounts();
+        for (DatastoreHostMount hostMount : hostMounts) {
+            String hostMountValue = hostMount.getKey().getValue();
+            if (hostMountValue.equalsIgnoreCase(hostValue)) {
+                HostMountInfo mountInfo = hostMount.getMountInfo();
+                isAccessible = mountInfo.isAccessible();
+                break;
+            }
+        }
+        return isAccessible;
     }
 }
