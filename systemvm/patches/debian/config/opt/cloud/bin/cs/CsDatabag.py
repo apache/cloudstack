@@ -119,10 +119,16 @@ class CsCmdLine(CsDataBag):
             return self.idata()['redundant_state'] == "MASTER"
         return False
 
-    def get_state(self):
-        if "redundant_state" in self.idata():
-            return self.idata()['redundant_state']
-        return "MASTER"
+    def set_fault_state(self):
+        self.idata()['redundant_state'] = "FAULT"
+        self.idata()['redundant_master'] = False
+
+    def set_master_state(self, value):
+        if value:
+            self.idata()['redundant_state'] = "MASTER"
+        else:
+            self.idata()['redundant_state'] = "BACKUP"
+        self.idata()['redundant_master'] = value
 
     def get_router_id(self):
         if "router_id" in self.idata():

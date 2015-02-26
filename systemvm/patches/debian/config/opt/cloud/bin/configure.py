@@ -141,6 +141,9 @@ class CsAcl(CsDataBag):
     class AclDevice():
         """ A little class for each list of acls per device """
 
+        FIXED_RULES_INGRESS = 3
+        FIXED_RULES_EGRESS = 3
+
         def __init__(self, obj, config):
             self.ingess = []
             self.egress = []
@@ -156,23 +159,27 @@ class CsAcl(CsDataBag):
             self.fw = config.get_fw()
 
         def create(self):
-            self.process("ingress", self.ingress)
-            self.process("egress", self.egress)
+            self.process("ingress", self.ingress, self.FIXED_RULES_INGRESS)
+            self.process("egress", self.egress, self.FIXED_RULES_EGRESS)
 
-        def process(self, direction, rule_list):
+        def process(self, direction, rule_list, base):
+            count = base
             for i in rule_list:
-                r = self.AclRule(direction, self, i, self.config)
+                r = self.AclRule(direction, self, i, self.config, count)
                 r.create()
+                count += 1
 
         class AclRule():
 
-            def __init__(self, direction, acl, rule, config):
+            def __init__(self, direction, acl, rule, config, count):
+                self.count = count
                 if config.is_vpc():
                     self.init_vpc(direction, acl, rule, config)
 
             def init_vpc(self, direction, acl, rule, config):
                 self.table = ""
                 self.device = acl.device
+                self.direction = direction
                 # acl is an object of the AclDevice type. So, its fw attribute is already a list.
                 self.fw = acl.fw
                 self.chain = config.get_ingress_chain(self.device, acl.ip)
@@ -210,7 +217,7 @@ class CsAcl(CsDataBag):
                     rstr = "%s -m icmp --icmp-type %s" % (rstr, self.icmp_type)
                 rstr = "%s %s -j %s" % (rstr, self.dport, self.action)
                 rstr = rstr.replace("  ", " ").lstrip()
-                self.fw.append([self.table, "front", rstr])
+                self.fw.append([self.table, self.count, rstr])
 
     def process(self):
         for item in self.dbag:

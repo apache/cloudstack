@@ -174,8 +174,8 @@ class CsRedundant(object):
         ads = [o for o in self.address.get_ips() if o.needs_vrrp()]
         for o in ads:
             pwdsvc = CsPasswdSvc(o.get_gateway()).stop()
-        cl.dbag['config']['redundant_master'] = "false"
-        cl.save()
+        self.cl.set_fault_state()
+        self.cl.save()
         logging.info("Router switched to fault mode")
 
     def set_backup(self):
@@ -201,7 +201,7 @@ class CsRedundant(object):
             pwdsvc = CsPasswdSvc(o.get_gateway()).stop()
         CsHelper.service("dnsmasq", "stop")
         # self._set_priority(self.CS_PRIO_DOWN)
-        self.cl.dbag['config']['redundant_master'] = "false"
+        self.cl.set_master_state(False)
         # CsHelper.service("keepalived", "restart")
         self.cl.save()
         logging.info("Router switched to backup mode")
@@ -235,7 +235,7 @@ class CsRedundant(object):
         for o in ads:
             pwdsvc = CsPasswdSvc(o.get_gateway()).restart()
         CsHelper.service("dnsmasq", "restart")
-        self.cl.dbag['config']['redundant_master'] = "true"
+        self.cl.set_master_state(True)
         self.cl.save()
         # CsHelper.service("keepalived", "restart")
         logging.info("Router switched to master mode")

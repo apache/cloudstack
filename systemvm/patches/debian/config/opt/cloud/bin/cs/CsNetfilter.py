@@ -26,18 +26,27 @@ class CsChain(object):
     def __init__(self):
         self.chain = {}
         self.last_added = ''
+        self.count = {}
 
     def add(self, table, chain):
         if table not in self.chain.keys():
             self.chain.setdefault(table, []).append(chain)
         else:
             self.chain[table].append(chain)
-        self.last_added = chain
+        if self.last_added != chain:
+            self.last_added = chain
+            self.count[chain] = 0
+
+    def add_rule(self, chain):
+        self.count[chain] += 1
 
     def get(self, table):
         if table not in self.chain.keys():
             return {}
         return self.chain[table]
+
+    def get_count(self, chain):
+        return self.count[chain]
 
     def last(self):
         return self.last_added
@@ -84,9 +93,12 @@ class CsNetfilters(object):
             if i.startswith(':'):  # Chain
                 self.chain.add(self.table.last(), i[1:].split(' ')[0])
             if i.startswith('-A'):  # Rule
+                self.chain.add_rule(i.split()[1])
                 rule = CsNetfilter()
                 rule.parse(i)
                 rule.set_table(self.table.last())
+                rule.set_chain(i.split()[1])
+                rule.set_count(self.chain.get_count(i.split()[1]))
                 self.save(rule)
 
     def save(self, rule):
@@ -104,6 +116,8 @@ class CsNetfilters(object):
     def has_rule(self, new_rule):
         for r in self.get():
             if new_rule == r:
+                if new_rule.get_count() > 0:
+                    continue
                 r.mark_seen()
                 return True
         return False
@@ -119,8 +133,8 @@ class CsNetfilters(object):
     def compare(self, list):
         """ Compare reality with what is needed """
         for c in self.chain.get("filter"):
-            # Ensure all inbound chains have a default drop rule
-            if c.startswith("ACL_INBOUND"):
+            # Ensure all inbound/outbound chains have a default drop rule
+            if c.startswith("ACL_INBOUND") or c.startswith("ACL_OUTBOUND"):
                 list.append(["filter", "", "-A %s -j DROP" % c])
         # PASS 1:  Ensure all chains are present
         for fw in list:
@@ -133,6 +147,8 @@ class CsNetfilters(object):
             new_rule = CsNetfilter()
             new_rule.parse(fw[2])
             new_rule.set_table(fw[0])
+            if isinstance(fw[1], int):
+                new_rule.set_count(fw[1])
             if self.has_rule(new_rule):
                 logging.debug("rule %s exists in table %s", fw[2], new_rule.get_table())
             else:
@@ -142,6 +158,8 @@ class CsNetfilters(object):
                 cpy = fw[2]
                 if fw[1] == "front":
                     cpy = cpy.replace('-A', '-I')
+                if isinstance(fw[1], int):
+                    cpy = cpy.replace("-A %s" % new_rule.get_chain(), '-I %s %s' % (new_rule.get_chain(), fw[1]))
 
                 CsHelper.execute("iptables -t %s %s" % (new_rule.get_table(), cpy))
         self.del_standard()
@@ -189,6 +207,7 @@ class CsNetfilter(object):
         self.table = ''
         self.chain = ''
         self.seen = False
+        self.count = 0
 
     def parse(self, rule):
         self.rule = self.__convert_to_dict(rule)
@@ -226,6 +245,12 @@ class CsNetfilter(object):
 
     def set_chain(self, chain):
         self.chain = chain
+
+    def set_count(self, count=0):
+        self.count = count
+
+    def get_count(self):
+        return self.count
 
     def get_chain(self):
         return self.chain

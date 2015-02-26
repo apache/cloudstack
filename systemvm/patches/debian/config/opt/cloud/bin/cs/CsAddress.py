@@ -371,9 +371,14 @@ class CsIP:
                         "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"])
         if self.get_type() in ["guest"]:
             self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" % (self.address['network'], self.dev, self.dev)])
+            self.fw.append(["filter", "front", "-A ACL_INBOUND_%s -d 224.0.0.18/32 -j ACCEPT" % self.dev])
+            self.fw.append(["filter", "front", "-A ACL_INBOUND_%s -d 225.0.0.50/32 -j ACCEPT" % self.dev])
+            self.fw.append(["mangle", "front", "-A ACL_OUTBOUND_%s -d 225.0.0.50/32 -j ACCEPT" % self.dev])
+            self.fw.append(["mangle", "front", "-A ACL_OUTBOUND_%s -d 224.0.0.18/32 -j ACCEPT" % self.dev])
             self.fw.append(["filter", "", "-A INPUT -i %s -p udp -m udp --dport 67 -j ACCEPT" % self.dev])
             self.fw.append(["filter", "", "-A INPUT -i %s -p udp -m udp --dport 53 -j ACCEPT" % self.dev])
             self.fw.append(["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 53 -j ACCEPT" % self.dev])
+
             self.fw.append(["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 80 -m state --state NEW -j ACCEPT" % self.dev])
             self.fw.append(["filter", "", "-A INPUT -i %s -p tcp -m tcp --dport 8080 -m state --state NEW -j ACCEPT" % self.dev])
             self.fw.append(["mangle", "",
