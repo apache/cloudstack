@@ -133,8 +133,8 @@ public class PBKDF2UserAuthenticator extends DefaultUserAuthenticator {
         return !(plainPassword == null || plainPassword.isEmpty() || hash == null || hash.length == 0);
     }
 
-    private static String encode(byte[] input) {
-        return new String(Base64.encode(input));
+    private static String encode(byte[] input) throws UnsupportedEncodingException {
+        return new String(Base64.encode(input), "UTF-8");
     }
 
     private static byte[] decode(String input) throws UnsupportedEncodingException {
