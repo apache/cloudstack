@@ -18,6 +18,7 @@ package com.cloud.user;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.ArrayList;
 
 import javax.inject.Inject;
 
@@ -39,6 +40,10 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
+
+import com.cloud.vm.snapshot.VMSnapshotManager;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ResourceCountDao;
@@ -178,6 +183,11 @@ public class AccountManagerImplTest {
     MessageBus _messageBus;
 
     @Mock
+    VMSnapshotManager _vmSnapshotMgr;
+    @Mock
+    VMSnapshotDao _vmSnapshotDao;
+
+    @Mock
     User callingUser;
     @Mock
     Account callingAccount;
@@ -264,6 +274,7 @@ public class AccountManagerImplTest {
                 securityChecker.checkAccess(Mockito.any(Account.class),
                         Mockito.any(Domain.class)))
                 .thenReturn(true);
+        Mockito.when(_vmSnapshotDao.listByAccountId(Mockito.anyLong())).thenReturn(new ArrayList<VMSnapshotVO>());
 
         Assert.assertTrue(accountManager.deleteUserAccount(42));
         // assert that this was a clean delete
