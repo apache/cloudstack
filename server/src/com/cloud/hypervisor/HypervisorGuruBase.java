@@ -35,6 +35,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.service.ServiceOfferingDetailsVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.utils.Pair;
@@ -71,6 +72,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     ResourceManager _resourceMgr;
     @Inject
     ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    @Inject
+    ServiceOfferingDao _serviceOfferingDao;
 
     protected HypervisorGuruBase() {
         super();
@@ -125,8 +128,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     }
 
     protected VirtualMachineTO toVirtualMachineTO(VirtualMachineProfile vmProfile) {
-
-        ServiceOffering offering = vmProfile.getServiceOffering();
+        ServiceOffering offering = _serviceOfferingDao.findById(vmProfile.getId(), vmProfile.getServiceOfferingId());
         VirtualMachine vm = vmProfile.getVirtualMachine();
         Long minMemory = (long)(offering.getRamSize() / vmProfile.getMemoryOvercommitRatio());
         int minspeed = (int)(offering.getSpeed() / vmProfile.getCpuOvercommitRatio());

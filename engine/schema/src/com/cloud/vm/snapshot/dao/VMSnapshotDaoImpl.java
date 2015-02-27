@@ -121,6 +121,12 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implem
         return null;
     }
 
+    public List<VMSnapshotVO> listByAccountId(Long accountId) {
+        SearchCriteria sc = this.AllFieldsSearch.create();
+        sc.setParameters("accountId", new Object[] { accountId });
+        return listBy(sc, null);
+    }
+
     @Override
     public boolean updateState(State currentState, Event event, State nextState, VMSnapshot vo, Object data) {
 

@@ -452,6 +452,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             snapshotResponse.setVolumeId(volume.getUuid());
             snapshotResponse.setVolumeName(volume.getName());
             snapshotResponse.setVolumeType(volume.getVolumeType().name());
+            DataCenter zone = ApiDBUtils.findZoneById(volume.getDeviceId());
+            if (zone != null) {
+                snapshotResponse.setZoneId(zone.getUuid());
+            }
         }
         snapshotResponse.setCreated(snapshot.getCreated());
         snapshotResponse.setName(snapshot.getName());
@@ -502,6 +506,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (vmSnapshot.getParent() != null) {
             VMSnapshot vmSnapshotParent = ApiDBUtils.getVMSnapshotById(vmSnapshot.getParent());
             if (vmSnapshotParent != null) {
+                vmSnapshotResponse.setParent(vmSnapshotParent.getUuid());
                 vmSnapshotResponse.setParentName(vmSnapshotParent.getDisplayName());
             }
         }
@@ -3096,9 +3101,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
             //Network ID
-            NetworkVO network = _entityMgr.findByIdIncludingRemoved(NetworkVO.class, usageRecord.getNetworkId().toString());
-            if (network != null) {
-                usageRecResponse.setNetworkId(network.getUuid());
+            if (usageRecord.getNetworkId() != null && usageRecord.getNetworkId() != 0L) {
+                NetworkVO network = _entityMgr.findByIdIncludingRemoved(NetworkVO.class, usageRecord.getNetworkId().toString());
+                if (network != null) {
+                    usageRecResponse.setNetworkId(network.getUuid());
+                }
             }
 
         } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE

@@ -36,4 +36,6 @@ public interface VMSnapshotDao extends GenericDao<VMSnapshotVO, Long>, StateDao<
     List<VMSnapshotVO> listByParent(Long vmSnapshotId);
 
     VMSnapshotVO findByName(Long vmId, String name);
+
+    List<VMSnapshotVO> listByAccountId(Long accountId);
 }

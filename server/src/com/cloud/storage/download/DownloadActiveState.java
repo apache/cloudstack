@@ -59,6 +59,7 @@ public abstract class DownloadActiveState extends DownloadState {
 
     @Override
     public void onEntry(String prevState, DownloadEvent event, Object evtObj) {
+        super.onEntry(prevState, event, evtObj);
         if (s_logger.isTraceEnabled()) {
             getDownloadListener().log("onEntry, prev state= " + prevState + ", curr state=" + getName() + ", event=" + event, Level.TRACE);
         }
