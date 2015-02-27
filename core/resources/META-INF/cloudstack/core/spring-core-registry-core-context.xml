@@ -33,7 +33,7 @@
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="orderConfigKey" value="user.authenticators.order" />
         <property name="excludeKey" value="user.authenticators.exclude" />
-        <property name="orderConfigDefault" value="SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT" />
+        <property name="orderConfigDefault" value="PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT" />
     </bean>
 
     <bean id="pluggableAPIAuthenticatorsRegistry"
@@ -47,7 +47,7 @@
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="orderConfigKey" value="user.password.encoders.order" />
         <property name="excludeKey" value="user.password.encoders.exclude" />
-        <property name="orderConfigDefault" value="SHA256SALT,MD5,LDAP,PLAINTEXT" />
+        <property name="orderConfigDefault" value="PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT" />
     </bean>
 
     <bean id="securityCheckersRegistry"
