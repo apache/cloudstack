@@ -105,6 +105,8 @@ public interface AccountService {
 
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd);
 
+    public String[] createApiKeyAndSecretKey(final long userId);
+
     UserAccount getUserByApiKey(String apiKey);
 
     RoleType getRoleType(Account account);

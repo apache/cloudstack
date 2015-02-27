@@ -42,7 +42,6 @@ import com.google.gson.Gson;
 import org.apache.cloudstack.api.AddBaremetalRctCmd;
 import org.apache.cloudstack.api.DeleteBaremetalRctCmd;
 import org.apache.cloudstack.api.ListBaremetalRctCmd;
-import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.utils.baremetal.BaremetalUtils;
 import org.springframework.web.client.RestTemplate;
 
@@ -259,9 +258,7 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
         user.setPassword(UUID.randomUUID().toString());
         user = userDao.persist(user);
 
-        RegisterCmd cmd = new RegisterCmd();
-        cmd.setId(user.getId());
-        String[] keys = acntMgr.createApiKeyAndSecretKey(cmd);
+        String[] keys = acntMgr.createApiKeyAndSecretKey(user.getId());
         user.setApiKey(keys[0]);
         user.setSecretKey(keys[1]);
         userDao.update(user.getId(), user);
