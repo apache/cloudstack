@@ -88,6 +88,7 @@ ERROR_NO_HOST_FOR_MIGRATION = \
     "please ensure setup has required no. of hosts"
 NAT_RULE = "nat rule"
 STATIC_NAT_RULE = "static nat rule"
+LB_RULE = "Load Balancer Rule"
 UNKNOWN = "UNKNOWN"
 FAULT = "FAULT"
 MASTER = "MASTER"
