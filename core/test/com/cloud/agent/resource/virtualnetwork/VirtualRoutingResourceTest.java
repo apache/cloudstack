@@ -674,7 +674,13 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     private void verifyArgs(SetFirewallRulesCommand cmd, String script, String args) {
         assertEquals(script, VRScripts.FIREWALL_INGRESS);
-        assertEquals(args, " -F -a 64.10.10.10:ICMP:0:0:10.10.1.1/24-10.10.1.2/24:,64.10.10.10:TCP:22:80:10.10.1.1/24-10.10.1.2/24:,64.10.10.10:reverted:0:0:0:,");
+
+        //Since the arguments are generated with a Set
+        //one can not make a bet on the order
+        assertTrue(args.startsWith(" -F -a "));
+        assertTrue(args.contains("64.10.10.10:ICMP:0:0:10.10.1.1/24-10.10.1.2/24:"));
+        assertTrue(args.contains("64.10.10.10:reverted:0:0:0:"));
+        assertTrue(args.contains("64.10.10.10:TCP:22:80:10.10.1.1/24-10.10.1.2/24:"));
     }
 
     @Test
