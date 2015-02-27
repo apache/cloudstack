@@ -117,6 +117,10 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotManager;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.RoleType;
@@ -200,6 +204,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private NetworkOrchestrationService _networkMgr;
     @Inject
     private SnapshotManager _snapMgr;
+    @Inject
+    private VMSnapshotManager _vmSnapshotMgr;
+    @Inject
+    private VMSnapshotDao _vmSnapshotDao;
     @Inject
     private UserVmManager _vmMgr;
     @Inject
@@ -730,6 +738,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 accountCleanupNeeded = true;
             }
 
+            // Destroy VM Snapshots
+            List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.listByAccountId(Long.valueOf(accountId));
+            for (VMSnapshot vmSnapshot : vmSnapshots) {
+                try {
+                    _vmSnapshotMgr.deleteVMSnapshot(vmSnapshot.getId());
+                } catch (Exception e) {
+                    s_logger.debug("Failed to cleanup vm snapshot " + vmSnapshot.getId() + " due to " + e.toString());
+                }
+            }
+
             // Destroy the account's VMs
             List<UserVmVO> vms = _userVmDao.listByAccountId(accountId);
             if (s_logger.isDebugEnabled()) {
@@ -1169,6 +1187,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         if (password != null) {
+            if (password.isEmpty()) {
+                throw new InvalidParameterValueException("Password cannot be empty");
+            }
             String encodedPassword = null;
             for (Iterator<UserAuthenticator> en = _userPasswordEncoders.iterator(); en.hasNext();) {
                 UserAuthenticator authenticator = en.next();
@@ -1977,7 +1998,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public UserAccount authenticateUser(String username, String password, Long domainId, InetAddress loginIpAddress, Map<String, Object[]> requestParameters) {
         UserAccount user = null;
-        if (password != null) {
+        if (password != null && !password.isEmpty()) {
             user = getUserAccount(username, password, domainId, requestParameters);
         } else {
             String key = _configDao.getValue("security.singlesignon.key");

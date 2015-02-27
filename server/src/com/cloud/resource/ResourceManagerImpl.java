@@ -30,7 +30,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.capacity.CapacityState;
 import com.cloud.vm.VirtualMachine;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -71,6 +70,7 @@ import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.agent.transport.Request;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.capacity.CapacityState;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
@@ -1174,12 +1174,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         MaintainAnswer answer = (MaintainAnswer)_agentMgr.easySend(hostId, new MaintainCommand());
         if (answer == null || !answer.getResult()) {
             s_logger.warn("Unable to send MaintainCommand to host: " + hostId);
+            return false;
         }
 
         try {
             resourceStateTransitTo(host, ResourceState.Event.AdminAskMaintenace, _nodeId);
         } catch (NoTransitionException e) {
-            String err = "Cannot transimit resource state of host " + host.getId() + " to " + ResourceState.Maintenance;
+            String err = "Cannot transmit resource state of host " + host.getId() + " to " + ResourceState.Maintenance;
             s_logger.debug(err, e);
             throw new CloudRuntimeException(err + e.getMessage());
         }
@@ -1210,7 +1211,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
             }
         }
-
         return true;
     }
 

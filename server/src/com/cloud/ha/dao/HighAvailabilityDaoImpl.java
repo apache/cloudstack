@@ -63,6 +63,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
         TBASearch.and("server", TBASearch.entity().getServerId(), Op.NULL);
         TBASearch.and("taken", TBASearch.entity().getDateTaken(), Op.NULL);
         TBASearch.and("time", TBASearch.entity().getTimeToTry(), Op.LTEQ);
+        TBASearch.and("step", TBASearch.entity().getStep(), Op.NIN);
         TBASearch.done();
 
         PreviousInstanceSearch = createSearchBuilder();
@@ -151,6 +152,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
         try {
             final SearchCriteria<HaWorkVO> sc = TBASearch.create();
             sc.setParameters("time", System.currentTimeMillis() >> 10);
+            sc.setParameters("step", Step.Done, Step.Cancelled);
 
             final Filter filter = new Filter(HaWorkVO.class, null, true, 0l, 1l);
 
