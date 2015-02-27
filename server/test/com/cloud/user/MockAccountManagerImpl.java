@@ -265,6 +265,11 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
+    public String[] createApiKeyAndSecretKey(final long userId) {
+        return null;
+    }
+
+    @Override
     public boolean enableAccount(long accountId) {
         // TODO Auto-generated method stub
         return false;

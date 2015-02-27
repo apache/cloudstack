@@ -2076,6 +2076,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 s_logger.error("Failed to authenticate user: " + username + " in domain " + domainId);
                 return null;
             }
+            // don't allow baremetal system user
+            if (BaremetalUtils.BAREMETAL_SYSTEM_ACCOUNT_NAME.equals(user.getUsername())) {
+                s_logger.error("Won't authenticate user: " + username + " in domain " + domainId);
+                return null;
+            }
 
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
@@ -2207,6 +2212,24 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
         });
 
+        return keys;
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_REGISTER_FOR_SECRET_API_KEY, eventDescription = "register for the developer API keys")
+    public String[] createApiKeyAndSecretKey(final long userId) {
+        User user = getUserIncludingRemoved(userId);
+        if (user == null) {
+            throw new InvalidParameterValueException("Unable to find user by id");
+        }
+        final String[] keys = new String[2];
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                keys[0] = AccountManagerImpl.this.createUserApiKey(userId);
+                keys[1] = AccountManagerImpl.this.createUserSecretKey(userId);
+            }
+        });
         return keys;
     }
 
