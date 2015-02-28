@@ -154,14 +154,6 @@ public class ApiServlet extends HttpServlet {
             }
 
             HttpSession session = req.getSession(false);
-            if (ApiServer.isSecureSessionCookieEnabled()) {
-                resp.setHeader("SET-COOKIE", "JSESSIONID=" + session.getId() + ";Secure;Path=/client");
-                if (s_logger.isDebugEnabled()) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Session cookie is marked secure!");
-                    }
-                }
-            }
             final Object[] responseTypeParam = params.get(ApiConstants.RESPONSE);
             if (responseTypeParam != null) {
                 responseType = (String)responseTypeParam[0];
@@ -187,6 +179,14 @@ public class ApiServlet extends HttpServlet {
                             }
                         }
                         session = req.getSession(true);
+                        if (ApiServer.isSecureSessionCookieEnabled()) {
+                            resp.setHeader("SET-COOKIE", "JSESSIONID=" + session.getId() + ";Secure;Path=/client");
+                            if (s_logger.isDebugEnabled()) {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Session cookie is marked secure!");
+                                }
+                            }
+                        }
                     }
 
                     try {
