@@ -181,7 +181,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
 
     public static boolean encodeApiResponse = false;
-    public static String jsonContentType = "text/javascript";
+    public static boolean s_enableSecureCookie = false;
+    public static String s_jsonContentType = HttpUtils.JSON_CONTENT_TYPE;
 
     /**
      * Non-printable ASCII characters - numbers 0 to 31 and 127 decimal
@@ -362,9 +363,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
 
         setEncodeApiResponse(Boolean.valueOf(_configDao.getValue(Config.EncodeApiResponse.key())));
-        final String jsonType = _configDao.getValue(Config.JavaScriptDefaultContentType.key());
+        final String jsonType = _configDao.getValue(Config.JSONDefaultContentType.key());
         if (jsonType != null) {
-            jsonContentType = jsonType;
+            s_jsonContentType = jsonType;
+        }
+        final Boolean enableSecureSessionCookie = Boolean.valueOf(_configDao.getValue(Config.EnableSecureSessionCookie.key()));
+        if (enableSecureSessionCookie != null) {
+            s_enableSecureCookie = enableSecureSessionCookie;
         }
 
         if (apiPort != null) {
@@ -1136,7 +1141,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final BasicHttpEntity body = new BasicHttpEntity();
             if (HttpUtils.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
                 // JSON response
-                body.setContentType(jsonContentType);
+                body.setContentType(getJSONContentType());
                 if (responseText == null) {
                     body.setContent(new ByteArrayInputStream("{ \"error\" : { \"description\" : \"Internal Server Error\" } }".getBytes(HttpUtils.UTF_8)));
                 }
@@ -1367,7 +1372,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         ApiServer.encodeApiResponse = encodeApiResponse;
     }
 
-    public static String getJsonContentType() {
-        return jsonContentType;
+    public static boolean isSecureSessionCookieEnabled() {
+        return s_enableSecureCookie;
+    }
+
+    public static String getJSONContentType() {
+        return s_jsonContentType;
     }
 }

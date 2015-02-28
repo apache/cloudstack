@@ -1591,13 +1591,22 @@ public enum Config {
             "Percentage (as a value between 0 and 1) of connected agents after which agent load balancing will start happening",
             null),
 
-    JavaScriptDefaultContentType(
+    JSONDefaultContentType(
             "Advanced",
             ManagementServer.class,
             String.class,
             "json.content.type",
-            "text/javascript",
-            "Http response content type for .js files (default is text/javascript)",
+            "application/json; charset=UTF-8",
+            "Http response content type for JSON",
+            null),
+
+    EnableSecureSessionCookie(
+            "Advanced",
+            ManagementServer.class,
+            Boolean.class,
+            "enable.secure.session.cookie",
+            "false",
+            "Session cookie's secure flag is enabled if true. Use this only when using HTTPS",
             null),
 
     DefaultMaxProjectUserVms(
