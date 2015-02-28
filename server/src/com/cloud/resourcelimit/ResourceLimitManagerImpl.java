@@ -868,8 +868,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         // this lock guards against the updates to user_vm, volume, snapshot, public _ip and template table
         // as any resource creation precedes with the resourceLimitExceeded check which needs this lock too
+        Set rowIdsToLock = _resourceCountDao.listAllRowsToUpdate(accountId, Resource.ResourceOwnerType.Account, type);
         SearchCriteria<ResourceCountVO> sc = ResourceCountSearch.create();
-        sc.setParameters("accountId", accountId);
+        sc.setParameters("id", rowIdsToLock.toArray());
         _resourceCountDao.lockRows(sc, null, true);
 
         ResourceCountVO accountRC = _resourceCountDao.findByOwnerAndType(accountId, ResourceOwnerType.Account, type);

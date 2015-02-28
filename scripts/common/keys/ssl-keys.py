@@ -33,7 +33,7 @@ import traceback
 def generateSSLKey(outputPath):
   logf = open("ssl-keys.log", "w")
   hostName = socket.gethostbyname(socket.gethostname())
-  keyFile = outputPath + os.sep + "cloud.keystore"
+  keyFile = outputPath + os.sep + "cloudmanagementserver.keystore"
   logf.write("HostName = %s\n" % hostName)
   logf.write("OutputPath = %s\n" % keyFile)
   dname='cn="Cloudstack User",ou="' + hostName + '",o="' + hostName + '",c="Unknown"';
