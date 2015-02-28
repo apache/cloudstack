@@ -194,6 +194,14 @@ public class ApiServlet extends HttpServlet {
                             }
                         }
                         session = req.getSession(true);
+                        if (ApiServer.isSecureSessionCookieEnabled()) {
+                            resp.setHeader("SET-COOKIE", "JSESSIONID=" + session.getId() + ";Secure;Path=/client");
+                            if (s_logger.isDebugEnabled()) {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Session cookie is marked secure!");
+                                }
+                            }
+                        }
                     }
 
                     try {
