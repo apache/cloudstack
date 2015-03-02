@@ -206,7 +206,29 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         sc.setParameters("store_id", storeId);
         sc.setParameters("volume_id", volumeId);
         sc.setParameters("destroyed", false);
-        return findOneBy(sc);
+
+        /*
+        When we download volume then we create entry in volume_store_ref table.
+        We mark the volume entry to ready state once download_url gets generated.
+        When we migrate that volume, then again one more entry is created with same volume id.
+        Its state is marked as allocated. Later we try to list only one dataobject in datastore
+        for state transition during volume migration. If the listed volume's state is allocated
+        then migration passes otherwise it fails.
+
+         Below fix will remove the randomness and give priority to volume entry which is made for
+         migration (download_url/extracturl will be null in case of migration). Giving priority to
+         download volume case is not needed as there will be only one entry in that case so no randomness.
+        */
+        List<VolumeDataStoreVO> vos = listBy(sc);
+        if(vos.size() > 1) {
+            for(VolumeDataStoreVO vo : vos) {
+                if(vo.getExtractUrl() == null) {
+                    return vo;
+                }
+            }
+        }
+
+        return vos.size() == 1 ? vos.get(0) : null;
     }
 
     @Override
