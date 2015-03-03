@@ -373,7 +373,7 @@ public class NetUtils {
         }
     }
 
-    public static long ip2Long(String ip) {
+    public static long ip2Long(final String ip) {
         String[] tokens = ip.split("[.]");
         assert (tokens.length == 4);
         long result = 0;
@@ -388,8 +388,8 @@ public class NetUtils {
         return result;
     }
 
-    public static String long2Ip(long ip) {
-        StringBuilder result = new StringBuilder(15);
+    public static String long2Ip(final long ip) {
+        final StringBuilder result = new StringBuilder(15);
         result.append((ip >> 24 & 0xff)).append(".");
         result.append((ip >> 16 & 0xff)).append(".");
         result.append((ip >> 8 & 0xff)).append(".");
@@ -398,8 +398,8 @@ public class NetUtils {
         return result.toString();
     }
 
-    public static long mac2Long(String macAddress) {
-        String[] tokens = macAddress.split(":");
+    public static long mac2Long(final String macAddress) {
+        final String[] tokens = macAddress.split(":");
         assert (tokens.length == 6);
         long result = 0;
         for (int i = 0; i < tokens.length; i++) {
@@ -464,12 +464,14 @@ public class NetUtils {
         return result.toString();
     }
 
-    public static String long2Mac(long macAddress) {
-        StringBuilder result = new StringBuilder(17);
-        Formatter formatter = new Formatter(result);
-        formatter.format("%02x:%02x:%02x:%02x:%02x:%02x", (macAddress >> 40) & 0xff, (macAddress >> 32) & 0xff, (macAddress >> 24) & 0xff, (macAddress >> 16) & 0xff,
-                (macAddress >> 8) & 0xff, (macAddress & 0xff));
-        formatter.close();
+    public static String long2Mac(final long macAddress) {
+        final StringBuilder result = new StringBuilder(17);
+        try (Formatter formatter = new Formatter(result)) {
+            formatter.format("%02x:%02x:%02x:%02x:%02x:%02x",
+                    (macAddress >> 40) & 0xff, (macAddress >> 32) & 0xff,
+                    (macAddress >> 24) & 0xff, (macAddress >> 16) & 0xff,
+                    (macAddress >> 8) & 0xff, (macAddress & 0xff));
+        }
         return result.toString();
     }
 

@@ -303,4 +303,43 @@ public class NetUtilsTest {
 
         assertTrue(NetUtils.validateGuestCidr(guestCidr));
     }
+
+    @Test
+    public void testMac2Long() {
+        assertEquals(0l, NetUtils.mac2Long("00:00:00:00:00:00"));
+        assertEquals(1l, NetUtils.mac2Long("00:00:00:00:00:01"));
+        assertEquals(0xFFl, NetUtils.mac2Long("00:00:00:00:00:FF"));
+        assertEquals(0xFFAAl, NetUtils.mac2Long("00:00:00:00:FF:AA"));
+        assertEquals(0x11FFAAl, NetUtils.mac2Long("00:00:00:11:FF:AA"));
+        assertEquals(0x12345678l, NetUtils.mac2Long("00:00:12:34:56:78"));
+        assertEquals(0x123456789Al, NetUtils.mac2Long("00:12:34:56:78:9A"));
+        assertEquals(0x123456789ABCl, NetUtils.mac2Long("12:34:56:78:9A:BC"));
+    }
+
+    @Test
+    public void testLong2Mac() {
+        assertEquals("00:00:00:00:00:00", NetUtils.long2Mac(0l));
+        assertEquals("00:00:00:00:00:01", NetUtils.long2Mac(1l));
+        assertEquals("00:00:00:00:00:ff", NetUtils.long2Mac(0xFFl));
+        assertEquals("00:00:00:00:ff:aa", NetUtils.long2Mac(0xFFAAl));
+        assertEquals("00:00:00:11:ff:aa", NetUtils.long2Mac(0x11FFAAl));
+        assertEquals("00:00:12:34:56:78", NetUtils.long2Mac(0x12345678l));
+        assertEquals("00:12:34:56:78:9a", NetUtils.long2Mac(0x123456789Al));
+        assertEquals("12:34:56:78:9a:bc", NetUtils.long2Mac(0x123456789ABCl));
+    }
+
+    @Test
+    public void testIp2Long() {
+        assertEquals(0x7f000001l, NetUtils.ip2Long("127.0.0.1"));
+        assertEquals(0xc0a80001l, NetUtils.ip2Long("192.168.0.1"));
+        assertEquals(0x08080808l, NetUtils.ip2Long("8.8.8.8"));
+    }
+
+    @Test
+    public void testLong2Ip() {
+        assertEquals("127.0.0.1", NetUtils.long2Ip(0x7f000001l));
+        assertEquals("192.168.0.1", NetUtils.long2Ip(0xc0a80001l));
+        assertEquals("8.8.8.8", NetUtils.long2Ip(0x08080808l));
+    }
+
 }
