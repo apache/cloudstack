@@ -197,10 +197,12 @@ def ovmCsPatch(version="3.2.1"):
     xendRtime = "MINIMUM_RESTART_TIME"
     version = ovmVersion()
 
+    # this bug is present from 3.2.1 till 3.3.2
+    if grep(netcom, "_%s" % func) == 3 and grep(netbr, "_%s" % func) < 1:
+        _replaceInFile(netbr, func, "_%s" % func, True)
+
+    # this is fixed in 3.3.1 and onwards
     if version == "3.2.1":
-        if grep(netcom, "_%s" % func) == 3 and grep(netbr, "_%s" % func) < 1:
-            _replaceInFile(netbr, func, "_%s" % func, True)
-        
         if grep(xendConst, "%s = %s" % (xendRtime, 60)) == 1:
             _replaceInFile(xendConst,
                 "%s = %s" % (xendRtime, 60),
