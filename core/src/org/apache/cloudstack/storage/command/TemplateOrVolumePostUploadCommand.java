@@ -45,6 +45,8 @@ public class TemplateOrVolumePostUploadCommand {
 
     String remoteEndPoint;
 
+    String maxUploadSize;
+
     public TemplateOrVolumePostUploadCommand(long entityId, String entityUUID, String absolutePath, String checksum, String type, String name, String imageFormat, String dataTo,
             String dataToRole) {
         this.entityId = entityId;
@@ -155,5 +157,13 @@ public class TemplateOrVolumePostUploadCommand {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getMaxUploadSize() {
+        return maxUploadSize;
+    }
+
+    public void setMaxUploadSize(String maxUploadSize) {
+        this.maxUploadSize = maxUploadSize;
     }
 }

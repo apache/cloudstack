@@ -108,6 +108,8 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                 String expires = null;
                 String metadata = null;
                 String hostname = null;
+                long contentLength = 0;
+
                 for (Entry<String, String> entry : request.headers()) {
                     switch (entry.getKey()) {
                         case HEADER_SIGNATURE:
@@ -122,12 +124,16 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                         case HEADER_HOST:
                             hostname = entry.getValue();
                             break;
+                        case HttpHeaders.Names.CONTENT_LENGTH:
+                            contentLength = Long.valueOf(entry.getValue());
+                            break;
                     }
                 }
                 logger.info("HEADER: signature=" + signature);
                 logger.info("HEADER: metadata=" + metadata);
                 logger.info("HEADER: expires=" + expires);
                 logger.info("HEADER: hostname=" + hostname);
+                logger.info("HEADER: Content-Length=" + contentLength);
                 QueryStringDecoder decoderQuery = new QueryStringDecoder(uri);
                 Map<String, List<String>> uriAttributes = decoderQuery.parameters();
                 uuid = uriAttributes.get("uuid").get(0);
@@ -136,9 +142,9 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                 UploadEntity uploadEntity = null;
                 try {
                     // Validate the request here
-                    storageResource.validatePostUploadRequest(signature, metadata, expires, hostname, uuid);
+                    storageResource.validatePostUploadRequest(signature, metadata, expires, hostname, contentLength, uuid);
                     //create an upload entity. This will fail if entity already exists.
-                    uploadEntity = storageResource.createUploadEntity(uuid, metadata);
+                    uploadEntity = storageResource.createUploadEntity(uuid, metadata, contentLength);
                 } catch (InvalidParameterValueException ex) {
                     logger.error("post request validation failed", ex);
                     responseContent.append(ex.getMessage());
@@ -185,9 +191,15 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                     return;
                 }
                 if (chunk instanceof LastHttpContent) {
-                    readFileUploadData();
-                    writeResponse(ctx.channel(), HttpResponseStatus.OK);
-                    reset();
+                    try {
+                        readFileUploadData();
+                        writeResponse(ctx.channel(), HttpResponseStatus.OK);
+                        reset();
+                    } catch (InvalidParameterValueException e) {
+                        logger.error("error during the file install.", e);
+                        responseContent.append("\n").append(e.getMessage());
+                        writeResponse(ctx.channel(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
+                    }
                 }
             }
         }

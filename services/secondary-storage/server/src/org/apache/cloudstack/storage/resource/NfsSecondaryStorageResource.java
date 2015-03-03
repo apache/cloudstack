@@ -2602,7 +2602,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return Script.findScript(scriptsDir, scriptname);
     }
 
-    public UploadEntity createUploadEntity(String uuid, String metadata) {
+    public UploadEntity createUploadEntity(String uuid, String metadata, long contentLength) {
         TemplateOrVolumePostUploadCommand cmd = getTemplateOrVolumePostUploadCmd(metadata);
         UploadEntity uploadEntity = null;
         if(cmd == null ){
@@ -2610,9 +2610,15 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             throw new InvalidParameterValueException("unable to decode and deserialize metadata");
         } else {
             uuid = cmd.getEntityUUID();
-            if(uploadEntityStateMap.containsKey(uuid)) {
+            if (uploadEntityStateMap.containsKey(uuid)) {
                 uploadEntity = uploadEntityStateMap.get(uuid);
                 throw new InvalidParameterValueException("The one time post url is already used and the upload is in " + uploadEntity.getUploadState() + " state.");
+            }
+            int maxSizeInGB = Integer.valueOf(cmd.getMaxUploadSize());
+            int contentLengthInGB = getSizeInGB(contentLength);
+            if (contentLengthInGB > maxSizeInGB) {
+                throw new InvalidParameterValueException("Maximum file upload size exceeded. Content Length received: " + contentLengthInGB + "GB. Maximum allowed size: " +
+                                                             maxSizeInGB + "GB.");
             }
             try {
                 String absolutePath = cmd.getAbsolutePath();
@@ -2627,6 +2633,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 uploadEntity.setInstallPathPrefix(installPathPrefix);
                 uploadEntity.setHvm(cmd.getRequiresHvm());
                 uploadEntity.setChksum(cmd.getChecksum());
+                uploadEntity.setMaxSizeInGB(maxSizeInGB);
                 // create a install dir
                 if (!_storage.exists(installPathPrefix)) {
                     _storage.mkdir(installPathPrefix);
@@ -2634,13 +2641,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 uploadEntityStateMap.put(uuid, uploadEntity);
             } catch (Exception e) {
                 //upload entity will be null incase an exception occurs and the handler will not proceed.
-                s_logger.debug("exception occured while creating upload entity " + e);
+                s_logger.error("exception occurred while creating upload entity ", e);
                 updateStateMapWithError(uuid, e.getMessage());
             }
         }
         return uploadEntity;
     }
 
+    private int getSizeInGB(long sizeInBytes) {
+        return (int)Math.ceil(sizeInBytes * 1.0d / (1024 * 1024 * 1024));
+    }
 
     public String postUpload(String uuid, String filename) {
         UploadEntity uploadEntity = uploadEntityStateMap.get(uuid);
@@ -2657,7 +2667,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         //}
         //dnld.setCheckSum(checkSum);
 
-        int imgSizeGigs = (int)Math.ceil(_storage.getSize(fileSavedTempLocation) * 1.0d / (1024 * 1024 * 1024));
+        int imgSizeGigs = getSizeInGB(_storage.getSize(fileSavedTempLocation));
+        int maxSize = uploadEntity.getMaxSizeInGB();
+        if(imgSizeGigs > maxSize) {
+            throw new InvalidParameterValueException("Maximum file upload size exceeded. Physical file size: "+imgSizeGigs+"GB. Maximum allowed size: "+maxSize+"GB.");
+        }
         imgSizeGigs++; // add one just in case
         long timeout = (long)imgSizeGigs * installTimeoutPerGig;
         Script scr = new Script(getScriptLocation(resourceType), timeout, s_logger);
@@ -2771,11 +2785,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         uploadEntityStateMap.put(uuid, uploadEntity);
     }
 
-    public void validatePostUploadRequest(String signature, String metadata, String timeout, String hostname, String uuid) throws InvalidParameterValueException{
+    public void validatePostUploadRequest(String signature, String metadata, String timeout, String hostname,long contentLength, String uuid) throws InvalidParameterValueException{
         // check none of the params are empty
         if(StringUtils.isEmpty(signature) || StringUtils.isEmpty(metadata) || StringUtils.isEmpty(timeout)) {
             updateStateMapWithError(uuid,"signature, metadata and expires are compulsory fields.");
             throw new InvalidParameterValueException("signature, metadata and expires are compulsory fields.");
+        }
+
+        //check that contentLength exists and is greater than zero
+        if (contentLength <= 0) {
+            throw new InvalidParameterValueException("content length is not set in the request or has invalid value.");
         }
 
         //validate signature

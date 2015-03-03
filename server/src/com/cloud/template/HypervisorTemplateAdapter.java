@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.configuration.Config;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -259,6 +260,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             TemplateOrVolumePostUploadCommand payload = new TemplateOrVolumePostUploadCommand(template.getId(), template.getUuid(), tmpl.getInstallPath(), tmpl.getChecksum(), tmpl
                     .getType().toString(), template.getName(), template.getFormat().toString(), templateOnStore.getDataStore().getUri(), templateOnStore.getDataStore().getRole()
                     .toString());
+            //using the existing max template size configuration
+            payload.setMaxUploadSize(_configDao.getValue(Config.MaxTemplateAndIsoSize.key()));
             payload.setRemoteEndPoint(ep.getPublicAddr());
             payload.setRequiresHvm(template.requiresHvm());
             payloads.add(payload);
