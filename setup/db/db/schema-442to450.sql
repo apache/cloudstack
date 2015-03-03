@@ -1024,3 +1024,4 @@ INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`,
 
 UPDATE `cloud`.`configuration` SET description='Uuid of the service offering used by secondary storage; if NULL - system offering will be used' where name='secstorage.service.offering';
 
+ALTER TABLE `cloud`.`guest_os_hypervisor` ADD FOREIGN KEY (`guest_os_id`) REFERENCES `cloud`.`guest_os`(`id`);
