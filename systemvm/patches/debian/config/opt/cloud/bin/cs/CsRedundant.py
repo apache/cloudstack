@@ -144,7 +144,7 @@ class CsRedundant(object):
             CsHelper.service("conntrackd", "restart")
 
         if file.is_changed():
-            CsHelper.service("keepalived", "restart")
+            CsHelper.service("keepalived", "reload")
 
         # Configure heartbeat cron job
         cron = CsFile("/etc/cron.d/heartbeat")
