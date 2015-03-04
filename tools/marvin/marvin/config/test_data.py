@@ -1494,6 +1494,7 @@ test_data = {
                            },
                     "ostype": 'CentOS 5.3 (64-bit)',
                     "mode": 'HTTP_DOWNLOAD'
-        }
+        },
+     "setHostConfigurationForIngressRule": False
     }
 }
