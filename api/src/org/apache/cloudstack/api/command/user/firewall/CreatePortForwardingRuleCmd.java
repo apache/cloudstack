@@ -111,21 +111,21 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from")
     private List<String> cidrlist;
 
-    @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end pubic port is automatically created; "
-        + "if false - firewall rule has to be created explicitely. If not specified 1) defaulted to false when PF"
+    @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end public port is automatically created; "
+        + "if false - firewall rule has to be created explicitly. If not specified 1) defaulted to false when PF"
         + " rule is being created for VPC guest network 2) in all other cases defaulted to true")
     private Boolean openFirewall;
 
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "The network of the vm the Port Forwarding rule will be created for. "
-                   + "Required when public Ip address is not associated with any Guest network yet (VPC case)")
+               description = "the network of the virtual machine the port forwarding rule will be created for. "
+                   + "Required when public IP address is not associated with any guest network yet (VPC case).")
     private Long networkId;
     @Parameter(name = ApiConstants.VM_GUEST_IP,
                type = CommandType.STRING,
                required = false,
-    description = "VM guest nic Secondary ip address for the port forwarding rule")
+    description = "VM guest nic secondary IP address for the port forwarding rule")
     private String vmSecondaryIp;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
