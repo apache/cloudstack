@@ -18,6 +18,7 @@ package com.cloud.user;
 
 import java.util.List;
 import java.util.Map;
+import java.net.InetAddress;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -37,6 +38,8 @@ import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -120,7 +123,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public boolean isAdmin(short accountType) {
+    public boolean isAdmin(Long accountId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -133,6 +136,19 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
 
     @Override
     public Account getActiveAccountByName(String accountName, Long domainId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public UserAccount getActiveUserAccount(String username, Long domainId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public UserAccount updateUser(Long userId, String firstName, String lastName, String email, String userName, String password, String apiKey, String secretKey,
+                                  String timeZone) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -162,7 +178,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public boolean isRootAdmin(short accountType) {
+    public boolean isRootAdmin(Long accountId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -189,6 +205,16 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     public void checkAccess(Account account, Domain domain) throws PermissionDeniedException {
         // TODO Auto-generated method stub
 
+    }
+
+    @Override
+    public void checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
     }
 
     @Override
@@ -224,13 +250,20 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         // TODO Auto-generated method stub
     }
 
+
+    @Override
+    public UserAccount getUserAccountById(Long userId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     @Override
     public void logoutUser(long userId) {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public UserAccount authenticateUser(String username, String password, Long domainId, String loginIpAddress, Map<String, Object[]> requestParameters) {
+    public UserAccount authenticateUser(String username, String password, Long domainId, InetAddress loginIpAddress, Map<String, Object[]> requestParameters) {
         return null;
     }
 
@@ -245,6 +278,11 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
+    public String[] createApiKeyAndSecretKey(final long userId) {
+        return null;
+    }
+
+    @Override
     public boolean enableAccount(long accountId) {
         // TODO Auto-generated method stub
         return false;
@@ -252,33 +290,32 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
 
     @Override
     public void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-        ListProjectResourcesCriteria listProjectResourcesCriteria) {
+            ListProjectResourcesCriteria listProjectResourcesCriteria) {
         // TODO Auto-generated method stub
 
     }
 
     @Override
     public void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-        ListProjectResourcesCriteria listProjectResourcesCriteria) {
+            ListProjectResourcesCriteria listProjectResourcesCriteria) {
         // TODO Auto-generated method stub
 
     }
 
     @Override
-    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts,
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation) {
+    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation) {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-        ListProjectResourcesCriteria listProjectResourcesCriteria) {
+    public void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId,
+            boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria) {
         // TODO Auto-generated method stub
     }
 
     @Override
-    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-        ListProjectResourcesCriteria listProjectResourcesCriteria) {
+    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc, Long domainId,
+            boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria) {
         // TODO Auto-generated method stub
     }
 
@@ -321,5 +358,36 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         // TODO Auto-generated method stub
         return null;
     }
+
+    @Override
+    public boolean isDomainAdmin(Long accountId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean isNormalUser(long accountId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public List<String> listAclGroupsByAccount(Long accountId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName,
+            ControlledEntity... entities) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 
 }

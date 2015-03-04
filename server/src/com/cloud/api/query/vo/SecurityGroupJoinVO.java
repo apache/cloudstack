@@ -23,6 +23,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 
@@ -301,5 +302,10 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
 
     public String getTagCustomer() {
         return tagCustomer;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return SecurityGroup.class;
     }
 }

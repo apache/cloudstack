@@ -40,7 +40,8 @@ import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.DedicatedResources;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listDedicatedHosts", description = "Lists dedicated hosts.", responseObject = DedicateHostResponse.class)
+@APICommand(name = "listDedicatedHosts", description = "Lists dedicated hosts.", responseObject = DedicateHostResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListDedicatedHostsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDedicatedHostsCmd.class.getName());
 

@@ -28,27 +28,62 @@
         user: {
             dataProvider: function(args) {
                 var dataFns = {
-                    instances: function(data) {
-                        $.ajax({
-                            url: createURL('listVirtualMachines'),
+                    instances: function(data) {                        
+                    	var totalInstanceCount = 0;
+                    	$.ajax({
+                            url: createURL("listVirtualMachines"),
                             data: {
-                                listAll: true
+                                listAll: true,
+                                page: 1,
+                                pageSize: 1
                             },
-                            success: function(json) {
-                                var instances = json.listvirtualmachinesresponse.virtualmachine ?
-                                    json.listvirtualmachinesresponse.virtualmachine : [];
-
-                                dataFns.account($.extend(data, {
-                                    runningInstances: $.grep(instances, function(instance) {
-                                        return instance.state == 'Running';
-                                    }).length,
-                                    stoppedInstances: $.grep(instances, function(instance) {
-                                        return instance.state == 'Stopped';
-                                    }).length,
-                                    totalInstances: instances.length
-                                }));
+                            async: false,
+                            success: function(json) {                            	
+                            	if (json.listvirtualmachinesresponse.count != undefined) {
+                            		totalInstanceCount = json.listvirtualmachinesresponse.count;
+                            	}   
                             }
                         });
+                    	
+                    	var RunningInstanceCount = 0;
+                    	$.ajax({
+                            url: createURL("listVirtualMachines"),
+                            data: {
+                                listAll: true,
+                                page: 1,
+                                pageSize: 1,
+                                state: "Running"
+                            },
+                            async: false,
+                            success: function(json) {                            	
+                            	if (json.listvirtualmachinesresponse.count != undefined) {
+                            		RunningInstanceCount = json.listvirtualmachinesresponse.count;
+                            	}                                 	
+                            }
+                        });
+                    	
+                    	var stoppedInstanceCount = 0;
+                    	$.ajax({
+                            url: createURL("listVirtualMachines"),
+                            data: {
+                                listAll: true,
+                                page: 1,
+                                pageSize: 1,
+                                state: "Stopped"
+                            },
+                            async: false,
+                            success: function(json) {                            	
+                            	if (json.listvirtualmachinesresponse.count != undefined) {
+                            		stoppedInstanceCount = json.listvirtualmachinesresponse.count;
+                            	}                                  	
+                            }
+                        });
+                    	
+                        dataFns.account($.extend(data, {
+                            runningInstances: RunningInstanceCount,
+                            stoppedInstances: stoppedInstanceCount,
+                            totalInstances: totalInstanceCount
+                        }));                        
                     },
 
                     account: function(data) {
@@ -68,7 +103,8 @@
                             data: {
                                 listAll: true,
                                 page: 1,
-                                pageSize: 4
+                                pageSize: (pageSize > 4? 4: pageSize) //if default.page.size > 4, show 4 items only (since space on dashboard is limited) 
+                                //pageSize: 1 //for testing only
                             },
                             success: function(json) {
                                 dataFns.ipAddresses($.extend(data, {
@@ -83,6 +119,8 @@
                             url: createURL('listNetworks'),
                             data: {
                                 listAll: true,
+                                page: 1,
+                                pageSize: 1,
                                 type: 'isolated',
                                 supportedServices: 'SourceNat'
                             },
@@ -92,6 +130,10 @@
 
                                 $.ajax({
                                     url: createURL('listPublicIpAddresses'),
+                                    data: {
+                                    	page: 1,
+                                        pageSize: 1
+                                    },
                                     success: function(json) {
                                         var ipTotal = json.listpublicipaddressesresponse.count ?
                                             json.listpublicipaddressesresponse.count : 0;
@@ -141,20 +183,12 @@
                         });
                     },
                     capacity: function(data) {
-                        var latestData = null;
                         if (window.fetchLatestflag == 1) {
-                            latestData = {
-
-                                fetchLatest: true
-                            }
+                            data.fetchLastest = true;
                         } else {
-                            latestData = {
-                                fetchLatest: false
-                            }
+                            data.fetchLastest = false;
                         }
-
                         window.fetchLatestflag = 0;
-
                         dataFns.alerts(data);
                     },
 
@@ -163,7 +197,7 @@
                             url: createURL('listAlerts'),
                             data: {
                                 page: 1,
-                                pageSize: 4
+                                pageSize: (pageSize > 4? 4: pageSize) //if default.page.size > 4, show 4 items only (since space on dashboard is limited) 
                             },
                             success: function(json) {
                                 var alerts = json.listalertsresponse.alert ?
@@ -188,7 +222,7 @@
                             data: {
                                 state: 'Alert',
                                 page: 1,
-                                pageSize: 4
+                                pageSize: (pageSize > 4? 4: pageSize) //if default.page.size > 4, show 4 items only (since space on dashboard is limited) 
                             },
                             success: function(json) {
                                 var hosts = json.listhostsresponse.host ?
@@ -210,10 +244,10 @@
                         $.ajax({
                             url: createURL('listCapacity'),
                             data: {
-                                fetchLatest: false,
+                                fetchLatest: data.fetchLatest,
                                 sortBy: 'usage',
                                 page: 0,
-                                pagesize: 8
+                                pageSize: (pageSize > 8? 8: pageSize) 
                             },
                             success: function(json) {
                                 var capacities = json.listcapacityresponse.capacity ?

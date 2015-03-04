@@ -301,27 +301,25 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     @Override
     @DB
     public List<VlanVO> searchForZoneWideVlans(long dcId, String vlanType, String vlanId) {
-
         StringBuilder sql = new StringBuilder(FindZoneWideVlans);
-
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = txn.prepareAutoCloseStatement(sql.toString());
-            pstmt.setLong(1, dcId);
-            pstmt.setString(2, vlanType);
-            pstmt.setString(3, vlanId);
-
-            ResultSet rs = pstmt.executeQuery();
-            List<VlanVO> zoneWideVlans = new ArrayList<VlanVO>();
-
-            while (rs.next()) {
-                zoneWideVlans.add(toEntityBean(rs, false));
+        List<VlanVO> zoneWideVlans = new ArrayList<VlanVO>();
+        try(PreparedStatement pstmt = txn.prepareStatement(sql.toString());){
+            if(pstmt != null) {
+                pstmt.setLong(1, dcId);
+                pstmt.setString(2, vlanType);
+                pstmt.setString(3, vlanId);
+                try(ResultSet rs = pstmt.executeQuery();) {
+                    while (rs.next()) {
+                        zoneWideVlans.add(toEntityBean(rs, false));
+                    }
+                }catch (SQLException e) {
+                    throw new CloudRuntimeException("searchForZoneWideVlans:Exception:" + e.getMessage(), e);
+                }
             }
-
             return zoneWideVlans;
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to execute " + pstmt.toString(), e);
+            throw new CloudRuntimeException("searchForZoneWideVlans:Exception:" + e.getMessage(), e);
         }
     }
 

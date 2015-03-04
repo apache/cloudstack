@@ -40,9 +40,6 @@ public class UpdateCfgCmdTest extends TestCase {
     private ConfigurationService configService;
     private ResponseGenerator responseGenerator;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Override
     @Before
     public void setUp() {

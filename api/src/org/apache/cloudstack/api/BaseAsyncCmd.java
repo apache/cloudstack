@@ -16,9 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.user.User;
+import org.apache.log4j.Logger;
 
 /**
  * queryAsyncJobResult API command.
@@ -30,11 +29,19 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     public static final String vpcSyncObject = "vpc";
     public static final String snapshotHostSyncObject = "snapshothost";
     public static final String gslbSyncObject = "globalserverloadbalacner";
+    private static final Logger s_logger = Logger.getLogger(BaseAsyncCmd.class.getName());
 
     private Object job;
 
     @Parameter(name = "starteventid", type = CommandType.LONG)
     private Long startEventId;
+
+    @Parameter(name = ApiConstants.CUSTOM_JOB_ID , type = CommandType.STRING)
+    private String injectedJobId;
+
+    public String getInjectedJobId() {
+        return this.injectedJobId;
+    }
 
     /**
      * For proper tracking of async commands through the system, events must be generated when the command is
@@ -91,36 +98,6 @@ public abstract class BaseAsyncCmd extends BaseCmd {
 
     public Object getJob() {
         return job;
-    }
-
-    protected long saveStartedEvent() {
-        return saveStartedEvent(getEventType(), "Executing job for " + getEventDescription(), getStartEventId());
-    }
-
-    protected long saveStartedEvent(String eventType, String description, Long startEventId) {
-        CallContext ctx = CallContext.current();
-        Long userId = ctx.getCallingUserId();
-        userId = (userId == null) ? User.UID_SYSTEM : userId;
-        Long startEvent = startEventId;
-        if (startEvent == null) {
-            startEvent = 0L;
-        }
-        return _mgr.saveStartedEvent((userId == null) ? User.UID_SYSTEM : userId, getEntityOwnerId(), eventType, description, startEvent);
-    }
-
-    protected long saveCompletedEvent(String level, String description) {
-        return saveCompletedEvent(level, getEventType(), description, getStartEventId());
-    }
-
-    protected long saveCompletedEvent(String level, String eventType, String description, Long startEventId) {
-        CallContext ctx = CallContext.current();
-        Long userId = ctx.getCallingUserId();
-        userId = (userId == null) ? User.UID_SYSTEM : userId;
-        Long startEvent = startEventId;
-        if (startEvent == null) {
-            startEvent = 0L;
-        }
-        return _mgr.saveCompletedEvent((userId == null) ? User.UID_SYSTEM : userId, getEntityOwnerId(), level, eventType, description, startEvent);
     }
 
 }

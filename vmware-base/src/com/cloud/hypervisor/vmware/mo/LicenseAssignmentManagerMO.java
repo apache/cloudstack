@@ -30,10 +30,8 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class LicenseAssignmentManagerMO extends BaseMO {
 
+    @SuppressWarnings("unused")
     private static final Logger s_logger = Logger.getLogger(LicenseAssignmentManagerMO.class);
-    private static final String LICENSE_INFO_PRODUCT_VERSION = "ProductVersion";
-    private static final String LICENSE_INFO_PRODUCT_NAME = "ProductName";
-    private static final String LICENSE_INFO_NAME = "Name";
     private static final String LICENSE_INFO_FEATURE = "feature";
 
     public LicenseAssignmentManagerMO(VmwareContext context, ManagedObjectReference mor) {

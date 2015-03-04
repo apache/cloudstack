@@ -46,9 +46,9 @@ def describeResources(config):
     vpcprovider = provider()
     vpcprovider.name = 'VpcVirtualRouter'
     
-    pn = physical_network()
+    pn = physicalNetwork()
     pn.name = "Sandbox-pnet"
-    pn.traffictypes = [traffictype("Guest"), traffictype("Management"), traffictype("Public")]
+    pn.traffictypes = [trafficType("Guest"), trafficType("Management"), trafficType("Public")]
     pn.isolationmethods = ["VLAN"]
     pn.providers.append(vpcprovider)
     pn.vlan = config.get('cloudstack', 'zone.vlan')
@@ -120,16 +120,10 @@ def describeResources(config):
     [zs.globalConfig.append(cfg) for cfg in getGlobalSettings(config)]
 
     ''''add loggers'''
-    testClientLogger = logger()
-    testClientLogger.name = 'TestClient'
-    testClientLogger.file = '/var/log/testclient.log'
+    testLogger = logger()
+    testLogger.logFolderPath = '/tmp/'
+    zs.logger = testLogger
 
-    testCaseLogger = logger()
-    testCaseLogger.name = 'TestCase'
-    testCaseLogger.file = '/var/log/testcase.log'
-
-    zs.logger.append(testClientLogger)
-    zs.logger.append(testCaseLogger)
     return zs
 
 

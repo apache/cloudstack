@@ -25,12 +25,15 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ImageStoreDetailResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.storage.ImageStore;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -57,7 +60,7 @@ public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long
         dsIdSearch.and("id", dsIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         dsIdSearch.done();
 
-        this._count = "select count(distinct id) from image_store_view WHERE ";
+        _count = "select count(distinct id) from image_store_view WHERE ";
     }
 
     @Override
@@ -67,14 +70,23 @@ public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long
         osResponse.setName(ids.getName());
         osResponse.setProviderName(ids.getProviderName());
         osResponse.setProtocol(ids.getProtocol());
-        osResponse.setUrl(ids.getUrl());
+        String url = ids.getUrl();
+        //if store is type cifs, remove the password
+        if(ids.getProtocol().equals("cifs".toString())) {
+            url = StringUtils.cleanString(url);
+        }
+        osResponse.setUrl(url);
         osResponse.setScope(ids.getScope());
         osResponse.setZoneId(ids.getZoneUuid());
         osResponse.setZoneName(ids.getZoneName());
 
         String detailName = ids.getDetailName();
-        if (detailName != null && detailName.length() > 0) {
-            ImageStoreDetailResponse osdResponse = new ImageStoreDetailResponse(detailName, ids.getDetailValue());
+        if ( detailName != null && detailName.length() > 0 && !detailName.equals(ApiConstants.PASSWORD)) {
+            String detailValue = ids.getDetailValue();
+            if (detailName.equals(ApiConstants.KEY) || detailName.equals(ApiConstants.S3_SECRET_KEY)) {
+                detailValue = DBEncryptionUtil.decrypt(detailValue);
+            }
+            ImageStoreDetailResponse osdResponse = new ImageStoreDetailResponse(detailName, detailValue);
             osResponse.addDetail(osdResponse);
         }
         osResponse.setObjectName("imagestore");
@@ -84,8 +96,12 @@ public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long
     @Override
     public ImageStoreResponse setImageStoreResponse(ImageStoreResponse response, ImageStoreJoinVO ids) {
         String detailName = ids.getDetailName();
-        if (detailName != null && detailName.length() > 0) {
-            ImageStoreDetailResponse osdResponse = new ImageStoreDetailResponse(detailName, ids.getDetailValue());
+        if ( detailName != null && detailName.length() > 0 && !detailName.equals(ApiConstants.PASSWORD)) {
+            String detailValue = ids.getDetailValue();
+            if (detailName.equals(ApiConstants.KEY) || detailName.equals(ApiConstants.S3_SECRET_KEY)) {
+                detailValue = DBEncryptionUtil.decrypt(detailValue);
+            }
+            ImageStoreDetailResponse osdResponse = new ImageStoreDetailResponse(detailName, detailValue);
             response.addDetail(osdResponse);
         }
         return response;

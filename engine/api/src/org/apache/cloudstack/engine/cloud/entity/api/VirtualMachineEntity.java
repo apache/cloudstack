@@ -30,6 +30,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import org.apache.cloudstack.engine.entity.api.CloudStackEntity;
 
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudException;
@@ -90,7 +91,7 @@ public interface VirtualMachineEntity extends CloudStackEntity {
      * @param exclude list of areas to exclude
      * @return a reservation id
      */
-    String reserve(String plannerToUse, @BeanParam DeploymentPlan plan, ExcludeList exclude, String caller) throws InsufficientCapacityException,
+    String reserve(DeploymentPlanner plannerToUse, @BeanParam DeploymentPlan plan, ExcludeList exclude, String caller) throws InsufficientCapacityException,
         ResourceUnavailableException;
 
     /**

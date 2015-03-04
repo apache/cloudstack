@@ -38,7 +38,9 @@ import com.cloud.user.Account;
 @APICommand(name = "createStorageNetworkIpRange",
             description = "Creates a Storage network IP range.",
             responseObject = StorageNetworkIpRangeResponse.class,
-            since = "3.0.0")
+            since = "3.0.0",
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class CreateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateStorageNetworkIpRangeCmd.class);
 

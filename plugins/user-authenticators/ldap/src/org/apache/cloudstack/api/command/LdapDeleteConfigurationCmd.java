@@ -31,7 +31,8 @@ import org.apache.cloudstack.ldap.LdapManager;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteLdapConfiguration", description = "Remove an Ldap Configuration", responseObject = LdapConfigurationResponse.class, since = "4.2.0")
+@APICommand(name = "deleteLdapConfiguration", description = "Remove an Ldap Configuration", responseObject = LdapConfigurationResponse.class, since = "4.2.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LdapDeleteConfigurationCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(LdapDeleteConfigurationCmd.class.getName());
     private static final String s_name = "ldapconfigurationresponse";

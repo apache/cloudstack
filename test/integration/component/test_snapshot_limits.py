@@ -16,13 +16,21 @@
 # under the License.
 
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-from marvin.integration.lib.utils import is_snapshot_on_nfs
-import os
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+#from marvin.cloudstackAPI import *
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (Account,
+                             VirtualMachine,
+                             SnapshotPolicy,
+                             ServiceOffering)
+from marvin.lib.common import (get_zone,
+                               get_template,
+                               get_domain,
+                               list_volumes,
+                               list_snapshots,
+                               list_snapshot_policy)
+from marvin.lib.utils import is_snapshot_on_nfs
+import time
 
 
 class Services:
@@ -123,12 +131,17 @@ class TestSnapshotLimit(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestSnapshotLimit, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestSnapshotLimit, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['lxc']:
+            raise unittest.SkipTest("snapshots are not supported on %s" % cls.hypervisor.lower())
         cls._cleanup = []
 
         try:
@@ -171,8 +184,6 @@ class TestSnapshotLimit(cloudstackTestCase):
             cls.tearDownClass()
             unittest.SkipTest("setupClass fails for %s" % cls.__name__)
             raise e
-        else:
-            cls._cleanup.remove(cls.account)
         return
 
     @classmethod
@@ -199,7 +210,7 @@ class TestSnapshotLimit(cloudstackTestCase):
         return
 
     @attr(speed = "slow")
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_04_snapshot_limit(self):
         """Test snapshot limit in snapshot policies
         """
@@ -262,7 +273,7 @@ class TestSnapshotLimit(cloudstackTestCase):
         # Sleep for (maxsnaps+1) hours to verify
         # only maxsnaps snapshots are retained
         time.sleep(
-            (self.services["recurring_snapshot"]["maxsnaps"]) * 3600
+            (int(self.services["recurring_snapshot"]["maxsnaps"]) + 1) * 3600
             )
 
         # Verify the snapshot was created or not

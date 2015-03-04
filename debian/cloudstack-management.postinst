@@ -23,6 +23,8 @@ if [ "$1" = configure ]; then
         usermod -m -d /var/lib/cloudstack/management cloud || true
     fi
 
+    rm -fr /var/cache/cloudstack/management/work/*
+
     for i in /var/cache/cloudstack/management \
         /var/cache/cloudstack/management/work \
         /var/cache/cloudstack/management/temp \
@@ -52,4 +54,5 @@ if [ "$1" = configure ]; then
 
     chmod 0640 /etc/cloudstack/management/db.properties
     chgrp cloud /etc/cloudstack/management/db.properties
+    service tomcat6 stop || true
 fi

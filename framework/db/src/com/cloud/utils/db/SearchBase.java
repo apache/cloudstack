@@ -52,13 +52,13 @@ import com.cloud.utils.exception.CloudRuntimeException;
  */
 public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
 
-    final Map<String, Attribute> _attrs;
-    final Class<T> _entityBeanType;
-    final Class<K> _resultType;
-    final GenericDaoBase<? extends T, ? extends Serializable> _dao;
+    Map<String, Attribute> _attrs;
+    Class<T> _entityBeanType;
+    Class<K> _resultType;
+    GenericDaoBase<? extends T, ? extends Serializable> _dao;
 
-    final ArrayList<Condition> _conditions;
-    final ArrayList<Attribute> _specifiedAttrs;
+    ArrayList<Condition> _conditions;
+    ArrayList<Attribute> _specifiedAttrs;
 
     protected HashMap<String, JoinBuilder<SearchBase<?, ?, ?>>> _joins;
     protected ArrayList<Select> _selects;
@@ -66,7 +66,11 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
     protected SelectType _selectType;
     T _entity;
 
-    SearchBase(Class<T> entityType, Class<K> resultType) {
+    SearchBase(final Class<T> entityType, final Class<K> resultType) {
+        init(entityType, resultType);
+    }
+
+    protected void init(final Class<T> entityType, final Class<K> resultType) {
         _dao = (GenericDaoBase<? extends T, ? extends Serializable>)GenericDaoBase.getDao(entityType);
         if (_dao == null) {
             throw new CloudRuntimeException("Unable to find DAO for " + entityType);
@@ -81,7 +85,6 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
         _joins = null;
         _specifiedAttrs = new ArrayList<Attribute>();
     }
-
     /**
      * Specifies how the search query should be grouped
      *
@@ -90,7 +93,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
      * @see GroupBy
      */
     @SuppressWarnings("unchecked")
-    public GroupBy<J, T, K> groupBy(Object... fields) {
+    public GroupBy<J, T, K> groupBy(final Object... fields) {
         assert _groupBy == null : "Can't do more than one group bys";
         _groupBy = new GroupBy<J, T, K>((J)this);
         return _groupBy;
@@ -106,7 +109,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
      * @return itself to build more search parts.
      */
     @SuppressWarnings("unchecked")
-    public J select(String fieldName, Func func, Object field, Object... params) {
+    public J select(final String fieldName, final Func func, final Object field, final Object... params) {
         if (_entity == null) {
             throw new RuntimeException("SearchBuilder cannot be modified once it has been setup");
         }
@@ -126,9 +129,9 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
             try {
                 declaredField = _resultType.getDeclaredField(fieldName);
                 declaredField.setAccessible(true);
-            } catch (SecurityException e) {
+            } catch (final SecurityException e) {
                 throw new RuntimeException("Unable to find " + fieldName, e);
-            } catch (NoSuchFieldException e) {
+            } catch (final NoSuchFieldException e) {
                 throw new RuntimeException("Unable to find " + fieldName, e);
             }
         } else {
@@ -138,7 +141,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
             }
         }
 
-        Select select = new Select(func, _specifiedAttrs.size() == 0 ? null : _specifiedAttrs.get(0), declaredField, params);
+        final Select select = new Select(func, _specifiedAttrs.size() == 0 ? null : _specifiedAttrs.get(0), declaredField, params);
         _selects.add(select);
 
         _specifiedAttrs.clear();
@@ -153,7 +156,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
      * @return itself
      */
     @SuppressWarnings("unchecked")
-    public J selectFields(Object... fields) {
+    public J selectFields(final Object... fields) {
         if (_entity == null) {
             throw new RuntimeException("SearchBuilder cannot be modified once it has been setup");
         }
@@ -165,13 +168,13 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
             _selects = new ArrayList<Select>();
         }
 
-        for (Attribute attr : _specifiedAttrs) {
+        for (final Attribute attr : _specifiedAttrs) {
             Field field = null;
             try {
                 field = _resultType.getDeclaredField(attr.field.getName());
                 field.setAccessible(true);
-            } catch (SecurityException e) {
-            } catch (NoSuchFieldException e) {
+            } catch (final SecurityException e) {
+            } catch (final NoSuchFieldException e) {
             }
             _selects.add(new Select(Func.NATIVE, attr, field, null));
         }
@@ -192,14 +195,14 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
      * @return itself
      */
     @SuppressWarnings("unchecked")
-    public J join(String name, SearchBase<?, ?, ?> builder, Object joinField1, Object joinField2, JoinBuilder.JoinType joinType) {
+    public J join(final String name, final SearchBase<?, ?, ?> builder, final Object joinField1, final Object joinField2, final JoinBuilder.JoinType joinType) {
         assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
         assert _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
         assert builder._entity != null : "SearchBuilder cannot be modified once it has been setup";
         assert builder._specifiedAttrs.size() == 1 : "You didn't select the attribute.";
         assert builder != this : "You can't add yourself, can you?  Really think about it!";
 
-        JoinBuilder<SearchBase<?, ?, ?>> t = new JoinBuilder<SearchBase<?, ?, ?>>(builder, _specifiedAttrs.get(0), builder._specifiedAttrs.get(0), joinType);
+        final JoinBuilder<SearchBase<?, ?, ?>> t = new JoinBuilder<SearchBase<?, ?, ?>>(builder, _specifiedAttrs.get(0), builder._specifiedAttrs.get(0), joinType);
         if (_joins == null) {
             _joins = new HashMap<String, JoinBuilder<SearchBase<?, ?, ?>>>();
         }
@@ -214,8 +217,8 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
         return _selectType;
     }
 
-    protected void set(String name) {
-        Attribute attr = _attrs.get(name);
+    protected void set(final String name) {
+        final Attribute attr = _attrs.get(name);
         assert (attr != null) : "Searching for a field that's not there: " + name;
         _specifiedAttrs.add(attr);
     }
@@ -239,12 +242,12 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
         return _specifiedAttrs;
     }
 
-    protected Condition constructCondition(String conditionName, String cond, Attribute attr, Op op) {
+    protected Condition constructCondition(final String conditionName, final String cond, final Attribute attr, final Op op) {
         assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
         assert op == null || _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
         assert op != Op.SC : "Call join";
 
-        Condition condition = new Condition(conditionName, cond, attr, op);
+        final Condition condition = new Condition(conditionName, cond, attr, op);
         _conditions.add(condition);
         _specifiedAttrs.clear();
         return condition;
@@ -304,7 +307,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
      */
     @SuppressWarnings("unchecked")
     public J cp() {
-        Condition condition = new Condition(null, " ) ", null, Op.RP);
+        final Condition condition = new Condition(null, " ) ", null, Op.RP);
         _conditions.add(condition);
         return (J)this;
     }
@@ -315,7 +318,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
      */
     @SuppressWarnings("unchecked")
     public J op() {
-        Condition condition = new Condition(null, " ( ", null, Op.RP);
+        final Condition condition = new Condition(null, " ( ", null, Op.RP);
         _conditions.add(condition);
         return (J)this;
     }
@@ -326,13 +329,13 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
     @Override
     protected synchronized void finalize() {
         if (_entity != null) {
-            Factory factory = (Factory)_entity;
+            final Factory factory = (Factory)_entity;
             factory.setCallback(0, null);
             _entity = null;
         }
 
         if (_joins != null) {
-            for (JoinBuilder<SearchBase<?, ?, ?>> join : _joins.values()) {
+            for (final JoinBuilder<SearchBase<?, ?, ?>> join : _joins.values()) {
                 join.getT().finalize();
             }
         }
@@ -343,7 +346,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
             return;
         }
 
-        for (Select select : _selects) {
+        for (final Select select : _selects) {
             if (select.field == null) {
                 assert (_selects.size() == 1) : "You didn't specify any fields to put the result in but you're specifying more than one select so where should I put the selects?";
                 _selectType = SelectType.Single;
@@ -365,11 +368,11 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
         protected final Attribute attr;
         protected Object[] presets;
 
-        protected Condition(String name) {
+        protected Condition(final String name) {
             this(name, null, null, null);
         }
 
-        public Condition(String name, String cond, Attribute attr, Op op) {
+        public Condition(final String name, final String cond, final Attribute attr, final Op op) {
             this.name = name;
             this.attr = attr;
             this.cond = cond;
@@ -381,7 +384,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
             return presets != null;
         }
 
-        public void setPresets(Object... presets) {
+        public void setPresets(final Object... presets) {
             this.presets = presets;
         }
 
@@ -389,7 +392,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
             return presets;
         }
 
-        public void toSql(StringBuilder sql, Object[] params, int count) {
+        public void toSql(final StringBuilder sql, final Object[] params, final int count) {
             if (count > 0) {
                 sql.append(cond);
             }
@@ -438,12 +441,12 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
         }
 
         @Override
-        public boolean equals(Object obj) {
+        public boolean equals(final Object obj) {
             if (!(obj instanceof Condition)) {
                 return false;
             }
 
-            Condition condition = (Condition)obj;
+            final Condition condition = (Condition)obj;
             return name.equals(condition.name);
         }
     }
@@ -457,7 +460,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
         protected Select() {
         }
 
-        public Select(Func func, Attribute attr, Field field, Object[] params) {
+        public Select(final Func func, final Attribute attr, final Field field, final Object[] params) {
             this.func = func;
             this.attr = attr;
             this.params = params;
@@ -467,22 +470,22 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
 
     protected class Interceptor implements MethodInterceptor {
         @Override
-        public Object intercept(Object object, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
-            String name = method.getName();
+        public Object intercept(final Object object, final Method method, final Object[] args, final MethodProxy methodProxy) throws Throwable {
+            final String name = method.getName();
             if (method.getAnnotation(Transient.class) == null) {
                 if (name.startsWith("get")) {
-                    String fieldName = Character.toLowerCase(name.charAt(3)) + name.substring(4);
+                    final String fieldName = Character.toLowerCase(name.charAt(3)) + name.substring(4);
                     set(fieldName);
                     return null;
                 } else if (name.startsWith("is")) {
-                    String fieldName = Character.toLowerCase(name.charAt(2)) + name.substring(3);
+                    final String fieldName = Character.toLowerCase(name.charAt(2)) + name.substring(3);
                     set(fieldName);
                     return null;
                 } else {
-                    Column ann = method.getAnnotation(Column.class);
+                    final Column ann = method.getAnnotation(Column.class);
                     if (ann != null) {
-                        String colName = ann.name();
-                        for (Map.Entry<String, Attribute> attr : _attrs.entrySet()) {
+                        final String colName = ann.name();
+                        for (final Map.Entry<String, Attribute> attr : _attrs.entrySet()) {
                             if (colName.equals(attr.getValue().columnName)) {
                                 set(attr.getKey());
                                 return null;

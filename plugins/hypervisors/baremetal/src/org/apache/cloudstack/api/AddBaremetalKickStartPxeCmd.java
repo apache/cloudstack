@@ -20,7 +20,8 @@ package org.apache.cloudstack.api;
 
 import com.cloud.baremetal.networkservice.BaremetalPxeKickStartResponse;
 
-@APICommand(name = "addBaremetalPxeKickStartServer", description = "add a baremetal pxe server", responseObject = BaremetalPxeKickStartResponse.class)
+@APICommand(name = "addBaremetalPxeKickStartServer", description = "add a baremetal pxe server", responseObject = BaremetalPxeKickStartResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddBaremetalKickStartPxeCmd extends AddBaremetalPxeCmd {
     @Parameter(name = ApiConstants.TFTP_DIR, type = CommandType.STRING, required = true, description = "Tftp root directory of PXE server")
     private String tftpDir;

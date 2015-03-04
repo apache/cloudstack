@@ -25,6 +25,8 @@ import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 
 public interface AccountService {
 
@@ -73,11 +75,15 @@ public interface AccountService {
         User
         createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID);
 
-    boolean isAdmin(short accountType);
+    boolean isAdmin(Long accountId);
 
     Account finalizeOwner(Account caller, String accountName, Long domainId, Long projectId);
 
     Account getActiveAccountByName(String accountName, Long domainId);
+
+    UserAccount getActiveUserAccount(String username, Long domainId);
+
+    UserAccount updateUser(Long userId, String firstName, String lastName, String email, String userName, String password, String apiKey, String secretKey, String timeZone);
 
     Account getActiveAccountById(long accountId);
 
@@ -87,13 +93,19 @@ public interface AccountService {
 
     User getUserIncludingRemoved(long userId);
 
-    boolean isRootAdmin(short accountType);
+    boolean isRootAdmin(Long accountId);
+
+    boolean isDomainAdmin(Long accountId);
+
+    boolean isNormalUser(long accountId);
 
     User getActiveUserByRegistrationToken(String registrationToken);
 
     void markUserRegistered(long userId);
 
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd);
+
+    public String[] createApiKeyAndSecretKey(final long userId);
 
     UserAccount getUserByApiKey(String apiKey);
 
@@ -102,5 +114,21 @@ public interface AccountService {
     void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, ControlledEntity... entities) throws PermissionDeniedException;
+
+    void checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException;
+
+    void checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException;
+
+    void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName,
+            ControlledEntity... entities) throws PermissionDeniedException;
+
+    Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
+
+    /**
+     * returns the user account object for a given user id
+     * @param userId user id
+     * @return useraccount object if it exists else null
+     */
+    UserAccount getUserAccountById(Long userId);
 
 }

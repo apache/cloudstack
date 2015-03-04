@@ -32,7 +32,8 @@ import org.apache.cloudstack.ratelimit.ApiRateLimitService;
 import com.cloud.configuration.Config;
 import com.cloud.user.Account;
 
-@APICommand(name = "getApiLimit", responseObject = ApiLimitResponse.class, description = "Get API limit count for the caller")
+@APICommand(name = "getApiLimit", responseObject = ApiLimitResponse.class, description = "Get API limit count for the caller",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetApiLimitCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(GetApiLimitCmd.class.getName());
 

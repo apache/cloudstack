@@ -39,7 +39,8 @@ import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcGateway;
 
-@APICommand(name = "createStaticRoute", description = "Creates a static route", responseObject = StaticRouteResponse.class)
+@APICommand(name = "createStaticRoute", description = "Creates a static route", responseObject = StaticRouteResponse.class, entityType = {StaticRoute.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
     private static final String s_name = "createstaticrouteresponse";
     public static final Logger s_logger = Logger.getLogger(CreateStaticRouteCmd.class.getName());
@@ -88,18 +89,17 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating static route";
+        return "Applying static route. Static route Id: " + getEntityId();
     }
 
     @Override
     public void execute() throws ResourceUnavailableException {
         boolean success = false;
-        StaticRoute route = _entityMgr.findById(StaticRoute.class, getEntityId());
+        StaticRoute route = null;
         try {
             CallContext.current().setEventDetails("Static route Id: " + getEntityId());
-            success = _vpcService.applyStaticRoutes(route.getVpcId());
-
-            // State is different after the route is applied, so get new object here
+            success = _vpcService.applyStaticRoute(getEntityId());
+            // State is different after the route is applied, so retrieve the object only here
             route = _entityMgr.findById(StaticRoute.class, getEntityId());
             StaticRouteResponse routeResponse = new StaticRouteResponse();
             if (route != null) {

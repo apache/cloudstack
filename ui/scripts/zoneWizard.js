@@ -180,11 +180,17 @@
                         },
                         'startip': {
                             edit: true,
-                            label: 'label.start.IP'
+                            label: 'label.start.IP',
+                            validation: {
+                                ipv4: true
+                            }
                         },
                         'endip': {
                             edit: true,
-                            label: 'label.end.IP'
+                            label: 'label.end.IP',
+                            validation: {
+                                ipv4: true
+                            }
                         },
                         'add-rule': {
                             label: 'label.add',
@@ -422,36 +428,50 @@
                         desc: 'message.tooltip.zone.name'
                     },
                     ip4dns1: {
-                        label: 'IPv4 DNS1',
+                        label: 'label.ipv4.dns1',
                         validation: {
-                            required: true
+                            required: true,
+                            ipv4: true
                         },
                         desc: 'message.tooltip.dns.1'
                     },
                     ip4dns2: {
-                        label: 'IPv4 DNS2',
-                        desc: 'message.tooltip.dns.2'
+                        label: 'label.ipv4.dns2',
+                        desc: 'message.tooltip.dns.2',
+                        validation: {
+                            ipv4: true
+                        }
                     },
 
                     ip6dns1: {
-                        label: 'IPv6 DNS1',
-                        desc: 'message.tooltip.dns.1'
+                        label: 'label.ipv6.dns1',
+                        desc: 'message.tooltip.dns.1',
+                        validation: {
+                            ipv6: true
+                        }
                     },
                     ip6dns2: {
-                        label: 'IPv6 DNS2',
-                        desc: 'message.tooltip.dns.2'
-                    },
+                        label: 'label.ipv6.dns2',
+                        desc: 'message.tooltip.dns.2',
+                        validation: {
+                            ipv6: true
+                        }
+                   },
 
                     internaldns1: {
                         label: 'label.internal.dns.1',
                         validation: {
-                            required: true
+                            required: true,
+                            ipv4: true
                         },
                         desc: 'message.tooltip.internal.dns.1'
                     },
                     internaldns2: {
                         label: 'label.internal.dns.2',
-                        desc: 'message.tooltip.internal.dns.2'
+                        desc: 'message.tooltip.internal.dns.2',
+                        validation: {
+                            ipv4: true
+                        },
                     },
                     hypervisor: {
                         label: 'label.hypervisor',
@@ -481,6 +501,10 @@
                                         nonSupportedHypervisors["LXC"] = 1;
                                     }
 
+                                    if (args.context.zones[0]['network-model'] == "Advanced") { //CLOUDSTACK-7681: UI > zone wizard > Advanced zone > hypervisor => do not support BareMetal                                    
+                                        nonSupportedHypervisors["BareMetal"] = 1;                                        
+                                    }
+                                    
                                     if (items != null) {
                                         for (var i = 0; i < items.length; i++) {
                                             if (items[i].name in nonSupportedHypervisors)
@@ -578,7 +602,7 @@
                                         });
 
                                         if (thisNetworkOffering.havingEIP == true && thisNetworkOffering.havingELB == true) { //EIP ELB
-                                            if (args.hypervisor == "VMware" || args.hypervisor == "BareMetal") { //VMware, BareMetal don't support EIP ELB
+                                            if (args.hypervisor == "VMware") { //VMware does not support EIP ELB
                                                 return true; //move to next item in $.each() loop
                                             }
                                             if (args.context.zones[0]["network-model"] == "Advanced" && args.context.zones[0]["zone-advanced-sg-enabled"] == "on") { // Advanced SG-enabled zone doesn't support EIP ELB
@@ -621,7 +645,7 @@
                     },
                     isdedicated: {                        
                         isBoolean: true,
-                        label: 'Dedicated',
+                        label: 'label.dedicated',
                         isChecked: false 
                     },
                     domain: {
@@ -652,7 +676,7 @@
                     },
 
                     account: {
-                        label: 'Account',
+                        label: 'label.account',
                         isHidden: true,
                         dependsOn: 'isdedicated',
                         //docID:'helpAccountForDedication',
@@ -714,13 +738,15 @@
                     reservedSystemStartIp: {
                         label: 'label.start.reserved.system.IP',
                         validation: {
-                            required: true
+                            required: true,
+                            ipv4: true
                         }
                     },
                     reservedSystemEndIp: {
                         label: 'label.end.reserved.system.IP',
                         validation: {
-                            required: false
+                            required: false,
+                            ipv4: true
                         }
                     }
                 }
@@ -774,15 +800,15 @@
                         label: 'label.private.interface'
                     },
                     gslbprovider: {
-                        label: 'GSLB service',
+                        label: 'label.gslb.service',
                         isBoolean: true,
                         isChecked: false
                     },
                     gslbproviderpublicip: {
-                        label: 'GSLB service Public IP'
+                        label: 'label.gslb.service.public.ip'
                     },
                     gslbproviderprivateip: {
-                        label: 'GSLB service Private IP'
+                        label: 'label.gslb.service.private.ip'
                     },
                     numretries: {
                         label: 'label.numretries',
@@ -856,7 +882,7 @@
                         label: 'label.guest.end.ip'
                     }, //Basic, Advanced with SG
                     vlanId: {
-                        label: 'VLAN ID'
+                        label: 'label.vlan.id'
                     }, //Advanced with SG
 
                     vlanRange: { //in multiple tabs (tabs is as many as Guest Traffic types in multiple physical networks in Advanced Zone without SG)
@@ -1051,7 +1077,7 @@
                     },
 
                     overridepublictraffic: {
-                        label: 'Override Public-Traffic',
+                        label: 'label.override.public.traffic',
                         isBoolean: true,
                         isHidden: true
 
@@ -1131,7 +1157,7 @@
                     */
 					
                     overrideguesttraffic: {
-                        label: 'Override Guest-Traffic',
+                        label: 'label.override.guest.traffic',
                         isBoolean: true,
                         isHidden: true
 
@@ -1214,21 +1240,21 @@
 
                     //Cisco Nexus Vswitch
                     vsmipaddress: {
-                        label: 'Nexus 1000v IP Address',
+                        label: 'label.cisco.nexus1000v.ip.address',
                         validation: {
                             required: false
                         },
                         isHidden: true
                     },
                     vsmusername: {
-                        label: 'Nexus 1000v Username',
+                        label: 'label.cisco.nexus1000v.username',
                         validation: {
                             required: false
                         },
                         isHidden: true
                     },
                     vsmpassword: {
-                        label: 'Nexus 1000v Password',
+                        label: 'label.cisco.nexus1000v.password',
                         validation: {
                             required: false
                         },
@@ -1464,8 +1490,8 @@
                                 return;
                             }
 
-                            //zone-wide-primary-storage is supported only for KVM and VMWare
-                            if (selectedHypervisorObj.hypervisortype == "KVM" || selectedHypervisorObj.hypervisortype == "VMware") {
+                            //zone-wide-primary-storage is supported only for KVM and VMWare and Hyperv
+                            if (selectedHypervisorObj.hypervisortype == "KVM" || selectedHypervisorObj.hypervisortype == "VMware" || selectedHypervisorObj.hypervisortype == "Hyperv") {
                                 var scope = [];
                                 scope.push({
                                     id: 'zone',
@@ -1520,6 +1546,10 @@
                                 items.push({
                                     id: "clvm",
                                     description: "CLVM"
+                                });
+                                items.push({
+                                    id: "gluster",
+                                    description: "Gluster"
                                 });
                                 args.response.success({
                                     data: items
@@ -1600,7 +1630,7 @@
 
                                 var protocol = $(this).val();
 
-                                $form.find('[rel=path]').find(".name").find("label").html('<span class=\"field-required\">*</span>Path:');
+                                $form.find('[rel=path]').find(".name").find("label").html('<span class=\"field-required\">*</span>' + _l('label.path') + ':');
 
                                 if (protocol == null)
                                     return;
@@ -1622,8 +1652,9 @@
                                     
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "SMB") { //"SMB" show almost the same fields as "nfs" does, except 3 more SMB-specific fields.                                                  
-                                	$form.find('[rel=server]').css('display', 'block');                                    
+                               	    $form.find('[rel=server]').css('display', 'block');                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("");
                                     
                                     $form.find('[rel=path]').css('display', 'block');                                   
@@ -1639,6 +1670,8 @@
                                     
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "ocfs2") { //ocfs2 is the same as nfs, except no server field.                                    
                                     $form.find('[rel=server]').hide();                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("");
@@ -1656,12 +1689,14 @@
                                    
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "PreSetup") {                                   
                                     $form.find('[rel=server]').hide();                                   
                                     $form.find('[rel=server]').find(".value").find("input").val("localhost");
                                    
                                     $form.find('[rel=path]').css('display', 'block');                                    
-                                    $form.find('[rel=path]').find(".name").find("label").html("<span class=\"field-required\">*</span>SR Name-Label:");
+                                    $form.find('[rel=path]').find(".name").find("label").html('<span class=\"field-required\">*</span>'+_l('label.SR.name')+':');
                                    
                                     $form.find('[rel=smbUsername]').hide();
                                     $form.find('[rel=smbPassword]').hide();
@@ -1674,6 +1709,8 @@
                                     
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "iscsi") {                                    
                                     $form.find('[rel=server]').css('display', 'block');                                   
                                     $form.find('[rel=server]').find(".value").find("input").val("");
@@ -1691,6 +1728,8 @@
                                     
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if ($(this).val() == "clvm") {                                    
                                     $form.find('[rel=server]').hide();                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("localhost");
@@ -1708,6 +1747,8 @@
                                    
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "vmfs") {                                    
                                     $form.find('[rel=server]').css('display', 'block');                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("");
@@ -1725,6 +1766,8 @@
                                    
                                     $form.find('[rel=vCenterDataCenter]').css('display', 'block');
                                     $form.find('[rel=vCenterDataStore]').css('display', 'block');
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "SharedMountPoint") { //"SharedMountPoint" show the same fields as "nfs" does.                                   
                                     $form.find('[rel=server]').hide();                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("localhost");
@@ -1742,6 +1785,27 @@
                                    
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
+                                } else if (protocol == "gluster") {
+                                    $form.find('[rel=server]').css('display', 'block');
+                                    $form.find('[rel=server]').find(".value").find("input").val("");
+
+                                    $form.find('[rel=path]').hide();
+                                   
+                                    $form.find('[rel=smbUsername]').hide();
+                                    $form.find('[rel=smbPassword]').hide();
+                                    $form.find('[rel=smbDomain]').hide();
+
+                                    $form.find('[rel=iqn]').hide();
+                                    $form.find('[rel=lun]').hide();
+
+                                    $form.find('[rel=volumegroup]').hide();
+
+                                    $form.find('[rel=vCenterDataCenter]').hide();
+                                    $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').css('display', 'block');
                                 } else {                                    
                                     $form.find('[rel=server]').css('display', 'block');                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("");
@@ -1757,6 +1821,8 @@
                                     
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 }
                             });
 
@@ -1780,7 +1846,14 @@
                         isHidden: true
                     },
 
-                    //SMB                                           
+                    //SMB
+                    smbDomain: {
+                    	label: 'label.smb.domain',
+                    	validation: {
+                            required: true
+                        },
+                        isHidden: true
+                    },          
                     smbUsername: {
                     	label: 'label.smb.username',
                     	validation: {
@@ -1796,13 +1869,7 @@
                         },
                         isHidden: true
                     },
-                    smbDomain: {
-                    	label: 'label.smb.domain',
-                    	validation: {
-                            required: true
-                        },
-                        isHidden: true
-                    },                          
+                                    
                     
                     //iscsi
                     iqn: {
@@ -1845,6 +1912,15 @@
                         isHidden: true
                     },
 
+                    //gluster
+                    glustervolume: {
+                        label: 'label.gluster.volume',
+                        validation: {
+                            required: true
+                        },
+                        isHidden: true
+                    },
+
                     //always appear (begin)
                     storageTags: {
                         label: 'label.storage.tags',
@@ -1858,7 +1934,7 @@
             secondaryStorage: {
                 fields: {                    
                     provider: {
-                        label: 'Provider',
+                        label: 'label.provider',
                         select: function(args) {
                         	var storageproviders = [];  
                         	storageproviders.push({ id: '', description: ''});                         	
@@ -2107,26 +2183,26 @@
                     //NFS, SMB (end)
 
 
-                    //SMB (begin)                                            
+                    //SMB (begin) 
+                    smbDomain: {
+                    	label: 'label.smb.domain',
+                    	validation: {
+                            required: true
+                        }
+                    },
                     smbUsername: {
-                    	label: 'SMB Username',
+                    	label: 'label.smb.username',
                     	validation: {
                             required: true
                         }
                     },
                     smbPassword: {
-                    	label: 'SMB Password',
+                    	label: 'label.smb.password',
                     	isPassword: true,
                     	validation: {
                             required: true
                         }
-                    },
-                    smbDomain: {
-                    	label: 'SMB Domain',
-                    	validation: {
-                            required: true
-                        }
-                    },
+                    },                    
                     //SMB (end)
                     
                     //S3 (begin)
@@ -2175,7 +2251,7 @@
                     },
 
                     createNfsCache: {
-                        label: 'Create NFS Secondary Staging Store',
+                        label: 'label.create.nfs.secondary.staging.storage',
                         isBoolean: true,
                         isChecked: true,
                         isHidden: true
@@ -2332,7 +2408,7 @@
                 },
 
                 addPhysicalNetworks: function(args) {
-                    message(dictionary['message.creating.physical.networks']);
+                    message(_l('message.creating.physical.networks'));
 
                     var returnedPhysicalNetworks = [];
 
@@ -2671,7 +2747,7 @@
 
                 //afterCreateZonePhysicalNetworkTrafficTypes: enable physical network, enable virtual router element, enable network service provider
                 configurePhysicalNetwork: function(args) {
-                    message(dictionary['message.configuring.physical.networks']);
+                    message(_l('message.configuring.physical.networks'));
 
                     if (args.data.zone.networkType == "Basic") {
                         $.ajax({
@@ -2826,7 +2902,7 @@
                                                                                                                 selectedNetworkOfferingHavingSG = args.data.pluginFrom.selectedNetworkOfferingHavingSG;
                                                                                                             }
                                                                                                             if (selectedNetworkOfferingHavingSG == true) { //need to Enable security group provider first
-                                                                                                                message(dictionary['message.enabling.security.group.provider']);
+                                                                                                                message(_l('message.enabling.security.group.provider'));
 
                                                                                                                 // get network service provider ID of Security Group
                                                                                                                 var securityGroupProviderId;
@@ -3549,7 +3625,7 @@
                                                             });
                                                             // ***** VPC Virtual Router ***** (end) *****
                                                         } else { //args.data.zone.sgEnabled == true  //Advanced SG-enabled zone                                                         
-                                                            message(dictionary['message.enabling.security.group.provider']);
+                                                            message(_l('message.enabling.security.group.provider'));
 
                                                             // get network service provider ID of Security Group
                                                             var securityGroupProviderId;
@@ -3620,7 +3696,7 @@
                 addNetscalerProvider: function(args) {
 
                     if (selectedNetworkOfferingHavingNetscaler == true) {
-                        message(dictionary['message.adding.Netscaler.provider']);
+                        message(_l('message.adding.Netscaler.provider'));
 
                         $.ajax({
                             url: createURL("addNetworkServiceProvider&name=Netscaler&physicalnetworkid=" + args.data.returnedBasicPhysicalNetwork.id),
@@ -3667,7 +3743,7 @@
 
 
                 addNetscalerDevice: function(args) {
-                    message(dictionary['message.adding.Netscaler.device']);
+                    message(_l('message.adding.Netscaler.device'));
 
                     var array1 = [];
                     array1.push("&physicalnetworkid=" + args.data.returnedBasicPhysicalNetwork.id);
@@ -3827,7 +3903,7 @@
                 },
 
                 addGuestNetwork: function(args) { //create a guest network for Basic zone or Advanced zone with SG
-                    message(dictionary['message.creating.guest.network']);
+                    message(_l('message.creating.guest.network'));
 
                     var data = {
                         zoneid: args.data.returnedZone.id,
@@ -3871,7 +3947,7 @@
                 },
 
                 addPod: function(args) {
-                    message(dictionary['message.creating.pod']);
+                    message(_l('message.creating.pod'));
 
                     var array3 = [];
                     array3.push("&zoneId=" + args.data.returnedZone.id);
@@ -3908,7 +3984,7 @@
                 configurePublicTraffic: function(args) {
                     if ((args.data.zone.networkType == "Basic" && (selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true)) || (args.data.zone.networkType == "Advanced" && args.data.zone.sgEnabled != true)) {
 
-                        message(dictionary['message.configuring.public.traffic']);
+                        message(_l('message.configuring.public.traffic'));
 
                         var stopNow = false;
 
@@ -4014,7 +4090,7 @@
                         return complete({});
                     }
 
-                    message(dictionary['message.configuring.storage.traffic']);
+                    message(_l('message.configuring.storage.traffic'));
 
                     var storageIPRanges = args.data.storageTraffic;
                     var tasks = [];
@@ -4104,7 +4180,7 @@
                         return;
                     }
 
-                    message(dictionary['message.configuring.guest.traffic']);
+                    message(_l('message.configuring.guest.traffic'));
 
                     if (args.data.returnedZone.networktype == "Basic") { //create an VlanIpRange for guest network in basic zone
                         var array1 = [];
@@ -4221,7 +4297,7 @@
                 },
 
                 addCluster: function(args) {
-                    message(dictionary['message.creating.cluster']);
+                    message(_l('message.creating.cluster'));
 
                     // Have cluster use zone's hypervisor
                     args.data.cluster.hypervisor = args.data.zone.hypervisor ?
@@ -4363,7 +4439,7 @@
                 },
 
                 addHost: function(args) {
-                    message(dictionary['message.adding.host']);
+                    message(_l('message.adding.host'));
 
                     var data = {
                         zoneid: args.data.returnedZone.id,
@@ -4436,7 +4512,7 @@
                         return;
                     }
 
-                    message(dictionary['message.creating.primary.storage']);
+                    message(_l('message.creating.primary.storage'));
 
                     var array1 = [];
                     array1.push("&zoneid=" + args.data.returnedZone.id);
@@ -4446,8 +4522,16 @@
                     array1.push("&scope=" + todb(args.data.primaryStorage.scope));
 
                     //zone-wide-primary-storage is supported only for KVM and VMWare
-                    if (args.data.primaryStorage.scope == "zone") {
-                        array1.push("&hypervisor=" + todb(args.data.cluster.hypervisor)); //hypervisor type of the hosts in zone that will be attached to this storage pool. KVM, VMware supported as of now.
+                    if (args.data.primaryStorage.scope == "zone") { //hypervisor type of the hosts in zone that will be attached to this storage pool. KVM, VMware supported as of now.
+                        if(args.data.cluster.hypervisor != undefined) {        
+                    	    array1.push("&hypervisor=" + todb(args.data.cluster.hypervisor)); 
+                        } else if(args.data.returnedCluster.hypervisortype != undefined) {        
+                    	    array1.push("&hypervisor=" + todb(args.data.returnedCluster.hypervisortype)); 
+                        } else {
+                        	cloudStack.dialog.notice({
+                            	message: "Error: args.data.cluster.hypervisor is undefined. So is args.data.returnedCluster.hypervisortype (zone-wide-primary-storage)"
+                            });     
+                        }
                     }
 
                     var server = args.data.primaryStorage.server;
@@ -4461,7 +4545,10 @@
                     	var path = args.data.primaryStorage.path;
                         if (path.substring(0, 1) != "/")
                             path = "/" + path;
-                        url = smbURL(server, path, args.data.primaryStorage.smbUsername, args.data.primaryStorage.smbPassword, args.data.primaryStorage.smbDomain);
+                        url = smbURL(server, path);
+                        array1.push("&details[0].user=" + args.data.primaryStorage.smbUsername);
+                        array1.push("&details[1].password=" + todb(args.data.primaryStorage.smbPassword));
+                        array1.push("&details[2].domain=" + args.data.primaryStorage.smbDomain);
                     } else if (args.data.primaryStorage.protocol == "PreSetup") {                        
                         var path = args.data.primaryStorage.path;
                         if (path.substring(0, 1) != "/")
@@ -4529,7 +4616,7 @@
                 	}
                 	
                 	
-                	message(dictionary['message.creating.secondary.storage']);
+                	message(_l('message.creating.secondary.storage'));
 
                     var data = {};
                     if (args.data.secondaryStorage.name != null && args.data.secondaryStorage.name.length > 0) {
@@ -4570,12 +4657,18 @@
                     } else if (args.data.secondaryStorage.provider == 'SMB') {
                         var nfs_server = args.data.secondaryStorage.nfsServer;
                         var path = args.data.secondaryStorage.path;
-                        var url = smbURL(nfs_server, path, args.data.secondaryStorage.smbUsername, args.data.secondaryStorage.smbPassword, args.data.secondaryStorage.smbDomain);
+                        var url = smbURL(nfs_server, path);
 
                         $.extend(data, {
                             provider: args.data.secondaryStorage.provider,
                             zoneid: args.data.returnedZone.id,
-                            url: url
+                            url: url,
+                            'details[0].key': 'user',
+                            'details[0].value': args.data.secondaryStorage.smbUsername,
+                            'details[1].key': 'password',
+                            'details[1].value': args.data.secondaryStorage.smbPassword,
+                            'details[2].key': 'domain',
+                            'details[2].value': args.data.secondaryStorage.smbDomain
                         });
 
                         $.ajax({
@@ -4732,7 +4825,7 @@
             };
 
             var complete = function(args) {
-                message(dictionary['message.Zone.creation.complete']);
+                message(_l('message.Zone.creation.complete'));
                 success(args);
             };
 

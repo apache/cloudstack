@@ -33,13 +33,13 @@ public class ConnectedAgentAttache extends AgentAttache {
 
     protected Link _link;
 
-    public ConnectedAgentAttache(AgentManagerImpl agentMgr, final long id, final String name, final Link link, boolean maintenance) {
+    public ConnectedAgentAttache(final AgentManagerImpl agentMgr, final long id, final String name, final Link link, final boolean maintenance) {
         super(agentMgr, id, name, maintenance);
         _link = link;
     }
 
     @Override
-    public synchronized void send(Request req) throws AgentUnavailableException {
+    public synchronized void send(final Request req) throws AgentUnavailableException {
         try {
             _link.send(req.toBytes());
         } catch (ClosedChannelException e) {
@@ -67,14 +67,31 @@ public class ConnectedAgentAttache extends AgentAttache {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        try {
-            ConnectedAgentAttache that = (ConnectedAgentAttache)obj;
-            return super.equals(obj) && _link == that._link && _link != null;
-        } catch (ClassCastException e) {
-            assert false : "Who's sending an " + obj.getClass().getSimpleName() + " to " + this.getClass().getSimpleName() + ".equals()? ";
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((_link == null) ? 0 : _link.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        // Return false straight away.
+        if (obj == null) {
             return false;
         }
+        // No need to handle a ClassCastException. If the classes are different, then equals can return false straight ahead.
+        if (this.getClass() != obj.getClass()) {
+            return false;
+        }
+        // This should not be part of the equals() method, but I'm keeping it because it is expected behaviour based
+        // on the previous implementation. The link attribute of the other object should be checked here as well
+        // to verify if it's not null whilst the this is null.
+        if (_link == null) {
+            return false;
+        }
+        ConnectedAgentAttache that = (ConnectedAgentAttache)obj;
+        return super.equals(obj) && _link == that._link;
     }
 
     @Override

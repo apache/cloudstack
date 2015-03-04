@@ -19,8 +19,6 @@ package org.apache.cloudstack.api.command.user.region.ha.gslb;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,6 +30,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.RegionResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
@@ -39,7 +38,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 
-@APICommand(name = "createGlobalLoadBalancerRule", description = "Creates a global load balancer rule", responseObject = GlobalLoadBalancerResponse.class)
+@APICommand(name = "createGlobalLoadBalancerRule", description = "Creates a global load balancer rule", responseObject = GlobalLoadBalancerResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
 
     public static final Logger s_logger = Logger.getLogger(CreateGlobalLoadBalancerRuleCmd.class.getName());
@@ -147,15 +147,12 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() throws ResourceAllocationException, ResourceUnavailableException {
-
-        CallContext callerContext = CallContext.current();
         GlobalLoadBalancerRule rule = _entityMgr.findById(GlobalLoadBalancerRule.class, getEntityId());
-        GlobalLoadBalancerResponse response = null;
         if (rule != null) {
-            response = _responseGenerator.createGlobalLoadBalancerResponse(rule);
-            setResponseObject(response);
+            GlobalLoadBalancerResponse response = _responseGenerator.createGlobalLoadBalancerResponse(rule);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
         }
-        response.setResponseName(getCommandName());
     }
 
     @Override
@@ -191,7 +188,7 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, null, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, null, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

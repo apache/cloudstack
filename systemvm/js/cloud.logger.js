@@ -331,7 +331,7 @@ Logger.prototype = {
 				return '' + object;
 			}
 		} else {
-			return 'N/A';
+			return 'label.na';
 		}
 	}
 };

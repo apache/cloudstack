@@ -19,7 +19,7 @@
 version='TESTBUILD'
 sourcedir=~/cloudstack/
 outputdir=/tmp/cloudstack-build/
-branch='master'
+branch='master' # DH(20140604): maybe change default to `git symbolic-ref --short HEAD`
 tag='no'
 certid='X'
 committosvn='X'
@@ -92,6 +92,8 @@ echo "found $currentversion"
 echo 'setting version numbers'
 mvn versions:set -DnewVersion=$version -P vmware -P developer -P systemvm -P simulator -P baremetal -P ucs -Dnoredist
 mv deps/XenServerJava/pom.xml.versionsBackup deps/XenServerJava/pom.xml
+perl -pi -e "s/<cs.xapi.version>6.2.0-1-SNAPSHOT<\/cs.xapi.version>/<cs.xapi.version>6.2.0-1<\/cs.xapi.version>/" pom.xml
+perl -pi -e "s/-SNAPSHOT//" tools/checkstyle/pom.xml
 perl -pi -e "s/-SNAPSHOT//" deps/XenServerJava/pom.xml
 perl -pi -e "s/-SNAPSHOT//" tools/apidoc/pom.xml
 case "$currentversion" in 
@@ -100,11 +102,24 @@ case "$currentversion" in
     ;;
 esac
 
+# set debian changelog entry
+tmpfilenm=$$.tmp
+echo "cloudstack ($version) unstable; urgency=low" >>$tmpfilenm 
+echo >>$tmpfilenm
+echo "  * Update the version to $version" >>$tmpfilenm
+echo >>$tmpfilenm
+echo " -- the Apache CloudStack project <dev@cloudstack.apache.org>  `date -j '+%a, %d %b %Y %T %z'`" >>$tmpfilenm
+echo >>$tmpfilenm
+
+cat debian/changelog >>$tmpfilenm
+mv $tmpfilenm debian/changelog
+
 git clean -f
 
 #create a RC branch
-RELEASE_BRANCH="RC" + `date +%Y%m%dT%H%M`
+RELEASE_BRANCH="RC"`date +%Y%m%dT%H%M`
 git branch $branch-$RELEASE_BRANCH
+git checkout $branch-$RELEASE_BRANCH
 
 
 echo 'commit changes'
@@ -114,7 +129,7 @@ export commitsh=`git show HEAD | head -n 1 | cut -d ' ' -f 2`
 echo "committed as $commitsh"
 
 echo 'archiving'
-git archive --format=tar --prefix=apache-cloudstack-$version-src/ $branch > $outputdir/apache-cloudstack-$version-src.tar
+git archive --format=tar --prefix=apache-cloudstack-$version-src/ $branch-$RELEASE_BRANCH > $outputdir/apache-cloudstack-$version-src.tar
 bzip2 $outputdir/apache-cloudstack-$version-src.tar
 
 cd $outputdir

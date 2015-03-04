@@ -157,7 +157,7 @@ public class SnapshotTestWithFakeData {
         HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), "10.223.0.1", "10.233.2.2/25", 8, "test");
         pod = podDao.persist(pod);
         podId = pod.getId();
-        // create xen cluster
+        // create xenserver cluster
         ClusterVO cluster = new ClusterVO(dc.getId(), pod.getId(), "devcloud cluster");
         cluster.setHypervisorType(Hypervisor.HypervisorType.XenServer.toString());
         cluster.setClusterType(Cluster.ClusterType.CloudManaged);

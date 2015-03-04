@@ -59,7 +59,7 @@ public class MockVMDaoImpl extends GenericDaoBase<MockVMVO, Long> implements Moc
     public List<MockVMVO> findByHostGuid(String guid) {
         SearchCriteria<MockVMVO> sc = GuidSearch.create();
         sc.setJoinParameters("host", "guid", guid);
-        sc.setParameters("state", VirtualMachine.State.Running);
+        sc.setParameters("power_state", VirtualMachine.PowerState.PowerOn);
         return listBy(sc);
     }
 
@@ -78,7 +78,7 @@ public class MockVMDaoImpl extends GenericDaoBase<MockVMVO, Long> implements Moc
 
         GuidSearch = createSearchBuilder();
         GuidSearch.join("host", host, host.entity().getId(), GuidSearch.entity().getHostId(), JoinBuilder.JoinType.INNER);
-        GuidSearch.and("state", GuidSearch.entity().getState(), SearchCriteria.Op.EQ);
+        GuidSearch.and("power_state", GuidSearch.entity().getPowerState(), SearchCriteria.Op.EQ);
         GuidSearch.done();
 
         vmNameSearch = createSearchBuilder();

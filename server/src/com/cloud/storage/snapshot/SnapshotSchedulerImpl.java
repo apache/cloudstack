@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.UUID;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -53,7 +52,9 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
@@ -63,6 +64,7 @@ import com.cloud.utils.concurrency.TestClock;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 @Local(value = {SnapshotScheduler.class})
@@ -83,6 +85,10 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     protected VolumeDao _volsDao;
     @Inject
     protected ConfigurationDao _configDao;
+    @Inject
+    protected ApiDispatcher _dispatcher;
+    @Inject
+    protected AccountDao _acctDao;
 
     protected AsyncJobDispatcher _asyncDispatcher;
 
@@ -96,21 +102,21 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         return _asyncDispatcher;
     }
 
-    public void setAsyncJobDispatcher(AsyncJobDispatcher dispatcher) {
+    public void setAsyncJobDispatcher(final AsyncJobDispatcher dispatcher) {
         _asyncDispatcher = dispatcher;
     }
 
-    private Date getNextScheduledTime(long policyId, Date currentTimestamp) {
-        SnapshotPolicyVO policy = _snapshotPolicyDao.findById(policyId);
+    private Date getNextScheduledTime(final long policyId, final Date currentTimestamp) {
+        final SnapshotPolicyVO policy = _snapshotPolicyDao.findById(policyId);
         Date nextTimestamp = null;
         if (policy != null) {
-            short intervalType = policy.getInterval();
-            IntervalType type = DateUtil.getIntervalType(intervalType);
-            String schedule = policy.getSchedule();
-            String timezone = policy.getTimezone();
+            final short intervalType = policy.getInterval();
+            final IntervalType type = DateUtil.getIntervalType(intervalType);
+            final String schedule = policy.getSchedule();
+            final String timezone = policy.getTimezone();
             nextTimestamp = DateUtil.getNextRunTime(type, schedule, timezone, currentTimestamp);
-            String currentTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, currentTimestamp);
-            String nextScheduledTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, nextTimestamp);
+            final String currentTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, currentTimestamp);
+            final String nextScheduledTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, nextTimestamp);
             s_logger.debug("Current time is " + currentTime + ". NextScheduledTime of policyId " + policyId + " is " + nextScheduledTime);
         }
         return nextTimestamp;
@@ -120,7 +126,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
      * {@inheritDoc}
      */
     @Override
-    public void poll(Date currentTimestamp) {
+    public void poll(final Date currentTimestamp) {
         // We don't maintain the time. The timer task does.
         _currentTimestamp = currentTimestamp;
 
@@ -152,12 +158,12 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     }
 
     private void checkStatusOfCurrentlyExecutingSnapshots() {
-        SearchCriteria<SnapshotScheduleVO> sc = _snapshotScheduleDao.createSearchCriteria();
+        final SearchCriteria<SnapshotScheduleVO> sc = _snapshotScheduleDao.createSearchCriteria();
         sc.addAnd("asyncJobId", SearchCriteria.Op.NNULL);
-        List<SnapshotScheduleVO> snapshotSchedules = _snapshotScheduleDao.search(sc, null);
-        for (SnapshotScheduleVO snapshotSchedule : snapshotSchedules) {
-            Long asyncJobId = snapshotSchedule.getAsyncJobId();
-            AsyncJobVO asyncJob = _asyncJobDao.findById(asyncJobId);
+        final List<SnapshotScheduleVO> snapshotSchedules = _snapshotScheduleDao.search(sc, null);
+        for (final SnapshotScheduleVO snapshotSchedule : snapshotSchedules) {
+            final Long asyncJobId = snapshotSchedule.getAsyncJobId();
+            final AsyncJobVO asyncJob = _asyncJobDao.findById(asyncJobId);
             switch (asyncJob.getStatus()) {
                 case SUCCEEDED:
                     // The snapshot has been successfully backed up.
@@ -168,7 +174,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                     break;
                 case FAILED:
                     // Check the snapshot status.
-                    Long snapshotId = snapshotSchedule.getSnapshotId();
+                    final Long snapshotId = snapshotSchedule.getSnapshotId();
                     if (snapshotId == null) {
                         // createSnapshotAsync exited, successfully or unsuccessfully,
                         // even before creating a snapshot record
@@ -176,7 +182,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                         // Schedule the next snapshot.
                         scheduleNextSnapshotJob(snapshotSchedule);
                     } else {
-                        SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+                        final SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
                         if (snapshot == null || snapshot.getRemoved() != null) {
                             // This snapshot has been deleted successfully from the primary storage
                             // Again no cleanup needs to be done.
@@ -220,58 +226,66 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         String displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, _currentTimestamp);
         s_logger.debug("Snapshot scheduler.poll is being called at " + displayTime);
 
-        List<SnapshotScheduleVO> snapshotsToBeExecuted = _snapshotScheduleDao.getSchedulesToExecute(_currentTimestamp);
+        final List<SnapshotScheduleVO> snapshotsToBeExecuted = _snapshotScheduleDao.getSchedulesToExecute(_currentTimestamp);
         s_logger.debug("Got " + snapshotsToBeExecuted.size() + " snapshots to be executed at " + displayTime);
 
-        for (SnapshotScheduleVO snapshotToBeExecuted : snapshotsToBeExecuted) {
+        for (final SnapshotScheduleVO snapshotToBeExecuted : snapshotsToBeExecuted) {
             SnapshotScheduleVO tmpSnapshotScheduleVO = null;
-            long snapshotScheId = snapshotToBeExecuted.getId();
-            long policyId = snapshotToBeExecuted.getPolicyId();
-            long volumeId = snapshotToBeExecuted.getVolumeId();
+            final long snapshotScheId = snapshotToBeExecuted.getId();
+            final long policyId = snapshotToBeExecuted.getPolicyId();
+            final long volumeId = snapshotToBeExecuted.getVolumeId();
             try {
-                VolumeVO volume = _volsDao.findById(volumeId);
+                final VolumeVO volume = _volsDao.findById(volumeId);
                 if (volume.getPoolId() == null) {
                     // this volume is not attached
+                    continue;
+                }
+                Account volAcct = _acctDao.findById(volume.getAccountId());
+                if (volAcct == null || volAcct.getState() == Account.State.disabled) {
+                    // this account has been removed, so don't trigger recurring snapshot
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Skip snapshot for volume " + volume.getUuid() + " since its account has been removed or disabled");
+                    }
                     continue;
                 }
                 if (_snapshotPolicyDao.findById(policyId) == null) {
                     _snapshotScheduleDao.remove(snapshotToBeExecuted.getId());
                 }
                 if (s_logger.isDebugEnabled()) {
-                    Date scheduledTimestamp = snapshotToBeExecuted.getScheduledTimestamp();
+                    final Date scheduledTimestamp = snapshotToBeExecuted.getScheduledTimestamp();
                     displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, scheduledTimestamp);
                     s_logger.debug("Scheduling 1 snapshot for volume " + volumeId + " for schedule id: " + snapshotToBeExecuted.getId() + " at " + displayTime);
                 }
 
                 tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
-                Long eventId =
+                final Long eventId =
                     ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:" +
-                        volumeId, 0);
+                        volumeId, true, 0);
 
-                Map<String, String> params = new HashMap<String, String>();
+                final Map<String, String> params = new HashMap<String, String>();
                 params.put(ApiConstants.VOLUME_ID, "" + volumeId);
                 params.put(ApiConstants.POLICY_ID, "" + policyId);
                 params.put("ctxUserId", "1");
                 params.put("ctxAccountId", "" + volume.getAccountId());
                 params.put("ctxStartEventId", String.valueOf(eventId));
 
-                CreateSnapshotCmd cmd = new CreateSnapshotCmd();
+                final CreateSnapshotCmd cmd = new CreateSnapshotCmd();
                 ComponentContext.inject(cmd);
-                ApiDispatcher.getInstance().dispatchCreateCmd(cmd, params);
+                _dispatcher.dispatchCreateCmd(cmd, params);
                 params.put("id", "" + cmd.getEntityId());
                 params.put("ctxStartEventId", "1");
 
-                AsyncJobVO job =
-                    new AsyncJobVO(UUID.randomUUID().toString(), User.UID_SYSTEM, volume.getAccountId(), CreateSnapshotCmd.class.getName(), ApiGsonHelper.getBuilder()
-                        .create()
-                        .toJson(params), cmd.getEntityId(), cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null);
+                AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, volume.getAccountId(), CreateSnapshotCmd.class.getName(),
+                        ApiGsonHelper.getBuilder().create().toJson(params), cmd.getEntityId(),
+                        cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null, null);
                 job.setDispatcher(_asyncDispatcher.getName());
 
-                long jobId = _asyncMgr.submitAsyncJob(job);
+                final long jobId = _asyncMgr.submitAsyncJob(job);
 
                 tmpSnapshotScheduleVO.setAsyncJobId(jobId);
                 _snapshotScheduleDao.update(snapshotScheId, tmpSnapshotScheduleVO);
-            } catch (Exception e) {
+            } catch (final Exception e) {
+                // TODO Logging this exception is enough?
                 s_logger.warn("Scheduling snapshot failed due to " + e.toString());
             } finally {
                 if (tmpSnapshotScheduleVO != null) {
@@ -281,16 +295,16 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         }
     }
 
-    private Date scheduleNextSnapshotJob(SnapshotScheduleVO snapshotSchedule) {
+    private Date scheduleNextSnapshotJob(final SnapshotScheduleVO snapshotSchedule) {
         if (snapshotSchedule == null) {
             return null;
         }
-        Long policyId = snapshotSchedule.getPolicyId();
+        final Long policyId = snapshotSchedule.getPolicyId();
         if (policyId.longValue() == Snapshot.MANUAL_POLICY_ID) {
             // Don't need to schedule the next job for this.
             return null;
         }
-        SnapshotPolicyVO snapshotPolicy = _snapshotPolicyDao.findById(policyId);
+        final SnapshotPolicyVO snapshotPolicy = _snapshotPolicyDao.findById(policyId);
         if (snapshotPolicy == null) {
             _snapshotScheduleDao.expunge(snapshotSchedule.getId());
         }
@@ -299,20 +313,29 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
 
     @Override
     @DB
-    public Date scheduleNextSnapshotJob(SnapshotPolicyVO policy) {
+    public Date scheduleNextSnapshotJob(final SnapshotPolicyVO policy) {
         if (policy == null) {
             return null;
         }
-        long policyId = policy.getId();
+
+        // If display attribute is false then remove schedules if any and return.
+        if(!policy.isDisplay()){
+            removeSchedule(policy.getVolumeId(), policy.getId());
+            return null;
+        }
+
+        final long policyId = policy.getId();
         if (policyId == Snapshot.MANUAL_POLICY_ID) {
             return null;
         }
-        Date nextSnapshotTimestamp = getNextScheduledTime(policyId, _currentTimestamp);
+        final Date nextSnapshotTimestamp = getNextScheduledTime(policyId, _currentTimestamp);
         SnapshotScheduleVO spstSchedVO = _snapshotScheduleDao.findOneByVolumePolicy(policy.getVolumeId(), policy.getId());
         if (spstSchedVO == null) {
             spstSchedVO = new SnapshotScheduleVO(policy.getVolumeId(), policyId, nextSnapshotTimestamp);
             _snapshotScheduleDao.persist(spstSchedVO);
         } else {
+            TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+
             try {
                 spstSchedVO = _snapshotScheduleDao.acquireInLockTable(spstSchedVO.getId());
                 spstSchedVO.setPolicyId(policyId);
@@ -320,20 +343,36 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 spstSchedVO.setAsyncJobId(null);
                 spstSchedVO.setSnapshotId(null);
                 _snapshotScheduleDao.update(spstSchedVO.getId(), spstSchedVO);
+                txn.commit();
             } finally {
                 if (spstSchedVO != null) {
                     _snapshotScheduleDao.releaseFromLockTable(spstSchedVO.getId());
                 }
+                txn.close();
             }
         }
         return nextSnapshotTimestamp;
     }
 
     @Override
+    public void scheduleOrCancelNextSnapshotJobOnDisplayChange(final SnapshotPolicyVO policy, boolean previousDisplay) {
+
+        // Take action only if display changed
+        if(policy.isDisplay() != previousDisplay ){
+            if(policy.isDisplay()){
+                scheduleNextSnapshotJob(policy);
+            }else{
+                removeSchedule(policy.getVolumeId(), policy.getId());
+            }
+        }
+    }
+
+
+    @Override
     @DB
-    public boolean removeSchedule(Long volumeId, Long policyId) {
+    public boolean removeSchedule(final Long volumeId, final Long policyId) {
         // We can only remove schedules which are in the future. Not which are already executed in the past.
-        SnapshotScheduleVO schedule = _snapshotScheduleDao.getCurrentSchedule(volumeId, policyId, false);
+        final SnapshotScheduleVO schedule = _snapshotScheduleDao.getCurrentSchedule(volumeId, policyId, false);
         boolean success = true;
         if (schedule != null) {
             success = _snapshotScheduleDao.remove(schedule.getId());
@@ -345,18 +384,18 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
 
         _snapshotPollInterval = NumbersUtil.parseInt(_configDao.getValue("snapshot.poll.interval"), 300);
-        boolean snapshotsRecurringTest = Boolean.parseBoolean(_configDao.getValue("snapshot.recurring.test"));
+        final boolean snapshotsRecurringTest = Boolean.parseBoolean(_configDao.getValue("snapshot.recurring.test"));
         if (snapshotsRecurringTest) {
             // look for some test values in the configuration table so that snapshots can be taken more frequently (QA test code)
-            int minutesPerHour = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.minutes.per.hour"), 60);
-            int hoursPerDay = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.hours.per.day"), 24);
-            int daysPerWeek = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.days.per.week"), 7);
-            int daysPerMonth = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.days.per.month"), 30);
-            int weeksPerMonth = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.weeks.per.month"), 4);
-            int monthsPerYear = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.months.per.year"), 12);
+            final int minutesPerHour = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.minutes.per.hour"), 60);
+            final int hoursPerDay = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.hours.per.day"), 24);
+            final int daysPerWeek = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.days.per.week"), 7);
+            final int daysPerMonth = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.days.per.month"), 30);
+            final int weeksPerMonth = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.weeks.per.month"), 4);
+            final int monthsPerYear = NumbersUtil.parseInt(_configDao.getValue("snapshot.test.months.per.year"), 12);
 
             _testTimerTask = new TestClock(this, minutesPerHour, hoursPerDay, daysPerWeek, daysPerMonth, weeksPerMonth, monthsPerYear);
         }
@@ -371,8 +410,8 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     @DB
     public boolean start() {
         // reschedule all policies after management restart
-        List<SnapshotPolicyVO> policyInstances = _snapshotPolicyDao.listAll();
-        for (SnapshotPolicyVO policyInstance : policyInstances) {
+        final List<SnapshotPolicyVO> policyInstances = _snapshotPolicyDao.listAll();
+        for (final SnapshotPolicyVO policyInstance : policyInstances) {
             if (policyInstance.getId() != Snapshot.MANUAL_POLICY_ID) {
                 scheduleNextSnapshotJob(policyInstance);
             }
@@ -383,13 +422,13 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
             // Else it becomes too confusing.
             _testClockTimer.schedule(_testTimerTask, 100 * 1000L, 60 * 1000L);
         } else {
-            TimerTask timerTask = new ManagedContextTimerTask() {
+            final TimerTask timerTask = new ManagedContextTimerTask() {
                 @Override
                 protected void runInContext() {
                     try {
-                        Date currentTimestamp = new Date();
+                        final Date currentTimestamp = new Date();
                         poll(currentTimestamp);
-                    } catch (Throwable t) {
+                    } catch (final Throwable t) {
                         s_logger.warn("Catch throwable in snapshot scheduler ", t);
                     }
                 }

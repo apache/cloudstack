@@ -16,11 +16,13 @@
 // under the License.
 package com.cloud.api;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.Enumeration;
+import java.util.Arrays;
+import java.util.Collections;
+import java.net.InetAddress;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -31,28 +33,34 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiServerService;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.auth.APIAuthenticationManager;
+import org.apache.cloudstack.api.auth.APIAuthenticationType;
+import org.apache.cloudstack.api.auth.APIAuthenticator;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.managed.context.ManagedContext;
-
-import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
+import com.cloud.utils.HttpUtils;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.net.NetUtils;
 
 @Component("apiServlet")
 @SuppressWarnings("serial")
 public class ApiServlet extends HttpServlet {
     public static final Logger s_logger = Logger.getLogger(ApiServlet.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
+    private final static List<String> s_clientAddressHeaders = Collections
+            .unmodifiableList(Arrays.asList("X-Forwarded-For",
+                    "HTTP_CLIENT_IP", "HTTP_X_FORWARDED_FOR", "Remote_Addr"));
 
     @Inject
     ApiServerService _apiServer;
@@ -62,51 +70,53 @@ public class ApiServlet extends HttpServlet {
     EntityManager _entityMgr;
     @Inject
     ManagedContext _managedContext;
+    @Inject
+    APIAuthenticationManager _authManager;
 
     public ApiServlet() {
     }
 
     @Override
-    public void init(ServletConfig config) throws ServletException {
+    public void init(final ServletConfig config) throws ServletException {
         SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
+    protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) {
         processRequest(req, resp);
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
+    protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) {
         processRequest(req, resp);
     }
 
-    private void utf8Fixup(HttpServletRequest req, Map<String, Object[]> params) {
+    void utf8Fixup(final HttpServletRequest req, final Map<String, Object[]> params) {
         if (req.getQueryString() == null) {
             return;
         }
 
-        String[] paramsInQueryString = req.getQueryString().split("&");
+        final String[] paramsInQueryString = req.getQueryString().split("&");
         if (paramsInQueryString != null) {
-            for (String param : paramsInQueryString) {
-                String[] paramTokens = param.split("=", 2);
-                if (paramTokens != null && paramTokens.length == 2) {
-                    String name = paramTokens[0];
-                    String value = paramTokens[1];
-
-                    try {
-                        name = URLDecoder.decode(name, "UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                    }
-                    try {
-                        value = URLDecoder.decode(value, "UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                    }
+            for (final String param : paramsInQueryString) {
+                final String[] paramTokens = param.split("=", 2);
+                if (paramTokens.length == 2) {
+                    String name = decodeUtf8(paramTokens[0]);
+                    String value = decodeUtf8(paramTokens[1]);
                     params.put(name, new String[] {value});
                 } else {
                     s_logger.debug("Invalid parameter in URL found. param: " + param);
                 }
             }
+        }
+    }
+
+    private String decodeUtf8(final String value) {
+        try {
+            return URLDecoder.decode(value, "UTF-8");
+        } catch (final UnsupportedEncodingException e) {
+            //should never happen
+            return null;
         }
     }
 
@@ -119,13 +129,14 @@ public class ApiServlet extends HttpServlet {
         });
     }
 
-    private void processRequestInContext(HttpServletRequest req, HttpServletResponse resp) {
-        StringBuffer auditTrailSb = new StringBuffer();
-        auditTrailSb.append(" " + req.getRemoteAddr());
-        auditTrailSb.append(" -- " + req.getMethod() + " ");
+    void processRequestInContext(final HttpServletRequest req, final HttpServletResponse resp) {
+        final String remoteAddress = getClientAddress(req);
+        final StringBuilder auditTrailSb = new StringBuilder(128);
+        auditTrailSb.append(" ").append(remoteAddress);
+        auditTrailSb.append(" -- ").append(req.getMethod()).append(' ');
         // get the response format since we'll need it in a couple of places
-        String responseType = BaseCmd.RESPONSE_TYPE_XML;
-        Map<String, Object[]> params = new HashMap<String, Object[]>();
+        String responseType = HttpUtils.RESPONSE_TYPE_XML;
+        final Map<String, Object[]> params = new HashMap<String, Object[]>();
         params.putAll(req.getParameterMap());
 
         // For HTTP GET requests, it seems that HttpServletRequest.getParameterMap() actually tries
@@ -142,117 +153,89 @@ public class ApiServlet extends HttpServlet {
         }
 
         try {
+
+            if (HttpUtils.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
+                resp.setContentType(ApiServer.getJSONContentType());
+            } else if (HttpUtils.RESPONSE_TYPE_XML.equalsIgnoreCase(responseType)){
+                resp.setContentType(HttpUtils.XML_CONTENT_TYPE);
+            }
+
             HttpSession session = req.getSession(false);
-            Object[] responseTypeParam = params.get("response");
+            if (ApiServer.isSecureSessionCookieEnabled()) {
+                resp.setHeader("SET-COOKIE", "JSESSIONID=" + session.getId() + ";Secure;Path=/client");
+                if (s_logger.isDebugEnabled()) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Session cookie is marked secure!");
+                    }
+                }
+            }
+            final Object[] responseTypeParam = params.get(ApiConstants.RESPONSE);
             if (responseTypeParam != null) {
                 responseType = (String)responseTypeParam[0];
             }
 
-            Object[] commandObj = params.get("command");
+            final Object[] commandObj = params.get(ApiConstants.COMMAND);
             if (commandObj != null) {
-                String command = (String)commandObj[0];
-                if ("logout".equalsIgnoreCase(command)) {
-                    // if this is just a logout, invalidate the session and return
-                    if (session != null) {
-                        Long userId = (Long)session.getAttribute("userid");
-                        Account account = (Account)session.getAttribute("accountobj");
-                        Long accountId = null;
-                        if (account != null) {
-                            accountId = account.getId();
-                        }
-                        auditTrailSb.insert(0, "(userId=" + userId + " accountId=" + accountId + " sessionId=" + session.getId() + ")");
-                        if (userId != null) {
-                            _apiServer.logoutUser(userId);
-                        }
-                        try {
-                            session.invalidate();
-                        } catch (IllegalStateException ise) {
-                        }
-                    }
-                    auditTrailSb.append("command=logout");
-                    auditTrailSb.append(" " + HttpServletResponse.SC_OK);
-                    writeResponse(resp, getLogoutSuccessResponse(responseType), HttpServletResponse.SC_OK, responseType);
-                    return;
-                } else if ("login".equalsIgnoreCase(command)) {
-                    auditTrailSb.append("command=login");
-                    // if this is a login, authenticate the user and return
-                    if (session != null) {
-                        try {
-                            session.invalidate();
-                        } catch (IllegalStateException ise) {
-                        }
-                    }
-                    session = req.getSession(true);
-                    String[] username = (String[])params.get("username");
-                    String[] password = (String[])params.get("password");
-                    String[] domainIdArr = (String[])params.get("domainid");
+                final String command = (String) commandObj[0];
 
-                    if (domainIdArr == null) {
-                        domainIdArr = (String[])params.get("domainId");
-                    }
-                    String[] domainName = (String[])params.get("domain");
-                    Long domainId = null;
-                    if ((domainIdArr != null) && (domainIdArr.length > 0)) {
-                        try {
-                            //check if UUID is passed in for domain
-                            domainId = _apiServer.fetchDomainId(domainIdArr[0]);
-                            if (domainId == null) {
-                                domainId = new Long(Long.parseLong(domainIdArr[0]));
-                            }
-                            auditTrailSb.append(" domainid=" + domainId);// building the params for POST call
-                        } catch (NumberFormatException e) {
-                            s_logger.warn("Invalid domain id entered by user");
-                            auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "Invalid domain id entered, please enter a valid one");
-                            String serializedResponse =
-                                _apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid domain id entered, please enter a valid one", params,
-                                    responseType);
-                            writeResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType);
-                        }
-                    }
-                    String domain = null;
-                    if (domainName != null) {
-                        domain = domainName[0];
-                        auditTrailSb.append(" domain=" + domain);
-                        if (domain != null) {
-                            // ensure domain starts with '/' and ends with '/'
-                            if (!domain.endsWith("/")) {
-                                domain += '/';
-                            }
-                            if (!domain.startsWith("/")) {
-                                domain = "/" + domain;
-                            }
-                        }
-                    }
+                APIAuthenticator apiAuthenticator = _authManager.getAPIAuthenticator(command);
+                if (apiAuthenticator != null) {
+                    auditTrailSb.append("command=");
+                    auditTrailSb.append(command);
 
-                    if (username != null) {
-                        String pwd = ((password == null) ? null : password[0]);
-                        try {
-                            _apiServer.loginUser(session, username[0], pwd, domainId, domain, req.getRemoteAddr(), params);
-                            auditTrailSb.insert(0, "(userId=" + session.getAttribute("userid") + " accountId=" + ((Account)session.getAttribute("accountobj")).getId() +
-                                " sessionId=" + session.getId() + ")");
-                            String loginResponse = getLoginSuccessResponse(session, responseType);
-                            writeResponse(resp, loginResponse, HttpServletResponse.SC_OK, responseType);
-                            return;
-                        } catch (CloudAuthenticationException ex) {
-                            // TODO: fall through to API key, or just fail here w/ auth error? (HTTP 401)
+                    int httpResponseCode = HttpServletResponse.SC_OK;
+                    String responseString = null;
+
+                    if (apiAuthenticator.getAPIType() == APIAuthenticationType.LOGIN_API) {
+                        if (session != null) {
                             try {
                                 session.invalidate();
-                            } catch (IllegalStateException ise) {
+                            } catch (final IllegalStateException ise) {
                             }
-
-                            auditTrailSb.append(" " + ApiErrorCode.ACCOUNT_ERROR + " " + ex.getMessage() != null ? ex.getMessage()
-                                : "failed to authenticate user, check if username/password are correct");
-                            String serializedResponse =
-                                _apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(), ex.getMessage() != null ? ex.getMessage()
-                                    : "failed to authenticate user, check if username/password are correct", params, responseType);
-                            writeResponse(resp, serializedResponse, ApiErrorCode.ACCOUNT_ERROR.getHttpCode(), responseType);
-                            return;
+                        }
+                        session = req.getSession(true);
+                        if (ApiServer.isSecureSessionCookieEnabled()) {
+                            resp.setHeader("SET-COOKIE", "JSESSIONID=" + session.getId() + ";Secure;Path=/client");
+                            if (s_logger.isDebugEnabled()) {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Session cookie is marked secure!");
+                                }
+                            }
                         }
                     }
+
+                    try {
+                        responseString = apiAuthenticator.authenticate(command, params, session, InetAddress.getByName(remoteAddress), responseType, auditTrailSb, resp);
+                    } catch (ServerApiException e) {
+                        httpResponseCode = e.getErrorCode().getHttpCode();
+                        responseString = e.getMessage();
+                        s_logger.debug("Authentication failure: " + e.getMessage());
+                    }
+                    if (apiAuthenticator.getAPIType() == APIAuthenticationType.LOGOUT_API) {
+                        if (session != null) {
+                            final Long userId = (Long) session.getAttribute("userid");
+                            final Account account = (Account) session.getAttribute("accountobj");
+                            Long accountId = null;
+                            if (account != null) {
+                                accountId = account.getId();
+                            }
+                            auditTrailSb.insert(0, "(userId=" + userId + " accountId=" + accountId + " sessionId=" + session.getId() + ")");
+                            if (userId != null) {
+                                _apiServer.logoutUser(userId);
+                            }
+                            try {
+                                session.invalidate();
+                            } catch (final IllegalStateException ignored) {
+                            }
+                        }
+                    }
+                    HttpUtils.writeHttpResponse(resp, responseString, httpResponseCode, responseType, ApiServer.getJSONContentType());
+                    return;
                 }
             }
-            auditTrailSb.append(req.getQueryString());
-            boolean isNew = ((session == null) ? true : session.isNew());
+
+            auditTrailSb.append(StringUtils.cleanString(req.getQueryString()));
+            final boolean isNew = ((session == null) ? true : session.isNew());
 
             // Initialize an empty context and we will update it after we have verified the request below,
             // we no longer rely on web-session here, verifyRequest will populate user/account information
@@ -261,46 +244,46 @@ public class ApiServlet extends HttpServlet {
 
             if (!isNew) {
                 userId = (Long)session.getAttribute("userid");
-                String account = (String)session.getAttribute("account");
-                Object accountObj = session.getAttribute("accountobj");
-                String sessionKey = (String)session.getAttribute("sessionkey");
-                String[] sessionKeyParam = (String[])params.get("sessionkey");
+                final String account = (String)session.getAttribute("account");
+                final Object accountObj = session.getAttribute("accountobj");
+                final String sessionKey = (String)session.getAttribute("sessionkey");
+                final String[] sessionKeyParam = (String[])params.get(ApiConstants.SESSIONKEY);
                 if ((sessionKeyParam == null) || (sessionKey == null) || !sessionKey.equals(sessionKeyParam[0])) {
                     try {
                         session.invalidate();
-                    } catch (IllegalStateException ise) {
+                    } catch (final IllegalStateException ise) {
                     }
                     auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
-                    String serializedResponse =
+                    final String serializedResponse =
                         _apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType);
-                    writeResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType);
+                    HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.getJSONContentType());
                     return;
                 }
 
                 // Do a sanity check here to make sure the user hasn't already been deleted
                 if ((userId != null) && (account != null) && (accountObj != null) && _apiServer.verifyUser(userId)) {
-                    String[] command = (String[])params.get("command");
+                    final String[] command = (String[])params.get(ApiConstants.COMMAND);
                     if (command == null) {
                         s_logger.info("missing command, ignoring request...");
                         auditTrailSb.append(" " + HttpServletResponse.SC_BAD_REQUEST + " " + "no command specified");
-                        String serializedResponse = _apiServer.getSerializedApiError(HttpServletResponse.SC_BAD_REQUEST, "no command specified", params, responseType);
-                        writeResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType);
+                        final String serializedResponse = _apiServer.getSerializedApiError(HttpServletResponse.SC_BAD_REQUEST, "no command specified", params, responseType);
+                        HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType, ApiServer.getJSONContentType());
                         return;
                     }
-                    User user = _entityMgr.findById(User.class, userId);
+                    final User user = _entityMgr.findById(User.class, userId);
                     CallContext.register(user, (Account)accountObj);
                 } else {
                     // Invalidate the session to ensure we won't allow a request across management server
                     // restarts if the userId was serialized to the stored session
                     try {
                         session.invalidate();
-                    } catch (IllegalStateException ise) {
+                    } catch (final IllegalStateException ise) {
                     }
 
                     auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
-                    String serializedResponse =
+                    final String serializedResponse =
                         _apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType);
-                    writeResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType);
+                    HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.getJSONContentType());
                     return;
                 }
             } else {
@@ -308,47 +291,34 @@ public class ApiServlet extends HttpServlet {
             }
 
             if (_apiServer.verifyRequest(params, userId)) {
-                /*
-                 * if (accountObj != null) { Account userAccount = (Account)accountObj; if (userAccount.getType() ==
-                 * Account.ACCOUNT_TYPE_NORMAL) { params.put(BaseCmd.Properties.USER_ID.getName(), new String[] { userId });
-                 * params.put(BaseCmd.Properties.ACCOUNT.getName(), new String[] { account });
-                 * params.put(BaseCmd.Properties.DOMAIN_ID.getName(), new String[] { domainId });
-                 * params.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { accountObj }); } else {
-                 * params.put(BaseCmd.Properties.USER_ID.getName(), new String[] { userId });
-                 * params.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { accountObj }); } }
-                 *
-                 * // update user context info here so that we can take information if the request is authenticated // via api
-                 * key mechanism updateUserContext(params, session != null ? session.getId() : null);
-                 */
-
                 auditTrailSb.insert(0, "(userId=" + CallContext.current().getCallingUserId() + " accountId=" + CallContext.current().getCallingAccount().getId() +
                     " sessionId=" + (session != null ? session.getId() : null) + ")");
 
                 // Add the HTTP method (GET/POST/PUT/DELETE) as well into the params map.
                 params.put("httpmethod", new String[] {req.getMethod()});
-                String response = _apiServer.handleRequest(params, responseType, auditTrailSb);
-                writeResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType);
+                final String response = _apiServer.handleRequest(params, responseType, auditTrailSb);
+                HttpUtils.writeHttpResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType, ApiServer.getJSONContentType());
             } else {
                 if (session != null) {
                     try {
                         session.invalidate();
-                    } catch (IllegalStateException ise) {
+                    } catch (final IllegalStateException ise) {
                     }
                 }
 
                 auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials and/or request signature");
-                String serializedResponse =
+                final String serializedResponse =
                     _apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials and/or request signature", params,
                         responseType);
-                writeResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType);
+                HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.getJSONContentType());
 
             }
-        } catch (ServerApiException se) {
-            String serializedResponseText = _apiServer.getSerializedApiError(se, params, responseType);
+        } catch (final ServerApiException se) {
+            final String serializedResponseText = _apiServer.getSerializedApiError(se, params, responseType);
             resp.setHeader("X-Description", se.getDescription());
-            writeResponse(resp, serializedResponseText, se.getErrorCode().getHttpCode(), responseType);
+            HttpUtils.writeHttpResponse(resp, serializedResponseText, se.getErrorCode().getHttpCode(), responseType, ApiServer.getJSONContentType());
             auditTrailSb.append(" " + se.getErrorCode() + " " + se.getDescription());
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             s_logger.error("unknown exception writing api response", ex);
             auditTrailSb.append(" unknown exception writing api response");
         } finally {
@@ -361,106 +331,33 @@ public class ApiServlet extends HttpServlet {
         }
     }
 
-    /*
-     * private void updateUserContext(Map<String, Object[]> requestParameters, String sessionId) { String userIdStr =
-     * (String)(requestParameters.get(BaseCmd.Properties.USER_ID.getName())[0]); Account accountObj =
-     * (Account)(requestParameters.get(BaseCmd.Properties.ACCOUNT_OBJ.getName())[0]);
-     *
-     * Long userId = null; Long accountId = null; if(userIdStr != null) userId = Long.parseLong(userIdStr);
-     *
-     * if(accountObj != null) accountId = accountObj.getId(); UserContext.updateContext(userId, accountId, sessionId); }
-     */
-
-    // FIXME: rather than isError, we might was to pass in the status code to give more flexibility
-    private void writeResponse(HttpServletResponse resp, String response, int responseCode, String responseType) {
-        try {
-            if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-                resp.setContentType(ApiServer.jsonContentType + "; charset=UTF-8");
-            } else {
-                resp.setContentType("text/xml; charset=UTF-8");
-            }
-
-            resp.setStatus(responseCode);
-            resp.getWriter().print(response);
-        } catch (IOException ioex) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("exception writing response: " + ioex);
-            }
-        } catch (Exception ex) {
-            if (!(ex instanceof IllegalStateException)) {
-                s_logger.error("unknown exception writing api response", ex);
+    //This method will try to get login IP of user even if servlet is behind reverseProxy or loadBalancer
+    static String getClientAddress(final HttpServletRequest request) {
+        for(final String header : s_clientAddressHeaders) {
+            final String ip = getCorrectIPAddress(request.getHeader(header));
+            if (ip != null) {
+                return ip;
             }
         }
+
+        return request.getRemoteAddr();
     }
 
-    @SuppressWarnings("rawtypes")
-    private String getLoginSuccessResponse(HttpSession session, String responseType) {
-        StringBuffer sb = new StringBuffer();
-        int inactiveInterval = session.getMaxInactiveInterval();
-
-        String user_UUID = (String)session.getAttribute("user_UUID");
-        session.removeAttribute("user_UUID");
-
-        String domain_UUID = (String)session.getAttribute("domain_UUID");
-        session.removeAttribute("domain_UUID");
-
-        if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-            sb.append("{ \"loginresponse\" : { ");
-            Enumeration attrNames = session.getAttributeNames();
-            if (attrNames != null) {
-                sb.append("\"timeout\" : \"" + inactiveInterval + "\"");
-                while (attrNames.hasMoreElements()) {
-                    String attrName = (String)attrNames.nextElement();
-                    if ("userid".equalsIgnoreCase(attrName)) {
-                        sb.append(", \"" + attrName + "\" : \"" + user_UUID + "\"");
-                    } else if ("domainid".equalsIgnoreCase(attrName)) {
-                        sb.append(", \"" + attrName + "\" : \"" + domain_UUID + "\"");
-                    } else {
-                        Object attrObj = session.getAttribute(attrName);
-                        if ((attrObj instanceof String) || (attrObj instanceof Long)) {
-                            sb.append(", \"" + attrName + "\" : \"" + attrObj.toString() + "\"");
-                        }
-                    }
-                }
-            }
-            sb.append(" } }");
-        } else {
-            sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            sb.append("<loginresponse cloud-stack-version=\"" + ApiDBUtils.getVersion() + "\">");
-            sb.append("<timeout>" + inactiveInterval + "</timeout>");
-            Enumeration attrNames = session.getAttributeNames();
-            if (attrNames != null) {
-                while (attrNames.hasMoreElements()) {
-                    String attrName = (String)attrNames.nextElement();
-                    if ("userid".equalsIgnoreCase(attrName)) {
-                        sb.append("<" + attrName + ">" + user_UUID + "</" + attrName + ">");
-                    } else if ("domainid".equalsIgnoreCase(attrName)) {
-                        sb.append("<" + attrName + ">" + domain_UUID + "</" + attrName + ">");
-                    } else {
-                        Object attrObj = session.getAttribute(attrName);
-                        if (attrObj instanceof String || attrObj instanceof Long || attrObj instanceof Short) {
-                            sb.append("<" + attrName + ">" + attrObj.toString() + "</" + attrName + ">");
-                        }
-                    }
-                }
-            }
-
-            sb.append("</loginresponse>");
+    private static String getCorrectIPAddress(String ip) {
+        if(ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            return null;
         }
-        return sb.toString();
-    }
-
-    private String getLogoutSuccessResponse(String responseType) {
-        StringBuffer sb = new StringBuffer();
-        if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-            sb.append("{ \"logoutresponse\" : { \"description\" : \"success\" } }");
-        } else {
-            sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            sb.append("<logoutresponse cloud-stack-version=\"" + ApiDBUtils.getVersion() + "\">");
-            sb.append("<description>success</description>");
-            sb.append("</logoutresponse>");
+        if(NetUtils.isValidIp(ip) || NetUtils.isValidIpv6(ip)) {
+            return ip;
         }
-        return sb.toString();
+        //it could be possible to have multiple IPs in HTTP header, this happens if there are multiple proxy in between
+        //the client and the servlet, so parse the client IP
+        String[] ips = ip.split(",");
+        for(String i : ips) {
+            if(NetUtils.isValidIp(i.trim()) || NetUtils.isValidIpv6(i.trim())) {
+                return i.trim();
+            }
+        }
+        return null;
     }
-
 }

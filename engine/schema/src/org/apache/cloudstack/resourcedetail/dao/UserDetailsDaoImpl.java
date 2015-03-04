@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 public class UserDetailsDaoImpl extends ResourceDetailsDaoBase<UserDetailVO> implements UserDetailsDao {
 
     @Override
-    public void addDetail(long resourceId, String key, String value) {
+    public void addDetail(long resourceId, String key, String value, boolean display) {
         super.addDetail(new UserDetailVO(resourceId, key, value));
     }
 }

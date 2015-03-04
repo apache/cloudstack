@@ -17,6 +17,7 @@
 package com.cloud.network;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -519,8 +520,13 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                                     null, false);
                             String publicIPNetmask = publicIp.getVlanNetmask();
                             String publicIPgateway = publicIp.getVlanGateway();
-                            String publicIPVlanTag = publicIp.getVlanTag();
                             String publicIP = publicIp.getAddress().toString();
+                            String publicIPVlanTag="";
+                            try {
+                                publicIPVlanTag = BroadcastDomainType.getValue(publicIp.getVlanTag());
+                            } catch (URISyntaxException e) {
+                                s_logger.error("Failed to parse public ip vlan tag" + e.getMessage());
+                            }
 
                             String url =
                                 "https://" + lbIP + "?publicinterface=" + publicIf + "&privateinterface=" + privateIf + "&lbdevicededicated=" + dedicatedLb +
@@ -691,7 +697,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                     try {
                         answer = (DestroyLoadBalancerApplianceAnswer)_agentMgr.easySend(lbDevice.getParentHostId(), lbDeleteCmd);
                         if (answer == null || !answer.getResult()) {
-                            s_logger.warn("Failed to destoy load balancer appliance used by the network" + guestConfig.getId() + " due to " + answer.getDetails());
+                            s_logger.warn("Failed to destoy load balancer appliance used by the network"
+                                    + guestConfig.getId() + " due to " + answer == null ? "communication error with agent"
+                                    : answer.getDetails());
                         }
                     } catch (Exception e) {
                         s_logger.warn("Failed to destroy load balancer appliance used by the network" + guestConfig.getId() + " due to " + e.getMessage());
@@ -1145,7 +1153,6 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         // Find the external load balancer in this zone
         long zoneId = network.getDataCenterId();
         DataCenterVO zone = _dcDao.findById(zoneId);
-        HealthCheckLBConfigAnswer answer = null;
 
         if (loadBalancingRules == null || loadBalancingRules.isEmpty()) {
             return null;
@@ -1169,10 +1176,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
         List<LoadBalancerTO> loadBalancersToApply = new ArrayList<LoadBalancerTO>();
         List<MappingState> mappingStates = new ArrayList<MappingState>();
-        for (int i = 0; i < loadBalancingRules.size(); i++) {
-            LoadBalancingRule rule = loadBalancingRules.get(i);
-
-            boolean revoked = (rule.getState().equals(FirewallRule.State.Revoke));
+        for (final LoadBalancingRule rule : loadBalancingRules) {
+            boolean revoked = (FirewallRule.State.Revoke.equals(rule.getState()));
             String protocol = rule.getProtocol();
             String algorithm = rule.getAlgorithm();
             String uuid = rule.getUuid();
@@ -1213,12 +1218,16 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 long guestVlanTag = Integer.parseInt(BroadcastDomainType.getValue(network.getBroadcastUri()));
                 cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
 
-                answer = (HealthCheckLBConfigAnswer)_agentMgr.easySend(externalLoadBalancer.getId(), cmd);
+                HealthCheckLBConfigAnswer answer = (HealthCheckLBConfigAnswer) _agentMgr
+                        .easySend(externalLoadBalancer.getId(), cmd);
+                // easySend will return null on error
+                return answer == null ? null : answer.getLoadBalancers();
             }
         } catch (Exception ex) {
             s_logger.error("Exception Occured ", ex);
         }
-        return answer.getLoadBalancers();
+        //null return is handled by clients
+        return null;
     }
 
     private NicVO getPlaceholderNic(Network network) {

@@ -29,11 +29,11 @@ import net.juniper.contrail.api.types.NetworkIpam;
 import net.juniper.contrail.api.types.Project;
 import net.juniper.contrail.api.types.SubnetType;
 import net.juniper.contrail.api.types.VirtualNetwork;
+import net.juniper.contrail.api.types.VirtualNetworkPolicyType;
 import net.juniper.contrail.api.types.VnSubnetsType;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.network.contrail.management.ContrailManager;
+import org.apache.log4j.Logger;
 
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
@@ -48,7 +48,7 @@ public class VirtualNetworkModel extends ModelObjectBase {
 
     private String _uuid;
     private long _id;
-    private TrafficType _trafficType;
+    private final TrafficType _trafficType;
 
     /*
      * current state for object properties
@@ -66,6 +66,7 @@ public class VirtualNetworkModel extends ModelObjectBase {
     private NetworkIpam _ipam;
 
     private FloatingIpPoolModel _fipPoolModel;
+    private NetworkPolicyModel _policyModel;
 
     public VirtualNetworkModel(Network network, String uuid, String name, TrafficType trafficType) {
         _uuid = uuid;
@@ -133,6 +134,10 @@ public class VirtualNetworkModel extends ModelObjectBase {
             successor.delete(controller);
         }
 
+        if (_policyModel != null) {
+            _policyModel.removeSuccessor(this);
+        }
+
         try {
             api.delete(VirtualNetwork.class, _uuid);
         } catch (IOException ex) {
@@ -181,6 +186,8 @@ public class VirtualNetworkModel extends ModelObjectBase {
             }
         }
 
+        _id = network.getId();
+
         try {
             _projectId = manager.getProjectId(network.getDomainId(), network.getAccountId());
         } catch (IOException ex) {
@@ -224,6 +231,16 @@ public class VirtualNetworkModel extends ModelObjectBase {
                 vn.setName(_name);
                 vn.setUuid(_uuid);
             }
+        }
+
+        if (_policyModel == null) {
+            vn.clearNetworkPolicy();
+        } else if (!_policyModel.hasPolicyRules()) {
+            vn.clearNetworkPolicy();
+            _policyModel.removeSuccessor(this);
+        } else {
+            vn.setNetworkPolicy(_policyModel.getPolicy(), new VirtualNetworkPolicyType(
+                    new VirtualNetworkPolicyType.SequenceType(1, 0), null));
         }
 
         if (_ipam == null) {
@@ -344,78 +361,92 @@ public class VirtualNetworkModel extends ModelObjectBase {
     @Override
     public boolean verify(ModelController controller) {
         assert _initialized : "initialized is false";
-        assert _uuid != null : "uuid is not set";
+    assert _uuid != null : "uuid is not set";
 
-        ApiConnector api = controller.getApiAccessor();
-        VlanDao vlanDao = controller.getVlanDao();
+    ApiConnector api = controller.getApiAccessor();
+    VlanDao vlanDao = controller.getVlanDao();
 
-        try {
-            _vn = (VirtualNetwork)api.findById(VirtualNetwork.class, _uuid);
-        } catch (IOException e) {
-            e.printStackTrace();
+    try {
+        _vn = (VirtualNetwork)api.findById(VirtualNetwork.class, _uuid);
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+
+    if (_vn == null) {
+        return false;
+    }
+
+    if (!isDynamicNetwork()) {
+        return true;
+    }
+
+    List<String> dbSubnets = new ArrayList<String>();
+    if (_trafficType == TrafficType.Public) {
+        List<VlanVO> vlan_list = vlanDao.listVlansByNetworkId(_id);
+        for (VlanVO vlan : vlan_list) {
+            String cidr = NetUtils.ipAndNetMaskToCidr(vlan.getVlanGateway(), vlan.getVlanNetmask());
+            dbSubnets.add(vlan.getVlanGateway() + cidr);
         }
+    } else {
+        dbSubnets.add(_gateway + _prefix);
+    }
 
-        if (_vn == null) {
-            return false;
-        }
+    List<ObjectReference<VnSubnetsType>> ipamRefs = _vn.getNetworkIpam();
+    List<String> vncSubnets = new ArrayList<String>();
 
-        if (!isDynamicNetwork()) {
-            return true;
-        }
+    if (ipamRefs == null && !dbSubnets.isEmpty()) {
+        return false;
+    }
 
-        List<String> dbSubnets = new ArrayList<String>();
-        if (_trafficType == TrafficType.Public) {
-            List<VlanVO> vlan_list = vlanDao.listVlansByNetworkId(_id);
-            for (VlanVO vlan : vlan_list) {
-                String cidr = NetUtils.ipAndNetMaskToCidr(vlan.getVlanGateway(), vlan.getVlanNetmask());
-                dbSubnets.add(vlan.getVlanGateway() + cidr);
-            }
-        } else {
-            dbSubnets.add(this._gateway + this._prefix);
-        }
-
-        List<ObjectReference<VnSubnetsType>> ipamRefs = _vn.getNetworkIpam();
-        List<String> vncSubnets = new ArrayList<String>();
-
-        if (ipamRefs == null && !dbSubnets.isEmpty()) {
-            return false;
-        }
-
-        if (ipamRefs != null) {
-            for (ObjectReference<VnSubnetsType> ref : ipamRefs) {
-                VnSubnetsType vnSubnetType = ref.getAttr();
-                if (vnSubnetType != null) {
-                    List<VnSubnetsType.IpamSubnetType> subnets = vnSubnetType.getIpamSubnets();
-                    if (subnets != null && !subnets.isEmpty()) {
-                        VnSubnetsType.IpamSubnetType ipamSubnet = subnets.get(0);
-                        vncSubnets.add(ipamSubnet.getDefaultGateway() + ipamSubnet.getSubnet().getIpPrefix() + "/" + ipamSubnet.getSubnet().getIpPrefixLen());
-                    }
+    if (ipamRefs != null) {
+        for (ObjectReference<VnSubnetsType> ref : ipamRefs) {
+            VnSubnetsType vnSubnetType = ref.getAttr();
+            if (vnSubnetType != null) {
+                List<VnSubnetsType.IpamSubnetType> subnets = vnSubnetType.getIpamSubnets();
+                if (subnets != null && !subnets.isEmpty()) {
+                    VnSubnetsType.IpamSubnetType ipamSubnet = subnets.get(0);
+                    vncSubnets.add(ipamSubnet.getDefaultGateway() + ipamSubnet.getSubnet().getIpPrefix() + "/" + ipamSubnet.getSubnet().getIpPrefixLen());
                 }
             }
         }
-        // unordered, no duplicates hence perform negation operation as set
-        Set<String> diff = new HashSet<String>(dbSubnets);
-        diff.removeAll(vncSubnets);
+    }
+    // unordered, no duplicates hence perform negation operation as set
+    Set<String> diff = new HashSet<String>(dbSubnets);
+    diff.removeAll(vncSubnets);
 
-        if (!diff.isEmpty()) {
-            s_logger.debug("Subnets changed, network: " + this._name + "; db: " + dbSubnets + ", vnc: " + vncSubnets + ", diff: " + diff);
+    if (!diff.isEmpty()) {
+        s_logger.debug("Subnets changed, network: " + _name + "; db: " + dbSubnets + ", vnc: " + vncSubnets + ", diff: " + diff);
+        return false;
+    }
+
+    List<ObjectReference<VirtualNetworkPolicyType>> policyRefs = _vn.getNetworkPolicy();
+    if ((policyRefs == null || policyRefs.isEmpty()) && _policyModel != null) {
+        return false;
+    }
+
+    if ((policyRefs != null && !policyRefs.isEmpty()) && _policyModel == null) {
+        return false;
+    }
+
+    if (policyRefs != null && !policyRefs.isEmpty() && _policyModel != null) {
+        ObjectReference<VirtualNetworkPolicyType> ref = policyRefs.get(0);
+        if (!ref.getUuid().equals(_policyModel.getUuid())) {
             return false;
         }
+    }
 
-        for (ModelObject successor : successors()) {
-            if (!successor.verify(controller)) {
-                return false;
-            }
+    for (ModelObject successor : successors()) {
+        if (!successor.verify(controller)) {
+            return false;
         }
-        return true;
+    }
+    return true;
     }
 
     @Override
     public boolean compare(ModelController controller, ModelObject o) {
         VirtualNetworkModel latest;
-        ApiConnector api = controller.getApiAccessor();
-
-        assert this._vn != null : "vnc virtual network current is not initialized";
+        assert _vn != null : "vnc virtual network current is not initialized";
 
         try {
             latest = (VirtualNetworkModel)o;
@@ -432,7 +463,7 @@ public class VirtualNetworkModel extends ModelObjectBase {
         }
         assert latest._vn != null : "vnc virtual network new is not initialized";
 
-        List<ObjectReference<VnSubnetsType>> currentIpamRefs = this._vn.getNetworkIpam();
+        List<ObjectReference<VnSubnetsType>> currentIpamRefs = _vn.getNetworkIpam();
         List<ObjectReference<VnSubnetsType>> newIpamRefs = latest._vn.getNetworkIpam();
         List<String> currentSubnets = new ArrayList<String>();
         List<String> newSubnets = new ArrayList<String>();
@@ -471,10 +502,62 @@ public class VirtualNetworkModel extends ModelObjectBase {
         diff.removeAll(newSubnets);
 
         if (!diff.isEmpty()) {
-            s_logger.debug("Subnets differ, network: " + this._name + "; db: " + currentSubnets + ", vnc: " + newSubnets + ", diff: " + diff);
+            s_logger.debug("Subnets differ, network: " + _name + "; db: " + currentSubnets + ", vnc: " + newSubnets + ", diff: " + diff);
             return false;
         }
 
+        List<ObjectReference<VirtualNetworkPolicyType>> currentPolicyRefs = _vn.getNetworkPolicy();
+        List<ObjectReference<VirtualNetworkPolicyType>> latestPolicyRefs = latest._vn.getNetworkPolicy();
+
+        if (currentPolicyRefs == null && latestPolicyRefs == null) {
+            return true;
+        }
+
+        if ((currentPolicyRefs == null && latestPolicyRefs != null) || (currentPolicyRefs != null
+                && latestPolicyRefs == null)) {
+            return false;
+        }
+
+        if ((currentPolicyRefs != null && latestPolicyRefs != null) && (currentPolicyRefs.size() != latestPolicyRefs.size())) {
+            return false;
+        }
+
+        if ((currentPolicyRefs != null && latestPolicyRefs != null) &&  currentPolicyRefs.isEmpty()
+                && latestPolicyRefs.isEmpty()) {
+            return true;
+        }
+
+        //both must be non empty lists
+        ObjectReference<VirtualNetworkPolicyType> ref1 = null;
+
+        if (currentPolicyRefs != null) {
+            ref1 = currentPolicyRefs.get(0);
+        }
+
+        ObjectReference<VirtualNetworkPolicyType> ref2 = null;
+
+        if (latestPolicyRefs != null) {
+            ref2 = latestPolicyRefs.get(0);
+        }
+
+        if (ref1 == null && ref2 == null) {
+            return true;
+        }
+
+        if ((ref1 != null && ref2 == null) || (ref1 == null && ref2 != null)) {
+            return false;
+        }
+
+        if ((ref1 != null && ref2 != null) && ((ref1.getUuid() != null && ref2.getUuid() == null)
+                || (ref1.getUuid() == null && ref2.getUuid() != null))) {
+            return false;
+        }
+        if ((ref1 != null && ref2 != null) && (ref1.getUuid() == null && ref2.getUuid() == null)) {
+            return true;
+        }
+        if ((ref1 != null && ref2 != null) && !ref1.getUuid().equals(ref2.getUuid())) {
+            return false;
+        }
         return true;
     }
 
@@ -484,5 +567,19 @@ public class VirtualNetworkModel extends ModelObjectBase {
 
     public void setFipPoolModel(FloatingIpPoolModel fipPoolModel) {
         _fipPoolModel = fipPoolModel;
+    }
+
+    public NetworkPolicyModel getNetworkPolicyModel() {
+        return _policyModel;
+    }
+
+    public void addToNetworkPolicy(NetworkPolicyModel policyModel) {
+        if (_policyModel != null) {
+            _policyModel.removeSuccessor(this);
+        }
+        _policyModel = policyModel;
+        if (_policyModel != null) {
+            _policyModel.addSuccessor(this);
+        }
     }
 }

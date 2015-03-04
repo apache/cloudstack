@@ -89,7 +89,7 @@ public class ResourceMetaDataManagerTest {
         doNothing().when(_nicDetailDao).removeDetail(anyLong(), anyString());
         Map<String, String> map = new HashedMap();
         map.put("key", "value");
-        _resourceMetaDataMgr.addResourceMetaData("1", ResourceTag.ResourceObjectType.Volume, map);
+        _resourceMetaDataMgr.addResourceMetaData("1", ResourceTag.ResourceObjectType.Volume, map, true);
 
     }
 

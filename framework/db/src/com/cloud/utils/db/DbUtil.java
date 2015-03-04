@@ -257,7 +257,7 @@ public class DbUtil {
             rs = pstmt.executeQuery();
             if (rs != null && rs.first())
                 return rs.getInt(1) > 0;
-            s_logger.error("RELEASE_LOCK() returns unexpected result : " + rs.getInt(1));
+            s_logger.error("releaseGlobalLock:RELEASE_LOCK() returns unexpected result");
         } catch (SQLException e) {
             s_logger.error("RELEASE_LOCK() throws exception ", e);
         } catch (Throwable e) {

@@ -48,7 +48,7 @@ replace_in_file() {
 get_value() {
   local filename=$1
   local keyname=$2
-  grep -i $keyname= $filename | cut -d= -f2
+  grep -i "^$keyname=" $filename | cut -d= -f2
 }
 
 ip=$1
@@ -70,7 +70,7 @@ do
 	fi
 done
 
-# echo -e \"\\\"HTTP/1.0 200 OK\\\nDocumentType: text/plain\\\n\\\n\\\"\"; 
+echo -ne "HTTP/1.0 200 OK\r\nDocumentType: text/plain\r\n\r\n"
 
 if [ "$request" == "send_my_password" ]
 then
@@ -97,7 +97,5 @@ else
 		echo "bad_request"
 	fi
 fi
-
-# echo -e \"\\\"\\\n\\\"\"
 
 unlock_exit 0 $lock $locked

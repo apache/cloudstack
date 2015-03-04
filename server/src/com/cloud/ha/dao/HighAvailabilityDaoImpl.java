@@ -49,6 +49,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
     private final SearchBuilder<HaWorkVO> ReleaseSearch;
     private final SearchBuilder<HaWorkVO> FutureHaWorkSearch;
     private final SearchBuilder<HaWorkVO> RunningHaWorkSearch;
+    private final SearchBuilder<HaWorkVO> PendingHaWorkSearch;
 
     protected HighAvailabilityDaoImpl() {
         super();
@@ -62,6 +63,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
         TBASearch.and("server", TBASearch.entity().getServerId(), Op.NULL);
         TBASearch.and("taken", TBASearch.entity().getDateTaken(), Op.NULL);
         TBASearch.and("time", TBASearch.entity().getTimeToTry(), Op.LTEQ);
+        TBASearch.and("step", TBASearch.entity().getStep(), Op.NIN);
         TBASearch.done();
 
         PreviousInstanceSearch = createSearchBuilder();
@@ -106,6 +108,22 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
         RunningHaWorkSearch.and("taken", RunningHaWorkSearch.entity().getDateTaken(), Op.NNULL);
         RunningHaWorkSearch.and("step", RunningHaWorkSearch.entity().getStep(), Op.NIN);
         RunningHaWorkSearch.done();
+
+        PendingHaWorkSearch = createSearchBuilder();
+        PendingHaWorkSearch.and("instance", PendingHaWorkSearch.entity().getInstanceId(), Op.EQ);
+        PendingHaWorkSearch.and("type", PendingHaWorkSearch.entity().getType(), Op.EQ);
+        PendingHaWorkSearch.and("step", PendingHaWorkSearch.entity().getStep(), Op.NIN);
+        PendingHaWorkSearch.done();
+    }
+
+    @Override
+    public List<HaWorkVO> listPendingHaWorkForVm(long vmId) {
+        SearchCriteria<HaWorkVO> sc = PendingHaWorkSearch.create();
+        sc.setParameters("instance", vmId);
+        sc.setParameters("type", WorkType.HA);
+        sc.setParameters("step", Step.Done, Step.Error, Step.Cancelled);
+
+        return search(sc, null);
     }
 
     @Override
@@ -134,6 +152,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
         try {
             final SearchCriteria<HaWorkVO> sc = TBASearch.create();
             sc.setParameters("time", System.currentTimeMillis() >> 10);
+            sc.setParameters("step", Step.Done, Step.Cancelled);
 
             final Filter filter = new Filter(HaWorkVO.class, null, true, 0l, 1l);
 

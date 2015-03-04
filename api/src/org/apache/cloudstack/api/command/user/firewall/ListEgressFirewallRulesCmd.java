@@ -33,7 +33,8 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listEgressFirewallRules", description = "Lists all egress firewall rules for network id.", responseObject = FirewallResponse.class)
+@APICommand(name = "listEgressFirewallRules", description = "Lists all egress firewall rules for network id.", responseObject = FirewallResponse.class, entityType = {FirewallRule.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListEgressFirewallRulesCmd extends ListFirewallRulesCmd {
     public static final Logger s_logger = Logger.getLogger(ListEgressFirewallRulesCmd.class.getName());
     private static final String s_name = "listegressfirewallrulesresponse";
@@ -84,13 +85,15 @@ public class ListEgressFirewallRulesCmd extends ListFirewallRulesCmd {
         ListResponse<FirewallResponse> response = new ListResponse<FirewallResponse>();
         List<FirewallResponse> fwResponses = new ArrayList<FirewallResponse>();
 
-        for (FirewallRule fwRule : result.first()) {
-            FirewallResponse ruleData = _responseGenerator.createFirewallResponse(fwRule);
-            ruleData.setObjectName("firewallrule");
-            fwResponses.add(ruleData);
+        if (result != null) {
+            for (FirewallRule fwRule : result.first()) {
+                FirewallResponse ruleData = _responseGenerator.createFirewallResponse(fwRule);
+                ruleData.setObjectName("firewallrule");
+                fwResponses.add(ruleData);
+            }
+            response.setResponses(fwResponses, result.second());
         }
-        response.setResponses(fwResponses, result.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

@@ -16,9 +16,10 @@
 // under the License.
 package com.cloud.vm;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Date;
 import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -36,6 +37,9 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
@@ -48,12 +52,13 @@ import com.cloud.vm.VirtualMachine.State;
 @Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.STRING, length = 32)
 public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, VirtualMachine.Event> {
+    private static final Logger s_logger = Logger.getLogger(VMInstanceVO.class);
     @Id
     @TableGenerator(name = "vm_instance_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "vm_instance_seq", allocationSize = 1)
     @Column(name = "id", updatable = false, nullable = false)
     protected long id;
 
-    @Column(name = "name", updatable = false, nullable = false, length = 255)
+    @Column(name = "name", nullable = false, length = 255)
     protected String hostName = null;
 
     @Encrypt
@@ -118,7 +123,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     private boolean limitCpuUse;
 
     @Column(name = "update_count", updatable = true, nullable = false)
-    protected long updated;    // This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
+    protected long updated; // This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
 
     @Column(name = GenericDao.CREATED_COLUMN)
     protected Date created;
@@ -136,6 +141,9 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name = "account_id")
     protected long accountId;
 
+    @Column(name = "user_id")
+    protected long userId;
+
     @Column(name = "service_offering_id")
     protected long serviceOfferingId;
 
@@ -150,8 +158,8 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     protected boolean dynamicallyScalable;
 
     /*
-        @Column(name="tags")
-        protected String tags;
+    @Column(name="tags")
+    protected String tags;
     */
 
     @Transient
@@ -181,29 +189,37 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     protected Long powerHostId;
 
     public VMInstanceVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,
-            long domainId, long accountId, boolean haEnabled) {
+                        long domainId, long accountId, long userId, boolean haEnabled) {
         this.id = id;
-        this.hostName = name != null ? name : this.uuid;
+        hostName = name != null ? name : uuid;
         if (vmTemplateId != null) {
-            this.templateId = vmTemplateId;
+            templateId = vmTemplateId;
         }
         this.instanceName = instanceName;
         this.type = type;
         this.guestOSId = guestOSId;
         this.haEnabled = haEnabled;
-        this.vncPassword = Long.toHexString(new Random().nextLong());
-        this.state = State.Stopped;
+        state = State.Stopped;
         this.accountId = accountId;
         this.domainId = domainId;
         this.serviceOfferingId = serviceOfferingId;
         this.hypervisorType = hypervisorType;
-        this.limitCpuUse = false;
+        this.userId = userId;
+        limitCpuUse = false;
+        try {
+            SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+            byte[] randomBytes = new byte[16];
+            random.nextBytes(randomBytes);
+            vncPassword = Base64.encodeBase64String(randomBytes);
+        } catch (NoSuchAlgorithmException e) {
+            s_logger.error("Unexpected exception in SecureRandom Algorithm selection ", e);
+        }
     }
 
     public VMInstanceVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,
-            long domainId, long accountId, boolean haEnabled, boolean limitResourceUse, Long diskOfferingId) {
-        this(id, serviceOfferingId, name, instanceName, type, vmTemplateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
-        this.limitCpuUse = limitResourceUse;
+                        long domainId, long accountId, long userId, boolean haEnabled, boolean limitResourceUse, Long diskOfferingId) {
+        this(id, serviceOfferingId, name, instanceName, type, vmTemplateId, hypervisorType, guestOSId, domainId, accountId, userId, haEnabled);
+        limitCpuUse = limitResourceUse;
         this.diskOfferingId = diskOfferingId;
     }
 
@@ -272,9 +288,18 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         return hostName;
     }
 
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
+    }
+
     @Override
     public String getInstanceName() {
         return instanceName;
+    }
+
+    // Be very careful to use this. This has to be unique for the vm and if changed should be done by root admin only.
+    public void setInstanceName(String instanceName) {
+        this.instanceName = instanceName;
     }
 
     @Override
@@ -320,11 +345,11 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     public Date getProxyAssignTime() {
-        return this.proxyAssignTime;
+        return proxyAssignTime;
     }
 
     public void setProxyAssignTime(Date time) {
-        this.proxyAssignTime = time;
+        proxyAssignTime = time;
     }
 
     @Override
@@ -380,7 +405,13 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         return haEnabled;
     }
 
+    //FIXME - Remove this and use isDisplay() instead
     public boolean isDisplayVm() {
+        return displayVm;
+    }
+
+    @Override
+    public boolean isDisplay() {
         return displayVm;
     }
 
@@ -407,7 +438,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         return podIdToDeployIn;
     }
 
-    public void setPodId(long podId) {
+    public void setPodIdToDeployIn(Long podId) {
         this.podIdToDeployIn = podId;
     }
 
@@ -432,7 +463,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     public String getReservationId() {
-        return this.reservationId;
+        return reservationId;
     }
 
     @Override
@@ -455,7 +486,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Override
     public String toString() {
         if (toString == null) {
-            toString = new StringBuilder("VM[").append(type.toString()).append("|").append(hostName).append("]").toString();
+            toString = new StringBuilder("VM[").append(type.toString()).append("|").append(getInstanceName()).append("]").toString();
         }
         return toString;
     }
@@ -496,7 +527,12 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     public Boolean isDynamicallyScalable() {
-        return this.dynamicallyScalable;
+        return dynamicallyScalable;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return VirtualMachine.class;
     }
 
     public VirtualMachine.PowerState getPowerState() {
@@ -530,5 +566,4 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     public void setPowerHostId(Long hostId) {
         powerHostId = hostId;
     }
-
 }

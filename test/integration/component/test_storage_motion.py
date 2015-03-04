@@ -20,9 +20,9 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 #Import System modules
 import time
@@ -89,13 +89,15 @@ class TestStorageMotion(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestStorageMotion, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cls.testClient = super(TestStorageMotion, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
 
         template = get_template(
                             cls.api_client,
@@ -148,7 +150,7 @@ class TestStorageMotion(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags = ["advanced", "basic", "multicluster", "storagemotion", "xenserver"])
+    @attr(tags=["advanced", "basic", "multicluster", "storagemotion", "xenserver"], required_hardware="true")
     def test_01_migrate_vm_with_volume(self):
         """Test migrate virtual machine with its volumes
         """
@@ -159,6 +161,8 @@ class TestStorageMotion(cloudstackTestCase):
         # 3. listVM command should return this VM.State of this VM
         #    should be "Running" and the host should be the host
         #    to which the VM was migrated to in a different cluster
+        if self.hypervisor.lower() in ["lxc"]:
+            self.skipTest("Migration across clusters is not supported on LXC")
 
         hosts = Host.listForMigration(
                           self.apiclient,
@@ -176,6 +180,7 @@ class TestStorageMotion(cloudstackTestCase):
 
         if hosts is None or len(hosts) == 0:
             self.skipTest("No valid hosts for storage motion. Skipping")
+
 
 
         host = hosts[0]
@@ -226,7 +231,7 @@ class TestStorageMotion(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "basic", "multipool", "storagemotion", "xenserver"])
+    @attr(tags=["advanced", "basic", "multipool", "storagemotion", "xenserver"], required_hardware="false")
     def test_02_migrate_volume(self):
         """Test migrate volume of a running vm
         """
@@ -236,6 +241,8 @@ class TestStorageMotion(cloudstackTestCase):
         #    storage pools should be present in the cluster.
         # 3. Migrate volume of the vm to another pool.
         # 4. Check volume is present in the new pool and is in Ready state.
+
+        # TODO: add test case for data volume migrate and handle it for LXC
 
         list_volumes_response = list_volumes(
                                     self.apiclient,

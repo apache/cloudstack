@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,86 +17,25 @@
 """ BVT tests for Templates ISO
 """
 #Import Local Modules
-import marvin
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.sshClient import SshClient
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.codes import FAILED
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.lib.utils import random_gen, cleanup_resources
+from marvin.lib.base import (Account,
+                             ServiceOffering,
+                             VirtualMachine,
+                             DiskOffering,
+                             Template,
+                             Volume,
+                             Zone)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template)
 from nose.plugins.attrib import attr
 import urllib
-from random import random
 #Import System modules
-import datetime
+import time
 
 _multiprocess_shared_ = True
-
-class Services:
-    """Test Templates Services
-    """
-
-    def __init__(self):
-        self.services = {
-                        "account": {
-                                    "email": "test@test.com",
-                                    "firstname": "Test",
-                                    "lastname": "User",
-                                    "username": "test",
-                                    # Random characters are appended for unique
-                                    # username
-                                    "password": "password",
-                         },
-                         "service_offering": {
-                                    "name": "Tiny Instance",
-                                    "displaytext": "Tiny Instance",
-                                    "cpunumber": 1,
-                                    "cpuspeed": 100,    # in MHz
-                                    "memory": 128,       # In MBs
-                        },
-                        "disk_offering": {
-                                    "displaytext": "Small",
-                                    "name": "Small",
-                                    "disksize": 1
-                        },
-                        "virtual_machine": {
-                                    "displayname": "testVM",
-                                    "hypervisor": 'XenServer',
-                                    "protocol": 'TCP',
-                                    "ssh_port": 22,
-                                    "username": "root",
-                                    "password": "password",
-                                    "privateport": 22,
-                                    "publicport": 22,
-                         },
-                        "volume": {
-                                "diskname": "Test Volume",
-                                 },
-                         "template_1": {
-                                "displaytext": "Cent OS Template",
-                                "name": "Cent OS Template",
-                                "ostype": "CentOS 5.3 (64-bit)",
-                         },
-                         "template_2": {
-                                "displaytext": "Public Template",
-                                "name": "Public template",
-                                "ostype": "CentOS 5.3 (64-bit)",
-                                "isfeatured": True,
-                                "ispublic": True,
-                                "isextractable": True,
-                                "mode": "HTTP_DOWNLOAD",
-                         },
-                        "templatefilter": 'self',
-                        "isfeatured": True,
-                        "ispublic": True,
-                        "isextractable": False,
-                        "bootable": True,
-                        "passwordenabled": True,
-                        "ostype": "CentOS 5.3 (64-bit)",
-                        "sleep": 30,
-                        "timeout": 10,
-                     }
-
 
 class TestCreateTemplate(cloudstackTestCase):
 
@@ -118,45 +57,55 @@ class TestCreateTemplate(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.services = Services().services
-        cls.api_client = super(TestCreateTemplate, cls).getClsTestClient().getApiClient()
+        testClient = super(TestCreateTemplate, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+        cls.hypervisor = testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['lxc']:
+            raise unittest.SkipTest("Template creation from root volume is not supported in LXC")
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
-        cls.disk_offering = DiskOffering.create(
-                                    cls.api_client,
+
+        cls._cleanup = []
+        try:
+            cls.disk_offering = DiskOffering.create(
+                                    cls.apiclient,
                                     cls.services["disk_offering"]
                                     )
-        template = get_template(
-                            cls.api_client,
+            cls._cleanup.append(cls.disk_offering)
+            template = get_template(
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
-        cls.services["template_1"]["ostypeid"] = template.ostypeid
-        cls.services["template_2"]["ostypeid"] = template.ostypeid
-        cls.services["ostypeid"] = template.ostypeid
+            if template == FAILED:
+                assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["volume"]["diskoffering"] = cls.disk_offering.id
-        cls.services["volume"]["zoneid"] = cls.zone.id
-        cls.services["sourcezoneid"] = cls.zone.id
+            cls.services["template"]["ostypeid"] = template.ostypeid
+            cls.services["template_2"]["ostypeid"] = template.ostypeid
+            cls.services["ostypeid"] = template.ostypeid
 
-        cls.account = Account.create(
-                            cls.api_client,
+            cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+            cls.services["volume"]["diskoffering"] = cls.disk_offering.id
+            cls.services["volume"]["zoneid"] = cls.zone.id
+            cls.services["sourcezoneid"] = cls.zone.id
+            cls.account = Account.create(
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-        cls.services["account"] = cls.account.name
-
-        cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
+            cls._cleanup.append(cls.account)
+            cls.service_offering = ServiceOffering.create(
+                                            cls.apiclient,
+                                            cls.services["service_offerings"]
                                             )
-        #create virtual machine
-        cls.virtual_machine = VirtualMachine.create(
-                                    cls.api_client,
+            cls._cleanup.append(cls.service_offering)
+            #create virtual machine
+            cls.virtual_machine = VirtualMachine.create(
+                                    cls.apiclient,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.name,
@@ -164,62 +113,35 @@ class TestCreateTemplate(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                     )
+            #Stop virtual machine
+            cls.virtual_machine.stop(cls.apiclient)
 
-        #Stop virtual machine
-        cls.virtual_machine.stop(cls.api_client)
-
-        # Poll listVM to ensure VM is stopped properly
-        timeout = cls.services["timeout"]
-        while True:
-            time.sleep(cls.services["sleep"])
-
-            # Ensure that VM is in stopped state
-            list_vm_response = list_virtual_machines(
-                                            cls.api_client,
-                                            id=cls.virtual_machine.id
-                                            )
-
-            if isinstance(list_vm_response, list):
-
-                vm = list_vm_response[0]
-                if vm.state == 'Stopped':
-                    break
-
-            if timeout == 0:
-                    raise Exception(
-                        "Failed to stop VM (ID: %s) in change service offering" %
-                                                                        vm.id)
-
-            timeout = timeout - 1
-
-        list_volume = list_volumes(
-                                   cls.api_client,
+            list_volume = Volume.list(
+                                   cls.apiclient,
                                    virtualmachineid=cls.virtual_machine.id,
                                    type='ROOT',
                                    listall=True
                                    )
 
-        cls.volume = list_volume[0]
-        cls._cleanup = [
-                        cls.account,
-                        cls.service_offering,
-                        cls.disk_offering,
-                        ]
+            cls.volume = list_volume[0]
+        except Exception as e:
+            cls.tearDownClass()
+            raise unittest.SkipTest("Exception in setUpClass: %s" % e)
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = super(TestCreateTemplate, cls).getClsTestClient().getApiClient()
+            cls.apiclient = super(TestCreateTemplate, cls).getClsTestClient().getApiClient()
             #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke"])
+    @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_01_create_template(self):
         """Test create public & private template
         """
@@ -233,7 +155,7 @@ class TestCreateTemplate(cloudstackTestCase):
         #Create template from Virtual machine and Volume ID
         template = Template.create(
                                 self.apiclient,
-                                self.services["template_1"],
+                                self.services["template"],
                                 self.volume.id,
                                 account=self.account.name,
                                 domainid=self.account.domainid
@@ -242,7 +164,7 @@ class TestCreateTemplate(cloudstackTestCase):
 
         self.debug("Created template with ID: %s" % template.id)
 
-        list_template_response = list_templates(
+        list_template_response = Template.list(
                                     self.apiclient,
                                     templatefilter=\
                                     self.services["templatefilter"],
@@ -264,18 +186,18 @@ class TestCreateTemplate(cloudstackTestCase):
 
         self.assertEqual(
                             template_response.displaytext,
-                            self.services["template_1"]["displaytext"],
+                            self.services["template"]["displaytext"],
                             "Check display text of newly created template"
                         )
         name = template_response.name
         self.assertEqual(
-                            name.count(self.services["template_1"]["name"]),
+                            name.count(self.services["template"]["name"]),
                             1,
                             "Check name of newly created template"
                         )
         self.assertEqual(
                             template_response.ostypeid,
-                            self.services["template_1"]["ostypeid"],
+                            self.services["template"]["ostypeid"],
                             "Check osTypeID of newly created template"
                         )
         return
@@ -286,60 +208,61 @@ class TestTemplates(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.services = Services().services
-        cls.api_client = super(TestTemplates, cls).getClsTestClient().getApiClient()
+        testClient = super(TestTemplates, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+        cls.hypervisor = testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['lxc']:
+            raise unittest.SkipTest("Template creation from root volume is not supported in LXC")
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         #populate second zone id for iso copy
-        cmd = listZones.listZonesCmd()
-        cls.zones = cls.api_client.listZones(cmd)
+        cls.zones = Zone.list(cls.apiclient)
         if not isinstance(cls.zones, list):
             raise Exception("Failed to find zones.")
 
         cls.disk_offering = DiskOffering.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["disk_offering"]
                                     )
         template = get_template(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
+        if template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["volume"]["diskoffering"] = cls.disk_offering.id
         cls.services["volume"]["zoneid"] = cls.zone.id
         cls.services["template_2"]["zoneid"] = cls.zone.id
         cls.services["sourcezoneid"] = cls.zone.id
 
-        cls.services["template_1"]["ostypeid"] = template.ostypeid
+        cls.services["template"]["ostypeid"] = template.ostypeid
         cls.services["template_2"]["ostypeid"] = template.ostypeid
         cls.services["ostypeid"] = template.ostypeid
-
         cls.account = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             admin=True,
                             domainid=cls.domain.id
                             )
-
         cls.user = Account.create(
-                            cls.api_client,
+                            cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
-
-        cls.services["account"] = cls.account.name
-
         cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
+                                            cls.apiclient,
+                                            cls.services["service_offerings"]
                                         )
         #create virtual machine
         cls.virtual_machine = VirtualMachine.create(
-                                    cls.api_client,
+                                    cls.apiclient,
                                     cls.services["virtual_machine"],
                                     templateid=template.id,
                                     accountid=cls.account.name,
@@ -348,34 +271,10 @@ class TestTemplates(cloudstackTestCase):
                                     mode=cls.services["mode"]
                                     )
         #Stop virtual machine
-        cls.virtual_machine.stop(cls.api_client)
+        cls.virtual_machine.stop(cls.apiclient)
 
-        # Poll listVM to ensure VM is stopped properly
-        timeout = cls.services["timeout"]
-        while True:
-            time.sleep(cls.services["sleep"])
-
-            # Ensure that VM is in stopped state
-            list_vm_response = list_virtual_machines(
-                                            cls.api_client,
-                                            id=cls.virtual_machine.id
-                                            )
-
-            if isinstance(list_vm_response, list):
-
-                vm = list_vm_response[0]
-                if vm.state == 'Stopped':
-                    break
-
-            if timeout == 0:
-                    raise Exception(
-                        "Failed to stop VM (ID: %s) in change service offering" %
-                                                                        vm.id)
-
-            timeout = timeout - 1
-
-        list_volume = list_volumes(
-                                   cls.api_client,
+        list_volume = Volume.list(
+                                   cls.apiclient,
                                    virtualmachineid=cls.virtual_machine.id,
                                    type='ROOT',
                                    listall=True
@@ -384,19 +283,19 @@ class TestTemplates(cloudstackTestCase):
             cls.volume = list_volume[0]
         except Exception as e:
             raise Exception(
-                "Exception: Unable to find root volume foe VM: %s" %
-                                                    cls.virtual_machine.id)
+                "Exception: Unable to find root volume foe VM: %s - %s" %
+                 (cls.virtual_machine.id, e))
 
         #Create templates for Edit, Delete & update permissions testcases
         cls.template_1 = Template.create(
-                                         cls.api_client,
-                                         cls.services["template_1"],
+                                         cls.apiclient,
+                                         cls.services["template"],
                                          cls.volume.id,
                                          account=cls.account.name,
                                          domainid=cls.account.domainid
                                          )
         cls.template_2 = Template.create(
-                                         cls.api_client,
+                                         cls.apiclient,
                                          cls.services["template_2"],
                                          cls.volume.id,
                                          account=cls.account.name,
@@ -412,9 +311,9 @@ class TestTemplates(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = super(TestTemplates, cls).getClsTestClient().getApiClient()
+            cls.apiclient = super(TestTemplates, cls).getClsTestClient().getApiClient()
             #Cleanup created resources such as templates and VMs
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -438,7 +337,7 @@ class TestTemplates(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_02_edit_template(self):
         """Test Edit template
         """
@@ -450,25 +349,21 @@ class TestTemplates(cloudstackTestCase):
         new_displayText = random_gen()
         new_name = random_gen()
 
-        cmd = updateTemplate.updateTemplateCmd()
-        # Update template attributes
-        cmd.id = self.template_1.id
-        cmd.displaytext = new_displayText
-        cmd.name = new_name
-        cmd.bootable = self.services["bootable"]
-        cmd.passwordenabled = self.services["passwordenabled"]
-
-        self.apiclient.updateTemplate(cmd)
+        self.template_1.update(self.apiclient,
+                               displaytext = new_displayText,
+                               name = new_name,
+                               bootable = self.services["bootable"],
+                               passwordenabled = self.services["passwordenabled"])
 
         self.debug("Edited template with new name: %s" % new_name)
-        
+
         # Sleep to ensure update reflected across all the calls
         time.sleep(self.services["sleep"])
-        
+
         timeout = self.services["timeout"]
         while True:
             # Verify template response for updated attributes
-            list_template_response = list_templates(
+            list_template_response = Template.list(
                                     self.apiclient,
                                     templatefilter=\
                                     self.services["templatefilter"],
@@ -483,7 +378,7 @@ class TestTemplates(cloudstackTestCase):
 
             time.sleep(10)
             timeout = timeout -1
-            
+
         self.assertEqual(
                             isinstance(list_template_response, list),
                             True,
@@ -495,7 +390,7 @@ class TestTemplates(cloudstackTestCase):
                             "Check template available in List Templates"
                         )
         template_response = list_template_response[0]
-        
+
         self.debug("New Name: %s" % new_displayText)
         self.debug("Name in Template response: %s"
                                 % template_response.displaytext)
@@ -521,7 +416,7 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_03_delete_template(self):
         """Test delete template
         """
@@ -534,7 +429,7 @@ class TestTemplates(cloudstackTestCase):
 
         self.template_1.delete(self.apiclient)
 
-        list_template_response = list_templates(
+        list_template_response = Template.list(
                                     self.apiclient,
                                     templatefilter=\
                                     self.services["templatefilter"],
@@ -550,7 +445,7 @@ class TestTemplates(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_04_extract_template(self):
         "Test for extract template"
 
@@ -561,19 +456,17 @@ class TestTemplates(cloudstackTestCase):
         # 3 .ListTemplates should not display the system templates
 
         self.debug("Extracting template with ID: %s" % self.template_2.id)
-
-        cmd = extractTemplate.extractTemplateCmd()
-        cmd.id = self.template_2.id
-        cmd.mode = self.services["template_2"]["mode"]
-        cmd.zoneid = self.zone.id
-        list_extract_response = self.apiclient.extractTemplate(cmd)
+        list_extract_response = Template.extract(self.apiclient,
+                                                 id=self.template_2.id,
+                                                 mode= self.services["template_2"]["mode"],
+                                                 zoneid=self.zone.id)
 
         try:
             # Format URL to ASCII to retrieve response code
             formatted_url = urllib.unquote_plus(list_extract_response.url)
             url_response = urllib.urlopen(formatted_url)
             response_code = url_response.getcode()
-        
+
         except Exception:
             self.fail(
                 "Extract Template Failed with invalid URL %s (template id: %s)" \
@@ -601,7 +494,7 @@ class TestTemplates(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_05_template_permissions(self):
         """Update & Test for template permissions"""
 
@@ -613,15 +506,12 @@ class TestTemplates(cloudstackTestCase):
 
         self.debug("Updating Template permissions ID:%s" % self.template_2.id)
 
-        cmd = updateTemplatePermissions.updateTemplatePermissionsCmd()
-        # Update template permissions
-        cmd.id = self.template_2.id
-        cmd.isfeatured = self.services["isfeatured"]
-        cmd.ispublic = self.services["ispublic"]
-        cmd.isextractable = self.services["isextractable"]
-        self.apiclient.updateTemplatePermissions(cmd)
+        self.template_2.updatePermissions(self.apiclient,
+                                          isfeatured = self.services["isfeatured"],
+                                          ispublic = self.services["ispublic"],
+                                          isextractable = self.services["isextractable"])
 
-        list_template_response = list_templates(
+        list_template_response = Template.list(
                                     self.apiclient,
                                     templatefilter='featured',
                                     id=self.template_2.id,
@@ -654,7 +544,7 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "multizone"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "multizone"], required_hardware="true")
     def test_06_copy_template(self):
         """Test for copy template from one zone to another"""
 
@@ -671,14 +561,13 @@ class TestTemplates(cloudstackTestCase):
                                             self.services["sourcezoneid"],
                                             self.services["destzoneid"]
                                             ))
-        cmd = copyTemplate.copyTemplateCmd()
-        cmd.id = self.template_2.id
-        cmd.destzoneid = self.services["destzoneid"]
-        cmd.sourcezoneid = self.services["sourcezoneid"]
-        self.apiclient.copyTemplate(cmd)
+
+        self.template_2.copy(self.apiclient,
+                             sourcezoneid=self.services["sourcezoneid"],
+                             destzoneid=self.services["destzoneid"])
 
         # Verify template is copied to another zone using ListTemplates
-        list_template_response = list_templates(
+        list_template_response = Template.list(
                                     self.apiclient,
                                     templatefilter=\
                                     self.services["templatefilter"],
@@ -712,7 +601,7 @@ class TestTemplates(cloudstackTestCase):
         timeout = self.services["timeout"]
         while True:
             time.sleep(self.services["sleep"])
-            list_template_response = list_templates(
+            list_template_response = Template.list(
                                         self.apiclient,
                                         templatefilter=\
                                         self.services["templatefilter"],
@@ -729,7 +618,7 @@ class TestTemplates(cloudstackTestCase):
                                 0,
                                 "Check template extracted in List Templates"
                             )
-    
+
             template_response = list_template_response[0]
             if template_response.isready == True:
                 break
@@ -739,20 +628,17 @@ class TestTemplates(cloudstackTestCase):
                         "Failed to download copied template(ID: %s)" % template_response.id)
 
             timeout = timeout - 1
-        cmd = deleteTemplate.deleteTemplateCmd()
-        cmd.id = template_response.id
-        cmd.zoneid = self.services["destzoneid"]
-        self.apiclient.deleteTemplate(cmd)
+        self.template_2.delete(self.apiclient, zoneid=self.services["destzoneid"])
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_07_list_public_templates(self):
         """Test only public templates are visible to normal user"""
 
         # Validate the following
         # 1. ListTemplates should show only 'public' templates for normal user
 
-        list_template_response = list_templates(
+        list_template_response = Template.list(
                                     self.apiclient,
                                     templatefilter='featured',
                                     account=self.user.name,
@@ -777,14 +663,14 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_08_list_system_templates(self):
         """Test System templates are not visible to normal user"""
 
         # Validate the following
         # 1. ListTemplates should not show 'SYSTEM' templates for normal user
 
-        list_template_response = list_templates(
+        list_template_response = Template.list(
                                     self.apiclient,
                                     templatefilter='featured',
                                     account=self.user.name,

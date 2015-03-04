@@ -80,6 +80,9 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
         String console_url = queryMap.get("consoleurl");
         String console_host_session = queryMap.get("sessionref");
         String vm_locale = queryMap.get("locale");
+        String hypervHost = queryMap.get("hypervHost");
+        String username = queryMap.get("username");
+        String password = queryMap.get("password");
 
         if (tag == null)
             tag = "";
@@ -128,6 +131,9 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
             param.setClientTunnelUrl(console_url);
             param.setClientTunnelSession(console_host_session);
             param.setLocale(vm_locale);
+            param.setHypervHost(hypervHost);
+            param.setUsername(username);
+            param.setPassword(password);
 
             viewer = ConsoleProxy.getAjaxVncViewer(param, ajaxSessionIdStr);
         } catch (Exception e) {

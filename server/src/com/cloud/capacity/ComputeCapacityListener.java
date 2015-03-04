@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.capacity;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
@@ -31,7 +29,6 @@ import com.cloud.host.Host;
 import com.cloud.host.Status;
 
 public class ComputeCapacityListener implements Listener {
-    private static final Logger s_logger = Logger.getLogger(ComputeCapacityListener.class);
     CapacityDao _capacityDao;
     CapacityManager _capacityMgr;
     float _cpuOverProvisioningFactor = 1.0f;

@@ -26,15 +26,19 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang.StringUtils;
 
 import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
 
-@APICommand(name = "createAccount", description = "Creates an account", responseObject = AccountResponse.class)
+
+@APICommand(name = "createAccount", description = "Creates an account", responseObject = AccountResponse.class, entityType = {Account.class},
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = true)
 public class CreateAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAccountCmd.class.getName());
 
@@ -171,14 +175,17 @@ public class CreateAccountCmd extends BaseCmd {
 
     @Override
     public void execute() {
+        if (StringUtils.isEmpty(getPassword())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Empty passwords are not allowed");
+        }
         CallContext.current().setEventDetails("Account Name: " + getAccountName() + ", Domain Id:" + getDomainId());
         UserAccount userAccount =
             _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(),
                 getDomainId(), getNetworkDomain(), getDetails(), getAccountUUID(), getUserUUID());
         if (userAccount != null) {
-            AccountResponse response = _responseGenerator.createUserAccountResponse(userAccount);
+            AccountResponse response = _responseGenerator.createUserAccountResponse(ResponseView.Full, userAccount);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a user account");
         }

@@ -149,7 +149,12 @@ public class BaseElement implements Element {
      */
     @Override
     public void poll(boolean block) {
-        for (DataSource source : inputPads.values()) {
+        // inputPads can be changed in handleData (see switchOff in OneTimeSwitch)
+        // as this results in an undefined response from the iterator on inputPads
+        // use a copy of the map to iterate over.
+        Map<String, DataSource> pads = new HashMap<String, DataSource>();
+        pads.putAll(inputPads);
+        for (DataSource source : pads.values()) {
             Link link = (Link)source;
             ByteBuffer buf = link.pull(block);
 

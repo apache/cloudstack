@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.user.vmgroup;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -29,7 +31,8 @@ import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import com.cloud.user.Account;
 import com.cloud.vm.InstanceGroup;
 
-@APICommand(name = "updateInstanceGroup", description = "Updates a vm group", responseObject = InstanceGroupResponse.class)
+@APICommand(name = "updateInstanceGroup", description = "Updates a vm group", responseObject = InstanceGroupResponse.class, entityType = {InstanceGroup.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateVMGroupCmd extends BaseCmd {
 
     private static final String s_name = "updateinstancegroupresponse";
@@ -38,7 +41,7 @@ public class UpdateVMGroupCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, required = true, description = "Instance group ID")
     private Long id;
 
@@ -82,7 +85,7 @@ public class UpdateVMGroupCmd extends BaseCmd {
         if (result != null) {
             InstanceGroupResponse response = _responseGenerator.createInstanceGroupResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update vm instance group");
         }

@@ -43,15 +43,16 @@ public class FirewallRuleDetailVO implements ResourceDetail {
     private String value;
 
     @Column(name = "display")
-    private boolean display;
+    private boolean display = true;
 
     public FirewallRuleDetailVO() {
     }
 
-    public FirewallRuleDetailVO(long id, String name, String value) {
+    public FirewallRuleDetailVO(long id, String name, String value, boolean display) {
         this.resourceId = id;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

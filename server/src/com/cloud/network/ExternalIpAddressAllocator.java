@@ -40,7 +40,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Local(value = IpAddrAllocator.class)
 public class ExternalIpAddressAllocator extends AdapterBase implements IpAddrAllocator {
     private static final Logger s_logger = Logger.getLogger(ExternalIpAddressAllocator.class);
-    String _name;
     @Inject
     ConfigurationDao _configDao = null;
     @Inject
@@ -52,10 +51,10 @@ public class ExternalIpAddressAllocator extends AdapterBase implements IpAddrAll
 
     @Override
     public IpAddr getPrivateIpAddress(String macAddr, long dcId, long podId) {
-        if (_externalIpAllocatorUrl == null || this._externalIpAllocatorUrl.equalsIgnoreCase("")) {
+        if (_externalIpAllocatorUrl == null || _externalIpAllocatorUrl.equalsIgnoreCase("")) {
             return new IpAddr();
         }
-        String urlString = this._externalIpAllocatorUrl + "?command=getIpAddr&mac=" + macAddr + "&dc=" + dcId + "&pod=" + podId;
+        String urlString = _externalIpAllocatorUrl + "?command=getIpAddr&mac=" + macAddr + "&dc=" + dcId + "&pod=" + podId;
         s_logger.debug("getIP:" + urlString);
 
         BufferedReader in = null;
@@ -101,11 +100,11 @@ public class ExternalIpAddressAllocator extends AdapterBase implements IpAddrAll
     @Override
     public boolean releasePrivateIpAddress(String ip, long dcId, long podId) {
         /*TODO: call API to release the ip address from external DHCP server*/
-        if (_externalIpAllocatorUrl == null || this._externalIpAllocatorUrl.equalsIgnoreCase("")) {
+        if (_externalIpAllocatorUrl == null || _externalIpAllocatorUrl.equalsIgnoreCase("")) {
             return false;
         }
 
-        String urlString = this._externalIpAllocatorUrl + "?command=releaseIpAddr&ip=" + ip + "&dc=" + dcId + "&pod=" + podId;
+        String urlString = _externalIpAllocatorUrl + "?command=releaseIpAddr&ip=" + ip + "&dc=" + dcId + "&pod=" + podId;
 
         s_logger.debug("releaseIP:" + urlString);
         BufferedReader in = null;

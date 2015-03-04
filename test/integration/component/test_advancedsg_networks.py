@@ -19,7 +19,7 @@
 """
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from ddt import ddt, data
-from marvin.integration.lib.base import (Zone,
+from marvin.lib.base import (Zone,
                                          ServiceOffering,
                                          Account,
                                          NetworkOffering,
@@ -29,39 +29,46 @@ from marvin.integration.lib.base import (Zone,
                                          VpcOffering,
                                          VPC,
                                          SecurityGroup,
-                                         Host)
+                                         Host,
+                                         )
 
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            get_free_vlan,
                                            list_virtual_machines,
-                                           wait_for_cleanup)
+                                           wait_for_cleanup,
+                                           )
 
-from marvin.integration.lib.utils import (cleanup_resources,
+from marvin.lib.utils import (cleanup_resources,
                                           random_gen,
-                                          validateList)
+                                          validateList,)
 from marvin.cloudstackAPI import (authorizeSecurityGroupIngress,
                                   revokeSecurityGroupIngress,
-                                  deleteSecurityGroup)
+                                  deleteSecurityGroup,
+                                  listCapacity)
+from marvin import deployDataCenter
 from nose.plugins.attrib import attr
-from marvin.codes import PASS
+from marvin.codes import PASS,FAIL,FAILED
+from netaddr import iter_iprange
 import time
 import sys
 import random
+import json
+import os
+from platform import system
+
 
 class TestCreateZoneSG(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestCreateZoneSG,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestCreateZoneSG, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
-        # Fill services from the external config file
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
-
+        cls.services = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
 
         cls._cleanup = []
         return
@@ -154,14 +161,13 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestNetworksInAdvancedSG,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
+        cls.testClient = super(TestNetworksInAdvancedSG, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
-
+        cls.services = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(cls.api_client, cls.zone.id,
                                     cls.services["ostype"])
 
@@ -1102,14 +1108,13 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestNetworksInAdvancedSG_VmOperations,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.testClient = super(TestNetworksInAdvancedSG_VmOperations, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -1255,6 +1260,59 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
 
         return
 
+    def dump_config_deploy_DC(self):
+        configLines = []
+        #Read zone and ip range information from config file
+        file = self.services["test_34_DeployVM_in_SecondSGNetwork"]["config"]
+        with open(file, 'r') as fp:
+            for line in fp:
+                ws = line.strip()
+                if not ws.startswith("#"):
+                    configLines.append(ws)
+        config = json.loads("\n".join(configLines))
+        config['zones'][0]['name'] = self.services["test_34_DeployVM_in_SecondSGNetwork"]["zone"]
+        config['zones'][0]['ipranges'][0]['startip'] = \
+            self.services["test_34_DeployVM_in_SecondSGNetwork"]["ipranges"][0]["startip"]
+        config['zones'][0]['ipranges'][0]['endip'] = \
+            self.services["test_34_DeployVM_in_SecondSGNetwork"]["ipranges"][0]["endip"]
+        config['zones'][0]['ipranges'][0]['vlan'] = \
+            self.services["test_34_DeployVM_in_SecondSGNetwork"]["ipranges"][0]["vlan"]
+        config['zones'][0]['ipranges'][0]['gateway'] = \
+            self.services["test_34_DeployVM_in_SecondSGNetwork"]["ipranges"][0]["gateway"]
+        config["dbSvr"]["dbSvr"] = self.services["test_34_DeployVM_in_SecondSGNetwork"]["dbSvr"]["dbSvr"]
+        config["dbSvr"]["passwd"] = self.services["test_34_DeployVM_in_SecondSGNetwork"]["dbSvr"]["passwd"]
+        config["dbSvr"]["db"] = self.services["test_34_DeployVM_in_SecondSGNetwork"]["dbSvr"]["db"]
+        config["dbSvr"]["port"] = self.services["test_34_DeployVM_in_SecondSGNetwork"]["dbSvr"]["port"]
+        config["dbSvr"]["user"] = self.services["test_34_DeployVM_in_SecondSGNetwork"]["dbSvr"]["user"]
+        config['mgtSvr'][0]['mgtSvrIp'] = self.services["test_34_DeployVM_in_SecondSGNetwork"]["mgtSvr"][0]["mgtSvrIp"]
+        config['mgtSvr'][0]["passwd"] = self.services["test_34_DeployVM_in_SecondSGNetwork"]["mgtSvr"][0]["passwd"]
+        config['mgtSvr'][0]["user"] = self.services["test_34_DeployVM_in_SecondSGNetwork"]["mgtSvr"][0]["user"]
+        config['mgtSvr'][0]["port"] = self.services["test_34_DeployVM_in_SecondSGNetwork"]["mgtSvr"][0]["port"]
+        config['zones'][0]['pods'][0]['clusters'][0]['primaryStorages'][0]['url'] = \
+            "nfs://10.147.28.6:/export/home/sandbox/primary_"+str(random.randrange(0,1000,3))
+        config['zones'][0]['pods'][0]['clusters'][0]['primaryStorages'][0]['name'] = \
+            "PS_"+str(random.randrange(0,1000,3))
+        config['zones'][0]['secondaryStorages'][0]['url'] = \
+            "nfs://10.147.28.6:/export/home/sandbox/sstor_"+str(random.randrange(0,1000,3))
+        if system().lower() != 'windows':
+            config_file = "/tmp/advsg.cfg"
+            with open(config_file, 'w+') as fp:
+                fp.write(json.dump(config, indent=4))
+            cfg_file = file.split('/')[-1]
+            file2 = file.replace("/setup/dev/advanced/"+cfg_file, "")
+            file2 = file2+"/tools/marvin/marvin/deployDataCenter.py"
+        else :
+            config_file = "D:\\advsg.cfg"
+            with open(config_file, 'w+') as fp:
+                fp.write(json.dumps(config, indent=4))
+            cfg_file = file.split('\\')[-1]
+            file2 = file.replace("\setup\dev\\"+cfg_file, "")
+            file2 = file2+"\\tools\marvin\marvin\deployDataCenter.py"
+        #Run deployDataCenter with new config file stored in \tmp
+        self.debug("Executing deployAndRun")
+        status = os.system("%s -i %s" %(file2, config_file))
+        return status
+
     @attr(tags = ["advancedsg"])
     def test__16_AccountSpecificNwAccess(self):
         """ Test account specific network access of users"""
@@ -1311,11 +1369,11 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
                                                   zoneid=self.zone.id)
 
         # Creaint user API client of account 1
-        api_client_account_1 = self.testClient.createUserApiClient(UserName=account_1.name,
+        api_client_account_1 = self.testClient.getUserApiClient(UserName=account_1.name,
                                                          DomainName=account_1.domain)
 
         # Creaint user API client of account 2
-        api_client_account_2 = self.testClient.createUserApiClient(UserName=account_2.name,
+        api_client_account_2 = self.testClient.getUserApiClient(UserName=account_2.name,
                                                          DomainName=account_2.domain)
 
         self.debug("Creating virtual machine in account %s with account specific shared network %s" %
@@ -1423,11 +1481,11 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         self.cleanup_networks.append(shared_network_domain_2)
 
         # Creaint user API client of account 1
-        api_client_domain_1 = self.testClient.createUserApiClient(UserName=account_1.name,
+        api_client_domain_1 = self.testClient.getUserApiClient(UserName=account_1.name,
                                                          DomainName=account_1.domain)
 
         # Creaint user API client of account 2
-        api_client_domain_2 = self.testClient.createUserApiClient(UserName=account_2.name,
+        api_client_domain_2 = self.testClient.getUserApiClient(UserName=account_2.name,
                                                          DomainName=account_2.domain)
 
         self.debug("Creating virtual machine in domain %s with domain wide shared network %s" %
@@ -1915,7 +1973,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
             self.debug("SSH into VM: %s" % vm.nic[0].ipaddress)
             vm.get_ssh_client(ipaddress=vm.nic[0].ipaddress)
             self.debug("SSH to VM successful, proceeding for %s operation" % value)
-            vm.delete(self.api_client)
+            vm.delete(self.api_client, expunge=False)
             if value == "recover":
                 vm.recover(self.api_client)
                 vm.start(self.api_client)
@@ -2024,6 +2082,9 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         #  1. VM migration should be successful
 
         #Create admin account
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
 
         hosts = Host.list(self.api_client, zoneid=self.zone.id)
         self.assertEqual(validateList(hosts)[0], PASS, "hosts list validation failed, list is %s" % hosts)
@@ -2082,18 +2143,142 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         self.assertEqual(vm_list[0].hostid, hosts_to_migrate[0].id, "VM host id does not reflect the migration")
         return
 
+    @attr(tags=["advancedsg"], required_hardware="false")
+    def test_34_DeployVM_in_SecondSGNetwork(self):
+        """
+        @Desc: VM Cannot deploy to second network in advanced SG network
+        @step1:Create shared SG network1
+        @step2: Consume all ip addresses in network1
+        @step3: Create shared SG network2
+        @step4: Deploy vm without specifying the network id
+        @step5: Verify that vm deployment should pick network2 and should not fail by picking network1
+        """
+        #Deploy data center with custom data
+        status = self.dump_config_deploy_DC()
+        if status == 1:
+            self.fail("Deploy DataCenter failed.")
+        zone_list = Zone.list(
+            self.api_client,
+            name=self.services["test_34_DeployVM_in_SecondSGNetwork"]["zone"]
+        )
+        status = validateList(zone_list)
+        self.assertEquals(status[0], PASS, "Failed to list the zones")
+        count = 0
+        """
+        In simulator environment default guest os template should be in ready state immediately after the ssvm is up.
+        In worst case test would wait for 100sec for the template to get ready else it would fail.
+        """
+        while (count < 10):
+            time.sleep(10)
+            template = get_template(
+                self.api_client,
+                zone_list[0].id
+                )
+            if template != FAILED and str(template.isready).lower() == 'true':
+                break
+            else:
+                count=count+1
+                if count == 10:
+                    self.fail("Template is not in ready state even after 100sec. something wrong with the SSVM")
+        self.debug("Creating virtual machine in default shared network to consume all IPs")
+        vm_1 = VirtualMachine.create(
+            self.api_client,
+            self.services["virtual_machine"],
+            templateid=template.id,
+            zoneid=zone_list[0].id,
+            serviceofferingid=self.service_offering.id
+        )
+        self.assertIsNotNone(vm_1,"Failed to deploy vm in default shared network")
+        self.cleanup_vms.append(vm_1)
+        #verify that all the IPs are consumed in the default shared network
+        cmd = listCapacity.listCapacityCmd()
+        cmd.type=8
+        cmd.zoneid = zone_list[0].id
+        cmd.fetchlatest='true'
+        count = 0
+        """
+        Created zone with only 4 guest IP addresses so limiting the loop count to 4
+        """
+        while count < 5:
+            listCapacityRes = self.api_client.listCapacity(cmd)
+            self.assertEqual(validateList(listCapacityRes)[0],PASS,"listCapacity returned invalid list")
+            percentused = listCapacityRes[0].percentused
+            if percentused == '100':
+                break
+            self.debug("Creating virtual machine in default shared network to consume all IPs")
+            vm = VirtualMachine.create(
+                self.api_client,
+                self.services["virtual_machine"],
+                templateid=template.id,
+                zoneid=zone_list[0].id,
+                serviceofferingid=self.service_offering.id
+            )
+            self.assertIsNotNone(vm,"Failed to deploy vm in default shared network")
+            self.cleanup_vms.append(vm)
+            count = count+1
+            if count == 5:
+                self.fail("IPs are not getting consumed. Please check the setup")
+        #Create another SG enabled shared network after consuming all IPs
+        self.services["shared_network_sg"]["acltype"] = "domain"
+        self.services["shared_network_sg"]["networkofferingid"] = self.shared_network_offering_sg.id
+        physical_network, vlan = get_free_vlan(self.api_client, zone_list[0].id)
+        #create network using the shared network offering created
+        self.services["shared_network_sg"]["vlan"] = vlan
+        self.services["shared_network_sg"]["physicalnetworkid"] = physical_network.id
+        nwIPs = 3
+        self.setSharedNetworkParams("shared_network_sg", range=nwIPs)
+        self.debug("Creating shared sg network1 with vlan %s" % vlan)
+        shared_network = Network.create(
+            self.api_client,
+            self.services["shared_network_sg"],
+            networkofferingid=self.shared_network_offering_sg.id,
+            zoneid=zone_list[0].id
+        )
+        self.assertIsNotNone(shared_network,"shared SG network1 creation failed")
+        self.cleanup_networks.append(shared_network)
+        # Deploying 1 VM will exhaust the IP range because we are passing range as 2, and one of the IPs
+        # already gets consumed by the virtual router of the shared network
+        self.debug("Deploying vm2 without passing network id after consuming all IPs from default shared nw")
+        try:
+            vm_2 = VirtualMachine.create(
+                self.api_client,
+                self.services["virtual_machine"],
+                templateid=template.id,
+                zoneid=zone_list[0].id,
+                serviceofferingid=self.service_offering.id
+            )
+            vm2_res = VirtualMachine.list(
+                self.api_client,
+                id=vm_2.id
+            )
+            self.assertEqual(validateList(vm2_res)[0],PASS,"Failed to list vms in new network")
+            vm_ip = vm2_res[0].nic[0].ipaddress
+            ips_in_new_network = []
+            ip_gen = iter_iprange(
+                self.services["shared_network_sg"]["startip"],
+                self.services["shared_network_sg"]["endip"]
+            )
+            #construct ip list using start and end ips in the network
+            for i in range(0,nwIPs):
+                ips_in_new_network.append(str(ip_gen.next()))
+            if vm_ip not in ips_in_new_network:
+                self.fail("vm did not get the ip from new SG enabled shared network")
+            self.cleanup_vms.append(vm_2)
+        except Exception as e:
+            self.fail("Failed to deploy vm with two advanced sg networks %s" % e)
+        return
+
 class TestSecurityGroups_BasicSanity(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestSecurityGroups_BasicSanity,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.testClient = super(TestSecurityGroups_BasicSanity, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -2548,14 +2733,13 @@ class TestSharedNetworkOperations(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestSharedNetworkOperations,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.testClient = super(TestSharedNetworkOperations, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -2815,14 +2999,13 @@ class TestAccountBasedIngressRules(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cloudstackTestClient = super(TestAccountBasedIngressRules,cls).getClsTestClient()
-        cls.api_client = cloudstackTestClient.getApiClient()
-
-        cls.services = cloudstackTestClient.getConfigParser().parsedDict
+        cls.testClient = super(TestAccountBasedIngressRules, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id

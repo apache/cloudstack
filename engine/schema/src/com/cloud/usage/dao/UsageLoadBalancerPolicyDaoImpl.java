@@ -18,6 +18,7 @@ package com.cloud.usage.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.TimeZone;
 
 import javax.ejb.Local;
 
+import com.cloud.exception.CloudException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -73,20 +75,24 @@ public class UsageLoadBalancerPolicyDaoImpl extends GenericDaoBase<UsageLoadBala
     @Override
     public void update(UsageLoadBalancerPolicyVO usage) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        PreparedStatement pstmt = null;
         try {
             txn.start();
             if (usage.getDeleted() != null) {
-                pstmt = txn.prepareAutoCloseStatement(UPDATE_DELETED);
-                pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getDeleted()));
-                pstmt.setLong(2, usage.getAccountId());
-                pstmt.setLong(3, usage.getId());
+                try(PreparedStatement pstmt = txn.prepareStatement(UPDATE_DELETED);) {
+                    if (pstmt != null) {
+                        pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getDeleted()));
+                        pstmt.setLong(2, usage.getAccountId());
+                        pstmt.setLong(3, usage.getId());
+                        pstmt.executeUpdate();
+                    }
+                }catch (SQLException e) {
+                    throw new CloudException("Error updating UsageLoadBalancerPolicyVO:" + e.getMessage(), e);
+                }
             }
-            pstmt.executeUpdate();
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            s_logger.warn("Error updating UsageLoadBalancerPolicyVO", e);
+            s_logger.warn("Error updating UsageLoadBalancerPolicyVO"+e.getMessage(), e);
         } finally {
             txn.close();
         }

@@ -217,7 +217,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
                 l.add(new Pair<Long, Integer>(rs.getLong(1), rs.getInt(2)));
             }
         } catch (SQLException e) {
-        } catch (Throwable e) {
+            s_logger.debug("Caught SQLException: ", e);
         }
         return l;
     }
@@ -242,7 +242,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
                 l.add(new Pair<Long, Integer>(rs.getLong(1), rs.getInt(2)));
             }
         } catch (SQLException e) {
-        } catch (Throwable e) {
+            s_logger.debug("Caught SQLException: ", e);
         }
         return l;
     }
@@ -261,7 +261,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
                 return rs.getInt(1);
             }
         } catch (SQLException e) {
-        } catch (Throwable e) {
+            s_logger.debug("Caught SQLException: ", e);
         }
         return 0;
     }
@@ -279,7 +279,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
                 return rs.getInt(1);
             }
         } catch (SQLException e) {
-        } catch (Throwable e) {
+            s_logger.debug("Caught SQLException: ", e);
         }
         return 0;
     }
@@ -301,7 +301,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
                 l.add(info);
             }
         } catch (SQLException e) {
-        } catch (Throwable e) {
+            s_logger.debug("Exception: ", e);
         }
         return l;
     }
@@ -323,7 +323,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
                 l.add(rs.getLong(1));
             }
         } catch (SQLException e) {
-        } catch (Throwable e) {
+            s_logger.debug("Caught SQLException: ", e);
         }
         return l;
     }

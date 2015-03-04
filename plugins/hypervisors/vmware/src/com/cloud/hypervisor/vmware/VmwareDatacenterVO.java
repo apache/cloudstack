@@ -37,6 +37,8 @@ import com.cloud.utils.db.Encrypt;
 @Table(name = "vmware_data_center")
 public class VmwareDatacenterVO implements VmwareDatacenter {
 
+    private static final long serialVersionUID = -9114941929893819232L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -105,11 +107,11 @@ public class VmwareDatacenterVO implements VmwareDatacenter {
     }
 
     public void setVmwareDatacenterName(String name) {
-        this.vmwareDatacenterName = name;
+        vmwareDatacenterName = name;
     }
 
     public void setVcenterHost(String vCenterHost) {
-        this.vcenterHost = vCenterHost;
+        vcenterHost = vCenterHost;
     }
 
     public void setUser(String user) {
@@ -134,17 +136,17 @@ public class VmwareDatacenterVO implements VmwareDatacenter {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof VmwareDatacenterVO) {
-            return ((VmwareDatacenterVO)obj).getId() == this.getId();
+            return ((VmwareDatacenterVO)obj).getId() == getId();
         } else {
             return false;
         }
     }
 
     public VmwareDatacenterVO(String guid, String name, String vCenterHost, String user, String password) {
-        this.uuid = UUID.randomUUID().toString();
-        this.vmwareDatacenterName = name;
+        uuid = UUID.randomUUID().toString();
+        vmwareDatacenterName = name;
         this.guid = guid;
-        this.vcenterHost = vCenterHost;
+        vcenterHost = vCenterHost;
         this.user = user;
         this.password = password;
     }
@@ -155,7 +157,7 @@ public class VmwareDatacenterVO implements VmwareDatacenter {
     }
 
     public VmwareDatacenterVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
 }

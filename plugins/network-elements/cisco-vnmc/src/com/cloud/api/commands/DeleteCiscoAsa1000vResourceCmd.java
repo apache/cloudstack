@@ -38,7 +38,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.CiscoAsa1000vService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteCiscoAsa1000vResource", responseObject = SuccessResponse.class, description = "Deletes a Cisco ASA 1000v appliance")
+@APICommand(name = "deleteCiscoAsa1000vResource", responseObject = SuccessResponse.class, description = "Deletes a Cisco ASA 1000v appliance",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteCiscoAsa1000vResourceCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(DeleteCiscoAsa1000vResourceCmd.class.getName());
     private static final String s_name = "deleteCiscoAsa1000vResource";

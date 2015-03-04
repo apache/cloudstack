@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteSecondaryStagingStore", description = "Deletes a secondary staging store .", responseObject = SuccessResponse.class, since = "4.2.0")
+@APICommand(name = "deleteSecondaryStagingStore", description = "Deletes a secondary staging store .", responseObject = SuccessResponse.class, since = "4.2.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSecondaryStagingStoreCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSecondaryStagingStoreCmd.class.getName());
 

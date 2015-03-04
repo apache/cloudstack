@@ -32,7 +32,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 
-@APICommand(name = "addAccountToProject", description = "Adds acoount to a project", responseObject = SuccessResponse.class, since = "3.0.0")
+@APICommand(name = "addAccountToProject", description = "Adds acoount to a project", responseObject = SuccessResponse.class, since = "3.0.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddAccountToProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddAccountToProjectCmd.class.getName());
 

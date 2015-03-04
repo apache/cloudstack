@@ -18,9 +18,9 @@ package com.cloud.api;
 
 import java.util.Map;
 
-import com.google.gson.GsonBuilder;
-
 import org.apache.cloudstack.api.ResponseObject;
+
+import com.google.gson.GsonBuilder;
 
 public class ApiGsonHelper {
     private static final GsonBuilder s_gBuilder;

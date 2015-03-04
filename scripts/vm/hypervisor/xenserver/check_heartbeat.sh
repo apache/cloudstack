@@ -72,3 +72,4 @@ do
 done
 
 echo "=====> DEAD <======"
+exit 1

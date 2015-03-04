@@ -31,7 +31,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.domain.Domain;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listDomainChildren", description = "Lists all children domains belonging to a specified domain", responseObject = DomainResponse.class)
+@APICommand(name = "listDomainChildren", description = "Lists all children domains belonging to a specified domain", responseObject = DomainResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListDomainChildrenCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDomainChildrenCmd.class.getName());
 

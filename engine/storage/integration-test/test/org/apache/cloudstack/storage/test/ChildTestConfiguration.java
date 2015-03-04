@@ -79,7 +79,6 @@ import com.cloud.storage.dao.VMTemplateZoneDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
 import com.cloud.storage.dao.VolumeHostDaoImpl;
 import com.cloud.storage.download.DownloadMonitorImpl;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.AccountManager;
@@ -109,11 +108,6 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
                includeFilters = {@Filter(value = Library.class, type = FilterType.CUSTOM)},
                useDefaultFilters = false)
 public class ChildTestConfiguration extends TestConfiguration {
-
-    @Bean
-    public SecondaryStorageVmManager secondaryStoreageMgr() {
-        return Mockito.mock(SecondaryStorageVmManager.class);
-    }
 
     @Bean
     public HostDao hostDao() {

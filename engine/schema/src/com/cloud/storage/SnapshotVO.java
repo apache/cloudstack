@@ -92,13 +92,19 @@ public class SnapshotVO implements Snapshot {
     @Column(name = "uuid")
     String uuid;
 
+    @Column(name = "min_iops")
+    Long minIops;
+
+    @Column(name = "max_iops")
+    Long maxIops;
+
     public SnapshotVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public SnapshotVO(long dcId, long accountId, long domainId, Long volumeId, Long diskOfferingId, String name, short snapshotType, String typeDescription, long size,
-            HypervisorType hypervisorType) {
-        this.dataCenterId = dcId;
+            Long minIops, Long maxIops, HypervisorType hypervisorType) {
+        dataCenterId = dcId;
         this.accountId = accountId;
         this.domainId = domainId;
         this.volumeId = volumeId;
@@ -107,10 +113,12 @@ public class SnapshotVO implements Snapshot {
         this.snapshotType = snapshotType;
         this.typeDescription = typeDescription;
         this.size = size;
-        this.state = State.Allocated;
+        this.minIops = minIops;
+        this.maxIops = maxIops;
+        state = State.Allocated;
         this.hypervisorType = hypervisorType;
-        this.version = "2.2";
-        this.uuid = UUID.randomUUID().toString();
+        version = "2.2";
+        uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -184,6 +192,14 @@ public class SnapshotVO implements Snapshot {
         return size;
     }
 
+    public Long getMinIops() {
+        return minIops;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
+    }
+
     public String getTypeDescription() {
         return typeDescription;
     }
@@ -229,10 +245,15 @@ public class SnapshotVO implements Snapshot {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return Snapshot.class;
     }
 }

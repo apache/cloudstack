@@ -40,7 +40,8 @@ import com.cloud.network.dao.ExternalFirewallDeviceVO;
 import com.cloud.network.element.PaloAltoFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "addPaloAltoFirewall", responseObject = PaloAltoFirewallResponse.class, description = "Adds a Palo Alto firewall device")
+@APICommand(name = "addPaloAltoFirewall", responseObject = PaloAltoFirewallResponse.class, description = "Adds a Palo Alto firewall device",
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddPaloAltoFirewallCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddPaloAltoFirewallCmd.class.getName());
     private static final String s_name = "addpaloaltofirewallresponse";

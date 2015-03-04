@@ -19,9 +19,14 @@ package groovy.org.apache.cloudstack.ldap
 import com.cloud.domain.Domain
 import com.cloud.domain.DomainVO
 import com.cloud.user.AccountService
+import com.cloud.user.AccountVO
 import com.cloud.user.DomainService
+import com.cloud.user.UserAccountVO
+import com.cloud.user.UserVO
+import org.apache.cloudstack.api.command.LdapCreateAccountCmd
 import org.apache.cloudstack.api.command.LdapImportUsersCmd
 import org.apache.cloudstack.api.response.LdapUserResponse
+import org.apache.cloudstack.context.CallContext
 import org.apache.cloudstack.ldap.LdapManager
 import org.apache.cloudstack.ldap.LdapUser
 
@@ -191,6 +196,94 @@ class LdapImportUsersCmdSpec extends spock.lang.Specification {
         null        | "TestGroup"  | "TestGroup"
         null        | "Test Group"  | "TestGroup"
 
+    }
+
+
+    def "Test create ldap import account for an already existing cloudstack account"() {
+        given: "We have an LdapManager, DomainService, two users and a LdapImportUsersCmd"
+        def ldapManager = Mock(LdapManager)
+        List<LdapUser> users = new ArrayList()
+        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering"))
+        ldapManager.getUsers() >> users
+        LdapUserResponse response1 = new LdapUserResponse("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering")
+        ldapManager.createLdapUserResponse(_) >>> response1
+
+        def domainService = Mock(DomainService)
+        1 * domainService.getDomain(1L) >> new DomainVO("DOMAIN", 1L, 1L, "DOMAIN", UUID.randomUUID().toString());;
+
+        def accountService = Mock(AccountService)
+        1 * accountService.getActiveAccountByName('ACCOUNT', 0) >>  Mock(AccountVO)
+
+        1 * accountService.createUser('rmurphy', _ , 'Ryan', 'Murphy', 'rmurphy@test.com', null, 'ACCOUNT', 0, _) >> Mock(UserVO)
+        0 * accountService.createUserAccount('rmurphy', _, 'Ryan', 'Murphy', 'rmurphy@test.com', null, 'ACCOUNT', 2, 0, 'DOMAIN', null, _, _)
+        0 * accountService.updateUser(_,'Ryan', 'Murphy', 'rmurphy@test.com', null, null, null, null, null);
+
+        def ldapImportUsersCmd = new LdapImportUsersCmd(ldapManager, domainService, accountService)
+        ldapImportUsersCmd.accountName = "ACCOUNT"
+        ldapImportUsersCmd.accountType = 2;
+        ldapImportUsersCmd.domainId = 1L;
+
+        when: "create account is called"
+        ldapImportUsersCmd.execute()
+        then: "expect 1 call on accountService createUser and 0 on account service create user account"
+    }
+
+
+    def "Test create ldap import account for an already existing cloudstack user"() {
+        given: "We have an LdapManager, DomainService, two users and a LdapImportUsersCmd"
+        def ldapManager = Mock(LdapManager)
+        List<LdapUser> users = new ArrayList()
+        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering"))
+        ldapManager.getUsers() >> users
+        LdapUserResponse response1 = new LdapUserResponse("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering")
+        ldapManager.createLdapUserResponse(_) >>> response1
+
+        def domainService = Mock(DomainService)
+        1 * domainService.getDomain(1L) >> new DomainVO("DOMAIN", 1L, 1L, "DOMAIN", UUID.randomUUID().toString());;
+
+        def accountService = Mock(AccountService)
+        1 * accountService.getActiveAccountByName('ACCOUNT', 0) >>  Mock(AccountVO)
+        1 * accountService.getActiveUserAccount('rmurphy',0) >> Mock(UserAccountVO)
+        0 * accountService.createUser('rmurphy', _ , 'Ryan', 'Murphy', 'rmurphy@test.com', null, 'ACCOUNT', 0, _) >> Mock(UserVO)
+        0 * accountService.createUserAccount('rmurphy', _, 'Ryan', 'Murphy', 'rmurphy@test.com', null, 'ACCOUNT', 2, 0, 'DOMAIN', null, _, _)
+        1 * accountService.updateUser(_,'Ryan', 'Murphy', 'rmurphy@test.com', null, null, null, null, null);
+
+        def ldapImportUsersCmd = new LdapImportUsersCmd(ldapManager, domainService, accountService)
+        ldapImportUsersCmd.accountName = "ACCOUNT"
+        ldapImportUsersCmd.accountType = 2;
+        ldapImportUsersCmd.domainId = 1L;
+
+        when: "create account is called"
+        ldapImportUsersCmd.execute()
+        then: "expect 1 call on accountService updateUser and 0 on account service create user and create user account"
+    }
+
+    def "Test create ldap import account for a new cloudstack account"() {
+        given: "We have an LdapManager, DomainService, two users and a LdapImportUsersCmd"
+        def ldapManager = Mock(LdapManager)
+        List<LdapUser> users = new ArrayList()
+        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering"))
+        ldapManager.getUsers() >> users
+        LdapUserResponse response1 = new LdapUserResponse("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering")
+        ldapManager.createLdapUserResponse(_) >>> response1
+
+        def domainService = Mock(DomainService)
+        1 * domainService.getDomain(1L) >> new DomainVO("DOMAIN", 1L, 1L, "DOMAIN", UUID.randomUUID().toString());;
+
+        def accountService = Mock(AccountService)
+        1 * accountService.getActiveAccountByName('ACCOUNT', 0) >>  null
+        0 * accountService.createUser('rmurphy', _ , 'Ryan', 'Murphy', 'rmurphy@test.com', null, 'ACCOUNT', 0, _)
+        1 * accountService.createUserAccount('rmurphy', _, 'Ryan', 'Murphy', 'rmurphy@test.com', null, 'ACCOUNT', 2, 0, 'DOMAIN', null, _, _)
+        0 * accountService.updateUser(_,'Ryan', 'Murphy', 'rmurphy@test.com', null, null, null, null, null);
+
+        def ldapImportUsersCmd = new LdapImportUsersCmd(ldapManager, domainService, accountService)
+        ldapImportUsersCmd.accountName = "ACCOUNT"
+        ldapImportUsersCmd.accountType = 2;
+        ldapImportUsersCmd.domainId = 1L;
+
+        when: "create account is called"
+        ldapImportUsersCmd.execute()
+        then: "expect 1 call on accountService createUser and 0 on account service create user account"
     }
 
 }

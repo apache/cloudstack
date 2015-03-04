@@ -16,46 +16,15 @@
 # under the License.
 
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.base import (ServiceOffering,
+from marvin.lib.base import (ServiceOffering,
                                          VirtualMachine,
                                          Account)
-from marvin.integration.lib.common import get_template, get_zone, list_virtual_machines
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.common import get_template, get_zone, list_virtual_machines
+from marvin.lib.utils import cleanup_resources
 from nose.plugins.attrib import attr
-
+from marvin.codes import FAILED
 import random
 import string
-
-class Services:
-    def __init__(self):
-        self.services = {
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                "password": "password",
-            },
-            "virtual_machine": {
-                "displayname": "Test VM",
-                "username": "root",
-                "password": "password",
-                "ssh_port": 22,
-                "hypervisor": 'XenServer',
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": 'TCP',
-            },
-            "ostype": 'CentOS 5.3 (64-bit)',
-            "service_offering": {
-                "name": "Tiny Instance",
-                "displaytext": "Tiny Instance",
-                "cpunumber": 1,
-                "cpuspeed": 100,
-                "memory": 256,
-            },
-        }
-
 
 class TestDeployVmWithUserData(cloudstackTestCase):
     """Tests for UserData
@@ -63,15 +32,17 @@ class TestDeployVmWithUserData(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.apiClient = super(TestDeployVmWithUserData, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
-        cls.zone = get_zone(cls.apiClient, cls.services)
+        testClient = super(TestDeployVmWithUserData, cls).getClsTestClient()
+        cls.apiClient = testClient.getApiClient() 
+        cls.services = testClient.getParsedTestDataConfig()
+
+        cls.zone = get_zone(cls.apiClient, testClient.getZoneForTests())
         if cls.zone.localstorageenabled:
             #For devcloud since localstroage is enabled
-            cls.services["service_offering"]["storagetype"] = "local"
+            cls.services["service_offerings"]["storagetype"] = "local"
         cls.service_offering = ServiceOffering.create(
             cls.apiClient,
-            cls.services["service_offering"]
+            cls.services["service_offerings"]
         )
         cls.account = Account.create(cls.apiClient, services=cls.services["account"])
         cls.cleanup = [cls.account]
@@ -80,6 +51,10 @@ class TestDeployVmWithUserData(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"]
         )
+
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         cls.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,\
                           cls.account.id))
@@ -92,7 +67,10 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         user_data = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(2500))
         cls.services["virtual_machine"]["userdata"] = user_data
 
-    @attr(tags=["simulator", "devcloud", "basic", "advanced"])
+    def setup(self):
+            self.hypervisor = self.testClient.getHypervisorInfo()
+
+    @attr(tags=["devcloud", "basic", "advanced", "post"], required_hardware="true")
     def test_deployvm_userdata_post(self):
         """Test userdata as POST, size > 2k
         """
@@ -117,7 +95,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         self.assert_(vm.id == str(deployVmResponse.id), "Vm deployed is different from the test")
         self.assert_(vm.state == "Running", "VM is not in Running state")
 
-    @attr(tags=["simulator", "devcloud", "basic", "advanced"])
+    @attr(tags=["devcloud", "basic", "advanced"], required_hardware="true")
     def test_deployvm_userdata(self):
         """Test userdata as GET, size > 2k
         """

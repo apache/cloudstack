@@ -621,37 +621,48 @@
         },
 
         // Project listing data provider
-        dataProvider: function(args) {
+        dataProvider: function(args) {        	
             var user = args.context.users[0];
-            var data = {
+            var data1 = {
                 accountId: user.userid,
                 listAll: true
             };
-
             if (args.projectName) {
-                data.keyword = args.projectName;
+            	data1.keyword = args.projectName;
             }
 
-            $.ajax({
-                url: createURL('listProjects', {
-                    ignoreProject: true
-                }),
-                data: data,
-                dataType: 'json',
-                async: true,
-                success: function(data) {
-                    args.response.success({
-                        data: $.map(
-                            data.listprojectsresponse.project ?
-                            data.listprojectsresponse.project : [],
-                            function(elem) {
-                                return $.extend(elem, {
-                                    displayText: elem.displaytext
-                                });
-                            })
-                    });
-                }
-            });
+            var array1 = [];
+        	var page = 1;        	
+            var getNextPage = function() {            	
+            	var data2 = $.extend({}, data1, {
+            		page: page,
+            		pageSize: 500
+            	});
+            	
+	            $.ajax({
+	                url: createURL('listProjects', {
+	                    ignoreProject: true
+	                }),
+	                data: data2,	                
+	                async: false,
+	                success: function(json) {                	
+	                	var projects = json.listprojectsresponse.project;
+	                	if (projects != undefined) {
+	                		for(var i = 0; i < projects.length; i++) {
+	                			array1.push($.extend(projects[i], {
+	                                displayText: projects[i].displaytext
+	                            }));
+	                		}
+	                	}   
+	                	if (array1.length < json.listprojectsresponse.count) {	                	    
+	                	    page++;
+	                	    getNextPage();
+	                	}	                	
+	                }
+	            });
+            }
+            getNextPage();          
+            args.response.success({ data: array1 });                     
         }
     };
 
@@ -700,7 +711,7 @@
                         },
 
                         domainid: {
-                            label: 'Domain',
+                            label: 'label.domain',
                             select: function(args) {
                                 if (isAdmin() || isDomainAdmin()) {
                                     $.ajax({
@@ -743,7 +754,7 @@
                         },
 
                         account: {
-                            label: 'Account',
+                            label: 'label.account',
                             isHidden: function(args) {
                                 if (isAdmin() || isDomainAdmin())
                                     return false;
@@ -773,7 +784,13 @@
                                     data: data.listprojectsresponse.project,
                                     actionFilter: projectsActionFilter
                                 });
-                            }
+                            },
+                    error: function(XMLHttpResponse) {
+                        cloudStack.dialog.notice({
+                            message: parseXMLHttpResponse(XMLHttpResponse)
+                        });
+                        args.response.error();
+                     }
                         });
                     },
 

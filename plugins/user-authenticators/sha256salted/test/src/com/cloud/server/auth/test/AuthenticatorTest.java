@@ -92,11 +92,11 @@ public class AuthenticatorTest {
     @Test
     public void testAuthentication() throws UnsupportedEncodingException, NoSuchAlgorithmException {
         Map<String, Object[]> dummyMap = new HashMap<String, Object[]>();
-        assertEquals("32 byte salt authenticated", true, authenticator.authenticate("admin", "password", 0L, dummyMap));
-        assertEquals("20 byte salt authenticated", true, authenticator.authenticate("admin20Byte", "password", 0L, dummyMap));
-        assertEquals("fake user not authenticated", false, authenticator.authenticate("fake", "fake", 0L, dummyMap));
-        assertEquals("bad password not authenticated", false, authenticator.authenticate("admin", "fake", 0L, dummyMap));
-        assertEquals("20 byte user bad password not authenticated", false, authenticator.authenticate("admin20Byte", "fake", 0L, dummyMap));
+        assertEquals("32 byte salt authenticated", true, authenticator.authenticate("admin", "password", 0L, dummyMap).first());
+        assertEquals("20 byte salt authenticated", true, authenticator.authenticate("admin20Byte", "password", 0L, dummyMap).first());
+        assertEquals("fake user not authenticated", false, authenticator.authenticate("fake", "fake", 0L, dummyMap).first());
+        assertEquals("bad password not authenticated", false, authenticator.authenticate("admin", "fake", 0L, dummyMap).first());
+        assertEquals("20 byte user bad password not authenticated", false, authenticator.authenticate("admin20Byte", "fake", 0L, dummyMap).first());
     }
 
 //    @Test

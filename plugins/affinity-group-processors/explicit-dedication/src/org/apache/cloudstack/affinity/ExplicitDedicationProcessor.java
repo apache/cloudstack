@@ -23,10 +23,9 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
@@ -120,10 +119,10 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
                 DataCenterVO zoneOfHost = _dcDao.findById(host.getDataCenterId());
                 if (resourceList != null && resourceList.size() != 0) {
                     for (DedicatedResourceVO resource : resourceList) {
-                        if ((resource.getHostId() != null && resource.getHostId() == plan.getHostId()) ||
-                            (resource.getClusterId() != null && resource.getClusterId() == clusterofHost.getId()) ||
-                            (resource.getPodId() != null && resource.getPodId() == podOfHost.getId()) ||
-                            (resource.getDataCenterId() != null && resource.getDataCenterId() == zoneOfHost.getId())) {
+                        if ((resource.getHostId() != null && resource.getHostId().longValue() == plan.getHostId().longValue()) ||
+                                (resource.getClusterId() != null && resource.getClusterId().longValue() == clusterofHost.getId()) ||
+                                (resource.getPodId() != null && resource.getPodId().longValue() == podOfHost.getId()) ||
+                                (resource.getDataCenterId() != null && resource.getDataCenterId().longValue() == zoneOfHost.getId())) {
                             canUse = true;
                         }
                     }

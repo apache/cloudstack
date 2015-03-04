@@ -19,23 +19,28 @@ package com.cloud.api.commands;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.agent.manager.SimulatorManager;
+import com.cloud.api.response.MockResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.user.Account;
 
-@APICommand(name = "configureSimulator", description = "configure simulator", responseObject = SuccessResponse.class)
+@APICommand(name = "configureSimulator", description = "configure simulator", responseObject = MockResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ConfigureSimulatorCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ConfigureSimulatorCmd.class.getName());
     private static final String s_name = "configuresimulatorresponse";
@@ -43,16 +48,16 @@ public class ConfigureSimulatorCmd extends BaseCmd {
     @Inject
     SimulatorManager _simMgr;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.LONG, description = "configure range: in a zone")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class, description="configure range: in a zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.LONG, description = "configure range: in a pod")
+    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType=PodResponse.class, description="configure range: in a pod")
     private Long podId;
 
-    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.LONG, description = "configure range: in a cluster")
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType=ClusterResponse.class, description="configure range: in a cluster")
     private Long clusterId;
 
-    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.LONG, description = "configure range: in a host")
+    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class, description="configure range: in a host")
     private Long hostId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "which command needs to be configured")
@@ -61,15 +66,37 @@ public class ConfigureSimulatorCmd extends BaseCmd {
     @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, required = true, description = "configuration options for this command, which is seperated by ;")
     private String values;
 
+    @Parameter(name=ApiConstants.COUNT, type=CommandType.INTEGER, description="number of times the mock is active")
+    private Integer count;
+
+    @Parameter(name="jsonresponse", type=CommandType.STRING, description="agent command response to be returned", length=4096)
+    private String jsonResponse;
+
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException {
-        boolean result = _simMgr.configureSimulator(zoneId, podId, clusterId, hostId, command, values);
-        if (!result) {
+        if (hostId != null && jsonResponse != null) {
+            jsonResponse = jsonResponse.replace("\"hostId\":0", "\"hostId\":" + hostId);
+        }
+        Long id = _simMgr.configureSimulator(zoneId, podId, clusterId, hostId, command, values, count, jsonResponse);
+        if (id == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure simulator");
         }
 
-        SuccessResponse response = new SuccessResponse(getCommandName());
+        MockConfigurationVO config = _simMgr.querySimulatorMock(id);
+        if (config == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to query simulator mock");
+        }
+
+        MockResponse response = new MockResponse();
+        response.setId(config.getId());
+        response.setZoneId(config.getDataCenterId());
+        response.setPodId(config.getPodId());
+        response.setClusterId(config.getClusterId());
+        response.setHostId(config.getHostId());
+        response.setName(config.getName());
+        response.setCount(config.getCount());
+        response.setResponseName("simulatormock");
         this.setResponseObject(response);
     }
 

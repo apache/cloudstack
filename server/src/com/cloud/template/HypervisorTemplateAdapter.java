@@ -16,10 +16,10 @@
 // under the License.
 package com.cloud.template;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import javax.ejb.Local;
@@ -27,6 +27,7 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
@@ -44,6 +45,8 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 
@@ -67,8 +70,10 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value = TemplateAdapter.class)
@@ -79,6 +84,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     @Inject
     AgentManager _agentMgr;
 
+    @Inject TemplateDataStoreDao templateDataStoreDao;
     @Inject
     DataStoreManager storeMgr;
     @Inject
@@ -95,6 +101,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     EndPointSelector _epSelector;
     @Inject
     DataCenterDao _dcDao;
+    @Inject
+    MessageBus _messageBus;
 
     @Override
     public String getName() {
@@ -105,13 +113,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
-
-        if ((!url.toLowerCase().endsWith("iso")) && (!url.toLowerCase().endsWith("iso.zip")) && (!url.toLowerCase().endsWith("iso.bz2")) &&
-            (!url.toLowerCase().endsWith("iso.gz"))) {
-            throw new InvalidParameterValueException("Please specify a valid iso");
-        }
-
-        UriUtils.validateUrl(url);
+        UriUtils.validateUrl(ImageFormat.ISO.getFileExtension(), url);
         profile.setUrl(url);
         // Check that the resource limit for secondary storage won't be exceeded
         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
@@ -122,86 +124,11 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
-        String path = null;
-        try {
-            URL str = new URL(url);
-            path = str.getPath();
-        } catch (MalformedURLException ex) {
-            throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is invalid");
-        }
-
-        try {
-            checkFormat(cmd.getFormat(), url);
-        } catch (InvalidParameterValueException ex) {
-            checkFormat(cmd.getFormat(), path);
-        }
-
-        UriUtils.validateUrl(url);
+        UriUtils.validateUrl(cmd.getFormat(), url);
         profile.setUrl(url);
         // Check that the resource limit for secondary storage won't be exceeded
         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
         return profile;
-    }
-
-    private void checkFormat(String format, String url) {
-        if ((!url.toLowerCase().endsWith("vhd")) && (!url.toLowerCase().endsWith("vhd.zip")) && (!url.toLowerCase().endsWith("vhd.bz2")) &&
-            (!url.toLowerCase().endsWith("vhdx")) && (!url.toLowerCase().endsWith("vhdx.gz")) &&
-            (!url.toLowerCase().endsWith("vhdx.bz2")) && (!url.toLowerCase().endsWith("vhdx.zip")) &&
-            (!url.toLowerCase().endsWith("vhd.gz")) && (!url.toLowerCase().endsWith("qcow2")) && (!url.toLowerCase().endsWith("qcow2.zip")) &&
-            (!url.toLowerCase().endsWith("qcow2.bz2")) && (!url.toLowerCase().endsWith("qcow2.gz")) && (!url.toLowerCase().endsWith("ova")) &&
-            (!url.toLowerCase().endsWith("ova.zip")) && (!url.toLowerCase().endsWith("ova.bz2")) && (!url.toLowerCase().endsWith("ova.gz")) &&
-            (!url.toLowerCase().endsWith("tar")) && (!url.toLowerCase().endsWith("tar.zip")) && (!url.toLowerCase().endsWith("tar.bz2")) &&
-            (!url.toLowerCase().endsWith("tar.gz")) && (!url.toLowerCase().endsWith("vmdk")) && (!url.toLowerCase().endsWith("vmdk.gz")) &&
-            (!url.toLowerCase().endsWith("vmdk.zip")) && (!url.toLowerCase().endsWith("vmdk.bz2")) && (!url.toLowerCase().endsWith("img")) &&
-            (!url.toLowerCase().endsWith("img.gz")) && (!url.toLowerCase().endsWith("img.zip")) && (!url.toLowerCase().endsWith("img.bz2")) &&
-            (!url.toLowerCase().endsWith("raw")) && (!url.toLowerCase().endsWith("raw.gz")) && (!url.toLowerCase().endsWith("raw.bz2")) &&
-            (!url.toLowerCase().endsWith("raw.zip"))) {
-            throw new InvalidParameterValueException("Please specify a valid " + format.toLowerCase());
-        }
-
-        if ((format.equalsIgnoreCase("vhd")
-                 && (!url.toLowerCase().endsWith("vhd")
-                         && !url.toLowerCase().endsWith("vhd.zip")
-                         && !url.toLowerCase().endsWith("vhd.bz2")
-                         && !url.toLowerCase().endsWith("vhd.gz")))
-            || (format.equalsIgnoreCase("vhdx")
-                 && (!url.toLowerCase().endsWith("vhdx")
-                         && !url.toLowerCase().endsWith("vhdx.zip")
-                         && !url.toLowerCase().endsWith("vhdx.bz2")
-                         && !url.toLowerCase().endsWith("vhdx.gz")))
-            || (format.equalsIgnoreCase("qcow2")
-                 && (!url.toLowerCase().endsWith("qcow2")
-                         && !url.toLowerCase().endsWith("qcow2.zip")
-                         && !url.toLowerCase().endsWith("qcow2.bz2")
-                         && !url.toLowerCase().endsWith("qcow2.gz")))
-            || (format.equalsIgnoreCase("ova")
-                 && (!url.toLowerCase().endsWith("ova")
-                         && !url.toLowerCase().endsWith("ova.zip")
-                         && !url.toLowerCase().endsWith("ova.bz2")
-                         && !url.toLowerCase().endsWith("ova.gz")))
-            || (format.equalsIgnoreCase("tar")
-                 && (!url.toLowerCase().endsWith("tar")
-                         && !url.toLowerCase().endsWith("tar.zip")
-                         && !url.toLowerCase().endsWith("tar.bz2")
-                         && !url.toLowerCase().endsWith("tar.gz")))
-            || (format.equalsIgnoreCase("raw")
-                 && (!url.toLowerCase().endsWith("img")
-                         && !url.toLowerCase().endsWith("img.zip")
-                         && !url.toLowerCase().endsWith("img.bz2")
-                         && !url.toLowerCase().endsWith("img.gz")
-                         && !url.toLowerCase().endsWith("raw")
-                         && !url.toLowerCase().endsWith("raw.bz2")
-                         && !url.toLowerCase().endsWith("raw.zip")
-                         && !url.toLowerCase().endsWith("raw.gz")))
-            || (format.equalsIgnoreCase("vmdk")
-                 && (!url.toLowerCase().endsWith("vmdk")
-                         && !url.toLowerCase().endsWith("vmdk.zip")
-                         && !url.toLowerCase().endsWith("vmdk.bz2")
-                         && !url.toLowerCase().endsWith("vmdk.gz")))
-           ) {
-            throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is an invalid for the format " + format.toLowerCase());
-        }
-
     }
 
     @Override
@@ -219,7 +146,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             throw new CloudRuntimeException("Unable to find image store to download template " + profile.getTemplate());
         }
 
-        Collections.shuffle(imageStores);// For private templates choose a random store. TODO - Have a better algorithm based on size, no. of objects, load etc.
+        Set<Long> zoneSet = new HashSet<Long>();
+        Collections.shuffle(imageStores); // For private templates choose a random store. TODO - Have a better algorithm based on size, no. of objects, load etc.
         for (DataStore imageStore : imageStores) {
             // skip data stores for a disabled zone
             Long zoneId = imageStore.getScope().getScopeId();
@@ -235,6 +163,14 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     s_logger.info("Zone " + zoneId + " is disabled, so skip downloading template to its image store " + imageStore.getId());
                     continue;
                 }
+
+                // We want to download private template to one of the image store in a zone
+                if(isPrivateTemplate(template) && zoneSet.contains(zoneId)){
+                    continue;
+                }else {
+                    zoneSet.add(zoneId);
+                }
+
             }
 
             TemplateInfo tmpl = imageFactory.getTemplate(template.getId(), imageStore);
@@ -243,13 +179,19 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             caller.setCallback(caller.getTarget().createTemplateAsyncCallBack(null, null));
             caller.setContext(context);
             imageService.createTemplateAsync(tmpl, imageStore, caller);
-            if (!(profile.getIsPublic() || profile.getFeatured())) {  // If private template then break
-                break;
-            }
         }
         _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
 
         return template;
+    }
+
+    private boolean isPrivateTemplate(VMTemplateVO template){
+
+        // if public OR featured OR system template
+        if(template.isPublicTemplate() || template.isFeatured() || template.getTemplateType() == TemplateType.SYSTEM)
+            return false;
+        else
+            return true;
     }
 
     private class CreateTemplateContext<T> extends AsyncRpcContext<T> {
@@ -267,6 +209,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateInfo template = context.template;
         if (result.isSuccess()) {
             VMTemplateVO tmplt = _tmpltDao.findById(template.getId());
+            // need to grant permission for public templates
+            if (tmplt.isPublicTemplate()) {
+                _messageBus.publish(_name, TemplateManager.MESSAGE_REGISTER_PUBLIC_TEMPLATE_EVENT, PublishScope.LOCAL, tmplt.getId());
+            }
             long accountId = tmplt.getAccountId();
             if (template.getSize() != null) {
                 // publish usage event
@@ -362,6 +308,9 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                             templateZoneDao.remove(templateZone.getId());
                         }
                     }
+                    //mark all the occurrences of this template in the given store as destroyed.
+                    templateDataStoreDao.removeByTemplateStore(template.getId(), imageStore.getId());
+
                 } catch (InterruptedException e) {
                     s_logger.debug("delete template Failed", e);
                     throw new CloudRuntimeException("delete template Failed", e);
@@ -372,6 +321,11 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             }
         }
         if (success) {
+            if ((imageStores.size() > 1) && (profile.getZoneId() != null)) {
+                //if template is stored in more than one image stores, and the zone id is not null, then don't delete other templates.
+                return success;
+            }
+
             // delete all cache entries for this template
             List<TemplateInfo> cacheTmpls = imageFactory.listTemplateOnCache(template.getId());
             for (TemplateInfo tmplOnCache : cacheTmpls) {
@@ -382,15 +336,22 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             // find all eligible image stores for this template
             List<DataStore> iStores = templateMgr.getImageStoreByTemplate(template.getId(), null);
             if (iStores == null || iStores.size() == 0) {
-                // remove template from vm_templates table
-                if (_tmpltDao.remove(template.getId())) {
+                // Mark template as Inactive.
+                template.setState(VirtualMachineTemplate.State.Inactive);
+                _tmpltDao.update(template.getId(), template);
+
                     // Decrement the number of templates and total secondary storage
                     // space used by the account
                     Account account = _accountDao.findByIdIncludingRemoved(template.getAccountId());
                     _resourceLimitMgr.decrementResourceCount(template.getAccountId(), ResourceType.template);
                     _resourceLimitMgr.recalculateResourceCount(template.getAccountId(), account.getDomainId(), ResourceType.secondary_storage.getOrdinal());
-                }
+
             }
+
+            // remove its related ACL permission
+            Pair<Class<?>, Long> tmplt = new Pair<Class<?>, Long>(VirtualMachineTemplate.class, template.getId());
+            _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, tmplt);
+
         }
         return success;
 

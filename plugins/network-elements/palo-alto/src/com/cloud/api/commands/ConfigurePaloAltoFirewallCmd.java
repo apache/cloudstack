@@ -39,7 +39,8 @@ import com.cloud.network.dao.ExternalFirewallDeviceVO;
 import com.cloud.network.element.PaloAltoFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "configurePaloAltoFirewall", responseObject = PaloAltoFirewallResponse.class, description = "Configures a Palo Alto firewall device")
+@APICommand(name = "configurePaloAltoFirewall", responseObject = PaloAltoFirewallResponse.class, description = "Configures a Palo Alto firewall device",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ConfigurePaloAltoFirewallCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ConfigurePaloAltoFirewallCmd.class.getName());

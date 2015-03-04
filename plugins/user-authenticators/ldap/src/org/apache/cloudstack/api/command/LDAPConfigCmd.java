@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.LDAPConfigResponse;
-import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
@@ -50,7 +49,9 @@ import com.cloud.utils.Pair;
  * @deprecated as of 4.3 use the new api {@link LdapAddConfigurationCmd}
  */
 @Deprecated
-@APICommand(name = "ldapConfig", description = "Configure the LDAP context for this site.", responseObject = LDAPConfigResponse.class, since = "3.0.0")
+@APICommand(name = "ldapConfig", description = "Configure the LDAP context for this site.", responseObject = LDAPConfigResponse.class, since = "3.0.0",
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
+
 public class LDAPConfigCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(LDAPConfigCmd.class.getName());
 
@@ -153,7 +154,7 @@ public class LDAPConfigCmd extends BaseCmd {
     }
 
     public Integer getPort() {
-        return port <= 0 ? 389 : port;
+        return (Integer)(port.intValue() <= 0 ? 389 : port.intValue());
     }
 
     public void setPort(Integer port) {
@@ -225,7 +226,7 @@ public class LDAPConfigCmd extends BaseCmd {
     }
 
     private boolean updateLDAP() {
-        LdapConfigurationResponse response = _ldapManager.addConfiguration(hostname, port);
+        _ldapManager.addConfiguration(hostname, port);
 
         /**
          * There is no query filter now. It is derived from ldap.user.object and ldap.search.group.principle

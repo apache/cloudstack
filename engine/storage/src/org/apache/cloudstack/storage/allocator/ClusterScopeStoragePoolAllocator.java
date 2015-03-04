@@ -25,11 +25,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
@@ -85,12 +84,6 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
         for (StoragePoolVO pool : allPools) {
             s_logger.debug("Adding pool " + pool + " to avoid set since it did not match tags");
             avoid.addPool(pool.getId());
-        }
-
-        // make sure our matching pool was not in avoid set
-        for (StoragePoolVO pool : pools) {
-            s_logger.debug("Removing pool " + pool + " from avoid set, must have been inserted when searching for another disk's tag");
-            avoid.removePool(pool.getId());
         }
 
         if (pools.size() == 0) {

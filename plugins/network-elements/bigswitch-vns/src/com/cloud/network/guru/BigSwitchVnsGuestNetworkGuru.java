@@ -38,7 +38,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
@@ -128,7 +128,7 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException {
+        throws InsufficientVirtualNetworkCapacityException {
         assert (network.getState() == State.Implementing) : "Why are we implementing " + network;
 
         long dcId = dest.getDataCenter().getId();
@@ -151,7 +151,7 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
         String vnet =
             _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), context.getReservationId(), UseSystemGuestVlans.valueIn(network.getAccountId()));
         if (vnet == null) {
-            throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a " + "part of network " + network + " implement ", DataCenter.class, dcId);
+            throw new InsufficientVirtualNetworkCapacityException("Unable to allocate vnet as a " + "part of network " + network + " implement ", DataCenter.class, dcId);
         }
         // when supporting more types of networks this need to become
 //        int vlan = Integer.parseInt(BroadcastDomainType.getValue(vnet));
@@ -198,7 +198,7 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
         super.reserve(nic, network, vm, dest, context);
     }

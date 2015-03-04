@@ -66,6 +66,9 @@ public class VMReservationVO implements Identity, InternalIdentity {
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
+    @Column(name = "deployment_planner")
+    private String deploymentPlanner;
+
     // VolumeId -> poolId
     @Transient
     Map<Long, Long> volumeReservationMap;
@@ -122,6 +125,14 @@ public class VMReservationVO implements Identity, InternalIdentity {
 
     public void setVolumeReservation(Map<Long, Long> volumeReservationMap) {
         this.volumeReservationMap = volumeReservationMap;
+    }
+
+    public void setDeploymentPlanner(String planner) {
+        this.deploymentPlanner = planner;
+    }
+
+    public String getDeploymentPlanner() {
+        return this.deploymentPlanner;
     }
 
 }

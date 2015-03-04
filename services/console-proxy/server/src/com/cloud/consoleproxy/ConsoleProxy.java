@@ -196,8 +196,8 @@ public class ConsoleProxy {
             Object result;
             try {
                 result =
-                    authMethod.invoke(ConsoleProxy.context, param.getClientHostAddress(), String.valueOf(param.getClientHostPort()), param.getClientTag(),
-                        param.getClientHostPassword(), param.getTicket(), new Boolean(reauthentication));
+                        authMethod.invoke(ConsoleProxy.context, param.getClientHostAddress(), String.valueOf(param.getClientHostPort()), param.getClientTag(),
+                                param.getClientHostPassword(), param.getTicket(), new Boolean(reauthentication));
             } catch (IllegalAccessException e) {
                 s_logger.error("Unable to invoke authenticateConsoleAccess due to IllegalAccessException" + " for vm: " + param.getClientTag(), e);
                 authResult.setSuccess(false);
@@ -307,6 +307,11 @@ public class ConsoleProxy {
                 s_logger.error(e.toString(), e);
             }
         }
+        try {
+            confs.close();
+        } catch (IOException e) {
+            s_logger.error("Failed to close consolepropxy.properties : " + e.toString(), e);
+        }
 
         start(conf);
     }
@@ -407,7 +412,7 @@ public class ConsoleProxy {
         synchronized (connectionMap) {
             viewer = connectionMap.get(clientKey);
             if (viewer == null) {
-                viewer = new ConsoleProxyVncClient();
+                viewer = getClient(param);
                 viewer.initClient(param);
                 connectionMap.put(clientKey, viewer);
                 s_logger.info("Added viewer object " + viewer);
@@ -418,7 +423,7 @@ public class ConsoleProxy {
                 viewer.initClient(param);
             } else if (!param.getClientHostPassword().equals(viewer.getClientHostPassword())) {
                 s_logger.warn("Bad sid detected(VNC port may be reused). sid in session: " + viewer.getClientHostPassword() + ", sid in request: " +
-                    param.getClientHostPassword());
+                        param.getClientHostPassword());
                 viewer.initClient(param);
             }
         }
@@ -442,7 +447,7 @@ public class ConsoleProxy {
             ConsoleProxyClient viewer = connectionMap.get(clientKey);
             if (viewer == null) {
                 authenticationExternally(param);
-                viewer = new ConsoleProxyVncClient();
+                viewer = getClient(param);
                 viewer.initClient(param);
 
                 connectionMap.put(clientKey, viewer);
@@ -457,7 +462,7 @@ public class ConsoleProxy {
                 }
 
                 if (param.getClientHostPassword() == null || param.getClientHostPassword().isEmpty() ||
-                    !param.getClientHostPassword().equals(viewer.getClientHostPassword()))
+                        !param.getClientHostPassword().equals(viewer.getClientHostPassword()))
                     throw new AuthenticationException("Cannot use the existing viewer " + viewer + ": bad sid");
 
                 if (!viewer.isFrontEndAlive()) {
@@ -479,6 +484,14 @@ public class ConsoleProxy {
         }
     }
 
+    private static ConsoleProxyClient getClient(ConsoleProxyClientParam param) {
+        if (param.getHypervHost() != null) {
+            return new ConsoleProxyRdpClient();
+        } else {
+            return new ConsoleProxyVncClient();
+        }
+    }
+
     public static void removeViewer(ConsoleProxyClient viewer) {
         synchronized (connectionMap) {
             for (Map.Entry<String, ConsoleProxyClient> entry : connectionMap.entrySet()) {
@@ -491,7 +504,9 @@ public class ConsoleProxy {
     }
 
     public static ConsoleProxyClientStatsCollector getStatsCollector() {
-        return new ConsoleProxyClientStatsCollector(connectionMap);
+        synchronized (connectionMap) {
+            return new ConsoleProxyClientStatsCollector(connectionMap);
+        }
     }
 
     public static void authenticationExternally(ConsoleProxyClientParam param) throws AuthenticationException {

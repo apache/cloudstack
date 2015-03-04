@@ -19,8 +19,7 @@ package org.apache.cloudstack.api.command.user.loadbalancer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
@@ -32,11 +31,13 @@ import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listLoadBalancerRules", description = "Lists load balancer rules.", responseObject = LoadBalancerResponse.class)
+@APICommand(name = "listLoadBalancerRules", description = "Lists load balancer rules.", responseObject = LoadBalancerResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListLoadBalancerRulesCmd.class.getName());
 
@@ -70,6 +71,9 @@ public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "list by network id the rule belongs to")
     private Long networkId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -98,6 +102,14 @@ public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
         return networkId;
     }
 
+    @Override
+    public Boolean getDisplay() {
+        if (display != null) {
+            return display;
+        }
+        return super.getDisplay();
+    }
+
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
@@ -118,8 +130,8 @@ public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
                 lbResponse.setObjectName("loadbalancerrule");
                 lbResponses.add(lbResponse);
             }
+            response.setResponses(lbResponses, loadBalancers.second());
         }
-        response.setResponses(lbResponses, loadBalancers.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

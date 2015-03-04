@@ -178,6 +178,22 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
     }
 
     @Override
+    public void releaseIpAddress(long nicId) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Releasing ip address for instance=" + nicId);
+        }
+        SearchCriteria<DataCenterIpAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("instance", nicId);
+
+        DataCenterIpAddressVO vo = createForUpdate();
+        vo.setTakenAt(null);
+        vo.setInstanceId(null);
+        vo.setReservationId(null);
+        update(vo, sc);
+    }
+
+
+    @Override
     public List<DataCenterIpAddressVO> listByPodIdDcId(long podId, long dcId) {
         SearchCriteria<DataCenterIpAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("pod", podId);

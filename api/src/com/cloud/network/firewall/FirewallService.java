@@ -40,7 +40,8 @@ public interface FirewallService {
      *            the id of the rule to revoke.
      * @return
      */
-    boolean revokeFirewallRule(long ruleId, boolean apply);
+    boolean revokeIngressFirewallRule(long ruleId, boolean apply);
+    boolean revokeEgressFirewallRule(long ruleId, boolean apply);
 
     boolean applyEgressFirewallRules(FirewallRule rule, Account caller) throws ResourceUnavailableException;
 
@@ -50,4 +51,9 @@ public interface FirewallService {
 
     boolean revokeRelatedFirewallRule(long ruleId, boolean apply);
 
+    FirewallRule updateIngressFirewallRule(long ruleId, String customId, Boolean forDisplay);
+    FirewallRule updateEgressFirewallRule(long ruleId, String customId, Boolean forDisplay);
+
+    boolean applyIngressFwRules(long ipId, Account caller) throws ResourceUnavailableException;
+    boolean revokeIngressFwRule(long ruleId, boolean apply);
 }

@@ -28,4 +28,6 @@ public interface VMNetworkMapDao extends GenericDao<VMNetworkMapVO, Long> {
 
     List<Long> getNetworks(long vmId);
 
+    VMNetworkMapVO findByVmAndNetworkId(long vmId, long networkId);
+
 }

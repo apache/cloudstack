@@ -41,6 +41,7 @@ import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 
 public class SamplePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
@@ -60,7 +61,6 @@ public class SamplePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLife
 
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
-
         DataStore store = primaryStoreHelper.createPrimaryDataStore(null);
         return providerMgr.getPrimaryDataStore(store.getId());
     }
@@ -135,4 +135,7 @@ public class SamplePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLife
         return false;
     }
 
+    @Override
+    public void updateStoragePool(StoragePool storagePool, Map<String, String> details) {
+    }
 }

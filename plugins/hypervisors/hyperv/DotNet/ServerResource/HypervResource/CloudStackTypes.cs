@@ -1,4 +1,4 @@
-﻿// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -61,42 +61,11 @@ namespace HypervResource
             get
             {
                 string uncPath = null;
-                if (uri.Scheme.Equals("cifs") || uri.Scheme.Equals("networkfilesystem"))
+                if (uri != null && (uri.Scheme.Equals("cifs") || uri.Scheme.Equals("networkfilesystem") || uri.Scheme.Equals("smb")))
                 {
                     uncPath = @"\\" + uri.Host + uri.LocalPath;
                 }
                 return uncPath;
-            }
-        }
-
-        public string User
-        {
-            get
-            {
-                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                return System.Web.HttpUtility.UrlDecode(queryDictionary["user"]);
-            }
-        }
-
-        public string Password
-        {
-            get
-            {
-                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                return System.Web.HttpUtility.UrlDecode(queryDictionary["password"]);
-            }
-        }
-
-        public string Domain
-        {
-            get
-            {
-                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                if (queryDictionary["domain"] != null)
-                {
-                    return System.Web.HttpUtility.UrlDecode(queryDictionary["domain"]);
-                }
-                else return uri.Host;
             }
         }
 
@@ -158,33 +127,35 @@ namespace HypervResource
                     PrimaryDataStoreTO store = this.primaryDataStore;
                     if (store.isLocal)
                     {
-                        fileName = Path.Combine(store.Path, this.name);
+                        String volume = this.path;
+                        if (String.IsNullOrEmpty(volume))
+                        {
+                            volume = this.uuid;
+                        }
+                        fileName = Path.Combine(store.Path, volume);
                     }
                     else
                     {
-                        fileName = @"\\" + store.uri.Host + store.uri.LocalPath + @"\" + this.name;
+                        String volume = this.path;
+                        if (String.IsNullOrEmpty(volume))
+                        {
+                            volume = this.uuid;
+                        }
+                        fileName = @"\\" + store.uri.Host + store.uri.LocalPath + @"\" + volume;
                         fileName = Utils.NormalizePath(fileName);
                     }
                 }
                 else if (this.nfsDataStore != null)
                 {
-                    if (this.path != null && File.Exists(this.path))
+                    fileName = this.nfsDataStore.UncPath;
+                    if (this.path != null)
                     {
-                        fileName = this.path;
+                        fileName = Utils.NormalizePath(fileName + @"\" + this.path);
                     }
-                    else
-                    {
-                        fileName = this.nfsDataStore.UncPath;
-                        if (this.path != null)
-                        {
-                            fileName += @"\" + this.path;
-                        }
 
-                        fileName = Utils.NormalizePath(fileName);
-                        if (Directory.Exists(fileName))
-                        {
-                            fileName = Utils.NormalizePath(fileName + @"\" + this.name);
-                        }
+                    if (fileName != null && !File.Exists(fileName))
+                    {
+                        fileName = Utils.NormalizePath(fileName + @"\" + this.uuid);
                     }
                 }
                 else
@@ -239,7 +210,7 @@ namespace HypervResource
                 // Assert
                 if (result.dataStore == null || (result.primaryDataStore == null && result.nfsDataStore == null))
                 {
-                    String errMsg = "VolumeObjectTO missing dataStore in spec " + volumeObjectTOJson.ToString();
+                    String errMsg = "VolumeObjectTO missing dataStore in spec " + Utils.CleanString(volumeObjectTOJson.ToString());
                     logger.Error(errMsg);
                     throw new ArgumentNullException(errMsg);
                 }
@@ -277,7 +248,7 @@ namespace HypervResource
                 }
                 else
                 {
-                    String errMsg = "VolumeObjectTO missing dataStore in spec " + volInfo.ToString();
+                    String errMsg = "VolumeObjectTO missing dataStore in spec " + Utils.CleanString(volInfo.ToString());
                     logger.Error(errMsg);
                     throw new ArgumentNullException(errMsg);
                 }
@@ -285,11 +256,11 @@ namespace HypervResource
                 path = Utils.NormalizePath(path);
                 if (Directory.Exists(path))
                 {
-                    string[] choices = choices = Directory.GetFiles(path, volInfo.name + ".vhd*");
+                    string[] choices = Directory.GetFiles(path, volInfo.uuid + ".vhd*");
                     if (choices.Length != 1)
                     {
                         String errMsg = "Tried to guess file extension, but cannot find file corresponding to " +
-                            Path.Combine(volInfo.primaryDataStore.Path, volInfo.name);
+                            Path.Combine(volInfo.primaryDataStore.Path, volInfo.uuid);
                         logger.Debug(errMsg);
                     }
                     else
@@ -319,18 +290,27 @@ namespace HypervResource
                     PrimaryDataStoreTO store = this.primaryDataStore;
                     if (store.isLocal)
                     {
-                        fileName = Path.Combine(store.Path, this.name);
+                        fileName = Path.Combine(store.Path, this.uuid);
                     }
                     else
                     {
-                        fileName = @"\\" + store.uri.Host + store.uri.LocalPath + @"\" + this.name;
+                        fileName = @"\\" + store.uri.Host + store.uri.LocalPath + @"\" + this.uuid;
                     }
                     fileName = fileName + '.' + this.format.ToLowerInvariant();
                 }
                 else if (this.nfsDataStoreTO != null)
                 {
-                    NFSTO store = this.nfsDataStoreTO;
-                    fileName = store.UncPath + @"\" + this.path + @"\" + this.name;
+                    fileName = this.nfsDataStoreTO.UncPath;
+                    if (this.path != null)
+                    {
+                        fileName = Utils.NormalizePath(fileName + @"\" + this.path);
+                    }
+
+                    if (fileName != null && !File.Exists(fileName))
+                    {
+                        fileName = Utils.NormalizePath(fileName + @"\" + this.uuid);
+                    }
+
                     if (!this.format.Equals("RAW"))
                     {
                         fileName = fileName + '.' + this.format.ToLowerInvariant();
@@ -431,36 +411,7 @@ namespace HypervResource
                 return uncPath;
             }
         }
-        public string User
-        {
-            get
-            {
-                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                return System.Web.HttpUtility.UrlDecode(queryDictionary["user"]);
-            }
-        }
 
-        public string Password
-        {
-            get
-            {
-                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                return System.Web.HttpUtility.UrlDecode(queryDictionary["password"]);
-            }
-        }
-
-        public string Domain
-        {
-            get
-            {
-                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                if (queryDictionary["domain"] != null)
-                {
-                    return System.Web.HttpUtility.UrlDecode(queryDictionary["domain"]);
-                }
-                else return uri.Host;
-            }
-        }
         public static NFSTO ParseJson(dynamic json)
         {
             NFSTO result = null;
@@ -569,7 +520,11 @@ namespace HypervResource
         /// <summary>
         /// 
         /// </summary>
-        OCFS2
+        OCFS2,
+        /// <summary>
+        /// for hyper-v
+        /// </summary>
+        SMB
     }
 
     public enum StorageResourceType
@@ -579,6 +534,7 @@ namespace HypervResource
 
     public struct VolumeInfo
     {
+#pragma warning disable 0414
         public long id;
         public string type;
         public string storagePoolType;
@@ -588,6 +544,7 @@ namespace HypervResource
         public string path;
         long size;
         string chainInfo;
+#pragma warning restore 0414
 
         public VolumeInfo(long id, string type, string poolType, String poolUuid, String name, String mountPoint, String path, long size, String chainInfo)
         {
@@ -605,10 +562,12 @@ namespace HypervResource
 
     public class VmState
     {
+#pragma warning disable 0414
         [JsonProperty("state")]
         public String state;
         [JsonProperty("host")]
         String host;
+#pragma warning restore 0414
         public VmState() { }
         public VmState(String vmState, String host)
         {
@@ -619,6 +578,7 @@ namespace HypervResource
 
     public struct StoragePoolInfo
     {
+#pragma warning disable 0414
         [JsonProperty("uuid")]
         public String uuid;
         [JsonProperty("host")]
@@ -637,6 +597,7 @@ namespace HypervResource
         long availableBytes;
         [JsonProperty("details")]
         Dictionary<String, String> details;
+#pragma warning restore 0414
 
         public StoragePoolInfo(String uuid, String host, String hostPath,
                 String localPath, string poolType, long capacityBytes,
@@ -673,6 +634,31 @@ namespace HypervResource
         public int numCPUs;
         [JsonProperty("entityType")]
         public String entityType;
+    }
+
+    public class NicDetails
+    {
+        [JsonProperty("macAddress")]
+        public string macaddress;
+        [JsonProperty("vlanid")]
+        public int vlanid;
+        [JsonProperty("state")]
+        public bool state;
+        public NicDetails() { }
+        public NicDetails(String macaddress, int vlanid, int enabledState)
+        {
+            this.macaddress = macaddress;
+            this.vlanid = vlanid;
+            if (enabledState == 2)
+            {
+                this.state = true;
+            }
+            else
+            {
+                this.state = false;
+            }
+
+        }
     }
 
     /// <summary>
@@ -723,6 +709,10 @@ namespace HypervResource
         public const string GetVmDiskStatsCommand = "com.cloud.agent.api.GetVmDiskStatsCommand";
         public const string GetVmStatsAnswer = "com.cloud.agent.api.GetVmStatsAnswer";
         public const string GetVmStatsCommand = "com.cloud.agent.api.GetVmStatsCommand";
+        public const string GetVmConfigCommand = "com.cloud.agent.api.GetVmConfigCommand";
+        public const string GetVmConfigAnswer = "com.cloud.agent.api.GetVmConfigAnswer";
+        public const string ModifyVmNicConfigCommand = "com.cloud.agent.api.ModifyVmNicConfigCommand";
+        public const string ModifyVmNicConfigAnswer = "com.cloud.agent.api.ModifyVmNicConfigAnswer";
         public const string GetVncPortAnswer = "com.cloud.agent.api.GetVncPortAnswer";
         public const string GetVncPortCommand = "com.cloud.agent.api.GetVncPortCommand";
         public const string HostStatsEntry = "com.cloud.agent.api.HostStatsEntry";
@@ -732,6 +722,8 @@ namespace HypervResource
         public const string ManageSnapshotCommand = "com.cloud.agent.api.ManageSnapshotCommand";
         public const string MigrateAnswer = "com.cloud.agent.api.MigrateAnswer";
         public const string MigrateCommand = "com.cloud.agent.api.MigrateCommand";
+        public const string MigrateWithStorageAnswer = "com.cloud.agent.api.MigrateWithStorageAnswer";
+        public const string MigrateWithStorageCommand = "com.cloud.agent.api.MigrateWithStorageCommand";
         public const string ModifySshKeysCommand = "com.cloud.agent.api.ModifySshKeysCommand";
         public const string ModifyStoragePoolAnswer = "com.cloud.agent.api.ModifyStoragePoolAnswer";
         public const string ModifyStoragePoolCommand = "com.cloud.agent.api.ModifyStoragePoolCommand";
@@ -816,6 +808,8 @@ namespace HypervResource
         public const string CreateCommand = "com.cloud.agent.api.storage.CreateCommand";
         public const string CreatePrivateTemplateAnswer = "com.cloud.agent.api.storage.CreatePrivateTemplateAnswer";
         public const string DestroyCommand = "com.cloud.agent.api.storage.DestroyCommand";
+        public const string MigrateVolumeAnswer = "com.cloud.agent.api.storage.MigrateVolumeAnswer";
+        public const string MigrateVolumeCommand = "com.cloud.agent.api.storage.MigrateVolumeCommand";
         public const string PrimaryStorageDownloadAnswer = "com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer";
         public const string PrimaryStorageDownloadCommand = "com.cloud.agent.api.storage.PrimaryStorageDownloadCommand";
         public const string ResizeVolumeAnswer = "com.cloud.agent.api.storage.ResizeVolumeAnswer";
@@ -881,5 +875,6 @@ namespace HypervResource
         public const string DeleteCommand = "org.apache.cloudstack.storage.command.DeleteCommand";
         public const string DettachAnswer = "org.apache.cloudstack.storage.command.DettachAnswer";
         public const string DettachCommand = "org.apache.cloudstack.storage.command.DettachCommand";
+        public const string HostVmStateReportCommand = "org.apache.cloudstack.HostVmStateReportCommand";
     }
 }

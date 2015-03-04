@@ -17,6 +17,7 @@
 package org.apache.cloudstack.network.lb;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -26,12 +27,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
+import com.cloud.user.dao.UserDao;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -91,6 +93,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.Storage;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -163,6 +166,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     VMTemplateDao _templateDao;
     @Inject
     ResourceManager _resourceMgr;
+    @Inject
+    UserDao _userDao;
 
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
@@ -378,7 +383,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
             ServiceOfferingVO newOff =
                 new ServiceOfferingVO("System Offering For Internal LB VM", 1, InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_RAMSIZE,
-                    InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_CPU_MHZ, null, null, true, null, useLocalStorage, true, null, true,
+                    InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_CPU_MHZ, null, null, true, null,
+                    Storage.ProvisioningType.THIN, useLocalStorage, true, null, true,
                     VirtualMachine.Type.InternalLoadBalancerVm, true);
             newOff.setUniqueName(ServiceOffering.internalLbVmDefaultOffUniqueName);
             newOff = _serviceOfferingDao.persistSystemServiceOffering(newOff);
@@ -613,7 +619,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                 return internalLbVms;
             }
 
-            LinkedHashMap<Network, NicProfile> networks = createInternalLbVmNetworks(guestNetwork, plan, requestedGuestIp);
+            LinkedHashMap<Network, List<? extends NicProfile>> networks = createInternalLbVmNetworks(guestNetwork, plan, requestedGuestIp);
             //Pass startVm=false as we are holding the network lock that needs to be released at the end of vm allocation
             DomainRouterVO internalLbVm =
                 deployInternalLbVm(owner, dest, plan, params, internalLbProviderId, _internalLbVmOfferingId, guestNetwork.getVpcId(), networks, false);
@@ -649,11 +655,11 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         return internalLbProvider.getId();
     }
 
-    protected LinkedHashMap<Network, NicProfile> createInternalLbVmNetworks(Network guestNetwork, DeploymentPlan plan, Ip guestIp) throws ConcurrentOperationException,
-        InsufficientAddressCapacityException {
+    protected LinkedHashMap<Network, List<? extends NicProfile>> createInternalLbVmNetworks(Network guestNetwork, DeploymentPlan plan, Ip guestIp) throws ConcurrentOperationException,
+            InsufficientAddressCapacityException {
 
         //Form networks
-        LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>(3);
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
 
         //1) Guest network - default
         if (guestNetwork != null) {
@@ -672,7 +678,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             String gatewayCidr = guestNetwork.getCidr();
             guestNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
             guestNic.setDefaultNic(true);
-            networks.put(guestNetwork, guestNic);
+            networks.put(guestNetwork, new ArrayList<NicProfile>(Arrays.asList(guestNic)));
         }
 
         //2) Control network
@@ -680,7 +686,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         List<? extends NetworkOffering> offerings = _ntwkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
         NetworkOffering controlOffering = offerings.get(0);
         Network controlConfig = _ntwkMgr.setupNetwork(_accountMgr.getSystemAccount(), controlOffering, plan, null, null, false).get(0);
-        networks.put(controlConfig, null);
+        networks.put(controlConfig, new ArrayList<NicProfile>());
 
         return networks;
     }
@@ -711,7 +717,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     }
 
     protected DomainRouterVO deployInternalLbVm(Account owner, DeployDestination dest, DeploymentPlan plan, Map<Param, Object> params, long internalLbProviderId,
-        long svcOffId, Long vpcId, LinkedHashMap<Network, NicProfile> networks, boolean startVm) throws ConcurrentOperationException,
+        long svcOffId, Long vpcId, LinkedHashMap<Network, List<? extends NicProfile>> networks, boolean startVm) throws ConcurrentOperationException,
         InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException, StorageUnavailableException,
         ResourceUnavailableException {
 
@@ -758,9 +764,14 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                     continue;
                 }
 
+                long userId = CallContext.current().getCallingUserId();
+                if (CallContext.current().getCallingAccount().getId() != owner.getId()) {
+                    userId =  _userDao.listByAccount(owner.getAccountId()).get(0).getId();
+                }
+
                 internalLbVm =
                     new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId, VirtualMachineName.getSystemVmName(id, _instance, InternalLbVmNamePrefix),
-                        template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), false, 0, false,
+                        template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), userId, false, 0, false,
                         RedundantState.UNKNOWN, false, false, VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
                 internalLbVm.setRole(Role.INTERNAL_LB_VM);
                 internalLbVm = _internalLbVmDao.persist(internalLbVm);
@@ -805,7 +816,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     protected DomainRouterVO startInternalLbVm(DomainRouterVO internalLbVm, Account caller, long callerUserId, Map<Param, Object> params)
         throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting Internal LB VM " + internalLbVm);
-        _itMgr.start(internalLbVm.getUuid(), params, null);
+        _itMgr.start(internalLbVm.getUuid(), params, null, null);
         if (internalLbVm.isStopPending()) {
             s_logger.info("Clear the stop pending flag of Internal LB VM " + internalLbVm.getHostName() + " after start router successfully!");
             internalLbVm.setStopPending(false);

@@ -30,7 +30,8 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteTrafficMonitor", description = "Deletes an traffic monitor host.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteTrafficMonitor", description = "Deletes an traffic monitor host.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteTrafficMonitorCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteTrafficMonitorCmd.class.getName());
     private static final String s_name = "deletetrafficmonitorresponse";

@@ -27,6 +27,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.resource.ResourceState;
+import com.cloud.utils.fsm.StateMachine2;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
@@ -49,7 +51,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.api.ApiDBUtils;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -67,7 +68,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceListener;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
@@ -76,7 +76,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.DateUtil;
@@ -182,12 +181,21 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @DB
     @Override
     public boolean releaseVmCapacity(VirtualMachine vm, final boolean moveFromReserved, final boolean moveToReservered, final Long hostId) {
+        if (hostId == null) {
+            return true;
+        }
+
         final ServiceOfferingVO svo = _offeringsDao.findById(vm.getId(), vm.getServiceOfferingId());
         CapacityVO capacityCpu = _capacityDao.findByHostIdType(hostId, Capacity.CAPACITY_TYPE_CPU);
         CapacityVO capacityMemory = _capacityDao.findByHostIdType(hostId, Capacity.CAPACITY_TYPE_MEMORY);
         Long clusterId = null;
         if (hostId != null) {
             HostVO host = _hostDao.findById(hostId);
+            if (host == null) {
+                s_logger.warn("Host " + hostId + " no long exist anymore!");
+                return true;
+            }
+
             clusterId = host.getClusterId();
         }
         if (capacityCpu == null || capacityMemory == null || svo == null) {
@@ -505,31 +513,32 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     }
 
-    private long getUsedBytes(StoragePoolVO pool) {
-        long usedBytes = 0;
+    @Override
+    public long getUsedBytes(StoragePoolVO pool) {
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
 
-        List<VolumeVO> volumes = _volumeDao.findByPoolId(pool.getId(), null);
+        if (storeDriver instanceof PrimaryDataStoreDriver) {
+            PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
 
-        if (volumes != null && volumes.size() > 0) {
-            DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
-            DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
-            PrimaryDataStoreDriver primaryStoreDriver = null;
-
-            if (storeDriver instanceof PrimaryDataStoreDriver) {
-                primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
-            }
-
-            for (VolumeVO volume : volumes) {
-                if (primaryStoreDriver != null) {
-                    usedBytes += primaryStoreDriver.getVolumeSizeIncludingHypervisorSnapshotReserve(volume, pool);
-                }
-                else {
-                    usedBytes += volume.getSize();
-                }
-            }
+            return primaryStoreDriver.getUsedBytes(pool);
         }
 
-        return usedBytes;
+        throw new CloudRuntimeException("Storage driver in CapacityManagerImpl.getUsedBytes(StoragePoolVO) is not a PrimaryDataStoreDriver.");
+    }
+
+    @Override
+    public long getUsedIops(StoragePoolVO pool) {
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+
+        if (storeDriver instanceof PrimaryDataStoreDriver) {
+            PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
+
+            return primaryStoreDriver.getUsedIops(pool);
+        }
+
+        throw new CloudRuntimeException("Storage driver in CapacityManagerImpl.getUsedIops(StoragePoolVO) is not a PrimaryDataStoreDriver.");
     }
 
     @Override
@@ -539,7 +548,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         // if the storage pool is managed, the used bytes can be larger than the sum of the sizes of all of the non-destroyed volumes
         // in this case, call getUsedBytes(StoragePoolVO)
         if (pool.isManaged()) {
-            totalAllocatedSize = getUsedBytes(pool);
+            return getUsedBytes(pool);
         }
         else {
             // Get size for all the non-destroyed volumes
@@ -586,6 +595,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         long usedMemory = 0;
         long reservedMemory = 0;
         long reservedCpu = 0;
+        final CapacityState capacityState = (host.getResourceState() == ResourceState.Enabled) ? CapacityState.Enabled : CapacityState.Disabled;
 
         List<VMInstanceVO> vms = _vmDao.listUpByHostId(host.getId());
         if (s_logger.isDebugEnabled()) {
@@ -669,6 +679,12 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 cpuCap.setTotalCapacity(hostTotalCpu);
 
             }
+            // Set the capacity state as per the host allocation state.
+            if(capacityState != cpuCap.getCapacityState()){
+                s_logger.debug("Calibrate cpu capacity state for host: " + host.getId() + " old capacity state:" + cpuCap.getTotalCapacity() + " new capacity state:" + hostTotalCpu);
+                cpuCap.setCapacityState(capacityState);
+            }
+            memCap.setCapacityState(capacityState);
 
             if (cpuCap.getUsedCapacity() == usedCpu && cpuCap.getReservedCapacity() == reservedCpu) {
                 s_logger.debug("No need to calibrate cpu capacity, host:" + host.getId() + " usedCpu: " + cpuCap.getUsedCapacity() + " reservedCpu: " +
@@ -690,6 +706,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                     host.getTotalMemory());
                 memCap.setTotalCapacity(host.getTotalMemory());
 
+            }
+            // Set the capacity state as per the host allocation state.
+            if(capacityState != memCap.getCapacityState()){
+                s_logger.debug("Calibrate memory capacity state for host: " + host.getId() + " old capacity state:" + memCap.getTotalCapacity() + " new capacity state:" + hostTotalCpu);
+                memCap.setCapacityState(capacityState);
             }
 
             if (memCap.getUsedCapacity() == usedMemory && memCap.getReservedCapacity() == reservedMemory) {
@@ -730,14 +751,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                         new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), host.getClusterId(), usedMemoryFinal, host.getTotalMemory(),
                             Capacity.CAPACITY_TYPE_MEMORY);
                     capacity.setReservedCapacity(reservedMemoryFinal);
-                    CapacityState capacityState = CapacityState.Enabled;
-                    if (host.getClusterId() != null) {
-                        ClusterVO cluster = ApiDBUtils.findClusterById(host.getClusterId());
-                        if (cluster != null) {
-                            capacityState = _configMgr.findClusterAllocationState(cluster) == AllocationState.Disabled ? CapacityState.Disabled : CapacityState.Enabled;
-                            capacity.setCapacityState(capacityState);
-                        }
-                    }
+                    capacity.setCapacityState(capacityState);
                     _capacityDao.persist(capacity);
 
                     capacity =
@@ -759,79 +773,82 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status, Object opaque) {
-        if (!status) {
-            return false;
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, VirtualMachine vm, boolean status, Object opaque) {
+      if (!status) {
+        return false;
+      }
+      @SuppressWarnings("unchecked")
+      Pair<Long, Long> hosts = (Pair<Long, Long>)opaque;
+      Long oldHostId = hosts.first();
+
+      State oldState = transition.getCurrentState();
+      State newState = transition.getToState();
+      Event event = transition.getEvent();
+      s_logger.debug("VM state transitted from :" + oldState + " to " + newState + " with event: " + event + "vm's original host id: " + vm.getLastHostId() +
+              " new host id: " + vm.getHostId() + " host id before state transition: " + oldHostId);
+
+      if (oldState == State.Starting) {
+        if (newState != State.Running) {
+          releaseVmCapacity(vm, false, false, oldHostId);
         }
-        @SuppressWarnings("unchecked")
-        Pair<Long, Long> hosts = (Pair<Long, Long>)opaque;
-        Long oldHostId = hosts.first();
-
-        s_logger.debug("VM state transitted from :" + oldState + " to " + newState + " with event: " + event + "vm's original host id: " + vm.getLastHostId() +
-            " new host id: " + vm.getHostId() + " host id before state transition: " + oldHostId);
-
-        if (oldState == State.Starting) {
-            if (newState != State.Running) {
-                releaseVmCapacity(vm, false, false, oldHostId);
-            }
-        } else if (oldState == State.Running) {
-            if (event == Event.AgentReportStopped) {
-                releaseVmCapacity(vm, false, true, oldHostId);
-            } else if (event == Event.AgentReportMigrated) {
-                releaseVmCapacity(vm, false, false, oldHostId);
-            }
-        } else if (oldState == State.Migrating) {
-            if (event == Event.AgentReportStopped) {
+      } else if (oldState == State.Running) {
+        if (event == Event.AgentReportStopped) {
+          releaseVmCapacity(vm, false, true, oldHostId);
+        } else if (event == Event.AgentReportMigrated) {
+          releaseVmCapacity(vm, false, false, oldHostId);
+        }
+      } else if (oldState == State.Migrating) {
+        if (event == Event.AgentReportStopped) {
                 /* Release capacity from original host */
-                releaseVmCapacity(vm, false, false, vm.getLastHostId());
-                releaseVmCapacity(vm, false, false, oldHostId);
-            } else if (event == Event.OperationFailed) {
+          releaseVmCapacity(vm, false, false, vm.getLastHostId());
+          releaseVmCapacity(vm, false, false, oldHostId);
+        } else if (event == Event.OperationFailed) {
                 /* Release from dest host */
-                releaseVmCapacity(vm, false, false, oldHostId);
-            } else if (event == Event.OperationSucceeded) {
-                releaseVmCapacity(vm, false, false, vm.getLastHostId());
-            }
-        } else if (oldState == State.Stopping) {
-            if (event == Event.OperationSucceeded) {
-                releaseVmCapacity(vm, false, true, oldHostId);
-            } else if (event == Event.AgentReportStopped) {
-                releaseVmCapacity(vm, false, false, oldHostId);
-            } else if (event == Event.AgentReportMigrated) {
-                releaseVmCapacity(vm, false, false, oldHostId);
-            }
-        } else if (oldState == State.Stopped) {
-            if (event == Event.DestroyRequested || event == Event.ExpungeOperation) {
-                releaseVmCapacity(vm, true, false, vm.getLastHostId());
-            } else if (event == Event.AgentReportMigrated) {
-                releaseVmCapacity(vm, false, false, oldHostId);
-            }
+          releaseVmCapacity(vm, false, false, oldHostId);
+        } else if (event == Event.OperationSucceeded) {
+          releaseVmCapacity(vm, false, false, vm.getLastHostId());
         }
-
-        if ((newState == State.Starting || newState == State.Migrating || event == Event.AgentReportMigrated) && vm.getHostId() != null) {
-            boolean fromLastHost = false;
-            if (vm.getHostId().equals(vm.getLastHostId())) {
-                s_logger.debug("VM starting again on the last host it was stopped on");
-                fromLastHost = true;
-            }
-            allocateVmCapacity(vm, fromLastHost);
+      } else if (oldState == State.Stopping) {
+        if (event == Event.OperationSucceeded) {
+          releaseVmCapacity(vm, false, true, oldHostId);
+        } else if (event == Event.AgentReportStopped) {
+          releaseVmCapacity(vm, false, false, oldHostId);
+        } else if (event == Event.AgentReportMigrated) {
+          releaseVmCapacity(vm, false, false, oldHostId);
         }
-
-        if (newState == State.Stopped) {
-            if (vm.getType() == VirtualMachine.Type.User) {
-
-                UserVmVO userVM = _userVMDao.findById(vm.getId());
-                _userVMDao.loadDetails(userVM);
-                // free the message sent flag if it exists
-                userVM.setDetail(MESSAGE_RESERVED_CAPACITY_FREED_FLAG, "false");
-                _userVMDao.saveDetails(userVM);
-
-            }
+      } else if (oldState == State.Stopped) {
+        if (event == Event.DestroyRequested || event == Event.ExpungeOperation) {
+          releaseVmCapacity(vm, true, false, vm.getLastHostId());
+        } else if (event == Event.AgentReportMigrated) {
+          releaseVmCapacity(vm, false, false, oldHostId);
         }
+      }
 
-        return true;
+      if ((newState == State.Starting || newState == State.Migrating || event == Event.AgentReportMigrated) && vm.getHostId() != null) {
+        boolean fromLastHost = false;
+        if (vm.getHostId().equals(vm.getLastHostId())) {
+          s_logger.debug("VM starting again on the last host it was stopped on");
+          fromLastHost = true;
+        }
+        allocateVmCapacity(vm, fromLastHost);
+      }
+
+      if (newState == State.Stopped) {
+        if (vm.getType() == VirtualMachine.Type.User) {
+
+          UserVmVO userVM = _userVMDao.findById(vm.getId());
+          _userVMDao.loadDetails(userVM);
+          // free the message sent flag if it exists
+          userVM.setDetail(MESSAGE_RESERVED_CAPACITY_FREED_FLAG, "false");
+          _userVMDao.saveDetails(userVM);
+
+        }
+      }
+
+      return true;
     }
 
-    // TODO: Get rid of this case once we've determined that the capacity listeners above have all the changes
+  // TODO: Get rid of this case once we've determined that the capacity listeners above have all the changes
     // create capacity entries if none exist for this server
     private void createCapacityEntry(StartupCommand startup, HostVO server) {
         SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();

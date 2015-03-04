@@ -43,32 +43,32 @@ angular.module('accounts').controller('AccountsListCtrl', ['$scope', 'accounts',
             {
                 model: 'username',
                 type: 'input-text',
-                label: 'username'
+                label: 'label.username.lower'
             },
             {
                 model: 'password',
                 type: 'input-password',
-                label: 'password'
+                label: 'label.password.lower'
             },
             {
                 model: 'email',
                 type: 'input-text',
-                label: 'email'
+                label: 'label.email.lower'
             },
             {
                 model: 'firstname',
                 type: 'input-text',
-                label: 'firstname'
+                label: 'label.firstname.lower'
             },
             {
                 model: 'lastname',
                 type: 'input-text',
-                label: 'lastname'
+                label: 'label.lastname.lower'
             },
             {
                 model: 'domainid',
                 type: 'select',
-                label: 'domain',
+                label: 'label.domain.lower',
                 options: Domains.fetch,
                 getName: function(model){
                     return model.name;
@@ -80,12 +80,12 @@ angular.module('accounts').controller('AccountsListCtrl', ['$scope', 'accounts',
             {
                 model: 'account',
                 type: 'input-text',
-                label: 'account'
+                label: 'label.account.lower'
             },
             {
                 model: 'accounttype',
                 type: 'select',
-                label: 'type',
+                label: 'label.type.lower',
                 options: function(){
                     return ['User', 'Admin']
                 },

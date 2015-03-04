@@ -49,7 +49,7 @@ public class SecurityGroupVO implements SecurityGroup {
     private String uuid;
 
     public SecurityGroupVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public SecurityGroupVO(String name, String description, long domainId, long accountId) {
@@ -57,7 +57,7 @@ public class SecurityGroupVO implements SecurityGroup {
         this.description = description;
         this.domainId = domainId;
         this.accountId = accountId;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -87,10 +87,15 @@ public class SecurityGroupVO implements SecurityGroup {
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return SecurityGroup.class;
     }
 }

@@ -17,15 +17,14 @@
 (function(cloudStack) {
 
     var domainObjs;
-    var rootDomainId;
-
+    
     cloudStack.sections.accounts = {
         title: 'label.accounts',
         id: 'accounts',
         sectionSelect: {
-            label: 'Select View',
+            label: 'label.select-view',
             preFilter: function() {
-                return ['accounts'];
+                return ['accounts', 'sshkeypairs'];
             }
         },
         sections: {
@@ -94,10 +93,11 @@
                         },
                                                 
                         addLdapAccount: {
-                            label: 'Add LDAP Account',
+                            label: 'label.add.ldap.account',
                             isHeader: true,
                             preFilter: function(args) {
-                                if ((isAdmin() || isDomainAdmin()) && isLdapEnabled()) {
+                                //if (isAdmin() && true) { //for testing only
+                                if (isAdmin() && isLdapEnabled()) {
                                     return true;
                                 } else {
                                     return false;
@@ -105,7 +105,7 @@
                             },
                             messages: {
                                 notification: function(args) {
-                                    return 'Add LDAP Account';
+                                    return 'label.add.ldap.account';
                                 }
                             },
                             notification: {
@@ -659,7 +659,7 @@
                                     }
                                 }, {
                                     id: {
-                                        label: 'ID'
+                                        label: 'label.id'
                                     },
                                     accounttype: {
                                         label: 'label.role',
@@ -728,7 +728,7 @@
                                         }
                                     },
                                     vpcLimit: {
-                                        label: 'VPC limits',
+                                        label: 'label.VPC.limits',
                                         isEditable: function(context) {
                                             if (context.accounts[0].accounttype == roleTypeUser || context.accounts[0].accounttype == roleTypeDomainAdmin) //updateResourceLimits is only allowed on account whose type is user or domain-admin
                                                 return true;
@@ -1369,16 +1369,10 @@
                                     }
                                 }, {
                                     id: {
-                                        label: 'ID'
+                                        label: 'label.id'
                                     },
                                     state: {
                                         label: 'label.state'
-                                    },
-                                    apikey: {
-                                        label: 'label.api.key'
-                                    },
-                                    secretkey: {
-                                        label: 'label.secret.key'
                                     },
                                     account: {
                                         label: 'label.account.name'
@@ -1391,6 +1385,14 @@
                                     },
                                     domain: {
                                         label: 'label.domain'
+                                    },
+                                    apikey: {
+                                        label: 'label.api.key',
+                                        isCopyPaste: true
+                                    },
+                                    secretkey: {
+                                        label: 'label.secret.key',
+                                        isCopyPaste: true
                                     },
                                     email: {
                                         label: 'label.email',
@@ -1466,6 +1468,280 @@
                         }
                     }
                 }
+            },
+            sshkeypairs: {
+                type: 'select',
+                id: 'sshkeypairs',
+                title: 'SSH Key Pairs',
+                listView: {
+                    name: 'sshkeypairs',
+                    fields: {
+                        name: {
+                            label: 'label.name'
+                        },
+                        domain: {
+                           label: 'label.domain'
+                        },
+                        account: {
+                           label: 'label.account'
+                        },
+                        privatekey: {
+                            label: 'Private Key',
+                            span: false
+                        }
+                    },
+                    dataProvider: function(args) {
+                        var data = {
+//                            domainid: g_domainid,
+//                            account: g_account
+                        };
+
+                        listViewDataProvider(args, data);
+
+                        $.ajax({
+                            url: createURL('listSSHKeyPairs'),
+                            data: data,
+                            success: function(json) {
+                                var items = json.listsshkeypairsresponse.sshkeypair;
+                                args.response.success({
+                                    data: items
+                                });
+                            }
+                        });
+                    },
+                    actions: {
+                        add: {
+                            label: 'Create a SSH Key Pair',
+
+                            preFilter: function(args) {
+                                return true;
+                            },
+
+                            messages: {
+                                notification: function(args) {
+                                    return 'Created a SSH Key Pair.';
+                                }
+                            },
+
+                            createForm: {
+                                title: 'Create a SSH Key Pair',
+                                desc: 'Please fill in the following data to create or register a ssh key pair.<br><br>(1) If public key is set, CloudStack will register the public key. You can use it through your private key.<br><br>(2) If public key is not set, CloudStack will create a new SSH Key pair. In this case, please copy and save the private key. CloudStack will not keep it.<br>',
+                                fields: {
+                                    name: {
+                                        label: 'label.name',
+                                        validation: {
+                                            required: true
+                                        },
+                                    },
+                                    publickey: {
+                                        label: 'Public Key'
+                                    },
+                                    domain: {
+                                        label: 'label.domain',
+                                        isHidden: function(args) {
+                                            if (isAdmin() || isDomainAdmin())
+                                                return false;
+                                            else
+                                                return true;
+                                        },
+                                        select: function(args) {
+                                            if (isAdmin() || isDomainAdmin()) {
+                                                $.ajax({
+                                                    url: createURL("listDomains&listAll=true"),
+                                                    success: function(json) {
+                                                        var items = [];
+                                                        items.push({
+                                                            id: "",
+                                                            description: ""
+                                                        });
+                                                        var domainObjs = json.listdomainsresponse.domain;
+                                                        $(domainObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.path
+                                                            });
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                                args.$select.change(function() {
+                                                    var $form = $(this).closest('form');
+                                                    if ($(this).val() == "") {
+                                                        $form.find('.form-item[rel=account]').hide();
+                                                    } else {
+                                                        $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                                                    }
+                                                });
+                                            } else {
+                                                var items = [];
+                                                items.push({
+                                                    id: "",
+                                                    description: ""
+                                                });
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        },
+                                    },
+                                    account: {
+                                        label: 'label.account',
+                                        isHidden: function(args) {
+                                            if (isAdmin() || isDomainAdmin())
+                                                return false;
+                                            else
+                                                return true;
+                                        }
+                                    }
+                                }
+                            },
+
+                            action: function(args) {
+
+                                var data = {
+                                    name: args.data.name
+                                };
+
+                                if (args.data.domain != null && args.data.domain.length > 0) {
+                                    $.extend(data, {
+                                        domainid: args.data.domain
+                                    });
+                                    if (args.data.account != null && args.data.account.length > 0) {
+                                        $.extend(data, {
+                                            account: args.data.account
+                                        });
+                                    }
+                                }
+
+                                if (args.data.publickey != null && args.data.publickey.length > 0) {
+                                    $.extend(data, {
+                                        publickey: encodeURIComponent(args.data.publickey)
+                                    });
+                                    $.ajax({
+                                        url: createURL('registerSSHKeyPair'),
+                                        data: data,
+                                        type: "POST",
+                                        success: function(json) {
+                                            var item = json.registersshkeypairresponse.keypair;
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        },
+                                        error: function(XMLHttpResponse) {
+                                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                            args.response.error(errorMsg);
+                                        }
+                                    });
+                                } else {
+                                    $.ajax({
+                                        url: createURL('createSSHKeyPair'),
+                                        data: data,
+                                        success: function(json) {
+                                            var item = json.createsshkeypairresponse.keypair;
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        },
+                                        error: function(XMLHttpResponse) {
+                                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                            args.response.error(errorMsg);
+                                        }
+                                    });
+                                }
+                            },
+
+                            notification: {
+                                poll: function(args) {
+                                    args.complete();
+                                }
+                            }
+                        }
+                    },
+
+                    detailView: {
+                        name: 'SSH Key Pair Details',
+                        isMaximized: true,
+                        viewAll: {
+                            label: 'label.instances',
+                            path: 'instances'
+                        },
+                        actions: {
+                            remove: {
+                                label: 'Remove SSH Key Pair',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'Please confirm that you want to remove this SSH Key Pair';
+                                    },
+                                    notification: function(args) {
+                                        return 'Removed a SSH Key Pair';
+                                    }
+                                },
+                                action: function(args) {
+                                    var data = {
+                                        domainid: args.context.sshkeypairs[0].domainid,
+                                        account: args.context.sshkeypairs[0].account,
+                                        name: args.context.sshkeypairs[0].name
+                                    };
+                                    $.ajax({
+                                        url: createURL('deleteSSHKeyPair'),
+                                        data: data,
+                                        success: function(json) {
+                                            args.response.success();
+                                            $(window).trigger('cloudStack.fullRefresh');
+                                        }
+                                    });
+                                }
+                            }
+                        },
+                        tabs: {
+                            details: {
+                                title: 'label.details',
+
+                                fields: [{
+                                    name: {
+                                        label: 'label.name',
+                                        isEditable: true,
+                                        validation: {
+                                            required: true
+                                        }
+                                    }
+                                }, {
+                                    domain: {
+                                        label: 'label.domain'
+                                    },
+                                    account: {
+                                        label: 'label.account'
+                                    },
+                                    privatekey: {
+                                        label: 'Private Key',
+                                        span: false
+                                    },
+                                    fingerprint: {
+                                        label: 'FingerPrint'
+                                    }
+                                }],
+
+                                dataProvider: function(args) {
+                                    var data = {
+                                        name: args.context.sshkeypairs[0].name
+                                    };
+                                    $.ajax({
+                                        url: createURL('listSSHKeyPairs&listAll=true'),
+                                        data: data,
+                                        success: function(json) {
+                                            args.response.success({
+                                                actionFilter: sshkeypairActionfilter,
+                                                data: json.listsshkeypairsresponse.sshkeypair[0]
+                                            });
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     };
@@ -1525,21 +1801,28 @@
                     allowedActions.push("enable");
                 allowedActions.push("remove");
             }
-        } else {
-            if (isSelfOrChildDomainUser(jsonObj.username, jsonObj.accounttype, jsonObj.domainid, jsonObj.iscallerchilddomain)) {
-                if (isDomainAdmin() && jsonObj.username != g_username) {
-                    allowedActions.push("edit");
-                    if (jsonObj.state == "enabled")
-                        allowedActions.push("disable");
-                    if (jsonObj.state == "disabled")
-                        allowedActions.push("enable");
-                    allowedActions.push("remove");
-                }
+        } else { //domain-admin, regular-user
+        	if (jsonObj.username == g_username) { //selected user is self
+        		allowedActions.push("changePassword");
+                allowedActions.push("generateKeys");
+        	} else if (isDomainAdmin()) { //if selected user is not self, and the current login is domain-admin
+        		allowedActions.push("edit");
+                if (jsonObj.state == "enabled")
+                    allowedActions.push("disable");
+                if (jsonObj.state == "disabled")
+                    allowedActions.push("enable");
+                allowedActions.push("remove");
+                
                 allowedActions.push("changePassword");
                 allowedActions.push("generateKeys");
-            }
+        	}        	
         }
         return allowedActions;
     }
 
+    var sshkeypairActionfilter = function(args) {
+        var allowedActions = [];
+        allowedActions.push("remove");
+        return allowedActions;
+    }
 })(cloudStack);

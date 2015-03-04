@@ -16,7 +16,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
-ips=$(ip addr show dev eth0 | grep inet | grep eth0 | awk '{print $2}' ); echo $ips
+#we have intentionally split the ip gathering command into two.
+#This was done to avoid getting a SIGPIPE during certain load conditions.
+ipInfo=$(ip addr show dev eth0 | grep inet | grep eth0 )
+ips=$(echo "$ipInfo" | awk '{print $2}' ); echo $ips
 for ip in $ips; do
 	addr=$(echo $ip | awk -F'/' '{print $1}')
 	/opt/cloud/bin/passwd_server_ip $addr >> /var/log/cloud.log 2>&1 &

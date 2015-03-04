@@ -36,7 +36,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.api.response.netapp.DeleteVolumePoolCmdResponse;
 
-@APICommand(name = "deletePool", description = "Delete a pool", responseObject = DeleteVolumePoolCmdResponse.class)
+@APICommand(name = "deletePool", description = "Delete a pool", responseObject = DeleteVolumePoolCmdResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteVolumePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVolumePoolCmd.class.getName());
     private static final String s_name = "deletepoolresponse";

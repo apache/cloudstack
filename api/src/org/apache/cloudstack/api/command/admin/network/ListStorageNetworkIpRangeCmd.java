@@ -39,7 +39,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(name = "listStorageNetworkIpRange", description = "List a storage network IP range.", responseObject = StorageNetworkIpRangeResponse.class, since = "3.0.0")
+@APICommand(name = "listStorageNetworkIpRange", description = "List a storage network IP range.", responseObject = StorageNetworkIpRangeResponse.class, since = "3.0.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListStorageNetworkIpRangeCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListStorageNetworkIpRangeCmd.class);
 

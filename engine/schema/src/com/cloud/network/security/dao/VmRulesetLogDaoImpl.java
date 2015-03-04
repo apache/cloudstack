@@ -39,7 +39,7 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 @Local(value = {VmRulesetLogDao.class})
 public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> implements VmRulesetLogDao {
-    protected static Logger s_logger = Logger.getLogger(VmRulesetLogDaoImpl.class);
+    protected static final Logger s_logger = Logger.getLogger(VmRulesetLogDaoImpl.class);
     private SearchBuilder<VmRulesetLogVO> VmIdSearch;
     private String InsertOrUpdateSQl = "INSERT INTO op_vm_ruleset_log (instance_id, created, logsequence) "
         + " VALUES(?, now(), 1) ON DUPLICATE KEY UPDATE logsequence=logsequence+1";

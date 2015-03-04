@@ -32,7 +32,8 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
 
-@APICommand(name = "createSecurityGroup", responseObject = SecurityGroupResponse.class, description = "Creates a security group")
+@APICommand(name = "createSecurityGroup", responseObject = SecurityGroupResponse.class, description = "Creates a security group", entityType = {SecurityGroup.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateSecurityGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSecurityGroupCmd.class.getName());
 
@@ -96,7 +97,7 @@ public class CreateSecurityGroupCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         Account account = CallContext.current().getCallingAccount();
-        if ((account == null) || isAdmin(account.getType())) {
+        if ((account == null) || _accountService.isAdmin(account.getId())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
                 if (userAccount != null) {
@@ -119,7 +120,7 @@ public class CreateSecurityGroupCmd extends BaseCmd {
         if (group != null) {
             SecurityGroupResponse response = _responseGenerator.createSecurityGroupResponse(group);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create security group");
         }

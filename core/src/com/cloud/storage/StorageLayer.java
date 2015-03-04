@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,10 +15,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.storage;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import com.cloud.utils.component.Manager;
 
@@ -146,4 +150,6 @@ public interface StorageLayer extends Manager {
     boolean setWorldReadableAndWriteable(File file);
 
     boolean deleteDir(String dir);
+
+    List<String> listMountPointsByMsHost(String path, long msHostId);
 }

@@ -19,7 +19,7 @@
 """
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.integration.lib.base import (Account,
+from marvin.lib.base import (Account,
                                          VpcOffering,
                                          VPC,
                                          ServiceOffering,
@@ -32,11 +32,11 @@ from marvin.integration.lib.base import (Account,
                                          StaticNATRule)
 from marvin.cloudstackAPI import (stopRouter,
                                   startRouter)
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            list_routers)
-from marvin.integration.lib.utils import cleanup_resources
+from marvin.lib.utils import cleanup_resources
 import socket
 import time
 
@@ -182,14 +182,13 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         # We want to fail quicker if it's failure
         socket.setdefaulttimeout(60)
 
-        cls.api_client = super(
-                                        TestVPCNetworkPFRules,
-                                        cls
-                                        ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestVPCNetworkPFRules, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.template = get_template(
                                     cls.api_client,
                                     cls.zone.id,
@@ -495,7 +494,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         return nwacl_nat
 
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_01_VPC_StaticNatRuleCreateStoppedState(self):
         """ Test case no extra : 
         """
@@ -523,7 +522,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_02_VPC_CreateStaticNatRule(self):
         """ Test case no 229 : Create Static NAT Rule for a single virtual network of 
             a VPC using a new Public IP Address available with the VPC when the Virtual Router is in Running State
@@ -546,7 +545,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_1, public_ip_1, testnegative=False)
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_03_VPC_StopCreateMultipleStaticNatRuleStopppedState(self):
         """ Test case no extra : Create Static Nat Rule rules for a two/multiple virtual networks of a VPC using
                 a new Public IP Address available with the VPC when Virtual Router is in Stopped State
@@ -586,7 +585,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_2, public_ip_2, testnegative=False)
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_04_VPC_CreateMultipleStaticNatRule(self):
         """ Test case no 230 : Create Static NAT Rules for a two/multiple virtual networks of 
             a VPC using a new Public IP Address available with the VPC when the Virtual Router is in Running State
@@ -619,7 +618,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_ssh_into_vm(vm_2, public_ip_2, testnegative=False)
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_05_network_services_VPC_DeleteAllPF(self):
         """ Test case no 232: Delete all Static NAT Rules for a single virtual network of 
             a VPC belonging to a single Public IP Address when the Virtual Router is in Running State
@@ -651,7 +650,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         self.check_wget_from_vm(vm_1, public_ip_1, testnegative=True)
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_06_network_services_VPC_DeleteAllMultiplePF(self):
         """ Test case no 233: Delete all Static NAT rules for two/multiple virtual networks of a VPC. 
             Observe the status of the Public IP Addresses of the rules when the Virtual Router is in Running State.

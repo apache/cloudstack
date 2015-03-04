@@ -21,6 +21,7 @@ import java.util.Date;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage.StoragePoolType;
 
 public interface StoragePool extends Identity, InternalIdentity {
@@ -98,10 +99,9 @@ public interface StoragePool extends Identity, InternalIdentity {
 
     Long getPodId();
 
-    /**
-     * @return
-     */
     String getStorageProviderName();
 
     boolean isInMaintenance();
+
+    Hypervisor.HypervisorType getHypervisor();
 }

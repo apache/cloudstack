@@ -101,20 +101,23 @@ public class AprSocketSource extends BaseElement {
             if (verbose)
                 System.out.println("[" + this + "] INFO: Reading data from stream.");
 
+            // to unblock during reboot
+            long startTime = System.currentTimeMillis();
             // FIXME: If pull is destroyed or socket is closed, segfault will happen here
             int actualLength = (block) ? // Blocking read
                     Socket.recv(socket, buf.data, buf.offset, buf.data.length - buf.offset)
                     : // Non-blocking read
-                        Socket.recvt(socket, buf.data, buf.offset, buf.data.length - buf.offset, 1);
+                        Socket.recvt(socket, buf.data, buf.offset, buf.data.length - buf.offset, 5000000);
 
                     if (socketWrapper.shutdown) {
                         socketWrapper.destroyPull();
                         return;
                     }
 
-                    if (actualLength < 0) {
+                    long elapsedTime = System.currentTimeMillis() - startTime;
+                    if (actualLength < 0 || elapsedTime > 5000) {
                         if (verbose)
-                            System.out.println("[" + this + "] INFO: End of stream.");
+                            System.out.println("[" + this + "] INFO: End of stream or timeout");
 
                         buf.unref();
                         closeStream();

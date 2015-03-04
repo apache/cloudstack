@@ -22,9 +22,10 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.event.ActionEvent;
@@ -83,10 +84,15 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     EntityManager _entityMgr;
     @Inject
     VpcService _vpcSvc;
+    @Inject
+    MessageBus _messageBus;
 
     @Override
-    public NetworkACL createNetworkACL(String name, String description, long vpcId) {
+    public NetworkACL createNetworkACL(String name, String description, long vpcId, Boolean forDisplay) {
         NetworkACLVO acl = new NetworkACLVO(name, description, vpcId);
+        if (forDisplay != null) {
+            acl.setDisplay(forDisplay);
+        }
         return _networkACLDao.persist(acl);
     }
 
@@ -208,7 +214,13 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         if (_networkDao.update(network.getId(), network)) {
             s_logger.debug("Updated network: " + network.getId() + " with Network ACL Id: " + acl.getId() + ", Applying ACL items");
             //Apply ACL to network
-            return applyACLToNetwork(network.getId());
+            Boolean result = applyACLToNetwork(network.getId());
+            if (result) {
+                // public message on message bus, so that network elements implementing distributed routing capability
+                // can act on the event
+                _messageBus.publish(_name, "Network_ACL_Replaced", PublishScope.LOCAL, network);
+            }
+            return result;
         }
         return false;
     }
@@ -216,8 +228,8 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_ITEM_CREATE, eventDescription = "creating network ACL Item", create = true)
-    public NetworkACLItem createNetworkACLItem(final Integer portStart, final Integer portEnd, final String protocol, final List<String> sourceCidrList,
-        final Integer icmpCode, final Integer icmpType, final NetworkACLItem.TrafficType trafficType, final Long aclId, final String action, Integer number) {
+    public NetworkACLItem createNetworkACLItem(final Integer portStart, final Integer portEnd, final String protocol, final List<String> sourceCidrList, final Integer icmpCode,
+            final Integer icmpType, final NetworkACLItem.TrafficType trafficType, final Long aclId, final String action, Integer number, final Boolean forDisplay) {
         // If number is null, set it to currentMax + 1 (for backward compatibility)
         if (number == null) {
             number = _networkACLItemDao.getMaxNumberByACL(aclId) + 1;
@@ -234,6 +246,11 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
                 NetworkACLItemVO newRule =
                     new NetworkACLItemVO(portStart, portEnd, protocol.toLowerCase(), aclId, sourceCidrList, icmpCode, icmpType, trafficType, ruleAction, numberFinal);
+
+                if (forDisplay != null) {
+                    newRule.setDisplay(forDisplay);
+                }
+
                 newRule = _networkACLItemDao.persist(newRule);
 
                 if (!_networkACLItemDao.setStateToAdd(newRule)) {
@@ -254,7 +271,6 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_DELETE, eventDescription = "revoking network acl", async = true)
     public boolean revokeNetworkACLItem(long ruleId) {
 
         NetworkACLItemVO rule = _networkACLItemDao.findById(ruleId);
@@ -399,7 +415,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
     @Override
     public NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType, String action,
-        Integer number, Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType) throws ResourceUnavailableException {
+        Integer number, Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType, String customId, Boolean forDisplay) throws ResourceUnavailableException {
         NetworkACLItemVO aclItem = _networkACLItemDao.findById(id);
         aclItem.setState(State.Add);
 
@@ -443,6 +459,14 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             aclItem.setIcmpType(icmpType);
         }
 
+        if (customId != null) {
+            aclItem.setUuid(customId);
+        }
+
+        if (forDisplay != null) {
+            aclItem.setDisplay(forDisplay);
+        }
+
         if (_networkACLItemDao.update(id, aclItem)) {
             if (applyNetworkACL(aclItem.getAclId())) {
                 return aclItem;
@@ -466,8 +490,12 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             foundProvider = true;
             s_logger.debug("Applying NetworkACL for network: " + network.getId() + " with Network ACL service provider");
             handled = element.applyNetworkACLs(network, rules);
-            if (handled)
+            if (handled) {
+                // publish message on message bus, so that network elements implementing distributed routing
+                // capability can act on the event
+                _messageBus.publish(_name, "Network_ACL_Replaced", PublishScope.LOCAL, network);
                 break;
+            }
         }
         if (!foundProvider) {
             s_logger.debug("Unable to find NetworkACL service provider for network: " + network.getId());

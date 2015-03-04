@@ -355,7 +355,7 @@
                             }
                         }, {
                             id: {
-                                label: 'ID'
+                                label: 'label.id'
                             },
 
                             path: {
@@ -417,7 +417,7 @@
                                 }
                             },
                             vpcLimit: {
-                                label: 'VPC limits',
+                                label: 'label.VPC.limits',
                                 isEditable: function(args) {
                                     if (args.domains[0].id == g_domainid) //disallow to update the field on the domain you log in as
                                         return false;
@@ -488,9 +488,7 @@
                             $.ajax({
                                 url: createURL("listAccounts&domainid=" + domainObj.id),
                                 async: false,
-                                data: {
-                                    details: 'min'
-                                },
+                                data: {},
                                 success: function(json) {
                                     var items = json.listaccountsresponse.account;
                                     if (items != null) {
@@ -508,9 +506,7 @@
                             $.ajax({
                                 url: createURL("listProjects&domainid=" + domainObj.id),
                                 async: false,
-                                data: {
-                                    details: 'min'
-                                },
+                                data: {},
                                 success: function(json) {
                                     var items = json.listprojectsresponse.project;
                                     if (items != null) {

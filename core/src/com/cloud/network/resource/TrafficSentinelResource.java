@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.resource;
 
 import java.io.BufferedReader;
@@ -219,9 +222,6 @@ public class TrafficSentinelResource implements ServerResource {
                         String publicIp = st.nextToken();
                         Long bytesSent = new Long(st.nextToken());
                         Long bytesRcvd = new Long(st.nextToken());
-                        if (bytesSent == null || bytesRcvd == null) {
-                            s_logger.debug("Incorrect bytes for IP: " + publicIp);
-                        }
                         long[] bytesSentAndReceived = new long[2];
                         bytesSentAndReceived[0] = bytesSent;
                         bytesSentAndReceived[1] = bytesRcvd;

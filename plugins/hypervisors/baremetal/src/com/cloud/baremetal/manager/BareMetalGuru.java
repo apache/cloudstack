@@ -84,4 +84,10 @@ public class BareMetalGuru extends HypervisorGuruBase implements HypervisorGuru 
     public boolean trackVmHostChange() {
         return false;
     }
+
+    @Override
+    public Map<String, String> getClusterSettings(long vmId) {
+        return null;
+    }
+
 }

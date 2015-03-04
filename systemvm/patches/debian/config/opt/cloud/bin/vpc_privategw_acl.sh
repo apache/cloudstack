@@ -155,10 +155,12 @@ acl_entry_for_guest_network() {
 dflag=0
 gflag=0
 aflag=0
+mflag=0
 rules=""
 rules_list=""
 dev=""
-while getopts 'd:a:' OPTION
+mac=""
+while getopts 'd:a:M:' OPTION
 do
   case $OPTION in
   d)    dflag=1
@@ -166,6 +168,9 @@ do
                 ;;
   a)    aflag=1
         rules="$OPTARG"
+        ;;
+  M)    mflag=1
+        mac="$OPTARG"
         ;;
   ?)    usage
                 unlock_exit 2 $lock $locked

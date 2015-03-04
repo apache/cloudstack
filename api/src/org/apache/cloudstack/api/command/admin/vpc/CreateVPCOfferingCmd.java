@@ -39,10 +39,11 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.user.Account;
 
-@APICommand(name = "createVPCOffering", description = "Creates VPC offering", responseObject = VpcOfferingResponse.class)
+@APICommand(name = "createVPCOffering", description = "Creates VPC offering", responseObject = VpcOfferingResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVPCOfferingCmd.class.getName());
-    private static final String Name = "createvpcofferingresponse";
+    private static final String s_name = "createvpcofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -64,6 +65,9 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST, type = CommandType.MAP, description = "provider to service mapping. "
         + "If not specified, the provider for the service will be mapped to the default provider on the physical network")
     private Map<String, String> serviceProviderList;
+
+    @Parameter(name = ApiConstants.SERVICE_CAPABILITY_LIST, type = CommandType.MAP, description = "desired service capabilities as part of vpc offering", since = "4.4")
+    private Map serviceCapabilitystList;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
                type = CommandType.UUID,
@@ -111,13 +115,18 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
         return serviceProviderMap;
     }
 
+    public Map<String, List<String>> getServiceCapabilitystList() {
+        return serviceCapabilitystList;
+    }
+
     public Long getServiceOfferingId() {
         return serviceOfferingId;
     }
 
     @Override
     public void create() throws ResourceAllocationException {
-        VpcOffering vpcOff = _vpcProvSvc.createVpcOffering(getVpcOfferingName(), getDisplayText(), getSupportedServices(), getServiceProviders(), getServiceOfferingId());
+        VpcOffering vpcOff = _vpcProvSvc.createVpcOffering(getVpcOfferingName(), getDisplayText(),
+                getSupportedServices(), getServiceProviders(), getServiceCapabilitystList(), getServiceOfferingId());
         if (vpcOff != null) {
             setEntityId(vpcOff.getId());
             setEntityUuid(vpcOff.getUuid());
@@ -150,7 +159,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getCommandName() {
-        return Name;
+        return s_name;
     }
 
     @Override

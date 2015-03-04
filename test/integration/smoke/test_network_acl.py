@@ -17,77 +17,27 @@
 """ Tests for Network ACLs in VPC
 """
 #Import Local Modules
+from marvin.codes import FAILED
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
-
-class Services:
-    def __init__(self):
-        self.services = {
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                "password": "password",
-            },
-            "virtual_machine": {
-                "displayname": "Test VM",
-                "username": "root",
-                "password": "password",
-                "ssh_port": 22,
-                "hypervisor": 'XenServer',
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": 'TCP',
-            },
-            "ostype": 'CentOS 5.3 (64-bit)',
-            "service_offering": {
-                "name": "Tiny Instance",
-                "displaytext": "Tiny Instance",
-                "cpunumber": 1,
-                "cpuspeed": 100,
-                "memory": 256,
-            },
-            "network_offering": {
-                "name": "Network offering for internal lb service",
-                "displaytext": "Network offering for internal lb service",
-                "guestiptype": "Isolated",
-                "traffictype": "Guest",
-                "supportedservices": "Vpn,Dhcp,Dns,Lb,UserData,SourceNat,StaticNat,PortForwarding,NetworkACL",
-                "serviceProviderList": {
-                    "Dhcp": "VpcVirtualRouter",
-                    "Dns": "VpcVirtualRouter",
-                    "Vpn": "VpcVirtualRouter",
-                    "UserData": "VpcVirtualRouter",
-                    "Lb": "InternalLbVM",
-                    "SourceNat": "VpcVirtualRouter",
-                    "StaticNat": "VpcVirtualRouter",
-                    "PortForwarding": "VpcVirtualRouter",
-                    "NetworkACL": "VpcVirtualRouter",
-                },
-                "serviceCapabilityList": {
-                    "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
-                    "Lb": {"lbSchemes": "internal", "SupportedLbIsolation": "dedicated"}
-                }
-            }
-        }
-
 
 class TestNetworkACL(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.apiclient = super(TestNetworkACL, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
-        cls.zone = get_zone(cls.apiclient, cls.services)
+        testClient = super(TestNetworkACL, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["service_offering"]
+            cls.services["service_offerings"]
         )
         cls.account = Account.create(cls.apiclient, services=cls.services["account"])
         cls.template = get_template(
@@ -95,13 +45,18 @@ class TestNetworkACL(cloudstackTestCase):
             cls.zone.id,
             cls.services["ostype"]
         )
+        
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
         cls.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,\
                           cls.account.id))
         cls.cleanup = [cls.account]
 
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_network_acl(self):
+        #TODO: SIMENH: add actual verification Logic for rules.
         """Test network ACL lists and items in VPC"""
 
         # 0) Get the default network offering for VPC

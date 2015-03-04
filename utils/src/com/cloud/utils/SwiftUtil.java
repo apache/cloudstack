@@ -1,24 +1,26 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
+//
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+//
+
 package com.cloud.utils;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -98,7 +100,7 @@ public class SwiftUtil {
             String[] lines = parser.getLines().split("\\n");
             for (String line : lines) {
                 if (line.contains("Errno") || line.contains("failed") || line.contains("not found")) {
-                    throw new CloudRuntimeException("Failed to upload file: " + lines.toString());
+                    throw new CloudRuntimeException("Failed to upload file: " + Arrays.toString(lines));
                 }
             }
         }
@@ -124,7 +126,7 @@ public class SwiftUtil {
     }
 
     public static String[] list(SwiftClientCfg swift, String container, String rFilename) {
-        String swiftCli = getSwiftCLIPath();
+        getSwiftCLIPath();
         Script command = new Script("/bin/bash", logger);
         command.add("-c");
 
@@ -181,7 +183,7 @@ public class SwiftUtil {
             String[] lines = parser.getLines().split("\\n");
             for (String line : lines) {
                 if (line.contains("Errno") || line.contains("failed")) {
-                    String errMsg = "swiftDownload failed , err=" + lines.toString();
+                    String errMsg = "swiftDownload failed , err=" + Arrays.toString(lines);
                     logger.debug(errMsg);
                     throw new CloudRuntimeException("Failed to get object: " + swiftPath);
                 }
@@ -231,7 +233,7 @@ public class SwiftUtil {
 
         command.add(swiftCmdBuilder.toString());
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
-        String result = command.execute(parser);
+        command.execute(parser);
         return true;
     }
 }

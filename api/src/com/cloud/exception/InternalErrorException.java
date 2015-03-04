@@ -24,4 +24,8 @@ public class InternalErrorException extends ManagementServerException {
         super(message);
     }
 
+    public InternalErrorException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }

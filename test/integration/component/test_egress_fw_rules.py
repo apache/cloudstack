@@ -18,10 +18,9 @@
 """
 """
 #Import Local Modules
-import unittest
 from nose.plugins.attrib           import attr
-from marvin.cloudstackTestCase     import cloudstackTestCase
-from marvin.integration.lib.base   import (Account,
+from marvin.cloudstackTestCase     import cloudstackTestCase, unittest
+from marvin.lib.base   import (Account,
                                            Domain,
                                            Router,
                                            Network,
@@ -31,14 +30,13 @@ from marvin.integration.lib.base   import (Account,
                                            FireWallRule,
                                            NATRule,
                                            PublicIPAddress)
-from marvin.integration.lib.common import (get_domain,
+from marvin.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
                                            list_routers,
-                                           wait_for_cleanup,
                                            list_virtual_machines
                                            )
-from marvin.integration.lib.utils import cleanup_resources, validateList
+from marvin.lib.utils import cleanup_resources, validateList
 from marvin.cloudstackAPI import rebootRouter
 from marvin.cloudstackAPI.createEgressFirewallRule import createEgressFirewallRuleCmd
 from marvin.cloudstackAPI.deleteEgressFirewallRule import deleteEgressFirewallRuleCmd
@@ -83,11 +81,11 @@ class Services:
                                                "privateport" : 22,
                                                "publicport"  : 22,
                                                "protocol"    : 'TCP',},
-                         "service_offering" : {"name"        : "Tiny Instance",
-                                               "displaytext" : "Tiny Instance",
-                                               "cpunumber"   : 1,
-                                               "cpuspeed"    : 100,# in MHz
-                                               "memory"      : 128},
+                         "service_offering" : {"name"        : "Medium Instance",
+                                               "displaytext" : "Medium Instance",
+                                               "cpunumber"   : 2,
+                                               "cpuspeed"    : 128,# in MHz
+                                               "memory"      : 256},
                          "network_offering":  {
                                                "name": 'Network offering-VR services',
                                                "displaytext": 'Network offering-VR services',
@@ -132,12 +130,13 @@ class TestEgressFWRules(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls._cleanup = []
-        cls.api_client = super(TestEgressFWRules,
-                               cls).getClsTestClient().getApiClient()
-        cls.services  = Services().services
-        # Get Zone  Domain and create Domains and sub Domains.
-        cls.domain           = get_domain(cls.api_client, cls.services)
-        cls.zone             = get_zone(cls.api_client, cls.services)
+        cls.testClient = super(TestEgressFWRules, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         # Get and set template id for VM creation.
         cls.template = get_template(cls.api_client,
@@ -145,16 +144,16 @@ class TestEgressFWRules(cloudstackTestCase):
                                     cls.services["ostype"])
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
-        parentDomain = None
-        cls.domain  =  Domain.create(cls.api_client,
-                                     cls.services["domain"],
-                                     parentdomainid=parentDomain.id if parentDomain else None)
-        cls._cleanup.append(cls.domain)
-        # Create an Account associated with domain
-        cls.account = Account.create(cls.api_client,
-                                     cls.services["account"],
-                                     domainid=cls.domain.id)
-        cls._cleanup.append(cls.account)
+
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+
+        # As Hyperv is GUI based VM, it requires more resources to be
+        # able to SSH properly to it
+        if cls.hypervisor.lower()  == 'hyperv':
+            cls.services["service_offering"]["name"] = "Medium Instance"
+            cls.services["service_offering"]["memory"] = "1024"
+            cls.services["service_offering"]["cpuspeed"] = "1024"
+
         # Create service offerings.
         cls.service_offering = ServiceOffering.create(cls.api_client,
                                                       cls.services["service_offering"])
@@ -172,11 +171,16 @@ class TestEgressFWRules(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.api_client
         self.dbclient = self.testClient.getDbConnection()
-        self.cleanup_vms = []
-        self.cleanup_networks = []
-        self.cleanup   = []
-        self.snapshot  = None
         self.egressruleid = None
+        self.cleanup   = []
+        self.domain  =  Domain.create(self.apiclient,
+                                      self.services["domain"])
+        # Create an Account associated with domain
+        self.account = Account.create(self.apiclient,
+                                      self.services["account"],
+                                      domainid=self.domain.id)
+        self.cleanup.append(self.account)
+        self.cleanup.append(self.domain)
         return
 
     def create_network_offering(self, egress_policy=True, RR=False):
@@ -210,7 +214,6 @@ class TestEgressFWRules(cloudstackTestCase):
                                       domainid=self.account.domainid,
                                       networkofferingid=self.network_offering.id,
                                       zoneid=self.zone.id)
-        self.cleanup_networks.append(self.network)
         self.debug("Created network with ID: %s" % self.network.id)
         self.debug("Deploying instance in the account: %s" % self.account.name)
 
@@ -224,7 +227,6 @@ class TestEgressFWRules(cloudstackTestCase):
                                                          mode=self.zone.networktype if pfrule else 'basic',
                                                          networkids=[str(self.network.id)],
                                                          projectid=project.id if project else None)
-            self.cleanup_vms.append(self.virtual_machine)
         except Exception as e:
             self.fail("Virtual machine deployment failed with exception: %s" % e)
         self.debug("Deployed instance %s in account: %s" % (self.virtual_machine.id,self.account.name))
@@ -274,17 +276,22 @@ class TestEgressFWRules(cloudstackTestCase):
             self.debug("script: %s" % script+exec_cmd_params)
             self.debug("result: %s" % result)
 
-            if str(result).strip() == expected_result:
+            if isinstance(result, list):
+                str_result = str([str(x) for x in result])
+            else:
+                str_result = str(result)
+            str_expected_result = str(expected_result).strip()
+            if str_result == str_expected_result:
                 exec_success = True
 
             if negative_test:
                 self.assertEqual(exec_success,
                                  True,
-                                 "Script result is %s matching with %s" % (result, expected_result))
+                                 "Script result is %s matching with %s" % (str_result, str_expected_result))
             else:
                 self.assertEqual(exec_success,
                                  True,
-                                 "Script result is %s is not matching with %s" % (result, expected_result))
+                                 "Script result is %s is not matching with %s" % (str_result, str_expected_result))
 
         except Exception as e:
             self.debug('Error=%s' % e)
@@ -340,49 +347,12 @@ class TestEgressFWRules(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            if self.egressruleid:
-                self.debug('remove egress rule id=%s' % self.egressruleid)
-                self.deleteEgressRule()
-
             self.debug("Cleaning up the resources")
-
-            #below components is not a part of cleanup because to mandate the order and to cleanup network
-            try:
-                for vm in self.cleanup_vms:
-                    if str(vm.state).lower() != "error":
-                        vm.delete(self.api_client)
-            except Exception as e:
-                self.fail("Warning: Exception during virtual machines cleanup : %s" % e)
-
-            # Wait for VMs to expunge
-            wait_for_cleanup(self.api_client, ["expunge.delay", "expunge.interval"])
-
-            if len(self.cleanup_vms) > 0:
-                retriesCount = 10
-                while True:
-                    vms = list_virtual_machines(self.api_client, id=self.virtual_machine.id)
-                    if vms is None:
-                        break
-                    elif retriesCount == 0:
-                        self.fail("Failed to expunge vm even after 10 minutes")
-                    time.sleep(60)
-                    retriesCount -= 1
-
-            try:
-                for network in self.cleanup_networks:
-                    network.delete(self.api_client)
-            except Exception as e:
-                self.fail("Warning: Exception during networks cleanup : %s" % e)
-
-            self.debug("Sleep for Network cleanup to complete.")
-            wait_for_cleanup(self.apiclient, ["network.gc.wait", "network.gc.interval"])
-
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-            self.debug("Cleanup complete!")
+            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             self.fail("Warning! Cleanup failed: %s" % e)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_01_egress_fr1(self):
         """Test By-default the communication from guest n/w to public n/w is allowed.
         """
@@ -391,13 +361,20 @@ class TestEgressFWRules(cloudstackTestCase):
         # 2. login to VM.
         # 3. ping public network.
         # 4. public network should be reachable from the VM.
+        # 5. Reboot the router
+        # 6. Ping public network from VM, it should be reachable
         self.create_vm()
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['0']",
                                     negative_test=False)
+        self.reboot_Router()
+        self.exec_script_on_user_vm('ping -c 1 www.google.com',
+                                    "| grep -oP \'\d+(?=% packet loss)\'",
+                                    "['0']",
+                                    negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_01_1_egress_fr1(self):
         """Test By-default the communication from guest n/w to public n/w is NOT allowed.
         """
@@ -413,7 +390,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     negative_test=False)
 
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_02_egress_fr2(self):
         """Test Allow Communication using Egress rule with CIDR + Port Range + Protocol.
         """
@@ -424,13 +401,13 @@ class TestEgressFWRules(cloudstackTestCase):
         # 4. ping public network.
         # 5. public network should not be reachable from the VM.
         self.create_vm()
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['100']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_02_1_egress_fr2(self):
         """Test Allow Communication using Egress rule with CIDR + Port Range + Protocol.
         """
@@ -441,13 +418,13 @@ class TestEgressFWRules(cloudstackTestCase):
         # 5. ping public network.
         # 6. public network should be reachable from the VM.
         self.create_vm(egress_policy=False)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['0']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_03_egress_fr3(self):
         """Test Communication blocked with network that is other than specified
         """
@@ -461,14 +438,14 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['0']",
                                     negative_test=False)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         #Egress rule is set for ICMP other traffic is allowed
         self.exec_script_on_user_vm(' wget -t1 http://apache.claz.org/favicon.ico 2>&1',
                                     "| grep -oP 'failed:'",
                                     "[]",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_03_1_egress_fr3(self):
         """Test Communication blocked with network that is other than specified
         """
@@ -482,14 +459,14 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['100']",
                                     negative_test=False)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         #Egress rule is set for ICMP other traffic is not allowed
         self.exec_script_on_user_vm(' wget -t1 http://apache.claz.org/favicon.ico 2>&1',
                                     "| grep -oP 'failed:'",
                                     "['failed:']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_04_egress_fr4(self):
         """Test Create Egress rule and check the Firewall_Rules DB table
         """
@@ -498,7 +475,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 2. create egress rule with specific CIDR + port range.
         # 3. check the table Firewall_Rules, Firewall and Traffic_type should be "Egress".
         self.create_vm()
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         qresultset = self.dbclient.execute("select purpose, traffic_type from firewall_rules where uuid='%s';" % self.egressruleid)
         self.assertEqual(isinstance(qresultset, list),
                          True,
@@ -526,7 +503,7 @@ class TestEgressFWRules(cloudstackTestCase):
                          "DB results not matching, expected: 1, found: %s" % qresultset[0][0])
 
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_04_1_egress_fr4(self):
         """Test Create Egress rule and check the Firewall_Rules DB table
         """
@@ -535,7 +512,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 2. create egress rule with specific CIDR + port range.
         # 3. check the table Firewall_Rules, Firewall and Traffic_type should be "Egress".
         self.create_vm(egress_policy=False)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         qresultset = self.dbclient.execute("select purpose, traffic_type from firewall_rules where uuid='%s';" % self.egressruleid)
         self.assertEqual(isinstance(qresultset, list),
                          True,
@@ -563,7 +540,7 @@ class TestEgressFWRules(cloudstackTestCase):
                          "DB results not matching, expected: 0, found: %s" % qresultset[0][0])
 
     @unittest.skip("Skip")
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "NotRun"])
     def test_05_egress_fr5(self):
         """Test Create Egress rule and check the IP tables
         """
@@ -577,12 +554,12 @@ class TestEgressFWRules(cloudstackTestCase):
         #  -A FW_EGRESS_RULES -d 10.147.28.0/24 -p tcp -m tcp --dport 22 -j ACCEPT
         #  -A FW_EGRESS_RULES -j DROP
         self.create_vm()
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         #TODO: Query VR for expected route rules.
 
 
     @unittest.skip("Skip")
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "NotRun"])
     def test_05_1_egress_fr5(self):
         """Test Create Egress rule and check the IP tables
         """
@@ -596,11 +573,11 @@ class TestEgressFWRules(cloudstackTestCase):
         #  -A FW_EGRESS_RULES -d 10.147.28.0/24 -p tcp -m tcp --dport 22 -j ACCEPT
         #  -A FW_EGRESS_RULES -j DROP
         self.create_vm(egress_policy=False)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         #TODO: Query VR for expected route rules.
 
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_06_egress_fr6(self):
         """Test Create Egress rule without CIDR
         """
@@ -616,7 +593,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['100']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_06_1_egress_fr6(self):
         """Test Create Egress rule without CIDR
         """
@@ -632,7 +609,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['0']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_07_egress_fr7(self):
         """Test Create Egress rule without End Port
         """
@@ -642,13 +619,13 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. login to VM.
         # 4. access to public network should not be successfull.
         self.create_vm()
-        self.createEgressRule(protocol='tcp', start_port=80)
+        self.createEgressRule(protocol='tcp', start_port=80, cidr=TestEgressFWRules.zone.guestcidraddress)
         self.exec_script_on_user_vm(' wget -t1 http://apache.claz.org/favicon.ico 2>&1',
                                     "| grep -oP 'failed:'",
                                     "['failed:']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_07_1_egress_fr7(self):
         """Test Create Egress rule without End Port
         """
@@ -658,14 +635,14 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. login to VM.
         # 4. access to public network for tcp port 80 is blocked.
         self.create_vm()
-        self.createEgressRule(protocol='tcp', start_port=80)
+        self.createEgressRule(protocol='tcp', start_port=80, cidr=TestEgressFWRules.zone.guestcidraddress)
         self.exec_script_on_user_vm(' wget -t1 http://apache.claz.org/favicon.ico 2>&1',
                                     "| grep -oP 'failed:'",
                                     "['failed:']",
                                     negative_test=False)
 
     @unittest.skip("Skip")
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "NotRun"])
     def test_08_egress_fr8(self):
         """Test Port Forwarding and Egress Conflict
         """
@@ -674,10 +651,10 @@ class TestEgressFWRules(cloudstackTestCase):
         # 2. create egress rule with specific CIDR + port range.
         # 3. Egress should not impact pf rule.
         self.create_vm(pfrule=True)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
 
     @unittest.skip("Skip")
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced", "NotRun"])
     def test_08_1_egress_fr8(self):
         """Test Port Forwarding and Egress Conflict
         """
@@ -686,10 +663,10 @@ class TestEgressFWRules(cloudstackTestCase):
         # 2. create egress rule with specific CIDR + port range.
         # 3. Egress should not impact pf rule.
         self.create_vm(pfrule=True, egress_policy=False)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
 
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_09_egress_fr9(self):
         """Test Delete Egress rule
         """
@@ -702,7 +679,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 4. delete egress rule.
         # 5. connection to public network should be reachable.
         self.create_vm()
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['100']",
@@ -713,7 +690,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['0']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_09_1_egress_fr9(self):
         """Test Delete Egress rule
         """
@@ -726,7 +703,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 4. delete egress rule.
         # 5. connection to public network should not be reachable.
         self.create_vm(egress_policy=False)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['0']",
@@ -738,7 +715,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     negative_test=False)
 
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_10_egress_fr10(self):
         """Test Invalid CIDR and Invalid Port ranges
         """
@@ -747,9 +724,9 @@ class TestEgressFWRules(cloudstackTestCase):
         # 2. create egress rule invalid cidr invalid port range.
         # 3. egress rule creation should fail.
         self.create_vm()
-        self.assertRaises(Exception, self.createEgressRule, '10.2.2.0/24')
+        self.assertRaises(Exception, self.createEgressRule, cidr='10.2.2.0/24')
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_10_1_egress_fr10(self):
         """Test Invalid CIDR and Invalid Port ranges
         """
@@ -758,10 +735,10 @@ class TestEgressFWRules(cloudstackTestCase):
         # 2. create egress rule invalid cidr invalid port range.
         # 3. egress rule creation should fail.
         self.create_vm(egress_policy=False)
-        self.assertRaises(Exception, self.createEgressRule, '10.2.2.0/24')
+        self.assertRaises(Exception, self.createEgressRule, cidr='10.2.2.0/24')
 
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_11_egress_fr11(self):
         """Test Regression on Firewall + PF + LB + SNAT
         """
@@ -771,7 +748,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. All should work fine.
         self.create_vm(pfrule=True)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="false")
     def test_11_1_egress_fr11(self):
         """Test Regression on Firewall + PF + LB + SNAT
         """
@@ -781,7 +758,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. All should work fine.
         self.create_vm(pfrule=True, egress_policy=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_12_egress_fr12(self):
         """Test Reboot Router
         """
@@ -791,14 +768,14 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. reboot router.
         # 4. access to public network should not be successfull.
         self.create_vm()
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         self.reboot_Router()
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['100']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_12_1_egress_fr12(self):
         """Test Reboot Router
         """
@@ -808,14 +785,14 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. reboot router.
         # 4. access to public network should be successfull.
         self.create_vm(egress_policy=False)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         self.reboot_Router()
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['0']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_13_egress_fr13(self):
         """Test Redundant Router : Master failover
         """
@@ -826,7 +803,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. All should work fine.
         #TODO: setup network with RR
         self.create_vm(RR=True)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         vm_network_id = self.virtual_machine.nic[0].networkid
         self.debug("Listing routers for network: %s" % vm_network_id)
         routers = Router.list(self.apiclient,
@@ -870,7 +847,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "['100']",
                                     negative_test=False)
 
-    @attr(tags = ["advanced"])
+    @attr(tags=["advanced"], required_hardware="true")
     def test_13_1_egress_fr13(self):
         """Test Redundant Router : Master failover
         """
@@ -881,7 +858,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. All should work fine.
         #TODO: setup network with RR
         self.create_vm(RR=True, egress_policy=False)
-        self.createEgressRule()
+        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         vm_network_id = self.virtual_machine.nic[0].networkid
         self.debug("Listing routers for network: %s" % vm_network_id)
         routers = Router.list(self.apiclient,

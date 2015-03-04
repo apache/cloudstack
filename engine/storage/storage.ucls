@@ -70,9 +70,9 @@
     </display>  
   </interface>  
   <class id="6" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.storage.datastore.configurator.xen.XenNfsConfigurator" 
+    name="org.apache.cloudstack.storage.datastore.configurator.xenserver.XenNfsConfigurator"
     project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/configurator/xen/XenNfsConfigurator.java" 
+    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/configurator/xenserver/XenNfsConfigurator.java"
     binary="false">    
     <position height="-1" width="-1" x="1482" y="448"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -81,9 +81,9 @@
     </display>  
   </class>  
   <class id="7" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.storage.datastore.configurator.xen.AbstractXenConfigurator" 
+    name="org.apache.cloudstack.storage.datastore.configurator.xenserver.AbstractXenConfigurator"
     project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/configurator/xen/AbstractXenConfigurator.java" 
+    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/configurator/xenserver/AbstractXenConfigurator.java"
     binary="false">    
     <position height="-1" width="-1" x="1536" y="278"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -134,9 +134,9 @@
     </display>  
   </class>  
   <class id="12" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.storage.datastore.lifecycle.DefaultXenPrimaryDataStoreLifeCycle" 
+    name="org.apache.cloudstack.storage.datastore.lifecycle.DefaultXenServerPrimaryDataStoreLifeCycle"
     project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/lifecycle/DefaultXenPrimaryDataStoreLifeCycle.java" 
+    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/lifecycle/DefaultXenServerPrimaryDataStoreLifeCycle.java"
     binary="false">    
     <position height="-1" width="-1" x="724" y="1502"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -156,9 +156,9 @@
     </display>  
   </class>  
   <class id="14" corner="BOTTOM_RIGHT" language="java" 
-    name="org.apache.cloudstack.storage.datastore.configurator.xen.XenIscsiConfigurator" 
+    name="org.apache.cloudstack.storage.datastore.configurator.xenserver.XenServerIscsiConfigurator"
     project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/configurator/xen/XenIscsiConfigurator.java" 
+    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/configurator/xenserver/XenServerIscsiConfigurator.java"
     binary="false">    
     <position height="-1" width="-1" x="1817" y="450"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      

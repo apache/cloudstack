@@ -63,4 +63,13 @@ public interface AccountDao extends GenericDao<AccountVO, Long> {
     Account findActiveNonProjectAccount(String accountName, Long domainId);
 
     List<Long> getAccountIdsForDomains(List<Long> ids);
+
+    /*
+    @Desc:   Retrieves the DomainId for a given Account Id
+    @Input:  id : Id of the Account
+    @Output: DomainId matching for the given Account Id. Returns -1
+             in case of no match;
+     */
+    long getDomainIdForGivenAccountId(long id);
+
 }

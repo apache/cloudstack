@@ -62,7 +62,7 @@ public class OvsTunnelNetworkVO implements InternalIdentity {
         this.key = key;
         this.networkId = networkId;
         this.portName = "[]";
-        this.state = "FAILED";
+        this.state = OvsTunnel.State.Created.name();
     }
 
     public void setKey(int key) {

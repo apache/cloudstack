@@ -27,6 +27,22 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.exception.CloudException;
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.utils.ActionDelegate;
+import com.cloud.utils.Pair;
+import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
+import com.cloud.utils.cisco.n1kv.vsm.PolicyMap;
+import com.cloud.utils.cisco.n1kv.vsm.PortProfile;
+import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.BindingType;
+import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.OperationType;
+import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.PortProfileType;
+import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.SwitchPortMode;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.vmware.vim25.AlreadyExistsFaultMsg;
 import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.CustomFieldStringValue;
@@ -54,6 +70,7 @@ import com.vmware.vim25.OvfCreateImportSpecResult;
 import com.vmware.vim25.OvfFileItem;
 import com.vmware.vim25.VMwareDVSConfigSpec;
 import com.vmware.vim25.VMwareDVSPortSetting;
+import com.vmware.vim25.VMwareDVSPortgroupPolicy;
 import com.vmware.vim25.VMwareDVSPvlanConfigSpec;
 import com.vmware.vim25.VMwareDVSPvlanMapEntry;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
@@ -67,22 +84,6 @@ import com.vmware.vim25.VirtualSCSISharing;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanSpec;
-
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.hypervisor.vmware.util.VmwareHelper;
-import com.cloud.network.Networks.BroadcastDomainType;
-import com.cloud.utils.ActionDelegate;
-import com.cloud.utils.Pair;
-import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
-import com.cloud.utils.cisco.n1kv.vsm.PolicyMap;
-import com.cloud.utils.cisco.n1kv.vsm.PortProfile;
-import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.BindingType;
-import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.OperationType;
-import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.PortProfileType;
-import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.SwitchPortMode;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.NetUtils;
 
 public class HypervisorHostHelper {
     private static final Logger s_logger = Logger.getLogger(HypervisorHostHelper.class);
@@ -194,7 +195,7 @@ public class HypervisorHostHelper {
     }
 
     public static void createPortProfile(VmwareContext context, String ethPortProfileName, String networkName, Integer vlanId, Integer networkRateMbps,
-        long peakBandwidth, long burstSize, String gateway, boolean configureVServiceInNexus) throws Exception {
+            long peakBandwidth, long burstSize, String gateway, boolean configureVServiceInNexus) throws Exception {
         Map<String, String> vsmCredentials = getValidatedVsmCredentials(context);
         String vsmIp = vsmCredentials.get("vsmip");
         String vsmUserName = vsmCredentials.get("vsmusername");
@@ -228,7 +229,7 @@ public class HypervisorHostHelper {
             }
         } catch (CloudRuntimeException e) {
             msg =
-                "Failed to add policy map of " + policyName + " with parameters " + "committed rate = " + averageBandwidth + "peak bandwidth = " + peakBandwidth +
+                    "Failed to add policy map of " + policyName + " with parameters " + "committed rate = " + averageBandwidth + "peak bandwidth = " + peakBandwidth +
                     "burst size = " + burstSize + ". Exception: " + e.toString();
             s_logger.error(msg);
             if (netconfClient != null) {
@@ -273,7 +274,7 @@ public class HypervisorHostHelper {
                     netconfClient.addVServiceNode(vlanId.toString(), gateway);
                     s_logger.info("Adding port profile with vservice details configured over VLAN : " + vlanId.toString());
                     netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, vlanId.intValue(), vdc,
-                        esp);
+                            esp);
                 }
             }
         } catch (CloudRuntimeException e) {
@@ -304,7 +305,7 @@ public class HypervisorHostHelper {
     }
 
     public static void updatePortProfile(VmwareContext context, String ethPortProfileName, String vethPortProfileName, Integer vlanId, Integer networkRateMbps,
-        long peakBandwidth, long burstRate) throws Exception {
+            long peakBandwidth, long burstRate) throws Exception {
         NetconfHelper netconfClient = null;
         Map<String, String> vsmCredentials = getValidatedVsmCredentials(context);
         String vsmIp = vsmCredentials.get("vsmip");
@@ -345,7 +346,7 @@ public class HypervisorHostHelper {
                     netconfClient.addPolicyMap(policyName, averageBandwidth, (int)peakBandwidth, (int)burstRate);
                 } catch (CloudRuntimeException e) {
                     msg =
-                        "Failed to add policy map of " + policyName + " with parameters " + "committed rate = " + averageBandwidth + "peak bandwidth = " + peakBandwidth +
+                            "Failed to add policy map of " + policyName + " with parameters " + "committed rate = " + averageBandwidth + "peak bandwidth = " + peakBandwidth +
                             "burst size = " + burstRate + ". Exception: " + e.toString();
                     s_logger.error(msg);
                     if (netconfClient != null) {
@@ -432,8 +433,8 @@ public class HypervisorHostHelper {
      */
 
     public static Pair<ManagedObjectReference, String> prepareNetwork(String physicalNetwork, String namePrefix, HostMO hostMo, String vlanId, String secondaryvlanId,
-        Integer networkRateMbps, Integer networkRateMulticastMbps, long timeOutMs, VirtualSwitchType vSwitchType, int numPorts, String gateway,
-        boolean configureVServiceInNexus, BroadcastDomainType broadcastDomainType) throws Exception {
+            Integer networkRateMbps, Integer networkRateMulticastMbps, long timeOutMs, VirtualSwitchType vSwitchType, int numPorts, String gateway,
+            boolean configureVServiceInNexus, BroadcastDomainType broadcastDomainType, Map<String, String> vsmCredentials) throws Exception {
         ManagedObjectReference morNetwork = null;
         VmwareContext context = hostMo.getContext();
         ManagedObjectReference dcMor = hostMo.getHyperHostDatacenter();
@@ -456,8 +457,8 @@ public class HypervisorHostHelper {
          * prepare networks for in this function.
          */
         BroadcastDomainType[] supportedBroadcastTypes =
-            new BroadcastDomainType[] {BroadcastDomainType.Lswitch, BroadcastDomainType.LinkLocal, BroadcastDomainType.Native, BroadcastDomainType.Pvlan,
-                BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan};
+                new BroadcastDomainType[] {BroadcastDomainType.Lswitch, BroadcastDomainType.LinkLocal, BroadcastDomainType.Native, BroadcastDomainType.Pvlan,
+                BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan, BroadcastDomainType.Vsp};
 
         if (!Arrays.asList(supportedBroadcastTypes).contains(broadcastDomainType)) {
             throw new InvalidParameterException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");
@@ -480,10 +481,10 @@ public class HypervisorHostHelper {
 
             if (vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId)) {
                 createGCTag = true;
-                vid = Integer.parseInt(BroadcastDomainType.getValue(vlanId));
+                vid = Integer.parseInt(vlanId);
             }
             if (secondaryvlanId != null) {
-                spvlanid = Integer.parseInt(BroadcastDomainType.getValue(secondaryvlanId));
+                spvlanid = Integer.parseInt(secondaryvlanId);
             }
         }
 
@@ -503,11 +504,11 @@ public class HypervisorHostHelper {
             }
             morDvSwitch = dataCenterMo.getDvSwitchMor(dvSwitchName);
             if (morDvSwitch == null) {
-                String msg = "Unable to find distributed vSwitch " + morDvSwitch;
+                String msg = "Unable to find distributed vSwitch " + dvSwitchName;
                 s_logger.error(msg);
                 throw new Exception(msg);
             } else {
-                s_logger.info("Found distributed vSwitch " + morDvSwitch);
+                s_logger.debug("Found distributed vSwitch " + dvSwitchName);
             }
 
             if (broadcastDomainType == BroadcastDomainType.Lswitch) {
@@ -528,8 +529,16 @@ public class HypervisorHostHelper {
                     setupPVlanPair(dvSwitchMo, morDvSwitch, vid, spvlanid);
                 }
 
+                VMwareDVSPortgroupPolicy portGroupPolicy = null;
+                if (broadcastDomainType == BroadcastDomainType.Vsp) {
+                    //If the broadcastDomainType is Vsp, then set the VMwareDVSPortgroupPolicy
+                    portGroupPolicy = new VMwareDVSPortgroupPolicy();
+                    portGroupPolicy.setVlanOverrideAllowed(true);
+                    portGroupPolicy.setBlockOverrideAllowed(true);
+                    portGroupPolicy.setPortConfigResetAtDisconnect(true);
+                }
                 // Next, create the port group. For this, we need to create a VLAN spec.
-                createPortGroup(physicalNetwork, networkName, vid, spvlanid, dataCenterMo, shapingPolicy, secPolicy, dvSwitchMo, numPorts, autoExpandSupported);
+                createPortGroup(physicalNetwork, networkName, vid, spvlanid, dataCenterMo, shapingPolicy, secPolicy, portGroupPolicy, dvSwitchMo, numPorts, autoExpandSupported);
                 bWaitPortGroupReady = true;
             }
         } else if (vSwitchType == VirtualSwitchType.NexusDistributedVirtualSwitch) {
@@ -558,6 +567,10 @@ public class HypervisorHostHelper {
             long peakBandwidth = (long)(averageBandwidth * 1.5);
             // TODO(sateesh): Optionally let user specify the burst coefficient
             long burstSize = 5 * averageBandwidth / 8;
+            if (vsmCredentials != null) {
+                s_logger.info("Stocking credentials of Nexus VSM");
+                context.registerStockObject("vsmcredentials", vsmCredentials);
+            }
 
             if (!dataCenterMo.hasDvPortGroup(networkName)) {
                 s_logger.info("Port profile " + networkName + " not found.");
@@ -663,8 +676,8 @@ public class HypervisorHostHelper {
     }
 
     private static void createPortGroup(String physicalNetwork, String networkName, Integer vid, Integer spvlanid, DatacenterMO dataCenterMo,
-        DVSTrafficShapingPolicy shapingPolicy, DVSSecurityPolicy secPolicy, DistributedVirtualSwitchMO dvSwitchMo, int numPorts, boolean autoExpandSupported)
-        throws Exception {
+            DVSTrafficShapingPolicy shapingPolicy, DVSSecurityPolicy secPolicy, VMwareDVSPortgroupPolicy portGroupPolicy, DistributedVirtualSwitchMO dvSwitchMo, int numPorts, boolean autoExpandSupported)
+                    throws Exception {
         VmwareDistributedVirtualSwitchVlanSpec vlanSpec = null;
         VmwareDistributedVirtualSwitchPvlanSpec pvlanSpec = null;
         VMwareDVSPortSetting dvsPortSetting = null;
@@ -689,6 +702,10 @@ public class HypervisorHostHelper {
         }
 
         dvPortGroupSpec = createDvPortGroupSpec(networkName, dvsPortSetting, numPorts, autoExpandSupported);
+        if (portGroupPolicy != null)
+        {
+            dvPortGroupSpec.setPolicy(portGroupPolicy);
+        }
 
         if (!dataCenterMo.hasDvPortGroup(networkName)) {
             s_logger.info("Distributed Virtual Port group " + networkName + " not found.");
@@ -783,7 +800,7 @@ public class HypervisorHostHelper {
     }
 
     public static VMwareDVSPortSetting createVmwareDVPortSettingSpec(DVSTrafficShapingPolicy shapingPolicy, DVSSecurityPolicy secPolicy,
-        VmwareDistributedVirtualSwitchVlanSpec vlanSpec) {
+            VmwareDistributedVirtualSwitchVlanSpec vlanSpec) {
         VMwareDVSPortSetting dvsPortSetting = new VMwareDVSPortSetting();
         dvsPortSetting.setVlan(vlanSpec);
         dvsPortSetting.setSecurityPolicy(secPolicy);
@@ -863,7 +880,7 @@ public class HypervisorHostHelper {
     }
 
     public static Pair<ManagedObjectReference, String> prepareNetwork(String vSwitchName, String namePrefix, HostMO hostMo, String vlanId, Integer networkRateMbps,
-        Integer networkRateMulticastMbps, long timeOutMs, boolean syncPeerHosts, BroadcastDomainType broadcastDomainType, String nicUuid) throws Exception {
+            Integer networkRateMulticastMbps, long timeOutMs, boolean syncPeerHosts, BroadcastDomainType broadcastDomainType, String nicUuid) throws Exception {
 
         HostVirtualSwitch vSwitch;
         if (vSwitchName == null) {
@@ -886,8 +903,8 @@ public class HypervisorHostHelper {
          * prepare networks for in this function.
          */
         BroadcastDomainType[] supportedBroadcastTypes =
-            new BroadcastDomainType[] {BroadcastDomainType.Lswitch, BroadcastDomainType.LinkLocal, BroadcastDomainType.Native, BroadcastDomainType.Pvlan,
-                BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan};
+                new BroadcastDomainType[] {BroadcastDomainType.Lswitch, BroadcastDomainType.LinkLocal, BroadcastDomainType.Native, BroadcastDomainType.Pvlan,
+                BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan, BroadcastDomainType.Vsp};
 
         if (!Arrays.asList(supportedBroadcastTypes).contains(broadcastDomainType)) {
             throw new InvalidParameterException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");
@@ -980,7 +997,7 @@ public class HypervisorHostHelper {
                 try {
                     if (lock.lock(DEFAULT_LOCK_TIMEOUT_SECONDS)) {
                         try {
-                            List<ManagedObjectReference> hosts = (List<ManagedObjectReference>)hostMo.getContext().getVimClient().getDynamicProperty(morParent, "host");
+                            List<ManagedObjectReference> hosts = hostMo.getContext().getVimClient().getDynamicProperty(morParent, "host");
                             if (hosts != null) {
                                 for (ManagedObjectReference otherHost : hosts) {
                                     if (!otherHost.getValue().equals(hostMo.getMor().getValue())) {
@@ -989,7 +1006,7 @@ public class HypervisorHostHelper {
                                             if (s_logger.isDebugEnabled())
                                                 s_logger.debug("Prepare network on other host, vlan: " + vlanId + ", host: " + otherHostMo.getHostName());
                                             prepareNetwork(vSwitchName, namePrefix, otherHostMo, vlanId, networkRateMbps, networkRateMulticastMbps, timeOutMs, false,
-                                                broadcastDomainType, nicUuid);
+                                                    broadcastDomainType, nicUuid);
                                         } catch (Exception e) {
                                             s_logger.warn("Unable to prepare network on other host, vlan: " + vlanId + ", host: " + otherHostMo.getHostName());
                                         }
@@ -1108,7 +1125,7 @@ public class HypervisorHostHelper {
     }
 
     public static boolean createBlankVm(VmwareHypervisorHost host, String vmName, String vmInternalCSName, int cpuCount, int cpuSpeedMHz, int cpuReservedMHz,
-        boolean limitCpuUse, int memoryMB, int memoryReserveMB, String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent) throws Exception {
+            boolean limitCpuUse, int memoryMB, int memoryReserveMB, String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent) throws Exception {
 
         if (s_logger.isInfoEnabled())
             s_logger.info("Create blank VM. cpuCount: " + cpuCount + ", cpuSpeed(MHz): " + cpuSpeedMHz + ", mem(Mb): " + memoryMB);
@@ -1273,7 +1290,7 @@ public class HypervisorHostHelper {
     }
 
     public static void importVmFromOVF(VmwareHypervisorHost host, String ovfFilePath, String vmName, DatastoreMO dsMo, String diskOption, ManagedObjectReference morRp,
-        ManagedObjectReference morHost) throws Exception {
+            ManagedObjectReference morHost) throws Exception {
 
         assert (morRp != null);
 
@@ -1288,12 +1305,25 @@ public class HypervisorHostHelper {
         String ovfDescriptor = HttpNfcLeaseMO.readOvfContent(ovfFilePath);
         VmwareContext context = host.getContext();
         OvfCreateImportSpecResult ovfImportResult =
-            context.getService().createImportSpec(context.getServiceContent().getOvfManager(), ovfDescriptor, morRp, dsMo.getMor(), importSpecParams);
+                context.getService().createImportSpec(context.getServiceContent().getOvfManager(), ovfDescriptor, morRp, dsMo.getMor(), importSpecParams);
 
         if (ovfImportResult == null) {
             String msg = "createImportSpec() failed. ovfFilePath: " + ovfFilePath + ", vmName: " + vmName + ", diskOption: " + diskOption;
             s_logger.error(msg);
             throw new Exception(msg);
+        }
+
+        if(!ovfImportResult.getError().isEmpty()) {
+            for (LocalizedMethodFault fault : ovfImportResult.getError()) {
+                s_logger.error("createImportSpec error: " + fault.getLocalizedMessage());
+            }
+            throw new CloudException("Failed to create an import spec from " + ovfFilePath + ". Check log for details.");
+        }
+
+        if (!ovfImportResult.getWarning().isEmpty()) {
+            for (LocalizedMethodFault fault : ovfImportResult.getError()) {
+                s_logger.warn("createImportSpec warning: " + fault.getLocalizedMessage());
+            }
         }
 
         DatacenterMO dcMo = new DatacenterMO(context, host.getHyperHostDatacenter());

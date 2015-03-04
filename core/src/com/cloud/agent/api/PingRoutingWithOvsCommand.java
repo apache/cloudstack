@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import java.util.List;
@@ -21,7 +24,6 @@ import java.util.Map;
 
 import com.cloud.host.Host;
 import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine.State;
 
 public class PingRoutingWithOvsCommand extends PingRoutingCommand {
     List<Pair<String, Long>> states;
@@ -30,9 +32,9 @@ public class PingRoutingWithOvsCommand extends PingRoutingCommand {
         super();
     }
 
-    public PingRoutingWithOvsCommand(Host.Type type, long id, Map<String, State> states, Map<String, HostVmStateReportEntry> hostVmStateReport,
+    public PingRoutingWithOvsCommand(Host.Type type, long id, Map<String, HostVmStateReportEntry> hostVmStateReport,
             List<Pair<String, Long>> ovsStates) {
-        super(type, id, states, hostVmStateReport);
+        super(type, id, hostVmStateReport);
 
         this.states = ovsStates;
     }

@@ -21,6 +21,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -50,6 +51,14 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account associated with the virtual machine")
     private String accountName;
+
+    @SerializedName(ApiConstants.USER_ID)
+    @Param(description = "the user's ID who deployed the virtual machine")
+    private String userId;
+
+    @SerializedName(ApiConstants.USERNAME)
+    @Param(description = "the user's name who deployed the virtual machine")
+    private String userName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
     @Param(description = "the project id of the vm")
@@ -140,11 +149,11 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private String serviceOfferingName;
 
     @SerializedName(ApiConstants.DISK_OFFERING_ID)
-    @Param(description = "the ID of the disk offering of the virtual machine")
+    @Param(description = "the ID of the disk offering of the virtual machine", since = "4.4")
     private String diskOfferingId;
 
     @SerializedName("diskofferingname")
-    @Param(description = "the name of the disk offering of the virtual machine")
+    @Param(description = "the name of the disk offering of the virtual machine", since = "4.4")
     private String diskOfferingName;
 
     @SerializedName("forvirtualnetwork")
@@ -162,6 +171,10 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.MEMORY)
     @Param(description = "the memory allocated for the virtual machine")
     private Integer memory;
+
+    @SerializedName(ApiConstants.VGPU)
+    @Param(description = "the vgpu type used by the virtual machine", since = "4.4")
+    private String vgpu;
 
     @SerializedName("cpuused")
     @Param(description = "the amount of the vm's CPU currently used")
@@ -235,6 +248,8 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @Param(description = "the list of resource tags associated with vm", responseObject = ResourceTagResponse.class)
     private Set<ResourceTagResponse> tags;
 
+    transient Set<Long> tagIds;
+
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "Vm details in key/value pairs.", since = "4.2.1")
     private Map details;
@@ -248,7 +263,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private Set<AffinityGroupResponse> affinityGroupList;
 
     @SerializedName(ApiConstants.DISPLAY_VM)
-    @Param(description = "an optional field whether to the display the vm to the end user or not.")
+    @Param(description = "an optional field whether to the display the vm to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayVm;
 
     @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE)
@@ -267,6 +282,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
         nics = new LinkedHashSet<NicResponse>();
         tags = new LinkedHashSet<ResourceTagResponse>();
+        tagIds = new LinkedHashSet<Long>();
         affinityGroupList = new LinkedHashSet<AffinityGroupResponse>();
     }
 
@@ -305,6 +321,14 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public String getAccountName() {
         return accountName;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public String getUserName() {
+        return userName;
     }
 
     public String getProjectId() {
@@ -419,6 +443,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         return memory;
     }
 
+    public String getVgpu() {
+        return vgpu;
+    }
     public String getCpuUsed() {
         return cpuUsed;
     }
@@ -522,6 +549,14 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
     }
 
     @Override
@@ -642,6 +677,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.memory = memory;
     }
 
+    public void setVgpu(String vgpu) {
+        this.vgpu = vgpu;
+    }
     public void setCpuUsed(String cpuUsed) {
         this.cpuUsed = cpuUsed;
     }
@@ -710,6 +748,10 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public void setInstanceName(String instanceName) {
         this.instanceName = instanceName;
+    }
+
+    public boolean containTag(Long tagId) {
+        return tagIds.contains(tagId);
     }
 
     public void setTags(Set<ResourceTagResponse> tags) {

@@ -25,6 +25,8 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.serializer.Param;
 
+import java.util.Set;
+
 @EntityReference(value = SecurityRule.class)
 public class SecurityGroupRuleResponse extends BaseResponse {
     @SerializedName("ruleid")
@@ -62,6 +64,10 @@ public class SecurityGroupRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.CIDR)
     @Param(description = "the CIDR notation for the base IP address of the security group rule")
     private String cidr;
+
+    @SerializedName(ApiConstants.TAGS)
+    @Param(description = "the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
+    private java.util.Set<ResourceTagResponse> tags;
 
     public String getRuleId() {
         return ruleId;
@@ -160,5 +166,13 @@ public class SecurityGroupRuleResponse extends BaseResponse {
         } else if (!oid.equals(other.getRuleId()))
             return false;
         return true;
+    }
+
+    public void setTags(Set<ResourceTagResponse> tags) {
+        this.tags = tags;
+    }
+
+    public void addTag(ResourceTagResponse tag) {
+        this.tags.add(tag);
     }
 }

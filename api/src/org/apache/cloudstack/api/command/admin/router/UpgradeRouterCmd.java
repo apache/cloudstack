@@ -29,8 +29,10 @@ import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "changeServiceForRouter", description = "Upgrades domain router to a new service offering", responseObject = DomainRouterResponse.class)
+@APICommand(name = "changeServiceForRouter", description = "Upgrades domain router to a new service offering", responseObject = DomainRouterResponse.class, entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpgradeRouterCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeRouterCmd.class.getName());
     private static final String s_name = "changeserviceforrouterresponse";
@@ -86,7 +88,7 @@ public class UpgradeRouterCmd extends BaseCmd {
         if (router != null) {
             DomainRouterResponse routerResponse = _responseGenerator.createDomainRouterResponse(router);
             routerResponse.setResponseName(getCommandName());
-            this.setResponseObject(routerResponse);
+            setResponseObject(routerResponse);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to upgrade router");
         }

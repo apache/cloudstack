@@ -38,7 +38,9 @@ import com.cloud.user.Account;
 @APICommand(name = "createPortableIpRange",
             responseObject = PortableIpRangeResponse.class,
             description = "adds a range of portable public IP's to a region",
-            since = "4.2.0")
+            since = "4.2.0",
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class CreatePortableIpRangeCmd extends BaseAsyncCreateCmd {
 
     public static final Logger s_logger = Logger.getLogger(CreatePortableIpRangeCmd.class.getName());
@@ -112,12 +114,11 @@ public class CreatePortableIpRangeCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         PortableIpRange portableIpRange = _entityMgr.findById(PortableIpRange.class, getEntityId());
-        PortableIpRangeResponse response = null;
         if (portableIpRange != null) {
-            response = _responseGenerator.createPortableIPRangeResponse(portableIpRange);
+            PortableIpRangeResponse response = _responseGenerator.createPortableIPRangeResponse(portableIpRange);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
         }
-        response.setResponseName(getCommandName());
-        this.setResponseObject(response);
     }
 
     @Override

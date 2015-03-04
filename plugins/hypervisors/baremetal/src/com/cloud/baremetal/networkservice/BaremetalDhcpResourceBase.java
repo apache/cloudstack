@@ -42,7 +42,6 @@ import com.cloud.agent.api.StartupExternalDhcpCommand;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.vm.VirtualMachine.State;
 
 public class BaremetalDhcpResourceBase extends ManagerBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(BaremetalDhcpResourceBase.class);
@@ -126,7 +125,7 @@ public class BaremetalDhcpResourceBase extends ManagerBase implements ServerReso
     @Override
     public PingCommand getCurrentStatus(long id) {
         //TODO: check server
-        return new PingRoutingCommand(getType(), id, new HashMap<String, State>(), new HashMap<String, HostVmStateReportEntry>());
+        return new PingRoutingCommand(getType(), id, new HashMap<String, HostVmStateReportEntry>());
     }
 
     protected ReadyAnswer execute(ReadyCommand cmd) {

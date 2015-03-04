@@ -77,12 +77,13 @@ public class AwtCanvasAdapter extends BaseElement {
     }
 
     private void handleCopyRect(CopyRectOrder order, ByteBuffer buf) {
-        // TODO Auto-generated method stub
         // Copy image
         canvas.getOfflineGraphics().copyArea(order.srcX, order.srcY, order.width, order.height, order.x - order.srcX, order.y - order.srcY);
 
         // Request update of repainted area
+        canvas.updateFrameBuffer(order.x, order.y, order.width, order.height);
         canvas.repaint(order.x, order.y, order.width, order.height);
+
 
     }
 
@@ -137,6 +138,7 @@ public class AwtCanvasAdapter extends BaseElement {
             g.drawImage(rectImage, x, y, null);
 
             // Request update of repainted area
+            canvas.updateFrameBuffer(x, y, width, height);
             canvas.repaint(x, y, width, height);
         }
 

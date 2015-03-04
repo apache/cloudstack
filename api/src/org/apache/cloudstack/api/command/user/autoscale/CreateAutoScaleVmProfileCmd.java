@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -44,7 +45,9 @@ import com.cloud.user.User;
 
 @APICommand(name = "createAutoScaleVmProfile",
             description = "Creates a profile that contains information about the virtual machine which will be provisioned automatically by autoscale feature.",
-            responseObject = AutoScaleVmProfileResponse.class)
+        responseObject = AutoScaleVmProfileResponse.class, entityType = {AutoScaleVmProfile.class},
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 @SuppressWarnings("rawtypes")
 public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAutoScaleVmProfileCmd.class.getName());
@@ -97,6 +100,9 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
                description = "the ID of the user used to launch and destroy the VMs")
     private Long autoscaleUserId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the profile to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     private Map<String, String> otherDeployParamMap;
 
     // ///////////////////////////////////////////////////
@@ -123,6 +129,19 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
 
     public Long getTemplateId() {
         return templateId;
+    }
+
+    @Deprecated
+    public Boolean getDisplay() {
+        return display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        if(display == null)
+            return true;
+        else
+            return display;
     }
 
     public Map getCounterParamList() {
@@ -235,7 +254,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         AutoScaleVmProfile result = _entityMgr.findById(AutoScaleVmProfile.class, getEntityId());
         AutoScaleVmProfileResponse response = _responseGenerator.createAutoScaleVmProfileResponse(result);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
     @Override
@@ -243,8 +262,8 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
 
         AutoScaleVmProfile result = _autoScaleService.createAutoScaleVmProfile(this);
         if (result != null) {
-            this.setEntityId(result.getId());
-            this.setEntityUuid(result.getUuid());
+            setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Autoscale Vm Profile");
         }

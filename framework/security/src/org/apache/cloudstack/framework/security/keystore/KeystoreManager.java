@@ -28,15 +28,18 @@ public interface KeystoreManager extends Manager {
         private String privCert;
         @LogLevel(Log4jLevel.Off)
         private String certChain;
+        @LogLevel(Log4jLevel.Off)
+        private String rootCACert;
 
         public Certificates() {
 
         }
 
-        public Certificates(String prvKey, String privCert, String certChain) {
-            privKey = prvKey;
+        public Certificates(String prvKey, String privCert, String certChain, String rootCACert) {
+            this.privKey = prvKey;
             this.privCert = privCert;
             this.certChain = certChain;
+            this.rootCACert = rootCACert;
         }
 
         public String getPrivKey() {
@@ -49,6 +52,10 @@ public interface KeystoreManager extends Manager {
 
         public String getCertChain() {
             return certChain;
+        }
+
+        public String getRootCACert() {
+            return rootCACert;
         }
     }
 

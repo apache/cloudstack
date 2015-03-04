@@ -19,6 +19,7 @@ package com.cloud.network.addr;
 import java.util.Date;
 
 import com.cloud.dc.VlanVO;
+import com.cloud.network.IpAddress;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.utils.net.Ip;
@@ -196,7 +197,7 @@ public class PublicIp implements PublicIpAddress {
 
     @Override
     public Long getVpcId() {
-        return _addr.getVpcId();
+       return _addr.getVpcId();
     }
 
     @Override
@@ -229,6 +230,26 @@ public class PublicIp implements PublicIpAddress {
     }
 
     public Long getIpMacAddress() {
-        return _addr.getMacAddress();
+        return  _addr.getMacAddress();
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return _addr.isDisplay();
+    }
+
+    @Override
+    public Date getRemoved() {
+        return _addr.getRemoved();
+    }
+
+    @Override
+    public Date getCreated() {
+        return _addr.getCreated();
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return IpAddress.class;
     }
 }

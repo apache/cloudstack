@@ -32,7 +32,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.network.as.Counter;
 import com.cloud.user.Account;
 
-@APICommand(name = "listCounters", description = "List the counters", responseObject = CounterResponse.class)
+@APICommand(name = "listCounters", description = "List the counters", responseObject = CounterResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListCountersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListCountersCmd.class.getName());
     private static final String s_name = "counterresponse";

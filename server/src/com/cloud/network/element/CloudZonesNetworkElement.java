@@ -50,7 +50,6 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -152,7 +151,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     private VmDataCommand generateVmDataCommand(String vmPrivateIpAddress, String userData, String serviceOffering, String zoneName, String guestIpAddress,
         String vmName, String vmInstanceName, long vmId, String vmUuid, String publicKey) {
         VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName, _networkMgr.getExecuteInSeqNtwkElmtCmd());
-
+        // if you add new metadata files, also edit systemvm/patches/debian/config/var/www/html/latest/.htaccess
         cmd.addVmData("userdata", "user-data", userData);
         cmd.addVmData("metadata", "service-offering", serviceOffering);
         cmd.addVmData("metadata", "availability-zone", zoneName);
@@ -215,8 +214,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
 
             Commands cmds = new Commands(Command.OnError.Continue);
             if (password != null && nic.isDefaultNic()) {
-                final String encodedPassword = PasswordGenerator.rot13(password);
-                SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), uservm.getHostName(), _networkMgr.getExecuteInSeqNtwkElmtCmd());
+                SavePasswordCommand cmd = new SavePasswordCommand(password, nic.getIp4Address(), uservm.getHostName(), _networkMgr.getExecuteInSeqNtwkElmtCmd());
                 cmds.addCommand("password", cmd);
             }
             String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(uservm.getServiceOfferingId()).getDisplayText();

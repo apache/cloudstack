@@ -18,7 +18,9 @@ package com.cloud.api;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,13 +33,16 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
@@ -47,6 +52,7 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.StorageTagResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -62,13 +68,16 @@ import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.dao.DiskOfferingJoinDao;
+import com.cloud.api.query.dao.DomainJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
+import com.cloud.api.query.dao.HostTagDao;
 import com.cloud.api.query.dao.ImageStoreJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
 import com.cloud.api.query.dao.ProjectAccountJoinDao;
@@ -78,6 +87,7 @@ import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
+import com.cloud.api.query.dao.StorageTagDao;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
@@ -87,9 +97,11 @@ import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.api.query.vo.DiskOfferingJoinVO;
+import com.cloud.api.query.vo.DomainJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
+import com.cloud.api.query.vo.HostTagVO;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
@@ -99,6 +111,7 @@ import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
+import com.cloud.api.query.vo.StorageTagVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
@@ -110,6 +123,7 @@ import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationService;
+import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterDetailsDao;
@@ -130,6 +144,10 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.Event;
 import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.gpu.HostGpuGroupsVO;
+import com.cloud.gpu.VGPUTypesVO;
+import com.cloud.gpu.dao.HostGpuGroupsDao;
+import com.cloud.gpu.dao.VGPUTypesDao;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
@@ -214,15 +232,16 @@ import com.cloud.projects.ProjectInvitation;
 import com.cloud.projects.ProjectService;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.resource.ResourceManager;
-import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.StatsCollector;
 import com.cloud.server.TaggedResourceService;
+import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
@@ -230,6 +249,7 @@ import com.cloud.storage.ImageStore;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StorageStats;
@@ -311,6 +331,7 @@ public class ApiDBUtils {
     static DiskOfferingJoinDao s_diskOfferingJoinDao;
     static DataCenterJoinDao s_dcJoinDao;
     static DomainDao s_domainDao;
+    static DomainJoinDao s_domainJoinDao;
     static DomainRouterDao s_domainRouterDao;
     static DomainRouterJoinDao s_domainRouterJoinDao;
     static GuestOSDao s_guestOSDao;
@@ -325,6 +346,7 @@ public class ApiDBUtils {
     static NetworkRuleConfigDao s_networkRuleConfigDao;
     static HostPodDao s_podDao;
     static ServiceOfferingDao s_serviceOfferingDao;
+    static ServiceOfferingDetailsDao s_serviceOfferingDetailsDao;
     static SnapshotDao s_snapshotDao;
     static PrimaryDataStoreDao s_storagePoolDao;
     static VMTemplateDao s_templateDao;
@@ -375,6 +397,8 @@ public class ApiDBUtils {
     static HostJoinDao s_hostJoinDao;
     static VolumeJoinDao s_volJoinDao;
     static StoragePoolJoinDao s_poolJoinDao;
+    static StorageTagDao s_tagDao;
+    static HostTagDao s_hostTagDao;
     static ImageStoreJoinDao s_imageStoreJoinDao;
     static AccountJoinDao s_accountJoinDao;
     static AsyncJobJoinDao s_jobJoinDao;
@@ -400,6 +424,8 @@ public class ApiDBUtils {
     static NetworkACLDao s_networkACLDao;
     static AccountService s_accountService;
     static ResourceMetaDataService s_resourceDetailsService;
+    static HostGpuGroupsDao s_hostGpuGroupsDao;
+    static VGPUTypesDao s_vgpuTypesDao;
 
     @Inject
     private ManagementServer ms;
@@ -439,6 +465,8 @@ public class ApiDBUtils {
     @Inject
     private DomainDao domainDao;
     @Inject
+    private DomainJoinDao domainJoinDao;
+    @Inject
     private DomainRouterDao domainRouterDao;
     @Inject
     private DomainRouterJoinDao domainRouterJoinDao;
@@ -466,6 +494,8 @@ public class ApiDBUtils {
     private HostPodDao podDao;
     @Inject
     private ServiceOfferingDao serviceOfferingDao;
+    @Inject
+    private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
     @Inject
     private SnapshotDao snapshotDao;
     @Inject
@@ -566,6 +596,10 @@ public class ApiDBUtils {
     @Inject
     private StoragePoolJoinDao poolJoinDao;
     @Inject
+    private StorageTagDao tagDao;
+    @Inject
+    private HostTagDao hosttagDao;
+    @Inject
     private ImageStoreJoinDao imageStoreJoinDao;
     @Inject
     private AccountJoinDao accountJoinDao;
@@ -616,6 +650,10 @@ public class ApiDBUtils {
     private ConfigurationManager configMgr;
     @Inject
     private ResourceMetaDataService resourceDetailsService;
+    @Inject
+    private HostGpuGroupsDao hostGpuGroupsDao;
+    @Inject
+    private VGPUTypesDao vgpuTypesDao;
 
     @PostConstruct
     void init() {
@@ -639,6 +677,7 @@ public class ApiDBUtils {
         s_diskOfferingDao = diskOfferingDao;
         s_diskOfferingJoinDao = diskOfferingJoinDao;
         s_domainDao = domainDao;
+        s_domainJoinDao = domainJoinDao;
         s_domainRouterDao = domainRouterDao;
         s_domainRouterJoinDao = domainRouterJoinDao;
         s_guestOSDao = guestOSDao;
@@ -649,6 +688,7 @@ public class ApiDBUtils {
         s_networkRuleConfigDao = networkRuleConfigDao;
         s_podDao = podDao;
         s_serviceOfferingDao = serviceOfferingDao;
+        s_serviceOfferingDetailsDao = serviceOfferingDetailsDao;
         s_serviceOfferingJoinDao = serviceOfferingJoinDao;
         s_snapshotDao = snapshotDao;
         s_storagePoolDao = storagePoolDao;
@@ -698,6 +738,8 @@ public class ApiDBUtils {
         s_hostJoinDao = hostJoinDao;
         s_volJoinDao = volJoinDao;
         s_poolJoinDao = poolJoinDao;
+        s_tagDao = tagDao;
+        s_hostTagDao = hosttagDao;
         s_imageStoreJoinDao = imageStoreJoinDao;
         s_accountJoinDao = accountJoinDao;
         s_jobJoinDao = jobJoinDao;
@@ -727,7 +769,8 @@ public class ApiDBUtils {
         s_networkACLDao = networkACLDao;
         s_accountService = accountService;
         s_resourceDetailsService = resourceDetailsService;
-
+        s_hostGpuGroupsDao = hostGpuGroupsDao;
+        s_vgpuTypesDao = vgpuTypesDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -736,14 +779,6 @@ public class ApiDBUtils {
 
     public static VMInstanceVO findVMInstanceById(long vmId) {
         return s_vmDao.findById(vmId);
-    }
-
-    public static long getMemoryOrCpuCapacitybyHost(Long hostId, short capacityType) {
-        // TODO: This method is for the API only, but it has configuration values (ramSize for system vms)
-        // so if this Utils class can have some kind of config rather than a static initializer (maybe from
-        // management server instantiation?) then maybe the management server method can be moved entirely
-        // into this utils class.
-        return s_ms.getMemoryOrCpuCapacityByHost(hostId, capacityType);
     }
 
     public static long getStorageCapacitybyPool(Long poolId, short capacityType) {
@@ -775,13 +810,34 @@ public class ApiDBUtils {
         return s_ms.getVersion();
     }
 
-    public static List<UserVmJoinVO> searchForUserVMs(Criteria c, List<Long> permittedAccounts) {
-        return s_userVmMgr.searchForUserVMs(c, s_accountDao.findById(Account.ACCOUNT_ID_SYSTEM), null, false, permittedAccounts, false, null, null).first();
-    }
 
     // ///////////////////////////////////////////////////////////
     // Manager methods //
     // ///////////////////////////////////////////////////////////
+
+    public static long findCorrectResourceLimitForDomain(ResourceType type, long domainId) {
+        DomainVO domain = s_domainDao.findById(domainId);
+
+        if (domain == null) {
+            return -1;
+        }
+
+        return s_resourceLimitMgr.findCorrectResourceLimitForDomain(domain, type);
+    }
+
+    public static long findCorrectResourceLimitForDomain(Long limit, boolean isRootDomain, ResourceType type, long domainId) {
+        long max = Resource.RESOURCE_UNLIMITED; // if resource limit is not found, then we treat it as unlimited
+
+        // No limits for Root domain
+        if (isRootDomain) {
+            return max;
+        }
+        if (limit != null) {
+            return limit.longValue();
+        } else {
+            return findCorrectResourceLimitForDomain(type, domainId);
+        }
+    }
 
     public static long findCorrectResourceLimit(ResourceType type, long accountId) {
         AccountVO account = s_accountDao.findById(accountId);
@@ -793,8 +849,8 @@ public class ApiDBUtils {
         return s_resourceLimitMgr.findCorrectResourceLimitForAccount(account, type);
     }
 
-    public static long findCorrectResourceLimit(Long limit, short accountType, ResourceType type) {
-        return s_resourceLimitMgr.findCorrectResourceLimitForAccount(accountType, limit, type);
+    public static long findCorrectResourceLimit(Long limit, long accountId, ResourceType type) {
+        return s_resourceLimitMgr.findCorrectResourceLimitForAccount(accountId, limit, type);
     }
 
     public static long getResourceCount(ResourceType type, long accountId) {
@@ -890,7 +946,11 @@ public class ApiDBUtils {
     }
 
     public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
-        return s_diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
+        DiskOfferingVO off = s_diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
+        if (off.getType() == DiskOfferingVO.Type.Disk) {
+            return off;
+        }
+        return null;
     }
 
     public static DomainVO findDomainById(Long domainId) {
@@ -966,6 +1026,10 @@ public class ApiDBUtils {
 
     public static ServiceOffering findServiceOfferingById(Long serviceOfferingId) {
         return s_serviceOfferingDao.findByIdIncludingRemoved(serviceOfferingId);
+    }
+
+    public static ServiceOfferingDetailsVO findServiceOfferingDetail(long serviceOfferingId, String key) {
+        return s_serviceOfferingDetailsDao.findDetail(serviceOfferingId, key);
     }
 
     public static Snapshot findSnapshotById(long snapshotId) {
@@ -1061,8 +1125,44 @@ public class ApiDBUtils {
             if (xenClusters.isEmpty()) {
                 type = HypervisorType.Hyperv;
             }
+        } if (format == ImageFormat.RAW) {
+            // Currently, KVM only suppoorts RBD images of type RAW.
+            // This results in a weird collision with OVM volumes which
+            // can only be raw, thus making KVM RBD volumes show up as OVM
+            // rather than RBD. This block of code can (hopefuly) by checking to
+            // see if the pool is using either RBD or NFS. However, it isn't
+            // quite clear what to do if both storage types are used. If the image
+            // format is RAW, it narrows the hypervisor choice down to OVM and KVM / RBD or KVM / CLVM
+            // This would be better implemented at a cluster level.
+            List<StoragePoolVO> pools = s_storagePoolDao.listByDataCenterId(dcId);
+            ListIterator<StoragePoolVO> itr = pools.listIterator();
+            while(itr.hasNext()) {
+                StoragePoolVO pool = itr.next();
+                if(pool.getPoolType() == StoragePoolType.RBD || pool.getPoolType() == StoragePoolType.CLVM) {
+                  // This case will note the presence of non-qcow2 primary stores, suggesting KVM without NFS. Otherwse,
+                  // If this check is not passed, the hypervisor type will remain OVM.
+                  type = HypervisorType.KVM;
+                  break;
+                }
+            }
         }
         return type;
+    }
+
+    public static List<HostGpuGroupsVO> getGpuGroups(long hostId) {
+        return s_hostGpuGroupsDao.listByHostId(hostId);
+    }
+
+    public static List<VgpuTypesInfo> getGpuCapacites(Long zoneId, Long podId, Long clusterId) {
+        return s_vgpuTypesDao.listGPUCapacities(zoneId, podId, clusterId);
+    }
+
+    public static HashMap<String, Long> getVgpuVmsCount(Long zoneId, Long podId, Long clusterId) {
+        return s_vmDao.countVgpuVMs(zoneId, podId, clusterId);
+    }
+
+    public static List<VGPUTypesVO> getVgpus(long groupId) {
+        return s_vgpuTypesDao.listByGroupId(groupId);
     }
 
     public static List<UserStatisticsVO> listUserStatsBy(Long accountId) {
@@ -1071,6 +1171,16 @@ public class ApiDBUtils {
 
     public static List<UserVmVO> listUserVMsByHostId(long hostId) {
         return s_userVmDao.listByHostId(hostId);
+    }
+
+    public static List<UserVmVO> listUserVMsByNetworkId(long networkId) {
+        return s_userVmDao.listByNetworkIdAndStates(networkId, VirtualMachine.State.Running,
+                VirtualMachine.State.Starting, VirtualMachine.State.Stopping, VirtualMachine.State.Unknown,
+                VirtualMachine.State.Migrating);
+    }
+
+    public static List<DomainRouterVO> listDomainRoutersByNetworkId(long networkId) {
+        return s_domainRouterDao.findByNetwork(networkId);
     }
 
     public static List<DataCenterVO> listZones() {
@@ -1161,7 +1271,7 @@ public class ApiDBUtils {
 
     public static boolean isExtractionDisabled() {
         String disableExtractionString = s_configDao.getValue(Config.DisableExtraction.toString());
-        boolean disableExtraction = (disableExtractionString == null) ? false : Boolean.parseBoolean(disableExtractionString);
+        boolean disableExtraction  = (disableExtractionString == null) ? false : Boolean.parseBoolean(disableExtractionString);
         return disableExtraction;
     }
 
@@ -1299,7 +1409,7 @@ public class ApiDBUtils {
         return null;
     }
 
-    public static UserVmDetailVO findPublicKeyByVmId(long vmId) {
+    public static UserVmDetailVO  findPublicKeyByVmId(long vmId) {
         return s_userVmDetailsDao.findDetail(vmId, "SSH.PublicKey");
     }
 
@@ -1381,6 +1491,12 @@ public class ApiDBUtils {
         }
         String jobInstanceId = null;
         ApiCommandJobType jobInstanceType = EnumUtils.fromString(ApiCommandJobType.class, job.getInstanceType(), ApiCommandJobType.None);
+
+        if (job.getInstanceId() == null) {
+            // when assert is hit, implement 'getInstanceId' of BaseAsyncCmd and return appropriate instance id
+            assert (false);
+            return null;
+        }
 
         if (jobInstanceType == ApiCommandJobType.Volume) {
             VolumeVO volume = ApiDBUtils.findVolumeById(job.getInstanceId());
@@ -1512,12 +1628,12 @@ public class ApiDBUtils {
         return s_domainRouterJoinDao.newDomainRouterView(vr);
     }
 
-    public static UserVmResponse newUserVmResponse(String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
-        return s_userVmJoinDao.newUserVmResponse(objectName, userVm, details, caller);
+    public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
+        return s_userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, caller);
     }
 
-    public static UserVmResponse fillVmDetails(UserVmResponse vmData, UserVmJoinVO vm) {
-        return s_userVmJoinDao.setUserVmResponse(vmData, vm);
+    public static UserVmResponse fillVmDetails(ResponseView view, UserVmResponse vmData, UserVmJoinVO vm) {
+        return s_userVmJoinDao.setUserVmResponse(view, vmData, vm);
     }
 
     public static List<UserVmJoinVO> newUserVmView(UserVm... userVms) {
@@ -1549,12 +1665,7 @@ public class ApiDBUtils {
     }
 
     public static ResourceTagJoinVO findResourceTagViewById(Long tagId) {
-        List<ResourceTagJoinVO> tags = s_tagJoinDao.searchByIds(tagId);
-        if (tags != null && tags.size() > 0) {
-            return tags.get(0);
-        } else {
-            return null;
-        }
+        return s_tagJoinDao.searchById(tagId);
     }
 
     public static EventResponse newEventResponse(EventJoinVO ve) {
@@ -1610,6 +1721,7 @@ public class ApiDBUtils {
         return s_userAccountJoinDao.searchByAccountId(accountId);
     }
 
+
     public static ProjectAccountResponse newProjectAccountResponse(ProjectAccountJoinVO proj) {
         return s_projectAccountJoinDao.newProjectAccountResponse(proj);
     }
@@ -1646,12 +1758,12 @@ public class ApiDBUtils {
         return s_hostJoinDao.newHostView(vr);
     }
 
-    public static VolumeResponse newVolumeResponse(VolumeJoinVO vr) {
-        return s_volJoinDao.newVolumeResponse(vr);
+    public static VolumeResponse newVolumeResponse(ResponseView view, VolumeJoinVO vr) {
+        return s_volJoinDao.newVolumeResponse(view, vr);
     }
 
-    public static VolumeResponse fillVolumeDetails(VolumeResponse vrData, VolumeJoinVO vr) {
-        return s_volJoinDao.setVolumeResponse(vrData, vr);
+    public static VolumeResponse fillVolumeDetails(ResponseView view, VolumeResponse vrData, VolumeJoinVO vr) {
+        return s_volJoinDao.setVolumeResponse(view, vrData, vr);
     }
 
     public static List<VolumeJoinVO> newVolumeView(Volume vr) {
@@ -1660,6 +1772,14 @@ public class ApiDBUtils {
 
     public static StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO vr) {
         return s_poolJoinDao.newStoragePoolResponse(vr);
+    }
+
+    public static StorageTagResponse newStorageTagResponse(StorageTagVO vr) {
+        return s_tagDao.newStorageTagResponse(vr);
+    }
+
+    public static HostTagResponse newHostTagResponse(HostTagVO vr) {
+        return s_hostTagDao.newHostTagResponse(vr);
     }
 
     public static StoragePoolResponse fillStoragePoolDetails(StoragePoolResponse vrData, StoragePoolJoinVO vr) {
@@ -1690,8 +1810,12 @@ public class ApiDBUtils {
         return s_imageStoreJoinDao.newImageStoreView(vr);
     }
 
-    public static AccountResponse newAccountResponse(AccountJoinVO ve) {
-        return s_accountJoinDao.newAccountResponse(ve);
+    public static DomainResponse newDomainResponse(ResponseView view, DomainJoinVO ve) {
+        return s_domainJoinDao.newDomainResponse(view, ve);
+    }
+
+    public static AccountResponse newAccountResponse(ResponseView view, AccountJoinVO ve) {
+        return s_accountJoinDao.newAccountResponse(view, ve);
     }
 
     public static AccountJoinVO newAccountView(Account e) {
@@ -1726,8 +1850,8 @@ public class ApiDBUtils {
         return s_serviceOfferingJoinDao.newServiceOfferingView(offering);
     }
 
-    public static ZoneResponse newDataCenterResponse(DataCenterJoinVO dc, Boolean showCapacities) {
-        return s_dcJoinDao.newDataCenterResponse(dc, showCapacities);
+    public static ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dc, Boolean showCapacities) {
+        return s_dcJoinDao.newDataCenterResponse(view, dc, showCapacities);
     }
 
     public static DataCenterJoinVO newDataCenterView(DataCenter dc) {
@@ -1746,16 +1870,16 @@ public class ApiDBUtils {
         return s_templateJoinDao.newUpdateResponse(vr);
     }
 
-    public static TemplateResponse newTemplateResponse(TemplateJoinVO vr) {
-        return s_templateJoinDao.newTemplateResponse(vr);
+    public static TemplateResponse newTemplateResponse(ResponseView view, TemplateJoinVO vr) {
+        return s_templateJoinDao.newTemplateResponse(view, vr);
     }
 
     public static TemplateResponse newIsoResponse(TemplateJoinVO vr) {
         return s_templateJoinDao.newIsoResponse(vr);
     }
 
-    public static TemplateResponse fillTemplateDetails(TemplateResponse vrData, TemplateJoinVO vr) {
-        return s_templateJoinDao.setTemplateResponse(vrData, vr);
+    public static TemplateResponse fillTemplateDetails(ResponseView view, TemplateResponse vrData, TemplateJoinVO vr) {
+        return s_templateJoinDao.setTemplateResponse(view, vrData, vr);
     }
 
     public static List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate vr) {
@@ -1778,6 +1902,7 @@ public class ApiDBUtils {
         return s_affinityGroupJoinDao.setAffinityGroupResponse(resp, group);
     }
 
+
     public static List<? extends LoadBalancer> listSiteLoadBalancers(long gslbRuleId) {
         return s_gslbService.listSiteLoadBalancers(gslbRuleId);
     }
@@ -1798,7 +1923,7 @@ public class ApiDBUtils {
     }
 
     public static boolean isAdmin(Account account) {
-        return s_accountService.isAdmin(account.getType());
+        return s_accountService.isAdmin(account.getId());
     }
 
     public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,16 +15,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.storage.template;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -69,7 +72,7 @@ public class VmdkProcessor extends AdapterBase implements Processor {
     }
 
     @Override
-    public Long getVirtualSize(File file) {
+    public long getVirtualSize(File file) {
         try {
             long size = getTemplateVirtualSize(file.getParent(), file.getName());
             return size;
@@ -83,8 +86,6 @@ public class VmdkProcessor extends AdapterBase implements Processor {
         long virtualSize = 0;
         String templateFileFullPath = templatePath.endsWith(File.separator) ? templatePath : templatePath + File.separator;
         templateFileFullPath += templateName.endsWith(ImageFormat.VMDK.getFileExtension()) ? templateName : templateName + "." + ImageFormat.VMDK.getFileExtension();
-        String vmdkHeader = "";
-
         try {
             FileReader fileReader = new FileReader(templateFileFullPath);
             BufferedReader bufferedReader = new BufferedReader(fileReader);

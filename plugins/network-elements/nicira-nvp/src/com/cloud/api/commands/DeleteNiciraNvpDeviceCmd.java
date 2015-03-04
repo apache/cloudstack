@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.api.commands;
 
 import javax.inject.Inject;
@@ -37,7 +40,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.NiciraNvpElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteNiciraNvpDevice", responseObject = SuccessResponse.class, description = " delete a nicira nvp device")
+@APICommand(name = "deleteNiciraNvpDevice", responseObject = SuccessResponse.class, description = " delete a nicira nvp device",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteNiciraNvpDeviceCmd extends BaseAsyncCmd {
     private static final String s_name = "deleteniciranvpdeviceresponse";
     @Inject

@@ -19,8 +19,6 @@ package org.apache.cloudstack.api.command.user.resource;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -32,11 +30,13 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceCountResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ResourceCount;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateResourceCount", description = "Recalculate and update resource count for an account or domain.", responseObject = ResourceCountResponse.class)
+@APICommand(name = "updateResourceCount", description = "Recalculate and update resource count for an account or domain.", responseObject = ResourceCountResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateResourceCountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateResourceCountCmd.class.getName());
 
@@ -63,16 +63,16 @@ public class UpdateResourceCountCmd extends BaseCmd {
                description = "Type of resource to update. If specifies valid values are 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 and 11. If not specified will update all resource counts"
                    + "0 - Instance. Number of instances a user can create. "
                    + "1 - IP. Number of public IP addresses a user can own. "
-                   + "2 - Volume. Number of disk volumes a user can create."
-                   + "3 - Snapshot. Number of snapshots a user can create."
-                   + "4 - Template. Number of templates that a user can register/create."
-                   + "5 - Project. Number of projects that a user can create."
-                   + "6 - Network. Number of guest network a user can create."
-                   + "7 - VPC. Number of VPC a user can create."
-                   + "8 - CPU. Total number of CPU cores a user can use."
-                   + "9 - Memory. Total Memory (in MB) a user can use."
-                   + "10 - PrimaryStorage. Total primary storage space (in GiB) a user can use."
-                   + "11 - SecondaryStorage. Total secondary storage space (in GiB) a user can use.")
+                   + "2 - Volume. Number of disk volumes a user can create. "
+                   + "3 - Snapshot. Number of snapshots a user can create. "
+                   + "4 - Template. Number of templates that a user can register/create. "
+                   + "5 - Project. Number of projects that a user can create. "
+                   + "6 - Network. Number of guest network a user can create. "
+                   + "7 - VPC. Number of VPC a user can create. "
+                   + "8 - CPU. Total number of CPU cores a user can use. "
+                   + "9 - Memory. Total Memory (in MB) a user can use. "
+                   + "10 - PrimaryStorage. Total primary storage space (in GiB) a user can use. "
+                   + "11 - SecondaryStorage. Total secondary storage space (in GiB) a user can use. ")
     private Integer resourceType;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Update resource limits for project")
@@ -106,7 +106,7 @@ public class UpdateResourceCountCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         Account account = CallContext.current().getCallingAccount();
-        if ((account == null) || isAdmin(account.getType())) {
+        if ((account == null) || _accountService.isAdmin(account.getId())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
                 if (userAccount != null) {
@@ -125,7 +125,7 @@ public class UpdateResourceCountCmd extends BaseCmd {
     @Override
     public void execute() {
         List<? extends ResourceCount> result =
-            _resourceLimitService.recalculateResourceCount(finalyzeAccountId(accountName, domainId, projectId, true), getDomainId(), getResourceType());
+                _resourceLimitService.recalculateResourceCount(_accountService.finalyzeAccountId(accountName, domainId, projectId, true), getDomainId(), getResourceType());
 
         if ((result != null) && (result.size() > 0)) {
             ListResponse<ResourceCountResponse> response = new ListResponse<ResourceCountResponse>();

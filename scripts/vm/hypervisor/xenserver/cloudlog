@@ -23,13 +23,13 @@
 
 
 
-/var/log/cloud/vmops.log {
+/var/log/cloud/cloud.log {
     daily
     size 1M
     rotate 20
 }
 
-/var/log/cloud/ovstunnel.log /var/log/cloud/ovs-pvlan.log /var/log/cloud/swiftxen.log /var/log/cloud/s3xen /var/log/cloud/storageplugin {
+/var/log/cloud/ovstunnel.log /var/log/cloud/ovs-pvlan.log /var/log/cloud/swiftxenserver.log /var/log/cloud/s3xenserver /var/log/cloud/storageplugin {
     daily
     size 1M
     rotate 2

@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -42,7 +43,8 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
-@APICommand(name = "createFirewallRule", description = "Creates a firewall rule for a given ip address", responseObject = FirewallResponse.class)
+@APICommand(name = "createFirewallRule", description = "Creates a firewall rule for a given ip address", responseObject = FirewallResponse.class, entityType = {FirewallRule.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements FirewallRule {
     public static final Logger s_logger = Logger.getLogger(CreateFirewallRuleCmd.class.getName());
 
@@ -83,9 +85,13 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "type of firewallrule: system/user")
     private String type;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
+
 
     public Long getIpAddressId() {
         return ipAddressId;
@@ -128,7 +134,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         FirewallRule rule = _entityMgr.findById(FirewallRule.class, getEntityId());
         try {
             CallContext.current().setEventDetails("Rule Id: " + getEntityId());
-            success = _firewallService.applyIngressFirewallRules(rule.getSourceIpAddressId(), callerContext.getCallingAccount());
+            success = _firewallService.applyIngressFwRules(rule.getSourceIpAddressId(), callerContext.getCallingAccount());
 
             // State is different after the rule is applied, so get new object here
             rule = _entityMgr.findById(FirewallRule.class, getEntityId());
@@ -140,7 +146,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
             fwResponse.setResponseName(getCommandName());
         } finally {
             if (!success || rule == null) {
-                _firewallService.revokeFirewallRule(getEntityId(), true);
+                _firewallService.revokeIngressFwRule(getEntityId(), true);
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create firewall rule");
             }
         }
@@ -171,7 +177,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     @Override
     public Integer getSourcePortStart() {
         if (publicStartPort != null) {
-            return publicStartPort.intValue();
+            return publicStartPort;
         }
         return null;
     }
@@ -180,10 +186,10 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     public Integer getSourcePortEnd() {
         if (publicEndPort == null) {
             if (publicStartPort != null) {
-                return publicStartPort.intValue();
+                return publicStartPort;
             }
         } else {
-            return publicEndPort.intValue();
+            return publicEndPort;
         }
 
         return null;
@@ -210,7 +216,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
 
         if (ntwkId == null) {
             throw new InvalidParameterValueException("Unable to create firewall rule for the ipAddress id=" + ipAddressId +
-                " as ip is not associated with any network and no networkId is passed in");
+                    " as ip is not associated with any network and no networkId is passed in");
         }
         return ntwkId;
     }
@@ -241,11 +247,12 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
                 }
             }
         }
-
         try {
             FirewallRule result = _firewallService.createIngressFirewallRule(this);
-            setEntityId(result.getId());
-            setEntityUuid(result.getUuid());
+            if (result != null) {
+                setEntityId(result.getId());
+                setEntityUuid(result.getUuid());
+            }
         } catch (NetworkRuleConflictException ex) {
             s_logger.info("Network rule conflict: " + ex.getMessage());
             s_logger.trace("Network Rule Conflict: ", ex);
@@ -261,7 +268,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     @Override
     public String getEventDescription() {
         IpAddress ip = _networkService.getIp(ipAddressId);
-        return ("Creating firewall rule for Ip: " + ip.getAddress() + " for protocol:" + this.getProtocol());
+        return ("Creating firewall rule for Ip: " + ip.getAddress() + " for protocol:" + getProtocol());
     }
 
     @Override
@@ -303,7 +310,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         if (icmpType != null) {
             return icmpType;
         } else if (protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO)) {
-            return -1;
+                return -1;
 
         }
         return null;
@@ -331,6 +338,20 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     @Override
     public TrafficType getTrafficType() {
         return FirewallRule.TrafficType.Ingress;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        if (display != null) {
+            return display;
+        } else {
+            return true;
+        }
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return FirewallRule.class;
     }
 
 }

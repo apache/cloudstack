@@ -671,6 +671,7 @@ class cloudAgentConfig(serviceCfgBase):
             cfo.addEntry("zone", self.syscfg.env.zone)
             cfo.addEntry("pod", self.syscfg.env.pod)
             cfo.addEntry("cluster", self.syscfg.env.cluster)
+            cfo.addEntry("hypervisor.type", self.syscfg.env.hypervisor)
             cfo.addEntry("port", "8250")
             cfo.addEntry("private.network.device", self.syscfg.env.nics[0])
             cfo.addEntry("public.network.device", self.syscfg.env.nics[1])
@@ -728,7 +729,7 @@ class sudoersConfig(serviceCfgBase):
     def config(self):
         try:
             cfo = configFileOps("/etc/sudoers", self)
-            cfo.addEntry("cloud ALL ", "NOPASSWD : /bin/chmod, /bin/cp, /bin/mkdir, /bin/mount, /bin/umount")
+            cfo.addEntry("cloud ALL ", "NOPASSWD : /bin/chmod, /bin/cp, /bin/mkdir, /bin/mount, /bin/umount, /usr/bin/keytool")
             cfo.rmEntry("Defaults", "requiretty", " ")
             cfo.save()
             return True
@@ -762,9 +763,6 @@ class ubuntuFirewallConfigServer(firewallConfigServer):
         try:
             for port in self.ports:
                 self.allowPort(port)
-
-            #FIXME: urgly make /root writable
-            bash("sudo chmod 0777 /root")
 
             return True
         except:

@@ -1,6 +1,6 @@
 #!/bin/bash
 ### BEGIN INIT INFO
-# Provides:          cloud agent
+# Provides:          cloudstack-agent
 # Required-Start:    $network 
 # Required-Stop:     $network 
 # Default-Start:     3 4 5
@@ -31,12 +31,10 @@
 . /lib/lsb/init-functions
 . /etc/rc.status
 
-whatami=cloud-agent
-
 # set environment variables
 
-SHORTNAME="$whatami"
-PIDFILE=@PIDDIR@/"$whatami".pid
+SHORTNAME=`basename $0`
+PIDFILE=@PIDDIR@/"$SHORTNAME".pid
 LOCKFILE=@LOCKDIR@/"$SHORTNAME"
 LOGFILE=@AGENTLOG@
 PROGNAME="Cloud Agent"
@@ -166,7 +164,7 @@ case "$1" in
 	start
 	;;
   *)
-	echo $"Usage: $whatami {start|stop|restart|status|help}"
+	echo $"Usage: $SHORTNAME {start|stop|restart|status|help}"
 	RETVAL=3
 esac
 

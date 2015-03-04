@@ -62,6 +62,9 @@ public class ServiceOfferingResponse extends BaseResponse {
     @Param(description = "the storage type for this service offering")
     private String storageType;
 
+    @SerializedName("provisioningtype") @Param(description="provisioning type used to create volumes. Valid values are thin, sparse, fat.", since = "4.4.0")
+    private String provisioningType;
+
     @SerializedName("offerha")
     @Param(description = "the ha support in the service offering")
     private Boolean offerHa;
@@ -105,6 +108,22 @@ public class ServiceOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.NETWORKRATE)
     @Param(description = "data transfer rate in megabits per second allowed.")
     private Integer networkRate;
+
+    @SerializedName("iscustomizediops")
+    @Param(description = "true if disk offering uses custom iops, false otherwise", since = "4.4")
+    private Boolean customizedIops;
+
+    @SerializedName(ApiConstants.MIN_IOPS)
+    @Param(description = "the min iops of the disk offering", since = "4.4")
+    private Long minIops;
+
+    @SerializedName(ApiConstants.MAX_IOPS)
+    @Param(description = "the max iops of the disk offering", since = "4.4")
+    private Long maxIops;
+
+    @SerializedName(ApiConstants.HYPERVISOR_SNAPSHOT_RESERVE)
+    @Param(description = "Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)", since = "4.4")
+    private Integer hypervisorSnapshotReserve;
 
     @SerializedName("diskBytesReadRate")
     @Param(description = "bytes read rate of the service offering")
@@ -225,6 +244,14 @@ public class ServiceOfferingResponse extends BaseResponse {
         this.storageType = storageType;
     }
 
+    public String getProvisioningType(){
+        return provisioningType;
+    }
+
+    public void setProvisioningType(String provisioningType){
+        this.provisioningType = provisioningType;
+    }
+
     public Boolean getOfferHa() {
         return offerHa;
     }
@@ -291,6 +318,38 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     public void setVolatileVm(boolean isVolatile) {
         this.isVolatile = isVolatile;
+    }
+
+    public Boolean isCustomizedIops() {
+        return customizedIops;
+    }
+
+    public void setCustomizedIops(Boolean customizedIops) {
+        this.customizedIops = customizedIops;
+    }
+
+    public Long getMinIops() {
+        return minIops;
+    }
+
+    public void setMinIops(Long minIops) {
+        this.minIops = minIops;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
+    }
+
+    public void setMaxIops(Long maxIops) {
+        this.maxIops = maxIops;
+    }
+
+    public Integer getHypervisorSnapshotReserve() {
+        return hypervisorSnapshotReserve;
+    }
+
+    public void setHypervisorSnapshotReserve(Integer hypervisorSnapshotReserve) {
+        this.hypervisorSnapshotReserve = hypervisorSnapshotReserve;
     }
 
     public void setBytesReadRate(Long bytesReadRate) {

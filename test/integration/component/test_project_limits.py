@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,16 +17,36 @@
 """ P1 tests for Resource limits
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+#from marvin.cloudstackAPI import *
+from marvin.lib.utils import (cleanup_resources,
+                              validateList)
+from marvin.lib.base import (Account,
+                             Domain,
+                             Project,
+                             Template,
+                             Snapshot,
+                             Volume,
+                             NetworkOffering,
+                             ServiceOffering,
+                             VirtualMachine,
+                             DiskOffering,
+                             Configurations,
+                             Network,
+                             PublicIPAddress)
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               list_snapshots,
+                               list_volumes,
+                               list_configurations,
+                               list_resource_limits,
+                               update_resource_limit,
+                               get_builtin_template_info,
+                               find_storage_pool_type)
 from marvin.codes import PASS
-import datetime
-
+import time
 
 class Services:
     """Test Resource Limits Services
@@ -90,7 +110,7 @@ class Services:
                                     "ostype": 'CentOS 5.3 (64-bit)',
                                     "templatefilter": 'self',
                         },
-                        "network_offering": {
+                         "network_offering": {
                                     "name": 'Network offering-VR services',
                                     "displaytext": 'Network offering-VR services',
                                     "guestiptype": 'Isolated',
@@ -124,13 +144,11 @@ class TestProjectLimits(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestProjectLimits,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestProjectLimits, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         # Create domains, account etc.
@@ -185,7 +203,7 @@ class TestProjectLimits(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_01_project_limits(self):
         """ Test project limits for domain admin
         """
@@ -352,7 +370,7 @@ class TestProjectLimits(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_02_project_limits_normal_user(self):
         """ Test project limits for normal user
         """
@@ -502,10 +520,11 @@ class TestResourceLimitsProject(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestResourceLimitsProject, cls).getClsTestClient().getApiClient()
+        cls.testClient = super(TestResourceLimitsProject, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services = Services().services
-        # Get Zone, Domain and templates
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         cls.template = get_template(
@@ -526,6 +545,11 @@ class TestResourceLimitsProject(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
+
+        cls.userapiclient = cls.testClient.getUserApiClient(
+                                    UserName=cls.account.name,
+                                    DomainName=cls.account.domain)
+
         # Create project as a domain admin
         cls.project = Project.create(
                                  cls.api_client,
@@ -576,7 +600,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_03_vm_per_project(self):
         """Test VM limit per project
         """
@@ -638,7 +662,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                                 )
         return
 
-    @attr(tags=["advanced", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_04_publicip_per_project(self):
         """Test Public IP limit per project
         """
@@ -714,7 +738,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
 
         # Exception should be raised for second Public IP
         with self.assertRaises(Exception):
-            public_ip_2 = PublicIPAddress.create(
+            PublicIPAddress.create(
                                            self.apiclient,
                                            zoneid=virtual_machine_1.zoneid,
                                            services=self.services["server"],
@@ -723,7 +747,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                                            )
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_05_snapshots_per_project(self):
         """Test Snapshot limit per project
         """
@@ -734,6 +758,8 @@ class TestResourceLimitsProject(cloudstackTestCase):
         # 5. Try to create another snapshot in this project. It should give
         #    user an appropriate error and an alert should be generated.
 
+        if self.hypervisor.lower() in ['hyperv', 'lxc']:
+            raise self.skipTest("Snapshots feature is not supported on %s" % self.hypervisor.lower())
         self.debug(
             "Updating snapshot resource limits for project: %s" %
                                         self.project.id)
@@ -773,7 +799,6 @@ class TestResourceLimitsProject(cloudstackTestCase):
                         True,
                         "Check for list volume response return valid data"
                         )
-        volume = volumes[0]
 
         self.debug("Creating snapshot from volume: %s" % volumes[0].id)
         # Create a snapshot from the ROOTDISK
@@ -799,7 +824,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                             )
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
     def test_06_volumes_per_project(self):
         """Test Volumes limit per project
         """
@@ -810,6 +835,9 @@ class TestResourceLimitsProject(cloudstackTestCase):
         #    an appropriate error that Volume limit is exhausted and an alert
         #    should be generated.
 
+        if self.hypervisor.lower() == 'lxc':
+            if not find_storage_pool_type(self.apiclient, storagetype='rbd'):
+                self.skipTest("RBD storage type is required for data volumes for LXC")
         self.project_1 = Project.create(
                          self.api_client,
                          self.services["project"],
@@ -855,7 +883,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
     def test_07_templates_per_project(self):
         """Test Templates limit per project
         """
@@ -882,77 +910,87 @@ class TestResourceLimitsProject(cloudstackTestCase):
                               max=1,
                               projectid=self.project.id
                               )
+        
+        # Register the First Template in the project
+        self.debug("Register the First Template in the project")
+        builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
+        self.services["template"]["url"] = builtin_info[0]
+        self.services["template"]["hypervisor"] = builtin_info[1]
+        self.services["template"]["format"] = builtin_info[2]
 
-        self.debug("Deploying VM for account: %s" % self.account.name)
-        virtual_machine_1 = VirtualMachine.create(
-                                self.apiclient,
-                                self.services["server"],
-                                templateid=self.template.id,
-                                serviceofferingid=self.service_offering.id,
-                                projectid=self.project.id
-                                )
-        self.cleanup.append(virtual_machine_1)
-        # Verify VM state
+        # Register new template
+        template = Template.register(
+                                        self.userapiclient,
+                                        self.services["template"],
+                                        zoneid=self.zone.id,
+                                        projectid=self.project.id
+                                        )
+        self.debug(
+                "Registered a template of format: %s with ID: %s" % (
+                                                                self.services["template"]["format"],
+                                                                template.id
+                                                                ))
+        self.cleanup.append(template)
+
+        # Wait for template status to be changed across
+        time.sleep(self.services["sleep"])
+        timeout = self.services["timeout"]
+        while True:
+            list_template_response = Template.list(
+                                            self.apiclient,
+                                            templatefilter='all',
+                                            id=template.id,
+                                            zoneid=self.zone.id,
+                                            projectid=self.project.id,
+                                            )
+            if list_template_response[0].isready is True:
+                break
+            elif timeout == 0:
+                raise Exception("Template state is not ready, it is %s" % list_template_response[0].isready)
+
+            time.sleep(self.services["sleep"])
+            timeout = timeout - 1
+            
+        #Verify template response to check whether template added successfully
         self.assertEqual(
-                            virtual_machine_1.state,
-                            'Running',
-                            "Check VM state is Running or not"
-                        )
-        virtual_machine_1.stop(self.apiclient)
-        # Get the Root disk of VM
-        volumes = list_volumes(
-                            self.apiclient,
-                            virtualmachineid=virtual_machine_1.id,
-                            projectid=self.project.id,
-                            type='ROOT'
-                            )
-        self.assertEqual(
-                        isinstance(volumes, list),
+                        isinstance(list_template_response, list),
                         True,
-                        "Check for list volume response return valid data"
+                        "Check for list template response return valid data"
                         )
-        volume = volumes[0]
 
-        self.debug("Creating template from volume: %s" % volume.id)
-        # Create a template from the ROOTDISK
-        template_1 = Template.create(
-                            self.apiclient,
-                            self.services["template"],
-                            volumeid=volume.id,
-                            projectid=self.project.id
-                            )
+        self.assertNotEqual(
+                            len(list_template_response),
+                            0,
+                            "Check template available in List Templates"
+                        )
 
-        self.cleanup.append(template_1)
-        # Verify Template state
+        template_response = list_template_response[0]
         self.assertEqual(
-                            template_1.isready,
+                            template_response.isready,
                             True,
-                            "Check Template is in ready state or not"
+                            "Template state is not ready, it is %s" % template_response.isready
                         )
 
         # Exception should be raised for second template
         with self.assertRaises(Exception):
-            Template.create(
-                            self.apiclient,
-                            self.services["template"],
-                            volumeid=volume.id,
-                            projectid=self.project.id
+            Template.register(
+                                self.userapiclient,
+                                self.services["template"],
+                                zoneid=self.zone.id,
+                                projectid=self.project.id
                             )
         return
-
 
 class TestMaxProjectNetworks(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-                               TestMaxProjectNetworks,
-                               cls
-                               ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestMaxProjectNetworks, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
-        # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
         cls.services['mode'] = cls.zone.networktype
         cls.template = get_template(
                             cls.api_client,

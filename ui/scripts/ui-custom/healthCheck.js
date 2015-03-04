@@ -76,7 +76,7 @@
                     title: '',
                     fields: {
                         pingpath: {
-                            label: 'Ping Path',
+                            label: 'label.ping.path',
                             validation: {
                                 required: false
                             },
@@ -98,28 +98,28 @@
                     title: '',
                     fields: {
                         responsetimeout: {
-                            label: 'Response Timeout (in sec)',
+                            label: 'label.response.timeout.in.sec',
                             validation: {
                                 required: false
                             },
                             defaultValue: responsetimeout1
                         },
                         healthinterval: {
-                            label: 'Health Check Interval (in sec)',
+                            label: 'label.health.check.interval.in.sec',
                             validation: {
                                 required: false
                             },
                             defaultValue: healthinterval1
                         },
                         healthythreshold: {
-                            label: 'Healthy Threshold',
+                            label: 'label.healthy.threshold',
                             validation: {
                                 required: false
                             },
                             defaultValue: healthythreshold1
                         },
                         unhealthythreshold: {
-                            label: 'Unhealthy Threshold',
+                            label: 'label.unhealthy.threshold',
                             validation: {
                                 required: false
                             },

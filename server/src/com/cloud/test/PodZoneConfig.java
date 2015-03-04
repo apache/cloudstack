@@ -408,7 +408,7 @@ public class PodZoneConfig {
         String defaultXenStorageNetworkLabel = getDefaultXenNetworkLabel(TrafficType.Storage);
         String defaultXenGuestNetworkLabel = getDefaultXenNetworkLabel(TrafficType.Guest);
 
-        String insertTraficType = "INSERT INTO `cloud`.`physical_network_traffic_types` " + "(physical_network_id, traffic_type, xen_network_label) VALUES ( ?, ?, ?)";
+        String insertTraficType = "INSERT INTO `cloud`.`physical_network_traffic_types` " + "(physical_network_id, traffic_type, xenserver_network_label) VALUES ( ?, ?, ?)";
 
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertTraficType);
@@ -444,16 +444,16 @@ public class PodZoneConfig {
         String configName = null;
         switch (trafficType) {
             case Public:
-                configName = "xen.public.network.device";
+                configName = "xenserver.public.network.device";
                 break;
             case Guest:
-                configName = "xen.guest.network.device";
+                configName = "xenserver.guest.network.device";
                 break;
             case Storage:
-                configName = "xen.storage.network.device1";
+                configName = "xenserver.storage.network.device1";
                 break;
             case Management:
-                configName = "xen.private.network.device";
+                configName = "xenserver.private.network.device";
                 break;
         }
 

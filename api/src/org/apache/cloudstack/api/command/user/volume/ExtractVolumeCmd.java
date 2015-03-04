@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.user.volume;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,7 +38,8 @@ import com.cloud.storage.Upload;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-@APICommand(name = "extractVolume", description = "Extracts volume", responseObject = ExtractResponse.class)
+@APICommand(name = "extractVolume", description = "Extracts volume", responseObject = ExtractResponse.class, entityType = {Volume.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ExtractVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ExtractVolumeCmd.class.getName());
 
@@ -46,7 +49,9 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "the ID of the volume")
+    @ACL(accessType = AccessType.OperateEntry)
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class,
+            required=true, description="the ID of the volume")
     private Long id;
 
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, description = "the url to which the volume would be extracted")
@@ -123,7 +128,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Extraction job";
+        return  "Extraction job";
     }
 
     @Override
@@ -145,7 +150,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
             Account account = _entityMgr.findById(Account.class, getEntityOwnerId());
             response.setAccountId(account.getUuid());
             response.setUrl(uploadUrl);
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract volume");
         }

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.storage;
 
 import java.io.File;
@@ -137,6 +140,20 @@ public class JavaStorageLayer implements StorageLayer {
             paths[i] = files[i].getAbsolutePath();
         }
         return paths;
+    }
+
+    @Override
+    public List<String> listMountPointsByMsHost(String path, long msHostId) {
+        List<String> mountPaths = new ArrayList<String>();
+        File[] files = new File(path).listFiles();
+        if (files == null) {
+            return mountPaths;
+        }
+        for (File file : files) {
+            if (file.getName().startsWith(String.valueOf(msHostId) + "."))
+                mountPaths.add(file.getAbsolutePath());
+        }
+        return mountPaths;
     }
 
     @Override

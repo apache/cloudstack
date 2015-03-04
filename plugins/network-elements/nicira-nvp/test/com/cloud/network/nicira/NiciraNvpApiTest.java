@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,32 +15,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.nicira;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.util.Collections;
 
-import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
-import org.apache.commons.httpclient.NameValuePair;
-import org.apache.http.HttpStatus;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+
+import com.cloud.utils.rest.RESTServiceConnector;
+import com.cloud.utils.rest.RESTValidationStrategy;
 
 public class NiciraNvpApiTest {
     protected static final String UUID = "aaaa";
@@ -49,8 +53,6 @@ public class NiciraNvpApiTest {
     protected static final String SCHEMA2 = "myTestSchema2";
     protected static final String HREF = "myTestHref";
     protected static final String HREF2 = "myTestHref2";
-    protected static final String DISPLAY_NAME = "myTestName";
-    protected static final String UUID_JSON_RESPONSE = "{\"uuid\" : \"aaaa\"}";
     protected static final String SEC_PROFILE_JSON_RESPONSE =
             "{\"uuid\" : \"aaaa\","
             + "\"display_name\" : \"myTestName\","
@@ -77,265 +79,24 @@ public class NiciraNvpApiTest {
     public void setUp() {
         final HttpClientParams hmp = mock(HttpClientParams.class);
         when(client.getParams()).thenReturn(hmp);
-        api = new NiciraNvpApi() {
+        api = new NiciraNvpApi();
+
+        api.restConnector = new RESTServiceConnector(new RESTValidationStrategy()) {
             @Override
-            protected HttpClient createHttpClient() {
+            public HttpClient createHttpClient() {
                 return client;
             }
 
             @Override
-            protected HttpMethod createMethod(final String newType, final String newUri) {
+            public HttpMethod createMethod(final String newType, final String newUri) {
                 type = newType;
                 uri = newUri;
                 return method;
             }
         };
+
         api.setAdminCredentials("admin", "adminpass");
         api.setControllerAddress("localhost");
-    }
-
-    @Test(expected = NiciraNvpApiException.class)
-    public void testExecuteLoginWithoutHostname() throws NiciraNvpApiException {
-        api.setControllerAddress(null);
-        api.login();
-    }
-
-    @Test(expected = NiciraNvpApiException.class)
-    public void testExecuteLoginWithoutCredentials() throws NiciraNvpApiException {
-        api.setAdminCredentials(null, null);
-        api.login();
-    }
-
-    @Test(expected = NiciraNvpApiException.class)
-    public void testExecuteUpdateObjectWithoutHostname() throws NiciraNvpApiException {
-        api.setControllerAddress(null);
-        api.executeUpdateObject(new String(), "/", Collections.<String, String> emptyMap());
-    }
-
-    @Test(expected = NiciraNvpApiException.class)
-    public void testExecuteUpdateObjectWithoutCredentials() throws NiciraNvpApiException {
-        api.setAdminCredentials(null, null);
-        api.executeUpdateObject(new String(), "/", Collections.<String, String> emptyMap());
-    }
-
-    @Test(expected = NiciraNvpApiException.class)
-    public void testExecuteCreateObjectWithoutHostname() throws NiciraNvpApiException {
-        api.setControllerAddress(null);
-        api.executeCreateObject(new String(), String.class, "/", Collections.<String, String> emptyMap());
-    }
-
-    @Test(expected = NiciraNvpApiException.class)
-    public void testExecuteCreateObjectWithoutCredentials() throws NiciraNvpApiException {
-        api.setAdminCredentials(null, null);
-        api.executeCreateObject(new String(), String.class, "/", Collections.<String, String> emptyMap());
-    }
-
-    @Test(expected = NiciraNvpApiException.class)
-    public void testExecuteDeleteObjectWithoutHostname() throws NiciraNvpApiException {
-        api.setControllerAddress(null);
-        api.executeDeleteObject("/");
-    }
-
-    @Test(expected = NiciraNvpApiException.class)
-    public void testExecuteDeleteObjectWithoutCredentials() throws NiciraNvpApiException {
-        api.setAdminCredentials(null, null);
-        api.executeDeleteObject("/");
-    }
-
-    @Test(expected = NiciraNvpApiException.class)
-    public void testExecuteRetrieveObjectWithoutHostname() throws NiciraNvpApiException {
-        api.setControllerAddress(null);
-        api.executeRetrieveObject(String.class, "/", Collections.<String, String> emptyMap());
-    }
-
-    @Test(expected = NiciraNvpApiException.class)
-    public void testExecuteRetrieveObjectWithoutCredentials() throws NiciraNvpApiException {
-        api.setAdminCredentials(null, null);
-        api.executeDeleteObject("/");
-    }
-
-    @Test
-    public void executeMethodTest() throws NiciraNvpApiException {
-        final GetMethod gm = mock(GetMethod.class);
-
-        when(gm.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        api.executeMethod(gm);
-        verify(gm, times(1)).getStatusCode();
-    }
-
-    /* Bit of a roundabout way to ensure that login is called after an un authorized result
-     * It not possible to properly mock login()
-     */
-    @Test(expected = NiciraNvpApiException.class)
-    public void executeMethodTestWithLogin() throws NiciraNvpApiException, HttpException, IOException {
-        final GetMethod gm = mock(GetMethod.class);
-        when(client.executeMethod((HttpMethod)any())).thenThrow(new HttpException());
-        when(gm.getStatusCode()).thenReturn(HttpStatus.SC_UNAUTHORIZED).thenReturn(HttpStatus.SC_UNAUTHORIZED);
-        api.executeMethod(gm);
-        verify(gm, times(1)).getStatusCode();
-    }
-
-    @Test
-    public void testExecuteCreateObject() throws NiciraNvpApiException, IOException {
-        LogicalSwitch ls = new LogicalSwitch();
-        method = mock(PostMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_CREATED);
-        when(method.getResponseBodyAsString()).thenReturn(UUID_JSON_RESPONSE);
-        ls = api.executeCreateObject(ls, LogicalSwitch.class, "/", Collections.<String, String> emptyMap());
-        assertTrue(UUID.equals(ls.getUuid()));
-        verify(method, times(1)).releaseConnection();
-
-    }
-
-    @Test(expected = NiciraNvpApiException.class)
-    public void testExecuteCreateObjectFailure() throws NiciraNvpApiException, IOException {
-        LogicalSwitch ls = new LogicalSwitch();
-        method = mock(PostMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        final Header header = mock(Header.class);
-        when(header.getValue()).thenReturn("text/html");
-        when(method.getResponseHeader("Content-Type")).thenReturn(header);
-        when(method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
-        when(method.isRequestSent()).thenReturn(true);
-        try {
-            ls = api.executeCreateObject(ls, LogicalSwitch.class, "/", Collections.<String, String> emptyMap());
-        } finally {
-            verify(method, times(1)).releaseConnection();
-        }
-    }
-
-    @Test(expected = NiciraNvpApiException.class)
-    public void testExecuteCreateObjectException() throws NiciraNvpApiException, IOException {
-        LogicalSwitch ls = new LogicalSwitch();
-        when(client.executeMethod((HttpMethod)any())).thenThrow(new HttpException());
-        method = mock(PostMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        final Header header = mock(Header.class);
-        when(header.getValue()).thenReturn("text/html");
-        when(method.getResponseHeader("Content-Type")).thenReturn(header);
-        when(method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
-        try {
-            ls = api.executeCreateObject(ls, LogicalSwitch.class, "/", Collections.<String, String> emptyMap());
-        } finally {
-            verify(method, times(1)).releaseConnection();
-        }
-    }
-
-    @Test
-    public void testExecuteUpdateObject() throws NiciraNvpApiException, IOException {
-        final LogicalSwitch ls = new LogicalSwitch();
-        method = mock(PutMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        api.executeUpdateObject(ls, "/", Collections.<String, String> emptyMap());
-        verify(method, times(1)).releaseConnection();
-        verify(client, times(1)).executeMethod(method);
-    }
-
-    @Test(expected = NiciraNvpApiException.class)
-    public void testExecuteUpdateObjectFailure() throws NiciraNvpApiException, IOException {
-        final LogicalSwitch ls = new LogicalSwitch();
-        method = mock(PutMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        final Header header = mock(Header.class);
-        when(header.getValue()).thenReturn("text/html");
-        when(method.getResponseHeader("Content-Type")).thenReturn(header);
-        when(method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
-        when(method.isRequestSent()).thenReturn(true);
-        try {
-            api.executeUpdateObject(ls, "/", Collections.<String, String> emptyMap());
-        } finally {
-            verify(method, times(1)).releaseConnection();
-        }
-    }
-
-    @Test(expected = NiciraNvpApiException.class)
-    public void testExecuteUpdateObjectException() throws NiciraNvpApiException, IOException {
-        final LogicalSwitch ls = new LogicalSwitch();
-        method = mock(PutMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        when(client.executeMethod((HttpMethod)any())).thenThrow(new IOException());
-        try {
-            api.executeUpdateObject(ls, "/", Collections.<String, String> emptyMap());
-        } finally {
-            verify(method, times(1)).releaseConnection();
-        }
-    }
-
-    @Test
-    public void testExecuteDeleteObject() throws NiciraNvpApiException, IOException {
-        method = mock(DeleteMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_NO_CONTENT);
-        api.executeDeleteObject("/");
-        verify(method, times(1)).releaseConnection();
-        verify(client, times(1)).executeMethod(method);
-    }
-
-    @Test(expected = NiciraNvpApiException.class)
-    public void testExecuteDeleteObjectFailure() throws NiciraNvpApiException, IOException {
-        method = mock(DeleteMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        final Header header = mock(Header.class);
-        when(header.getValue()).thenReturn("text/html");
-        when(method.getResponseHeader("Content-Type")).thenReturn(header);
-        when(method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
-        when(method.isRequestSent()).thenReturn(true);
-        try {
-            api.executeDeleteObject("/");
-        } finally {
-            verify(method, times(1)).releaseConnection();
-        }
-    }
-
-    @Test(expected = NiciraNvpApiException.class)
-    public void testExecuteDeleteObjectException() throws NiciraNvpApiException, IOException {
-        method = mock(DeleteMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_NO_CONTENT);
-        when(client.executeMethod((HttpMethod)any())).thenThrow(new HttpException());
-        try {
-            api.executeDeleteObject("/");
-        } finally {
-            verify(method, times(1)).releaseConnection();
-        }
-    }
-
-    @Test
-    public void testExecuteRetrieveObject() throws NiciraNvpApiException, IOException {
-        method = mock(GetMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        when(method.getResponseBodyAsString()).thenReturn(UUID_JSON_RESPONSE);
-        api.executeRetrieveObject(LogicalSwitch.class, "/", Collections.<String, String> emptyMap());
-        verify(method, times(1)).releaseConnection();
-        verify(client, times(1)).executeMethod(method);
-    }
-
-    @Test(expected = NiciraNvpApiException.class)
-    public void testExecuteRetrieveObjectFailure() throws NiciraNvpApiException, IOException {
-        method = mock(GetMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        when(method.getResponseBodyAsString()).thenReturn(UUID_JSON_RESPONSE);
-        final Header header = mock(Header.class);
-        when(header.getValue()).thenReturn("text/html");
-        when(method.getResponseHeader("Content-Type")).thenReturn(header);
-        when(method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
-        when(method.isRequestSent()).thenReturn(true);
-        try {
-            api.executeRetrieveObject(LogicalSwitch.class, "/", Collections.<String, String> emptyMap());
-        } finally {
-            verify(method, times(1)).releaseConnection();
-        }
-    }
-
-    @Test(expected = NiciraNvpApiException.class)
-    public void testExecuteRetrieveObjectException() throws NiciraNvpApiException, IOException {
-        method = mock(GetMethod.class);
-        when(method.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-        when(method.getResponseBodyAsString()).thenReturn(UUID_JSON_RESPONSE);
-        when(client.executeMethod((HttpMethod)any())).thenThrow(new HttpException());
-        try {
-            api.executeRetrieveObject(LogicalSwitch.class, "/", Collections.<String, String> emptyMap());
-        } finally {
-            verify(method, times(1)).releaseConnection();
-        }
     }
 
     @Test
@@ -464,9 +225,98 @@ public class NiciraNvpApiTest {
 
         // Assert
         verify(method, times(1)).releaseConnection();
-        assertEquals("Wrong URI for SecurityProfile deletion REST service",
-                UUID_SEC_PROFILE_URI, uri);
-        assertEquals("Wrong HTTP method for SecurityProfile deletion REST service",
-                NiciraNvpApi.DELETE_METHOD_TYPE, type);
+        assertEquals("Wrong URI for SecurityProfile deletion REST service", UUID_SEC_PROFILE_URI, uri);
+        assertEquals("Wrong HTTP method for SecurityProfile deletion REST service", NiciraNvpApi.DELETE_METHOD_TYPE, type);
     }
+
+    @Test(expected = JsonParseException.class)
+    public void testRoutingConfigAdapterNoType() throws NiciraNvpApiException, IOException {
+        // Prepare
+        final NiciraNvpApi api = new NiciraNvpApi();
+        final Gson gson = api.restConnector.getGson();
+
+        // Execute
+        gson.fromJson("{}", RoutingConfig.class);
+
+        // Assert: JsonParseException should be thrown
+    }
+
+    @Test(expected = JsonParseException.class)
+    public void testRoutingConfigAdapterWrongType() throws NiciraNvpApiException, IOException {
+        // Prepare
+        final NiciraNvpApi api = new NiciraNvpApi();
+        final Gson gson = api.restConnector.getGson();
+
+        // Execute
+        gson.fromJson("{type : \"WrongType\"}", RoutingConfig.class);
+
+        // Assert: JsonParseException should be thrown
+    }
+
+    @Test()
+    public void testRoutingConfigAdapter() throws NiciraNvpApiException, IOException {
+        // Prepare
+        final NiciraNvpApi api = new NiciraNvpApi();
+        final Gson gson = api.restConnector.getGson();
+
+        // Execute
+        final SingleDefaultRouteImplicitRoutingConfig singleDefaultRouteImplicitRoutingConfig =
+                (SingleDefaultRouteImplicitRoutingConfig) gson.fromJson("{type : \"SingleDefaultRouteImplicitRoutingConfig\"}", RoutingConfig.class);
+
+        // Assert: JsonParseException should be thrown
+        assertEquals("", SingleDefaultRouteImplicitRoutingConfig.class, singleDefaultRouteImplicitRoutingConfig.getClass());
+    }
+
+    @Test(expected = JsonParseException.class)
+    public void testNatRuleAdapterNoType() throws NiciraNvpApiException, IOException {
+        // Prepare
+        final NiciraNvpApi api = new NiciraNvpApi();
+        final Gson gson = api.restConnector.getGson();
+
+        // Execute
+        gson.fromJson("{}", NatRule.class);
+
+        // Assert: JsonParseException should be thrown
+    }
+
+    @Test(expected = JsonParseException.class)
+    public void testNatRuleAdapterWrongType() throws NiciraNvpApiException, IOException {
+        // Prepare
+        final NiciraNvpApi api = new NiciraNvpApi();
+        final Gson gson = api.restConnector.getGson();
+
+        // Execute
+        gson.fromJson("{type : \"WrongType\"}", NatRule.class);
+
+        // Assert: JsonParseException should be thrown
+    }
+
+    @Test()
+    public void testRoutingConfigAdapterWithSourceNatRule() throws NiciraNvpApiException, IOException {
+        // Prepare
+        final NiciraNvpApi api = new NiciraNvpApi();
+        final Gson gson = api.restConnector.getGson();
+
+        // Execute
+        final SourceNatRule sourceNatRule =
+                (SourceNatRule) gson.fromJson("{type : \"SourceNatRule\"}", NatRule.class);
+
+        // Assert: JsonParseException should be thrown
+        assertEquals("", SourceNatRule.class, sourceNatRule.getClass());
+    }
+
+    @Test()
+    public void testRoutingConfigAdapterWithDestinationNatRule() throws NiciraNvpApiException, IOException {
+        // Prepare
+        final NiciraNvpApi api = new NiciraNvpApi();
+        final Gson gson = api.restConnector.getGson();
+
+        // Execute
+        final DestinationNatRule destinationNatRule =
+                (DestinationNatRule) gson.fromJson("{type : \"DestinationNatRule\"}", NatRule.class);
+
+        // Assert: JsonParseException should be thrown
+        assertEquals("", DestinationNatRule.class, destinationNatRule.getClass());
+    }
+
 }

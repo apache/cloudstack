@@ -23,6 +23,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.server.ResourceTag.ResourceObjectType;
+import com.cloud.tags.dao.ResourceTagDao;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.security.SecurityGroupRuleVO;
@@ -32,6 +34,8 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.DB;
 
 @Component
 @Local(value = {SecurityGroupRuleDao.class})
@@ -39,6 +43,8 @@ public class SecurityGroupRuleDaoImpl extends GenericDaoBase<SecurityGroupRuleVO
 
     @Inject
     SecurityGroupDao _securityGroupDao;
+    @Inject
+    ResourceTagDao _tagsDao;
 
     protected SearchBuilder<SecurityGroupRuleVO> securityGroupIdSearch;
     protected SearchBuilder<SecurityGroupRuleVO> securityGroupIdAndTypeSearch;
@@ -173,5 +179,19 @@ public class SecurityGroupRuleDaoImpl extends GenericDaoBase<SecurityGroupRuleVO
         sc.setParameters("endPort", endPort);
         sc.setParameters("allowedNetworkId", allowedGroupId);
         return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    @DB
+    public boolean remove(Long id) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
+        SecurityGroupRuleVO entry = findById(id);
+        if (entry != null) {
+            _tagsDao.removeByIdAndType(id, ResourceObjectType.SecurityGroupRule);
+        }
+        boolean result = super.remove(id);
+        txn.commit();
+        return result;
     }
 }

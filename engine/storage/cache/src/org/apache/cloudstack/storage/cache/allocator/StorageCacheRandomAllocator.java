@@ -26,9 +26,13 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 
 import com.cloud.storage.ScopeType;
 
@@ -37,9 +41,28 @@ public class StorageCacheRandomAllocator implements StorageCacheAllocator {
     private static final Logger s_logger = Logger.getLogger(StorageCacheRandomAllocator.class);
     @Inject
     DataStoreManager dataStoreMgr;
+    @Inject
+    ObjectInDataStoreManager objectInStoreMgr;
 
     @Override
     public DataStore getCacheStore(Scope scope) {
+        if (scope.getScopeType() != ScopeType.ZONE) {
+            s_logger.debug("Can only support zone wide cache storage");
+            return null;
+        }
+
+        List<DataStore> cacheStores = dataStoreMgr.getImageCacheStores(scope);
+        if ((cacheStores == null) || (cacheStores.size() <= 0)) {
+            s_logger.debug("Can't find staging storage in zone: " + scope.getScopeId());
+            return null;
+        }
+
+        Collections.shuffle(cacheStores);
+        return cacheStores.get(0);
+    }
+
+    @Override
+    public DataStore getCacheStore(DataObject data, Scope scope) {
         if (scope.getScopeType() != ScopeType.ZONE) {
             s_logger.debug("Can only support zone wide cache storage");
             return null;
@@ -51,7 +74,22 @@ public class StorageCacheRandomAllocator implements StorageCacheAllocator {
             return null;
         }
 
-        Collections.shuffle(cacheStores);
+        // if there are multiple cache stores, we give priority to the one where data is already there
+        if (cacheStores.size() > 1) {
+            for (DataStore store : cacheStores) {
+                DataObjectInStore obj = objectInStoreMgr.findObject(data, store);
+                if (obj != null && obj.getState() == ObjectInDataStoreStateMachine.State.Ready) {
+                    s_logger.debug("pick the cache store " + store.getId() + " where data is already there");
+                    return store;
+                }
+            }
+
+            // otherwise, just random pick one
+            Collections.shuffle(cacheStores);
+        }
         return cacheStores.get(0);
+
     }
+
+
 }

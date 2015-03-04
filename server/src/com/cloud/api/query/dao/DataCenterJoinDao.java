@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.api.query.vo.DataCenterJoinVO;
@@ -24,7 +25,7 @@ import com.cloud.utils.db.GenericDao;
 
 public interface DataCenterJoinDao extends GenericDao<DataCenterJoinVO, Long> {
 
-    ZoneResponse newDataCenterResponse(DataCenterJoinVO dof, Boolean showCapacities);
+    ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dof, Boolean showCapacities);
 
     DataCenterJoinVO newDataCenterView(DataCenter dof);
 }

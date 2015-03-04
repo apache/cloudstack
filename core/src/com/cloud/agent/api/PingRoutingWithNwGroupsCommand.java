@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
 import java.util.HashMap;
@@ -21,7 +24,6 @@ import java.util.Map;
 
 import com.cloud.host.Host;
 import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine.State;
 
 public class PingRoutingWithNwGroupsCommand extends PingRoutingCommand {
     HashMap<String, Pair<Long, Long>> newGroupStates;
@@ -30,9 +32,9 @@ public class PingRoutingWithNwGroupsCommand extends PingRoutingCommand {
         super();
     }
 
-    public PingRoutingWithNwGroupsCommand(Host.Type type, long id, Map<String, State> states, Map<String, HostVmStateReportEntry> hostVmStateReport,
+    public PingRoutingWithNwGroupsCommand(Host.Type type, long id, Map<String, HostVmStateReportEntry> hostVmStateReport,
             HashMap<String, Pair<Long, Long>> nwGrpStates) {
-        super(type, id, states, hostVmStateReport);
+        super(type, id, hostVmStateReport);
         newGroupStates = nwGrpStates;
     }
 

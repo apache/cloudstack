@@ -25,7 +25,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 
-@APICommand(name = "listUsers", description = "Lists user accounts", responseObject = UserResponse.class)
+@APICommand(name = "listUsers", description = "Lists user accounts", responseObject = UserResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ListUsersCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListUsersCmd.class.getName());
 

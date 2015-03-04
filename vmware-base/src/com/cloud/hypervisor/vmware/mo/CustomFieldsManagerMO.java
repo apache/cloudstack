@@ -51,7 +51,7 @@ public class CustomFieldsManagerMO extends BaseMO {
     }
 
     public List<CustomFieldDef> getFields() throws Exception {
-        return (List<CustomFieldDef>)_context.getVimClient().getDynamicProperty(getMor(), "field");
+        return _context.getVimClient().getDynamicProperty(getMor(), "field");
     }
 
     @Override

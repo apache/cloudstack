@@ -35,8 +35,10 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.user.Account;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "stopRouter", description = "Stops a router.", responseObject = DomainRouterResponse.class)
+@APICommand(name = "stopRouter", description = "Stops a router.", responseObject = DomainRouterResponse.class, entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class StopRouterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StopRouterCmd.class.getName());
     private static final String s_name = "stoprouterresponse";
@@ -116,7 +118,7 @@ public class StopRouterCmd extends BaseAsyncCmd {
         if (result != null) {
             DomainRouterResponse response = _responseGenerator.createDomainRouterResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to stop router");
         }

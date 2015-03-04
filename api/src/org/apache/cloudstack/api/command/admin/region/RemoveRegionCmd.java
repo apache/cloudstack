@@ -31,7 +31,8 @@ import org.apache.cloudstack.region.RegionService;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "removeRegion", description = "Removes specified region", responseObject = SuccessResponse.class)
+@APICommand(name = "removeRegion", description = "Removes specified region", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RemoveRegionCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveRegionCmd.class.getName());
     private static final String s_name = "removeregionresponse";

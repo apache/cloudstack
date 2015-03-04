@@ -27,7 +27,8 @@ import com.cloud.utils.component.Manager;
 
 public interface AsyncJobManager extends Manager {
 
-    public static final String JOB_POOL_THREAD_PREFIX = "Job-Executor";
+    public static final String API_JOB_POOL_THREAD_PREFIX = "API-Job-Executor";
+    public static final String WORK_JOB_POOL_THREAD_PREFIX = "Work-Job-Executor";
 
     AsyncJobVO getAsyncJob(long jobId);
 
@@ -128,4 +129,6 @@ public interface AsyncJobManager extends Manager {
     String marshallResultObject(Serializable obj);
 
     Object unmarshallResultObject(AsyncJob job);
+
+    List<AsyncJobVO> findFailureAsyncJobs(String... cmds);
 }

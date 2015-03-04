@@ -19,24 +19,28 @@ package org.apache.cloudstack.api.command.user.network;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.Network;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class)
+@APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworksCmd.class.getName());
-    private static final String Name = "listnetworksresponse";
+    private static final String s_name = "listnetworksresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -79,6 +83,9 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
 
     @Parameter(name = ApiConstants.FOR_VPC, type = CommandType.BOOLEAN, description = "the network belongs to vpc")
     private Boolean forVpc;
+
+    @Parameter(name = ApiConstants.DISPLAY_NETWORK, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -136,12 +143,19 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
         return forVpc;
     }
 
+    @Override
+    public Boolean getDisplay() {
+        if (display != null) {
+            return display;
+        }
+        return super.getDisplay();
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
     public String getCommandName() {
-        return Name;
+        return s_name;
     }
 
     @Override
@@ -150,11 +164,11 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
         ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
         List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
         for (Network network : networks.first()) {
-            NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(network);
+            NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(ResponseView.Restricted, network);
             networkResponses.add(networkResponse);
         }
         response.setResponses(networkResponses, networks.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

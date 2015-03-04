@@ -92,6 +92,9 @@ known_categories = {
     'NetworkACL': 'Network ACL',
     'Network': 'Network',
     'CiscoNexus': 'Network',
+    'OpenDaylight': 'Network',
+    'createServiceInstance': 'Network',
+    'addGloboDnsHost': 'Network',
     'Vpn': 'VPN',
     'Limit': 'Limit',
     'ResourceCount': 'Limit',
@@ -108,8 +111,10 @@ known_categories = {
     'Hypervisor': 'Hypervisor',
     'Alert': 'Alert',
     'Event': 'Event',
-    'login': 'Login',
-    'logout': 'Logout',
+    'login': 'Authentication',
+    'logout': 'Authentication',
+    'saml': 'Authentication',
+    'getSPMetadata': 'Authentication',
     'Capacity': 'System Capacity',
     'NetworkDevice': 'Network Device',
     'ExternalLoadBalancer': 'Ext Load Balancer',
@@ -132,7 +137,9 @@ known_categories = {
     'StaticRoute': 'VPC',
     'Tags': 'Resource tags',
     'NiciraNvpDevice': 'Nicira NVP',
+    'BrocadeVcsDevice': 'Brocade VCS',
     'BigSwitchVnsDevice': 'BigSwitch VNS',
+	'NuageVsp': 'Nuage VSP',
     'AutoScale': 'AutoScale',
     'Counter': 'AutoScale',
     'Condition': 'AutoScale',
@@ -160,7 +167,9 @@ known_categories = {
     'Ucs' : 'UCS',
     'CacheStores' : 'Cache Stores',
     'CacheStore' : 'Cache Store',
-    'OvsElement' : 'Ovs Element'
+    'IAM' : 'IAM',
+    'OvsElement' : 'Ovs Element',
+    'StratosphereSsp' : ' Stratosphere SSP'
     }
 
 

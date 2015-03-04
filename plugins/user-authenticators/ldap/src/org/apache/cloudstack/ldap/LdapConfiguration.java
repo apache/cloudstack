@@ -22,12 +22,20 @@ import javax.inject.Inject;
 import javax.naming.directory.SearchControls;
 
 import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.utils.Pair;
 
-public class LdapConfiguration {
+public class LdapConfiguration implements Configurable{
     private final static String factory = "com.sun.jndi.ldap.LdapCtxFactory";
+
+    private static final ConfigKey<Long> ldapReadTimeout = new ConfigKey<Long>(Long.class, "ldap.read.timeout", "Advanced", "1000",
+        "LDAP connection Timeout in milli sec", true, ConfigKey.Scope.Global, 1l);
+
+    private static final ConfigKey<Integer> ldapPageSize = new ConfigKey<Integer>(Integer.class, "ldap.request.page.size", "Advanced", "1000",
+                                                                               "page size sent to ldap server on each request to get user", true, ConfigKey.Scope.Global, 1);
 
     private final static int scope = SearchControls.SUBTREE_SCOPE;
 
@@ -147,5 +155,23 @@ public class LdapConfiguration {
 
     public String getCommonNameAttribute() {
         return "cn";
+    }
+
+    public Long getReadTimeout() {
+        return ldapReadTimeout.value();
+    }
+
+    public Integer getLdapPageSize() {
+        return ldapPageSize.value();
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return LdapConfiguration.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {ldapReadTimeout, ldapPageSize};
     }
 }

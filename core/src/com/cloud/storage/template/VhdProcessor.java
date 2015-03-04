@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,12 +15,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.storage.template;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -27,12 +29,10 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * VhdProcessor processes the downloaded template for VHD.  It
@@ -52,80 +52,60 @@ public class VhdProcessor extends AdapterBase implements Processor {
     private byte[][] citrixCreatorApp = { {0x74, 0x61, 0x70, 0x00}, {0x43, 0x54, 0x58, 0x53}}; /*"tap ", and "CTXS"*/
 
     @Override
-    public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
+    public FormatInfo process(String templatePath, ImageFormat format, String templateName) {
         if (format != null) {
             s_logger.debug("We currently don't handle conversion from " + format + " to VHD.");
             return null;
         }
 
         String vhdPath = templatePath + File.separator + templateName + "." + ImageFormat.VHD.getFileExtension();
-
         if (!_storage.exists(vhdPath)) {
             s_logger.debug("Unable to find the vhd file: " + vhdPath);
             return null;
         }
 
+        File vhdFile = _storage.getFile(vhdPath);
+
         FormatInfo info = new FormatInfo();
         info.format = ImageFormat.VHD;
         info.filename = templateName + "." + ImageFormat.VHD.getFileExtension();
-
-        File vhdFile = _storage.getFile(vhdPath);
-
         info.size = _storage.getSize(vhdPath);
-        FileInputStream strm = null;
-        byte[] currentSize = new byte[8];
-        byte[] creatorApp = new byte[4];
+
         try {
-            strm = new FileInputStream(vhdFile);
-            strm.skip(info.size - vhdFooterSize + vhdFooterCreatorAppOffset);
-            strm.read(creatorApp);
-            strm.skip(vhdFooterCurrentSizeOffset - vhdFooterCreatorVerOffset);
-            strm.read(currentSize);
-        } catch (Exception e) {
-            s_logger.warn("Unable to read vhd file " + vhdPath, e);
-            throw new InternalErrorException("Unable to read vhd file " + vhdPath + ": " + e);
-        } finally {
-            if (strm != null) {
-                try {
-                    strm.close();
-                } catch (IOException e) {
-                }
-            }
+            info.virtualSize = getVirtualSize(vhdFile);
+        } catch (IOException e) {
+            s_logger.error("Unable to get the virtual size for " + vhdPath);
+            return null;
         }
-
-        //imageSignatureCheck(creatorApp);
-
-        long templateSize = NumbersUtil.bytesToLong(currentSize);
-        info.virtualSize = templateSize;
 
         return info;
     }
 
     @Override
-    public Long getVirtualSize(File file) {
-        FileInputStream strm = null;
+    public long getVirtualSize(File file) throws IOException {
         byte[] currentSize = new byte[8];
         byte[] creatorApp = new byte[4];
-        try {
-            strm = new FileInputStream(file);
-            strm.skip(file.length() - vhdFooterSize + vhdFooterCreatorAppOffset);
-            strm.read(creatorApp);
-            strm.skip(vhdFooterCurrentSizeOffset - vhdFooterCreatorVerOffset);
-            strm.read(currentSize);
-        } catch (Exception e) {
-            s_logger.warn("Unable to read vhd file " + file.getAbsolutePath(), e);
-            throw new CloudRuntimeException("Unable to read vhd file " + file.getAbsolutePath() + ": " + e);
-        } finally {
-            if (strm != null) {
-                try {
-                    strm.close();
-                } catch (IOException e) {
-                }
+
+        try (FileInputStream strm = new FileInputStream(file)) {
+            long skipped = strm.skip(file.length() - vhdFooterSize + vhdFooterCreatorAppOffset);
+            if (skipped == -1) {
+                throw new IOException("Unexpected end-of-file");
+            }
+            long read = strm.read(creatorApp);
+            if (read == -1) {
+                throw new IOException("Unexpected end-of-file");
+            }
+            skipped = strm.skip(vhdFooterCurrentSizeOffset - vhdFooterCreatorVerOffset);
+            if (skipped == -1) {
+                throw new IOException("Unexpected end-of-file");
+            }
+            read = strm.read(currentSize);
+            if (read == -1) {
+                throw new IOException("Unexpected end-of-file");
             }
         }
 
-        long templateSize = NumbersUtil.bytesToLong(currentSize);
-        return templateSize;
+        return NumbersUtil.bytesToLong(currentSize);
     }
 
     @Override
@@ -139,21 +119,4 @@ public class VhdProcessor extends AdapterBase implements Processor {
         return true;
     }
 
-    private void imageSignatureCheck(byte[] creatorApp) throws InternalErrorException {
-        boolean findKnownCreator = false;
-        for (int i = 0; i < citrixCreatorApp.length; i++) {
-            if (Arrays.equals(creatorApp, citrixCreatorApp[i])) {
-                findKnownCreator = true;
-                break;
-            }
-        }
-        if (!findKnownCreator) {
-            /*Only support VHD image created by citrix xenserver, and xenconverter*/
-            String readableCreator = "";
-            for (int j = 0; j < creatorApp.length; j++) {
-                readableCreator += (char)creatorApp[j];
-            }
-            throw new InternalErrorException("Image creator is:" + readableCreator + ", is not supported");
-        }
-    }
 }

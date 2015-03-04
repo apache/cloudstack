@@ -30,6 +30,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.network.Network;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
@@ -83,7 +84,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
     BaremetalPxeDao _pxeDao;
 
     @Override
-    public boolean prepare(VirtualMachineProfile profile, NicProfile pxeNic, DeployDestination dest, ReservationContext context) {
+    public boolean prepare(VirtualMachineProfile profile, NicProfile pxeNic, Network network, DeployDestination dest, ReservationContext context) {
         QueryBuilder<BaremetalPxeVO> sc = QueryBuilder.create(BaremetalPxeVO.class);
         sc.and(sc.entity().getDeviceType(), Op.EQ, BaremetalPxeType.PING.toString());
         sc.and(sc.entity().getPodId(), Op.EQ, dest.getPod().getId());

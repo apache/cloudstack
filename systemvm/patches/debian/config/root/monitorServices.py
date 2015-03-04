@@ -25,6 +25,7 @@ from subprocess import *
 from os import path
 import time
 import os
+import logging
 
 class StatusCodes:
     SUCCESS      = 0
@@ -92,6 +93,8 @@ def raisealert(severity, msg, process_name=None):
     else:
         log = '['+severity+']' + " " + msg +"\n"
 
+    logging.basicConfig(level=logging.INFO,filename='/var/log/routerServiceMonitor.log',format='%(asctime)s %(message)s')
+    logging.info(log)
     msg = 'logger -t monit '+ log
     pout = Popen(msg, shell=True, stdout=PIPE)
 

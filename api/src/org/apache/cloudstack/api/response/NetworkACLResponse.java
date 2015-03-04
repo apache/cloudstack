@@ -16,14 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.google.gson.annotations.SerializedName;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = NetworkACL.class)
 public class NetworkACLResponse extends BaseResponse {
@@ -43,6 +43,10 @@ public class NetworkACLResponse extends BaseResponse {
     @Param(description = "Id of the VPC this ACL is associated with")
     private String vpcId;
 
+    @SerializedName(ApiConstants.FOR_DISPLAY)
+    @Param(description = "is ACL for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean forDisplay;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -57,5 +61,9 @@ public class NetworkACLResponse extends BaseResponse {
 
     public void setVpcId(String vpcId) {
         this.vpcId = vpcId;
+    }
+
+    public void setForDisplay(Boolean forDisplay) {
+        this.forDisplay = forDisplay;
     }
 }

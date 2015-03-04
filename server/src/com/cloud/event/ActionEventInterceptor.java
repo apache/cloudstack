@@ -44,7 +44,7 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
 
         Object interceptorData = null;
 
-        boolean success = true;
+        boolean success = false;
         try {
             interceptorData = interceptStart(m, target);
 
@@ -71,8 +71,9 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
 
                 String eventDescription = getEventDescription(actionEvent, ctx);
                 String eventType = getEventType(actionEvent, ctx);
+                boolean isEventDisplayEnabled = ctx.isEventDisplayEnabled();
 
-                ActionEventUtils.onStartedActionEventFromContext(eventType, eventDescription);
+                ActionEventUtils.onStartedActionEventFromContext(eventType, eventDescription, isEventDisplayEnabled);
             }
         }
         return event;
@@ -87,17 +88,19 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
             long startEventId = ctx.getStartEventId();
             String eventDescription = getEventDescription(actionEvent, ctx);
             String eventType = getEventType(actionEvent, ctx);
+            boolean isEventDisplayEnabled = ctx.isEventDisplayEnabled();
 
             if (eventType.equals(""))
                 return;
 
             if (actionEvent.create()) {
                 //This start event has to be used for subsequent events of this action
-                startEventId =
-                    ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_INFO, eventType, "Successfully created entity for " + eventDescription);
+                startEventId = ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_INFO, eventType,
+                        isEventDisplayEnabled, "Successfully created entity for " + eventDescription);
                 ctx.setStartEventId(startEventId);
             } else {
-                ActionEventUtils.onCompletedActionEvent(userId, accountId, EventVO.LEVEL_INFO, eventType, "Successfully completed " + eventDescription, startEventId);
+                ActionEventUtils.onCompletedActionEvent(userId, accountId, EventVO.LEVEL_INFO, eventType,
+                        isEventDisplayEnabled, "Successfully completed " + eventDescription, startEventId);
             }
         }
     }
@@ -111,16 +114,18 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
             long startEventId = ctx.getStartEventId();
             String eventDescription = getEventDescription(actionEvent, ctx);
             String eventType = getEventType(actionEvent, ctx);
+            boolean isEventDisplayEnabled = ctx.isEventDisplayEnabled();
 
             if (eventType.equals(""))
                 return;
 
             if (actionEvent.create()) {
-                long eventId =
-                    ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, eventType, "Error while creating entity for " + eventDescription);
+                long eventId = ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, eventType,
+                            isEventDisplayEnabled, "Error while creating entity for " + eventDescription);
                 ctx.setStartEventId(eventId);
             } else {
-                ActionEventUtils.onCompletedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, eventType, "Error while " + eventDescription, startEventId);
+                ActionEventUtils.onCompletedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, eventType, isEventDisplayEnabled,
+                        "Error while " + eventDescription, startEventId);
             }
         }
     }

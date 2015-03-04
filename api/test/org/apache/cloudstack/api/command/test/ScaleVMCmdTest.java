@@ -29,6 +29,7 @@ import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
 import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -85,7 +86,8 @@ public class ScaleVMCmdTest extends TestCase {
         List<UserVmResponse> list = new LinkedList<UserVmResponse>();
         list.add(userVmResponse);
 
-        Mockito.when(responseGenerator.createUserVmResponse("virtualmachine", userVm)).thenReturn(list);
+        Mockito.when(responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", userVm)).thenReturn(
+                list);
 
         scaleVMCmd._userVmService = userVmService;
 

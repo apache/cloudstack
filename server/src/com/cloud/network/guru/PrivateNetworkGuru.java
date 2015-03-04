@@ -27,7 +27,7 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
@@ -152,13 +152,13 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException {
+        throws InsufficientVirtualNetworkCapacityException {
 
         return network;
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapacityException,
         InsufficientAddressCapacityException {
         DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
         NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
@@ -181,7 +181,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
         return nic;
     }
 
-    protected void getIp(NicProfile nic, DataCenter dc, Network network) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+    protected void getIp(NicProfile nic, DataCenter dc, Network network) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         if (nic.getIp4Address() == null) {
             PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(network.getDataCenterId(), network.getId(), null);
             String vlanTag = BroadcastDomainType.getValue(network.getBroadcastUri());
@@ -215,7 +215,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         if (nic.getIp4Address() == null) {
             getIp(nic, _entityMgr.findById(DataCenter.class, network.getDataCenterId()), network);
             nic.setStrategy(ReservationStrategy.Create);

@@ -34,7 +34,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.user.Account;
 
-@APICommand(name = "addTrafficType", description = "Adds traffic type to a physical network", responseObject = TrafficTypeResponse.class, since = "3.0.0")
+@APICommand(name = "addTrafficType", description = "Adds traffic type to a physical network", responseObject = TrafficTypeResponse.class, since = "3.0.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AddTrafficTypeCmd.class.getName());
 
@@ -54,7 +55,7 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, required = true, description = "the trafficType to be added to the physical network")
     private String trafficType;
 
-    @Parameter(name = ApiConstants.XEN_NETWORK_LABEL,
+    @Parameter(name = ApiConstants.XENSERVER_NETWORK_LABEL,
                type = CommandType.STRING,
                description = "The network name label of the physical device dedicated to this traffic on a XenServer host")
     private String xenLabel;
@@ -81,6 +82,10 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "The VLAN id to be used for Management traffic by VMware host")
     private String vlan;
+
+    @Parameter(name=ApiConstants.ISOLATION_METHOD, type=CommandType.STRING, description="Used if physical network has multiple isolation types and traffic type is public."
+        + " Choose which isolation method. Valid options currently 'vlan' or 'vxlan', defaults to 'vlan'.")
+    private String isolationMethod;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -127,6 +132,14 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
         return vlan;
     }
 
+    public String getIsolationMethod() {
+        if (isolationMethod != null && !isolationMethod.isEmpty()) {
+            return isolationMethod;
+        } else {
+            return "vlan";
+        }
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -157,7 +170,7 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException {
         PhysicalNetworkTrafficType result =
-            _networkService.addTrafficTypeToPhysicalNetwork(getPhysicalNetworkId(), getTrafficType(), getXenLabel(), getKvmLabel(), getVmwareLabel(),
+            _networkService.addTrafficTypeToPhysicalNetwork(getPhysicalNetworkId(), getTrafficType(), getIsolationMethod(), getXenLabel(), getKvmLabel(), getVmwareLabel(),
                 getSimulatorLabel(), getVlan(), getHypervLabel(), getOvm3Label());
         if (result != null) {
             setEntityId(result.getId());

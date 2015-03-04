@@ -30,19 +30,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
+import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
-import com.cloud.agent.api.ClusterSyncCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
@@ -72,7 +70,7 @@ public abstract class AgentAttache {
 
     protected static final Comparator<Request> s_reqComparator = new Comparator<Request>() {
         @Override
-        public int compare(Request o1, Request o2) {
+        public int compare(final Request o1, final Request o2) {
             long seq1 = o1.getSequence();
             long seq2 = o2.getSequence();
             if (seq1 < seq2) {
@@ -87,7 +85,7 @@ public abstract class AgentAttache {
 
     protected static final Comparator<Object> s_seqComparator = new Comparator<Object>() {
         @Override
-        public int compare(Object o1, Object o2) {
+        public int compare(final Object o1, final Object o2) {
             long seq1 = ((Request)o1).getSequence();
             long seq2 = (Long)o2;
             if (seq1 < seq2) {
@@ -108,21 +106,20 @@ public abstract class AgentAttache {
     protected Status _status = Status.Connecting;
     protected boolean _maintenance;
     protected long _nextSequence;
-    protected AtomicInteger _outstandingTaskCount;
 
     protected AgentManagerImpl _agentMgr;
 
     public final static String[] s_commandsAllowedInMaintenanceMode = new String[] {MaintainCommand.class.toString(), MigrateCommand.class.toString(),
         StopCommand.class.toString(), CheckVirtualMachineCommand.class.toString(), PingTestCommand.class.toString(), CheckHealthCommand.class.toString(),
-        ReadyCommand.class.toString(), ShutdownCommand.class.toString(), SetupCommand.class.toString(), ClusterSyncCommand.class.toString(),
-        CleanupNetworkRulesCmd.class.toString(), CheckNetworkCommand.class.toString(), PvlanSetupCommand.class.toString()};
+        ReadyCommand.class.toString(), ShutdownCommand.class.toString(), SetupCommand.class.toString(),
+        CleanupNetworkRulesCmd.class.toString(), CheckNetworkCommand.class.toString(), PvlanSetupCommand.class.toString(), CheckOnHostCommand.class.toString()};
     protected final static String[] s_commandsNotAllowedInConnectingMode = new String[] {StartCommand.class.toString(), CreateCommand.class.toString()};
     static {
         Arrays.sort(s_commandsAllowedInMaintenanceMode);
         Arrays.sort(s_commandsNotAllowedInConnectingMode);
     }
 
-    protected AgentAttache(AgentManagerImpl agentMgr, final long id, final String name, boolean maintenance) {
+    protected AgentAttache(final AgentManagerImpl agentMgr, final long id, final String name, final boolean maintenance) {
         _id = id;
         _name = name;
         _waitForList = new ConcurrentHashMap<Long, Listener>();
@@ -130,8 +127,7 @@ public abstract class AgentAttache {
         _maintenance = maintenance;
         _requests = new LinkedList<Request>();
         _agentMgr = agentMgr;
-        _nextSequence = s_rand.nextInt(Short.MAX_VALUE) << 48;
-        _outstandingTaskCount = new AtomicInteger(0);
+        _nextSequence = new Long(s_rand.nextInt(Short.MAX_VALUE)).longValue() << 48;
     }
 
     public synchronized long getNextSequence() {
@@ -180,13 +176,13 @@ public abstract class AgentAttache {
         }
     }
 
-    protected synchronized void addRequest(Request req) {
+    protected synchronized void addRequest(final Request req) {
         int index = findRequest(req);
         assert (index < 0) : "How can we get index again? " + index + ":" + req.toString();
         _requests.add(-index - 1, req);
     }
 
-    protected void cancel(Request req) {
+    protected void cancel(final Request req) {
         long seq = req.getSequence();
         cancel(seq);
     }
@@ -205,11 +201,11 @@ public abstract class AgentAttache {
         }
     }
 
-    protected synchronized int findRequest(Request req) {
+    protected synchronized int findRequest(final Request req) {
         return Collections.binarySearch(_requests, req, s_reqComparator);
     }
 
-    protected synchronized int findRequest(long seq) {
+    protected synchronized int findRequest(final long seq) {
         return Collections.binarySearch(_requests, seq, s_seqComparator);
     }
 
@@ -312,16 +308,18 @@ public abstract class AgentAttache {
     }
 
     protected void cancelAllCommands(final Status state, final boolean cancelActive) {
-        final Set<Map.Entry<Long, Listener>> entries = _waitForList.entrySet();
-        final Iterator<Map.Entry<Long, Listener>> it = entries.iterator();
-        while (it.hasNext()) {
-            final Map.Entry<Long, Listener> entry = it.next();
-            it.remove();
-            final Listener monitor = entry.getValue();
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(log(entry.getKey(), "Sending disconnect to " + monitor.getClass()));
+        if (cancelActive) {
+            final Set<Map.Entry<Long, Listener>> entries = _waitForList.entrySet();
+            final Iterator<Map.Entry<Long, Listener>> it = entries.iterator();
+            while (it.hasNext()) {
+                final Map.Entry<Long, Listener> entry = it.next();
+                it.remove();
+                final Listener monitor = entry.getValue();
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(log(entry.getKey(), "Sending disconnect to " + monitor.getClass()));
+                }
+                monitor.processDisconnect(_id, state);
             }
-            monitor.processDisconnect(_id, state);
         }
     }
 
@@ -331,17 +329,20 @@ public abstract class AgentAttache {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        try {
-            AgentAttache that = (AgentAttache)obj;
-            return _id == that._id;
-        } catch (ClassCastException e) {
-            assert false : "Who's sending an " + obj.getClass().getSimpleName() + " to AgentAttache.equals()? ";
+    public boolean equals(final Object obj) {
+        // Return false straight away.
+        if (obj == null) {
             return false;
         }
+        // No need to handle a ClassCastException. If the classes are different, then equals can return false straight ahead.
+        if (this.getClass() != obj.getClass()) {
+            return false;
+        }
+        AgentAttache that = (AgentAttache)obj;
+        return _id == that._id;
     }
 
-    public void send(Request req, final Listener listener) throws AgentUnavailableException {
+    public void send(final Request req, final Listener listener) throws AgentUnavailableException {
         checkAvailability(req.getCommands());
 
         long seq = req.getSequence();
@@ -387,7 +388,7 @@ public abstract class AgentAttache {
         }
     }
 
-    public Answer[] send(Request req, int wait) throws AgentUnavailableException, OperationTimedoutException {
+    public Answer[] send(final Request req, final int wait) throws AgentUnavailableException, OperationTimedoutException {
         SynchronousListener sl = new SynchronousListener(null);
 
         long seq = req.getSequence();
@@ -478,7 +479,7 @@ public abstract class AgentAttache {
         _currentSequence = req.getSequence();
     }
 
-    public void process(Answer[] answers) {
+    public void process(final Answer[] answers) {
         //do nothing
     }
 
@@ -505,7 +506,7 @@ public abstract class AgentAttache {
     protected class Alarm extends ManagedContextRunnable {
         long _seq;
 
-        public Alarm(long seq) {
+        public Alarm(final long seq) {
             _seq = seq;
         }
 

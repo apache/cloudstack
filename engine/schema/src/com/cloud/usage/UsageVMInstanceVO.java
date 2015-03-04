@@ -86,6 +86,23 @@ public class UsageVMInstanceVO {
         this.endDate = endDate;
     }
 
+    public UsageVMInstanceVO(int usageType, long zoneId, long accountId, long vmInstanceId, String vmName, long serviceOfferingId, long templateId,
+            Long cpuSpeed, Long cpuCores, Long memory, String hypervisorType, Date startDate, Date endDate) {
+        this.usageType = usageType;
+        this.zoneId = zoneId;
+        this.accountId = accountId;
+        this.vmInstanceId = vmInstanceId;
+        this.vmName = vmName;
+        this.serviceOfferingId = serviceOfferingId;
+        this.templateId = templateId;
+        this.cpuSpeed = cpuSpeed;
+        this.cpuCores = cpuCores;
+        this.memory = memory;
+        this.hypervisorType = hypervisorType;
+        this.startDate = startDate;
+        this.endDate = endDate;
+    }
+
     public int getUsageType() {
         return usageType;
     }

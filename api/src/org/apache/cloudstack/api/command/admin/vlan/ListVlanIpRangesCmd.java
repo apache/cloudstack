@@ -37,7 +37,8 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.dc.Vlan;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listVlanIpRanges", description = "Lists all VLAN IP ranges.", responseObject = VlanIpRangeResponse.class)
+@APICommand(name = "listVlanIpRanges", description = "Lists all VLAN IP ranges.", responseObject = VlanIpRangeResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVlanIpRangesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListVlanIpRangesCmd.class.getName());
 

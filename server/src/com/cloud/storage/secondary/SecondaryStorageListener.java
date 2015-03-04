@@ -18,7 +18,6 @@ package com.cloud.storage.secondary;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
@@ -35,11 +34,9 @@ public class SecondaryStorageListener implements Listener {
     private final static Logger s_logger = Logger.getLogger(SecondaryStorageListener.class);
 
     SecondaryStorageVmManager _ssVmMgr = null;
-    AgentManager _agentMgr = null;
 
-    public SecondaryStorageListener(SecondaryStorageVmManager ssVmMgr, AgentManager agentMgr) {
+    public SecondaryStorageListener(SecondaryStorageVmManager ssVmMgr) {
         _ssVmMgr = ssVmMgr;
-        _agentMgr = agentMgr;
     }
 
     @Override

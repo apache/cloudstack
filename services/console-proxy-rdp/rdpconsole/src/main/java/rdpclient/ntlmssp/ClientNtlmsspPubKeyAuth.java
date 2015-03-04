@@ -16,6 +16,8 @@
 // under the License.
 package rdpclient.ntlmssp;
 
+import com.cloud.utils.ConstantTimeComparator;
+
 import java.nio.charset.Charset;
 
 import rdpclient.ntlmssp.asn1.NegoItem;
@@ -604,7 +606,7 @@ public class ClientNtlmsspPubKeyAuth extends OneTimeSwitch implements NtlmConsta
 
     private void dumpNegoToken(ByteBuffer buf) {
         String signature = buf.readVariableString(RdpConstants.CHARSET_8);
-        if (!signature.equals(NTLMSSP))
+        if (!ConstantTimeComparator.compareStrings(signature, NTLMSSP))
             throw new RuntimeException("Unexpected NTLM message singature: \"" + signature + "\". Expected signature: \"" + NTLMSSP + "\". Data: " + buf + ".");
 
         // MessageType (CHALLENGE)

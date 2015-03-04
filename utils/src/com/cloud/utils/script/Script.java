@@ -1,12 +1,13 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// the License.  You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -14,11 +15,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils.script;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -35,6 +37,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.PropertiesUtil;
@@ -60,6 +63,10 @@ public class Script implements Callable<String> {
     long _timeout;
     Process _process;
     Thread _thread;
+
+    public int getExitValue()  {
+        return _process.exitValue();
+    }
 
     public Script(String command, long timeout, Logger logger) {
         _command = new ArrayList<String>();
@@ -161,6 +168,16 @@ public class Script implements Callable<String> {
         return buildCommandLine(command);
     }
 
+    static String stackTraceAsString(Throwable throwable) {
+        //TODO: a StringWriter is bit to heavy weight
+        try(StringWriter out = new StringWriter(); PrintWriter writer = new PrintWriter(out);) {
+            throwable.printStackTrace(writer);
+            return out.toString();
+        } catch (IOException e) {
+            return "";
+        }
+    }
+
     public String execute(OutputInterpreter interpreter) {
         String[] command = _command.toArray(new String[_command.size()]);
 
@@ -253,28 +270,15 @@ public class Script implements Callable<String> {
             return error;
         } catch (SecurityException ex) {
             _logger.warn("Security Exception....not running as root?", ex);
-            StringWriter writer = new StringWriter();
-            ex.printStackTrace(new PrintWriter(writer));
-            return writer.toString();
+            return stackTraceAsString(ex);
         } catch (Exception ex) {
             _logger.warn("Exception: " + buildCommandLine(command), ex);
-            StringWriter writer = new StringWriter();
-            ex.printStackTrace(new PrintWriter(writer));
-            return writer.toString();
+            return stackTraceAsString(ex);
         } finally {
             if (_process != null) {
-                try {
-                    _process.getErrorStream().close();
-                } catch (IOException ex) {
-                }
-                try {
-                    _process.getOutputStream().close();
-                } catch (IOException ex) {
-                }
-                try {
-                    _process.getInputStream().close();
-                } catch (IOException ex) {
-                }
+                IOUtils.closeQuietly(_process.getErrorStream());
+                IOUtils.closeQuietly(_process.getOutputStream());
+                IOUtils.closeQuietly(_process.getInputStream());
                 _process.destroy();
             }
         }
@@ -303,32 +307,24 @@ public class Script implements Callable<String> {
         public Task(OutputInterpreter interpreter, BufferedReader reader) {
             this.interpreter = interpreter;
             this.reader = reader;
-            this.result = null;
+            result = null;
         }
 
         @Override
         public void run() {
-            done = false;
-            try {
-                result = interpreter.interpret(reader);
-            } catch (IOException ex) {
-                StringWriter writer = new StringWriter();
-                ex.printStackTrace(new PrintWriter(writer));
-                result = writer.toString();
-            } catch (Exception ex) {
-                StringWriter writer = new StringWriter();
-                ex.printStackTrace(new PrintWriter(writer));
-                result = writer.toString();
-            } finally {
-                synchronized (this) {
-                    done = true;
-                    notifyAll();
-                }
+            synchronized(this) {
+                done = false;
                 try {
-                    reader.close();
+                    result = interpreter.interpret(reader);
                 } catch (IOException ex) {
+                    result = stackTraceAsString(ex);
+                } catch (Exception ex) {
+                    result = stackTraceAsString(ex);
+                } finally {
+                        done = true;
+                        notifyAll();
+                        IOUtils.closeQuietly(reader);
                 }
-                ;
             }
         }
 
@@ -343,8 +339,6 @@ public class Script implements Callable<String> {
     public static String findScript(String path, String script) {
         s_logger.debug("Looking for " + script + " in the classpath");
 
-        path = path.replace("/", File.separator);
-
         URL url = ClassLoader.getSystemResource(script);
         s_logger.debug("System resource: " + url);
         File file = null;
@@ -353,6 +347,12 @@ public class Script implements Callable<String> {
             s_logger.debug("Absolute path =  " + file.getAbsolutePath());
             return file.getAbsolutePath();
         }
+
+        if (path == null) {
+            s_logger.warn("No search path specified, unable to look for " + script);
+            return null;
+        }
+        path = path.replace("/", File.separator);
 
         /**
          * Look in WEB-INF/classes of the webapp
@@ -413,10 +413,7 @@ public class Script implements Callable<String> {
                     if (propsFile == null) {
                         s_logger.debug("environment.properties could not be opened");
                     } else {
-                        final FileInputStream finputstream = new FileInputStream(propsFile);
-                        final Properties props = new Properties();
-                        props.load(finputstream);
-                        finputstream.close();
+                        final Properties props = PropertiesUtil.loadFromFile(propsFile);
                         search = props.getProperty("paths.script");
                     }
                 } catch (IOException e) {

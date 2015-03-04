@@ -33,7 +33,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 import com.cloud.storage.GuestOS;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listOsTypes", description = "Lists all supported OS types for this cloud.", responseObject = GuestOSResponse.class)
+@APICommand(name = "listOsTypes", description = "Lists all supported OS types for this cloud.", responseObject = GuestOSResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListGuestOsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
 

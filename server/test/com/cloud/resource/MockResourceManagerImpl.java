@@ -17,6 +17,7 @@
 
 package com.cloud.resource;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +36,8 @@ import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.VgpuTypesInfo;
+import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
@@ -42,6 +45,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.gpu.HostGpuGroupsVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
@@ -549,9 +553,49 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
+    public List<HostVO> listAllUpAndEnabledHostsInOneZone(long dcId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public boolean releaseHostReservation(Long hostId) {
         // TODO Auto-generated method stub
         return false;
     }
 
+    @Override
+    public boolean isGPUDeviceAvailable(long hostId, String groupName, String vgpuType) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public GPUDeviceTO getGPUDevice(long hostId, String groupName, String vgpuType) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<HostGpuGroupsVO> listAvailableGPUDevice(long hostId, String groupName, String vgpuType) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void updateGPUDetails(long hostId, HashMap<String, HashMap<String, VgpuTypesInfo>> deviceDetails) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUStatistics(HostVO host) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean isHostGpuEnabled(long hostId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 }

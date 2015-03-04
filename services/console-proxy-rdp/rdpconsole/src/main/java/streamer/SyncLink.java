@@ -371,7 +371,7 @@ public class SyncLink implements Link {
         // Pull source in loop
         while (!shutdown) {
             // Pull data from source element and send it to sink element
-            ByteBuffer data = pull(true);
+            ByteBuffer data = pull(false);
             if (data != null)
                 sink.handleData(data, this);
 

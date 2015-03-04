@@ -251,8 +251,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             if (_emailAlert != null) {
                 _emailAlert.sendAlert(alertType, dataCenterId, podId, null, subject, body);
             } else {
-                s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " + podId + " // clusterId:: " + null +
-                    " // message:: " + subject);
+                s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " + podId +
+                    " // message:: " + subject + " // body:: " + body);
             }
         } catch (Exception ex) {
             s_logger.error("Problem sending email alert", ex);
@@ -278,10 +278,11 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             // Calculate CPU and RAM capacities
             //     get all hosts...even if they are not in 'UP' state
             List<HostVO> hosts = _resourceMgr.listAllNotInMaintenanceHostsInOneZone(Host.Type.Routing, null);
-            for (HostVO host : hosts) {
-                _capacityMgr.updateCapacityForHost(host);
+            if (hosts != null) {
+                for (HostVO host : hosts) {
+                    _capacityMgr.updateCapacityForHost(host);
+                }
             }
-
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Done executing cpu/ram capacity update");
                 s_logger.debug("Executing storage capacity update");
@@ -363,16 +364,16 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         int totalVlans = _dcDao.countZoneVlans(dcId, false);
         int allocatedVlans = _dcDao.countZoneVlans(dcId, true);
 
+        CapacityState vlanCapacityState = (capacityState == AllocationState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
         if (capacities.size() == 0) {
             CapacityVO newVlanCapacity = new CapacityVO(null, dcId, null, null, allocatedVlans, totalVlans, Capacity.CAPACITY_TYPE_VLAN);
-            if (capacityState == AllocationState.Disabled) {
-                newVlanCapacity.setCapacityState(CapacityState.Disabled);
-            }
+            newVlanCapacity.setCapacityState(vlanCapacityState);
             _capacityDao.persist(newVlanCapacity);
-        } else if (!(capacities.get(0).getUsedCapacity() == allocatedVlans && capacities.get(0).getTotalCapacity() == totalVlans)) {
+        } else if (!(capacities.get(0).getUsedCapacity() == allocatedVlans && capacities.get(0).getTotalCapacity() == totalVlans && capacities.get(0).getCapacityState() == vlanCapacityState)) {
             CapacityVO capacity = capacities.get(0);
             capacity.setUsedCapacity(allocatedVlans);
             capacity.setTotalCapacity(totalVlans);
+            capacity.setCapacityState(vlanCapacityState);
             _capacityDao.update(capacity.getId(), capacity);
         }
 
@@ -401,19 +402,18 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             allocatedIPs = _publicIPAddressDao.countIPsForNetwork(dcId, true, VlanType.DirectAttached);
         }
 
+        CapacityState ipCapacityState = (capacityState == AllocationState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
         if (capacities.size() == 0) {
             CapacityVO newPublicIPCapacity = new CapacityVO(null, dcId, podId, null, allocatedIPs, totalIPs, capacityType);
-            if (capacityState == AllocationState.Disabled) {
-                newPublicIPCapacity.setCapacityState(CapacityState.Disabled);
-            }
+            newPublicIPCapacity.setCapacityState(ipCapacityState);
             _capacityDao.persist(newPublicIPCapacity);
-        } else if (!(capacities.get(0).getUsedCapacity() == allocatedIPs && capacities.get(0).getTotalCapacity() == totalIPs)) {
+        } else if (!(capacities.get(0).getUsedCapacity() == allocatedIPs && capacities.get(0).getTotalCapacity() == totalIPs && capacities.get(0).getCapacityState() == ipCapacityState)) {
             CapacityVO capacity = capacities.get(0);
             capacity.setUsedCapacity(allocatedIPs);
             capacity.setTotalCapacity(totalIPs);
+            capacity.setCapacityState(ipCapacityState);
             _capacityDao.update(capacity.getId(), capacity);
         }
-
     }
 
     class CapacityChecker extends ManagedContextTimerTask {
@@ -750,7 +750,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         public void sendAlert(AlertType alertType, long dataCenterId, Long podId, Long clusterId, String subject, String content) throws MessagingException,
             UnsupportedEncodingException {
             s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " +
-                podId + " // clusterId:: " + null + " // message:: " + subject);
+                podId + " // clusterId:: " + clusterId + " // message:: " + subject);
             AlertVO alert = null;
             if ((alertType != AlertManager.AlertType.ALERT_TYPE_HOST) &&
                 (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM) &&

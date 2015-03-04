@@ -63,7 +63,7 @@ public class SecurityGroupResultObject implements ControlledEntity, InternalIden
         this.domainId = domainId;
         this.accountId = accountId;
         this.accountName = accountName;
-        this.securityGroupRules = ingressRules;
+        securityGroupRules = ingressRules;
     }
 
     @Override
@@ -208,5 +208,10 @@ public class SecurityGroupResultObject implements ControlledEntity, InternalIden
             }
         }
         return resultObjects;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return SecurityGroup.class;
     }
 }

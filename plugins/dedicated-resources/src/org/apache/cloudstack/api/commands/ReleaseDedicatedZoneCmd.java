@@ -33,7 +33,8 @@ import org.apache.cloudstack.dedicated.DedicatedService;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "releaseDedicatedZone", description = "Release dedication of zone", responseObject = SuccessResponse.class)
+@APICommand(name = "releaseDedicatedZone", description = "Release dedication of zone", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ReleaseDedicatedZoneCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReleaseDedicatedZoneCmd.class.getName());
 

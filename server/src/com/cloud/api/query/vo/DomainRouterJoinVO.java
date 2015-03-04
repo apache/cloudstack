@@ -26,11 +26,13 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
 @Entity
@@ -117,13 +119,17 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     private String ip6Dns2 = null;
 
     @Column(name = "host_id", updatable = true, nullable = true)
-    private long hostId;
+    private Long hostId;
 
     @Column(name = "host_uuid")
     private String hostUuid;
 
     @Column(name = "host_name", nullable = false)
     private String hostName;
+
+    @Column(name="hypervisor_type")
+    @Enumerated(value=EnumType.STRING)
+    private Hypervisor.HypervisorType hypervisorType;
 
     @Column(name = "template_id", updatable = true, nullable = true, length = 17)
     private long templateId;
@@ -337,6 +343,10 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
         return hostName;
     }
 
+    public Hypervisor.HypervisorType getHypervisorType() {
+        return hypervisorType;
+    }
+
     public Long getClusterId() {
         return clusterId;
     }
@@ -509,5 +519,10 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
     public VirtualRouter.Role getRole() {
         return role;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return VirtualMachine.class;
     }
 }

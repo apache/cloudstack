@@ -24,9 +24,11 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.fsm.StateMachine2;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 
@@ -44,14 +46,17 @@ public class NetworkStateListener implements StateListener<State, Event, Network
     protected UsageEventDao _usageEventDao;
     @Inject
     protected NetworkDao _networkDao;
+    @Inject
+    protected ConfigurationDao _configDao;
 
     protected static EventBus s_eventBus = null;
 
     private static final Logger s_logger = Logger.getLogger(NetworkStateListener.class);
 
-    public NetworkStateListener(UsageEventDao usageEventDao, NetworkDao networkDao) {
+    public NetworkStateListener(UsageEventDao usageEventDao, NetworkDao networkDao, ConfigurationDao configDao) {
         _usageEventDao = usageEventDao;
         _networkDao = networkDao;
+        _configDao = configDao;
     }
 
     @Override
@@ -61,13 +66,21 @@ public class NetworkStateListener implements StateListener<State, Event, Network
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, Network vo, boolean status, Object opaque) {
-        pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
-        return true;
+    public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, Network vo, boolean status, Object opaque) {
+      State oldState = transition.getCurrentState();
+      State newState = transition.getToState();
+      Event event = transition.getEvent();
+      pubishOnEventBus(event.name(), "postStateTransitionEvent", vo, oldState, newState);
+      return true;
     }
 
-    private void pubishOnEventBus(String event, String status, Network vo, State oldState, State newState) {
+  private void pubishOnEventBus(String event, String status, Network vo, State oldState, State newState) {
 
+        String configKey = "publish.resource.state.events";
+        String value = _configDao.getValue(configKey);
+        boolean configValue = Boolean.parseBoolean(value);
+        if(!configValue)
+            return;
         try {
             s_eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {

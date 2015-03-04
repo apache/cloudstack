@@ -32,6 +32,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.db.EntityManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -56,6 +57,8 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.dc.dao.DedicatedResourceDao;
@@ -78,6 +81,7 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.projects.dao.ProjectDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -109,6 +113,9 @@ public class AffinityApiUnitTest {
 
     @Inject
     AccountDao _accountDao;
+
+    @Inject
+    ProjectDao _projectDao;
 
     @Inject
     EventDao _eventDao;
@@ -196,7 +203,7 @@ public class AffinityApiUnitTest {
     @Test(expected = InvalidParameterValueException.class)
     public void updateAffinityGroupVMRunning() throws ResourceInUseException {
 
-        UserVmVO vm = new UserVmVO(10L, "test", "test", 101L, HypervisorType.Any, 21L, false, false, domainId, 200L, 5L, "", "test", 1L);
+        UserVmVO vm = new UserVmVO(10L, "test", "test", 101L, HypervisorType.Any, 21L, false, false, domainId, 200L, 1, 5L, "", "test", 1L);
         vm.setState(VirtualMachine.State.Running);
         when(_vmDao.findById(10L)).thenReturn(vm);
 
@@ -215,6 +222,11 @@ public class AffinityApiUnitTest {
         @Bean
         public AccountDao accountDao() {
             return Mockito.mock(AccountDao.class);
+        }
+
+        @Bean
+        public ProjectDao projectDao() {
+            return Mockito.mock(ProjectDao.class);
         }
 
         @Bean
@@ -273,8 +285,23 @@ public class AffinityApiUnitTest {
         }
 
         @Bean
+        public EntityManager entityManager() {
+            return Mockito.mock(EntityManager.class);
+        }
+
+        @Bean
         public DomainDao domainDao() {
             return Mockito.mock(DomainDao.class);
+        }
+
+        @Bean
+        public MessageBus messageBus() {
+            return Mockito.mock(MessageBus.class);
+        }
+
+        @Bean
+        public ConfigurationDao configDao() {
+            return Mockito.mock(ConfigurationDao.class);
         }
 
         public static class Library implements TypeFilter {

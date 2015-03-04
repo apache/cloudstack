@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.storage.template;
 
 import java.io.File;
@@ -34,7 +37,9 @@ import com.cloud.utils.component.AdapterBase;
 @Local(value = Processor.class)
 public class QCOW2Processor extends AdapterBase implements Processor {
     private static final Logger s_logger = Logger.getLogger(QCOW2Processor.class);
-    StorageLayer _storage;
+    private static final int VIRTUALSIZE_HEADER_LOCATION = 24;
+
+    private StorageLayer _storage;
 
     @Override
     public FormatInfo process(String templatePath, ImageFormat format, String templateName) {
@@ -57,52 +62,30 @@ public class QCOW2Processor extends AdapterBase implements Processor {
         File qcow2File = _storage.getFile(qcow2Path);
 
         info.size = _storage.getSize(qcow2Path);
-        FileInputStream strm = null;
-        byte[] b = new byte[8];
-        try {
-            strm = new FileInputStream(qcow2File);
-            strm.skip(24);
-            strm.read(b);
-        } catch (Exception e) {
-            s_logger.warn("Unable to read qcow2 file " + qcow2Path, e);
-            return null;
-        } finally {
-            if (strm != null) {
-                try {
-                    strm.close();
-                } catch (IOException e) {
-                }
-            }
-        }
 
-        long templateSize = NumbersUtil.bytesToLong(b);
-        info.virtualSize = templateSize;
+        try {
+            info.virtualSize = getVirtualSize(qcow2File);
+        } catch (IOException e) {
+            s_logger.error("Unable to get virtual size from " + qcow2File.getName());
+            return null;
+        }
 
         return info;
     }
 
     @Override
-    public Long getVirtualSize(File file) {
-        FileInputStream strm = null;
+    public long getVirtualSize(File file) throws IOException {
         byte[] b = new byte[8];
-        try {
-            strm = new FileInputStream(file);
-            strm.skip(24);
-            strm.read(b);
-        } catch (Exception e) {
-            s_logger.warn("Unable to read qcow2 file " + file, e);
-            return null;
-        } finally {
-            if (strm != null) {
-                try {
-                    strm.close();
-                } catch (IOException e) {
-                }
+        try (FileInputStream strm = new FileInputStream(file)) {
+            if (strm.skip(VIRTUALSIZE_HEADER_LOCATION) != VIRTUALSIZE_HEADER_LOCATION) {
+                throw new IOException("Unable to skip to the virtual size header");
+            }
+            if (strm.read(b) != 8) {
+                throw new IOException("Unable to properly read the size");
             }
         }
 
-        long templateSize = NumbersUtil.bytesToLong(b);
-        return templateSize;
+        return NumbersUtil.bytesToLong(b);
     }
 
     @Override
