@@ -195,11 +195,25 @@ def ovmCsPatch(version="3.2.1"):
     # on 3.3.1 this moved to python2.6, but the restart time is already good
     xendConst = "/usr/lib64/python2.4/site-packages/xen/xend/XendConstants.py"
     xendRtime = "MINIMUM_RESTART_TIME"
+    netconf = "/etc/sysconfig/network"
+    netzero = "NOZEROCONF"
     version = ovmVersion()
 
     # this bug is present from 3.2.1 till 3.3.2
     if grep(netcom, "_%s" % func) == 3 and grep(netbr, "_%s" % func) < 1:
         _replaceInFile(netbr, func, "_%s" % func, True)
+
+    # zeroconf is in the way for local loopback, as it introduces a route
+    # on every interface that conflicts with what we want
+    if grep(netconf, "%s" % netzero) == 0:
+        text_file = open("%s" % netconf, "a")
+        text_file.write("%s=no\n" % netzero)
+        text_file.close()
+    else:
+        _replaceInFile(netconf,
+            netzero,
+            "no",
+            False)
 
     # this is fixed in 3.3.1 and onwards
     if version == "3.2.1":
