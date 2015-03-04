@@ -66,9 +66,18 @@ public class CloudstackPlugin extends OvmObject {
         }
 
         public Boolean getRc() throws Ovm3ResourceException {
-            Long rc = (Long) returnCode.get("rc");
-            returnCode.put("exit", rc);
-            if (rc != 0) {
+            Object rc = returnCode.get("rc");
+            Long c = 1L;
+            if (rc instanceof Integer) {
+                c = new Long((Integer) rc);
+            } else if (rc instanceof Long) {
+                c = (Long) rc;
+            } else {
+                LOGGER.debug("Incorrect return code: " + rc);
+                return false;
+            }
+            returnCode.put("exit", c);
+            if (c != 0) {
                 return false;
             }
             return true;
