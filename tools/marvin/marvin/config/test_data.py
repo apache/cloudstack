@@ -860,6 +860,27 @@ test_data = {
         "http://10.147.28.7/templates/393d3550-05ef-330f-9b8c-745b0e699759.vhd",
         "checksum": "",
     },
+    "browser_upload_volume": {
+          "VHD": {
+        "diskname": "XenUploadVol",
+        "url": "http://10.147.28.7/templates/rajani-thin-volume.vhd",
+        "checksum": "",
+                },
+          "OVA": {
+        "diskname": "VMwareUploadVol",
+        "url": "http://10.147.28.7/templates/Autoscale_Template/CentOS5.5(64bit)-vmware-autoscale.ova",
+        "checksum": "",
+                },
+          "QCOW2": {
+        "diskname": "KVMUploadVol",
+        "url": "http://10.147.28.7/templates/rajani-thin-volume.qcow2",
+        "checksum": "",
+                },
+    'browser_resized_disk_offering': {
+        "displaytext": "Resizeddisk",
+        "name": "Resizeddisk",
+        "disksize": 3
+    },
     "recurring_snapshot": {
         "maxsnaps": 2,
         "timezone": "US/Arizona",
