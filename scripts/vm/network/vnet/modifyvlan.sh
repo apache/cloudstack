@@ -34,6 +34,7 @@ addVlan() {
 	if [ ! -d /sys/class/net/$vlanDev ]
 	then
 		ip link add link $pif name $vlanDev type vlan id $vlanId > /dev/null
+		ip link set $vlanDev up
 		
 		if [ $? -gt 0 ]
 		then
