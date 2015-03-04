@@ -22,7 +22,7 @@
   <version>4.3.2</version>
   <packaging>pom</packaging>
   <name>Apache CloudStack</name>
-  <description>Apache CloudStack is an IaaS (“Infrastracture as a Service”) cloud orchestration platform.</description>
+  <description>Apache CloudStack is an IaaS (“Infrastructure as a Service”) cloud orchestration platform.</description>
   <url>http://www.cloudstack.org</url>
   <scm>
     <connection>scm:git:https://git-wip-us.apache.org/repos/asf/cloudstack.git</connection>
@@ -552,6 +552,8 @@
               <exclude>CHANGES</exclude>
               <exclude>CHANGES.md</exclude>
               <exclude>INSTALL.md</exclude>
+              <exclude>Dockerfile</exclude>
+              <exclude>supervisord.conf</exclude>
               <exclude>.idea/</exclude>
               <exclude>**/*.log</exclude>
               <exclude>**/*.patch</exclude>
