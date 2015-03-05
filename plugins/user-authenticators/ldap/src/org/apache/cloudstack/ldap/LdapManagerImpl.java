@@ -74,9 +74,10 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     public LdapConfigurationResponse addConfiguration(final String hostname, final int port) throws InvalidParameterValueException {
         LdapConfigurationVO configuration = _ldapConfigurationDao.findByHostname(hostname);
         if (configuration == null) {
+            LdapContext context = null;
             try {
                 final String providerUrl = "ldap://" + hostname + ":" + port;
-                _ldapContextFactory.createBindContext(providerUrl);
+                context = _ldapContextFactory.createBindContext(providerUrl);
                 configuration = new LdapConfigurationVO(hostname, port);
                 _ldapConfigurationDao.persist(configuration);
                 s_logger.info("Added new ldap server with hostname: " + hostname);
@@ -84,6 +85,8 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
             } catch (NamingException | IOException e) {
                 s_logger.debug("NamingException while doing an LDAP bind", e);
                 throw new InvalidParameterValueException("Unable to bind to the given LDAP server");
+            } finally {
+                closeContext(context);
             }
         } else {
             throw new InvalidParameterValueException("Duplicate configuration");
