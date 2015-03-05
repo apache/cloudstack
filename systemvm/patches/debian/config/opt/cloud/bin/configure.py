@@ -496,15 +496,22 @@ class CsForwardingRules(CsDataBag):
                 elif rule["type"] == "staticnat":
                     self.processStaticNatRule(rule)
 
-    def getDeviceByIp(self, ip):
-        ips = CsDataBag("ips")
-        dbag = ips.get_bag()
-        for device in dbag:
-            if device == "id":
-                continue
-            for addy in dbag[device]:
-                if addy["public_ip"] == ip:
-                    return device
+    def getDeviceByIp(self, ipa):
+        for ip in self.config.address().get_ips():
+            if ip.ip_in_subnet(ipa):
+                return ip.get_device()
+        return None
+
+    def getNetworkByIp(self, ipa):
+        for ip in self.config.address().get_ips():
+            if ip.ip_in_subnet(ipa):
+                return ip.get_network()
+        return None
+
+    def getGatewayByIp(self, ipa):
+        for ip in self.config.address().get_ips():
+            if ip.ip_in_subnet(ipa):
+                return ip.get_gateway()
         return None
 
     def portsToString(self, ports, delimiter):
@@ -515,7 +522,70 @@ class CsForwardingRules(CsDataBag):
             return "%s%s%s" % (ports_parts[0], delimiter, ports_parts[1])
 
     def processForwardRule(self, rule):
-        # FIXME this seems to be different for regular VRs?
+        if self.config.is_vpc():
+            self.forward_vpc(rule)
+        else:
+            self.forward_vr(rule)
+
+    def forward_vr(self, rule):
+        fw1 = "-A PREROUTING -d %s/32 -i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s" % \
+              ( rule['public_ip'],
+                self.getDeviceByIp(rule['public_ip']),
+                rule['protocol'],
+                rule['protocol'],
+                self.portsToString(rule['public_ports'], ':'),
+                rule['internal_ip'],
+                self.portsToString(rule['internal_ports'], '-')
+              )
+        fw2 = "-A PREROUTING -d %s/32 -i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s" % \
+              ( rule['public_ip'],
+                self.getDeviceByIp(rule['internal_ip']),
+                rule['protocol'],
+                rule['protocol'],
+                self.portsToString(rule['public_ports'], ':'),
+                rule['internal_ip'],
+                self.portsToString(rule['internal_ports'], '-')
+              )
+        fw3 = "-A OUTPUT -d %s/32 -p %s -m %s --dport %s -j DNAT --to-destination %s:%s" % \
+              ( rule['public_ip'],
+                rule['protocol'],
+                rule['protocol'],
+                self.portsToString(rule['public_ports'], ':'),
+                rule['internal_ip'],
+                self.portsToString(rule['internal_ports'], '-')
+              )
+        fw4 = "-j SNAT --to-source %s -A POSTROUTING -s %s -d %s/32 -o %s -p %s -m %s --dport %s" % \
+              ( self.getGatewayByIp(rule['internal_ip']),
+                self.getNetworkByIp(rule['internal_ip']),
+                rule['internal_ip'],
+                self.getDeviceByIp(rule['internal_ip']),
+                rule['protocol'],
+                rule['protocol'],
+                self.portsToString(rule['internal_ports'], ':')
+              )  
+        fw5 = "-A PREROUTING -d %s/32 -i %s -p %s -m %s --dport %s -j MARK --set-xmark %s/0xffffffff" % \
+              ( rule['public_ip'],
+                self.getDeviceByIp(rule['public_ip']),
+                rule['protocol'],
+                rule['protocol'],
+                self.portsToString(rule['public_ports'], ':'),
+                hex(int(self.getDeviceByIp(rule['public_ip'])[3:]))
+              )  
+        fw6 = "-A PREROUTING -d %s/32 -i %s -p %s -m %s --dport %s -m state --state NEW -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff" % \
+              ( rule['public_ip'],
+                self.getDeviceByIp(rule['public_ip']),
+                rule['protocol'],
+                rule['protocol'],
+                self.portsToString(rule['public_ports'], ':'),
+              )  
+        self.fw.append(["nat", "", fw1])
+        self.fw.append(["nat", "", fw2])
+        self.fw.append(["nat", "", fw3])
+        self.fw.append(["nat", "", fw4])
+        self.fw.append(["nat", "", fw5])
+        self.fw.append(["nat", "", fw6])
+
+    def forward_vpc(self, rule):
         fwrule = "-A PREROUTING -d %s/32" % rule["public_ip"]
         if not rule["protocol"] == "any":
             fwrule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])

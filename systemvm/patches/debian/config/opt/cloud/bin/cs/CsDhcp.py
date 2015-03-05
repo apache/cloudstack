@@ -98,7 +98,7 @@ class CsDhcp(CsDataBag):
                 to = {"device": bits[0],
                       "mac": bits[1],
                       "ip": bits[2],
-                      "host": bits[3],
+                      "host": bits[3:],
                       "del": False
                       }
                 changed.append(to)

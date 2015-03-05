@@ -19,6 +19,7 @@ from CsDatabag import CsDataBag, CsCmdLine
 from CsApp import CsApache, CsDnsmasq, CsPasswdSvc
 import CsHelper
 import logging
+from netaddr import IPAddress, IPNetwork
 import CsHelper
 
 import subprocess
@@ -118,6 +119,9 @@ class CsInterface:
     def get_ip(self):
         return self.get_attr("public_ip")
 
+    def get_network(self):
+        return self.get_attr("network")
+
     def get_netmask(self):
         return self.get_attr("netmask")
 
@@ -125,7 +129,15 @@ class CsInterface:
         if self.config.is_vpc():
             return self.get_attr("gateway")
         else:
-            return self.config.cmdline().get_guest_gw()
+            if self.config.cmdline().is_redundant():
+                return self.config.cmdline().get_guest_gw()
+            else:
+                return self.get_ip()
+
+    def ip_in_subnet(self, ip):
+        ipo = IPAddress(ip)
+        net = IPNetwork("%s/%s" % (self.get_ip(), self.get_size()))
+        return ipo in list(net)
 
     def get_gateway_cidr(self):
         return "%s/%s" % (self.get_gateway(), self.get_size())
@@ -185,7 +197,7 @@ class CsDevice:
         self.table = ''
         self.tableNo = ''
         if dev != '':
-            self.tableNo = dev[3]
+            self.tableNo = dev[3:]
             self.table = "Table_%s" % dev
         self.fw = config.get_fw()
         self.cl = config.cmdline()
@@ -228,7 +240,7 @@ class CsIP:
 
     def __init__(self, dev, config):
         self.dev = dev
-        self.dnum = dev[3]
+        self.dnum = hex(int(dev[3:]))
         self.iplist = {}
         self.address = {}
         self.list()
@@ -275,8 +287,8 @@ class CsIP:
                     CsHelper.execute(cmd2)
 
     def set_mark(self):
-        cmd = "-A PREROUTING -i %s -m state --state NEW -j CONNMARK --set-xmark 0x%s/0xffffffff" % \
-              (self.getDevice(), self.getDevice()[3])
+        cmd = "-A PREROUTING -i %s -m state --state NEW -j CONNMARK --set-xmark %s/0xffffffff" % \
+                (self.getDevice(), self.dnum)
         self.fw.append(["mangle", "", cmd])
 
     def get_type(self):
@@ -327,7 +339,7 @@ class CsIP:
                             "-A POSTROUTING -o eth2 -j SNAT --to-source %s" % self.address['public_ip']])
             self.fw.append(["mangle", "",
                             "-A PREROUTING -i %s -m state --state NEW " % self.dev +
-                            "-j CONNMARK --set-xmark 0x%s/0xffffffff" % self.dnum])
+                            "-j CONNMARK --set-xmark %s/0xffffffff" % self.dnum])
             self.fw.append(["mangle", "", "-A FIREWALL_%s -j DROP" % self.address['public_ip']])
 
         self.fw.append(["filter", "", "-A INPUT -d 224.0.0.18/32 -j ACCEPT"])
@@ -350,7 +362,7 @@ class CsIP:
             self.fw.append(["filter", "", "-A FORWARD -i eth0 -o eth2 -j FW_OUTBOUND"])
             self.fw.append(["mangle", "",
                             "-A PREROUTING -i %s -m state --state NEW " % self.dev +
-                            "-j CONNMARK --set-xmark 0x%s/0xffffffff" % self.dnum])
+                            "-j CONNMARK --set-xmark %s/0xffffffff" % self.dnum])
 
         if self.get_type() in ["control"]:
             self.fw.append(["filter", "", "-A FW_OUTBOUND -m state --state RELATED,ESTABLISHED -j ACCEPT"])

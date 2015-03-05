@@ -24,7 +24,7 @@ class CsRoute:
 
     def __init__(self, dev):
         self.dev = dev
-        self.tableNo = dev[3]
+        self.tableNo = dev[3:]
         self.table = "Table_%s" % (dev)
 
     def routeTable(self):
