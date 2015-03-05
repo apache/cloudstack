@@ -3023,7 +3023,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         List<VirtualMachineRelocateSpecDiskLocator> diskLocators = new ArrayList<VirtualMachineRelocateSpecDiskLocator>();
         VirtualMachineRelocateSpecDiskLocator diskLocator = null;
 
-        boolean isFirstDs = true;
         String tgtDsName = "";
         String tgtDsHost;
         String tgtDsPath;
@@ -3112,9 +3111,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     morTgtDatastore = morDsAtSource;
                 }
 
-                if (isFirstDs) {
+                if (volume.getType() == Volume.Type.ROOT) {
                     relocateSpec.setDatastore(morTgtDatastore);
-                    isFirstDs = false;
                 }
                 diskLocator = new VirtualMachineRelocateSpecDiskLocator();
                 diskLocator.setDatastore(morTgtDatastore);
@@ -3124,6 +3122,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 diskLocators.add(diskLocator);
                 volumeDeviceKey.put(volume.getId(), diskId);
             }
+            // If a target datastore is provided for the VM, then by default all volumes associated with the VM will be migrated to that target datastore.
+            // Hence set the existing datastore as target datastore for volumes that are not to be migrated.
+            List<Pair<Integer, ManagedObjectReference>> diskDatastores = vmMo.getAllDiskDatastores();
+            for (Pair<Integer, ManagedObjectReference> diskDatastore : diskDatastores) {
+                if (!volumeDeviceKey.containsValue(diskDatastore.first().intValue())) {
+                    diskLocator = new VirtualMachineRelocateSpecDiskLocator();
+                    diskLocator.setDiskId(diskDatastore.first().intValue());
+                    diskLocator.setDatastore(diskDatastore.second());
+                    diskLocators.add(diskLocator);
+                }
+            }
+
             relocateSpec.getDisk().addAll(diskLocators);
 
             // Prepare network at target before migration
@@ -3225,6 +3235,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private Answer execute(MigrateVolumeCommand cmd) {
         String volumePath = cmd.getVolumePath();
         StorageFilerTO poolTo = cmd.getPool();
+        Volume.Type volumeType = cmd.getVolumeType();
 
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource MigrateVolumeCommand: " + _gson.toJson(cmd));
@@ -3271,9 +3282,23 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             diskLocator = new VirtualMachineRelocateSpecDiskLocator();
             diskLocator.setDatastore(morDs);
             diskLocator.setDiskId(diskId);
-
             diskLocators.add(diskLocator);
-            relocateSpec.getDisk().add(diskLocator);
+            if (cmd.getVolumeType() == Volume.Type.ROOT) {
+                relocateSpec.setDatastore(morDs);
+                // If a target datastore is provided for the VM, then by default all volumes associated with the VM will be migrated to that target datastore.
+                // Hence set the existing datastore as target datastore for volumes that are not to be migrated.
+                List<Pair<Integer, ManagedObjectReference>> diskDatastores = vmMo.getAllDiskDatastores();
+                for (Pair<Integer, ManagedObjectReference> diskDatastore : diskDatastores) {
+                    if (diskDatastore.first().intValue() != diskId) {
+                        diskLocator = new VirtualMachineRelocateSpecDiskLocator();
+                        diskLocator.setDiskId(diskDatastore.first().intValue());
+                        diskLocator.setDatastore(diskDatastore.second());
+                        diskLocators.add(diskLocator);
+                    }
+                }
+            }
+
+            relocateSpec.getDisk().addAll(diskLocators);
 
             // Change datastore
             if (!vmMo.changeDatastore(relocateSpec)) {
@@ -3286,12 +3311,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             // In case of a linked clone VM, if VM's disks are not consolidated,
             // further volume operations on the ROOT volume such as volume snapshot etc. will result in DB inconsistencies.
             String apiVersion = HypervisorHostHelper.getVcenterApiVersion(vmMo.getContext());
-            if (apiVersion.compareTo("5.0") >= 0) {
-                if (!vmMo.consolidateVmDisks()) {
-                    s_logger.warn("VM disk consolidation failed after storage migration.");
-                } else {
-                    s_logger.debug("Successfully consolidated disks of VM " + vmName + ".");
-                }
+            if (!vmMo.consolidateVmDisks()) {
+                s_logger.warn("VM disk consolidation failed after storage migration.");
+            } else {
+                s_logger.debug("Successfully consolidated disks of VM " + vmName + ".");
             }
 
             // Update and return volume path because that could have changed after migration
