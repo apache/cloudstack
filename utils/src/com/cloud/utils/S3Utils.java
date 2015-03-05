@@ -339,22 +339,21 @@ public final class S3Utils {
 
     private static List<S3ObjectSummary> listDirectory(final String bucketName, final String directory, final AmazonS3 client) {
 
-     List<S3ObjectSummary> objects = new ArrayList<S3ObjectSummary>();
-     ListObjectsRequest listObjectsRequest = new ListObjectsRequest().withBucketName(bucketName).withPrefix(directory + SEPARATOR);
-     ObjectListing objectListing;
+        List<S3ObjectSummary> objects = new ArrayList<S3ObjectSummary>();
+        ListObjectsRequest listObjectsRequest = new ListObjectsRequest().withBucketName(bucketName).withPrefix(directory + SEPARATOR);
 
-     do {
-      objectListing = client.listObjects(listObjectsRequest);
-      if (objectListing != null )
-        objects.addAll(objectListing.getObjectSummaries());
-      listObjectsRequest.setMarker(objectListing.getNextMarker());
-     } while (objectListing.isTruncated());
+        ObjectListing ol = client.listObjects(listObjectsRequest);
+        while (ol != null && ol.isTruncated()) {
+            objects.addAll(ol.getObjectSummaries());
+            listObjectsRequest.setMarker(ol.getNextMarker());
+            ol = client.listObjects(listObjectsRequest);
+        }
+
         if (objects.isEmpty()) {
             return emptyList();
         }
 
         return unmodifiableList(objects);
-
     }
 
     public static void putDirectory(final ClientOptions clientOptions, final String bucketName, final File directory, final FilenameFilter fileNameFilter,
