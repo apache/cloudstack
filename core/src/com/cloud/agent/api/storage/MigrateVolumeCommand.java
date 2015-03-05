@@ -22,6 +22,7 @@ package com.cloud.agent.api.storage;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.Volume;
 
 public class MigrateVolumeCommand extends Command {
 
@@ -29,6 +30,7 @@ public class MigrateVolumeCommand extends Command {
     String volumePath;
     StorageFilerTO pool;
     String attachedVmName;
+    Volume.Type volumeType;
 
     public MigrateVolumeCommand(long volumeId, String volumePath, StoragePool pool, int timeout) {
         this.volumeId = volumeId;
@@ -37,11 +39,12 @@ public class MigrateVolumeCommand extends Command {
         this.setWait(timeout);
     }
 
-    public MigrateVolumeCommand(long volumeId, String volumePath, StoragePool pool, String attachedVmName, int timeout) {
+    public MigrateVolumeCommand(long volumeId, String volumePath, StoragePool pool, String attachedVmName, Volume.Type volumeType, int timeout) {
         this.volumeId = volumeId;
         this.volumePath = volumePath;
         this.pool = new StorageFilerTO(pool);
         this.attachedVmName = attachedVmName;
+        this.volumeType = volumeType;
         this.setWait(timeout);
     }
 
@@ -64,5 +67,9 @@ public class MigrateVolumeCommand extends Command {
 
     public String getAttachedVmName() {
         return attachedVmName;
+    }
+
+    public Volume.Type getVolumeType() {
+        return volumeType;
     }
 }

@@ -2083,6 +2083,26 @@ public class VirtualMachineMO extends BaseMO {
         return builder;
     }
 
+    public List<Pair<Integer, ManagedObjectReference>> getAllDiskDatastores() throws Exception {
+        List<Pair<Integer, ManagedObjectReference>> disks = new ArrayList<Pair<Integer, ManagedObjectReference>>();
+
+        List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
+        if (devices != null && devices.size() > 0) {
+            for (VirtualDevice device : devices) {
+                if (device instanceof VirtualDisk) {
+                    VirtualDeviceBackingInfo backingInfo = ((VirtualDisk)device).getBacking();
+                    if (backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
+                        VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)backingInfo;
+                        disks.add(new Pair<Integer, ManagedObjectReference>(new Integer(device.getKey()), diskBackingInfo.getDatastore()));
+                    }
+                }
+            }
+        }
+
+        return disks;
+    }
+
+
     @Deprecated
     public List<Pair<String, ManagedObjectReference>> getDiskDatastorePathChain(VirtualDisk disk, boolean followChain) throws Exception {
         VirtualDeviceBackingInfo backingInfo = disk.getBacking();
