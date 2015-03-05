@@ -307,10 +307,10 @@ class CsIP:
         if self.get_type() in ["public"]:
             self.fw.append(["mangle", "front",
                             "-A PREROUTING " +
-                            "-d %s -j VPN_%s" % (self.address['network'], self.address['public_ip'])])
+                            "-d %s/32 -j VPN_%s" % (self.address['public_ip'], self.address['public_ip'])])
             self.fw.append(["mangle", "front",
                             "-A PREROUTING " +
-                            "-d %s -j FIREWALL_%s" % (self.address['network'], self.address['public_ip'])])
+                            "-d %s/32 -j FIREWALL_%s" % (self.address['public_ip'], self.address['public_ip'])])
             self.fw.append(["mangle", "front",
                             "-A FIREWALL_%s " % self.address['public_ip'] +
                             "-m state --state RELATED,ESTABLISHED -j ACCEPT"])
