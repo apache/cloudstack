@@ -600,7 +600,11 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
 
         Pair<List<NetworkACLItemVO>, Integer> result = _networkACLItemDao.searchAndCount(sc, filter);
-        return new Pair<List<? extends NetworkACLItem>, Integer>(result.first(), result.second());
+        List<NetworkACLItemVO> aclItemVOs = result.first();
+        for (NetworkACLItemVO item: aclItemVOs) {
+            _networkACLItemDao.loadCidrs(item);
+        }
+        return new Pair<List<? extends NetworkACLItem>, Integer>(aclItemVOs, result.second());
     }
 
     @Override
