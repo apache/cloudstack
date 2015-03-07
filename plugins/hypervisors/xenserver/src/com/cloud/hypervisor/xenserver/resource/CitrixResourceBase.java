@@ -26,6 +26,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -575,7 +576,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         s_logger.debug("Copying VR with ip " + routerIp +" config file into host "+ _host.ip );
         try {
-            SshHelper.scpTo(_host.ip, 22, _username, null, _password.peek(), hostPath, content.getBytes(), filename, null);
+            SshHelper.scpTo(_host.ip, 22, _username, null, _password.peek(), hostPath, content.getBytes(Charset.defaultCharset()), filename, null);
         } catch (Exception e) {
             s_logger.warn("scp VR config file into host " + _host.ip + " failed with exception " + e.getMessage().toString());
         }
