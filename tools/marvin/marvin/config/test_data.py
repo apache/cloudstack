@@ -860,27 +860,46 @@ test_data = {
         "http://10.147.28.7/templates/393d3550-05ef-330f-9b8c-745b0e699759.vhd",
         "checksum": "",
     },
-    "browser_upload_volume": {
+    "browser_upload_volume":{
           "VHD": {
         "diskname": "XenUploadVol",
         "url": "http://10.147.28.7/templates/rajani-thin-volume.vhd",
-        "checksum": "",
+        "checksum": "09b08b6abb1b903fca7711d3ac8d6598",
                 },
           "OVA": {
         "diskname": "VMwareUploadVol",
         "url": "http://10.147.28.7/templates/Autoscale_Template/CentOS5.5(64bit)-vmware-autoscale.ova",
-        "checksum": "",
+        "checksum": "02de0576dd3a61ab59c03fd795fc86ac",
                 },
           "QCOW2": {
         "diskname": "KVMUploadVol",
         "url": "http://10.147.28.7/templates/rajani-thin-volume.qcow2",
-        "checksum": "",
+        "checksum": "da997b697feaa2f1f6e0d4785b0cece2",
                 },
     'browser_resized_disk_offering': {
         "displaytext": "Resizeddisk",
         "name": "Resizeddisk",
-        "disksize": 3
-    },
+        "disksize": 3,
+    }
+},
+    "browser_upload_template": {
+          "VHD": {
+        "diskname": "XenUploadVol",
+        "url": "http://10.147.28.7/templates/rajani-thin-volume.vhd",
+        "checksum": "09b08b6abb1b903fca7711d3ac8d6598",
+                },
+          "OVA": {
+        "diskname": "VMwareUploadVol",
+        "url": "http://10.147.28.7/templates/Autoscale_Template/CentOS5.5(64bit)-vmware-autoscale.ova",
+        "checksum": "02de0576dd3a61ab59c03fd795fc86ac",
+                },
+          "QCOW2": {
+        "diskname": "KVMUploadVol",
+        "url": "http://10.147.28.7/templates/rajani-thin-volume.qcow2",
+        "checksum": "da997b697feaa2f1f6e0d4785b0cece2",
+                },
+                              },
+                              },
     "recurring_snapshot": {
         "maxsnaps": 2,
         "timezone": "US/Arizona",
