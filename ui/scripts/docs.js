@@ -300,6 +300,16 @@ cloudStack.docs = {
     helpComputeOfferingDomain: {
         desc: 'The domain to associate this compute offering with'
     },
+    // Create Instance Snapshot
+    helpCreateInstanceSnapshotName: {
+        desc: 'Give the snapshot a name. A unique name will be automatically generated if you leave this blank'
+    },
+    helpCreateInstanceSnapshotDescription: {
+        desc: 'A short description of for the snapshot'
+    },
+    helpCreateInstanceSnapshotMemory: {
+        desc: 'Check this to include CPU/memory state. Does not quiesce the VM. If not checked, the snapshot contain only volumes.'
+    },
     // Add disk offering
     helpDiskOfferingName: {
         desc: 'Any desired name for the offering',
