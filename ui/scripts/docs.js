@@ -300,6 +300,16 @@ cloudStack.docs = {
     helpComputeOfferingDomain: {
         desc: 'The domain to associate this compute offering with'
     },
+    // Create Instance Snapshot
+    helpCreateInstanceSnapshotName: {
+        desc: 'Give the snapshot a name. A unique name will be automatically generated if you leave this blank'
+    },
+    helpCreateInstanceSnapshotDescription: {
+        desc: 'A short description of for the snapshot'
+    },
+    helpCreateInstanceSnapshotMemory: {
+        desc: 'Check this to include CPU/memory state. Does not quiesce the VM. If not checked, the snapshot contain only volumes.'
+    },
     // Add disk offering
     helpDiskOfferingName: {
         desc: 'Any desired name for the offering',
@@ -326,7 +336,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpDiskOfferingDiskSize: {
-        desc: 'Appears only if Custom Disk Size is not selected. Define the volume size in GB.',
+        desc: 'Appears only if Custom Disk Size is not selected. Define the volume size in GB. (1GB = 1,073,741,824 bytes)',
         externalLink: ''
     },
     helpDiskOfferingDiskBytesReadRate: {
@@ -1007,6 +1017,10 @@ cloudStack.docs = {
     },
     helpVolumeDiskOffering: {
         desc: 'Choose the characteristics of the storage.',
+        externalLink: ''
+    },
+    helpVolumeSizeGb: {
+        desc: 'Volume size in GB (1GB = 1,073,741,824 bytes)',
         externalLink: ''
     },
     // Add VPC

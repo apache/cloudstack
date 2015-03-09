@@ -19,17 +19,23 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
-import junit.framework.Assert;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import org.apache.commons.lang.SystemUtils;
+import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
 import org.libvirt.Connect;
@@ -43,6 +49,8 @@ import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -75,8 +83,6 @@ public class LibvirtComputingResourceTest {
         int maxRam = 512 * 1024;
 
         String os = "Ubuntu";
-        boolean haEnabled = false;
-        boolean limitCpuUse = false;
 
         String vncAddr = "";
         String vncPassword = "mySuperSecretPassword";
@@ -89,47 +95,7 @@ public class LibvirtComputingResourceTest {
         LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(_hyperVisorType);
 
-        String vmStr = "<domain type='" + _hyperVisorType + "'>\n";
-        vmStr += "<name>" + name + "</name>\n";
-        vmStr += "<uuid>b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9</uuid>\n";
-        vmStr += "<description>" + os + "</description>\n";
-        vmStr += "<clock offset='utc'>\n";
-        vmStr += "</clock>\n";
-        vmStr += "<features>\n";
-        vmStr += "<pae/>\n";
-        vmStr += "<apic/>\n";
-        vmStr += "<acpi/>\n";
-        vmStr += "</features>\n";
-        vmStr += "<devices>\n";
-        vmStr += "<serial type='pty'>\n";
-        vmStr += "<target port='0'/>\n";
-        vmStr += "</serial>\n";
-        vmStr += "<graphics type='vnc' autoport='yes' listen='" + vncAddr + "' passwd='" + vncPassword + "'/>\n";
-        vmStr += "<console type='pty'>\n";
-        vmStr += "<target port='0'/>\n";
-        vmStr += "</console>\n";
-        vmStr += "<input type='tablet' bus='usb'/>\n";
-        vmStr += "</devices>\n";
-        vmStr += "<memory>" + maxRam / 1024 + "</memory>\n";
-        vmStr += "<currentMemory>" + minRam / 1024 + "</currentMemory>\n";
-        vmStr += "<devices>\n";
-        vmStr += "<memballoon model='virtio'/>\n";
-        vmStr += "</devices>\n";
-        vmStr += "<vcpu>" + cpus + "</vcpu>\n";
-        vmStr += "<os>\n";
-        vmStr += "<type  machine='pc'>hvm</type>\n";
-        vmStr += "<boot dev='cdrom'/>\n";
-        vmStr += "<boot dev='hd'/>\n";
-        vmStr += "</os>\n";
-        //vmStr += "<cputune>\n";
-        //vmStr += "<shares>" + (cpus * speed) + "</shares>\n";
-        //vmStr += "</cputune>\n";
-        vmStr += "<cpu></cpu>";
-        vmStr += "<on_reboot>restart</on_reboot>\n";
-        vmStr += "<on_poweroff>destroy</on_poweroff>\n";
-        vmStr += "<on_crash>destroy</on_crash>\n";
-        vmStr += "</domain>\n";
-        assertEquals(vmStr, vm.toString());
+        verifyVm(to, vm);
     }
 
     /**
@@ -147,8 +113,6 @@ public class LibvirtComputingResourceTest {
         int maxRam = 512 * 1024;
 
         String os = "Ubuntu";
-        boolean haEnabled = false;
-        boolean limitCpuUse = false;
 
         String vncAddr = "";
         String vncPassword = "mySuperSecretPassword";
@@ -161,45 +125,7 @@ public class LibvirtComputingResourceTest {
         LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(_hyperVisorType);
 
-        String vmStr = "<domain type='" + _hyperVisorType + "'>\n";
-        vmStr += "<name>" + name + "</name>\n";
-        vmStr += "<uuid>b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9</uuid>\n";
-        vmStr += "<description>" + os + "</description>\n";
-        vmStr += "<clock offset='utc'>\n";
-        vmStr += "</clock>\n";
-        vmStr += "<features>\n";
-        vmStr += "<pae/>\n";
-        vmStr += "<apic/>\n";
-        vmStr += "<acpi/>\n";
-        vmStr += "</features>\n";
-        vmStr += "<devices>\n";
-        vmStr += "<serial type='pty'>\n";
-        vmStr += "<target port='0'/>\n";
-        vmStr += "</serial>\n";
-        vmStr += "<graphics type='vnc' autoport='yes' listen='" + vncAddr + "' passwd='" + vncPassword + "'/>\n";
-        vmStr += "<console type='pty'>\n";
-        vmStr += "<target port='0'/>\n";
-        vmStr += "</console>\n";
-        vmStr += "<input type='tablet' bus='usb'/>\n";
-        vmStr += "</devices>\n";
-        vmStr += "<memory>" + maxRam / 1024 + "</memory>\n";
-        vmStr += "<currentMemory>" + minRam / 1024 + "</currentMemory>\n";
-        vmStr += "<devices>\n";
-        vmStr += "<memballoon model='virtio'/>\n";
-        vmStr += "</devices>\n";
-        vmStr += "<vcpu>" + cpus + "</vcpu>\n";
-        vmStr += "<os>\n";
-        vmStr += "<type  machine='pc'>hvm</type>\n";
-        vmStr += "<boot dev='cdrom'/>\n";
-        vmStr += "<boot dev='hd'/>\n";
-        vmStr += "</os>\n";
-        vmStr += "<cpu><topology sockets='2' cores='6' threads='1' /></cpu>";
-        vmStr += "<on_reboot>restart</on_reboot>\n";
-        vmStr += "<on_poweroff>destroy</on_poweroff>\n";
-        vmStr += "<on_crash>destroy</on_crash>\n";
-        vmStr += "</domain>\n";
-
-        assertEquals(vmStr, vm.toString());
+        verifyVm(to, vm);
     }
 
     /**
@@ -217,8 +143,6 @@ public class LibvirtComputingResourceTest {
         int maxRam = 512 * 1024;
 
         String os = "Ubuntu";
-        boolean haEnabled = false;
-        boolean limitCpuUse = false;
 
         String vncAddr = "";
         String vncPassword = "mySuperSecretPassword";
@@ -231,45 +155,7 @@ public class LibvirtComputingResourceTest {
         LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(_hyperVisorType);
 
-        String vmStr = "<domain type='" + _hyperVisorType + "'>\n";
-        vmStr += "<name>" + name + "</name>\n";
-        vmStr += "<uuid>b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9</uuid>\n";
-        vmStr += "<description>" + os + "</description>\n";
-        vmStr += "<clock offset='utc'>\n";
-        vmStr += "</clock>\n";
-        vmStr += "<features>\n";
-        vmStr += "<pae/>\n";
-        vmStr += "<apic/>\n";
-        vmStr += "<acpi/>\n";
-        vmStr += "</features>\n";
-        vmStr += "<devices>\n";
-        vmStr += "<serial type='pty'>\n";
-        vmStr += "<target port='0'/>\n";
-        vmStr += "</serial>\n";
-        vmStr += "<graphics type='vnc' autoport='yes' listen='" + vncAddr + "' passwd='" + vncPassword + "'/>\n";
-        vmStr += "<console type='pty'>\n";
-        vmStr += "<target port='0'/>\n";
-        vmStr += "</console>\n";
-        vmStr += "<input type='tablet' bus='usb'/>\n";
-        vmStr += "</devices>\n";
-        vmStr += "<memory>" + maxRam / 1024 + "</memory>\n";
-        vmStr += "<currentMemory>" + minRam / 1024 + "</currentMemory>\n";
-        vmStr += "<devices>\n";
-        vmStr += "<memballoon model='virtio'/>\n";
-        vmStr += "</devices>\n";
-        vmStr += "<vcpu>" + cpus + "</vcpu>\n";
-        vmStr += "<os>\n";
-        vmStr += "<type  machine='pc'>hvm</type>\n";
-        vmStr += "<boot dev='cdrom'/>\n";
-        vmStr += "<boot dev='hd'/>\n";
-        vmStr += "</os>\n";
-        vmStr += "<cpu><topology sockets='2' cores='4' threads='1' /></cpu>";
-        vmStr += "<on_reboot>restart</on_reboot>\n";
-        vmStr += "<on_poweroff>destroy</on_poweroff>\n";
-        vmStr += "<on_crash>destroy</on_crash>\n";
-        vmStr += "</domain>\n";
-
-        assertEquals(vmStr, vm.toString());
+        verifyVm(to, vm);
     }
 
     /**
@@ -291,8 +177,6 @@ public class LibvirtComputingResourceTest {
         int maxRam = 512 * 1024;
 
         String os = "Ubuntu";
-        boolean haEnabled = false;
-        boolean limitCpuUse = false;
 
         String vncAddr = "";
         String vncPassword = "mySuperSecretPassword";
@@ -306,48 +190,76 @@ public class LibvirtComputingResourceTest {
         LibvirtVMDef vm = lcr.createVMFromSpec(to);
         vm.setHvsType(_hyperVisorType);
 
-        String vmStr = "<domain type='" + _hyperVisorType + "'>\n";
-        vmStr += "<name>" + name + "</name>\n";
-        vmStr += "<uuid>b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9</uuid>\n";
-        vmStr += "<description>" + os + "</description>\n";
-        vmStr += "<clock offset='utc'>\n";
-        vmStr += "</clock>\n";
-        vmStr += "<features>\n";
-        vmStr += "<pae/>\n";
-        vmStr += "<apic/>\n";
-        vmStr += "<acpi/>\n";
-        vmStr += "</features>\n";
-        vmStr += "<devices>\n";
-        vmStr += "<serial type='pty'>\n";
-        vmStr += "<target port='0'/>\n";
-        vmStr += "</serial>\n";
-        vmStr += "<graphics type='vnc' autoport='yes' listen='" + vncAddr + "' passwd='" + vncPassword + "'/>\n";
-        vmStr += "<console type='pty'>\n";
-        vmStr += "<target port='0'/>\n";
-        vmStr += "</console>\n";
-        vmStr += "<input type='tablet' bus='usb'/>\n";
-        vmStr += "</devices>\n";
-        vmStr += "<memory>" + maxRam / 1024 + "</memory>\n";
-        vmStr += "<currentMemory>" + minRam / 1024 + "</currentMemory>\n";
-        vmStr += "<devices>\n";
-        vmStr += "<memballoon model='virtio'/>\n";
-        vmStr += "</devices>\n";
-        vmStr += "<vcpu>" + cpus + "</vcpu>\n";
-        vmStr += "<os>\n";
-        vmStr += "<type  machine='pc'>hvm</type>\n";
-        vmStr += "<boot dev='cdrom'/>\n";
-        vmStr += "<boot dev='hd'/>\n";
-        vmStr += "</os>\n";
-        //vmStr += "<cputune>\n";
-        //vmStr += "<shares>" + (cpus * minSpeed) + "</shares>\n";
-        //vmStr += "</cputune>\n";
-        vmStr += "<cpu></cpu>";
-        vmStr += "<on_reboot>restart</on_reboot>\n";
-        vmStr += "<on_poweroff>destroy</on_poweroff>\n";
-        vmStr += "<on_crash>destroy</on_crash>\n";
-        vmStr += "</domain>\n";
+        verifyVm(to, vm);
+    }
 
-        assertEquals(vmStr, vm.toString());
+    private void verifyVm(VirtualMachineTO to, LibvirtVMDef vm) {
+        Document domainDoc = parse(vm.toString());
+        assertXpath(domainDoc, "/domain/@type", vm.getHvsType());
+        assertXpath(domainDoc, "/domain/name/text()", to.getName());
+        assertXpath(domainDoc, "/domain/uuid/text()", to.getUuid());
+        assertXpath(domainDoc, "/domain/description/text()", to.getOs());
+        assertXpath(domainDoc, "/domain/clock/@offset", "utc");
+        assertNodeExists(domainDoc, "/domain/features/pae");
+        assertNodeExists(domainDoc, "/domain/features/apic");
+        assertNodeExists(domainDoc, "/domain/features/acpi");
+        assertXpath(domainDoc, "/domain/devices/serial/@type", "pty");
+        assertXpath(domainDoc, "/domain/devices/serial/target/@port", "0");
+        assertXpath(domainDoc, "/domain/devices/graphics/@type", "vnc");
+        assertXpath(domainDoc, "/domain/devices/graphics/@listen", to.getVncAddr());
+        assertXpath(domainDoc, "/domain/devices/graphics/@autoport", "yes");
+        assertXpath(domainDoc, "/domain/devices/graphics/@passwd", to.getVncPassword());
+
+        assertXpath(domainDoc, "/domain/devices/console/@type", "pty");
+        assertXpath(domainDoc, "/domain/devices/console/target/@port", "0");
+        assertXpath(domainDoc, "/domain/devices/input/@type", "tablet");
+        assertXpath(domainDoc, "/domain/devices/input/@bus", "usb");
+
+        assertXpath(domainDoc, "/domain/memory/text()", String.valueOf( to.getMaxRam() / 1024 ));
+        assertXpath(domainDoc, "/domain/currentMemory/text()", String.valueOf( to.getMinRam() / 1024 ));
+
+        assertXpath(domainDoc, "/domain/devices/memballoon/@model", "virtio");
+        assertXpath(domainDoc, "/domain/vcpu/text()", String.valueOf(to.getCpus()));
+
+        assertXpath(domainDoc, "/domain/os/type/@machine", "pc");
+        assertXpath(domainDoc, "/domain/os/type/text()", "hvm");
+
+        assertNodeExists(domainDoc, "/domain/cpu");
+        assertNodeExists(domainDoc, "/domain/os/boot[@dev='cdrom']");
+        assertNodeExists(domainDoc, "/domain/os/boot[@dev='hd']");
+
+        assertXpath(domainDoc, "/domain/on_reboot/text()", "restart");
+        assertXpath(domainDoc, "/domain/on_poweroff/text()", "destroy");
+        assertXpath(domainDoc, "/domain/on_crash/text()", "destroy");
+    }
+
+    static Document parse(final String input) {
+        try {
+            return DocumentBuilderFactory.newInstance().newDocumentBuilder()
+                    .parse(new ByteArrayInputStream(input.getBytes()));
+        } catch (SAXException | IOException | ParserConfigurationException e) {
+            throw new IllegalArgumentException("Cloud not parse: "+input, e);
+        }
+    }
+
+    static void assertNodeExists(final Document doc, final String xPathExpr) {
+        try {
+            Assert.assertNotNull(XPathFactory.newInstance().newXPath()
+                    .evaluate(xPathExpr, doc, XPathConstants.NODE));
+        } catch (XPathExpressionException e) {
+            Assert.fail(e.getMessage());
+        }
+    }
+
+    static void assertXpath(final Document doc, final String xPathExpr,
+            final String expected) {
+        try {
+            Assert.assertEquals(expected, XPathFactory.newInstance().newXPath()
+                    .evaluate(xPathExpr, doc));
+        } catch (XPathExpressionException e) {
+            Assert.fail("Could not evaluate xpath" + xPathExpr + ":"
+                    + e.getMessage());
+        }
     }
 
     @Test

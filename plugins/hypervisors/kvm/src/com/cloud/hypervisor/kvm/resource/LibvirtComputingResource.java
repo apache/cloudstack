@@ -4754,7 +4754,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 guestOSName.startsWith("CentOS 5.5") || guestOSName.startsWith("CentOS") || guestOSName.startsWith("Fedora") ||
                 guestOSName.startsWith("Red Hat Enterprise Linux 5.3") || guestOSName.startsWith("Red Hat Enterprise Linux 5.4") ||
                 guestOSName.startsWith("Red Hat Enterprise Linux 5.5") || guestOSName.startsWith("Red Hat Enterprise Linux 6") || guestOSName.startsWith("Debian GNU/Linux") ||
-                guestOSName.startsWith("FreeBSD 10") || guestOSName.startsWith("Oracle Enterprise Linux") || guestOSName.startsWith("Other PV")) {
+                guestOSName.startsWith("FreeBSD 10") || guestOSName.startsWith("Oracle") || guestOSName.startsWith("Other PV")) {
             return true;
         } else {
             return false;

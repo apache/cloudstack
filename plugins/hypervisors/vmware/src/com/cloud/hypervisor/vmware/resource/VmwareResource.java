@@ -2360,7 +2360,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         // if the datastore is not present, we need to discover the iSCSI device that will support it,
                         // create the datastore, and create a VMDK file in the datastore
                         if (morDatastore == null) {
-                            morDatastore = _storageProcessor.prepareManagedStorage(context, hyperHost, iScsiName,
+                            morDatastore = _storageProcessor.prepareManagedStorage(context, hyperHost, null, iScsiName,
                                     details.get(DiskTO.STORAGE_HOST), Integer.parseInt(details.get(DiskTO.STORAGE_PORT)),
                                     volumeTO.getVolumeType() == Volume.Type.ROOT ? volumeTO.getName() : null,
                                     details.get(DiskTO.CHAP_INITIATOR_USERNAME), details.get(DiskTO.CHAP_INITIATOR_SECRET),

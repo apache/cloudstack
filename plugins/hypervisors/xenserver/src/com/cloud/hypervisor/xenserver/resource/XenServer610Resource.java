@@ -132,6 +132,12 @@ public class XenServer610Resource extends XenServer600Resource {
 
         try {
             prepareISO(connection, vmSpec.getName());
+
+            // Get the list of networks and recreate VLAN, if required.
+            for (NicTO nicTo : vmSpec.getNics()) {
+                getNetwork(connection, nicTo);
+            }
+
             Map<String, String> other = new HashMap<String, String>();
             other.put("live", "true");
             Network networkForSm = getNativeNetworkForTraffic(connection, TrafficType.Storage, null).getNetwork();

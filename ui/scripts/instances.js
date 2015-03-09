@@ -31,14 +31,17 @@
                 fields: {
                     name: {
                         label: 'label.name',
+                        docID: 'helpCreateInstanceSnapshotName',
                         isInput: true
                     },
                     description: {
                         label: 'label.description',
+                        docID: 'helpCreateInstanceSnapshotDescription',
                         isTextarea: true
                     },
                     snapshotMemory: {
                         label: 'label.vmsnapshot.memory',
+                        docID: 'helpCreateInstanceSnapshotMemory',
                         isBoolean: true,
                         isChecked: false,
                         isHidden: function(args) {

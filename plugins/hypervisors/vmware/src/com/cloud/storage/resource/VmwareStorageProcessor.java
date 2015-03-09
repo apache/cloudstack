@@ -105,6 +105,7 @@ import com.cloud.vm.VirtualMachine.PowerState;
 
 public class VmwareStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(VmwareStorageProcessor.class);
+    private static final int DEFAULT_NFS_PORT = 2049;
 
     private VmwareHostService hostService;
     private boolean _fullCloneFlag;
@@ -297,8 +298,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 final ManagedObjectReference morDs;
 
                 if (managed) {
-                    morDs = prepareManagedDatastore(context, hyperHost, managedStoragePoolName, storageHost, storagePort,
-                            chapInitiatorUsername, chapInitiatorSecret, chapTargetUsername, chapTargetSecret);
+                    morDs = prepareManagedDatastore(context, hyperHost, null, managedStoragePoolName, storageHost, storagePort,
+                                chapInitiatorUsername, chapInitiatorSecret, chapTargetUsername, chapTargetSecret);
                 }
                 else {
                     morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, storageUuid);
@@ -1306,17 +1307,22 @@ public class VmwareStorageProcessor implements StorageProcessor {
             vmName = vmMo.getName();
 
             ManagedObjectReference morDs = null;
+            String diskUuid =  volumeTO.getUuid().replace("-", "");
 
             if (isAttach && isManaged) {
                 Map<String, String> details = disk.getDetails();
 
-                morDs = prepareManagedStorage(context, hyperHost, iScsiName, storageHost, storagePort, null,
-                        details.get(DiskTO.CHAP_INITIATOR_USERNAME), details.get(DiskTO.CHAP_INITIATOR_SECRET),
-                        details.get(DiskTO.CHAP_TARGET_USERNAME), details.get(DiskTO.CHAP_TARGET_SECRET),
-                        volumeTO.getSize(), cmd);
+                morDs = prepareManagedStorage(context, hyperHost, diskUuid, iScsiName, storageHost, storagePort, null,
+                            details.get(DiskTO.CHAP_INITIATOR_USERNAME), details.get(DiskTO.CHAP_INITIATOR_SECRET),
+                            details.get(DiskTO.CHAP_TARGET_USERNAME), details.get(DiskTO.CHAP_TARGET_SECRET),
+                            volumeTO.getSize(), cmd);
             }
             else {
-                morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, isManaged ? VmwareResource.getDatastoreName(iScsiName) : primaryStore.getUuid());
+                if (storagePort == DEFAULT_NFS_PORT) {
+                    morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, isManaged ? VmwareResource.getDatastoreName(diskUuid) : primaryStore.getUuid());
+                } else {
+                    morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, isManaged ? VmwareResource.getDatastoreName(iScsiName) : primaryStore.getUuid());
+                }
             }
 
             if (morDs == null) {
@@ -1357,7 +1363,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 vmMo.detachDisk(datastoreVolumePath, false);
 
                 if (isManaged) {
-                    handleDatastoreAndVmdkDetach(iScsiName, storageHost, storagePort);
+                    handleDatastoreAndVmdkDetachManaged(diskUuid, iScsiName, storageHost, storagePort);
                 } else {
                     VmwareStorageLayoutHelper.syncVolumeToRootFolder(dsMo.getOwnerDatacenter().first(), dsMo, volumeTO.getPath());
                 }
@@ -1721,11 +1727,24 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return getVmfsDatastore(context, hyperHost, datastoreName, storageHost, storagePort, trimIqn(iScsiName), null, null, null, null);
     }
 
-    private ManagedObjectReference prepareManagedDatastore(VmwareContext context, VmwareHypervisorHost hyperHost, String iScsiName,
-            String storageHost, int storagePort, String chapInitiatorUsername, String chapInitiatorSecret,
-            String chapTargetUsername, String chapTargetSecret) throws Exception {
-        return getVmfsDatastore(context, hyperHost, VmwareResource.getDatastoreName(iScsiName), storageHost, storagePort,
-                trimIqn(iScsiName), chapInitiatorUsername, chapInitiatorSecret, chapTargetUsername, chapTargetSecret);
+    private ManagedObjectReference prepareManagedDatastore(VmwareContext context, VmwareHypervisorHost hyperHost, String diskUuid, String iScsiName,
+                String storageHost, int storagePort, String chapInitiatorUsername, String chapInitiatorSecret,
+                String chapTargetUsername, String chapTargetSecret) throws Exception {
+        if (storagePort == DEFAULT_NFS_PORT) {
+            s_logger.info("creating the NFS datastore with the following configuration - storageHost: " + storageHost + ", storagePort: " + storagePort +
+                          ", exportpath: " + iScsiName + "and diskUuid : " + diskUuid);
+            ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
+            ClusterMO cluster = new ClusterMO(context, morCluster);
+            List<Pair<ManagedObjectReference, String>> lstHosts = cluster.getClusterHosts();
+
+            HostMO host = new HostMO(context, lstHosts.get(0).first());
+            HostDatastoreSystemMO hostDatastoreSystem = host.getHostDatastoreSystemMO();
+
+            return hostDatastoreSystem.createNfsDatastore(storageHost, storagePort, iScsiName, diskUuid);
+         } else {
+             return getVmfsDatastore(context, hyperHost, VmwareResource.getDatastoreName(iScsiName), storageHost, storagePort,
+                        trimIqn(iScsiName), chapInitiatorUsername, chapInitiatorSecret, chapTargetUsername, chapTargetSecret);
+         }
     }
 
     private ManagedObjectReference getVmfsDatastore(VmwareContext context, VmwareHypervisorHost hyperHost, String datastoreName, String storageIpAddress, int storagePortNumber,
@@ -2006,10 +2025,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
         return tmp[1].trim();
     }
 
-    public ManagedObjectReference prepareManagedStorage(VmwareContext context, VmwareHypervisorHost hyperHost, String iScsiName,
+    public ManagedObjectReference prepareManagedStorage(VmwareContext context, VmwareHypervisorHost hyperHost, String diskUuid, String iScsiName,
             String storageHost, int storagePort, String volumeName, String chapInitiatorUsername, String chapInitiatorSecret,
             String chapTargetUsername, String chapTargetSecret, long size, Command cmd) throws Exception {
-        ManagedObjectReference morDs = prepareManagedDatastore(context, hyperHost, iScsiName, storageHost, storagePort,
+
+        ManagedObjectReference morDs = prepareManagedDatastore(context, hyperHost, diskUuid, iScsiName, storageHost, storagePort,
                 chapInitiatorUsername, chapInitiatorSecret, chapTargetUsername, chapTargetSecret);
 
         DatastoreMO dsMo = new DatastoreMO(hostService.getServiceContext(null), morDs);
@@ -2030,8 +2050,15 @@ public class VmwareStorageProcessor implements StorageProcessor {
         removeVmfsDatastore(hyperHost, datastoreName, storageHost, storagePort, trimIqn(iqn));
     }
 
-    private void handleDatastoreAndVmdkDetach(String iqn, String storageHost, int storagePort) throws Exception {
-        handleDatastoreAndVmdkDetach(VmwareResource.getDatastoreName(iqn), iqn, storageHost, storagePort);
+    private void handleDatastoreAndVmdkDetachManaged(String diskUuid, String iqn, String storageHost, int storagePort) throws Exception {
+        if (storagePort == DEFAULT_NFS_PORT) {
+            VmwareContext context = hostService.getServiceContext(null);
+            VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
+            // for managed NFS datastore
+            hyperHost.unmountDatastore(diskUuid);
+        } else {
+            handleDatastoreAndVmdkDetach(VmwareResource.getDatastoreName(iqn), iqn, storageHost, storagePort);
+        }
     }
 
     private void removeManagedTargetsFromCluster(List<String> iqns) throws Exception {

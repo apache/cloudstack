@@ -701,5 +701,5 @@ fi
 * Fri Jul 04 2014 Hugo Trippaers <hugo@apache.org> 4.5.0
 - Add a package for the mysql ha module
 
-* Fri Oct 03 2012 Hugo Trippaers <hugo@apache.org> 4.1.0
+* Wed Oct 03 2012 Hugo Trippaers <hugo@apache.org> 4.1.0
 - new style spec file
