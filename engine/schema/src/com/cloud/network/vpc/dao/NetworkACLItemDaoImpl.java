@@ -91,6 +91,13 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
     }
 
     @Override
+    public boolean update(Long id, NetworkACLItemVO item) {
+        boolean result = super.update(id, item);
+        saveCidrs(item, item.getSourceCidrList());
+        return result;
+    }
+
+    @Override
     public boolean setStateToAdd(NetworkACLItemVO rule) {
         SearchCriteria<NetworkACLItemVO> sc = AllFieldsSearch.create();
         sc.setParameters("id", rule.getId());
