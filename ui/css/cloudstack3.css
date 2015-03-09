@@ -7888,6 +7888,10 @@ label.error {
   overflow: auto;
 }
 
+.tree-view.overflowScroll {
+  overflow: scroll;
+}
+
 #browser .tree-view div.toolbar {
 }
 
