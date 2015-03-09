@@ -21,6 +21,7 @@
 
         // Domain tree
         treeView: {
+		overflowScroll: true,
             // Details
             detailView: {
                 name: 'Domain details',
