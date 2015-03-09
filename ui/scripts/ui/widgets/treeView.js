@@ -83,6 +83,10 @@
         var treeViewArgs = args.treeView;
         var $browser = args.$browser;
 
+        if(treeViewArgs.overflowScroll) {
+            $treeView.addClass('overflowScroll');
+        }
+
         makeTreeList({
             $treeView: $treeView,
             parent: null,
