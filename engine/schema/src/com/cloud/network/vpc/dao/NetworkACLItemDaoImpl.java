@@ -93,7 +93,7 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
     @Override
     public boolean update(Long id, NetworkACLItemVO item) {
         boolean result = super.update(id, item);
-        saveCidrs(item, item.getSourceCidrList());
+        _networkACLItemCidrsDao.updateCidrs(item.getId(), item.getSourceCidrList());
         return result;
     }
 

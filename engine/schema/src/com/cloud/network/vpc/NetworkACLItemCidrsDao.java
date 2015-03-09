@@ -31,6 +31,8 @@ public interface NetworkACLItemCidrsDao extends GenericDao<NetworkACLItemCidrsVO
 
     void persist(long networkACLItemId, List<String> cidrs);
 
+    void updateCidrs(long networkACLItemId, List<String> cidrs);
+
     List<String> getCidrs(long networkACLItemId);
 
     @DB
