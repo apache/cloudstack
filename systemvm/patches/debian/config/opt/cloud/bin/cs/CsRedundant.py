@@ -40,6 +40,8 @@ from CsFile import CsFile
 from CsConfig import CsConfig
 from CsProcess import CsProcess
 from CsApp import CsPasswdSvc
+import socket
+from time import sleep
 
 
 class CsRedundant(object):
@@ -157,11 +159,31 @@ class CsRedundant(object):
         if not proc.find():
             CsHelper.service("keepalived", "restart")
 
+    def set_lock(self):
+        """
+        Make sure that master state changes happen sequentially
+        """
+        iterations = 10
+        time_between = 1
+
+        for iter in range(0, iterations):
+            try:
+                s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                s.bind( '\0master_lock')
+                return s
+            except socket.error, e:
+                error_code = e.args[0]
+                error_string = e.args[1]
+                print "Process already running (%d:%s ). Exiting" % ( error_code, error_string)
+                logging.info("Master is already running, waiting")
+                sleep(1)
+
     def set_fault(self):
         """ Set fault mode on this router """
         if not self.cl.is_redundant():
             logging.error("Set fault called on non-redundant router")
             return
+        s = self.set_lock()
         logging.info("Router switched to fault mode")
         ads = [o for o in self.address.get_ips() if o.is_public()]
         for o in ads:
@@ -188,7 +210,8 @@ class CsRedundant(object):
             logging.error("Set backup called on node that is already backup")
             return
         """
-        logging.info("Router switched to backup mode")
+        s = self.set_lock()
+        logging.debug("Setting router to backup")
         ads = [o for o in self.address.get_ips() if o.is_public()]
         for o in ads:
             CsHelper.execute("ifconfig %s down" % o.get_device())
@@ -202,7 +225,6 @@ class CsRedundant(object):
         CsHelper.service("dnsmasq", "stop")
         # self._set_priority(self.CS_PRIO_DOWN)
         self.cl.set_master_state(False)
-        # CsHelper.service("keepalived", "restart")
         self.cl.save()
         logging.info("Router switched to backup mode")
 
@@ -216,6 +238,8 @@ class CsRedundant(object):
             logging.error("Set master called on master node")
             return
         """
+        s = self.set_lock()
+        logging.debug("Setting router to master")
         ads = [o for o in self.address.get_ips() if o.is_public()]
         for o in ads:
             # cmd2 = "ip link set %s up" % self.getDevice()
@@ -237,7 +261,6 @@ class CsRedundant(object):
         CsHelper.service("dnsmasq", "restart")
         self.cl.set_master_state(True)
         self.cl.save()
-        # CsHelper.service("keepalived", "restart")
         logging.info("Router switched to master mode")
 
     def _collect_ignore_ips(self):
