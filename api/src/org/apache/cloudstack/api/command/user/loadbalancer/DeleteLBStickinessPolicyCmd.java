@@ -34,7 +34,8 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteLBStickinessPolicy", description = "Deletes a LB stickiness policy.", responseObject = SuccessResponse.class, since = "3.0.0")
+@APICommand(name = "deleteLBStickinessPolicy", description = "Deletes a LB stickiness policy.", responseObject = SuccessResponse.class, since = "3.0.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteLBStickinessPolicyCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteLBStickinessPolicyCmd.class.getName());
     private static final String s_name = "deleteLBstickinessrruleresponse";

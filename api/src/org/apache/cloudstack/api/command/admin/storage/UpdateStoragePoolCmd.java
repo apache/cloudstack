@@ -31,7 +31,8 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateStoragePool", description = "Updates a storage pool.", responseObject = StoragePoolResponse.class, since = "3.0.0")
+@APICommand(name = "updateStoragePool", description = "Updates a storage pool.", responseObject = StoragePoolResponse.class, since = "3.0.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateStoragePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateStoragePoolCmd.class.getName());
 

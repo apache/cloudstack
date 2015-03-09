@@ -18,8 +18,6 @@ package org.apache.cloudstack.network.lb;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
@@ -53,19 +51,20 @@ import javax.crypto.NoSuchPaddingException;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
-import org.bouncycastle.openssl.PasswordFinder;
-
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListSslCertsCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
 import org.apache.cloudstack.api.response.SslCertResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMReader;
+import org.bouncycastle.openssl.PasswordFinder;
 
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.domain.DomainVO;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -76,6 +75,8 @@ import com.cloud.network.dao.SslCertDao;
 import com.cloud.network.dao.SslCertVO;
 import com.cloud.network.lb.CertService;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
@@ -93,6 +94,10 @@ public class CertServiceImpl implements CertService {
     @Inject
     AccountDao _accountDao;
     @Inject
+    ProjectService _projectMgr;
+    @Inject
+    DomainDao _domainDao;
+    @Inject
     SslCertDao _sslCertDao;
     @Inject
     LoadBalancerCertMapDao _lbCertDao;
@@ -108,27 +113,36 @@ public class CertServiceImpl implements CertService {
     @ActionEvent(eventType = EventTypes.EVENT_LB_CERT_UPLOAD, eventDescription = "Uploading a certificate to cloudstack", async = false)
     public SslCertResponse uploadSslCert(UploadSslCertCmd certCmd) {
         try {
-
-            String cert = URLDecoder.decode(certCmd.getCert(), "UTF-8");
-            String key = URLDecoder.decode(certCmd.getKey(), "UTF-8");
+            String cert = certCmd.getCert();
+            String key = certCmd.getKey();
             String password = certCmd.getPassword();
-            String chain = certCmd.getChain() == null ? null : URLDecoder.decode(certCmd.getChain(), "UTF-8");
+            String chain = certCmd.getChain();
 
             validate(cert, key, password, chain);
             s_logger.debug("Certificate Validation succeeded");
 
             String fingerPrint = generateFingerPrint(parseCertificate(cert));
 
-            Long accountId = CallContext.current().getCallingAccount().getId();
-            Long domainId = CallContext.current().getCallingAccount().getDomainId();
+            CallContext ctx = CallContext.current();
+            Account caller = ctx.getCallingAccount();
+
+            Account owner = null;
+            if ((certCmd.getAccountName() != null && certCmd.getDomainId() != null) || certCmd.getProjectId() != null) {
+                owner = _accountMgr.finalizeOwner(caller, certCmd.getAccountName(), certCmd.getDomainId(), certCmd.getProjectId());
+            } else {
+                owner = caller;
+            }
+
+            Long accountId = owner.getId();
+            Long domainId = owner.getDomainId();
 
             SslCertVO certVO = new SslCertVO(cert, key, password, chain, accountId, domainId, fingerPrint);
             _sslCertDao.persist(certVO);
 
             return createCertResponse(certVO, null);
 
-        } catch (UnsupportedEncodingException e) {
-            throw new CloudRuntimeException("Error decoding certificate data");
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Error parsing certificate data " + e.getMessage());
         }
 
     }
@@ -147,7 +161,7 @@ public class CertServiceImpl implements CertService {
         if (certVO == null) {
             throw new InvalidParameterValueException("Invalid certificate id: " + certId);
         }
-        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ModifyEntry, true, certVO);
+        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, true, certVO);
 
         List<LoadBalancerCertMapVO> lbCertRule = _lbCertDao.listByCertId(certId);
 
@@ -173,25 +187,25 @@ public class CertServiceImpl implements CertService {
         Long certId = listSslCertCmd.getCertId();
         Long accountId = listSslCertCmd.getAccountId();
         Long lbRuleId = listSslCertCmd.getLbId();
+        Long projectId = listSslCertCmd.getProjectId();
 
         List<SslCertResponse> certResponseList = new ArrayList<SslCertResponse>();
 
-        if (certId == null && accountId == null && lbRuleId == null) {
-            throw new InvalidParameterValueException("Invalid parameters either certificate ID or Account ID or Loadbalancer ID required");
+        if (certId == null && accountId == null && lbRuleId == null && projectId == null) {
+            throw new InvalidParameterValueException("Invalid parameters either certificate ID or Account ID or Loadbalancer ID or Project ID required");
         }
 
         List<LoadBalancerCertMapVO> certLbMap = null;
         SslCertVO certVO = null;
 
         if (certId != null) {
-
             certVO = _sslCertDao.findById(certId);
 
             if (certVO == null) {
                 throw new InvalidParameterValueException("Invalid certificate id: " + certId);
             }
 
-            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ListEntry, true, certVO);
+            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, true, certVO);
 
             certLbMap = _lbCertDao.listByCertId(certId);
 
@@ -203,17 +217,18 @@ public class CertServiceImpl implements CertService {
             LoadBalancer lb = _entityMgr.findById(LoadBalancerVO.class, lbRuleId);
 
             if (lb == null) {
-                throw new InvalidParameterValueException("found no loadbalancer  wth id: " + lbRuleId);
+                throw new InvalidParameterValueException("Found no loadbalancer with id: " + lbRuleId);
             }
 
-            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ListEntry, true, lb);
+            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, true, lb);
 
             // get the cert id
             LoadBalancerCertMapVO lbCertMapRule;
             lbCertMapRule = _lbCertDao.findByLbRuleId(lbRuleId);
 
             if (lbCertMapRule == null) {
-                throw new InvalidParameterValueException("No certificate bound to loadbalancer id: " + lbRuleId);
+                s_logger.debug("No certificate bound to loadbalancer id: " + lbRuleId);
+                return certResponseList;
             }
 
             certVO = _sslCertDao.findById(lbCertMapRule.getCertId());
@@ -224,17 +239,35 @@ public class CertServiceImpl implements CertService {
 
         }
 
+        if (projectId != null) {
+            Project project = _projectMgr.getProject(projectId);
+
+            if (project == null) {
+                throw new InvalidParameterValueException("Found no project with id: " + projectId);
+            }
+
+            List<SslCertVO> projectCertVOList = _sslCertDao.listByAccountId(project.getProjectAccountId());
+            if (projectCertVOList == null || projectCertVOList.isEmpty())
+                return certResponseList;
+            _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, true, projectCertVOList.get(0));
+
+            for (SslCertVO cert : projectCertVOList) {
+                certLbMap = _lbCertDao.listByCertId(cert.getId());
+                certResponseList.add(createCertResponse(cert, certLbMap));
+            }
+            return certResponseList;
+        }
+
         //reached here look by accountId
         List<SslCertVO> certVOList = _sslCertDao.listByAccountId(accountId);
         if (certVOList == null || certVOList.isEmpty())
             return certResponseList;
-        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.ListEntry, true, certVOList.get(0));
+        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, true, certVOList.get(0));
 
         for (SslCertVO cert : certVOList) {
             certLbMap = _lbCertDao.listByCertId(cert.getId());
             certResponseList.add(createCertResponse(cert, certLbMap));
         }
-
         return certResponseList;
     }
 
@@ -266,13 +299,28 @@ public class CertServiceImpl implements CertService {
         SslCertResponse response = new SslCertResponse();
 
         Account account = _accountDao.findByIdIncludingRemoved(cert.getAccountId());
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            // find the project
+            Project project = _projectMgr.findByProjectAccountIdIncludingRemoved(account.getId());
+            if (project != null)
+            {
+                response.setProjectId(project.getUuid());
+                response.setProjectName(project.getName());
+            } else {
+                response.setAccountName(account.getAccountName());
+            }
+        } else {
+            response.setAccountName(account.getAccountName());
+        }
+
+        DomainVO domain = _domainDao.findByIdIncludingRemoved(cert.getDomainId());
+        response.setDomainId(domain.getUuid());
+        response.setDomainName(domain.getName());
 
         response.setObjectName("sslcert");
         response.setId(cert.getUuid());
         response.setCertificate(cert.getCertificate());
-        response.setPrivatekey(cert.getKey());
         response.setFingerprint(cert.getFingerPrint());
-        response.setAccountName(account.getAccountName());
 
         if (cert.getChain() != null)
             response.setCertchain(cert.getChain());
@@ -281,7 +329,9 @@ public class CertServiceImpl implements CertService {
             List<String> lbIds = new ArrayList<String>();
             for (LoadBalancerCertMapVO mapVO : lbCertMap) {
                 LoadBalancer lb = _entityMgr.findById(LoadBalancerVO.class, mapVO.getLbId());
-                lbIds.add(lb.getUuid());
+                if (lb != null) {
+                    lbIds.add(lb.getUuid());
+                }
             }
             response.setLbIds(lbIds);
         }
@@ -298,15 +348,6 @@ public class CertServiceImpl implements CertService {
             ((X509Certificate)cert).checkValidity();
         } catch (Exception e) {
             throw new IllegalArgumentException("Certificate expired or not valid", e);
-        }
-
-        if (!chainPresent) {
-            PublicKey pubKey = cert.getPublicKey();
-            try {
-                cert.verify(pubKey);
-            } catch (Exception e) {
-                throw new IllegalArgumentException("No chain given and certificate not self signed", e);
-            }
         }
     }
 
@@ -348,8 +389,6 @@ public class CertServiceImpl implements CertService {
     private void validateChain(List<Certificate> chain, Certificate cert) {
 
         List<Certificate> certs = new ArrayList<Certificate>();
-        List<Certificate> root = new ArrayList<Certificate>();
-
         Set<TrustAnchor> anchors = new HashSet<TrustAnchor>();
 
         certs.add(cert); // adding for self signed certs
@@ -364,14 +403,8 @@ public class CertServiceImpl implements CertService {
             Principal subject = xCert.getSubjectDN();
             Principal issuer = xCert.getIssuerDN();
 
-            if (issuer != null && subject.equals(issuer)) {
-                root.add(c);
-                anchors.add(new TrustAnchor(xCert, null));
-            }
+           anchors.add(new TrustAnchor(xCert, null));
         }
-
-        if (root.size() == 0)
-            throw new IllegalArgumentException("No root certificates found for certificate chain", null);
 
         X509CertSelector target = new X509CertSelector();
         target.setCertificate((X509Certificate)cert);
@@ -428,7 +461,7 @@ public class CertServiceImpl implements CertService {
         try {
             return (Certificate)certPem.readObject();
         } catch (Exception e) {
-            throw new InvalidParameterValueException("Invalid Certificate format. Expected X509 certificate");
+            throw new InvalidParameterValueException("Invalid Certificate format. Expected X509 certificate. Failed due to " + e.getMessage());
         } finally {
             IOUtils.closeQuietly(certPem);
         }
@@ -486,7 +519,7 @@ public class CertServiceImpl implements CertService {
         char[] password;
 
         KeyPassword(char[] word) {
-            this.password = word;
+            password = word;
         }
 
         @Override

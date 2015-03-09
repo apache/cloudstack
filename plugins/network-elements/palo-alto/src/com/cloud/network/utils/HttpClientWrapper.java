@@ -27,6 +27,8 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.cloudstack.utils.security.SSLUtils;
+
 import org.apache.http.client.HttpClient;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.scheme.Scheme;
@@ -39,7 +41,7 @@ public class HttpClientWrapper {
 
     public static HttpClient wrapClient(HttpClient base) {
         try {
-            SSLContext ctx = SSLContext.getInstance("TLS");
+            SSLContext ctx = SSLUtils.getSSLContext();
             X509TrustManager tm = new X509TrustManager() {
 
                 @Override

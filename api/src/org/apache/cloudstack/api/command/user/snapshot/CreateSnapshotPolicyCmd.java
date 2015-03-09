@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.snapshot;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -34,7 +35,8 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.user.Account;
 
-@APICommand(name = "createSnapshotPolicy", description = "Creates a snapshot policy for the account.", responseObject = SnapshotPolicyResponse.class)
+@APICommand(name = "createSnapshotPolicy", description = "Creates a snapshot policy for the account.", responseObject = SnapshotPolicyResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateSnapshotPolicyCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSnapshotPolicyCmd.class.getName());
 
@@ -63,6 +65,9 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "the ID of the disk volume")
     private Long volumeId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the policy to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -85,6 +90,14 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
 
     public Long getVolumeId() {
         return volumeId;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        if(display == null)
+            return true;
+        else
+            return display;
     }
 
     /////////////////////////////////////////////////////

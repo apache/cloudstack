@@ -19,9 +19,11 @@ under the License.
 
 # Setting up Tools and Environment
 
-    - Install VirtualBox 4.2 or latest
-    - Tool for exporting appliances: qemu-img, vboxmanage, vhd-util
+    - Install latest VirtualBox (at least 4.2)
+    - Install tools for exporting appliances: qemu-img, vboxmanage, vhd-util
     - Install [RVM](https://rvm.io/rvm/install)
+    - Install shar
+          yum install sharutils
     - Setup paths:
           export PATH=~/.rvm/bin:$PATH
     - Install Ruby 1.9.3, if it installed some other version:
@@ -40,12 +42,36 @@ Note, gem may require gcc-4.2, make sure link exists:
 
     sudo ln -s /usr/bin/gcc /usr/bin/gcc-4.2
 
+# Setting up jenkins (CI) builds
+
+All the tools listed above are expected to be available. If you follow
+
+    http://rvm.io/integration/jenkins
+
+then you'll need to do a bit of logic to load RVM in jenkins. In the
+build script you put into jenkins, start it with
+```
+#!/bin/bash -l
+```
+
+to ensure a login shell, then add something like
+```
+# inspired by https://github.com/CloudBees-community/rubyci-clickstart/blob/master/bin/run-ci
+# also see https://rvm.io/integration/jenkins
+# .rvmrc won't get trusted/auto-loaded by jenkins by default
+export VAGRANT_HOME=$HOME/.vagrant.d-release-cloudstack
+rvm use ruby-1.9.3@vagrant-release-cloudstack --create
+# do not use --deployment since that requires Gemfile.lock...and we prefer an up-to-date veewee
+bundle_args="--path vendor/bundle"
+```
+
+
 # How to build SystemVMs automatically
 
-Just run build.sh, it will export archived appliances for KVM, Xen,
+Just run build.sh, it will export archived appliances for KVM, XenServer,
 VMWare and HyperV in `dist`:
 
-    sh build.sh [systemvmtemplate|systemvmtemplate64]
+    bash build.sh [systemvmtemplate|systemvmtemplate64]
 
 # Building SystemVM template appliance manually
 
@@ -68,6 +94,12 @@ Halt the box:
 
 Now VirtualBox can be used to export appliance.
 
+To build the systemvm64template by hand using veewee, set VM_ARCH=amd64 and use
+the systemvmtemplate:
+
+    export VM_ARCH=amd64
+    cp -r definitions/systemvmtemplate definitions/systemvm64template
+    veewee vbox build 'systemvm64template'
 
 Trobuleshooting
 ===============

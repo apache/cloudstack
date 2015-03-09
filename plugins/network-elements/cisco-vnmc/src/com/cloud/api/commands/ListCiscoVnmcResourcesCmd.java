@@ -43,7 +43,8 @@ import com.cloud.network.cisco.CiscoVnmcControllerVO;
 import com.cloud.network.element.CiscoVnmcElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listCiscoVnmcResources", responseObject = CiscoVnmcResourceResponse.class, description = "Lists Cisco VNMC controllers")
+@APICommand(name = "listCiscoVnmcResources", responseObject = CiscoVnmcResourceResponse.class, description = "Lists Cisco VNMC controllers",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListCiscoVnmcResourcesCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListCiscoVnmcResourcesCmd.class.getName());
     private static final String s_name = "listCiscoVnmcResources";

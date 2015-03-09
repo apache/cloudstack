@@ -48,10 +48,11 @@ public class DiskOfferingDetailVO implements ResourceDetail {
     public DiskOfferingDetailVO() {
     }
 
-    public DiskOfferingDetailVO(long id, String name, String value) {
+    public DiskOfferingDetailVO(long id, String name, String value, boolean display) {
         this.resourceId = id;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override

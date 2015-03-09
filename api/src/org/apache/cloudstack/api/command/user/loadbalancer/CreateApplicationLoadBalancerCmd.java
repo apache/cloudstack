@@ -16,8 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,10 +28,11 @@ import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
@@ -41,7 +41,8 @@ import com.cloud.network.Network;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.net.NetUtils;
 
-@APICommand(name = "createLoadBalancer", description = "Creates a Load Balancer", responseObject = ApplicationLoadBalancerResponse.class, since = "4.2.0")
+@APICommand(name = "createLoadBalancer", description = "Creates a Load Balancer", responseObject = ApplicationLoadBalancerResponse.class, since = "4.2.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateApplicationLoadBalancerCmd.class.getName());
 
@@ -94,9 +95,15 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
                description = "the load balancer scheme. Supported value in this release is Internal")
     private String scheme;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
+    public Boolean getDisplay() {
+        return display;
+    }
 
     public String getAlgorithm() {
         return algorithm;
@@ -215,7 +222,7 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
 
             ApplicationLoadBalancerRule result =
                 _appLbService.createApplicationLoadBalancer(getName(), getDescription(), getScheme(), getSourceIpNetworkId(), getSourceIp(), getSourcePort(),
-                    getInstancePort(), getAlgorithm(), getNetworkId(), getEntityOwnerId());
+                    getInstancePort(), getAlgorithm(), getNetworkId(), getEntityOwnerId(), getDisplay());
             this.setEntityId(result.getId());
             this.setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException e) {
@@ -224,7 +231,7 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
         } catch (InsufficientAddressCapacityException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, e.getMessage());
-        } catch (InsufficientVirtualNetworkCapcityException e) {
+        } catch (InsufficientVirtualNetworkCapacityException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, e.getMessage());
         }

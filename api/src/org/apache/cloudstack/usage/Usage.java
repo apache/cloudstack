@@ -40,6 +40,12 @@ public interface Usage {
 
     public String getVmName();
 
+    public Long getCpuCores();
+
+    public Long getCpuSpeed();
+
+    public Long getMemory();
+
     public Long getOfferingId();
 
     public Long getTemplateId();

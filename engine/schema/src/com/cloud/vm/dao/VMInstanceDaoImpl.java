@@ -48,7 +48,11 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
@@ -76,10 +80,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> TypesSearch;
     protected SearchBuilder<VMInstanceVO> IdTypesSearch;
     protected SearchBuilder<VMInstanceVO> HostIdTypesSearch;
+    protected SearchBuilder<VMInstanceVO> HostIdStatesSearch;
     protected SearchBuilder<VMInstanceVO> HostIdUpTypesSearch;
     protected SearchBuilder<VMInstanceVO> HostUpSearch;
     protected SearchBuilder<VMInstanceVO> InstanceNameSearch;
     protected SearchBuilder<VMInstanceVO> HostNameSearch;
+    protected SearchBuilder<VMInstanceVO> HostNameAndZoneSearch;
     protected GenericSearchBuilder<VMInstanceVO, Long> FindIdsOfVirtualRoutersByAccount;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByHost;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByAccount;
@@ -109,6 +115,13 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             "WHERE host.data_center_id = ? AND host.type = 'Routing' AND host.removed is null ";
 
     private static final String ORDER_HOSTS_NUMBER_OF_VMS_FOR_ACCOUNT_PART2 = " GROUP BY host.id ORDER BY 2 ASC ";
+
+    private static final String COUNT_VMS_BASED_ON_VGPU_TYPES1 =
+            "SELECT pci, type, SUM(vmcount) FROM (SELECT MAX(IF(offering.name = 'pciDevice',value,'')) AS pci, MAX(IF(offering.name = 'vgpuType', value,'')) " +
+            "AS type, COUNT(DISTINCT vm.id) AS vmcount FROM service_offering_details offering INNER JOIN vm_instance vm ON offering.service_offering_id = vm.service_offering_id " +
+            "INNER JOIN `cloud`.`host` ON vm.host_id = host.id WHERE vm.state = 'Running' AND host.data_center_id = ? ";
+    private static final String COUNT_VMS_BASED_ON_VGPU_TYPES2 =
+            "GROUP BY offering.service_offering_id) results GROUP BY pci, type";
 
     @Inject
     protected HostDao _hostDao;
@@ -182,6 +195,11 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         HostIdTypesSearch.and("types", HostIdTypesSearch.entity().getType(), Op.IN);
         HostIdTypesSearch.done();
 
+        HostIdStatesSearch = createSearchBuilder();
+        HostIdStatesSearch.and("hostId", HostIdStatesSearch.entity().getHostId(), Op.EQ);
+        HostIdStatesSearch.and("states", HostIdStatesSearch.entity().getState(), Op.IN);
+        HostIdStatesSearch.done();
+
         HostIdUpTypesSearch = createSearchBuilder();
         HostIdUpTypesSearch.and("hostid", HostIdUpTypesSearch.entity().getHostId(), Op.EQ);
         HostIdUpTypesSearch.and("types", HostIdUpTypesSearch.entity().getType(), Op.IN);
@@ -200,6 +218,11 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         HostNameSearch = createSearchBuilder();
         HostNameSearch.and("hostName", HostNameSearch.entity().getHostName(), Op.EQ);
         HostNameSearch.done();
+
+        HostNameAndZoneSearch = createSearchBuilder();
+        HostNameAndZoneSearch.and("hostName", HostNameAndZoneSearch.entity().getHostName(), Op.EQ);
+        HostNameAndZoneSearch.and("zone", HostNameAndZoneSearch.entity().getDataCenterId(), Op.EQ);
+        HostNameAndZoneSearch.done();
 
         FindIdsOfVirtualRoutersByAccount = createSearchBuilder(Long.class);
         FindIdsOfVirtualRoutersByAccount.selectFields(FindIdsOfVirtualRoutersByAccount.entity().getId());
@@ -335,6 +358,15 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
+    public List<VMInstanceVO> listByHostAndState(long hostId, State... states) {
+        SearchCriteria<VMInstanceVO> sc = HostIdStatesSearch.create();
+        sc.setParameters("hostId", hostId);
+        sc.setParameters("states", (Object[])states);
+
+        return listBy(sc);
+    }
+
+    @Override
     public List<VMInstanceVO> listUpByHostIdTypes(long hostid, Type... types) {
         SearchCriteria<VMInstanceVO> sc = HostIdUpTypesSearch.create();
         sc.setParameters("hostid", hostid);
@@ -389,6 +421,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
+    public VMInstanceVO findVMByHostNameInZone(String hostName, long zoneId) {
+        SearchCriteria<VMInstanceVO> sc = HostNameAndZoneSearch.create();
+        sc.setParameters("hostName", hostName);
+        sc.setParameters("zone", zoneId);
+        return findOneBy(sc);
+    }
+
+    @Override
     public void updateProxyId(long id, Long proxyId, Date time) {
         VMInstanceVO vo = createForUpdate();
         vo.setProxyId(proxyId);
@@ -418,6 +458,9 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             return true;
         }
 
+        // lock the target row at beginning to avoid lock-promotion caused deadlock
+        lockRow(vm.getId(), true);
+
         SearchCriteria<VMInstanceVO> sc = StateChangeSearch.create();
         sc.setParameters("id", vmi.getId());
         sc.setParameters("states", oldState);
@@ -433,41 +476,29 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         ub.set(vmi, _updateTimeAttr, new Date());
 
         int result = update(vmi, sc);
-        if (result == 0 && s_logger.isDebugEnabled()) {
-
+        if (result == 0) {
             VMInstanceVO vo = findByIdIncludingRemoved(vm.getId());
 
-            if (vo != null) {
-                StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-                str.append(": DB Data={Host=")
-                    .append(vo.getHostId())
-                    .append("; State=")
-                    .append(vo.getState().toString())
-                    .append("; updated=")
-                    .append(vo.getUpdated())
-                    .append("; time=")
-                    .append(vo.getUpdateTime());
-                str.append("} New Data: {Host=")
-                    .append(vm.getHostId())
-                    .append("; State=")
-                    .append(vm.getState().toString())
-                    .append("; updated=")
-                    .append(vmi.getUpdated())
-                    .append("; time=")
-                    .append(vo.getUpdateTime());
-                str.append("} Stale Data: {Host=")
-                    .append(oldHostId)
-                    .append("; State=")
-                    .append(oldState)
-                    .append("; updated=")
-                    .append(oldUpdated)
-                    .append("; time=")
-                    .append(oldUpdateDate)
-                    .append("}");
-                s_logger.debug(str.toString());
+            if (s_logger.isDebugEnabled()) {
+                if (vo != null) {
+                    StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
+                    str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated())
+                            .append("; time=").append(vo.getUpdateTime());
+                    str.append("} New Data: {Host=").append(vm.getHostId()).append("; State=").append(vm.getState().toString()).append("; updated=").append(vmi.getUpdated())
+                            .append("; time=").append(vo.getUpdateTime());
+                    str.append("} Stale Data: {Host=").append(oldHostId).append("; State=").append(oldState).append("; updated=").append(oldUpdated).append("; time=")
+                            .append(oldUpdateDate).append("}");
+                    s_logger.debug(str.toString());
 
-            } else {
-                s_logger.debug("Unable to update the vm id=" + vm.getId() + "; the vm either doesn't exist or already removed");
+                } else {
+                    s_logger.debug("Unable to update the vm id=" + vm.getId() + "; the vm either doesn't exist or already removed");
+                }
+            }
+
+            if (vo != null && vo.getState() == newState) {
+                // allow for concurrent update if target state has already been matched
+                s_logger.debug("VM " + vo.getInstanceName() + " state has been already been updated to " + newState);
+                return true;
             }
         }
         return result > 0;
@@ -631,6 +662,45 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
+    public HashMap<String, Long> countVgpuVMs(Long dcId, Long podId, Long clusterId) {
+        StringBuilder finalQuery = new StringBuilder();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        List<Long> resourceIdList = new ArrayList<Long>();
+        HashMap<String, Long> result = new HashMap<String, Long>();
+
+        resourceIdList.add(dcId);
+        finalQuery.append(COUNT_VMS_BASED_ON_VGPU_TYPES1);
+
+        if (podId != null) {
+            finalQuery.append("AND host.pod_id = ? ");
+            resourceIdList.add(podId);
+        }
+
+        if (clusterId != null) {
+            finalQuery.append("AND host.cluster_id = ? ");
+            resourceIdList.add(clusterId);
+        }
+        finalQuery.append(COUNT_VMS_BASED_ON_VGPU_TYPES2);
+
+        try {
+            pstmt = txn.prepareAutoCloseStatement(finalQuery.toString());
+            for (int i = 0; i < resourceIdList.size(); i++) {
+                pstmt.setLong(1 + i, resourceIdList.get(i));
+            }
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                result.put(rs.getString(1).concat(rs.getString(2)), rs.getLong(3));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + finalQuery, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + finalQuery, e);
+        }
+    }
+
+    @Override
     public Long countRunningByAccount(long accountId) {
         SearchCriteria<Long> sc = CountRunningByAccount.create();
         sc.setParameters("account", accountId);
@@ -702,60 +772,66 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public boolean updatePowerState(long instanceId, long powerHostId, VirtualMachine.PowerState powerState) {
-        boolean needToUpdate = false;
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        txn.start();
+    public boolean updatePowerState(final long instanceId, final long powerHostId, final VirtualMachine.PowerState powerState) {
+        return Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
+                boolean needToUpdate = false;
+                VMInstanceVO instance = findById(instanceId);
+                if (instance != null) {
+                    Long savedPowerHostId = instance.getPowerHostId();
+                    if (instance.getPowerState() != powerState || savedPowerHostId == null
+                            || savedPowerHostId.longValue() != powerHostId) {
+                        instance.setPowerState(powerState);
+                        instance.setPowerHostId(powerHostId);
+                        instance.setPowerStateUpdateCount(1);
+                        instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
+                        needToUpdate = true;
+                        update(instanceId, instance);
+                    } else {
+                        // to reduce DB updates, consecutive same state update for more than 3 times
+                        if (instance.getPowerStateUpdateCount() < MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT) {
+                            instance.setPowerStateUpdateCount(instance.getPowerStateUpdateCount() + 1);
+                            instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
+                            needToUpdate = true;
+                            update(instanceId, instance);
+                        }
+                    }
+                }
+                return needToUpdate;
+            }
+        });
+    }
 
-        VMInstanceVO instance = findById(instanceId);
-        if (instance != null) {
-            Long savedPowerHostId = instance.getPowerHostId();
-            if (instance.getPowerState() != powerState || savedPowerHostId == null || savedPowerHostId.longValue() != powerHostId) {
-                instance.setPowerState(powerState);
-                instance.setPowerHostId(powerHostId);
-                instance.setPowerStateUpdateCount(1);
-                instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
-                needToUpdate = true;
-                update(instanceId, instance);
-            } else {
-                // to reduce DB updates, consecutive same state update for more than 3 times
-                if (instance.getPowerStateUpdateCount() < MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT) {
-                    instance.setPowerStateUpdateCount(instance.getPowerStateUpdateCount() + 1);
+    @Override
+    public void resetVmPowerStateTracking(final long instanceId) {
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                VMInstanceVO instance = findById(instanceId);
+                if (instance != null) {
+                    instance.setPowerStateUpdateCount(0);
                     instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
-                    needToUpdate = true;
                     update(instanceId, instance);
                 }
             }
-        }
-
-        txn.commit();
-        return needToUpdate;
+        });
     }
 
-    @Override
-    public void resetVmPowerStateTracking(long instanceId) {
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        txn.start();
-        VMInstanceVO instance = findById(instanceId);
-        if (instance != null) {
-            instance.setPowerStateUpdateCount(0);
-            instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
-            update(instanceId, instance);
-        }
+    @Override @DB
+    public void resetHostPowerStateTracking(final long hostId) {
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                SearchCriteria<VMInstanceVO> sc = createSearchCriteria();
+                sc.addAnd("powerHostId", SearchCriteria.Op.EQ, hostId);
 
-        txn.commit();
-    }
+                VMInstanceVO instance = createForUpdate();
+                instance.setPowerStateUpdateCount(0);
+                instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
 
-    @Override
-    @DB
-    public void resetHostPowerStateTracking(long hostId) {
-        SearchCriteria<VMInstanceVO> sc = createSearchCriteria();
-        sc.addAnd("powerHostId", SearchCriteria.Op.EQ, hostId);
-
-        VMInstanceVO instance = this.createForUpdate();
-        instance.setPowerStateUpdateCount(0);
-        instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
-
-        this.update(instance, sc);
+                update(instance, sc);
+            }
+        });
     }
 }

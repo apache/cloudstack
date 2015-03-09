@@ -20,8 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.gson.annotations.SerializedName;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.BaseResponse;
@@ -31,6 +30,7 @@ import org.apache.cloudstack.api.Parameter;
 import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.serializer.Param;
 import com.cloud.utils.Pair;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = AutoScaleVmProfile.class)
 public class AutoScaleVmProfileResponse extends BaseResponse implements ControlledEntityResponse {
@@ -97,8 +97,11 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     @Param(description = "the domain name of the vm profile")
     private String domainName;
 
-    public AutoScaleVmProfileResponse() {
+    @SerializedName(ApiConstants.FOR_DISPLAY)
+    @Param(description = "is profile for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean forDisplay;
 
+    public AutoScaleVmProfileResponse() {
     }
 
     @Override
@@ -170,5 +173,9 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
 
     public void setCsUrl(String csUrl) {
         this.csUrl = csUrl;
+    }
+
+    public void setForDisplay(Boolean forDisplay) {
+        this.forDisplay = forDisplay;
     }
 }

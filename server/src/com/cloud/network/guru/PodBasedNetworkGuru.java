@@ -28,7 +28,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.AddressFormat;
@@ -96,7 +96,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapacityException,
         InsufficientAddressCapacityException {
         TrafficType trafficType = config.getTrafficType();
         assert trafficType == TrafficType.Management || trafficType == TrafficType.Storage : "Well, I can't take care of this config now can I? " + config;
@@ -115,7 +115,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public void reserve(NicProfile nic, Network config, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         Pod pod = dest.getPod();
 
         Pair<String, Long> ip = _dcDao.allocatePrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), nic.getId(), context.getReservationId());
@@ -159,7 +159,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public Network implement(Network config, NetworkOffering offering, DeployDestination destination, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException {
+        throws InsufficientVirtualNetworkCapacityException {
         return config;
     }
 

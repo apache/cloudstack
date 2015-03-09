@@ -51,7 +51,9 @@ import com.cloud.user.Account;
 
 @APICommand(name = "createServiceInstance",
             description = "Creates a system virtual-machine that implements network services",
-            responseObject = ServiceInstanceResponse.class)
+            responseObject = ServiceInstanceResponse.class,
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
     private static final String s_name = "createserviceinstanceresponse";
 
@@ -104,7 +106,8 @@ public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
                description = "The service offering ID that defines the resources consumed by the service appliance")
     private Long serviceOfferingId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING)
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING,
+               required = true, description = "The name of the service instance")
     private String name;
 
     /// Implementation
@@ -140,6 +143,10 @@ public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
             Network right = _networkService.getNetwork(rightNetworkId);
             if (right == null) {
                 throw new InvalidParameterValueException("Invalid ID for right network " + rightNetworkId);
+            }
+
+            if (name.isEmpty()) {
+                throw new InvalidParameterValueException("service instance name is empty");
             }
 
             ServiceVirtualMachine svm = _vrouterService.createServiceInstance(zone, owner, template, serviceOffering, name, left, right);
@@ -184,7 +191,7 @@ public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

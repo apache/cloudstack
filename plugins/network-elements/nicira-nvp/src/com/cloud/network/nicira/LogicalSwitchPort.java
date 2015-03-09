@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,20 +15,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.nicira;
 
 import java.util.List;
 
-public class LogicalSwitchPort {
-    private String displayName;
-    private List<NiciraNvpTag> tags;
+public class LogicalSwitchPort extends BaseNiciraNamedEntity {
     private Integer portno;
     private boolean adminStatusEnabled;
     private String queueUuid;
     private List<String> securityProfiles;
     private List<String> mirrorTargets;
-    private String type;
-    private String uuid;
+    private final String type = "LogicalSwitchPortConfig";
 
     public LogicalSwitchPort() {
         super();
@@ -40,27 +40,11 @@ public class LogicalSwitchPort {
         this.adminStatusEnabled = adminStatusEnabled;
     }
 
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public List<NiciraNvpTag> getTags() {
-        return tags;
-    }
-
-    public void setTags(List<NiciraNvpTag> tags) {
-        this.tags = tags;
-    }
-
     public Integer getPortno() {
         return portno;
     }
 
-    public void setPortno(Integer portno) {
+    public void setPortno(final Integer portno) {
         this.portno = portno;
     }
 
@@ -68,7 +52,7 @@ public class LogicalSwitchPort {
         return adminStatusEnabled;
     }
 
-    public void setAdminStatusEnabled(boolean adminStatusEnabled) {
+    public void setAdminStatusEnabled(final boolean adminStatusEnabled) {
         this.adminStatusEnabled = adminStatusEnabled;
     }
 
@@ -76,7 +60,7 @@ public class LogicalSwitchPort {
         return queueUuid;
     }
 
-    public void setQueueUuid(String queueUuid) {
+    public void setQueueUuid(final String queueUuid) {
         this.queueUuid = queueUuid;
     }
 
@@ -84,7 +68,7 @@ public class LogicalSwitchPort {
         return securityProfiles;
     }
 
-    public void setSecurityProfiles(List<String> securityProfiles) {
+    public void setSecurityProfiles(final List<String> securityProfiles) {
         this.securityProfiles = securityProfiles;
     }
 
@@ -92,24 +76,7 @@ public class LogicalSwitchPort {
         return mirrorTargets;
     }
 
-    public void setMirrorTargets(List<String> mirrorTargets) {
+    public void setMirrorTargets(final List<String> mirrorTargets) {
         this.mirrorTargets = mirrorTargets;
     }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
 }

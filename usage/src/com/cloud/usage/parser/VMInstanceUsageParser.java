@@ -27,7 +27,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.usage.UsageVMInstanceVO;
@@ -36,6 +35,7 @@ import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageVMInstanceDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 
 @Component
 public class VMInstanceUsageParser {
@@ -75,7 +75,7 @@ public class VMInstanceUsageParser {
         Map<String, Pair<String, Long>> usageVMUptimeMap = new HashMap<String, Pair<String, Long>>();
         Map<String, Pair<String, Long>> allocatedVMMap = new HashMap<String, Pair<String, Long>>();
 
-        Map<String, VMInfo> vmServiceOfferingMap = new HashMap<String, VMInfo>();
+        Map<String, VMInfo> vmInfosMap = new HashMap<String, VMInfo>();
 
         // loop through all the usage instances, create a usage record for each
         for (UsageVMInstanceVO usageInstance : usageInstances) {
@@ -84,10 +84,13 @@ public class VMInstanceUsageParser {
             long zoneId = usageInstance.getZoneId();
             long tId = usageInstance.getTemplateId();
             int usageType = usageInstance.getUsageType();
-            String key = vmId + "-" + soId + "-" + usageType;
+            Long cpuCores = usageInstance.getCpuCores();
+            Long cpuSpeed = usageInstance.getCpuSpeed();
+            Long memory = usageInstance.getMemory();
+            String key = StringUtils.join("-", vmId, soId, usageType, cpuCores, cpuSpeed, memory);
 
-            // store the info in the service offering map
-            vmServiceOfferingMap.put(key, new VMInfo(vmId, zoneId, soId, tId, usageInstance.getHypervisorType()));
+            // store the info in the VMs map
+            vmInfosMap.put(key, new VMInfo(vmId, zoneId, soId, tId, usageInstance.getHypervisorType(), cpuCores, cpuSpeed, memory));
 
             Date vmStartDate = usageInstance.getStartDate();
             Date vmEndDate = usageInstance.getEndDate();
@@ -99,6 +102,11 @@ public class VMInstanceUsageParser {
             // clip the start date to the beginning of our aggregation range if the vm has been running for a while
             if (vmStartDate.before(startDate)) {
                 vmStartDate = startDate;
+            }
+
+            if (vmStartDate.after(endDate)) {
+                //Ignore records created after endDate
+                continue;
             }
 
             long currentDuration = (vmEndDate.getTime() - vmStartDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
@@ -119,9 +127,9 @@ public class VMInstanceUsageParser {
 
             // Only create a usage record if we have a runningTime of bigger than zero.
             if (runningTime > 0L) {
-                VMInfo info = vmServiceOfferingMap.get(vmIdKey);
+                VMInfo info = vmInfosMap.get(vmIdKey);
                 createUsageRecord(UsageTypes.RUNNING_VM, runningTime, startDate, endDate, account, info.getVirtualMachineId(), vmUptimeInfo.first(), info.getZoneId(),
-                    info.getServiceOfferingId(), info.getTemplateId(), info.getHypervisorType());
+                    info.getServiceOfferingId(), info.getTemplateId(), info.getHypervisorType(), info.getCpuCores(), info.getCpuSpeed(), info.getMemory());
             }
         }
 
@@ -131,9 +139,9 @@ public class VMInstanceUsageParser {
 
             // Only create a usage record if we have a runningTime of bigger than zero.
             if (allocatedTime > 0L) {
-                VMInfo info = vmServiceOfferingMap.get(vmIdKey);
+                VMInfo info = vmInfosMap.get(vmIdKey);
                 createUsageRecord(UsageTypes.ALLOCATED_VM, allocatedTime, startDate, endDate, account, info.getVirtualMachineId(), vmAllocInfo.first(), info.getZoneId(),
-                    info.getServiceOfferingId(), info.getTemplateId(), info.getHypervisorType());
+                    info.getServiceOfferingId(), info.getTemplateId(), info.getHypervisorType(), info.getCpuCores(), info.getCpuSpeed(), info.getMemory());
             }
         }
 
@@ -153,7 +161,7 @@ public class VMInstanceUsageParser {
     }
 
     private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, String vmName, long zoneId,
-        long serviceOfferingId, long templateId, String hypervisorType) {
+        long serviceOfferingId, long templateId, String hypervisorType, Long cpuCores, Long cpuSpeed, Long memory) {
         // Our smallest increment is hourly for now
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Total running time " + runningTime + "ms");
@@ -179,23 +187,29 @@ public class VMInstanceUsageParser {
         usageDesc += " (ServiceOffering: " + serviceOfferingId + ") (Template: " + templateId + ")";
         UsageVO usageRecord =
             new UsageVO(Long.valueOf(zoneId), account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), Long.valueOf(vmId),
-                vmName, Long.valueOf(serviceOfferingId), Long.valueOf(templateId), Long.valueOf(vmId), startDate, endDate, hypervisorType);
+                vmName, cpuCores, cpuSpeed, memory, Long.valueOf(serviceOfferingId), Long.valueOf(templateId), Long.valueOf(vmId), startDate, endDate, hypervisorType);
         s_usageDao.persist(usageRecord);
     }
 
     private static class VMInfo {
-        private long virtualMachineId;
-        private long zoneId;
-        private long serviceOfferingId;
-        private long templateId;
-        private String hypervisorType;
+        private final long virtualMachineId;
+        private final long zoneId;
+        private final long serviceOfferingId;
+        private final long templateId;
+        private final String hypervisorType;
+        private final Long cpuCores;
+        private final Long cpuSpeed;
+        private final Long memory;
 
-        public VMInfo(long vmId, long zId, long soId, long tId, String hypervisorType) {
+        public VMInfo(long vmId, long zId, long soId, long tId, String hypervisorType, Long cpuCores, Long cpuSpeed, Long memory) {
             virtualMachineId = vmId;
             zoneId = zId;
             serviceOfferingId = soId;
             templateId = tId;
             this.hypervisorType = hypervisorType;
+            this.cpuCores = cpuCores;
+            this.cpuSpeed = cpuSpeed;
+            this.memory = memory;
         }
 
         public long getZoneId() {
@@ -216,6 +230,18 @@ public class VMInstanceUsageParser {
 
         private String getHypervisorType() {
             return hypervisorType;
+        }
+
+        public Long getCpuCores() {
+            return cpuCores;
+        }
+
+        public Long getCpuSpeed() {
+            return cpuSpeed;
+        }
+
+        public Long getMemory() {
+            return memory;
         }
     }
 }

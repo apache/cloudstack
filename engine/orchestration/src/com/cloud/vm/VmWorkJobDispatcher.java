@@ -28,6 +28,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.jobs.JobInfo;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -60,9 +61,6 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
             String cmd = job.getCmd();
             assert (cmd != null);
 
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Run VM work job: " + cmd + ", job origin: " + job.getRelated());
-
             Class<?> workClz = null;
             try {
                 workClz = Class.forName(job.getCmd());
@@ -80,34 +78,45 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
                 return;
             }
 
-            if (_handlers == null || _handlers.isEmpty()) {
-                s_logger.error("Invalid startup configuration, no work job handler is found. cmd: " + job.getCmd() + ", job info: " + job.getCmdInfo()
-                        + ", job origin: " + job.getRelated());
-                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, "Invalid startup configuration. no job handler is found");
-                return;
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Run VM work job: " + cmd + " for VM " + work.getVmId() + ", job origin: " + job.getRelated());
+            try {
+                if (_handlers == null || _handlers.isEmpty()) {
+                    s_logger.error("Invalid startup configuration, no work job handler is found. cmd: " + job.getCmd() + ", job info: " + job.getCmdInfo()
+                            + ", job origin: " + job.getRelated());
+                    _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, "Invalid startup configuration. no job handler is found");
+                    return;
+                }
+
+                VmWorkJobHandler handler = _handlers.get(work.getHandlerName());
+
+                if (handler == null) {
+                    s_logger.error("Unable to find work job handler. handler name: " + work.getHandlerName() + ", job cmd: " + job.getCmd()
+                            + ", job info: " + job.getCmdInfo() + ", job origin: " + job.getRelated());
+                    _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, "Unable to find work job handler");
+                    return;
+                }
+
+                CallContext.register(work.getUserId(), work.getAccountId());
+
+                try {
+                    Pair<JobInfo.Status, String> result = handler.handleVmWorkJob(work);
+                    _asyncJobMgr.completeAsyncJob(job.getId(), result.first(), 0, result.second());
+                } finally {
+                    CallContext.unregister();
+                }
+            } finally {
+                if (s_logger.isDebugEnabled())
+                    s_logger.debug("Done with run of VM work job: " + cmd + " for VM " + work.getVmId() + ", job origin: " + job.getRelated());
             }
-
-            VmWorkJobHandler handler = _handlers.get(work.getHandlerName());
-
-            if (handler == null) {
-                s_logger.error("Unable to find work job handler. handler name: " + work.getHandlerName() + ", job cmd: " + job.getCmd()
-                        + ", job info: " + job.getCmdInfo() + ", job origin: " + job.getRelated());
-                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, "Unable to find work job handler");
-                return;
-            }
-
-            CallContext.register(work.getUserId(), work.getAccountId(), job.getRelated());
-
-            Pair<JobInfo.Status, String> result = handler.handleVmWorkJob(work);
-            _asyncJobMgr.completeAsyncJob(job.getId(), result.first(), 0, result.second());
-
+        } catch(InvalidParameterValueException e) {
+            s_logger.error("Unable to complete " + job + ", job origin:" + job.getRelated());
+            _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, _asyncJobMgr.marshallResultObject(e));
         } catch(Throwable e) {
             s_logger.error("Unable to complete " + job + ", job origin:" + job.getRelated(), e);
 
-            RuntimeException ex = new RuntimeException("Job failed due to exception " + e.getMessage());
-            _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, _asyncJobMgr.marshallResultObject(ex));
-        } finally {
-            CallContext.unregister();
+            //RuntimeException ex = new RuntimeException("Job failed due to exception " + e.getMessage());
+            _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, _asyncJobMgr.marshallResultObject(e));
         }
     }
 }

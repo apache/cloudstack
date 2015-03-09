@@ -1,0 +1,1455 @@
+#!/usr/bin/python
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# Version @VERSION@
+#
+# A plugin for executing script needed by vmops cloud 
+
+import os, sys, time
+import XenAPIPlugin
+sys.path.extend(["/usr/lib/xcp/sm/", "/usr/local/sbin/", "/sbin/"])
+import base64
+import hostvmstats
+import socket
+import stat
+import tempfile
+import util
+import subprocess
+import zlib
+from util import CommandException
+
+def echo(fn):
+    def wrapped(*v, **k):
+        name = fn.__name__
+        util.SMlog("#### VMOPS enter  %s ####" % name )
+        res = fn(*v, **k)
+        util.SMlog("#### VMOPS exit  %s ####" % name )
+        return res
+    return wrapped
+
+@echo
+def setup_iscsi(session, args):
+   uuid=args['uuid']
+   try:
+       cmd = ["b", "/opt/cloud/bin/setup_iscsi.sh", uuid]
+       txt = util.pread2(cmd)
+   except:
+       txt = ''
+   return '> DONE <'
+ 
+@echo
+def preparemigration(session, args):
+    uuid = args['uuid']
+    try:
+        cmd = ["/opt/cloud/bin/make_migratable.sh", uuid]
+        util.pread2(cmd)
+        txt = 'success'
+    except:
+        util.SMlog("Catch prepare migration exception" )
+        txt = ''
+
+    return txt
+
+@echo
+def setIptables(session, args):
+    try:
+        '''cmd = ["/bin/bash", "/opt/cloud/bin/setupxenserver.sh"]
+        txt = util.pread2(cmd)'''
+        txt = 'success'
+    except:
+        util.SMlog("  setIptables execution failed "  )
+        txt = '' 
+
+    return txt
+ 
+@echo
+def pingdomr(session, args):
+    host = args['host']
+    port = args['port']
+    socket.setdefaulttimeout(3)
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.connect((host,int(port)))
+        txt = 'success'
+    except:
+        txt = ''
+    
+    s.close()
+
+    return txt
+
+@echo
+def kill_copy_process(session, args):
+    namelabel = args['namelabel']
+    try:
+        cmd = ["bash", "/opt/cloud/bin/kill_copy_process.sh", namelabel]
+        txt = util.pread2(cmd)
+    except:
+        txt = 'false'
+    return txt
+
+@echo
+def pingxenserver(session, args):
+    txt = 'success'
+    return txt
+
+@echo
+def ipassoc(session, args):
+    sargs = args['args']
+    cmd = sargs.split(' ')
+    cmd.insert(0, "/opt/cloud/bin/ipassoc.sh")
+    cmd.insert(0, "/bin/bash")
+    try:
+        txt = util.pread2(cmd)
+        txt = 'success'
+    except:
+        util.SMlog("  ip associate failed "  )
+        txt = '' 
+
+    return txt
+
+def pingtest(session, args):
+    sargs = args['args']
+    cmd = sargs.split(' ')
+    cmd.insert(0, "/opt/cloud/bin/pingtest.sh")
+    cmd.insert(0, "/bin/bash")
+    try:
+        txt = util.pread2(cmd)
+        txt = 'success'
+    except:
+        util.SMlog("  pingtest failed "  )
+        txt = ''
+
+    return txt
+
+@echo
+def savePassword(session, args):
+    sargs = args['args']
+    cmd = sargs.split(' ')
+    cmd.insert(0, "/opt/cloud/bin/save_password_to_domr.sh")
+    cmd.insert(0, "/bin/bash")
+    try:
+        txt = util.pread2(cmd)
+        txt = 'success'
+    except:
+        util.SMlog("  save password to domr failed "  )
+        txt = '' 
+
+    return txt
+
+@echo
+def saveDhcpEntry(session, args):
+    sargs = args['args']
+    cmd = sargs.split(' ')
+    cmd.insert(0, "/opt/cloud/bin/dhcp_entry.sh")
+    cmd.insert(0, "/bin/bash")
+    try:
+        txt = util.pread2(cmd)
+        txt = 'success'
+    except:
+        util.SMlog(" save dhcp entry failed "  )
+        txt = '' 
+
+    return txt
+    
+@echo
+def lt2p_vpn(session, args):
+    sargs = args['args']
+    cmd = sargs.split(' ')
+    cmd.insert(0, "/opt/cloud/bin/l2tp_vpn.sh")
+    cmd.insert(0, "/bin/bash")
+    try:
+        txt = util.pread2(cmd)
+        txt = 'success'
+    except:
+        util.SMlog("l2tp vpn failed "  )
+        txt = '' 
+
+    return txt    
+
+@echo
+def setLinkLocalIP(session, args):
+    brName = args['brName']
+    try:
+        cmd = ["ip", "route", "del", "169.254.0.0/16"]
+        txt = util.pread2(cmd)
+    except:
+        txt = '' 
+    try:
+        cmd = ["ifconfig", brName, "169.254.0.1", "netmask", "255.255.0.0"]
+        txt = util.pread2(cmd)
+    except:
+
+        try:
+            cmd = ["brctl", "addbr", brName]
+            txt = util.pread2(cmd)
+        except:
+            pass
+ 
+        try:
+            cmd = ["ifconfig", brName, "169.254.0.1", "netmask", "255.255.0.0"]
+            txt = util.pread2(cmd)
+        except:
+            pass
+    try:
+        cmd = ["ip", "route", "add", "169.254.0.0/16", "dev", brName, "src", "169.254.0.1"]
+        txt = util.pread2(cmd)
+    except:
+        txt = '' 
+    txt = 'success'
+    return txt
+    
+@echo
+def setFirewallRule(session, args):
+    sargs = args['args']
+    cmd = sargs.split(' ')
+    cmd.insert(0, "/opt/cloud/bin/call_firewall.sh")
+    cmd.insert(0, "/bin/bash")
+    try:
+        txt = util.pread2(cmd)
+        txt = 'success'
+    except:
+        util.SMlog(" set firewall rule failed "  )
+        txt = '' 
+
+    return txt
+
+@echo
+def setLoadBalancerRule(session, args):
+    sargs = args['args']
+    cmd = sargs.split(' ')
+    cmd.insert(0, "/opt/cloud/bin/call_loadbalancer.sh")
+    cmd.insert(0, "/bin/bash")
+    try:
+        txt = util.pread2(cmd)
+        txt = 'success'
+    except:
+        util.SMlog(" set loadbalancer rule failed "  )
+        txt = '' 
+
+    return txt
+    
+@echo
+def createFile(session, args):
+    file_path = args['filepath']
+    file_contents = args['filecontents']
+
+    try:
+        f = open(file_path, "w")
+        f.write(file_contents)
+        f.close()
+        txt = 'success'
+    except:
+        util.SMlog(" failed to create HA proxy cfg file ")
+        txt = ''
+
+    return txt
+
+@echo
+def deleteFile(session, args):
+    file_path = args["filepath"]
+
+    try:
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+        txt = 'success'
+    except:
+        util.SMlog(" failed to remove HA proxy cfg file ")
+        txt = ''
+
+    return txt
+
+
+@echo
+def networkUsage(session, args):
+    sargs = args['args']
+    cmd = sargs.split(' ')
+    cmd.insert(0, "/opt/cloud/bin/networkUsage.sh")
+    cmd.insert(0, "/bin/bash")
+    try:
+        txt = util.pread2(cmd)
+    except:
+        util.SMlog("  network usage error "  )
+        txt = '' 
+
+    return txt
+    
+def get_private_nic(session, args):
+    vms = session.xenapi.VM.get_all()
+    host_uuid = args.get('host_uuid')
+    host = session.xenapi.host.get_by_uuid(host_uuid)
+    piflist = session.xenapi.host.get_PIFs(host)
+    mgmtnic = 'eth0'
+    for pif in piflist:
+        pifrec = session.xenapi.PIF.get_record(pif)
+        network = pifrec.get('network')
+        nwrec = session.xenapi.network.get_record(network)
+        if nwrec.get('name_label') == 'cloud-guest':
+            return pifrec.get('device')
+        if pifrec.get('management'):
+            mgmtnic = pifrec.get('device')
+    
+    return mgmtnic
+
+def chain_name(vm_name):
+    if vm_name.startswith('i-') or vm_name.startswith('r-'):
+        if vm_name.endswith('untagged'):
+            return '-'.join(vm_name.split('-')[:-1])
+    return vm_name
+
+def chain_name_def(vm_name):
+    if vm_name.startswith('i-'):
+        if vm_name.endswith('untagged'):
+            return '-'.join(vm_name.split('-')[:-2]) + "-def"
+        return '-'.join(vm_name.split('-')[:-1]) + "-def"
+    return vm_name
+  
+def egress_chain_name(vm_name):
+    return chain_name(vm_name) + "-eg"
+      
+@echo
+def can_bridge_firewall(session, args):
+    try:
+        util.pread2(['ebtables', '-V'])
+        util.pread2(['ipset', '-V'])
+    except:
+        return 'false'
+
+    host_uuid = args.get('host_uuid')
+    try:
+        util.pread2(['iptables', '-N', 'BRIDGE-FIREWALL'])
+        util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
+        util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged',  '-p', 'udp', '--dport', '67', '--sport', '68',  '-j', 'ACCEPT'])
+        util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged',  '-p', 'udp', '--dport', '68', '--sport', '67',  '-j', 'ACCEPT'])
+        util.pread2(['iptables', '-D', 'FORWARD',  '-j', 'RH-Firewall-1-INPUT'])
+    except:
+        util.SMlog('Chain BRIDGE-FIREWALL already exists')
+    privnic = get_private_nic(session, args)
+    result = 'true'
+    try:
+        util.pread2(['/bin/bash', '-c', 'iptables -n -L FORWARD | grep BRIDGE-FIREWALL'])
+    except:
+        try:
+            util.pread2(['iptables', '-I', 'FORWARD', '-m', 'physdev', '--physdev-is-bridged', '-j', 'BRIDGE-FIREWALL'])
+            util.pread2(['iptables', '-A', 'FORWARD', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', privnic, '-j', 'ACCEPT'])
+            util.pread2(['iptables', '-A', 'FORWARD', '-j', 'DROP'])
+        except:
+            return 'false'
+    default_ebtables_rules()
+    allow_egress_traffic(session)
+    if not os.path.exists('/var/run/cloud'):
+        os.makedirs('/var/run/cloud')
+    if not os.path.exists('/var/cache/cloud'):
+        os.makedirs('/var/cache/cloud')
+    #get_ipset_keyword()
+ 
+    cleanup_rules_for_dead_vms(session)
+    cleanup_rules(session, args)
+    
+    return result
+
+@echo
+def default_ebtables_rules():
+    try:
+        util.pread2(['ebtables', '-N',  'DEFAULT_EBTABLES'])
+        util.pread2(['ebtables', '-A', 'FORWARD', '-j'  'DEFAULT_EBTABLES'])
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv4', '--ip-dst', '255.255.255.255', '--ip-proto', 'udp', '--ip-dport', '67', '-j', 'ACCEPT'])
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'ARP', '--arp-op', 'Request', '-j', 'ACCEPT'])
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'ARP', '--arp-op', 'Reply', '-j', 'ACCEPT'])
+        # deny mac broadcast and multicast
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv4', '-d', 'Broadcast', '-j', 'DROP']) 
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv4', '-d', 'Multicast', '-j', 'DROP']) 
+        # deny ip broadcast and multicast
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv4', '--ip-dst', '255.255.255.255', '-j', 'DROP'])
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv4', '--ip-dst', '224.0.0.0/4', '-j', 'DROP'])
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv4', '-j', 'RETURN'])
+        # deny ipv6
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', 'IPv6', '-j', 'DROP'])
+        # deny vlan
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES', '-p', '802_1Q', '-j', 'DROP'])
+        # deny all others (e.g., 802.1d, CDP)
+        util.pread2(['ebtables', '-A', 'DEFAULT_EBTABLES',  '-j', 'DROP'])
+    except:
+        util.SMlog('Chain DEFAULT_EBTABLES already exists')
+
+
+@echo
+def allow_egress_traffic(session):
+    devs = []
+    for pif in session.xenapi.PIF.get_all():
+        pif_rec = session.xenapi.PIF.get_record(pif)
+        vlan = pif_rec.get('VLAN')
+        dev = pif_rec.get('device')
+        if vlan == '-1':
+            devs.append(dev)
+        else:
+            devs.append(dev + "." + vlan)
+    for d in devs:
+        try:
+            util.pread2(['/bin/bash', '-c', "iptables -n -L FORWARD | grep '%s '" % d])
+        except:
+            try:
+                util.pread2(['iptables', '-I', 'FORWARD', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', d, '-j', 'ACCEPT'])
+            except:
+                util.SMlog("Failed to add FORWARD rule through to %s" % d)
+                return 'false'
+    return 'true'
+
+
+def ipset(ipsetname, proto, start, end, ips):
+    try:
+        util.pread2(['ipset', '-N', ipsetname, 'iptreemap'])
+    except:
+        util.SMlog("ipset chain already exists" + ipsetname)
+
+    result = True
+    ipsettmp = ''.join(''.join(ipsetname.split('-')).split('_')) + str(int(time.time()) % 1000)
+
+    try: 
+        util.pread2(['ipset', '-N', ipsettmp, 'iptreemap']) 
+    except:
+        util.SMlog("Failed to create temp ipset, reusing old name= " + ipsettmp)
+        try: 
+            util.pread2(['ipset', '-F', ipsettmp]) 
+        except:
+            util.SMlog("Failed to clear old temp ipset name=" + ipsettmp)
+            return False
+        
+    try: 
+        for ip in ips:
+            try:
+                util.pread2(['ipset', '-A', ipsettmp, ip])
+            except CommandException, cex:
+                if cex.reason.rfind('already in set') == -1:
+                   raise
+    except:
+        util.SMlog("Failed to program ipset " + ipsetname)
+        util.pread2(['ipset', '-F', ipsettmp]) 
+        util.pread2(['ipset', '-X', ipsettmp]) 
+        return False
+
+    try: 
+        util.pread2(['ipset', '-W', ipsettmp, ipsetname]) 
+    except:
+        util.SMlog("Failed to swap ipset " + ipsetname)
+        result = False
+
+    try: 
+        util.pread2(['ipset', '-F', ipsettmp]) 
+        util.pread2(['ipset', '-X', ipsettmp]) 
+    except:
+        # if the temporary name clashes next time we'll just reuse it
+        util.SMlog("Failed to delete temp ipset " + ipsettmp)
+
+    return result
+
+@echo 
+def destroy_network_rules_for_vm(session, args):
+    vm_name = args.pop('vmName')
+    vmchain = chain_name(vm_name)
+    vmchain_egress = egress_chain_name(vm_name)
+    vmchain_default = chain_name_def(vm_name)
+    
+    delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
+    if vm_name.startswith('i-') or vm_name.startswith('r-') or vm_name.startswith('l-'):
+        try:
+            util.pread2(['iptables', '-F', vmchain_default])
+            util.pread2(['iptables', '-X', vmchain_default])
+        except:
+            util.SMlog("Ignoring failure to delete  chain " + vmchain_default)
+    
+    destroy_ebtables_rules(vmchain)
+    
+    try:
+        util.pread2(['iptables', '-F', vmchain])
+        util.pread2(['iptables', '-X', vmchain])
+    except:
+        util.SMlog("Ignoring failure to delete ingress chain " + vmchain)
+        
+   
+    try:
+        util.pread2(['iptables', '-F', vmchain_egress])
+        util.pread2(['iptables', '-X', vmchain_egress])
+    except:
+        util.SMlog("Ignoring failure to delete egress chain " + vmchain_egress)
+    
+    remove_rule_log_for_vm(vm_name)
+    
+    if 1 in [ vm_name.startswith(c) for c in ['r-', 's-', 'v-', 'l-'] ]:
+        return 'true'
+    
+    try:
+        setscmd = "ipset --save | grep " +  vmchain + " | grep '^-N' | awk '{print $2}'"
+        setsforvm = util.pread2(['/bin/bash', '-c', setscmd]).split('\n')
+        for set in setsforvm:
+            if set != '':
+                util.pread2(['ipset', '-F', set])       
+                util.pread2(['ipset', '-X', set])       
+    except:
+        util.SMlog("Failed to destroy ipsets for %" % vm_name)
+    
+    
+    return 'true'
+
+@echo
+def destroy_ebtables_rules(vm_chain):
+    
+    delcmd = "ebtables-save | grep " +  vm_chain + " | sed 's/-A/-D/'"
+    delcmds = util.pread2(['/bin/bash', '-c', delcmd]).split('\n')
+    delcmds.pop()
+    for cmd in delcmds:
+        try:
+            dc = cmd.split(' ')
+            dc.insert(0, 'ebtables')
+            util.pread2(dc)
+        except:
+            util.SMlog("Ignoring failure to delete ebtables rules for vm " + vm_chain)
+    try:
+        util.pread2(['ebtables', '-F', vm_chain])
+        util.pread2(['ebtables', '-X', vm_chain])
+    except:
+            util.SMlog("Ignoring failure to delete ebtables chain for vm " + vm_chain)   
+
+@echo
+def destroy_arptables_rules(vm_chain):
+    delcmd = "arptables -vL FORWARD | grep " + vm_chain + " | sed 's/-i any//' | sed 's/-o any//' | awk '{print $1,$2,$3,$4}' "
+    delcmds = util.pread2(['/bin/bash', '-c', delcmd]).split('\n')
+    delcmds.pop()
+    for cmd in delcmds:
+        try:
+            dc = cmd.split(' ')
+            dc.insert(0, 'arptables')
+            dc.insert(1, '-D')
+            dc.insert(2, 'FORWARD')
+            util.pread2(dc)
+        except:
+            util.SMlog("Ignoring failure to delete arptables rules for vm " + vm_chain)
+    
+    try:
+        util.pread2(['arptables', '-F', vm_chain])
+        util.pread2(['arptables', '-X', vm_chain])
+    except:
+        util.SMlog("Ignoring failure to delete arptables chain for vm " + vm_chain) 
+              
+@echo
+def default_ebtables_antispoof_rules(vm_chain, vifs, vm_ip, vm_mac):
+    if vm_mac == 'ff:ff:ff:ff:ff:ff':
+        util.SMlog("Ignoring since mac address is not valid")
+        return 'true'
+    
+    try:
+        util.pread2(['ebtables', '-N', vm_chain])
+    except:
+        try:
+            util.pread2(['ebtables', '-F', vm_chain])
+        except:
+            util.SMlog("Failed to create ebtables antispoof chain, skipping")
+            return 'true'
+
+    # note all rules for packets into the bridge (-i) precede all output rules (-o)
+    # always start after the first rule in the FORWARD chain that jumps to DEFAULT_EBTABLES chain
+    try:
+        for vif in vifs:
+            util.pread2(['ebtables', '-I', 'FORWARD', '2', '-i',  vif,  '-j', vm_chain])
+            util.pread2(['ebtables', '-A', 'FORWARD', '-o',  vif, '-j', vm_chain])
+    except:
+        util.SMlog("Failed to program default ebtables FORWARD rules for %s" % vm_chain)
+        return 'false'
+
+    try:
+        for vif in vifs:
+            # only allow source mac that belongs to the vm
+	    util.pread2(['ebtables', '-A', vm_chain, '-i', vif, '-s', '!', vm_mac,  '-j', 'DROP'])
+            # do not allow fake dhcp responses
+            util.pread2(['ebtables', '-A', vm_chain, '-i', vif, '-p', 'IPv4', '--ip-proto', 'udp', '--ip-dport', '68', '-j', 'DROP'])
+            # do not allow snooping of dhcp requests
+            util.pread2(['ebtables', '-A', vm_chain, '-o', vif, '-p', 'IPv4', '--ip-proto', 'udp', '--ip-dport', '67', '-j', 'DROP'])
+    except:
+        util.SMlog("Failed to program default ebtables antispoof rules for %s" % vm_chain)
+        return 'false'
+
+    return 'true'
+
+@echo
+def default_arp_antispoof(vm_chain, vifs, vm_ip, vm_mac):
+    if vm_mac == 'ff:ff:ff:ff:ff:ff':
+        util.SMlog("Ignoring since mac address is not valid")
+        return 'true'
+
+    try:
+        util.pread2(['arptables',  '-N', vm_chain])
+    except:
+        try:
+            util.pread2(['arptables', '-F', vm_chain])
+        except:
+            util.SMlog("Failed to create arptables rule, skipping")
+            return 'true'
+
+    # note all rules for packets into the bridge (-i) precede all output rules (-o)
+    try:
+        for vif in vifs:
+           util.pread2(['arptables',  '-I', 'FORWARD', '-i',  vif, '-j', vm_chain])
+           util.pread2(['arptables',  '-A', 'FORWARD', '-o',  vif, '-j', vm_chain])
+    except:
+        util.SMlog("Failed to program default arptables rules in FORWARD chain vm=" + vm_chain)
+        return 'false'
+    
+    try:
+        for vif in vifs:
+            #accept arp replies into the bridge as long as the source mac and ips match the vm
+            util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--opcode', 'Reply', '--source-mac',  vm_mac, '--source-ip',  vm_ip, '-j', 'ACCEPT'])
+            #accept any arp requests from this vm. In the future this can be restricted to deny attacks on hosts
+            #also important to restrict source ip and src mac in these requests as they can be used to update arp tables on destination
+            util.pread2(['arptables',  '-A', vm_chain, '-i', vif, '--opcode', 'Request',  '--source-mac',  vm_mac, '--source-ip',  vm_ip, '-j', 'RETURN'])
+            #accept any arp requests to this vm as long as the request is for this vm's ip
+            util.pread2(['arptables',  '-A', vm_chain, '-o', vif, '--opcode', 'Request', '--destination-ip', vm_ip, '-j', 'ACCEPT'])   
+            #accept any arp replies to this vm as long as the mac and ip matches
+            util.pread2(['arptables',  '-A', vm_chain, '-o', vif, '--opcode', 'Reply', '--destination-mac', vm_mac, '--destination-ip', vm_ip, '-j', 'ACCEPT'])   
+        util.pread2(['arptables',  '-A', vm_chain,  '-j', 'DROP'])
+
+    except:
+        util.SMlog("Failed to program default arptables  rules")
+        return 'false'
+
+    return 'true'
+
+@echo
+def default_network_rules_systemvm(session, args):
+    vm_name = args.pop('vmName')
+    try:
+        vm = session.xenapi.VM.get_by_name_label(vm_name)
+        if len(vm) != 1:
+             return 'false'
+        vm_rec = session.xenapi.VM.get_record(vm[0])
+        vm_vifs = vm_rec.get('VIFs')
+        vifnums = [session.xenapi.VIF.get_record(vif).get('device') for vif in vm_vifs]
+        domid = vm_rec.get('domid')
+    except:
+        util.SMlog("### Failed to get domid or vif list for vm  ##" + vm_name)
+        return 'false'
+    
+    if domid == '-1':
+        util.SMlog("### Failed to get domid for vm (-1):  " + vm_name)
+        return 'false'
+
+    vifs = ["vif" + domid + "." + v for v in vifnums]
+    #vm_name =  '-'.join(vm_name.split('-')[:-1])
+    vmchain = chain_name(vm_name)
+   
+ 
+    delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
+  
+    try:
+        util.pread2(['iptables', '-N', vmchain])
+    except:
+        util.pread2(['iptables', '-F', vmchain])
+    
+    allow_egress_traffic(session)
+  
+    for vif in vifs:
+        try:
+            util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', vif, '-j', vmchain])
+            util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '4', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '-j', vmchain])
+            util.pread2(['iptables', '-I', vmchain, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '-j', 'RETURN'])
+        except:
+            util.SMlog("Failed to program default rules")
+            return 'false'
+	
+	
+    util.pread2(['iptables', '-A', vmchain, '-j', 'ACCEPT'])
+    
+    if write_rule_log_for_vm(vm_name, '-1', '_ignore_', domid, '_initial_', '-1') == False:
+        util.SMlog("Failed to log default network rules for systemvm, ignoring")
+    return 'true'
+
+
+@echo
+def default_network_rules(session, args):
+    vm_name = args.pop('vmName')
+    vm_ip = args.pop('vmIP')
+    vm_id = args.pop('vmID')
+    vm_mac = args.pop('vmMAC')
+    
+    try:
+        vm = session.xenapi.VM.get_by_name_label(vm_name)
+        if len(vm) != 1:
+             util.SMlog("### Failed to get record for vm  " + vm_name)
+             return 'false'
+        vm_rec = session.xenapi.VM.get_record(vm[0])
+        domid = vm_rec.get('domid')
+    except:
+        util.SMlog("### Failed to get domid for vm " + vm_name)
+        return 'false'
+    if domid == '-1':     
+        util.SMlog("### Failed to get domid for vm (-1):  " + vm_name)
+        return 'false'
+    
+    vif = "vif" + domid + ".0"
+    tap = "tap" + domid + ".0"
+    vifs = [vif]
+    try:
+        util.pread2(['ifconfig', tap])
+        vifs.append(tap)
+    except:
+        pass
+
+    delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
+
+     
+    vmchain =  chain_name(vm_name)
+    vmchain_egress =  egress_chain_name(vm_name)
+    vmchain_default = chain_name_def(vm_name)
+    
+    destroy_ebtables_rules(vmchain)
+    
+
+    try:
+        util.pread2(['iptables', '-N', vmchain])
+    except:
+        util.pread2(['iptables', '-F', vmchain])
+    
+    try:
+        util.pread2(['iptables', '-N', vmchain_egress])
+    except:
+        util.pread2(['iptables', '-F', vmchain_egress])
+        
+    try:
+        util.pread2(['iptables', '-N', vmchain_default])
+    except:
+        util.pread2(['iptables', '-F', vmchain_default])        
+
+    try:
+        for v in vifs:
+            util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default])
+            util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
+        util.pread2(['iptables', '-A', vmchain_default, '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
+        #allow dhcp
+        for v in vifs:
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-p', 'udp', '--dport', '67', '--sport', '68',  '-j', 'ACCEPT'])
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-p', 'udp', '--dport', '68', '--sport', '67',  '-j', 'ACCEPT'])
+
+        #don't let vm spoof its ip address
+        for v in vifs:
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip,'-p', 'udp', '--dport', '53', '-j', 'RETURN'])
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', '!', vm_ip, '-j', 'DROP'])
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '--destination', '!', vm_ip, '-j', 'DROP'])
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip, '-j', vmchain_egress])
+        
+        for v in vifs:
+            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v,  '-j', vmchain])
+    except:
+        util.SMlog("Failed to program default rules for vm " + vm_name)
+        return 'false'
+    
+    default_arp_antispoof(vmchain, vifs, vm_ip, vm_mac)
+    default_ebtables_antispoof_rules(vmchain, vifs, vm_ip, vm_mac)
+    
+    if write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, '_initial_', '-1', vm_mac) == False:
+        util.SMlog("Failed to log default network rules, ignoring")
+        
+    util.SMlog("Programmed default rules for vm " + vm_name)
+    return 'true'
+
+@echo
+def check_domid_changed(session, vmName):
+    curr_domid = '-1'
+    try:
+        vm = session.xenapi.VM.get_by_name_label(vmName)
+        if len(vm) != 1:
+             util.SMlog("### Could not get record for vm ## " + vmName)
+        else:
+            vm_rec = session.xenapi.VM.get_record(vm[0])
+            curr_domid = vm_rec.get('domid')
+    except:
+        util.SMlog("### Failed to get domid for vm  ## " + vmName)
+        
+    
+    logfilename = "/var/run/cloud/" + vmName +".log"
+    if not os.path.exists(logfilename):
+        return ['-1', curr_domid]
+    
+    lines = (line.rstrip() for line in open(logfilename))
+    
+    [_vmName,_vmID,_vmIP,old_domid,_signature,_seqno, _vmMac] = ['_', '-1', '_', '-1', '_', '-1', 'ff:ff:ff:ff:ff:ff']
+    for line in lines:
+        try:
+            [_vmName,_vmID,_vmIP,old_domid,_signature,_seqno,_vmMac] = line.split(',')
+        except ValueError,v:
+            [_vmName,_vmID,_vmIP,old_domid,_signature,_seqno] = line.split(',')
+        break
+    
+    return [curr_domid, old_domid]
+
+@echo
+def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
+    vm_name = vmName
+    vmchain = chain_name_def(vm_name)
+    
+    delcmd = "iptables-save | grep '\-A BRIDGE-FIREWALL' | grep " +  vmchain + " | sed 's/-A/-D/'"
+    delcmds = util.pread2(['/bin/bash', '-c', delcmd]).split('\n')
+    delcmds.pop()
+    for cmd in delcmds:
+        try:
+            dc = cmd.split(' ')
+            dc.insert(0, 'iptables')
+            dc.pop()
+            util.pread2(filter(None, dc))
+        except:
+              util.SMlog("Ignoring failure to delete rules for vm " + vmName)
+
+  
+@echo
+def network_rules_for_rebooted_vm(session, vmName):
+    vm_name = vmName
+    [curr_domid, old_domid] = check_domid_changed(session, vm_name)
+    
+    if curr_domid == old_domid:
+        return True
+    
+    if old_domid == '-1':
+        return True
+    
+    if curr_domid == '-1':
+        return True
+    
+    util.SMlog("Found a rebooted VM -- reprogramming rules for  " + vm_name)
+    
+    delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
+    if 1 in [ vm_name.startswith(c) for c in ['r-', 's-', 'v-', 'l-'] ]:
+        default_network_rules_systemvm(session, {"vmName":vm_name})
+        return True
+    
+    vif = "vif" + curr_domid + ".0"
+    tap = "tap" + curr_domid + ".0"
+    vifs = [vif]
+    try:
+        util.pread2(['ifconfig', tap])
+        vifs.append(tap)
+    except:
+        pass
+    vmchain = chain_name(vm_name)
+    vmchain_default = chain_name_def(vm_name)
+
+    for v in vifs:
+        util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default])
+        util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
+
+    #change antispoof rule in vmchain
+    try:
+        delcmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-in | sed 's/-A/-D/'"
+        delcmd2 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | sed 's/-A/-D/'"
+        inscmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' "
+        inscmd2 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' "
+        inscmd3 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' "
+        inscmd4 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' "
+        
+        ipts = []
+        for cmd in [delcmd, delcmd2, inscmd, inscmd2, inscmd3, inscmd4]:
+            cmds = util.pread2(['/bin/bash', '-c', cmd]).split('\n')
+            cmds.pop()
+            for c in cmds:
+                    ipt = c.split(' ')
+                    ipt.insert(0, 'iptables')
+                    ipt.pop()
+                    ipts.append(ipt)
+        
+        for ipt in ipts:
+            try:
+                util.pread2(filter(None,ipt))
+            except:
+                util.SMlog("Failed to rewrite antispoofing rules for vm " + vm_name)
+        
+        util.pread2(['/bin/bash', '-c', 'iptables -D ' + vmchain_default + " -j " + vmchain])
+        util.pread2(['/bin/bash', '-c', 'iptables -A ' + vmchain_default + " -j " + vmchain])
+    except:
+        util.SMlog("No rules found for vm " + vm_name)
+
+    destroy_ebtables_rules(vmchain)
+    destroy_arptables_rules(vmchain)
+    [vm_ip, vm_mac] = get_vm_mac_ip_from_log(vmchain)
+    default_arp_antispoof(vmchain, vifs, vm_ip, vm_mac)
+    default_ebtables_antispoof_rules(vmchain, vifs, vm_ip, vm_mac)
+    rewrite_rule_log_for_vm(vm_name, curr_domid)
+    return True
+
+def rewrite_rule_log_for_vm(vm_name, new_domid):
+    logfilename = "/var/run/cloud/" + vm_name +".log"
+    if not os.path.exists(logfilename):
+        return 
+    lines = (line.rstrip() for line in open(logfilename))
+    
+    [_vmName,_vmID,_vmIP,_domID,_signature,_seqno,_vmMac] = ['_', '-1', '_', '-1', '_', '-1','ff:ff:ff:ff:ff:ff']
+    for line in lines:
+        try:
+            [_vmName,_vmID,_vmIP,_domID,_signature,_seqno,_vmMac] = line.split(',')
+            break
+        except ValueError,v:
+            [_vmName,_vmID,_vmIP,_domID,_signature,_seqno] = line.split(',')
+    
+    write_rule_log_for_vm(_vmName, _vmID, _vmIP, new_domid, _signature, '-1', _vmMac)
+
+def get_rule_log_for_vm(session, vmName):
+    vm_name = vmName;
+    logfilename = "/var/run/cloud/" + vm_name +".log"
+    if not os.path.exists(logfilename):
+        return ''
+    
+    lines = (line.rstrip() for line in open(logfilename))
+    
+    [_vmName,_vmID,_vmIP,_domID,_signature,_seqno,_vmMac] = ['_', '-1', '_', '-1', '_', '-1', 'ff:ff:ff:ff:ff:ff']
+    for line in lines:
+        try:
+            [_vmName,_vmID,_vmIP,_domID,_signature,_seqno,_vmMac] = line.split(',')
+            break
+        except ValueError,v:
+            [_vmName,_vmID,_vmIP,_domID,_signature,_seqno] = line.split(',')
+    
+    return ','.join([_vmName, _vmID, _vmIP, _domID, _signature, _seqno])
+
+@echo
+def get_vm_mac_ip_from_log(vm_name):
+    [_vmName,_vmID,_vmIP,_domID,_signature,_seqno,_vmMac] = ['_', '-1', '0.0.0.0', '-1', '_', '-1','ff:ff:ff:ff:ff:ff']
+    logfilename = "/var/run/cloud/" + vm_name +".log"
+    if not os.path.exists(logfilename):
+        return ['_', '_']
+    
+    lines = (line.rstrip() for line in open(logfilename))
+    for line in lines:
+        try:
+            [_vmName,_vmID,_vmIP,_domID,_signature,_seqno,_vmMac] = line.split(',')
+            break
+        except ValueError,v:
+            [_vmName,_vmID,_vmIP,_domID,_signature,_seqno] = line.split(',')
+    
+    return [ _vmIP, _vmMac]
+
+@echo
+def get_rule_logs_for_vms(session, args):
+    host_uuid = args.pop('host_uuid')
+    try:
+        thishost = session.xenapi.host.get_by_uuid(host_uuid)
+        hostrec = session.xenapi.host.get_record(thishost)
+        vms = hostrec.get('resident_VMs')
+    except:
+        util.SMlog("Failed to get host from uuid " + host_uuid)
+        return ' '
+    
+    result = []
+    try:
+        for name in [session.xenapi.VM.get_name_label(x) for x in vms]:
+            if 1 not in [ name.startswith(c) for c in ['r-', 's-', 'v-', 'i-', 'l-'] ]:
+                continue
+            network_rules_for_rebooted_vm(session, name)
+            if name.startswith('i-'):
+                log = get_rule_log_for_vm(session, name)
+                result.append(log)
+    except:
+        util.SMlog("Failed to get rule logs, better luck next time!")
+        
+    return ";".join(result)
+
+@echo
+def cleanup_rules_for_dead_vms(session):
+  try:
+    vms = session.xenapi.VM.get_all()
+    cleaned = 0
+    for vm_name in [session.xenapi.VM.get_name_label(x) for x in vms]:
+        if 1 in [ vm_name.startswith(c) for c in ['r-', 'i-', 's-', 'v-', 'l-'] ]:
+            vm = session.xenapi.VM.get_by_name_label(vm_name)
+            if len(vm) != 1:
+                continue
+            vm_rec = session.xenapi.VM.get_record(vm[0])
+            state = vm_rec.get('power_state')
+            if state != 'Running' and state != 'Paused':
+                util.SMlog("vm " + vm_name + " is not running, cleaning up")
+                destroy_network_rules_for_vm(session, {'vmName':vm_name})
+                cleaned = cleaned+1
+                
+    util.SMlog("Cleaned up rules for " + str(cleaned) + " vms")
+  except:
+    util.SMlog("Failed to cleanup rules for dead vms!")
+        
+
+@echo
+def cleanup_rules(session, args):
+  instance = args.get('instance')
+  if not instance:
+    instance = 'VM'
+  resident_vms = []
+  try:
+    hostname = util.pread2(['/bin/bash', '-c', 'hostname']).split('\n')
+    if len(hostname) < 1:
+       raise Exception('Could not find hostname of this host')
+    thishost = session.xenapi.host.get_by_name_label(hostname[0])
+    if len(thishost) < 1:
+       raise Exception("Could not find host record from hostname %s of this host"%hostname[0])
+    hostrec = session.xenapi.host.get_record(thishost[0])
+    vms = hostrec.get('resident_VMs')
+    resident_vms = [session.xenapi.VM.get_name_label(x) for x in vms]
+    util.SMlog('cleanup_rules: found %s resident vms on this host %s' % (len(resident_vms)-1, hostname[0]))
+ 
+    chainscmd = "iptables-save | grep '^:' | awk '{print $1}' | cut -d':' -f2 | sed 's/-def/-%s/'| sed 's/-eg//' | sort|uniq" % instance
+    chains = util.pread2(['/bin/bash', '-c', chainscmd]).split('\n')
+    vmchains = [ch  for ch in chains if 1 in [ ch.startswith(c) for c in ['r-', 'i-', 's-', 'v-', 'l-']]]
+    util.SMlog('cleanup_rules: found %s iptables chains for vms on this host %s' % (len(vmchains), hostname[0]))
+    cleaned = 0
+    cleanup = []
+    for chain in vmchains:
+        vm = session.xenapi.VM.get_by_name_label(chain)
+        if len(vm) != 1:
+            vm = session.xenapi.VM.get_by_name_label(chain + "-untagged")
+            if len(vm) != 1:
+                util.SMlog("chain " + chain + " does not correspond to a vm, cleaning up")
+                cleanup.append(chain)
+                continue
+        if chain not in resident_vms:
+            util.SMlog("vm " + chain + " is not running, cleaning up")
+            cleanup.append(chain)
+                
+    for vm_name in cleanup:
+        destroy_network_rules_for_vm(session, {'vmName':vm_name})
+                    
+    util.SMlog("Cleaned up rules for " + str(len(cleanup)) + " chains")
+    return str(len(cleanup))                
+  except Exception, ex:
+    util.SMlog("Failed to cleanup rules, reason= " + str(ex))
+    return '-1';
+
+@echo
+def check_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
+    vm_name = vmName;
+    logfilename = "/var/run/cloud/" + vm_name +".log"
+    if not os.path.exists(logfilename):
+        util.SMlog("Failed to find logfile %s" %logfilename)
+        return [True, True, True]
+        
+    lines = (line.rstrip() for line in open(logfilename))
+    
+    [_vmName,_vmID,_vmIP,_domID,_signature,_seqno,_vmMac] = ['_', '-1', '_', '-1', '_', '-1', 'ff:ff:ff:ff:ff:ff']
+    try:
+        for line in lines:
+            try:
+                [_vmName,_vmID,_vmIP,_domID,_signature,_seqno, _vmMac] = line.split(',')
+            except ValueError,v:
+                [_vmName,_vmID,_vmIP,_domID,_signature,_seqno] = line.split(',')
+            break
+    except:
+        util.SMlog("Failed to parse log file for vm " + vmName)
+        remove_rule_log_for_vm(vmName)
+        return [True, True, True]
+    
+    reprogramDefault = False
+    if (domID != _domID) or (vmID != _vmID) or (vmIP != _vmIP):
+        util.SMlog("Change in default info set of vm %s" % vmName)
+        return [True, True, True]
+    else:
+        util.SMlog("No change in default info set of vm %s" % vmName)
+    
+    reprogramChain = False
+    rewriteLog = True
+    if (int(seqno) > int(_seqno)):
+        if (_signature != signature):
+            reprogramChain = True
+            util.SMlog("Seqno increased from %s to %s: reprogamming "\
+                        "ingress rules for vm %s" % (_seqno, seqno, vmName))
+        else:
+            util.SMlog("Seqno increased from %s to %s: but no change "\
+                        "in signature for vm: skip programming ingress "\
+                        "rules %s" % (_seqno, seqno, vmName))
+    elif (int(seqno) < int(_seqno)):
+        util.SMlog("Seqno decreased from %s to %s: ignoring these "\
+                        "ingress rules for vm %s" % (_seqno, seqno, vmName))
+        rewriteLog = False
+    elif (signature != _signature):
+        util.SMlog("Seqno %s stayed the same but signature changed from "\
+                    "%s to %s for vm %s" % (seqno, _signature, signature, vmName))
+        rewriteLog = True
+        reprogramChain = True
+    else:
+        util.SMlog("Seqno and signature stayed the same: %s : ignoring these "\
+                        "ingress rules for vm %s" % (seqno, vmName))
+        rewriteLog = False
+        
+    return [reprogramDefault, reprogramChain, rewriteLog]
+    
+
+@echo
+def write_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno, vmMac='ff:ff:ff:ff:ff:ff'):
+    vm_name = vmName
+    logfilename = "/var/run/cloud/" + vm_name +".log"
+    util.SMlog("Writing log to " + logfilename)
+    logf = open(logfilename, 'w')
+    output = ','.join([vmName, vmID, vmIP, domID, signature, seqno, vmMac])
+    result = True
+    try:
+        logf.write(output)
+        logf.write('\n')
+    except:
+        util.SMlog("Failed to write to rule log file " + logfilename)
+        result = False
+        
+    logf.close()
+    
+    return result
+
+@echo
+def remove_rule_log_for_vm(vmName):
+    vm_name = vmName
+    logfilename = "/var/run/cloud/" + vm_name +".log"
+
+    result = True
+    try:
+        os.remove(logfilename)
+    except:
+        util.SMlog("Failed to delete rule log file " + logfilename)
+        result = False
+    
+    return result
+
+@echo
+def inflate_rules (zipped):
+   return zlib.decompress(base64.b64decode(zipped))
+
+@echo
+def cache_ipset_keyword():
+    tmpname = 'ipsetqzvxtmp'
+    try:
+        util.pread2(['/bin/bash', '-c', 'ipset -N ' + tmpname + ' iptreemap'])
+    except:
+        util.pread2(['/bin/bash', '-c', 'ipset -F ' + tmpname])
+
+    try:
+        util.pread2(['/bin/bash', '-c', 'iptables -A INPUT -m set --set ' + tmpname + ' src' + ' -j ACCEPT'])
+        util.pread2(['/bin/bash', '-c', 'iptables -D INPUT -m set --set ' + tmpname + ' src' + ' -j ACCEPT'])
+        keyword = 'set'
+    except:
+        keyword = 'match-set'
+    
+    try:
+       util.pread2(['/bin/bash', '-c', 'ipset -X ' + tmpname])
+    except:
+       pass
+       
+    cachefile = "/var/cache/cloud/ipset.keyword"
+    util.SMlog("Writing ipset keyword to " + cachefile)
+    cachef = open(cachefile, 'w')
+    try:
+        cachef.write(keyword)
+        cachef.write('\n')
+    except:
+        util.SMlog("Failed to write to cache file " + cachef)
+        
+    cachef.close()
+    return keyword
+    
+@echo
+def get_ipset_keyword():
+    cachefile = "/var/cache/cloud/ipset.keyword"
+    keyword = 'match-set'
+    
+    if not os.path.exists(cachefile):
+        util.SMlog("Failed to find ipset keyword cachefile %s" %cachefile)
+        keyword = cache_ipset_keyword()
+    else:
+        lines = (line.rstrip() for line in open(cachefile))
+        for line in lines:
+            keyword = line
+            break
+
+    return keyword
+
+@echo
+def network_rules(session, args):
+  try:
+    vm_name = args.get('vmName')
+    vm_ip = args.get('vmIP')
+    vm_id = args.get('vmID')
+    vm_mac = args.get('vmMAC')
+    signature = args.pop('signature')
+    seqno = args.pop('seqno')
+    deflated = 'false'
+    if 'deflated' in args:
+        deflated = args.pop('deflated')
+    
+    try:
+        vm = session.xenapi.VM.get_by_name_label(vm_name)
+        if len(vm) != 1:
+             util.SMlog("### Could not get record for vm ## " + vm_name)
+             return 'false'
+        vm_rec = session.xenapi.VM.get_record(vm[0])
+        domid = vm_rec.get('domid')
+    except:
+        util.SMlog("### Failed to get domid for vm  ## " + vm_name)
+        return 'false'
+    if domid == '-1':
+        util.SMlog("### Failed to get domid for vm (-1):  " + vm_name)
+        return 'false'
+   
+    vif = "vif" + domid + ".0"
+    tap = "tap" + domid + ".0"
+    vifs = [vif]
+    try:
+        util.pread2(['ifconfig', tap])
+        vifs.append(tap)
+    except:
+        pass
+   
+
+    reason = 'seqno_change_or_sig_change'
+    [reprogramDefault, reprogramChain, rewriteLog] = \
+             check_rule_log_for_vm (vm_name, vm_id, vm_ip, domid, signature, seqno)
+    
+    if not reprogramDefault and not reprogramChain:
+        util.SMlog("No changes detected between current state and received state")
+        reason = 'seqno_same_sig_same'
+        if rewriteLog:
+            reason = 'seqno_increased_sig_same'
+            write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, signature, seqno, vm_mac)
+        util.SMlog("Programming network rules for vm  %s seqno=%s signature=%s guestIp=%s,"\
+               " do nothing, reason=%s" % (vm_name, seqno, signature, vm_ip, reason))
+        return 'true'
+           
+    if not reprogramChain:
+        util.SMlog("###Not programming any ingress rules since no changes detected?")
+        return 'true'
+
+    if reprogramDefault:
+        util.SMlog("Change detected in vmId or vmIp or domId, resetting default rules")
+        default_network_rules(session, args)
+        reason = 'domid_change'
+    
+    rules = args.pop('rules')
+    if deflated.lower() == 'true':
+       rules = inflate_rules (rules)
+    keyword = '--' + get_ipset_keyword() 
+    lines = rules.split(' ')
+
+    util.SMlog("Programming network rules for vm  %s seqno=%s numrules=%s signature=%s guestIp=%s,"\
+              " update iptables, reason=%s" % (vm_name, seqno, len(lines), signature, vm_ip, reason))
+    
+    cmds = []
+    egressrules = 0
+    for line in lines:
+        tokens = line.split(':')
+        if len(tokens) != 5:
+          continue
+        type = tokens[0]
+        protocol = tokens[1]
+        start = tokens[2]
+        end = tokens[3]
+        cidrs = tokens.pop();
+        ips = cidrs.split(",")
+        ips.pop()
+        allow_any = False
+
+        if type == 'E':
+            vmchain = egress_chain_name(vm_name)
+            action = "RETURN"
+            direction = "dst"
+            egressrules = egressrules + 1
+        else:
+            vmchain = chain_name(vm_name)
+            action = "ACCEPT"
+            direction = "src"
+        if  '0.0.0.0/0' in ips:
+            i = ips.index('0.0.0.0/0')
+            del ips[i]
+            allow_any = True
+        range = start + ":" + end
+        if ips:    
+            ipsetname = vmchain + "_" + protocol + "_" + start + "_" + end
+            if start == "-1":
+                ipsetname = vmchain + "_" + protocol + "_any"
+
+            if ipset(ipsetname, protocol, start, end, ips) == False:
+                util.SMlog(" failed to create ipset for rule " + str(tokens))
+
+            if protocol == 'all':
+                iptables = ['iptables', '-I', vmchain, '-m', 'state', '--state', 'NEW', '-m', 'set', keyword, ipsetname, direction, '-j', action]
+            elif protocol != 'icmp':
+                iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-m', 'set', keyword, ipsetname, direction, '-j', action]
+            else:
+                range = start + "/" + end
+                if start == "-1":
+                    range = "any"
+                iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range,  '-m', 'set', keyword, ipsetname, direction, '-j', action]
+                
+            cmds.append(iptables)
+            util.SMlog(iptables)
+        
+        if allow_any and protocol != 'all':
+            if protocol != 'icmp':
+                iptables = ['iptables', '-I', vmchain, '-p',  protocol, '-m', protocol, '--dport', range, '-m', 'state', '--state', 'NEW', '-j', action]
+            else:
+                range = start + "/" + end
+                if start == "-1":
+                    range = "any"
+                iptables = ['iptables', '-I', vmchain, '-p',  'icmp', '--icmp-type',  range, '-j', action]
+            cmds.append(iptables)
+            util.SMlog(iptables)
+      
+    vmchain = chain_name(vm_name)        
+    util.pread2(['iptables', '-F', vmchain])
+    egress_vmchain = egress_chain_name(vm_name)        
+    util.pread2(['iptables', '-F', egress_vmchain])
+    
+    for cmd in cmds:
+        util.pread2(cmd)
+        
+    if egressrules == 0 :
+        util.pread2(['iptables', '-A', egress_vmchain, '-j', 'RETURN'])
+    else:
+        util.pread2(['iptables', '-A', egress_vmchain, '-j', 'DROP'])
+   
+    util.pread2(['iptables', '-A', vmchain, '-j', 'DROP'])
+
+    if write_rule_log_for_vm(vm_name, vm_id, vm_ip, domid, signature, seqno, vm_mac) == False:
+        return 'false'
+    
+    return 'true'
+  except:
+    util.SMlog("Failed to network rule !")
+
+@echo
+def checkRouter(session, args):
+    sargs = args['args']
+    cmd = sargs.split(' ')
+    cmd.insert(0, "/opt/cloud/bin/getRouterStatus.sh")
+    cmd.insert(0, "/bin/bash")
+    try:
+        txt = util.pread2(cmd)
+    except:
+        util.SMlog("  check router status fail! ")
+        txt = '' 
+
+    return txt
+
+@echo
+def bumpUpPriority(session, args):
+    sargs = args['args']
+    cmd = sargs.split(' ')
+    cmd.insert(0, "/opt/cloud/bin/bumpUpPriority.sh")
+    cmd.insert(0, "/bin/bash")
+    try:
+        txt = util.pread2(cmd)
+        txt = 'success'
+    except:
+        util.SMlog("bump up priority fail! ")
+        txt = ''
+
+    return txt
+    
+@echo
+def setDNATRule(session, args):
+    add = args["add"]
+    if add == "false":
+        util.pread2(["iptables", "-t", "nat", "-F"])
+    else:
+        ip = args["ip"]
+        port = args["port"]
+        util.pread2(["iptables", "-t", "nat", "-F"])
+        util.pread2(["iptables", "-t", "nat", "-A", "PREROUTING", "-i", "xenbr0", "-p", "tcp", "--dport", port, "-m", "state", "--state", "NEW", "-j", "DNAT", "--to-destination", ip +":443"])
+    return ""
+
+@echo
+def createISOVHD(session, args):
+    # Should not create the VDI if the systemvm.iso does not exist
+    if not os.path.exists('/usr/share/xcp/packages/iso/systemvm.iso'):
+        return "Failed"
+    #hack for XCP on ubuntu 12.04, as can't attach iso to a vm
+    vdis = session.xenapi.VDI.get_by_name_label("systemvm-vdi");
+    util.SMlog(vdis)
+    if len(vdis) > 0:
+        vdi_record = session.xenapi.VDI.get_record(vdis[0])
+        vdi_uuid = vdi_record['uuid']
+        return vdi_uuid
+    localsrUUid = args['uuid'];
+    sr = session.xenapi.SR.get_by_uuid(localsrUUid)
+    data = {'name_label': "systemvm-vdi",
+            'SR': sr,
+            'virtual_size': '50000000',
+            'type': 'user',
+            'sharable':False,
+            'read_only':False,
+            'other_config':{},
+            }
+    vdi = session.xenapi.VDI.create(data);
+    vdi_record = session.xenapi.VDI.get_record(vdi)
+
+    vdi_uuid = vdi_record['uuid']
+
+    vms = session.xenapi.VM.get_all()
+    ctrldom = None
+    for vm in vms:
+        dom0 = session.xenapi.VM.get_is_control_domain(vm)
+        if dom0 is False:
+            continue
+        else:
+            ctrldom = vm
+
+    if ctrldom is None:
+        return "Failed"
+
+    vbds = session.xenapi.VM.get_VBDs(ctrldom)
+    if len(vbds) == 0:
+        vbd = session.xenapi.VBD.create({"VDI": vdi, "VM": ctrldom, "type":"Disk", "device": "xvda4",  "bootable": False, "mode": "RW", "userdevice": "4", "empty":False,
+                              "other_config":{}, "qos_algorithm_type":"", "qos_algorithm_params":{}})
+    else:
+        vbd = vbds[0]
+
+    vbdr = session.xenapi.VBD.get_record(vbd)
+    if session.xenapi.VBD.get_currently_attached(vbd) is False:
+        session.xenapi.VBD.plug(vbd)
+        vbdr = session.xenapi.VBD.get_record(vbd)
+    util.pread2(["dd", "if=/usr/share/xcp/packages/iso/systemvm.iso", "of=" + "/dev/" + vbdr["device"]])
+    session.xenapi.VBD.unplug(vbd)
+    session.xenapi.VBD.destroy(vbd)
+    return vdi_uuid
+
+@echo
+def getDomRVersion(session, args):
+    sargs = args['args']
+    cmd = sargs.split(' ')
+    cmd.insert(0, "/opt/cloud/bin/getDomRVersion.sh")
+    cmd.insert(0, "/bin/bash")
+    try:
+        txt = util.pread2(cmd)
+    except:
+        util.SMlog("  get domR version fail! ")
+        txt = '' 
+
+    return txt
+
+if __name__ == "__main__":
+     XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi,
+                            "preparemigration": preparemigration, 
+                            "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
+                            "ipassoc": ipassoc, "savePassword": savePassword, 
+                            "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, 
+                            "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, 
+                            "networkUsage": networkUsage, "network_rules":network_rules, 
+                            "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules,
+                            "destroy_network_rules_for_vm":destroy_network_rules_for_vm, 
+                            "default_network_rules_systemvm":default_network_rules_systemvm, 
+                            "get_rule_logs_for_vms":get_rule_logs_for_vms, 
+                            "setLinkLocalIP":setLinkLocalIP, "lt2p_vpn":lt2p_vpn,
+                            "cleanup_rules":cleanup_rules, "checkRouter":checkRouter,
+                            "bumpUpPriority":bumpUpPriority, "getDomRVersion":getDomRVersion,
+                            "kill_copy_process":kill_copy_process,
+                            "createISOVHD":createISOVHD,
+                            "setDNATRule":setDNATRule})

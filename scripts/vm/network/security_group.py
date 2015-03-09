@@ -25,7 +25,6 @@ import os
 import xml.dom.minidom
 from optparse import OptionParser, OptionGroup, OptParseError, BadOptionError, OptionError, OptionConflictError, OptionValueError
 import re
-import traceback
 import libvirt
 
 logpath = "/var/run/cloud/"        # FIXME: Logs should reside in /var/log/cloud
@@ -33,6 +32,11 @@ iptables = Command("iptables")
 bash = Command("/bin/bash")
 ebtablessave = Command("ebtables-save")
 ebtables = Command("ebtables")
+driver = "qemu:///system"
+cfo = configFileOps("/etc/cloudstack/agent/agent.properties")
+hyper = cfo.getEntry("hypervisor.type")
+if hyper == "lxc":
+    driver = "lxc:///"
 def execute(cmd):
     logging.debug(cmd)
     return bash("-c", cmd).stdout
@@ -96,7 +100,7 @@ def virshlist(*states):
 
     searchstates = list(libvirt_states[state] for state in states)
 
-    conn = libvirt.openReadOnly('qemu:///system')
+    conn = libvirt.openReadOnly(driver)
     if conn == None:
        print 'Failed to open connection to the hypervisor'
        sys.exit(3)
@@ -124,7 +128,7 @@ def virshdomstate(domain):
                      libvirt.VIR_DOMAIN_CRASHED  : 'crashed',
     }
 
-    conn = libvirt.openReadOnly('qemu:///system')
+    conn = libvirt.openReadOnly(driver)
     if conn == None:
        print 'Failed to open connection to the hypervisor'
        sys.exit(3)
@@ -141,7 +145,7 @@ def virshdomstate(domain):
 
 def virshdumpxml(domain):
 
-    conn = libvirt.openReadOnly('qemu:///system')
+    conn = libvirt.openReadOnly(driver)
     if conn == None:
        print 'Failed to open connection to the hypervisor'
        sys.exit(3)
@@ -673,7 +677,7 @@ def get_rule_logs_for_vms():
                 log = get_rule_log_for_vm(name)
                 result.append(log)
     except:
-        logging.debug("Failed to get rule logs, better luck next time!")
+        logging.exception("Failed to get rule logs, better luck next time!")
 
     print ";".join(result)
 
@@ -700,7 +704,7 @@ def cleanup_rules():
                     logging.debug("vm " + vm_name + " is not running or paused, cleaning up iptable rules")
                     cleanup.append(vm_name)
 
-        chainscmd = """ebtables-save | awk '/:i/ { gsub(/(^:|-(in|out))/, "") ; print $1}'"""
+        chainscmd = """ebtables-save | awk '/:i/ { gsub(/(^:|-(in|out|ips))/, "") ; print $1}'"""
         chains = execute(chainscmd).split('\n')
         for chain in chains:
             if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
@@ -878,8 +882,7 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
 
     return 'true'
   except:
-    exceptionText = traceback.format_exc()
-    logging.debug("Failed to network rule !: " + exceptionText)
+    logging.exception("Failed to network rule !")
 
 def getVifs(vmName):
     vifs = []
@@ -925,7 +928,7 @@ def getBridges(vmName):
 
 def getvmId(vmName):
 
-    conn = libvirt.openReadOnly('qemu:///system')
+    conn = libvirt.openReadOnly(driver)
     if conn == None:
        print 'Failed to open connection to the hypervisor'
        sys.exit(3)
@@ -937,7 +940,10 @@ def getvmId(vmName):
 
     conn.close()
 
-    return dom.ID()
+    res = dom.ID()
+    if isinstance(res, int):
+        res = str(res)
+    return res
 
 def getBrfw(brname):
     cmd = "iptables-save |grep physdev-is-bridged |grep FORWARD |grep BF |grep '\-o' | grep -w " + brname  + "|awk '{print $9}' | head -1"
@@ -978,7 +984,7 @@ def addFWFramework(brname):
         execute("iptables -N " + brfwin)
 
     try:
-        refs = execute("""iptables -n -L " + brfw + " | awk '/%s(.*)references/ {gsub(/\(/, "") ;print $3}'""" % brfw).strip()
+        refs = execute("""iptables -n -L %s | awk '/%s(.*)references/ {gsub(/\(/, "") ;print $3}'""" % (brfw,brfw)).strip()
         if refs == "0":
             execute("iptables -I FORWARD -i " + brname + " -j DROP")
             execute("iptables -I FORWARD -o " + brname + " -j DROP")

@@ -61,18 +61,18 @@ public class SslCertVO implements SslCert {
     String fingerPrint;
 
     public SslCertVO() {
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     public SslCertVO(String cert, String key, String password, String chain, Long accountId, Long domainId, String fingerPrint) {
-        this.certificate = cert;
+        certificate = cert;
         this.key = key;
         this.chain = chain;
         this.password = password;
         this.accountId = accountId;
         this.domainId = domainId;
         this.fingerPrint = fingerPrint;
-        this.uuid = UUID.randomUUID().toString();
+        uuid = UUID.randomUUID().toString();
     }
 
     // Getters
@@ -120,4 +120,10 @@ public class SslCertVO implements SslCert {
     public String getFingerPrint() {
         return fingerPrint;
     }
+
+    @Override
+    public Class<?> getEntityType() {
+        return SslCert.class;
+    }
+
 }

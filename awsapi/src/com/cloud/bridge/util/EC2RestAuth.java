@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.bridge.util;
 
+import com.cloud.utils.ConstantTimeComparator;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.security.SignatureException;
@@ -120,7 +122,7 @@ public class EC2RestAuth {
 
     public void setHTTPRequestURI(String uri) {
         if (null == uri || 0 == uri.length())
-            this.httpRequestURI = new String("/");
+            this.httpRequestURI = "/";
         else
             this.httpRequestURI = uri.trim();
     }
@@ -209,7 +211,7 @@ public class EC2RestAuth {
         if (-1 != offset)
             signature = URLDecoder.decode(signature, "UTF-8");
 
-        boolean match = signature.equals(calSig);
+        boolean match = ConstantTimeComparator.compareStrings(signature, calSig);
         if (!match)
             logger.error("Signature mismatch, [" + signature + "] [" + calSig + "] over [" + StringToSign + "]");
         return match;

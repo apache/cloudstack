@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -41,8 +41,7 @@ case "$1" in
             mkdir /etc/libvirt/hooks
         fi
         cp -a /usr/share/cloudstack-agent/lib/libvirtqemuhook /etc/libvirt/hooks/qemu
-        /etc/init.d/libvirt-bin restart
         ;;
 esac
 
-exit 0
+#DEBHELPER#

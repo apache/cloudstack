@@ -17,7 +17,7 @@
 (function ($, cloudStack) {
     cloudStack.modules.vnmcNetworkProvider = function (module) {
         var vnmcDeviceViewAll = window._m = [{
-            label: 'VNMC Devices',
+            label: 'label.vnmc.devices',
             path: '_zone.vnmcDevices'
         }];
 
@@ -25,10 +25,10 @@
             id: 'vnmcDevices',
             fields: {
                 resourcename: {
-                    label: 'Resource Name'
+                    label: 'label.resource.name'
                 },
                 provider: {
-                    label: 'Provider'
+                    label: 'label.provider'
                 }
             },
             dataProvider: function (args) {
@@ -47,16 +47,16 @@
             },
             actions: {
                 add: {
-                    label: 'Add VNMC device',
+                    label: 'label.add.vnmc.device',
 
                     messages: {
                         notification: function (args) {
-                            return 'Add VNMC device';
+                            return 'label.add.vnmc.device';
                         }
                     },
 
                     createForm: {
-                        title: 'Add VNMC device',
+                        title: 'label.add.vnmc.device',
                         fields: {
                             hostname: {
                                 label: 'label.host',
@@ -203,16 +203,16 @@
             },
 
             detailView: {
-                name: 'CiscoVNMC resource details',
+                name: 'label.ciscovnmc.resource.details',
                 actions: {
                     remove: {
-                        label: 'delete CiscoVNMC resource',
+                        label: 'label.delete.ciscovnmc.resource',
                         messages: {
                             confirm: function (args) {
-                                return 'Please confirm you want to delete CiscoVNMC resource';
+                                return 'message.confirm.delete.ciscovnmc.resource';
                             },
                             notification: function (args) {
-                                return 'delete CiscoVNMC resource';
+                                return 'label.delete.ciscovnmc.resource';
                             }
                         },
                         action: function (args) {
@@ -242,14 +242,14 @@
                         title: 'label.details',
                         fields: [{
                             resourcename: {
-                                label: 'Resource Name'
+                                label: 'label.resource.name'
                             }
                         }, {
                             resourceid: {
-                                label: 'Resource ID'
+                                label: 'label.reource.id'
                             },
                             provider: {
-                                label: 'Provider'
+                                label: 'label.provider'
                             }
                         }],
                         dataProvider: function (args) {
@@ -273,18 +273,18 @@
 
         var vnmcProviderDetailView = {
             id: 'vnmcProvider',
-            label: 'VNMC',
+            label: 'label.vnmc',
             viewAll: vnmcDeviceViewAll,
             actions: {
             	add: {
-            		label: 'Add VNMC provider',
+            		label: 'label.add.vnmc.provider',
 
                     messages: {
                         confirm: function (args) {
-                            return 'Please confirm you would like to add the VNMC provider.';
+                            return 'message.confirm.add.vnmc.provider';
                         },
                         notification: function (args) {
-                            return 'Add VNMC device';
+                            return 'label.add.vnmc.device';
                         }
                     },
 
@@ -327,14 +327,14 @@
                     }
             	},
                 enable: {
-                    label: 'Enable VNMC provider',
+                    label: 'label.enable.vnmc.provider',
 
                     messages: {
                         confirm: function (args) {
-                            return 'Please confirm you would like to enable the VNMC provider.';
+                            return 'message.confirm.enable.vnmc.provider';
                         },
                         notification: function (args) {
-                            return 'Enable VNMC device';
+                            return 'label.enable.vnmc.device';
                         }
                     },
 
@@ -352,7 +352,7 @@
 
                                     enableCiscoVnmcProviderFn(ciscoVnmcProvider);
                                 } else {
-                                    args.response.error('VNMC is not available from provider list.');
+                                    args.response.error('message.vnmc.available.list');
                                 }
                             }
                         });
@@ -419,14 +419,14 @@
                 },
 
                 disable: {
-                    label: 'Disable VNMC provider',
+                    label: 'label.disable.vnmc.provider',
 
                     messages: {
                         confirm: function (args) {
-                            return 'Please confirm you would like to disable the VNMC provider.';
+                            return 'message.confirm.disable.vnmc.provider';
                         },
                         notification: function (args) {
-                            return 'Disable VNMC device';
+                            return 'label.disbale.vnmc.device';
                         }
                     },
 
@@ -444,7 +444,7 @@
 
                                     disableCiscoVnmcProviderFn(ciscoVnmcProvider);
                                 } else {
-                                    args.response.error('VNMC is not available from provider list.');
+                                    args.response.error('message.vnmc.not.available.list');
                                 }
                             }
                         });
@@ -525,7 +525,7 @@
                             label: 'label.id'
                         },
                         servicelist: {
-                            label: 'Services',
+                            label: 'label.services',
                             converter: function (args) {
                                 if (args)
                                     return args.join(', ');

@@ -30,9 +30,11 @@ import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 
 import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.VpcGateway;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listPrivateGateways", description = "List private gateways", responseObject = PrivateGatewayResponse.class)
+@APICommand(name = "listPrivateGateways", description = "List private gateways", responseObject = PrivateGatewayResponse.class, entityType = {VpcGateway.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPrivateGatewaysCmd.class.getName());
 
@@ -100,6 +102,6 @@ public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCm
         response.setResponses(projectResponses, gateways.second());
         response.setResponseName(getCommandName());
 
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

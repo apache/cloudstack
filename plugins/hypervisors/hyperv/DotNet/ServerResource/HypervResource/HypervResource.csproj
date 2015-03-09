@@ -87,6 +87,11 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="heartbeat.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\WmiWrappers\WmiWrappers.csproj">
       <Project>{db824727-bdc3-437c-a364-7a811d8a160f}</Project>
       <Name>WmiWrappers</Name>
@@ -94,6 +99,10 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
+  <Target Name="BeforeBuild" Condition="'$(BuildWithMono)' == 'true' ">
+    <RemoveDir Directories="$(ProjectDir)$(BaseIntermediateOutputPath)" Condition="Exists('$(ProjectDir)$(BaseIntermediateOutputPath)')"/>
+    <RemoveDir Directories="$(ProjectDir)$(OutputPath)" Condition="Exists('$(ProjectDir)$(OutputPath)')"/>
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,11 +15,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
-import java.util.List;
-
 import com.cloud.agent.api.routing.NetworkElementCommand;
+
+import java.util.List;
 
 public class CheckS2SVpnConnectionsCommand extends NetworkElementCommand {
     List<String> vpnIps;
@@ -35,5 +38,10 @@ public class CheckS2SVpnConnectionsCommand extends NetworkElementCommand {
 
     public List<String> getVpnIps() {
         return vpnIps;
+    }
+
+    @Override
+    public boolean isQuery() {
+        return true;
     }
 }

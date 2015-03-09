@@ -30,5 +30,8 @@
         class="org.apache.cloudstack.storage.motion.AncientDataMotionStrategy" />
     <bean id="xenserverStorageMotionStrategy"
         class="org.apache.cloudstack.storage.motion.XenServerStorageMotionStrategy" />
-
+    <bean id="hypervStorageMotionStrategy"
+        class="org.apache.cloudstack.storage.motion.HypervStorageMotionStrategy" />
+    <bean id="storageSystemDataMotionStrategy"
+        class="org.apache.cloudstack.storage.motion.StorageSystemDataMotionStrategy" />
 </beans>

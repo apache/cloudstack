@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
@@ -29,7 +30,7 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
@@ -62,9 +63,13 @@ public interface NetworkOrchestrationService {
     static final String NetworkLockTimeoutCK = "network.lock.timeout";
     static final String GuestDomainSuffixCK = "guest.domain.suffix";
     static final String NetworkThrottlingRateCK = "network.throttling.rate";
+    static final String MinVRVersionCK = "minreq.sysvmtemplate.version";
+
+    static final ConfigKey<String> MinVRVersion = new ConfigKey<String>(String.class, MinVRVersionCK, "Advanced", "4.6.0",
+            "What version should the Virtual Routers report", true, ConfigKey.Scope.Zone, null);
 
     static final ConfigKey<Integer> NetworkLockTimeout = new ConfigKey<Integer>(Integer.class, NetworkLockTimeoutCK, "Network", "600",
-        "Lock wait timeout (seconds) while implementing network", true);
+        "Lock wait timeout (seconds) while implementing network", true, Scope.Global, null);
     static final ConfigKey<String> GuestDomainSuffix = new ConfigKey<String>(String.class, GuestDomainSuffixCK, "Network", "cloud.internal",
         "Default domain name for vms inside virtualized networks fronted by router", true, ConfigKey.Scope.Zone, null);
     static final ConfigKey<Integer> NetworkThrottlingRate = new ConfigKey<Integer>("Network", Integer.class, NetworkThrottlingRateCK, "200",
@@ -77,7 +82,7 @@ public interface NetworkOrchestrationService {
         boolean errorIfAlreadySetup, Long domainId, ACLType aclType, Boolean subdomainAccess, Long vpcId, Boolean isDisplayNetworkEnabled)
         throws ConcurrentOperationException;
 
-    void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, ? extends NicProfile> networks) throws InsufficientCapacityException,
+    void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, List<? extends NicProfile>> networks) throws InsufficientCapacityException,
         ConcurrentOperationException;
 
     void prepare(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException,
@@ -147,12 +152,12 @@ public interface NetworkOrchestrationService {
      * @param deviceId
      * @param vm
      * @return
-     * @throws InsufficientVirtualNetworkCapcityException
+     * @throws InsufficientVirtualNetworkCapacityException
      * @throws InsufficientAddressCapacityException
      * @throws ConcurrentOperationException
      */
     Pair<NicProfile, Integer> allocateNic(NicProfile requested, Network network, Boolean isDefaultNic, int deviceId, VirtualMachineProfile vm)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException;
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException;
 
     /**
      * @param vmProfile
@@ -161,14 +166,14 @@ public interface NetworkOrchestrationService {
      * @param nicId
      * @param network
      * @return
-     * @throws InsufficientVirtualNetworkCapcityException
+     * @throws InsufficientVirtualNetworkCapacityException
      * @throws InsufficientAddressCapacityException
      * @throws ConcurrentOperationException
      * @throws InsufficientCapacityException
      * @throws ResourceUnavailableException
      */
     NicProfile prepareNic(VirtualMachineProfile vmProfile, DeployDestination dest, ReservationContext context, long nicId, Network network)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
         ResourceUnavailableException;
 
     void removeNic(VirtualMachineProfile vm, Nic nic);
@@ -183,7 +188,7 @@ public interface NetworkOrchestrationService {
     void releaseNic(VirtualMachineProfile vmProfile, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException;
 
     NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfile vmProfile, boolean prepare)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,
         ResourceUnavailableException;
 
     NetworkProfile convertNetworkToNetworkProfile(long networkId);
@@ -217,4 +222,6 @@ public interface NetworkOrchestrationService {
     void removeDhcpServiceInSubnet(Nic nic);
 
     boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType);
+
+    void prepareAllNicsForMigration(VirtualMachineProfile vm, DeployDestination dest);
 }

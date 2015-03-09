@@ -33,7 +33,8 @@ import org.apache.cloudstack.region.RegionService;
 import com.cloud.domain.Domain;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateDomain", description = "Updates a domain with a new name", responseObject = DomainResponse.class)
+@APICommand(name = "updateDomain", description = "Updates a domain with a new name", responseObject = DomainResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateDomainCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateDomainCmd.class.getName());
     private static final String s_name = "updatedomainresponse";

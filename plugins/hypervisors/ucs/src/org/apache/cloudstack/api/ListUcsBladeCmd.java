@@ -32,7 +32,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.ucs.manager.UcsManager;
 import com.cloud.user.Account;
 
-@APICommand(name = "listUcsBlades", description = "List ucs blades", responseObject = UcsBladeResponse.class)
+@APICommand(name = "listUcsBlades", description = "List ucs blades", responseObject = UcsBladeResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListUcsBladeCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListUcsBladeCmd.class);
 

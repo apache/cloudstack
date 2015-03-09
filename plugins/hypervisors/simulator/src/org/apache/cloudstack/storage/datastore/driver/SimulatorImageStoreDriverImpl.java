@@ -23,6 +23,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -76,6 +77,11 @@ public class SimulatorImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         } else if (data.getType() == DataObjectType.VOLUME) {
             createVolume(data, callback);
         }
+    }
+
+    @Override
+    public void deleteAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CommandResult> callback) {
+        callback.complete(new CommandResult());
     }
 
     protected void createTemplate(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {

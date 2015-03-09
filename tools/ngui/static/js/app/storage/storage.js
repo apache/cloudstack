@@ -47,19 +47,19 @@ angular.module("storage").controller("VolumesListCtrl", ["$scope", "$location", 
     $scope.toDisplay = ['name', 'type', 'hypervisor', 'vmdisplayname'];
 
     $scope.addVolumeForm = {
-        title: 'Add Volume',
+        title: 'label.add.volume',
         onSubmit: Volumes.getAll,
         fields: [
             {
                 model: 'name',
                 type: 'input-text',
-                label: 'name',
+                label: 'label.name.lower',
                 required: true
             },
             {
                 model: 'zoneid',
                 type: 'select',
-                label: 'availabilityZone',
+                label: 'label.availabilityZone',
                 options: Zones.getAll,
                 getValue: function(model){
                     return model.id;
@@ -71,7 +71,7 @@ angular.module("storage").controller("VolumesListCtrl", ["$scope", "$location", 
             {
                 model: 'diskofferingid',
                 type: 'select',
-                label: 'diskoffering',
+                label: 'label.diskoffering',
                 options: DiskOfferings.getAll,
                 getValue: function(model){
                     return model.id;
@@ -84,18 +84,18 @@ angular.module("storage").controller("VolumesListCtrl", ["$scope", "$location", 
     };
 
     $scope.uploadVolumeForm = {
-        title: 'Upload Volume',
+        title: 'title.upload.volume',
         onSubmit: Volumes.getAll,
         fields: [
             {
                 model: 'name',
                 type: 'input-text',
-                label: 'name',
+                label: 'label.name.lower',
             },
             {
                 model: 'zoneid',
                 type: 'select',
-                label: 'availabilityZone',
+                label: 'label.availabilityZone',
                 options: Zones.getAll,
                 getValue: function(model){
                     return model.id;
@@ -107,7 +107,7 @@ angular.module("storage").controller("VolumesListCtrl", ["$scope", "$location", 
             {
                 model: 'format',
                 type: 'select',
-                label: 'format',
+                label: 'label.format.lower',
                 options: function(){
                     return ['RAW', 'VHD', 'OVA', 'QCOW2'];
                 },
@@ -121,12 +121,12 @@ angular.module("storage").controller("VolumesListCtrl", ["$scope", "$location", 
             {
                 model: 'url',
                 type: 'input-text',
-                label: 'url'
+                label: 'label.url'
             },
             {
                 model: 'checksum',
                 type: 'input-text',
-                label: 'checksum'
+                label: 'label.checksum'
             }
         ],
     }

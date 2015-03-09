@@ -39,7 +39,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteSrxFirewall", responseObject = SuccessResponse.class, description = " delete a SRX firewall device")
+@APICommand(name = "deleteSrxFirewall", responseObject = SuccessResponse.class, description = " delete a SRX firewall device",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSrxFirewallCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSrxFirewallCmd.class.getName());
     private static final String s_name = "deletesrxfirewallresponse";

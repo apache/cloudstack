@@ -68,7 +68,8 @@ public class XenServerInvestigator extends AdapterBase implements Investigator {
                     s_logger.debug("Host " + neighbor + " couldn't determine the status of " + agent);
                     continue;
                 }
-                return ans.isAlive() ? Status.Up : Status.Down;
+                // even it returns true, that means host is up, but XAPI may not work
+                return ans.isAlive() ? null : Status.Down;
             }
         }
 

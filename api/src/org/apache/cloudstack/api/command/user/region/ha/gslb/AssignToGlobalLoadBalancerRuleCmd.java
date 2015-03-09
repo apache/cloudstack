@@ -45,19 +45,17 @@ import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.Account;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.db.EntityManager;
 
 @APICommand(name = "assignToGlobalLoadBalancerRule",
             description = "Assign load balancer rule or list of load " + "balancer rules to a global load balancer rules.",
-            responseObject = SuccessResponse.class)
+            responseObject = SuccessResponse.class,
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(AssignToGlobalLoadBalancerRuleCmd.class.getName());
 
     private static final String s_name = "assigntogloballoadbalancerruleresponse";
-
-    @Inject
-    public EntityManager _entityMgr;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

@@ -224,7 +224,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
             try {
                 objectInDataStoreMgr.update(destData, ObjectInDataStoreStateMachine.Event.OperationFailed);
             } catch (Exception e1) {
-
+                s_logger.debug("failed to further change state to OperationFailed", e1);
             }
             CreateCmdResult res = new CreateCmdResult(null, null);
             res.setResult("Failed to change state: " + e.toString());
@@ -234,7 +234,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
             try {
                 objectInDataStoreMgr.update(destData, ObjectInDataStoreStateMachine.Event.OperationFailed);
             } catch (Exception e1) {
-
+                s_logger.debug("failed to further change state to OperationFailed", e1);
             }
             CreateCmdResult res = new CreateCmdResult(null, null);
             res.setResult("Failed to change state: " + e.toString());
@@ -272,6 +272,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
             try {
                 objectInDataStoreMgr.update(destObj, ObjectInDataStoreStateMachine.Event.OperationFailed);
             } catch (Exception e1) {
+                s_logger.debug("failed to further change state to OperationFailed", e1);
             }
             CreateCmdResult res = new CreateCmdResult(null, null);
             res.setResult("Failed to update copying state: " + e.toString());
@@ -281,6 +282,7 @@ public class DataObjectManagerImpl implements DataObjectManager {
             try {
                 objectInDataStoreMgr.update(destObj, ObjectInDataStoreStateMachine.Event.OperationFailed);
             } catch (Exception e1) {
+                s_logger.debug("failed to further change state to OperationFailed", e1);
             }
             CreateCmdResult res = new CreateCmdResult(null, null);
             res.setResult("Failed to update copying state: " + e.toString());

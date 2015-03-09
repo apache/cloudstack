@@ -54,7 +54,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.AgentManager;
@@ -100,8 +99,6 @@ public class EndpointSelectorTest {
     SnapshotDataFactory snapshotDataFactory;
     @Inject
     PrimaryDataStoreProvider primaryDataStoreProvider;
-    @Inject
-    SnapshotDataStoreDao snapshotDataStoreDao;
     @Inject
     VolumeDao volumeDao;
     @Inject
@@ -158,7 +155,7 @@ public class EndpointSelectorTest {
         HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), "10.223.0.1", "10.233.2.2/25", 8, "test");
         pod = podDao.persist(pod);
         podId = pod.getId();
-        // create xen cluster
+        // create xenserver cluster
         ClusterVO cluster = new ClusterVO(dc.getId(), pod.getId(), "devcloud cluster");
         cluster.setHypervisorType(Hypervisor.HypervisorType.XenServer.toString());
         cluster.setClusterType(Cluster.ClusterType.CloudManaged);
@@ -230,7 +227,7 @@ public class EndpointSelectorTest {
     public HostVO createHost(Hypervisor.HypervisorType hypervisorType) {
         String uuid = UUID.randomUUID().toString();
         HostVO host = new HostVO(uuid);
-        host.setName("devcloud xen host");
+        host.setName("devcloud xenserver host");
         host.setType(Host.Type.Routing);
         host.setPrivateIpAddress(uuid);
         host.setDataCenterId(dcId);

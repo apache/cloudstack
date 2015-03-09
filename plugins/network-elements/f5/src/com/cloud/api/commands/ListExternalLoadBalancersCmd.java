@@ -36,7 +36,8 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.host.Host;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 
-@APICommand(name = "listExternalLoadBalancers", description = "Lists F5 external load balancer appliances added in a zone.", responseObject = HostResponse.class)
+@APICommand(name = "listExternalLoadBalancers", description = "Lists F5 external load balancer appliances added in a zone.", responseObject = HostResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 @Deprecated
 // API supported for backward compatibility.
 public class ListExternalLoadBalancersCmd extends BaseListCmd {

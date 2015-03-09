@@ -39,7 +39,6 @@ import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
-import com.cloud.vm.VirtualMachine.State;
 
 public class BaremetalDhcpdResource extends BaremetalDhcpResourceBase {
     private static final Logger s_logger = Logger.getLogger(BaremetalDhcpdResource.class);
@@ -93,7 +92,7 @@ public class BaremetalDhcpdResource extends BaremetalDhcpResourceBase {
             s_logger.debug("Dhcpd resource configure successfully");
             return true;
         } catch (Exception e) {
-            s_logger.debug("Dhcpd resorce configure failed", e);
+            s_logger.debug("Dhcpd resource configure failed", e);
             throw new ConfigurationException(e.getMessage());
         } finally {
             SSHCmdHelper.releaseSshConnection(sshConnection);
@@ -107,7 +106,7 @@ public class BaremetalDhcpdResource extends BaremetalDhcpResourceBase {
             return null;
         } else {
             SSHCmdHelper.releaseSshConnection(sshConnection);
-            return new PingRoutingCommand(getType(), id, new HashMap<String, State>(), new HashMap<String, HostVmStateReportEntry>());
+            return new PingRoutingCommand(getType(), id, new HashMap<String, HostVmStateReportEntry>());
         }
     }
 

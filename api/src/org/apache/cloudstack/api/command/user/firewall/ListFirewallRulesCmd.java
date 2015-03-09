@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
@@ -34,7 +35,8 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listFirewallRules", description = "Lists all firewall rules for an IP address.", responseObject = FirewallResponse.class)
+@APICommand(name = "listFirewallRules", description = "Lists all firewall rules for an IP address.", responseObject = FirewallResponse.class, entityType = {FirewallRule.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListFirewallRulesCmd.class.getName());
     private static final String s_name = "listfirewallrulesresponse";
@@ -58,6 +60,9 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
                since = "4.3")
     private Long networkId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -76,6 +81,14 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
 
     public Long getNetworkId() {
         return networkId;
+    }
+
+    @Override
+    public Boolean getDisplay() {
+        if (display != null) {
+            return display;
+        }
+        return super.getDisplay();
     }
 
     /////////////////////////////////////////////////////
@@ -100,6 +113,6 @@ public class ListFirewallRulesCmd extends BaseListTaggedResourcesCmd {
         }
         response.setResponses(fwResponses, result.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

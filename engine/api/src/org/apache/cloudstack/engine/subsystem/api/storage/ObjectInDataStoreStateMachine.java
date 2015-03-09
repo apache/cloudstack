@@ -51,6 +51,9 @@ public interface ObjectInDataStoreStateMachine extends StateObject<ObjectInDataS
         OperationFailed,
         CopyingRequested,
         MigrationRequested,
+        MigrationCopyRequested,
+        MigrationCopySucceeded,
+        MigrationCopyFailed,
         ResizeRequested,
         ExpungeRequested
     }

@@ -16,20 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.kvm.discoverer;
 
-import java.net.InetAddress;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -41,7 +27,6 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
-import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
@@ -49,18 +34,25 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.NetworkModel;
 import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
-import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.ssh.SSHCmdHelper;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.net.InetAddress;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public abstract class LibvirtServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(LibvirtServerDiscoverer.class);
@@ -70,17 +62,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     private String _kvmPublicNic;
     private String _kvmGuestNic;
     @Inject
-    HostDao _hostDao = null;
-    @Inject
-    ClusterDao _clusterDao;
-    @Inject
-    ResourceManager _resourceMgr;
-    @Inject
     AgentManager _agentMgr;
-    @Inject
-    ConfigurationDao _configDao;
-    @Inject
-    NetworkModel _networkMgr;
 
     @Override
     public abstract Hypervisor.HypervisorType getHypervisorType();
@@ -221,11 +203,19 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             parameters += " --pubNic=" + kvmPublicNic;
             parameters += " --prvNic=" + kvmPrivateNic;
             parameters += " --guestNic=" + kvmGuestNic;
+            parameters += " --hypervisor=" + cluster.getHypervisorType().toString().toLowerCase();
 
-            SSHCmdHelper.sshExecuteCmd(sshConnection, "cloudstack-setup-agent " + parameters, 3);
+            if (!SSHCmdHelper.sshExecuteCmd(sshConnection,
+                    "cloudstack-setup-agent " + parameters, 3)) {
+                s_logger.info("cloudstack agent setup command failed: "
+                        + "cloudstack-setup-agent " + parameters);
+                return null;
+            }
 
             KvmDummyResourceBase kvmResource = new KvmDummyResourceBase();
             Map<String, Object> params = new HashMap<String, Object>();
+
+            params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
 
             params.put("zone", Long.toString(dcId));
             params.put("pod", Long.toString(podId));

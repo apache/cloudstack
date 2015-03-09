@@ -35,6 +35,8 @@ import org.apache.cloudstack.storage.command.DettachAnswer;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
+import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -55,6 +57,13 @@ public class SimulatorStorageProcessor implements StorageProcessor {
 
     public SimulatorStorageProcessor(SimulatorManager resource) {
         this.hypervisorResource = resource;
+    }
+
+    @Override
+    public SnapshotAndCopyAnswer snapshotAndCopy(SnapshotAndCopyCommand cmd) {
+        s_logger.info("'SnapshotAndCopyAnswer snapshotAndCopy(SnapshotAndCopyCommand)' not currently used for SimulatorStorageProcessor");
+
+        return new SnapshotAndCopyAnswer();
     }
 
     @Override
@@ -95,9 +104,11 @@ public class SimulatorStorageProcessor implements StorageProcessor {
     @Override
     public Answer createTemplateFromVolume(CopyCommand cmd) {
         DataTO destData = cmd.getDestTO();
+        VolumeObjectTO srcData = (VolumeObjectTO)cmd.getSrcTO();
         TemplateObjectTO template = new TemplateObjectTO();
         template.setPath(template.getName());
         template.setFormat(Storage.ImageFormat.RAW);
+        template.setSize(srcData.getSize());
         DataStoreTO imageStore = destData.getDataStore();
         if (!(imageStore instanceof NfsTO)) {
             return new CopyCmdAnswer("unsupported protocol");
@@ -140,7 +151,7 @@ public class SimulatorStorageProcessor implements StorageProcessor {
         int index = snapshot.getPath().lastIndexOf("/");
 
         String snapshotName = snapshot.getPath().substring(index + 1);
-        String snapshotRelPath = null;
+        String snapshotRelPath = "snapshots";
         SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
         newSnapshot.setPath(snapshotRelPath + File.separator + snapshotName);
         return new CopyCmdAnswer(newSnapshot);
@@ -207,7 +218,6 @@ public class SimulatorStorageProcessor implements StorageProcessor {
         SnapshotObjectTO snapshot = (SnapshotObjectTO)srcData;
         String snapshotPath = snapshot.getPath();
         int index = snapshotPath.lastIndexOf("/");
-        snapshotPath = snapshotPath.substring(0, index);
         String snapshotName = snapshotPath.substring(index + 1);
         VolumeObjectTO newVol = new VolumeObjectTO();
         newVol.setPath(snapshotName);

@@ -52,6 +52,10 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
 
     IPAddressVO findByAssociatedVmId(long vmId);
 
+    // for vm secondary ips case mapping is  IP1--> vmIp1, IP2-->vmIp2, etc
+    // This method is used when one vm is mapped to muliple to public ips
+    List<IPAddressVO> findAllByAssociatedVmId(long vmId);
+
     IPAddressVO findByIpAndSourceNetworkId(long networkId, String ipAddress);
 
     public IPAddressVO findByIpAndDcId(long dcId, String ipAddress);
@@ -79,4 +83,6 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
     boolean deletePublicIPRange(long vlanDbId);
 
     void lockRange(long vlandbId);
+
+    List<IPAddressVO> listByAssociatedVmId(long vmId);
 }

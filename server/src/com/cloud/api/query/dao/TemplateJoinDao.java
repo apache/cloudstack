@@ -18,24 +18,25 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.SearchCriteria;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.TemplateResponse;
 
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.SearchCriteria;
 
 public interface TemplateJoinDao extends GenericDao<TemplateJoinVO, Long> {
 
-    TemplateResponse newTemplateResponse(TemplateJoinVO tmpl);
+    TemplateResponse newTemplateResponse(ResponseView view, TemplateJoinVO tmpl);
 
     TemplateResponse newIsoResponse(TemplateJoinVO tmpl);
 
     TemplateResponse newUpdateResponse(TemplateJoinVO tmpl);
 
-    TemplateResponse setTemplateResponse(TemplateResponse tmplData, TemplateJoinVO tmpl);
+    TemplateResponse setTemplateResponse(ResponseView view, TemplateResponse tmplData, TemplateJoinVO tmpl);
 
     List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate tmpl);
 

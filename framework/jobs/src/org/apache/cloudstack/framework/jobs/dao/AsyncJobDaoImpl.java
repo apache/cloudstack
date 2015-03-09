@@ -44,6 +44,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
     private final SearchBuilder<AsyncJobVO> pseudoJobCleanupSearch;
     private final SearchBuilder<AsyncJobVO> expiringUnfinishedAsyncJobSearch;
     private final SearchBuilder<AsyncJobVO> expiringCompletedAsyncJobSearch;
+    private final SearchBuilder<AsyncJobVO> failureMsidAsyncJobSearch;
 
     public AsyncJobDaoImpl() {
         pendingAsyncJobSearch = createSearchBuilder();
@@ -63,6 +64,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         pendingAsyncJobsSearch.done();
 
         expiringUnfinishedAsyncJobSearch = createSearchBuilder();
+        expiringUnfinishedAsyncJobSearch.and("jobDispatcher", expiringUnfinishedAsyncJobSearch.entity().getDispatcher(), SearchCriteria.Op.NEQ);
         expiringUnfinishedAsyncJobSearch.and("created", expiringUnfinishedAsyncJobSearch.entity().getCreated(), SearchCriteria.Op.LTEQ);
         expiringUnfinishedAsyncJobSearch.and("completeMsId", expiringUnfinishedAsyncJobSearch.entity().getCompleteMsid(), SearchCriteria.Op.NULL);
         expiringUnfinishedAsyncJobSearch.and("jobStatus", expiringUnfinishedAsyncJobSearch.entity().getStatus(), SearchCriteria.Op.EQ);
@@ -83,6 +85,13 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         pseudoJobCleanupSearch = createSearchBuilder();
         pseudoJobCleanupSearch.and("initMsid", pseudoJobCleanupSearch.entity().getInitMsid(), Op.EQ);
         pseudoJobCleanupSearch.done();
+
+        failureMsidAsyncJobSearch = createSearchBuilder();
+        failureMsidAsyncJobSearch.and("initMsid", failureMsidAsyncJobSearch.entity().getInitMsid(), Op.EQ);
+        failureMsidAsyncJobSearch.and("instanceType", failureMsidAsyncJobSearch.entity().getInstanceType(), SearchCriteria.Op.EQ);
+        failureMsidAsyncJobSearch.and("status", failureMsidAsyncJobSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        failureMsidAsyncJobSearch.and("job_cmd", failureMsidAsyncJobSearch.entity().getCmd(), Op.IN);
+        failureMsidAsyncJobSearch.done();
 
     }
 
@@ -151,6 +160,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
     @Override
     public List<AsyncJobVO> getExpiredUnfinishedJobs(Date cutTime, int limit) {
         SearchCriteria<AsyncJobVO> sc = expiringUnfinishedAsyncJobSearch.create();
+        sc.setParameters("jobDispatcher", AsyncJobVO.JOB_DISPATCHER_PSEUDO);
         sc.setParameters("created", cutTime);
         sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
         Filter filter = new Filter(AsyncJobVO.class, "created", true, 0L, (long)limit);
@@ -185,5 +195,34 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         } catch (Throwable e) {
             s_logger.warn("Unable to reset job status for management server " + msid, e);
         }
+    }
+
+    @Override
+    public List<AsyncJobVO> getResetJobs(long msid) {
+        SearchCriteria<AsyncJobVO> sc = pendingAsyncJobSearch.create();
+        sc.setParameters("status", JobInfo.Status.IN_PROGRESS);
+
+        // construct query: (job_executing_msid=msid OR (job_executing_msid IS NULL AND job_init_msid=msid))
+        SearchCriteria<AsyncJobVO> msQuery = createSearchCriteria();
+        msQuery.addOr("executingMsid", SearchCriteria.Op.EQ, msid);
+        SearchCriteria<AsyncJobVO> initMsQuery = createSearchCriteria();
+        initMsQuery.addAnd("executingMsid", SearchCriteria.Op.NULL);
+        initMsQuery.addAnd("initMsid", SearchCriteria.Op.EQ, msid);
+        msQuery.addOr("initMsId", SearchCriteria.Op.SC, initMsQuery);
+
+        sc.addAnd("executingMsid", SearchCriteria.Op.SC, msQuery);
+
+        Filter filter = new Filter(AsyncJobVO.class, "created", true, null, null);
+        return listIncludingRemovedBy(sc, filter);
+
+    }
+
+    @Override
+    public List<AsyncJobVO> getFailureJobsSinceLastMsStart(long msId, String... cmds) {
+        SearchCriteria<AsyncJobVO> sc = failureMsidAsyncJobSearch.create();
+        sc.setParameters("initMsid", msId);
+        sc.setParameters("status", AsyncJobVO.Status.FAILED);
+        sc.setParameters("job_cmd", (Object[])cmds);
+        return listBy(sc);
     }
 }

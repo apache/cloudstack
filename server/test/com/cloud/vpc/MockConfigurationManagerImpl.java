@@ -24,8 +24,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
@@ -52,6 +50,7 @@ import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationService;
@@ -80,6 +79,7 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 
 @Component
@@ -255,7 +255,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationService#searchForNetworkOfferings(org.apache.cloudstack.api.commands.ListNetworkOfferingsCmd)
      */
     @Override
-    public List<? extends NetworkOffering> searchForNetworkOfferings(ListNetworkOfferingsCmd cmd) {
+    public Pair<List<? extends NetworkOffering>, Integer> searchForNetworkOfferings(ListNetworkOfferingsCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }

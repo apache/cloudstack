@@ -27,14 +27,19 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
@@ -50,6 +55,7 @@ import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.cluster.ClusterManager;
@@ -71,75 +77,83 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.secstorage.CommandExecLogVO;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.GuestOSHypervisorDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = HypervisorGuru.class)
 public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
     private static final Logger s_logger = Logger.getLogger(VMwareGuru.class);
 
     @Inject
-    NetworkDao _networkDao;
+    private NetworkDao _networkDao;
     @Inject
-    GuestOSDao _guestOsDao;
+    private GuestOSDao _guestOsDao;
     @Inject
-    HostDao _hostDao;
+    GuestOSHypervisorDao _guestOsHypervisorDao;
     @Inject
-    HostDetailsDao _hostDetailsDao;
+    private HostDao _hostDao;
     @Inject
-    CommandExecLogDao _cmdExecLogDao;
+    private HostDetailsDao _hostDetailsDao;
     @Inject
-    VmwareManager _vmwareMgr;
+    private CommandExecLogDao _cmdExecLogDao;
     @Inject
-    SecondaryStorageVmManager _secStorageMgr;
+    private VmwareManager _vmwareMgr;
     @Inject
-    NetworkModel _networkMgr;
+    private SecondaryStorageVmManager _secStorageMgr;
     @Inject
-    ConfigurationDao _configDao;
+    private NetworkModel _networkMgr;
     @Inject
-    NicDao _nicDao;
+    private ConfigurationDao _configDao;
     @Inject
-    PhysicalNetworkDao _physicalNetworkDao;
+    private NicDao _nicDao;
     @Inject
-    PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
+    private PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
     @Inject
-    VMInstanceDao _vmDao;
+    private VMInstanceDao _vmDao;
     @Inject
-    ClusterDao _clusterDao;
+    private ClusterManager _clusterMgr;
     @Inject
-    ClusterManager _clusterMgr;
+    VolumeDao _volumeDao;
+    @Inject
+    PrimaryDataStoreDao _storagePoolDao;
+    @Inject
+    VolumeDataFactory _volFactory;
 
     protected VMwareGuru() {
         super();
     }
 
-    static final ConfigKey<Boolean> VmwareReserveCpu = new ConfigKey<Boolean>(Boolean.class, "vmware.reserve.cpu", "Advanced", "false",
+    public static final ConfigKey<Boolean> VmwareReserveCpu = new ConfigKey<Boolean>(Boolean.class, "vmware.reserve.cpu", "Advanced", "false",
         "Specify whether or not to reserve CPU when not overprovisioning, In case of cpu overprovisioning we will always reserve cpu.", true, ConfigKey.Scope.Cluster,
         null);
 
-    static final ConfigKey<Boolean> VmwareReserveMemory = new ConfigKey<Boolean>(Boolean.class, "vmware.reserve.cpu", "Advanced", "false",
+    public static final ConfigKey<Boolean> VmwareReserveMemory = new ConfigKey<Boolean>(Boolean.class, "vmware.reserve.mem", "Advanced", "false",
         "Specify whether or not to reserve memory when not overprovisioning, In case of memory overprovisioning we will always reserve memory.", true,
         ConfigKey.Scope.Cluster, null);
 
@@ -157,9 +171,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         if (details == null)
             details = new HashMap<String, String>();
 
+        Type vmType = vm.getType();
+        boolean userVm = !(vmType.equals(VirtualMachine.Type.DomainRouter) || vmType.equals(VirtualMachine.Type.ConsoleProxy)
+                || vmType.equals(VirtualMachine.Type.SecondaryStorageVm));
+
         String nicDeviceType = details.get(VmDetailConstants.NIC_ADAPTER);
-        if (vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO ||
-            vm.getVirtualMachine() instanceof SecondaryStorageVmVO) {
+        if (!userVm) {
 
             if (nicDeviceType == null) {
                 details.put(VmDetailConstants.NIC_ADAPTER, _vmwareMgr.getSystemVMDefaultNicAdapterType());
@@ -186,8 +203,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         }
 
         String diskDeviceType = details.get(VmDetailConstants.ROOK_DISK_CONTROLLER);
-        if (!(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO || vm.getVirtualMachine() instanceof SecondaryStorageVmVO)) {
-            // user vm
+        if (userVm) {
             if (diskDeviceType == null) {
                 details.put(VmDetailConstants.ROOK_DISK_CONTROLLER, _vmwareMgr.getRootDiskController());
             }
@@ -204,12 +220,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             }
         }
 
-        long clusterId = this.getClusterId(vm.getId());
-        details.put(Config.VmwareReserveCpu.key(), VmwareReserveCpu.valueIn(clusterId).toString());
-        details.put(Config.VmwareReserveMem.key(), VmwareReserveMemory.valueIn(clusterId).toString());
+        long clusterId = getClusterId(vm.getId());
+        details.put(VmwareReserveCpu.key(), VmwareReserveCpu.valueIn(clusterId).toString());
+        details.put(VmwareReserveMemory.key(), VmwareReserveMemory.valueIn(clusterId).toString());
         to.setDetails(details);
 
-        if (vm.getVirtualMachine() instanceof DomainRouterVO) {
+        if (vmType.equals(VirtualMachine.Type.DomainRouter)) {
 
             NicProfile publicNicProfile = null;
             for (NicProfile nicProfile : nicProfiles) {
@@ -275,15 +291,17 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             for (NicTO nicTo : sortNicsByDeviceId(to.getNics())) {
                 sbMacSequence.append(nicTo.getMac()).append("|");
             }
-            sbMacSequence.deleteCharAt(sbMacSequence.length() - 1);
-            String bootArgs = to.getBootArgs();
-            to.setBootArgs(bootArgs + " nic_macs=" + sbMacSequence.toString());
+            if (!sbMacSequence.toString().isEmpty()) {
+                sbMacSequence.deleteCharAt(sbMacSequence.length() - 1);
+                String bootArgs = to.getBootArgs();
+                to.setBootArgs(bootArgs + " nic_macs=" + sbMacSequence.toString());
+            }
 
         }
 
         // Don't do this if the virtual machine is one of the special types
         // Should only be done on user machines
-        if (!(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO || vm.getVirtualMachine() instanceof SecondaryStorageVmVO)) {
+        if (userVm) {
             String nestedVirt = _configDao.getValue(Config.VmwareEnableNestedVirtualization.key());
             if (nestedVirt != null) {
                 s_logger.debug("Nested virtualization requested, adding flag to vm configuration");
@@ -293,9 +311,19 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             }
         }
         // Determine the VM's OS description
-        GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
+        GuestOSVO guestOS = _guestOsDao.findByIdIncludingRemoved(vm.getVirtualMachine().getGuestOSId());
         to.setOs(guestOS.getDisplayName());
         to.setHostName(vm.getHostName());
+        HostVO host = _hostDao.findById(vm.getVirtualMachine().getHostId());
+        GuestOSHypervisorVO guestOsMapping = null;
+        if (host != null) {
+            guestOsMapping = _guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), getHypervisorType().toString(), host.getHypervisorVersion());
+        }
+        if (guestOsMapping == null || host == null) {
+            to.setPlatformEmulator(null);
+        } else {
+            to.setPlatformEmulator(guestOsMapping.getGuestOsName());
+        }
         return to;
     }
 
@@ -340,6 +368,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @DB
     public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
         boolean needDelegation = false;
+
+        if (cmd instanceof StorageSubSystemCommand) {
+            Boolean fullCloneEnabled = VmwareFullClone.value();
+            StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
+            c.setExecuteInSequence(fullCloneEnabled);
+        }
 
         //NOTE: the hostid can be a hypervisor host, or a ssvm agent. For copycommand, if it's for volume upload, the hypervisor
         //type is empty, so we need to check the format of volume at first.
@@ -478,5 +512,53 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {VmwareReserveCpu, VmwareReserveMemory};
+    }
+
+    @Override
+    public List<Command> finalizeExpungeVolumes(VirtualMachine vm) {
+        List<Command> commands = new ArrayList<Command>();
+
+        List<VolumeVO> volumes = _volumeDao.findByInstance(vm.getId());
+
+        if (volumes != null) {
+            for (VolumeVO volume : volumes) {
+                StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
+
+                // storagePool should be null if we are expunging a volume that was never
+                // attached to a VM that was started (the "trick" for storagePool to be null
+                // is that none of the VMs this volume may have been attached to were ever started,
+                // so the volume was never assigned to a storage pool)
+                if (storagePool != null && storagePool.isManaged() && volume.getVolumeType() == Volume.Type.ROOT) {
+                    VolumeInfo volumeInfo = _volFactory.getVolume(volume.getId());
+                    PrimaryDataStore primaryDataStore = (PrimaryDataStore)volumeInfo.getDataStore();
+                    Map<String, String> details = primaryDataStore.getDetails();
+
+                    if (details == null) {
+                        details = new HashMap<String, String>();
+
+                        primaryDataStore.setDetails(details);
+                    }
+
+                    details.put(DiskTO.MANAGED, Boolean.TRUE.toString());
+
+                    DeleteCommand cmd = new DeleteCommand(volumeInfo.getTO());
+
+                    commands.add(cmd);
+
+                    break;
+                }
+            }
+        }
+
+        return commands;
+    }
+
+    @Override
+    public Map<String, String> getClusterSettings(long vmId) {
+        Map<String, String> details = new HashMap<String, String>();
+        long clusterId = getClusterId(vmId);
+        details.put(VmwareReserveCpu.key(), VmwareReserveCpu.valueIn(clusterId).toString());
+        details.put(VmwareReserveMemory.key(), VmwareReserveMemory.valueIn(clusterId).toString());
+        return details;
     }
 }

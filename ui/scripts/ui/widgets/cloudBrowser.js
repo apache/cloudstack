@@ -205,16 +205,7 @@
                 .addClass('reduced')
             ).removeClass('active maximized');
 
-            $toRemove.css(
-                _panel.initialState($container), {
-                    duration: 500,
-                    complete: function() {
-                        $(this).remove();
-
-                        if (complete) complete($toShow);
-                    }
-                }
-            );
+            $toRemove.remove();
             $toShow.show();
             $panel.css({
                 left: _panel.position($container, {
@@ -352,75 +343,6 @@
                 $browser.cloudBrowser('selectPanel', {
                     panel: data.panel
                 });
-            }
-        }
-    ));
-
-    // Breadcrumb hovering
-    $('#breadcrumbs li').live('mouseover', cloudStack.ui.event.bind(
-        'cloudBrowser', {
-            'breadcrumb': function($target, $browser, data) {
-                var $hiddenPanels = data.panel.siblings().filter(function() {
-                    return $(this).index() > data.panel.index();
-                });
-                var $targetPanel = data.panel.filter(':first');
-                var $targetBreadcrumb = _breadcrumb.filter($targetPanel);
-                var $panelWrapper = $('<div>').addClass('panel panel-highlight-wrapper');
-
-                $hiddenPanels.addClass('mouseover-hidden');
-
-                $browser.data('browser-panel-highlight-timer', setTimeout(function() {
-                    $('#browser').addClass('panel-highlight');
-                    $('.overlay').remove();
-
-                    // Setup panel and wrapper positioning
-                    $panelWrapper
-                        .css({
-                            left: $targetPanel.position().left
-                        })
-                        .width($targetPanel.width());
-                    $targetPanel
-                        .wrap($panelWrapper);
-                    $panelWrapper
-                        .zIndex(10000)
-                        .overlay();
-                    $targetPanel.filter(':last').addClass('highlighted');
-
-                    // Setup breadcrumbs
-                    $targetBreadcrumb.each(function() {
-                        $(this).data('breadcrumb-original-zindex', $(this).zIndex());
-                    });
-                    $targetBreadcrumb.zIndex(10001);
-
-                    $hiddenPanels.hide();
-                }, 1000));
-            }
-        }
-    ));
-
-    $('#breadcrumbs li').live('mouseout', cloudStack.ui.event.bind(
-        'cloudBrowser', {
-            'breadcrumb': function($target, $browser, data) {
-                var $getHiddenPanels = $browser.find('.panel.mouseover-hidden');
-                var $visiblePanels = $getHiddenPanels.siblings();
-                var $visibleBreadcrumbs = _breadcrumb.filter($visiblePanels);
-
-                clearTimeout($browser.data('browser-panel-highlight-timer'));
-                $('#browser').removeClass('panel-highlight');
-                $('#browser .panel').removeClass('highlighted');
-                $('#browser .panel.panel-highlight-wrapper').each(function() {
-                    var $wrapper = $(this);
-                    var $panel = $wrapper.find('.panel');
-
-                    $wrapper.after($panel);
-                    $wrapper.remove();
-                });
-                $getHiddenPanels.removeClass('mouseover-hidden').show();
-                $visibleBreadcrumbs.each(function() {
-                    $(this).zIndex($(this).data('breadcrumb-original-zindex'));
-                });
-                $('.overlay').remove();
-                $('#browser .panel > .highlight-arrow').remove();
             }
         }
     ));

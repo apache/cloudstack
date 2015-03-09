@@ -35,7 +35,8 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@APICommand(name = "deleteStratosphereSsp", responseObject = SuccessResponse.class, description = "Removes stratosphere ssp server")
+@APICommand(name = "deleteStratosphereSsp", responseObject = SuccessResponse.class, description = "Removes stratosphere ssp server",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSspCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(AddSspCmd.class.getName());
     @Inject

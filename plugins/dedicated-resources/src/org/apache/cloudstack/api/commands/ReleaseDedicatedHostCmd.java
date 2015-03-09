@@ -33,7 +33,8 @@ import org.apache.cloudstack.dedicated.DedicatedService;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "releaseDedicatedHost", description = "Release the dedication for host", responseObject = SuccessResponse.class)
+@APICommand(name = "releaseDedicatedHost", description = "Release the dedication for host", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ReleaseDedicatedHostCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReleaseDedicatedHostCmd.class.getName());
 

@@ -1,24 +1,25 @@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements. See the NOTICE file
+// or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
-// regarding copyright ownership. The ASF licenses this file
+// regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// with the License. You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied. See the License for the
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 //
 
 package org.apache.cloudstack.network.opendaylight.api;
 
+import org.apache.cloudstack.utils.security.SSLUtils;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -33,6 +34,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -175,7 +177,7 @@ public class NeutronRestApi {
 
             try {
                 // Install the all-trusting trust manager
-                SSLContext sc = SSLContext.getInstance("SSL");
+                SSLContext sc = SSLUtils.getSSLContext();
                 sc.init(null, trustAllCerts, new java.security.SecureRandom());
                 ssf = sc.getSocketFactory();
             } catch (KeyManagementException e) {
@@ -187,17 +189,29 @@ public class NeutronRestApi {
 
         @Override
         public Socket createSocket(final String host, final int port) throws IOException {
-            return ssf.createSocket(host, port);
+            Socket s = ssf.createSocket(host, port);
+            if (s instanceof SSLSocket) {
+                ((SSLSocket)s).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket)s).getEnabledProtocols()));
+            }
+            return s;
         }
 
         @Override
         public Socket createSocket(final String address, final int port, final InetAddress localAddress, final int localPort) throws IOException, UnknownHostException {
-            return ssf.createSocket(address, port, localAddress, localPort);
+            Socket s = ssf.createSocket(address, port, localAddress, localPort);
+            if (s instanceof SSLSocket) {
+                ((SSLSocket)s).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket)s).getEnabledProtocols()));
+            }
+            return s;
         }
 
         @Override
         public Socket createSocket(final Socket socket, final String host, final int port, final boolean autoClose) throws IOException, UnknownHostException {
-            return ssf.createSocket(socket, host, port, autoClose);
+            Socket s = ssf.createSocket(socket, host, port, autoClose);
+            if (s instanceof SSLSocket) {
+                ((SSLSocket)s).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket)s).getEnabledProtocols()));
+            }
+            return s;
         }
 
         @Override
@@ -205,9 +219,16 @@ public class NeutronRestApi {
                 UnknownHostException, ConnectTimeoutException {
             int timeout = params.getConnectionTimeout();
             if (timeout == 0) {
-                return createSocket(host, port, localAddress, localPort);
+                Socket s = createSocket(host, port, localAddress, localPort);
+                if (s instanceof SSLSocket) {
+                    ((SSLSocket)s).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket)s).getEnabledProtocols()));
+                }
+                return s;
             } else {
                 Socket s = ssf.createSocket();
+                if (s instanceof SSLSocket) {
+                    ((SSLSocket)s).setEnabledProtocols(SSLUtils.getSupportedProtocols(((SSLSocket)s).getEnabledProtocols()));
+                }
                 s.bind(new InetSocketAddress(localAddress, localPort));
                 s.connect(new InetSocketAddress(host, port), timeout);
                 return s;

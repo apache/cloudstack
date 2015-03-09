@@ -24,6 +24,7 @@ help() {
    printf " -k path of private key\n"
    printf " -p path of certificate of public key\n"
    printf " -t path of certificate chain\n"
+   printf " -u path of root ca certificate \n"
 }
 
 
@@ -36,6 +37,7 @@ config_httpd_conf() {
   echo "  DocumentRoot /var/www/html/" >> /etc/httpd/conf/httpd.conf
   echo "  ServerName $srvr" >> /etc/httpd/conf/httpd.conf
   echo "  SSLEngine on" >>  /etc/httpd/conf/httpd.conf
+  echo "  SSLProtocol all -SSLv2 -SSLv3" >>  /etc/httpd/conf/httpd.conf
   echo "  SSLCertificateFile /etc/httpd/ssl/certs/realhostip.crt" >>  /etc/httpd/conf/httpd.conf
   echo "  SSLCertificateKeyFile /etc/httpd/ssl/keys/realhostip.key" >> /etc/httpd/conf/httpd.conf
   echo "</VirtualHost>" >> /etc/httpd/conf/httpd.conf
@@ -53,6 +55,11 @@ config_apache2_conf() {
   sed -i -e "s/NameVirtualHost .*:80/NameVirtualHost $ip:80/g" /etc/apache2/ports.conf
   sed -i  's/ssl-cert-snakeoil.key/cert_apache.key/' /etc/apache2/sites-available/default-ssl
   sed -i  's/ssl-cert-snakeoil.pem/cert_apache.crt/' /etc/apache2/sites-available/default-ssl
+  sed -i  's/SSLProtocol.*$/SSLProtocol all -SSLv2 -SSLv3/' /etc/apache2/sites-available/default-ssl
+  if [ -f /etc/ssl/certs/cert_apache_chain.crt ]
+  then
+    sed -i -e "s/#SSLCertificateChainFile.*/SSLCertificateChainFile \/etc\/ssl\/certs\/cert_apache_chain.crt/" /etc/apache2/sites-available/default-ssl
+  fi
 }
 
 copy_certs() {
@@ -88,12 +95,13 @@ cccflag=
 customPrivKey=$(dirname $0)/certs/realhostip.key
 customPrivCert=$(dirname $0)/certs/realhostip.crt
 customCertChain=
+customCACert=
 publicIp=
 hostName=
 keyStore=$(dirname $0)/certs/realhostip.keystore
 aliasName="CPVMCertificate"
 storepass="vmops.com"
-while getopts 'i:h:k:p:t:c' OPTION
+while getopts 'i:h:k:p:t:u:c' OPTION
 do
   case $OPTION in
      c) cflag=1
@@ -106,6 +114,9 @@ do
         ;;
      t) cccflag=1
         customCertChain="$OPTARG"
+        ;;
+     u) ccacflag=1
+        customCACert="$OPTARG"
         ;;
      i) publicIp="$OPTARG"
         ;;
@@ -165,10 +176,10 @@ then
   exit 2
 fi
 
-if [ -f "$customPrivCert" ]
+if [ -f "$customCACert" ]
 then
   keytool -delete -alias $aliasName -keystore $keyStore -storepass $storepass -noprompt
-  keytool -import -alias $aliasName -keystore $keyStore -storepass $storepass -noprompt -file $customPrivCert
+  keytool -import -alias $aliasName -keystore $keyStore -storepass $storepass -noprompt -file $customCACert
 fi
 
 if [ -d /etc/apache2 ]

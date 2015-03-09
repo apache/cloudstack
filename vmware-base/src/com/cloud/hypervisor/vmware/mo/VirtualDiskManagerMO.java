@@ -25,6 +25,7 @@ import com.vmware.vim25.VirtualDiskSpec;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class VirtualDiskManagerMO extends BaseMO {
+    @SuppressWarnings("unused")
     private static final Logger s_logger = Logger.getLogger(VirtualDiskManagerMO.class);
 
     public VirtualDiskManagerMO(VmwareContext context) {
@@ -40,7 +41,7 @@ public class VirtualDiskManagerMO extends BaseMO {
     }
 
     public void copyVirtualDisk(String srcName, ManagedObjectReference morSrcDc, String destName, ManagedObjectReference morDestDc, VirtualDiskSpec diskSpec,
-        boolean force) throws Exception {
+            boolean force) throws Exception {
 
         ManagedObjectReference morTask = _context.getService().copyVirtualDiskTask(_mor, srcName, morSrcDc, destName, morDestDc, diskSpec, force);
 

@@ -34,7 +34,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 
-@APICommand(name = "createAffinityGroup", responseObject = AffinityGroupResponse.class, description = "Creates an affinity/anti-affinity group")
+@APICommand(name = "createAffinityGroup", responseObject = AffinityGroupResponse.class, description = "Creates an affinity/anti-affinity group", entityType = {AffinityGroup.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAffinityGroupCmd.class.getName());
 
@@ -101,7 +102,7 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
     @Override
     public long getEntityOwnerId() {
         Account account = CallContext.current().getCallingAccount();
-        if ((account == null) || isAdmin(account.getType())) {
+        if ((account == null) || _accountService.isAdmin(account.getId())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
                 if (userAccount != null) {
@@ -125,7 +126,7 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
         if (group != null) {
             AffinityGroupResponse response = _responseGenerator.createAffinityGroupResponse(group);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create affinity group:" + affinityGroupName);
         }

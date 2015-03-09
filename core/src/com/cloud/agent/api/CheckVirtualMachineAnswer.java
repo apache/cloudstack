@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,25 +15,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api;
 
-import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.PowerState;
 
 public class CheckVirtualMachineAnswer extends Answer {
 
     Integer vncPort;
-    State state;
+    PowerState state;
 
     protected CheckVirtualMachineAnswer() {
     }
 
-    public CheckVirtualMachineAnswer(CheckVirtualMachineCommand cmd, State state, Integer vncPort, String detail) {
+    public CheckVirtualMachineAnswer(CheckVirtualMachineCommand cmd, PowerState state, Integer vncPort, String detail) {
         super(cmd, true, detail);
         this.state = state;
         this.vncPort = vncPort;
     }
 
-    public CheckVirtualMachineAnswer(CheckVirtualMachineCommand cmd, State state, Integer vncPort) {
+    public CheckVirtualMachineAnswer(CheckVirtualMachineCommand cmd, PowerState state, Integer vncPort) {
         this(cmd, state, vncPort, null);
     }
 
@@ -44,7 +47,7 @@ public class CheckVirtualMachineAnswer extends Answer {
         return vncPort;
     }
 
-    public State getState() {
+    public PowerState getState() {
         return state;
     }
 }

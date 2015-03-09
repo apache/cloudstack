@@ -126,6 +126,8 @@ public class KVMGuestOsMapper {
         s_mapper.put("Windows NT 4", "Windows NT");
         s_mapper.put("Windows 3.1", "Windows 3.1");
         s_mapper.put("Windows PV", "Other PV");
+        s_mapper.put("FreeBSD 10 (32-bit)", "FreeBSD 10");
+        s_mapper.put("FreeBSD 10 (64-bits", "FreeBSD 10");
         s_mapper.put("Other PV (32-bit)", "Other PV");
         s_mapper.put("Other PV (64-bit)", "Other PV");
 

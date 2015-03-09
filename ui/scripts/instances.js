@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack) {
-    var vmMigrationHostObjs;
+    var vmMigrationHostObjs, ostypeObjs;
 
     var vmSnapshotAction = function(args) {
         var action = {
@@ -31,21 +31,39 @@
                 fields: {
                     name: {
                         label: 'label.name',
+                        docID: 'helpCreateInstanceSnapshotName',
                         isInput: true
                     },
                     description: {
                         label: 'label.description',
+                        docID: 'helpCreateInstanceSnapshotDescription',
                         isTextarea: true
                     },
                     snapshotMemory: {
                         label: 'label.vmsnapshot.memory',
+                        docID: 'helpCreateInstanceSnapshotMemory',
                         isBoolean: true,
-                        isChecked: false
+                        isChecked: false,
+                        isHidden: function(args) {
+                            if (args.context.instances[0].vgpu != undefined) {
+                                return true;
+                            }
+                            return false;
+                        }
                     },
                     quiescevm: {
                         label: 'label.quiesce.vm',
                         isBoolean: true,
-                        isChecked: false
+                        isChecked: false,
+                        isHidden: function(args) {
+                            if (args.context.instances[0].hypervisor !== 'VMware') {
+                                return true;
+                            }
+
+                            args.form.fields.quiescevm.isChecked = true;
+                            
+                            return false;
+                        }
                     }
                 }
             },
@@ -81,6 +99,9 @@
                                     }
                                 }
                             });
+                        },
+                        error: function(json) {
+                            args.response.error(parseXMLHttpResponse(json));
                         }
                     });       
                 });
@@ -150,8 +171,7 @@
                     truncate: true
                 },
                 zonename: {
-                    label: 'label.zone.name',
-                    truncate: true
+                    label: 'label.zone.name'
                 },
                 state: {
                     label: 'label.state',
@@ -166,10 +186,10 @@
 
             advSearchFields: {
                 name: {
-                    label: 'Name'
+                    label: 'label.name'
                 },
                 zoneid: {
-                    label: 'Zone',
+                    label: 'label.zone',
                     select: function(args) {
                         $.ajax({
                             url: createURL('listZones'),
@@ -193,7 +213,7 @@
                 },
 
                 domainid: {
-                    label: 'Domain',
+                    label: 'label.domain',
                     select: function(args) {
                         if (isAdmin() || isDomainAdmin()) {
                             $.ajax({
@@ -235,7 +255,7 @@
                     }
                 },
                 account: {
-                    label: 'Account',
+                    label: 'label.account',
                     isHidden: function(args) {
                         if (isAdmin() || isDomainAdmin())
                             return false;
@@ -245,10 +265,10 @@
                 },
 
                 tagKey: {
-                    label: 'Tag Key'
+                    label: 'label.tag.key'
                 },
                 tagValue: {
-                    label: 'Tag Value'
+                    label: 'label.tag.value'
                 }
             },
 
@@ -311,9 +331,12 @@
                 }
 
                 if ("hosts" in args.context) {
+                    g_hostid = args.context.hosts[0].id;
                     $.extend(data, {
                         hostid: args.context.hosts[0].id
                     });
+                } else {
+                    g_hostid = null;
                 }
 
                 if ("affinityGroups" in args.context) {
@@ -330,6 +353,26 @@
                     });
                 }
 
+                if ("templates" in args.context) {
+                    $.extend(data, {
+                        templateid: args.context.templates[0].id
+                    });
+                }
+
+                if ("isos" in args.context) {
+                    $.extend(data, {
+                        isoid: args.context.isos[0].id
+                    });
+                }
+
+                if ("sshkeypairs" in args.context) {
+                    $.extend(data, {
+                        domainid: args.context.sshkeypairs[0].domainid,
+                        account: args.context.sshkeypairs[0].account,
+                        keypair: args.context.sshkeypairs[0].name
+                    });
+                }
+
                 $.ajax({
                     url: createURL('listVirtualMachines'),
                     data: data,
@@ -338,7 +381,13 @@
                         args.response.success({
                             data: items
                         });
-                    }
+                    },
+                    error: function(XMLHttpResponse) {
+                        cloudStack.dialog.notice({
+                            message: parseXMLHttpResponse(XMLHttpResponse)
+                        });
+                        args.response.error();
+                     }
                 });
             },
 
@@ -355,9 +404,9 @@
                     label: 'label.affinity.groups'
                 }, {
                     path: '_zone.hosts',
-                    label: 'label.hosts',
+                    label: 'label.host',
                     preFilter: function(args) {
-                        return isAdmin();
+                        return isAdmin() && args.context.instances[0].hostid;
                     },
                     updateContext: function(args) {
                         var instance = args.context.instances[0];
@@ -458,7 +507,7 @@
                             },
                             complete: function(args) {
                                 if (args.password != null) {
-                                    return 'Password of the VM is ' + args.password;
+                                    return 'label.vm.password' + ' ' + args.password;
                                 }
 
                                 return false;
@@ -472,7 +521,7 @@
                         label: 'label.action.stop.instance',
                         compactLabel: 'label.stop',
                         createForm: {
-                            title: 'Stop instance',
+                            title: 'notification.stop.instance',
                             desc: 'message.action.stop.instance',
                             fields: {
                                 forced: {
@@ -495,7 +544,7 @@
                                         _custom: {
                                             jobId: jid,
                                             getUpdatedItem: function(json) {
-                                                return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                                return $.extend(json.queryasyncjobresultresponse.jobresult.virtualmachine, { hostid: null });
                                             },
                                             getActionFilter: function() {
                                                 return vmActionfilter;
@@ -565,7 +614,8 @@
                         compactLabel: 'label.destroy',
                         createForm: {
                             title: 'label.action.destroy.instance', 
-                            desc: 'Please confirm that you want to destroy this instance',
+                            desc: 'label.action.destroy.instance',
+			    isWarning: true,
                             preFilter: function(args) {
                             	if (isAdmin() || isDomainAdmin()) {
                             		args.$form.find('.form-item[rel=expunge]').css('display', 'inline-block');
@@ -575,7 +625,7 @@
                             },
                             fields: {
                             	expunge: {
-                                    label: 'Expunge',
+                                    label: 'label.expunge',
                                     isBoolean: true,
                                     isChecked: false
                                 }
@@ -628,6 +678,7 @@
                             confirm: function(args) {
                                 return 'message.action.expunge.instance';
                             },
+                            isWarning: true,
                             notification: function(args) {
                                 return 'label.action.expunge.instance';
                             }
@@ -654,15 +705,15 @@
                             poll: pollAsyncJobResult
                         }
                     },
-                    restore: {
-                        label: 'label.action.restore.instance',
-                        compactLabel: 'label.restore',
+                    recover: {
+                        label: 'label.recover.vm',
+                        compactLabel: 'label.recover.vm',
                         messages: {
                             confirm: function(args) {
-                                return 'message.action.restore.instance';
+                                return 'message.recover.vm';
                             },
                             notification: function(args) {
-                                return 'label.action.restore.instance';
+                                return 'label.recover.vm';
                             }
                         },
                         action: function(args) {
@@ -688,19 +739,19 @@
                             }
                         }
                     },
-                    reset: {
-                        label: 'Reset VM',
-                        textLabel: 'Reset VM',
+                    reinstall: {
+                        label: 'label.reinstall.vm',
                         messages: {
                             confirm: function(args) {
-                                return 'Do you want to restore the VM ?';
+                                return 'message.reinstall.vm';
                             },
+                            isWarning: true,
                             notification: function(args) {
-                                return 'Reset VM';
+                                return 'label.reinstall.vm';
                             },
                             complete: function(args) {
                             	if (args.password != null && args.password.length > 0)
-                                    return 'Password has been reset to ' + args.password;
+                                    return _l('label.password.reset.confirm') + args.password;
                             	else
                             		return null;
                             }
@@ -736,7 +787,7 @@
                     },
 
                     changeAffinity: {
-                        label: 'Change affinity',
+                        label: 'label.change.affinity',
 
                         action: {
                             custom: cloudStack.uiCustom.affinity({
@@ -758,7 +809,7 @@
                                                 var networks = json.listnetworksresponse.network;
                                                 var items = [{
                                                     id: -1,
-                                                    description: 'Please select a tier'
+                                                    description: 'message.select.tier'
                                                 }];
                                                 $(networks).each(function() {
                                                     items.push({
@@ -865,7 +916,7 @@
                         },
                         messages: {
                             notification: function(args) {
-                                return 'Change affinity';
+                                return 'label.change.affinity';
                             }
                         },
                         notification: {
@@ -928,14 +979,14 @@
                                                         	 //do nothing                                                        	 
                                                          } else if (result.jobstatus == 2) {
                                                         	 cloudStack.dialog.notice({
-                                                                 message: "Failed to update XenServer Tools Version 6.1+ field. Error: " + _s(result.jobresult.errortext)
+                                                                 message: _s(result.jobresult.errortext)
                                                              });                                                             
                                                          }
                                                      }
                                                  },
                                                  error: function(XMLHttpResponse) {                                                    
                                                      cloudStack.dialog.notice({
-                                                         message: "Failed to update XenServer Tools Version 6.1+ field. Error: " + parseXMLHttpResponse(XMLHttpResponse)
+                                                         message: parseXMLHttpResponse(XMLHttpResponse)
                                                      });                                                          
                                                  }
                                              });
@@ -954,13 +1005,17 @@
                             title: 'label.action.attach.iso',
                             fields: {
                                 iso: {
-                                    label: 'ISO',
+                                    label: 'label.iso',
                                     select: function(args) {
                                         var items = [];
                                         var map = {};
                                         $.ajax({
-                                            url: createURL("listIsos&isReady=true&isofilter=featured"),
-                                            dataType: "json",
+                                            url: createURL("listIsos"),
+                                            data: {
+                                            	isofilter: 'featured',
+                                            	isReady: true,
+                                            	zoneid: args.context.instances[0].zoneid
+                                            },
                                             async: false,
                                             success: function(json) {
                                                 var isos = json.listisosresponse.iso;
@@ -974,8 +1029,12 @@
                                             }
                                         });
                                         $.ajax({
-                                            url: createURL("listIsos&isReady=true&isofilter=community"),
-                                            dataType: "json",
+                                            url: createURL("listIsos"),
+                                            data: {
+                                            	isofilter: 'community',
+                                            	isReady: true,
+                                            	zoneid: args.context.instances[0].zoneid
+                                            },
                                             async: false,
                                             success: function(json) {
                                                 var isos = json.listisosresponse.iso;
@@ -991,8 +1050,12 @@
                                             }
                                         });
                                         $.ajax({
-                                            url: createURL("listIsos&isReady=true&isofilter=selfexecutable"),
-                                            dataType: "json",
+                                            url: createURL("listIsos"),
+                                            data: {
+                                            	isofilter: 'selfexecutable',
+                                            	isReady: true,
+                                            	zoneid: args.context.instances[0].zoneid
+                                            },
                                             async: false,
                                             success: function(json) {
                                                 var isos = json.listisosresponse.iso;
@@ -1167,25 +1230,27 @@
                                 },
                                 osTypeId: {
                                     label: 'label.os.type',
-                                    select: function(args) {
-                                        $.ajax({
-                                            url: createURL("listOsTypes"),
-                                            dataType: "json",
-                                            async: true,
-                                            success: function(json) {
-                                                var ostypes = json.listostypesresponse.ostype;
-                                                var items = [];
-                                                $(ostypes).each(function() {
-                                                    items.push({
-                                                        id: this.id,
-                                                        description: this.description
-                                                    });
-                                                });
-                                                args.response.success({
-                                                    data: items
-                                                });
-                                            }
+                                    select: function(args) {                                   
+                                    	if (ostypeObjs == undefined) {                                     	
+	                                        $.ajax({
+	                                            url: createURL("listOsTypes"),
+	                                            dataType: "json",
+	                                            async: false,
+	                                            success: function(json) {	                                            	
+	                                            	ostypeObjs = json.listostypesresponse.ostype;	
+	                                            }
+	                                        });
+                                    	}                                    	
+                                    	var items = [];
+                                        $(ostypeObjs).each(function() {
+                                            items.push({
+                                                id: this.id,
+                                                description: this.description
+                                            });
                                         });
+                                        args.response.success({
+                                            data: items
+                                        });                                    	
                                     }
                                 },
                                 isPublic: {
@@ -1282,7 +1347,7 @@
                                                     });
                                                 } else {
                                                     cloudStack.dialog.notice({
-                                                        message: _l('No Hosts are avaialble for Migration')
+                                                        message: _l('message.no.host.available')
                                                     }); //Only a single host in the set up
                                                 }
                                             }
@@ -1428,7 +1493,7 @@
                             	var description = '';                            	
                             	var vmObj = args.jsonObj;                            	
                             	if (vmObj.state == 'Running' && vmObj.hypervisor == 'VMware') {
-                            		description = 'Please read the dynamic scaling section in the admin guide before scaling up.';
+                            		description = 'message.read.admin.guide.scaling.up';
                             	}                             
                                 return description;                  	                
                             },
@@ -1525,17 +1590,17 @@
                         	                        	
                         	if (args.$form.find('.form-item[rel=cpuSpeed]').is(':visible')) {
                                 $.extend(data, {
-                                	'customparameters[0].cpuSpeed': args.data.cpuSpeed 
+                                	'details[0].cpuSpeed': args.data.cpuSpeed 
                                 });
                             }                        	
                         	if (args.$form.find('.form-item[rel=cpuNumber]').is(':visible')) {
                                 $.extend(data, {
-                                	'customparameters[0].cpuNumber': args.data.cpuNumber
+                                	'details[0].cpuNumber': args.data.cpuNumber
                                 });
                             }                        	
                         	if (args.$form.find('.form-item[rel=memory]').is(':visible')) {
                                 $.extend(data, {
-                                	'customparameters[0].memory': args.data.memory
+                                	'details[0].memory': args.data.memory
                                 });
                             }                        	
                         	
@@ -1564,22 +1629,111 @@
                             });
                         },
                         messages: {
-                            confirm: function(args) {
-                                return 'Do you really want to scale Up your instance ?';
-                            },
                             notification: function(args) {
-                                return 'Instance Scaled Up';
+                                return 'label.change.service.offering';  //CLOUDSTACK-7744
                             }
                         },
                         notification: {
                             poll: pollAsyncJobResult
                         }
                     },
-                   
-                    assignVmToAnotherAccount: {
-                        label: 'Assign Instance to Another Account',
+                  
+                    resetSSHKeyForVirtualMachine: {
+                        label: 'Reset SSH Key Pair',
                         createForm: {
-                            title: 'Assign Instance to Another Account',
+                            title: 'Reset SSH Key Pair on VM',
+                            desc: 'Please specify a ssh key pair that you would like to add to this VM. Please note the root password will be changed by this operation if password is enabled.',
+                            fields: {
+                                sshkeypair: {
+                                    label: 'New SSH Key Pair',
+                                    validation: {
+                                        required: true
+                                    },
+                                    select: function(args) {
+                                        var data = {
+                                            domainid: args.context.instances[0].domainid,
+                                            account: args.context.instances[0].account,
+                                            listAll: true
+                                        };
+
+                                        $.ajax({
+                                            url: createURL("listSSHKeyPairs"),
+                                            data: data,
+                                            async: false,
+                                            success: function(json) {
+                                                var items = [];
+                                                var sshkeypairs = json.listsshkeypairsresponse.sshkeypair;
+                                                if (sshkeypairs == null) {
+                                                } else {
+                                                    for (var i = 0; i < sshkeypairs.length; i++) {
+                                                        var sshkeypair = sshkeypairs[i];
+                                                        if (sshkeypair.name != args.context.instances[0].keypair) {
+                                                            items.push({
+                                                                id: sshkeypair.name,
+                                                                description: sshkeypair.name
+                                                            });
+                                                        }
+                                                    }
+                                                }
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        },
+
+                        action: function(args) {
+                            var data = {
+                                domainid: args.context.instances[0].domainid,
+                                account: args.context.instances[0].account,
+                                id: args.context.instances[0].id,
+                                keypair: args.data.sshkeypair
+                            };
+
+                            $.ajax({
+                                url: createURL("resetSSHKeyForVirtualMachine"),
+                                data: data,
+                                async: true,
+                                success: function(json) {
+                                    var jid = json.resetSSHKeyforvirtualmachineresponse.jobid;
+                                    args.response.success({
+                                        _custom: {
+                                            jobId: jid,
+                                            getUpdatedItem: function(json) {
+                                                return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                            },
+                                            getActionFilter: function() {
+                                                return vmActionfilter;
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        },
+                        messages: {
+                            notification: function(args) {
+                                return 'Reset SSH Key Pair on VM';
+                            },
+                            complete: function(args) {
+                                if (args.password != null) {
+                                    return 'Password of the VM has been reset to ' + args.password;
+                                }
+
+                                return false;
+                            }
+                        },
+                        notification: {
+                            poll: pollAsyncJobResult
+                        }
+                    },
+ 
+                    assignVmToAnotherAccount: {
+                        label: 'label.assign.instance.another',
+                        createForm: {
+                            title: 'label.assign.instance.another',
                             fields: {                                
                             	domainid: {
                 				    label: 'label.domain',
@@ -1621,14 +1775,14 @@
                         },
                         action: function(args) {                            
                             $.ajax({
-                                url: createURL('assignVirtualMachine&virtualmachine'),
+                                url: createURL('assignVirtualMachine'),
                                 data: {
                                     virtualmachineid: args.context.instances[0].id,
                                     domainid: args.data.domainid,
                                     account: args.data.account
                                 },                                
                                 success: function(json) {   
-                                    var item = json.virtualmachine.virtualmachine;                                     
+                                    var item = json.assignvirtualmachineresponse.virtualmachine;                                     
                                     args.response.success({
                                         data: item
                                     });                                    
@@ -1637,7 +1791,7 @@
                         },
                         messages: {
                             notification: function(args) {
-                                return 'Assign Instance to Another Account';
+                                return 'label.assign.instance.another';
                             }
                         },
                         notification: {
@@ -1677,7 +1831,32 @@
                             }
                             
                             if ('instances' in args.context && args.context.instances[0].hypervisor != 'XenServer') {
-                          	  hiddenFields.push('xenserverToolsVersion61plus');
+                          	    hiddenFields.push('xenserverToolsVersion61plus');
+                            }
+                            
+                            if ('instances' in args.context && args.context.instances[0].guestosid != undefined) {                        
+                            	if (ostypeObjs == undefined) {
+	                            	$.ajax({
+	                                    url: createURL("listOsTypes"),
+	                                    dataType: "json",
+	                                    async: false,
+	                                    success: function(json) {	                                    	
+	                                    	ostypeObjs = json.listostypesresponse.ostype;		                                    	
+	                                    }
+	                                });
+                            	}                            	
+                            	if (ostypeObjs != undefined) {
+                            		var ostypeName;
+                            		for (var i = 0; i < ostypeObjs.length; i++) {
+                            			if (ostypeObjs[i].id == args.context.instances[0].guestosid) {                            				
+                            				ostypeName = ostypeObjs[i].description;
+                            				break;
+                            			}
+                            		}                            		
+                            		if (ostypeName == undefined || ostypeName.indexOf("Win") == -1) {                            			
+                            			hiddenFields.push('xenserverToolsVersion61plus');
+                            		}                            		
+                            	}
                             }
                             
                             if (!args.context.instances[0].publicip) {
@@ -1726,7 +1905,7 @@
                             },
 
                             isdynamicallyscalable: {
-                                label: 'Dynamically Scalable',
+                                label: 'label.dynamically.scalable',
                                 isBoolean: true,
                                 isEditable: true,
                                 converter: cloudStack.converters.toBooleanText
@@ -1735,24 +1914,26 @@
                             guestosid: {
                                 label: 'label.os.type',
                                 isEditable: true,
-                                select: function(args) {
-                                    $.ajax({
-                                        url: createURL("listOsTypes"),
-                                        dataType: "json",
-                                        async: true,
-                                        success: function(json) {
-                                            var ostypes = json.listostypesresponse.ostype;
-                                            var items = [];
-                                            $(ostypes).each(function() {
-                                                items.push({
-                                                    id: this.id,
-                                                    description: this.description
-                                                });
-                                            });
-                                            args.response.success({
-                                                data: items
-                                            });
-                                        }
+                                select: function(args) {                                
+                                    if (ostypeObjs == undefined) {                                	
+	                                	$.ajax({
+	                                        url: createURL("listOsTypes"),
+	                                        dataType: "json",
+	                                        async: false,
+	                                        success: function(json) {	                                       
+	                                        	ostypeObjs = json.listostypesresponse.ostype;	 
+	                                        }
+	                                    });
+                                    }                                    
+                                    var items = [];
+                                    $(ostypeObjs).each(function() {
+                                        items.push({
+                                            id: this.id,
+                                            description: this.description
+                                        });
+                                    });
+                                    args.response.success({
+                                        data: items
                                     });
                                 }
                             },
@@ -1762,7 +1943,7 @@
                             },
 
                             xenserverToolsVersion61plus: {
-                                label: 'XenServer Tools Version 6.1+',
+                                label: 'label.Xenserver.Tools.Version61plus',
                                 isBoolean: true,
                                 isEditable: function () {
                                     if (isAdmin())
@@ -1789,6 +1970,18 @@
                             serviceofferingname: {
                                 label: 'label.compute.offering'
                             },
+                            cpunumber: {
+                            	label: 'label.num.cpu.cores'
+                            },
+                            cpuspeed: {
+                            	label: 'label.cpu.mhz'
+                            },
+                            memory: {
+                            	label: 'label.memory.mb'
+                            },
+                            vgpu: {
+                                label: 'label.vgpu'
+                            },
                             haenable: {
                                 label: 'label.ha.enabled',
                                 converter: cloudStack.converters.toBooleanText
@@ -1810,6 +2003,9 @@
                             },
                             publicip: {
                                 label: 'label.public.ip'
+                            },
+                            keypair: {
+                                label: 'SSH Key Pair'
                             },
                             domain: {
                                 label: 'label.domain'
@@ -1858,7 +2054,12 @@
                                         else
                                             jsonObj.xenserverToolsVersion61plus = false;
                                     }
-                                    
+                                                                           
+                                    $(window).trigger('cloudStack.module.sharedFunctions.addExtraProperties', {
+                                    	obj: jsonObj,
+                                    	objType: "UserVM"
+                                    });
+                                                                       
                                     args.response.success({
                                         actionFilter: vmActionfilter,
                                         data: jsonObj
@@ -1876,37 +2077,63 @@
                         multiple: true,
                         actions: {
                             add: {
-                                label: 'Add network to VM',
+                                label: 'label.network.addVM',
                                 messages: {
                                     confirm: function(args) {
-                                        return 'Please confirm that you would like to add a new VM NIC for this network.';
+                                        return 'message.network.addVMNIC';
                                     },
                                     notification: function(args) {
-                                        return 'Add network to VM';
+                                        return 'label.network.addVM';
                                     }
                                 },
                                 createForm: {
-                                    title: 'Add network to VM',
-                                    desc: 'Please specify the network that you would like to add this VM to. A new NIC will be added for this network.',
+                                    title: 'label.network.addVM',
+                                    desc: 'message.network.addVM.desc',
                                     fields: {
                                         networkid: {
                                             label: 'label.network',
                                             select: function(args) {
+                                            	var data1 = {
+                                            		zoneid: args.context.instances[0].zoneid	
+                                            	};
+                                            	if (isAdmin()) {
+                                            		$.extend(data1, {
+                                            			listAll: true
+                                            		});
+                                            	} else {
+                                            		$.extend(data1, {
+                                            			account: args.context.instances[0].account,
+                                                        domainid: args.context.instances[0].domainid
+                                            		});
+                                            	}     
                                                 $.ajax({
                                                     url: createURL('listNetworks'),
-                                                    data: {
-                                                        zoneid: args.context.instances[0].zoneid,
-                                                        account: args.context.instances[0].account,
-                                                        domainid: args.context.instances[0].domainid
-                                                    },
+                                                    data: data1,
                                                     success: function(json) {
+                                                        var networkObjs = json.listnetworksresponse.network;
+                                                        var nicObjs = args.context.instances[0].nic;
+                                                        var items = [];
+
+                                                        for (var i = 0; i < networkObjs.length; i++) {
+                                                            var networkObj = networkObjs[i];
+                                                            var isNetworkExists = false;
+
+                                                            for (var j = 0; j < nicObjs.length; j++) {
+                                                                if (nicObjs[j].networkid == networkObj.id) {
+                                                                    isNetworkExists = true;
+                                                                    break;
+                                                               }
+                                                            }
+
+                                                            if (!isNetworkExists) {
+                                                                items.push({
+                                                                    id: networkObj.id,
+                                                                    description: networkObj.name
+                                                                });
+                                                            }
+                                                        }
                                                         args.response.success({
-                                                            data: $.map(json.listnetworksresponse.network, function(network) {
-                                                                return {
-                                                                    id: network.id,
-                                                                    description: network.name
-                                                                };
-                                                            })
+                                                            data: items
                                                         });
                                                     }
                                                 });
@@ -1924,7 +2151,10 @@
                                         success: function(json) {
                                             args.response.success({
                                                 _custom: {
-                                                    jobId: json.addnictovirtualmachineresponse.jobid
+                                                    jobId: json.addnictovirtualmachineresponse.jobid,
+                                                    getUpdatedItem: function(json) {
+                                                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                                    }
                                                 }
                                             });
                                         }
@@ -1936,13 +2166,13 @@
                             },
 
                             makeDefault: {
-                                label: 'Set default NIC',
+                                label: 'label.set.default.NIC',
                                 messages: {
                                     confirm: function() {
-                                        return 'Please confirm that you would like to make this NIC the default for this VM.';
+                                        return 'message.set.default.NIC';
                                     },
                                     notification: function(args) {
-                                        return 'Set default NIC'
+                                        return 'label.set.default.NIC'
                                     }
                                 },
                                 action: function(args) {
@@ -1959,7 +2189,7 @@
                                                 }
                                             });
                                             cloudStack.dialog.notice({
-                                                message: _l('Please manually update the default NIC on the VM now.')
+                                                message: _l('message.set.default.NIC.manual')
                                             });
                                         }
                                     });
@@ -1990,7 +2220,10 @@
                                         success: function(json) {
                                             args.response.success({
                                                 _custom: {
-                                                    jobId: json.removenicfromvirtualmachineresponse.jobid
+                                                    jobId: json.removenicfromvirtualmachineresponse.jobid,
+                                                    getUpdatedItem: function(json) {
+                                                        return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                                    }
                                                 }
                                             })
                                         }
@@ -2003,20 +2236,23 @@
                         },
                         fields: [{
                             id: {
-                                label: 'ID'
+                                label: 'label.id'
                             },
                             name: {
                                 label: 'label.name',
                                 header: true
                             },
                             networkname: {
-                                label: 'Network Name'
+                                label: 'label.network.name'
                             },
                             type: {
                                 label: 'label.type'
                             },
                             ipaddress: {
                                 label: 'label.ip.address'
+                            },
+                            secondaryips: {
+                                label: 'label.secondary.ips'
                             },
                             gateway: {
                                 label: 'label.gateway'
@@ -2026,13 +2262,13 @@
                             },
 
                             ip6address: {
-                                label: 'IPv6 IP Address'
+                                label: 'label.ipv6.address'
                             },
                             ip6gateway: {
-                                label: 'IPv6 Gateway'
+                                label: 'label.ipv6.gateway'
                             },
                             ip6cidr: {
-                                label: 'IPv6 CIDR'
+                                label: 'label.ipv6.CIDR'
                             },
 
                             isdefault: {
@@ -2044,8 +2280,8 @@
                         }],
                         viewAll: {
                             path: 'network.secondaryNicIps',
-                            attachTo: 'ipaddress',
-                            label: 'label.view.secondary.ips',
+                            attachTo: 'secondaryips',
+                            label: 'label.edit.secondary.ips',
                             title: function(args) {
                                 var title = _l('label.menu.ipaddresses') + ' - ' + args.context.nics[0].name;
 
@@ -2068,6 +2304,19 @@
                                             }
                                         },
                                         data: $.map(json.listvirtualmachinesresponse.virtualmachine[0].nic, function(nic, index) {
+                                            if (nic.secondaryip != null) {
+                                                var secondaryips = "";
+                                                for (var i = 0; i < nic.secondaryip.length; i++) {
+                                                    if (i == 0)
+                                                        secondaryips = nic.secondaryip[i].ipaddress;
+                                                    else
+                                                        secondaryips = secondaryips + " , " + nic.secondaryip[i].ipaddress;
+                                                }
+                                                $.extend(nic, {
+                                                    secondaryips: secondaryips
+                                                })
+                                            }
+                                                
                                             var name = 'NIC ' + (index + 1);
                                             if (nic.isdefault) {
                                                 name += ' (' + _l('label.default') + ')';
@@ -2090,7 +2339,7 @@
                         multiple: true,
                         fields: [{
                             id: {
-                                label: 'ID'
+                                label: 'label.id'
                             },
                             name: {
                                 label: 'label.name'
@@ -2180,20 +2429,24 @@
 
         if (jsonObj.state == 'Destroyed') {
             if (isAdmin() || isDomainAdmin()) {
-                allowedActions.push("restore");
+                allowedActions.push("recover");
             }
             if (isAdmin() || isDomainAdmin())
                 allowedActions.push("expunge");
         } else if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
             allowedActions.push("restart");
-            if (jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true)
+            
+            if ((jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true) 
+            		&& (jsonObj.hypervisor != 'LXC')) {
                 allowedActions.push("snapshot");
+            }
+            
             allowedActions.push("destroy");            
-            allowedActions.push("reset");
+            allowedActions.push("reinstall");
              
-            //when userVm is running, scaleUp is not supported for KVM
-            if (jsonObj.hypervisor != 'KVM') {
+            //when userVm is running, scaleUp is not supported for KVM, LXC
+            if (jsonObj.hypervisor != 'KVM' && jsonObj.hypervisor != 'LXC') {
             	allowedActions.push("scaleUp");
             }              
 
@@ -2216,9 +2469,13 @@
             allowedActions.push("edit");
             allowedActions.push("start");
             allowedActions.push("destroy");
-            allowedActions.push("reset");
-            if (jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true)
+            allowedActions.push("reinstall");
+            
+            if ((jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true) 
+            		&& (jsonObj.hypervisor != 'LXC')) {
                 allowedActions.push("snapshot");
+            }
+            
             allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors 
             allowedActions.push("changeAffinity");
 
@@ -2238,7 +2495,7 @@
             if (isAdmin() || isDomainAdmin()) {
                 allowedActions.push("assignVmToAnotherAccount");
             }
-            
+            allowedActions.push("resetSSHKeyForVirtualMachine");
         } else if (jsonObj.state == 'Starting') {
             //  allowedActions.push("stop");
         } else if (jsonObj.state == 'Error') {

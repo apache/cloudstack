@@ -58,6 +58,7 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 public interface ConfigurationService {
 
@@ -248,7 +249,7 @@ public interface ConfigurationService {
 
     NetworkOffering updateNetworkOffering(UpdateNetworkOfferingCmd cmd);
 
-    List<? extends NetworkOffering> searchForNetworkOfferings(ListNetworkOfferingsCmd cmd);
+    Pair<List<? extends NetworkOffering>, Integer> searchForNetworkOfferings(ListNetworkOfferingsCmd cmd);
 
     boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd);
 

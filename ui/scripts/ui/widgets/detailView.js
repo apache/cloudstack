@@ -269,6 +269,12 @@
                                         message: args
                                     });
                                 }
+
+                                // Quickview: Remove loading state on list row
+                                if (viewArgs && viewArgs.$listViewRow) {
+                                    viewArgs.$listViewRow.removeClass('loading')
+                                        .find('.loading').removeClass('loading');
+                                }
                                 $loading.remove();
                             }
                         }
@@ -305,6 +311,7 @@
                     if (messages && messages.confirm) {
                         cloudStack.dialog.confirm({
                             message: messages.confirm(messageArgs),
+			    isWarning: messages.isWarning,
                             action: function() {
                                 performAction({
                                     id: id
@@ -430,6 +437,7 @@
          */
         edit: function($detailView, args) {
             $detailView.addClass('edit-mode');
+            var token_value = "";
 
             if ($detailView.find('.button.done').size()) return false;
 
@@ -456,8 +464,17 @@
                 tooltip: '.tooltip-box'
             });
 
+            var removeCopyPasteIcons = function() {
+                $detailView.find('.copypasteactive').removeClass('copypasteactive').addClass('copypasteenabledvalue');
+                $detailView.find('td.value .copypasteicon').hide();
+            };
+
+            removeCopyPasteIcons();
+
             var convertInputs = function($inputs) {
                 // Save and turn back into labels
+                var $token;
+                var tags_value = "";
                 $inputs.each(function() {
                     if ($(this).closest('.tagger').size()) return true;
 
@@ -465,9 +482,19 @@
                     var $value = $input.closest('td.value span');
 
                     if ($input.is('input[type=text]'))
+                    {
+                        if ($input.attr('name') === "token-input-")
+                        {
+                            $token = $value;
+                        }
+                        else if (($input.attr('name') === "tags") || ($input.attr('name') === "hosttags"))
+                        {
+                            tags_value = $input.attr('value');
+                        }
                         $value.html(_s(
                             $input.attr('value')
                         ));
+                    }
                     else if ($input.is('input[type=password]')) {
                         $value.html('');
                     } else if ($input.is('input[type=checkbox]')) {
@@ -482,6 +509,9 @@
                         $value.data('detail-view-selected-option', _s($input.find('option:selected').val()));
                     }
                 });
+
+                if ($token != null)
+                    $token.html(_s(tags_value));
             };
 
             var removeEditForm = function() {
@@ -508,6 +538,11 @@
                     var $input = $(this);
                     var $value = $input.closest('td.value span');
                     var originalValue = $input.data('original-value');
+
+                    if ($input.attr('id') === 'token-input-')
+                    {
+                        originalValue = token_value;
+                    }
 
                     $value.html(_s(originalValue));
                 });
@@ -606,11 +641,12 @@
                             return false;
                         }
                     }
+                    restoreCopyPasteIcons();
                     applyEdits($inputs, $editButton);
                 } else { // Cancel
+                    restoreCopyPasteIcons();
                     cancelEdits($inputs, $editButton);
                 }
-
                 return true;
             });
 
@@ -625,6 +661,9 @@
                 tooltip: '.tooltip-box'
             });
 
+            var restoreCopyPasteIcons = function() {
+                $detailView.find('td.value .copypasteicon').show();
+            };
 
             $detailView.find('td.value span').each(function() {
                 var name = $(this).closest('tr').data('detail-view-field');
@@ -634,6 +673,7 @@
                 // Turn into form field
                 var selectData = $value.data('detail-view-editable-select');
                 var isBoolean = $value.data('detail-view-editable-boolean');
+                var isTokenInput = $value.data('detail-view-is-token-input');
                 var data = !isBoolean ? cloudStack.sanitizeReverse($value.html()) : $value.data('detail-view-boolean-value');
                 var rules = $value.data('validation-rules') ? $value.data('validation-rules') : {};
                 var isPassword = $value.data('detail-view-is-password');
@@ -671,6 +711,56 @@
                             checked: data
                         })
                     );
+                } else if (isTokenInput) { // jquery.tokeninput.js
+                    function to_json_array(str) {
+                        var simple_array = str.split(",");
+                        var json_array = [];
+
+                        $.each(simple_array, function(index, value) {
+                            if ($.trim(value).length > 0)
+                            {
+                                var obj = {
+                                    id : value,
+                                    name : value
+                                };
+
+                                json_array.push(obj);
+                            }
+                        });
+
+                        return json_array;
+                    }
+
+                    var existing_tags = to_json_array(data);
+
+                    isAsync = true;
+
+                    selectArgs = {
+                        context: $detailView.data('view-args').context,
+                        response: {
+                            success: function(args) {
+                                $input.tokenInput(unique_tags(args.data),
+                                {
+                                    theme: "facebook",
+                                    preventDuplicates: true,
+                                    prePopulate: existing_tags,
+                                    processPrePopulate: true,
+                                    hintText: args.hintText,
+                                    noResultsText: args.noResultsText
+                                });
+                            }
+                        }
+                    };
+
+                    $input = $('<input>').attr({
+                        name: name,
+                        type: 'text',
+                        value: data
+                    }).data('original-value', data);
+
+                    $value.append($input);
+                    token_value = data;
+                    $value.data('value-token').dataProvider(selectArgs);
                 } else {
                     // Text input
                     $value.append(
@@ -716,7 +806,7 @@
     };
 
     var viewAll = function(viewAllID, options) {
-        var $detailView = $('div.detail-view:last');
+        var $detailView = $('div.detail-view:visible:last');
         var args = $detailView.data('view-args');
         var cloudStackArgs = $('[cloudstack-container]').data('cloudStack-args');
         var $browser = args.$browser;
@@ -824,9 +914,11 @@
                 });
 
             $.each(actions, function(key, value) {
-                if ($.inArray(key, allowedActions) == -1 ||
+                if ((!value.preFilter && $.inArray(key, allowedActions) == -1) ||
+                    (value.preFilter && !value.preFilter({ context: options.context })) ||
                     (options.ignoreAddAction && key == 'add') ||
                     (key == 'edit' && options.compact)) {
+
                     return true;
                 }
 
@@ -897,7 +989,7 @@
         var isOddRow = false; // Even/odd row coloring
         var $header;
         var detailViewArgs = $detailView.data('view-args');
-        var fields = tabData.fields;
+        var fields = $.isArray(tabData.fields) ? tabData.fields.slice() : tabData.fields;
         var hiddenFields;
         var context = $.extend(true, {}, detailViewArgs ? detailViewArgs.context : cloudStack.context);
         var isMultiple = tabData.multiple || tabData.isMultiple;
@@ -929,9 +1021,16 @@
 
         $detailGroups.append($('<div>').addClass('main-groups'));
 
+        $(window).trigger('cloudStack.detailView.makeFieldContent', {
+            fields: fields,
+            data: data,
+            detailViewArgs: detailViewArgs,
+            $detailView: $detailView,
+            $detailGroups: $detailGroups
+        });
+
         $(fields).each(function() {
             var fieldGroup = this;
-
             var $detailTable = $('<tbody></tbody>').appendTo(
                 $('<table></table>').appendTo(
                     $('<div></div>').addClass('detail-group').appendTo($detailGroups.find('.main-groups'))
@@ -944,7 +1043,7 @@
                     return true;
                 }
 
-                var $detail = $('<tr></tr>').addClass(key).appendTo($detailTable);
+                var $detail = $('<tr></tr>').addClass(key + '-row').appendTo($detailTable);
                 var $name = $('<td></td>').addClass('name').appendTo($detail);
                 var $value = $('<span>').appendTo($('<td></td>').addClass('value').appendTo($detail));
                 var content = data[key];
@@ -979,15 +1078,49 @@
 
                 $name.html(_l(value.label));
                 $value.html(_s(content));
+                $value.attr('title', _s(content));
 
                 // Set up validation metadata
                 $value.data('validation-rules', value.validation);
 
+                //add copypaste icon
+                if (value.isCopyPaste) {
+                    var $copyicon = $('<div>').addClass('copypasteicon').insertAfter($value);
+                    $value.addClass('copypasteenabledvalue');
+
+                    //set up copypaste eventhandler
+                    $copyicon.click(function() {
+                        //reset other values' formatting
+                        $(this).closest('table').find('span.copypasteactive').removeClass('copypasteactive').addClass('copypasteenabledvalue');
+                        //find the corresponding value
+                        var $correspValue = $(this).closest('tr').find('.value').find('span');
+                        $value.removeClass("copypasteenabledvalue").addClass("copypasteactive");
+                        var correspValueElem = $correspValue.get(0);
+                        //select the full value
+                        var range = document.createRange();
+                        range.selectNodeContents(correspValueElem);
+                        var selection = window.getSelection();
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    });
+                }
+
                 // Set up editable metadata
                 if (typeof(value.isEditable) == 'function')
+                {
                     $value.data('detail-view-is-editable', value.isEditable(context));
-                else //typeof(value.isEditable) == 'boolean' or 'undefined'
+                }
+                else // typeof(value.isEditable) == 'boolean' or 'undefined'
+                {
                     $value.data('detail-view-is-editable', value.isEditable);
+
+                    if (value.isTokenInput)
+                    {
+                         $value.data('detail-view-is-token-input', true);
+                         $value.data('value-token', value);
+                    }
+                }
+
                 if (value.select) {
                     value.selected = $value.html();
 
@@ -1198,7 +1331,7 @@
 
                             if (tabData.viewAll) {
                                 $fieldContent.find('tr')
-                                    .filter('.' + tabData.viewAll.attachTo).find('td.value')
+                                    .filter('.' + tabData.viewAll.attachTo + '-row').find('td.value')
                                     .append(
                                         $('<div>').addClass('view-all').append(
                                             $('<span>').html(
@@ -1424,7 +1557,12 @@
             }
         }
 
-        $detailView.tabs();
+        $detailView.tabs({
+            select: function() {
+                // Cleanup old tab content
+                $detailView.find('.detail-group').children().remove();
+            }
+        });
 
         return $detailView;
     };
@@ -1486,7 +1624,8 @@
         }
 
         // Detail action
-        if ($target.closest('div.detail-view [detail-action], div.detail-view .action.text').size()) {
+        if ($target.closest('div.detail-view [detail-action], div.detail-view .action.text').size() &&
+            !$target.closest('.list-view').size()) {
             var $action = $target.closest('.action').find('[detail-action]');
             var actionName = $action.attr('detail-action');
             var actionCallback = $action.data('detail-view-action-callback');

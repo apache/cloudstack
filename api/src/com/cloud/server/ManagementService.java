@@ -23,6 +23,13 @@ import java.util.Map;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCmd;
+import org.apache.cloudstack.api.command.admin.guest.AddGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.ListGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsCmd;
+import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsCmd;
+import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
@@ -67,6 +74,7 @@ import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.IpAddress;
 import com.cloud.org.Cluster;
 import com.cloud.storage.GuestOS;
+import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.SSHKeyPair;
@@ -145,6 +153,69 @@ public interface ManagementService {
      * @return list of GuestOSCategories
      */
     Pair<List<? extends GuestOsCategory>, Integer> listGuestOSCategoriesByCriteria(ListGuestOsCategoriesCmd cmd);
+
+    /**
+     * Obtains a list of all guest OS mappings
+     *
+     * @return list of GuestOSHypervisor
+     */
+    Pair<List<? extends GuestOSHypervisor>, Integer> listGuestOSMappingByCriteria(ListGuestOsMappingCmd cmd);
+
+    /**
+     * Adds a new guest OS mapping
+     *
+     * @return A VO containing the new mapping, with its hypervisor, hypervisor type, guest OS name, and the name of guest OS specific to hypervisor
+     */
+    GuestOSHypervisor addGuestOsMapping(AddGuestOsMappingCmd addGuestOsMappingCmd);
+
+    /**
+     * Find newly added guest OS mapping by ID
+     *
+     * @return A VO containing the guest OS mapping specified by ID, with its hypervisor, hypervisor type, guest OS name, and the name of guest OS specific to hypervisor
+     */
+    GuestOSHypervisor getAddedGuestOsMapping(Long guestOsHypervisorId);
+
+    /**
+     * Adds a new guest OS
+     *
+     * @return A VO containing the new guest OS, with its category ID, name and display name
+     */
+    GuestOS addGuestOs(AddGuestOsCmd addGuestOsCmd);
+
+    /**
+     * Find newly added guest OS by ID
+     *
+     * @return A VO containing the guest OS specified by ID, with its category ID, name and display name
+     */
+    GuestOS getAddedGuestOs(Long guestOsId);
+
+    /**
+     * Updates an existing guest OS
+     *
+     * @return A VO containing the updated display name
+     */
+    GuestOS updateGuestOs(UpdateGuestOsCmd updateGuestOsCmd);
+
+    /**
+     * Updates an existing guest OS mapping
+     *
+     * @return A VO containing the updated OS name for hypervisor
+     */
+    GuestOSHypervisor updateGuestOsMapping(UpdateGuestOsMappingCmd updateGuestOsMappingCmd);
+
+    /**
+     * Removes an existing guest OS
+     *
+     * @return True is successfully marked for delete, false otherwise
+     */
+    boolean removeGuestOs(RemoveGuestOsCmd removeGuestOsCmd);
+
+    /**
+     * Removes an existing guest OS mapping
+     *
+     * @return True is successfully marked for delete, false otherwise
+     */
+    boolean removeGuestOsMapping(RemoveGuestOsMappingCmd removeGuestOsMappingCmd);
 
     VirtualMachine stopSystemVM(StopSystemVmCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
 
@@ -269,10 +340,6 @@ public interface ManagementService {
      */
     String generateRandomPassword();
 
-    public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId);
-
-    public Long saveCompletedEvent(Long userId, Long accountId, String level, String type, String description, long startEventId);
-
     /**
      * Search registered key pairs for the logged in user.
      *
@@ -365,4 +432,6 @@ public interface ManagementService {
         ConcurrentOperationException;
 
     void cleanupVMReservations();
+
+
 }

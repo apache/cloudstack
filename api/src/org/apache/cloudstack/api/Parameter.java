@@ -48,7 +48,5 @@ public @interface Parameter {
 
     String since() default "";
 
-    String retrieveMethod() default "getById";
-
     RoleType[] authorized() default {};
 }

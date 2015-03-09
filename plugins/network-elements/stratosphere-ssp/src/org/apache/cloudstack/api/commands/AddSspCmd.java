@@ -37,7 +37,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 
-@APICommand(name = "addStratosphereSsp", responseObject = SspResponse.class, description = "Adds stratosphere ssp server")
+@APICommand(name = "addStratosphereSsp", responseObject = SspResponse.class, description = "Adds stratosphere ssp server",
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddSspCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(AddSspCmd.class.getName());
     @Inject

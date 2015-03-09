@@ -39,7 +39,8 @@ import com.cloud.dc.DedicatedResources;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "dedicatePod", description = "Dedicates a Pod.", responseObject = DedicatePodResponse.class)
+@APICommand(name = "dedicatePod", description = "Dedicates a Pod.", responseObject = DedicatePodResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DedicatePodCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DedicatePodCmd.class.getName());
 

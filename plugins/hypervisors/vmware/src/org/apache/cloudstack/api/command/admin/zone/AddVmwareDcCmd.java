@@ -37,7 +37,8 @@ import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "addVmwareDc", description = "Adds a VMware datacenter to specified zone", responseObject = VmwareDatacenterResponse.class)
+@APICommand(name = "addVmwareDc", description = "Adds a VMware datacenter to specified zone", responseObject = VmwareDatacenterResponse.class,
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddVmwareDcCmd extends BaseCmd {
 
     @Inject

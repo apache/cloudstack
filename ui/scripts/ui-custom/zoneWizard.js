@@ -177,7 +177,7 @@
             }
 
             cloudStack.dialog.notice({
-                message: dictionary['message.please.add.at.lease.one.traffic.range']
+                message: _l('message.please.add.at.lease.one.traffic.range')
             });
             return false;
         },
@@ -300,11 +300,11 @@
             if (hypervisor == 'VMware') {
             	fields = {
             		vSwitchName: {
-	                    label: 'vSwitch Name' ,
+	                    label: 'label.vswitch.name' ,
 	                    defaultValue: trafficData.vSwitchName
 	                },
 	                vlanId: { 
-	                	label: 'VLAN ID',
+	                        label: 'label.vlan.id',
 	                	defaultValue: trafficData.vlanId
 	                }	                
 	            };  
@@ -354,7 +354,7 @@
 	            		
 	            		$.extend(fields, {
 	            		    vSwitchType: {
-	            		        label: 'vSwitch Type',
+	                                label: 'label.vSwitch.type',
 	            		        select: function (args) {            		        	
 	            		            args.response.success({
 	            		                data: [{
@@ -723,7 +723,16 @@
                             }).html('VXLAN'),
                             $('<option>').attr({
                                 value: 'ODL'
-                            }).html('ODL')
+                            }).html('ODL'),
+                            $('<option>').attr({
+                                value: 'L3VPN'
+                            }).html('L3VPN'),
+		                    $('<option>').attr({
+                                value: 'VSP'
+                            }).html('VSP'),
+                            $('<option>').attr({
+                                value: 'VCS'
+                            }).html('VCS')
                         )
                     )
                 );
@@ -1029,7 +1038,7 @@
                             };
 
                             var enableZone = function() {
-                                makeMessage(dictionary['message.enabling.zone']);
+                                makeMessage(_l('message.enabling.zone'));
 
                                 enableZoneAction({
                                     formData: data,
@@ -1042,7 +1051,7 @@
 
                                         error: function(message) {
                                             cloudStack.dialog.notice({
-                                                message: dictionary['error.could.not.enable.zone'] + ':</br>' + message
+                                                message: _l('error.could.not.enable.zone') + ':</br>' + message
                                             });
                                         }
                                     }
@@ -1050,7 +1059,7 @@
                             };
 
                             cloudStack.dialog.confirm({
-                                message: dictionary['message.zone.creation.complete.would.you.like.to.enable.this.zone'],
+                                message: _l('message.zone.creation.complete.would.you.like.to.enable.this.zone'),
                                 action: function() {
                                     enableZone();
                                 },
@@ -1074,7 +1083,7 @@
                                 .removeClass('final')
                                 .html('<span>Fix errors</span>')
                                 .click(goNextOverride);
-                            makeMessage(dictionary['error.something.went.wrong.please.correct.the.following'] + ':<br/>' + message, true);
+                            makeMessage(_l('error.something.went.wrong.please.correct.the.following') + ':<br/>' + message, true);
                             $wizard.data('startfn', start);
                         },
                         message: makeMessage

@@ -25,6 +25,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.user.Account;
+import com.cloud.user.UserAccount;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -51,7 +53,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
 
-@APICommand(name = "importLdapUsers", description = "Import LDAP users", responseObject = LdapUserResponse.class, since = "4.3.0")
+@APICommand(name = "importLdapUsers", description = "Import LDAP users", responseObject = LdapUserResponse.class, since = "4.3.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LdapImportUsersCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(LdapImportUsersCmd.class.getName());
@@ -86,6 +89,9 @@ public class LdapImportUsersCmd extends BaseListCmd {
 
     private Domain _domain;
 
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Creates the user under the specified account. If no account is specified, the username will be used as the account name.")
+    private String accountName;
+
     @Inject
     private LdapManager _ldapManager;
 
@@ -98,6 +104,26 @@ public class LdapImportUsersCmd extends BaseListCmd {
         _ldapManager = ldapManager;
         _domainService = domainService;
         _accountService = accountService;
+    }
+
+    private void createCloudstackUserAccount(LdapUser user, String accountName, Domain domain) {
+        Account account = _accountService.getActiveAccountByName(accountName, domain.getId());
+        if (account == null) {
+            s_logger.debug("No account exists with name: " + accountName + " creating the account and an user with name: " + user.getUsername() + " in the account");
+            _accountService.createUserAccount(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, accountType,
+                    domain.getId(), domain.getNetworkDomain(), details, UUID.randomUUID().toString(), UUID.randomUUID().toString());
+        } else {
+//            check if the user exists. if yes, call update
+            UserAccount csuser = _accountService.getActiveUserAccount(user.getUsername(), domain.getId());
+            if(csuser == null) {
+                s_logger.debug("No user exists with name: " + user.getUsername() + " creating a user in the account: " + accountName);
+                _accountService.createUser(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, domain.getId(),
+                                           UUID.randomUUID().toString());
+            } else {
+                s_logger.debug("account with name: " + accountName + " exist and user with name: " + user.getUsername() + " exists in the account. Updating the account.");
+                _accountService.updateUser(csuser.getId(), user.getFirstname(), user.getLastname(), user.getEmail(), null, null, null, null, null);
+            }
+        }
     }
 
     @Override
@@ -121,8 +147,7 @@ public class LdapImportUsersCmd extends BaseListCmd {
         for (LdapUser user : users) {
             Domain domain = getDomain(user);
             try {
-                _accountService.createUserAccount(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone,
-                    user.getUsername(), accountType, domain.getId(), domain.getNetworkDomain(), details, UUID.randomUUID().toString(), UUID.randomUUID().toString());
+                createCloudstackUserAccount(user, getAccountName(user), domain);
                 addedUsers.add(user);
             } catch (InvalidParameterValueException ex) {
                 s_logger.error("Failed to create user with username: " + user.getUsername() + " ::: " + ex.getMessage());
@@ -132,6 +157,14 @@ public class LdapImportUsersCmd extends BaseListCmd {
         response.setResponses(createLdapUserResponse(addedUsers));
         response.setResponseName(getCommandName());
         setResponseObject(response);
+    }
+
+    private String getAccountName(LdapUser user) {
+        String finalAccountName = accountName;
+        if(finalAccountName == null ) {
+            finalAccountName = user.getUsername();
+        }
+        return finalAccountName;
     }
 
     private Domain getDomainForName(String name) {

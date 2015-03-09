@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
@@ -36,10 +37,13 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.kvm.resource.KVMHABase;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.PoolType;
 import com.cloud.hypervisor.kvm.resource.KVMHAMonitor;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
 import com.cloud.utils.exception.CloudRuntimeException;
+
+import org.reflections.Reflections;
 
 public class KVMStoragePoolManager {
     private static final Logger s_logger = Logger.getLogger(KVMStoragePoolManager.class);
@@ -94,7 +98,29 @@ public class KVMStoragePoolManager {
         this._storageMapper.put("libvirt", new LibvirtStorageAdaptor(storagelayer));
         // add other storage adaptors here
         // this._storageMapper.put("newadaptor", new NewStorageAdaptor(storagelayer));
-        this._storageMapper.put(StoragePoolType.Iscsi.toString(), new IscsiAdmStorageAdaptor());
+        this._storageMapper.put(StoragePoolType.ManagedNFS.toString(), new ManagedNfsStorageAdaptor(storagelayer));
+
+        // add any adaptors that wish to register themselves via annotation
+        Reflections reflections = new Reflections("com.cloud.hypervisor.kvm.storage");
+        Set<Class<? extends StorageAdaptor>> storageAdaptors = reflections.getSubTypesOf(StorageAdaptor.class);
+        for (Class<? extends StorageAdaptor> storageAdaptor : storageAdaptors) {
+            StorageAdaptorInfo info = storageAdaptor.getAnnotation(StorageAdaptorInfo.class);
+            if (info != null && info.storagePoolType() != null) {
+                if (this._storageMapper.containsKey(info.storagePoolType().toString())) {
+                    s_logger.error("Duplicate StorageAdaptor type " + info.storagePoolType().toString() + ", not loading " + storageAdaptor.getName());
+                } else {
+                    try {
+                        this._storageMapper.put(info.storagePoolType().toString(), storageAdaptor.newInstance());
+                    } catch (Exception ex) {
+                       throw new CloudRuntimeException(ex.toString());
+                    }
+                }
+            }
+        }
+
+        for (Map.Entry<String, StorageAdaptor> adaptors : this._storageMapper.entrySet()) {
+            s_logger.debug("Registered a StorageAdaptor for " + adaptors.getKey());
+        }
     }
 
     public boolean connectPhysicalDisk(StoragePoolType type, String poolUuid, String volPath, Map<String, String> details) {
@@ -194,15 +220,21 @@ public class KVMStoragePoolManager {
     }
 
     public KVMStoragePool getStoragePool(StoragePoolType type, String uuid) {
+        return this.getStoragePool(type, uuid, false);
+    }
+
+    public KVMStoragePool getStoragePool(StoragePoolType type, String uuid, boolean refreshInfo) {
 
         StorageAdaptor adaptor = getStorageAdaptor(type);
         KVMStoragePool pool = null;
         try {
-            pool = adaptor.getStoragePool(uuid);
+            pool = adaptor.getStoragePool(uuid, refreshInfo);
         } catch (Exception e) {
             StoragePoolInformation info = _storagePools.get(uuid);
             if (info != null) {
                 pool = createStoragePool(info.name, info.host, info.port, info.path, info.userInfo, info.poolType, info.type);
+            } else {
+                throw new CloudRuntimeException("Could not fetch storage pool " + uuid + " from libvirt");
             }
         }
         return pool;
@@ -297,22 +329,38 @@ public class KVMStoragePoolManager {
         StorageAdaptor adaptor = getStorageAdaptor(type);
         _haMonitor.removeStoragePool(uuid);
         adaptor.deleteStoragePool(uuid);
-        _storagePools.remove(uuid);
+        synchronized (_storagePools) {
+            _storagePools.remove(uuid);
+        }
         return true;
     }
 
-    public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, KVMStoragePool destPool, int timeout) {
+    public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, Storage.ProvisioningType provisioningType,
+                                                    KVMStoragePool destPool, int timeout) {
+        return createDiskFromTemplate(template, name, provisioningType, destPool, template.getSize(), timeout);
+    }
+
+    public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, Storage.ProvisioningType provisioningType,
+                                                    KVMStoragePool destPool, long size, int timeout) {
         StorageAdaptor adaptor = getStorageAdaptor(destPool.getType());
 
         // LibvirtStorageAdaptor-specific statement
         if (destPool.getType() == StoragePoolType.RBD) {
-            return adaptor.createDiskFromTemplate(template, name, PhysicalDiskFormat.RAW, template.getSize(), destPool, timeout);
+            return adaptor.createDiskFromTemplate(template, name,
+                    PhysicalDiskFormat.RAW, provisioningType,
+                    size, destPool, timeout);
         } else if (destPool.getType() == StoragePoolType.CLVM) {
-            return adaptor.createDiskFromTemplate(template, name, PhysicalDiskFormat.RAW, template.getSize(), destPool, timeout);
+            return adaptor.createDiskFromTemplate(template, name,
+                    PhysicalDiskFormat.RAW, provisioningType,
+                    size, destPool, timeout);
         } else if (template.getFormat() == PhysicalDiskFormat.DIR) {
-            return adaptor.createDiskFromTemplate(template, name, PhysicalDiskFormat.DIR, template.getSize(), destPool, timeout);
+            return adaptor.createDiskFromTemplate(template, name,
+                    PhysicalDiskFormat.DIR, provisioningType,
+                    size, destPool, timeout);
         } else {
-            return adaptor.createDiskFromTemplate(template, name, PhysicalDiskFormat.QCOW2, template.getSize(), destPool, timeout);
+            return adaptor.createDiskFromTemplate(template, name,
+                    PhysicalDiskFormat.QCOW2, provisioningType,
+                    size, destPool, timeout);
         }
     }
 

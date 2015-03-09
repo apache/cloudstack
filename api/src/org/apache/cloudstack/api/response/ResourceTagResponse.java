@@ -109,4 +109,35 @@ public class ResourceTagResponse extends BaseResponse implements ControlledViewE
     public void setCustomer(String customer) {
         this.customer = customer;
     }
+
+    public String getKey() {
+        return this.key;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        String key = this.getKey();
+        result = prime * result + ((key == null) ? 0 : key.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        ResourceTagResponse other = (ResourceTagResponse) obj;
+        String key = this.getKey();
+        if (key == null) {
+            if (other.getKey() != null)
+                return false;
+        } else if (!key.equals(other.getKey()))
+            return false;
+        return true;
+    }
 }

@@ -16,14 +16,14 @@
 // under the License.
 package org.apache.cloudstack.usage;
 
-import java.util.List;
-import java.util.TimeZone;
-
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
+import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
 
-import com.cloud.utils.Pair;
+import java.util.List;
+import java.util.TimeZone;
 
 public interface UsageService {
     /**
@@ -61,6 +61,7 @@ public interface UsageService {
      */
     TimeZone getUsageTimezone();
 
-    List<UsageTypeResponse> listUsageTypes();
+    boolean removeRawUsageRecords(RemoveRawUsageRecordsCmd cmd);
 
+    List<UsageTypeResponse> listUsageTypes();
 }

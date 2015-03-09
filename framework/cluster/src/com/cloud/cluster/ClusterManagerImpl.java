@@ -41,12 +41,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.cluster.dao.ManagementServerHostPeerDao;
@@ -542,7 +543,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                             s_logger.trace("Cluster manager heartbeat update, id:" + _mshostId);
                         }
 
-                        _mshostDao.update(_mshostId, getCurrentRunId(), DateUtil.currentGMTTime());
+                        _mshostDao.update(_mshostId, _runId, DateUtil.currentGMTTime());
                         profilerHeartbeatUpdate.stop();
 
                         profilerPeerScan.start();
@@ -934,7 +935,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     @DB
     public boolean start() {
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Starting cluster manager, msid : " + _msId);
+            s_logger.info("Starting Cluster manager, msid : " + _msId);
         }
 
         ManagementServerHostVO mshost = Transaction.execute(new TransactionCallback<ManagementServerHostVO>() {
@@ -948,7 +949,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                 if (mshost == null) {
                     mshost = new ManagementServerHostVO();
                     mshost.setMsid(_msId);
-                    mshost.setRunid(getCurrentRunId());
+                    mshost.setRunid(_runId);
                     mshost.setName(NetUtils.getHostName());
                     mshost.setVersion(version);
                     mshost.setServiceIP(_clusterNodeIP);
@@ -958,17 +959,15 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     mshost.setAlertCount(0);
                     mshost.setState(ManagementServerHost.State.Up);
                     _mshostDao.persist(mshost);
-
                     if (s_logger.isInfoEnabled()) {
-                        s_logger.info("New instance of management server msid " + _msId + " is being started");
+                        s_logger.info("New instance of management server msid " + _msId + ", runId " + _runId + " is being started");
                     }
                 } else {
-                    if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Management server " + _msId + " is being started");
-                    }
-
-                    _mshostDao.update(mshost.getId(), getCurrentRunId(), NetUtils.getHostName(), version, _clusterNodeIP, _currentServiceAdapter.getServicePort(),
+                    _mshostDao.update(mshost.getId(), _runId, NetUtils.getHostName(), version, _clusterNodeIP, _currentServiceAdapter.getServicePort(),
                         DateUtil.currentGMTTime());
+                    if (s_logger.isInfoEnabled()) {
+                        s_logger.info("Management server " + _msId + ", runId " + _runId + " is being started");
+                    }
                 }
 
                 return mshost;
@@ -996,6 +995,10 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     @Override
     @DB
     public boolean stop() {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Stopping Cluster manager, msid : " + _msId);
+        }
+
         if (_mshostId != null) {
             ManagementServerHostVO mshost = _mshostDao.findByMsid(_msId);
             mshost.setState(ManagementServerHost.State.Down);
@@ -1072,6 +1075,15 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         return _runId;
     }
 
+    @Override
+    public long getManagementRunId(long msId) {
+        ManagementServerHostVO mshost = _mshostDao.findByMsid(msId);
+        if (mshost != null) {
+            return mshost.getRunid();
+        }
+        return -1;
+    }
+
     public boolean isManagementNodeAlive(long msid) {
         ManagementServerHostVO mshost = _mshostDao.findByMsid(msid);
         if (mshost != null) {
@@ -1099,7 +1111,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {HeartbeatInterval, HeartbeatThreshold, ManagementHostIPAdr};
+        return new ConfigKey<?>[] {HeartbeatInterval, HeartbeatThreshold};
     }
 
     private boolean pingManagementNode(ManagementServerHostVO mshost) {

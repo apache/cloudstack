@@ -20,12 +20,13 @@ import contextlib
 from mysql import connector
 from mysql.connector import errors
 from contextlib import closing
-import cloudstackException
+from marvin import cloudstackException
 import sys
 import os
 
 
-class dbConnection(object):
+class DbConnection(object):
+
     def __init__(self, host="localhost", port=3306, user='cloud',
                  passwd='cloud', db='cloud'):
         self.host = host
@@ -34,7 +35,7 @@ class dbConnection(object):
         self.passwd = passwd
         self.database = db
 
-    def execute(self, sql=None, params=None):
+    def execute(self, sql=None, params=None, db=None):
         if sql is None:
             return None
 
@@ -44,14 +45,14 @@ class dbConnection(object):
                                             port=int(self.port),
                                             user=str(self.user),
                                             password=str(self.passwd),
-                                            db=str(self.database))) as conn:
+                                            db=str(self.database) if not db else db)) as conn:
             conn.autocommit = True
             with contextlib.closing(conn.cursor(buffered=True)) as cursor:
                 cursor.execute(sql, params)
                 try:
                     resultRow = cursor.fetchall()
                 except errors.InterfaceError:
-                    #Raised on empty result - DML
+                    # Raised on empty result - DML
                     resultRow = []
         return resultRow
 
@@ -68,7 +69,7 @@ class dbConnection(object):
         return self.execute(sqls)
 
 if __name__ == "__main__":
-    db = dbConnection()
+    db = DbConnection()
     '''
     try:
 

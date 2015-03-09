@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
@@ -39,7 +42,8 @@ import com.cloud.network.NiciraNvpDeviceVO;
 import com.cloud.network.element.NiciraNvpElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listNiciraNvpDevices", responseObject = NiciraNvpDeviceResponse.class, description = "Lists Nicira NVP devices")
+@APICommand(name = "listNiciraNvpDevices", responseObject = NiciraNvpDeviceResponse.class, description = "Lists Nicira NVP devices",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNiciraNvpDevicesCmd extends BaseListCmd {
     private static final String s_name = "listniciranvpdeviceresponse";
 

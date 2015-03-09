@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.user;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -27,11 +25,14 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
 
-@APICommand(name = "createUser", description = "Creates a user for an account that already exists", responseObject = UserResponse.class)
+@APICommand(name = "createUser", description = "Creates a user for an account that already exists", responseObject = UserResponse.class,
+        requestHasSensitiveInfo = true, responseHasSensitiveInfo = true)
 public class CreateUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateUserCmd.class.getName());
 
@@ -131,7 +132,7 @@ public class CreateUserCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         Account account = CallContext.current().getCallingAccount();
-        if ((account == null) || isAdmin(account.getType())) {
+        if ((account == null) || _accountService.isAdmin(account.getId())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
                 if (userAccount != null) {
@@ -149,6 +150,9 @@ public class CreateUserCmd extends BaseCmd {
 
     @Override
     public void execute() {
+        if (StringUtils.isEmpty(getPassword())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Empty passwords are not allowed");
+        }
         CallContext.current().setEventDetails("UserName: " + getUserName() + ", FirstName :" + getFirstName() + ", LastName: " + getLastName());
         User user =
             _accountService.createUser(getUserName(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimezone(), getAccountName(), getDomainId(),

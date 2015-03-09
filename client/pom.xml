@@ -1,11 +1,11 @@
-<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
-  license agreements. See the NOTICE file distributed with this work for additional 
-  information regarding copyright ownership. The ASF licenses this file to you under 
-  the Apache License, Version 2.0 (the "License"); you may not use this file except 
-  in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
-  Unless required by applicable law or agreed to in writing, software distributed under 
-  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
-  OF ANY KIND, either express or implied. See the License for the specific language 
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor
+  license agreements. See the NOTICE file distributed with this work for additional
+  information regarding copyright ownership. The ASF licenses this file to you under
+  the Apache License, Version 2.0 (the "License"); you may not use this file except
+  in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+  OF ANY KIND, either express or implied. See the License for the specific language
   governing permissions and limitations under the License. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -17,7 +17,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.4.0-SNAPSHOT</version>
+    <version>4.6.0-SNAPSHOT</version>
   </parent>
   <dependencies>
     <dependency>
@@ -33,6 +33,11 @@
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-storage-volume-solidfire</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-storage-volume-cloudbyte</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -72,7 +77,17 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-user-authenticator-pbkdf2</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-user-authenticator-plaintext</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-user-authenticator-saml2</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -97,6 +112,11 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-network-netscaler</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+  <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-ovs</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -137,7 +157,12 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-plugin-hypervisor-xen</artifactId>
+      <artifactId>cloud-plugin-network-vcs</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-hypervisor-xenserver</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -187,7 +212,7 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-       <groupId>org.apache.cloudstack</groupId>
+      <groupId>org.apache.cloudstack</groupId>
        <artifactId>cloud-plugin-planner-skip-heurestics</artifactId>
        <version>${project.version}</version>
     </dependency>
@@ -220,11 +245,6 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-mom-inmemory</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -269,6 +289,11 @@
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-storage-cache</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-controller-secondary-storage</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -326,6 +351,16 @@
       <artifactId>cloud-plugin-host-anti-affinity</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-plugin-api-solidfire-intg-test</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-network-globodns</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -344,9 +379,26 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>com.googlecode.todomap</groupId>
+        <artifactId>maven-jettygzip-plugin</artifactId>
+        <version>0.0.4</version>
+        <configuration>
+          <webappDirectory>${project.build.directory}/generated-webapp</webappDirectory>
+          <outputDirectory>${project.build.directory}/generated-webapp</outputDirectory>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>process</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
-        <version>2.3</version>
+        <version>2.5</version>
         <configuration>
           <webXml>./target/generated-webapp/WEB-INF/web.xml</webXml>
           <warSourceDirectory>./target/generated-webapp</warSourceDirectory>
@@ -362,15 +414,23 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.mortbay.jetty</groupId>
-        <artifactId>maven-jetty-plugin</artifactId>
-        <version>6.1.26</version>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-maven-plugin</artifactId>
+            <version>9.2.6.v20141205</version>
+             <dependencies>
+              <!-- specify the dependent jdbc driver here -->
+              <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${cs.mysql.version}</version>
+              </dependency>
+            </dependencies>
         <configuration>
           <scanIntervalSeconds>0</scanIntervalSeconds>
           <stopPort>9966</stopPort>
           <stopKey>stop-jetty</stopKey>
           <connectors>
-            <connector implementation="org.mortbay.jetty.nio.SelectChannelConnector">
+            <connector implementation="org.eclipse.jetty.server.nio.SelectChannelConnector">
               <port>8080</port>
               <maxIdleTime>60000</maxIdleTime>
             </connector>
@@ -435,14 +495,8 @@
                 </copy>
                 <copy overwrite="true" todir="${basedir}/target/generated-webapp/WEB-INF/classes">
                   <fileset dir="${basedir}/tomcatconf">
-                    <include name="*.in"/>
+                    <exclude name="*.in"/>
                   </fileset>
-                  <globmapper from="*.in" to="*"/>
-                  <filterchain>
-                    <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile" value="${cs.replace.properties}"/>
-                    </filterreader>
-                  </filterchain>
                 </copy>
                 <copy overwrite="true" todir="${basedir}/target/utilities/bin">
                   <fileset dir="${basedir}/../setup/bindir">
@@ -550,14 +604,14 @@
                 <artifactItem>
                   <groupId>org.jasypt</groupId>
                   <artifactId>jasypt</artifactId>
-                  <version>1.9.0</version>
+                  <version>1.9.2</version>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}/pythonlibs</outputDirectory>
                 </artifactItem>
                 <artifactItem>
                   <groupId>org.jasypt</groupId>
                   <artifactId>jasypt</artifactId>
-                  <version>1.8</version>
+                  <version>1.9.2</version>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}/pythonlibs</outputDirectory>
                 </artifactItem>
@@ -565,6 +619,17 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>cloudstack-checkstyle</id>
+              <phase>none</phase>
+              <inherited>false</inherited>
+            </execution>
+          </executions>
       </plugin>
     </plugins>
   </build>
@@ -590,7 +655,7 @@
             <artifactId>maven-antrun-plugin</artifactId>
             <version>1.7</version>
             <executions>
-              <!-- Copy the systemvm in the package phase as it is generated by console-proxy 
+              <!-- Copy the systemvm in the package phase as it is generated by console-proxy
             in the package phase. -->
               <execution>
                 <id>copy-systemvm</id>
@@ -608,6 +673,244 @@
                     </copy>
                   </target>
                 </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>buildw</id>
+      <activation>
+        <property>
+          <name>buildw</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>generate-resource-windows</id>
+                <phase>generate-resources</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <copy todir="./target">
+                      <fileset dir="../scripts/installer/windows/">
+                        <include name="start.bat"/>
+                        <include name="acs_license.rtf"/>
+                        <include name="optionstheme.xml"/>
+                        <include name="*.wxl"/>
+                      </fileset>
+                    </copy>
+                    <copy todir="./target/client">
+                      <fileset dir="./target/generated-webapp">
+                        <include name="**/*"/>
+                      </fileset>
+                    </copy>
+                    <copy todir="./target/setup">
+                      <fileset dir="./target/utilities/scripts/db">
+                        <include name="**/*" />
+                      </fileset>
+                    </copy>
+                    <copy file="../scripts/storage/secondary/cloud-install-sys-tmplt.py" tofile="target/scripts/cloud-install-sys-tmplt.py" />
+                    <copy todir="./target/scripts">
+                      <fileset dir="./target/utilities/bin">
+                        <include name="**/*" />
+                      </fileset>
+                    </copy>
+                    <copy todir="./target/python-site-packages">
+                      <fileset dir="../python/lib">
+                        <include name="**/*" />
+                      </fileset>
+                    </copy>
+                   </target>
+                  </configuration>
+                 </execution>
+                 <execution>
+                  <id>download-files</id>
+                  <phase>prepare-package</phase>
+                  <goals>
+                    <goal>run</goal>
+                  </goals>
+                  <configuration>
+                    <target>
+                      <!-- download file -->
+                      <get src="http://downloads.sourceforge.net/sevenzip/7z920-x64.msi" dest="target" verbose="false" usetimestamp="true"/>
+                      <get src="https://www.python.org/ftp/python/2.7.6/python-2.7.6.amd64.msi" dest="target" verbose="false" usetimestamp="true"/>
+                      <get src="http://dev.mysql.com/get/Downloads/MySQL-5.1/mysql-5.1.73-winx64.msi" dest="target" verbose="false" usetimestamp="true"/>
+                      <get src="http://mirror.sdunix.com/apache/tomcat/tomcat-6/v6.0.39/bin/apache-tomcat-6.0.39.exe" dest="target" verbose="false" usetimestamp="true"/>
+                      <get src="http://downloads.sourceforge.net/project/cdrtoolswin/1.0/Binaries/CDR-Tools.exe?r=&amp;ts=1398764640&amp;use_mirror=kaz" dest="target" verbose="false" usetimestamp="true"/>
+                      <get src="https://bootstrap.pypa.io/ez_setup.py" dest="target" verbose="false" usetimestamp="true"/>
+                    </target>
+                  </configuration>
+                 </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-war-plugin</artifactId>
+            <version>2.5</version>
+            <configuration>
+              <webappDirectory>target/client</webappDirectory>
+              <webXml>./target/generated-webapp/WEB-INF/web.xml</webXml>
+              <warSourceDirectory>./target/generated-webapp</warSourceDirectory>
+              <archive>
+                <manifest>
+                  <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                </manifest>
+                <manifestEntries>
+                  <Implementation-Revision>${git.revision}</Implementation-Revision>
+                  <Implementation-Branch>${git.branch}</Implementation-Branch>
+                </manifestEntries>
+              </archive>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>Wix-cloudstack-maven-plugin</artifactId>
+            <version>${project.version}</version>
+            <executions>
+              <execution>
+                <id>wix-cs</id>
+                <configuration>
+                  <vars>-var wix.SourceClient</vars>
+                  <workingDirectory>${basedir}/target</workingDirectory>
+                  <dir>client</dir>
+                  <template>fragment</template>
+                  <directoryName>WEBAPPS</directoryName>
+                  <outputFile>target/client.wxs</outputFile>
+                  <componentGroup>ClientPath</componentGroup>
+                </configuration>
+                <goals>
+                  <goal>heat</goal>
+                </goals>
+                </execution>
+                <execution>
+                  <id>wix-cs-setup-db</id>
+                  <configuration>
+                    <vars>-var wix.SetupPathDir</vars>
+                    <workingDirectory>${basedir}/target</workingDirectory>
+                    <dir>setup</dir>
+                    <template>fragment</template>
+                    <directoryName>CSMANAGEMENT</directoryName>
+                    <outputFile>target/setupdb.wxs</outputFile>
+                    <componentGroup>SetupPath</componentGroup>
+                  </configuration>
+                  <goals>
+                    <goal>heat</goal>
+                  </goals>
+                </execution>
+                <execution>
+                  <id>wix-cs-utilities</id>
+                  <configuration>
+                    <vars>-var wix.UtilitiesPathDir</vars>
+                    <workingDirectory>${basedir}/target</workingDirectory>
+                    <dir>scripts</dir>
+                    <template>fragment</template>
+                    <directoryName>INSTALLDIR</directoryName>
+                    <outputFile>target/utilities.wxs</outputFile>
+                    <componentGroup>UtilitiesPath</componentGroup>
+                  </configuration>
+                  <goals>
+                    <goal>heat</goal>
+                  </goals>
+                </execution>
+                <execution>
+                  <id>python-site-packages</id>
+                  <configuration>
+                    <vars>-var wix.PythonSitePackagesDir</vars>
+                    <workingDirectory>${basedir}/target</workingDirectory>
+                    <dir>python-site-packages</dir>
+                    <template>fragment</template>
+                    <directoryName>INSTALLDIR</directoryName>
+                    <outputFile>target/python-site-packages.wxs</outputFile>
+                    <componentGroup>PythonSitePackagesPath</componentGroup>
+                  </configuration>
+                  <goals>
+                    <goal>heat</goal>
+                  </goals>
+                </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.bitbucket.joxley</groupId>
+            <artifactId>wix-maven-plugin</artifactId>
+            <version>1.1.1</version>
+            <executions>
+              <execution>
+                <id>wix-acs</id>
+                  <configuration>
+                    <workingDirectory>${basedir}/target</workingDirectory>
+                    <extensions>
+                      <extension>WixFirewallExtension</extension>
+                      <extension>WixUIExtension</extension>
+                      <extension>WixUtilExtension</extension>
+                    </extensions>
+                    <arguments>-dSourceClient=SourceDir\client -dSetupPathDir=SourceDir\setup -dUtilitiesPathDir=SourceDir\scripts -dPythonSitePackagesDir=SourceDir\python-site-packages</arguments>
+                    <sourceFiles>
+                      <sourceFile>../scripts/installer/windows/acs.wxs</sourceFile>
+                      <sourceFile>../scripts/installer/windows/WixInstallerDialog.wxs</sourceFile>
+                      <sourceFile>../scripts/installer/windows/Setup_Databases.wxs</sourceFile>
+                      <sourceFile>target/client.wxs</sourceFile>
+                      <sourceFile>target/setupdb.wxs</sourceFile>
+                      <sourceFile>target/utilities.wxs</sourceFile>
+                      <sourceFile>target/python-site-packages.wxs</sourceFile>
+                    </sourceFiles>
+                    <outputDirectory>target</outputDirectory>
+                    <objectFiles>
+                      <objectFile>target/acs.wixobj</objectFile>
+                      <objectFile>target/client.wixobj</objectFile>
+                      <objectFile>target/setupdb.wixobj</objectFile>
+                      <objectFile>target/utilities.wixobj</objectFile>
+                      <objectFile>target/WixInstallerDialog.wixobj</objectFile>
+                      <objectFile>target/Setup_Databases.wixobj</objectFile>
+                      <objectFile>target/python-site-packages.wixobj</objectFile>
+                    </objectFiles>
+                    <cultures>
+                      <culture>en-us</culture>
+                    </cultures>
+                    <localizationFiles>
+                      <localizationFile>target/en-us.wxl</localizationFile>
+                    </localizationFiles>
+                    <outputFile>target/acs.msi</outputFile>
+                  </configuration>
+                  <goals>
+                    <goal>candle</goal>
+                    <goal>light</goal>
+                  </goals>
+              </execution>
+              <execution>
+                <id>wix-final</id>
+                  <configuration>
+                    <workingDirectory>${basedir}/target</workingDirectory>
+                    <extensions>
+                      <extension>WixBalExtension</extension>
+                      <extension>WixUtilExtension</extension>
+                    </extensions>
+                    <sourceFiles>
+                      <sourceFile>../scripts/installer/windows/dependencies.wxs</sourceFile>
+                    </sourceFiles>
+                    <outputDirectory>target</outputDirectory>
+                    <objectFiles>
+                      <objectFile>target/dependencies.wixobj</objectFile>
+                    </objectFiles>
+                    <cultures>
+                      <culture>en-US</culture>
+                    </cultures>
+                    <localizationFiles>
+                      <localizationFile>target/en-us.wxl</localizationFile>
+                    </localizationFiles>
+                    <outputFile>target/acs-${project.version}.exe</outputFile>
+                  </configuration>
+                  <goals>
+                    <goal>candle</goal>
+                    <goal>light</goal>
+                  </goals>
               </execution>
             </executions>
           </plugin>
@@ -660,7 +963,7 @@
       </dependencies>
     </profile>
     <profile>
-      <id>netscaler</id>
+      <id>nuagevsp</id>
       <activation>
         <property>
           <name>noredist</name>
@@ -669,7 +972,7 @@
       <dependencies>
         <dependency>
           <groupId>org.apache.cloudstack</groupId>
-          <artifactId>cloud-plugin-network-netscaler</artifactId>
+          <artifactId>cloud-plugin-network-vsp</artifactId>
           <version>${project.version}</version>
         </dependency>
       </dependencies>
@@ -710,6 +1013,21 @@
         <dependency>
           <groupId>org.apache.cloudstack</groupId>
           <artifactId>cloud-plugin-network-cisco-vnmc</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>mysqlha</id>
+      <activation>
+        <property>
+          <name>noredist</name>
+        </property>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.cloudstack</groupId>
+          <artifactId>cloud-plugin-database-mysqlha</artifactId>
           <version>${project.version}</version>
         </dependency>
       </dependencies>

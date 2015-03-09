@@ -28,7 +28,7 @@ import org.apache.cloudstack.resourcedetail.VpcDetailVO;
 public class VpcDetailsDaoImpl extends ResourceDetailsDaoBase<VpcDetailVO> implements VpcDetailsDao {
 
     @Override
-    public void addDetail(long resourceId, String key, String value) {
-        super.addDetail(new VpcDetailVO(resourceId, key, value));
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new VpcDetailVO(resourceId, key, value, display));
     }
 }

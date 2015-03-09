@@ -87,8 +87,6 @@ public class MultiPartUploadsDaoImpl extends GenericDaoBase<MultiPartUploadsVO, 
     @Override
     public List<MultiPartUploadsVO> getInitiatedUploads(String bucketName, int maxParts, String prefix, String keyMarker, String uploadIdMarker) {
 
-        List<MultiPartUploadsVO> uploadList = new ArrayList<MultiPartUploadsVO>();
-
         SearchBuilder<MultiPartUploadsVO> byBucket = createSearchBuilder();
         byBucket.and("BucketName", byBucket.entity().getBucketName(), SearchCriteria.Op.EQ);
 

@@ -36,7 +36,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
 
-@APICommand(name = "disassociateIpAddress", description = "Disassociates an ip address from the account.", responseObject = SuccessResponse.class)
+@APICommand(name = "disassociateIpAddress", description = "Disassociates an ip address from the account.", responseObject = SuccessResponse.class,
+ requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, entityType = { IpAddress.class })
 public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DisassociateIPAddrCmd.class.getName());
 

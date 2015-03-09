@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.image.datastore;
 
 import java.util.Set;
 
+import com.cloud.storage.Upload;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -43,4 +44,6 @@ public interface ImageStoreEntity extends DataStore, ImageStore {
     String getMountPoint(); // get the mount point on ssvm.
 
     String createEntityExtractUrl(String installPath, ImageFormat format, DataObject dataObject);  // get the entity download URL
+
+    void deleteExtractUrl(String installPath, String url, Upload.Type volume);
 }

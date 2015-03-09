@@ -29,6 +29,15 @@ public class SSHKeyPairResponse extends BaseResponse {
     @Param(description = "Name of the keypair")
     private String name;
 
+    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner of the keypair")
+    private String accountName;
+
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the keypair owner")
+    private String domainId;
+
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the keypair owner")
+    private String domain;
+
     @SerializedName("fingerprint")
     @Param(description = "Fingerprint of the public key")
     private String fingerprint;
@@ -57,4 +66,27 @@ public class SSHKeyPairResponse extends BaseResponse {
         this.fingerprint = fingerprint;
     }
 
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public String getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
+    }
+
+    public String getDomainName() {
+        return domain;
+    }
+
+    public void setDomainName(String domain) {
+        this.domain = domain;
+    }
 }

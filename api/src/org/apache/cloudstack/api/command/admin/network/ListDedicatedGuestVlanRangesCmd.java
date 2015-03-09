@@ -36,7 +36,8 @@ import com.cloud.network.GuestVlan;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listDedicatedGuestVlanRanges", description = "Lists dedicated guest vlan ranges", responseObject = GuestVlanRangeResponse.class)
+@APICommand(name = "listDedicatedGuestVlanRanges", description = "Lists dedicated guest vlan ranges", responseObject = GuestVlanRangeResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListDedicatedGuestVlanRangesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDedicatedGuestVlanRangesCmd.class.getName());
 

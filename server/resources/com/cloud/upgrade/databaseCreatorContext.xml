@@ -47,6 +47,5 @@
 
   <bean id="versionDaoImpl" class="com.cloud.upgrade.dao.VersionDaoImpl" />
   <bean id="databaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker" />
-  <bean id="premiumDatabaseUpgradeChecker" class="com.cloud.upgrade.PremiumDatabaseUpgradeChecker" />
 
 </beans>

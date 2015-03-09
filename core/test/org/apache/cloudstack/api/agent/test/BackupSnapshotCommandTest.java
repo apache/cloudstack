@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package org.apache.cloudstack.api.agent.test;
 
 import static org.junit.Assert.assertEquals;
@@ -28,6 +31,7 @@ import org.junit.Test;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
@@ -145,7 +149,14 @@ public class BackupSnapshotCommandTest {
         public boolean isInMaintenance() {
             // TODO Auto-generated method stub
             return false;
-        };
+        }
+
+        @Override
+        public Hypervisor.HypervisorType getHypervisor() {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        ;
     };
 
     BackupSnapshotCommand bsc = new BackupSnapshotCommand("http://secondary.Storage.Url", 101L, 102L, 103L, 104L, 105L, "vPath", pool,

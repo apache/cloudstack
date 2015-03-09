@@ -30,8 +30,16 @@ import java.util.concurrent.Executors;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.framework.events.Event;
+import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.cloudstack.framework.events.EventSubscriber;
+import org.apache.cloudstack.framework.events.EventTopic;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ManagerBase;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
@@ -43,16 +51,6 @@ import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 
-import org.apache.cloudstack.framework.events.Event;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
-import org.apache.cloudstack.framework.events.EventSubscriber;
-import org.apache.cloudstack.framework.events.EventTopic;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-
-import com.cloud.utils.Ternary;
-import com.cloud.utils.component.ManagerBase;
-
 @Local(value = EventBus.class)
 public class RabbitMQEventBus extends ManagerBase implements EventBus {
 
@@ -61,6 +59,19 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     private static Integer port;
     private static String username;
     private static String password;
+    private static String secureProtocol = "TLSv1";
+
+    public synchronized static void setVirtualHost(String virtualHost) {
+        RabbitMQEventBus.virtualHost = virtualHost;
+    }
+
+    private static String virtualHost;
+
+    public static void setUseSsl(String useSsl) {
+        RabbitMQEventBus.useSsl = useSsl;
+    }
+
+    private static String useSsl;
 
     // AMQP exchange name where all CloudStack events will be published
     private static String amqpExchangeName;
@@ -106,6 +117,12 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
                 throw new ConfigurationException("Unable to get the port details of AMQP server");
             }
 
+            if (useSsl != null && !useSsl.isEmpty()) {
+                if (!useSsl.equalsIgnoreCase("true") && !useSsl.equalsIgnoreCase("false")) {
+                    throw new ConfigurationException("Invalid configuration parameter for 'ssl'.");
+                }
+            }
+
             if (retryInterval == null) {
                 retryInterval = 10000;// default to 10s to try out reconnect
             }
@@ -135,6 +152,10 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
 
     public void setPort(Integer port) {
         RabbitMQEventBus.port = port;
+    }
+
+    public void setSecureProtocol(String protocol) {
+        RabbitMQEventBus.secureProtocol = protocol;
     }
 
     @Override
@@ -347,9 +368,18 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
             ConnectionFactory factory = new ConnectionFactory();
             factory.setUsername(username);
             factory.setPassword(password);
-            factory.setVirtualHost("/");
             factory.setHost(amqpHost);
             factory.setPort(port);
+
+            if (virtualHost != null && !virtualHost.isEmpty()) {
+                factory.setVirtualHost(virtualHost);
+            } else {
+                factory.setVirtualHost("/");
+            }
+
+            if (useSsl != null && !useSsl.isEmpty() && useSsl.equalsIgnoreCase("true")) {
+                factory.useSslProtocol(this.secureProtocol);
+            }
             Connection connection = factory.newConnection();
             connection.addShutdownListener(disconnectHandler);
             s_connection = connection;
@@ -456,8 +486,7 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     }
 
     @Override
-    public boolean stop() {
-
+    public synchronized boolean stop() {
         if (s_connection.isOpen()) {
             for (String subscriberId : s_subscribers.keySet()) {
                 Ternary<String, Channel, EventSubscriber> subscriberDetails = s_subscribers.get(subscriberId);

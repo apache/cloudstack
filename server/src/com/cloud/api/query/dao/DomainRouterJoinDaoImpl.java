@@ -22,21 +22,21 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.NicResponse;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.maint.Version;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -47,7 +47,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
     public static final Logger s_logger = Logger.getLogger(DomainRouterJoinDaoImpl.class);
 
     @Inject
-    private ConfigurationDao _configDao;
+    private ConfigurationDao  _configDao;
+    @Inject
+    public AccountManager _accountMgr;
 
     private final SearchBuilder<DomainRouterJoinVO> vrSearch;
 
@@ -63,7 +65,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         vrIdSearch.and("id", vrIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         vrIdSearch.done();
 
-        this._count = "select count(distinct id) from domain_router_view WHERE ";
+        _count = "select count(distinct id) from domain_router_view WHERE ";
     }
 
     @Override
@@ -80,16 +82,18 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         if (router.getTemplateVersion() != null) {
             String routerVersion = Version.trimRouterVersion(router.getTemplateVersion());
             routerResponse.setVersion(routerVersion);
-            routerResponse.setRequiresUpgrade((Version.compare(routerVersion, VirtualNetworkApplianceService.MinVRVersion) < 0));
+            routerResponse.setRequiresUpgrade((Version.compare(routerVersion, NetworkOrchestrationService.MinVRVersion.valueIn(router.getDataCenterId())) < 0));
         } else {
             routerResponse.setVersion("UNKNOWN");
             routerResponse.setRequiresUpgrade(true);
         }
 
-        if (caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+        if (caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
+                || _accountMgr.isRootAdmin(caller.getId())) {
             if (router.getHostId() != null) {
                 routerResponse.setHostId(router.getHostUuid());
                 routerResponse.setHostName(router.getHostName());
+                routerResponse.setHypervisor(router.getHypervisorType().toString());
             }
             routerResponse.setPodId(router.getPodUuid());
             long nic_id = router.getNicId();

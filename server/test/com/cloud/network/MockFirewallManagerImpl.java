@@ -70,9 +70,13 @@ public class MockFirewallManagerImpl extends ManagerBase implements FirewallMana
     }
 
     @Override
-    public boolean revokeFirewallRule(long ruleId, boolean apply) {
-        // TODO Auto-generated method stub
-        return false;
+    public boolean revokeIngressFirewallRule(long ruleId, boolean apply) {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public boolean revokeEgressFirewallRule(long ruleId, boolean apply) {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
@@ -85,6 +89,26 @@ public class MockFirewallManagerImpl extends ManagerBase implements FirewallMana
     public boolean revokeRelatedFirewallRule(long ruleId, boolean apply) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public FirewallRule updateIngressFirewallRule(long ruleId, String customId, Boolean forDisplay) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public FirewallRule updateEgressFirewallRule(long ruleId, String customId, Boolean forDisplay) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public boolean applyIngressFwRules(long ipId, Account caller) throws ResourceUnavailableException {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public boolean revokeIngressFwRule(long ruleId, boolean apply) {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
@@ -183,5 +207,6 @@ public class MockFirewallManagerImpl extends ManagerBase implements FirewallMana
         // TODO Auto-generated method stub
         return null;
     }
+
 
 }

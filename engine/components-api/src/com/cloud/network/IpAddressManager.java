@@ -25,7 +25,7 @@ import com.cloud.dc.Vlan.VlanType;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.addr.PublicIp;
@@ -107,7 +107,7 @@ public interface IpAddressManager {
     boolean handleSystemIpRelease(IpAddress ip);
 
     void allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network, String requestedIpv4, String requestedIpv6)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException;
 
     /**
      * @param owner
@@ -160,7 +160,7 @@ public interface IpAddressManager {
     PublicIp assignDedicateIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId, boolean isSourceNat) throws ConcurrentOperationException,
         InsufficientAddressCapacityException;
 
-    IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId, DataCenter zone) throws ConcurrentOperationException,
+    IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId, DataCenter zone, Boolean displayIp) throws ConcurrentOperationException,
         ResourceAllocationException, InsufficientAddressCapacityException;
 
     PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp,

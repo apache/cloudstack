@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.resource;
 
 import java.util.ArrayList;
@@ -63,7 +66,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.network.nicira.ControlClusterStatus;
 import com.cloud.network.nicira.DestinationNatRule;
 import com.cloud.network.nicira.L3GatewayAttachment;
-import com.cloud.network.nicira.LogicalRouterConfig;
+import com.cloud.network.nicira.LogicalRouter;
 import com.cloud.network.nicira.LogicalRouterPort;
 import com.cloud.network.nicira.LogicalSwitch;
 import com.cloud.network.nicira.LogicalSwitchPort;
@@ -75,7 +78,7 @@ import com.cloud.network.nicira.NiciraNvpList;
 import com.cloud.network.nicira.NiciraNvpTag;
 import com.cloud.network.nicira.PatchAttachment;
 import com.cloud.network.nicira.RouterNextHop;
-import com.cloud.network.nicira.SingleDefaultRouteImplictRoutingConfig;
+import com.cloud.network.nicira.SingleDefaultRouteImplicitRoutingConfig;
 import com.cloud.network.nicira.SourceNatRule;
 import com.cloud.network.nicira.TransportZoneBinding;
 import com.cloud.network.nicira.VifAttachment;
@@ -291,7 +294,7 @@ public class NiciraNvpResource implements ServerResource {
             LogicalSwitchPort logicalSwitchPort = new LogicalSwitchPort(attachmentUuid, tags, true);
             LogicalSwitchPort newPort = niciraNvpApi.createLogicalSwitchPort(logicalSwitchUuid, logicalSwitchPort);
             try {
-                niciraNvpApi.modifyLogicalSwitchPortAttachment(cmd.getLogicalSwitchUuid(), newPort.getUuid(), new VifAttachment(attachmentUuid));
+                niciraNvpApi.updateLogicalSwitchPortAttachment(cmd.getLogicalSwitchUuid(), newPort.getUuid(), new VifAttachment(attachmentUuid));
             } catch (NiciraNvpApiException ex) {
                 s_logger.warn("modifyLogicalSwitchPort failed after switchport was created, removing switchport");
                 niciraNvpApi.deleteLogicalSwitchPort(cmd.getLogicalSwitchUuid(), newPort.getUuid());
@@ -331,7 +334,7 @@ public class NiciraNvpResource implements ServerResource {
             List<NiciraNvpTag> tags = new ArrayList<NiciraNvpTag>();
             tags.add(new NiciraNvpTag("cs_account", cmd.getOwnerName()));
 
-            niciraNvpApi.modifyLogicalSwitchPortAttachment(logicalSwitchUuid, logicalSwitchPortUuid, new VifAttachment(attachmentUuid));
+            niciraNvpApi.updateLogicalSwitchPortAttachment(logicalSwitchUuid, logicalSwitchPortUuid, new VifAttachment(attachmentUuid));
             return new UpdateLogicalSwitchPortAnswer(cmd, true, "Attachment for  " + logicalSwitchPortUuid + " updated", logicalSwitchPortUuid);
         } catch (NiciraNvpApiException e) {
             if (numRetries > 0) {
@@ -380,10 +383,10 @@ public class NiciraNvpResource implements ServerResource {
 
         try {
             // Create the Router
-            LogicalRouterConfig lrc = new LogicalRouterConfig();
+            LogicalRouter lrc = new LogicalRouter();
             lrc.setDisplayName(truncate(routerName, NAME_MAX_LEN));
             lrc.setTags(tags);
-            lrc.setRoutingConfig(new SingleDefaultRouteImplictRoutingConfig(new RouterNextHop(publicNetworkNextHopIp)));
+            lrc.setRoutingConfig(new SingleDefaultRouteImplicitRoutingConfig(new RouterNextHop(publicNetworkNextHopIp)));
             lrc = niciraNvpApi.createLogicalRouter(lrc);
 
             // store the switchport for rollback
@@ -405,7 +408,7 @@ public class NiciraNvpResource implements ServerResource {
                 if (cmd.getVlanId() != 0) {
                     attachment.setVlanId(cmd.getVlanId());
                 }
-                niciraNvpApi.modifyLogicalRouterPortAttachment(lrc.getUuid(), lrpo.getUuid(), attachment);
+                niciraNvpApi.updateLogicalRouterPortAttachment(lrc.getUuid(), lrpo.getUuid(), attachment);
 
                 // Create the inside port for the router
                 LogicalRouterPort lrpi = new LogicalRouterPort();
@@ -422,10 +425,10 @@ public class NiciraNvpResource implements ServerResource {
                 lsp = niciraNvpApi.createLogicalSwitchPort(logicalSwitchUuid, lsp);
 
                 // Attach the inside router port to the lswitch port with a PatchAttachment
-                niciraNvpApi.modifyLogicalRouterPortAttachment(lrc.getUuid(), lrpi.getUuid(), new PatchAttachment(lsp.getUuid()));
+                niciraNvpApi.updateLogicalRouterPortAttachment(lrc.getUuid(), lrpi.getUuid(), new PatchAttachment(lsp.getUuid()));
 
                 // Attach the inside lswitch port to the router with a PatchAttachment
-                niciraNvpApi.modifyLogicalSwitchPortAttachment(logicalSwitchUuid, lsp.getUuid(), new PatchAttachment(lrpi.getUuid()));
+                niciraNvpApi.updateLogicalSwitchPortAttachment(logicalSwitchUuid, lsp.getUuid(), new PatchAttachment(lrpi.getUuid()));
 
                 // Setup the source nat rule
                 SourceNatRule snr = new SourceNatRule();
@@ -481,7 +484,7 @@ public class NiciraNvpResource implements ServerResource {
             }
             LogicalRouterPort lrp = ports.getResults().get(0);
             lrp.setIpAddresses(cmd.getPublicCidrs());
-            niciraNvpApi.modifyLogicalRouterPort(cmd.getLogicalRouterUuid(), lrp);
+            niciraNvpApi.updateLogicalRouterPort(cmd.getLogicalRouterUuid(), lrp);
 
             return new ConfigurePublicIpsOnLogicalRouterAnswer(cmd, true, "Configured " + cmd.getPublicCidrs().size() + " ip addresses on logical router uuid " +
                 cmd.getLogicalRouterUuid());

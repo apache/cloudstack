@@ -32,7 +32,8 @@ import org.apache.cloudstack.api.response.RegionResponse;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.region.RegionService;
 
-@APICommand(name = "listRegions", description = "Lists Regions", responseObject = RegionResponse.class)
+@APICommand(name = "listRegions", description = "Lists Regions", responseObject = RegionResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListRegionsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListRegionsCmd.class.getName());
 

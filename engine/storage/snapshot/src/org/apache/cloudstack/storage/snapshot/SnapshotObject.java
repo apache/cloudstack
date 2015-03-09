@@ -139,6 +139,16 @@ public class SnapshotObject implements SnapshotInfo {
     }
 
     @Override
+    public long getPhysicalSize() {
+        long physicalSize = 0;
+        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Image);
+        if (snapshotStore != null) {
+            physicalSize = snapshotStore.getPhysicalSize();
+        }
+        return physicalSize;
+    }
+
+    @Override
     public VolumeInfo getBaseVolume() {
         return volFactory.getVolume(snapshot.getVolumeId());
     }
@@ -286,13 +296,10 @@ public class SnapshotObject implements SnapshotInfo {
             } else if (answer instanceof CopyCmdAnswer) {
                 SnapshotObjectTO snapshotTO = (SnapshotObjectTO)((CopyCmdAnswer)answer).getNewData();
                 snapshotStore.setInstallPath(snapshotTO.getPath());
-                // DEBUG [o.a.c.s.s.SnapshotServiceImpl] (Job-Executor-10:ctx-edd5ff44 ctx-822f2b0b) Failed to update snapshot state
-                // java.lang.NullPointerException
-                //         at org.apache.cloudstack.storage.snapshot.SnapshotObject.processEvent(SnapshotObject.java:289)
-                if (snapshotTO.getPhysicalSize() == null) {
-                    snapshotStore.setSize(0L);
-                } else {
-                    snapshotStore.setSize(snapshotTO.getPhysicalSize());
+
+                if (snapshotTO.getPhysicalSize() != null) {
+                    // For S3 delta snapshot, physical size is currently not set
+                snapshotStore.setPhysicalSize(snapshotTO.getPhysicalSize());
                 }
                 if (snapshotTO.getParentSnapshotPath() == null) {
                     snapshotStore.setParentSnapshotId(0L);
@@ -383,5 +390,10 @@ public class SnapshotObject implements SnapshotInfo {
             return store.delete(this);
         }
         return true;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return Snapshot.class;
     }
 }

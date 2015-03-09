@@ -204,7 +204,7 @@ public class NetworkProviderTest extends TestCase {
         ManagementServerMock.setParameter(cmd, "accountName", BaseCmd.CommandType.STRING, system.getAccountName());
         ManagementServerMock.setParameter(cmd, ApiConstants.NAME, BaseCmd.CommandType.STRING, name);
         ManagementServerMock.setParameter(cmd, "displayText", BaseCmd.CommandType.STRING, "test network");
-        ManagementServerMock.setParameter(cmd, "networkOfferingId", BaseCmd.CommandType.LONG, _contrailMgr.getOffering().getId());
+        ManagementServerMock.setParameter(cmd, "networkOfferingId", BaseCmd.CommandType.LONG, _contrailMgr.getRouterOffering().getId());
         ManagementServerMock.setParameter(cmd, "zoneId", BaseCmd.CommandType.LONG, zone.getId());
         ManagementServerMock.setParameter(cmd, ApiConstants.GATEWAY, BaseCmd.CommandType.STRING, "10.0.1.254");
         ManagementServerMock.setParameter(cmd, ApiConstants.NETMASK, BaseCmd.CommandType.STRING, "255.255.255.0");

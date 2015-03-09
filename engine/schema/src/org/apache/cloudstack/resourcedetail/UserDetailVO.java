@@ -43,7 +43,7 @@ public class UserDetailVO implements ResourceDetail {
     private String value;
 
     @Column(name = "display")
-    private boolean display;
+    private boolean display = true;
 
     public UserDetailVO() {
     }

@@ -120,4 +120,29 @@
             return str;
         }
     };
+
+    /**
+     * Localize validator messages
+     */
+    cloudStack.localizeValidatorMessages = function() {
+        $.extend($.validator.messages, {
+            required: _l('message.validate.fieldrequired'),
+            remote: _l('message.validate.fixfield'),
+            email: _l('message.validate.email.address'),
+            url: _l('message.validate.URL'),
+            date: _l('message.validate.date'),
+            dateISO: _l('message.validate.date.ISO'),
+            number: _l('message.validate.number'),
+            digits: _l('message.validate.digits'),
+            creditcard: _l('message.validate.creditcard'),
+            equalTo: _l('message.validate.equalto'),
+            accept: _l('message.validate.accept'),
+            maxlength: $.validator.format(_l('message.validate.maxlength')),
+            minlength: $.validator.format(_l('message.validate.minlength')),
+            rangelength: $.validator.format(_l('message.validate.range.length')),
+            range: $.validator.format(_l('message.validate.range')),
+            max: $.validator.format(_l('message.validate.max')),
+            min: $.validator.format(_l('messgae.validate.min'))
+        });
+    };
 })(jQuery, cloudStack);

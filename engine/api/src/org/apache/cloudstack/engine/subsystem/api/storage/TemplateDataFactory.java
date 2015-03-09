@@ -25,6 +25,8 @@ import com.cloud.storage.DataStoreRole;
 public interface TemplateDataFactory {
     TemplateInfo getTemplate(long templateId, DataStore store);
 
+    TemplateInfo getReadyTemplateOnImageStore(long templateId, Long zoneId);
+
     TemplateInfo getTemplate(DataObject obj, DataStore store);
 
     TemplateInfo getTemplate(long templateId, DataStoreRole storeRole);

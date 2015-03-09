@@ -16,13 +16,13 @@
 -- under the License.
 
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
-    VALUES (1, UUID(), 'routing-1', 'SystemVM Template (XenServer)', 0, now(), 'SYSTEM', 0, 32, 1, 'http://download.cloud.com/templates/4.2/systemvmtemplate-2013-07-12-master-xen.vhd.bz2', '74b92f031cc5c2089ee89efb81344dcf', 0, 'SystemVM Template (XenServer)', 'VHD', 183, 0, 1, 'XenServer' );
+    VALUES (1, UUID(), 'routing-1', 'SystemVM Template (XenServer)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/4.3/systemvm64template-2014-01-14-master-xen.vhd.bz2', '74b92f031cc5c2089ee89efb81344dcf', 0, 'SystemVM Template (XenServer)', 'VHD', 184, 0, 1, 'XenServer' );
 
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, removed, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
     VALUES (2, UUID(), 'centos53-x86_64', 'CentOS 5.3(64-bit) no GUI (XenServer)', 1, now(), now(), 'BUILTIN', 0, 64, 1, 'http://download.cloud.com/templates/builtin/f59f18fb-ae94-4f97-afd2-f84755767aca.vhd.bz2', 'b63d854a9560c013142567bbae8d98cf', 0, 'CentOS 5.3(64-bit) no GUI (XenServer)', 'VHD', 12, 1, 1, 'XenServer', 1);
 
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
-    VALUES (3, UUID(), 'routing-3', 'SystemVM Template (KVM)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-kvm.qcow2.bz2', '6cea42b2633841648040becb588bd8f0', 0, 'SystemVM Template (KVM)', 'QCOW2', 15, 0, 1, 'KVM' );
+    VALUES (3, UUID(), 'routing-3', 'SystemVM Template (KVM)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/4.3/systemvm64template-2014-01-14-master-kvm.qcow2.bz2', '85a1bed07bf43cbf022451cb2ecae4ff', 0, 'SystemVM Template (KVM)', 'QCOW2', 15, 0, 1, 'KVM' );
 
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, display_text, enable_password, format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
     VALUES (4, UUID(), 'centos55-x86_64', 'CentOS 5.5(64-bit) no GUI (KVM)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloud.com/releases/2.2.0/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2', 'ed0e788280ff2912ea40f7f91ca7a249', 'CentOS 5.5(64-bit) no GUI (KVM)', 0, 'QCOW2', 112, 1, 1, 'KVM', 1);
@@ -37,14 +37,14 @@ INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created,
     VALUES (7, UUID(), 'centos53-x64', 'CentOS 5.3(64-bit) no GUI (vSphere)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloud.com/releases/2.2.0/CentOS5.3-x86_64.ova', 'f6f881b7f2292948d8494db837fe0f47', 0, 'CentOS 5.3(64-bit) no GUI (vSphere)', 'OVA', 12, 1, 1, 'VMware', 1);
 
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
-    VALUES (8, UUID(), 'routing-8', 'SystemVM Template (vSphere)', 0, now(), 'SYSTEM', 0, 32, 1, 'http://download.cloud.com/templates/4.2/systemvmtemplate-4.2-vh7.ova', '8fde62b1089e5844a9cd3b9b953f9596', 0, 'SystemVM Template (vSphere)', 'OVA', 15, 0, 1, 'VMware' );
+    VALUES (8, UUID(), 'routing-8', 'SystemVM Template (vSphere)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/4.3/systemvm64template-2014-01-14-master-vmware.ova', 'ef593a061f3b7594ab0bfd9b0ed0a0d4', 0, 'SystemVM Template (vSphere)', 'OVA', 15, 0, 1, 'VMware' );
 
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
     VALUES (9, UUID(), 'routing-9', 'SystemVM Template (HyperV)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/4.3/systemvm64template-2013-12-23-hyperv.vhd.bz2', '5df45ee6ebe1b703a8805f4e1f4d0818', 0, 'SystemVM Template (HyperV)', 'VHD', 15, 0, 1, 'Hyperv' );
 
 -- 1- already taken, the upgrade 410 to 420 breaks...
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
-    VALUES (11, UUID(), 'routing-11', 'SystemVM Template (Ovm3)', 0, now(), 'SYSTEM', 0, 32, 1, 'http://nibbler/~funs/iso/systemvmtemplate-4.2-ovm.vhd.bz2', '4425688804dbcf0abc9e9e56c53070d7', 0, 'SystemVM Template (Ovm3)', 'RAW', 183, 0, 1, 'Ovm3' );
+    VALUES (12, UUID(), 'routing-12', 'SystemVM Template (Ovm3)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/4.3/systemvm64template-2014-01-14-master-ovm.vhd.bz2', '4425688804dbcf0abc9e9e56c53070d7', 0, 'SystemVM Template (Ovm3)', 'RAW', 183, 0, 1, 'Ovm3' );
 
 INSERT INTO `cloud`.`guest_os_category` (id, uuid, name) VALUES (1, UUID(), 'CentOS');
 INSERT INTO `cloud`.`guest_os_category` (id, uuid, name) VALUES (2, UUID(), 'Debian');
@@ -72,7 +72,7 @@ INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (11,
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (12, UUID(), 1, 'CentOS 5.3 (64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (13, UUID(), 1, 'CentOS 5.4 (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (14, UUID(), 1, 'CentOS 5.4 (64-bit)');
-INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (15, UUID(), 2, 'Debian GNU/Linux 5.0 (32-bit)');
+INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (15, UUID(), 2, 'Debian GNU/Linux 5.0 (64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (16, UUID(), 3, 'Oracle Enterprise Linux 5.0 (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (17, UUID(), 3, 'Oracle Enterprise Linux 5.0 (64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (18, UUID(), 3, 'Oracle Enterprise Linux 5.1 (32-bit)');
@@ -224,6 +224,7 @@ INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (164
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (165, UUID(), 6, 'Windows 8 (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (166, UUID(), 6, 'Windows 8 (64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (167, UUID(), 6, 'Windows Server 2012 (64-bit)');
+INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (168, UUID(), 6, 'Windows Server 2012 R2 (64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (169, UUID(), 10, 'Ubuntu 11.04 (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (170, UUID(), 10, 'Ubuntu 11.04 (64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (171, UUID(), 1, 'CentOS 6.3 (32-bit)');
@@ -276,6 +277,8 @@ INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (221
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (222, UUID(), 7, 'Apple Mac OS X 10.6 (64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (223, UUID(), 7, 'Apple Mac OS X 10.7 (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (224, UUID(), 7, 'Apple Mac OS X 10.7 (64-bit)');
+INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (225, UUID(), 9, 'FreeBSD 10 (32-bit)');
+INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (226, UUID(), 9, 'FreeBSD 10 (64-bit)');
 
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (200, UUID(), 1, 'Other CentOS (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, uuid, category_id, display_name) VALUES (201, UUID(), 1, 'Other CentOS (64-bit)');
@@ -379,6 +382,7 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'Windows 8 (32-bit)', 165);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'Windows 8 (64-bit)', 166);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'Windows Server 2012 (64-bit)', 167);
+INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'Windows Server 2012 R2 (64-bit)', 168);
 
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Microsoft Windows 7(32-bit)', 48);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Microsoft Windows 7(64-bit)', 49);
@@ -410,6 +414,7 @@ INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("VmWare", 'Windows 8 (32-bit)', 165);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("VmWare", 'Windows 8 (64-bit)', 166);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("VmWare", 'Windows Server 2012 (64-bit)', 167);
+INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("VmWare", 'Windows Server 2012 R2 (64-bit)', 168);
 
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Red Hat Enterprise Linux 5.0(32-bit)', 30);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES ("VmWare", 'Red Hat Enterprise Linux 5.1(32-bit)', 32);

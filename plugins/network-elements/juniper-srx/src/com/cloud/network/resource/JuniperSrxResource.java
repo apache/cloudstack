@@ -191,16 +191,18 @@ public class JuniperSrxResource implements ServerResource {
                     throw new Exception("Failed to find Juniper SRX XML file: " + filename);
                 }
 
-                FileReader fr = new FileReader(xmlFilePath);
-                BufferedReader br = new BufferedReader(fr);
-
-                String xml = "";
-                String line;
-                while ((line = br.readLine()) != null) {
-                    xml += line.trim();
+                try(FileReader fr = new FileReader(xmlFilePath);
+                BufferedReader br = new BufferedReader(fr);) {
+                    String xml = "";
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        xml += line.trim();
+                    }
+                    return xml;
+                }catch (Exception e) {
+                    s_logger.debug(e);
+                    return null;
                 }
-
-                return xml;
             } catch (Exception e) {
                 s_logger.debug(e);
                 return null;
@@ -965,6 +967,7 @@ public class JuniperSrxResource implements ServerResource {
     private void addStaticNatRule(Long publicVlanTag, String publicIp, String privateIp, List<FirewallRuleTO> rules) throws ExecutionException {
         manageStaticNatRule(SrxCommand.ADD, publicIp, privateIp);
         manageAddressBookEntry(SrxCommand.ADD, _privateZone, privateIp, null);
+        manageProxyArp(SrxCommand.ADD, publicVlanTag, publicIp);
 
         // Add a new security policy with the current set of applications
         addSecurityPolicyAndApplications(SecurityPolicyType.STATIC_NAT, privateIp, extractApplications(rules));
@@ -979,6 +982,7 @@ public class JuniperSrxResource implements ServerResource {
         removeSecurityPolicyAndApplications(SecurityPolicyType.STATIC_NAT, privateIp);
 
         manageAddressBookEntry(SrxCommand.DELETE, _privateZone, privateIp, null);
+        manageProxyArp(SrxCommand.DELETE, publicVlanTag, publicIp);
 
         s_logger.debug("Removed static NAT rule for public IP " + publicIp + ", and private IP " + privateIp);
     }
@@ -1248,6 +1252,7 @@ public class JuniperSrxResource implements ServerResource {
         List<Object[]> applications = new ArrayList<Object[]>();
         applications.add(new Object[] {protocol, destPortStart, destPortEnd});
         addSecurityPolicyAndApplications(SecurityPolicyType.DESTINATION_NAT, privateIp, applications);
+        manageProxyArp(SrxCommand.ADD, publicVlanTag, publicIp);
 
         String srcPortRange = srcPortStart + "-" + srcPortEnd;
         String destPortRange = destPortStart + "-" + destPortEnd;
@@ -1258,6 +1263,7 @@ public class JuniperSrxResource implements ServerResource {
     private void removeDestinationNatRule(Long publicVlanTag, String publicIp, String privateIp, int srcPort, int destPort) throws ExecutionException {
         manageDestinationNatRule(SrxCommand.DELETE, publicIp, privateIp, srcPort, destPort);
         manageDestinationNatPool(SrxCommand.DELETE, privateIp, destPort);
+        manageProxyArp(SrxCommand.DELETE, publicVlanTag, publicIp);
 
         removeSecurityPolicyAndApplications(SecurityPolicyType.DESTINATION_NAT, privateIp);
 
@@ -2809,7 +2815,7 @@ public class JuniperSrxResource implements ServerResource {
                 if (type.equals(SecurityPolicyType.SECURITYPOLICY_EGRESS) || type.equals(SecurityPolicyType.SECURITYPOLICY_EGRESS_DEFAULT)) {
                     xml = replaceXmlValue(xml, "from-zone", _privateZone);
                     xml = replaceXmlValue(xml, "to-zone", _publicZone);
-                    if (cidrs == null) {
+                    if (cidrs == null || cidrs.size() == 0) {
                         srcAddrs = "<source-address>any</source-address>";
                     } else {
                         for (String cidr : cidrs) {

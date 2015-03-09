@@ -17,7 +17,6 @@
 
 build/replace.properties
 build/build.number
-bin/
 .lock-wscript
 .waf-*
 waf-*
@@ -48,6 +47,7 @@ tools/devcloud/devcloudbox/.vagrant
 tools/cli/cloudmonkey/marvin/
 tools/cli/cloudmonkey/precache.py
 tools/marvin/marvin/cloudstackAPI/
+tools/marvin/build/
 tools/cli/build/
 *.jar
 *.war
@@ -64,6 +64,7 @@ awsapi/modules/*
 .settings.xml
 .settings/
 db.properties.override
+replace.properties.override
 awsapi/overlays/
 tools/marvin/marvin/cloudstackAPI/*
 *.egg-info/
@@ -87,3 +88,9 @@ tools/apidoc/log/
 log/
 plugins/network-elements/juniper-contrail/logs/
 scripts/vm/hypervisor/xenserver/vhd-util
+*.orig
+tools/appliance/box/
+.reviewboardrc
+.checkstyle
+.pmd
+.pmdruleset.xml

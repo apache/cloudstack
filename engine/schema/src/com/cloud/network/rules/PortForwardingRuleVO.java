@@ -79,14 +79,26 @@ public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardi
         return destinationPortStart;
     }
 
+    public void setDestinationPortStart(int destinationPortStart) {
+        this.destinationPortStart = destinationPortStart;
+    }
+
     @Override
     public int getDestinationPortEnd() {
         return destinationPortEnd;
     }
 
+    public void setDestinationPortEnd(int destinationPortEnd) {
+        this.destinationPortEnd = destinationPortEnd;
+    }
+
     @Override
     public long getVirtualMachineId() {
         return virtualMachineId;
+    }
+
+    public void setVirtualMachineId(long virtualMachineId) {
+        this.virtualMachineId = virtualMachineId;
     }
 
     @Override

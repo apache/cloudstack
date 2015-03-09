@@ -16,6 +16,7 @@
 -- under the License.
 
 SET foreign_key_checks = 0;
+USE `cloud_usage`;
 DROP TABLE IF EXISTS `cloud_usage`.`cloud_usage`;
 DROP TABLE IF EXISTS `cloud_usage`.`usage_vm_instance`;
 DROP TABLE IF EXISTS `cloud_usage`.`usage_ip_address`;
@@ -282,6 +283,8 @@ ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_gro
 ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__created`(`created`);
 ALTER TABLE `cloud_usage`.`usage_security_group` ADD INDEX `i_usage_security_group__deleted`(`deleted`);
 
+USE `cloud`;
+
 CREATE TABLE `cloud`.`netapp_volume` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `ip_address` varchar(255) NOT NULL COMMENT 'ip address/fqdn of the volume',
@@ -296,7 +299,7 @@ CREATE TABLE `cloud`.`netapp_volume` (
   `password` varchar(200) COMMENT 'password',
   `round_robin_marker` int COMMENT 'This marks the volume to be picked up for lun creation, RR fashion',
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_netapp_volume__pool_id` FOREIGN KEY `fk_netapp_volume__pool_id` (`pool_id`) REFERENCES `netapp_pool` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_netapp_volume__pool_id` FOREIGN KEY `fk_netapp_volume__pool_id` (`pool_id`) REFERENCES `cloud`.`netapp_pool` (`id`) ON DELETE CASCADE,
   INDEX `i_netapp_volume__pool_id`(`pool_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -315,7 +318,7 @@ CREATE TABLE `cloud`.`netapp_lun` (
   `size` bigint NOT NULL COMMENT 'lun size',
   `volume_id` bigint unsigned NOT NULL COMMENT 'parent volume id',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_netapp_lun__volume_id` FOREIGN KEY `fk_netapp_lun__volume_id` (`volume_id`) REFERENCES `netapp_volume` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_netapp_lun__volume_id` FOREIGN KEY `fk_netapp_lun__volume_id` (`volume_id`) REFERENCES `cloud`.`netapp_volume` (`id`) ON DELETE CASCADE,
   INDEX `i_netapp_lun__volume_id`(`volume_id`),
   INDEX `i_netapp_lun__lun_name`(`lun_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

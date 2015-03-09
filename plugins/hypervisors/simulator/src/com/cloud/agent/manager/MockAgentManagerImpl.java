@@ -32,6 +32,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.user.AccountManager;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -87,6 +89,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
     MockStorageManager _storageMgr = null;
     @Inject
     ResourceManager _resourceMgr;
+    @Inject private AccountManager _accountMgr;
 
     SimulatorSecondaryDiscoverer discoverer;
     @Inject
@@ -303,8 +306,10 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
         @Override
         @DB
         public void run() {
+            CallContext.register(_accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
             if (this.mode.equalsIgnoreCase("Stop")) {
                 handleSystemVMStop();
+                CallContext.unregister();
                 return;
             }
 
@@ -359,10 +364,12 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
                         _resourceMgr.discoverHosts(cmd);
                     } catch (DiscoveryException e) {
                         s_logger.debug("Failed to discover host: " + e.toString());
+                        CallContext.unregister();
                         return;
                     }
                 } catch (ConfigurationException e) {
                     s_logger.debug("Failed to load secondary storage resource: " + e.toString());
+                    CallContext.unregister();
                     return;
                 }
             }

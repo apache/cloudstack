@@ -1,4 +1,5 @@
-#!/bin/sh -e
+#!/bin/sh
+
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -16,12 +17,16 @@
 # specific language governing permissions and limitations
 # under the License.
 
+set -e
+
 if [ "$1" = configure ]; then
     if ! getent passwd cloud >/dev/null; then
         adduser --quiet --system --group --no-create-home --home /var/lib/cloudstack/management cloud
     else
         usermod -m -d /var/lib/cloudstack/management cloud || true
     fi
+
+    rm -fr /var/cache/cloudstack/management/work/*
 
     for i in /var/cache/cloudstack/management \
         /var/cache/cloudstack/management/work \
@@ -52,4 +57,7 @@ if [ "$1" = configure ]; then
 
     chmod 0640 /etc/cloudstack/management/db.properties
     chgrp cloud /etc/cloudstack/management/db.properties
+    invoke-rc.d tomcat6 stop || true
 fi
+
+#DEBHELPER#

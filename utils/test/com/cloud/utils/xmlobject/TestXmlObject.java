@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils.xmlobject;
 
 import org.junit.Test;
@@ -40,6 +43,11 @@ public class TestXmlObject {
                 }
             }
             */
+
+        XmlObject xml = new XmlObject("vlan").putElement("vlan-id", String.valueOf(19)).putElement("tagged",
+                new XmlObject("teng").putElement("name", "0/0")
+        ).putElement("shutdown", "false");
+        System.out.println(xml.toString());
     }
 
 }

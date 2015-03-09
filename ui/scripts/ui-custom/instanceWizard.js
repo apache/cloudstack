@@ -45,6 +45,38 @@
                     var data = cloudStack.serializeForm($form);
                     var $wizardLoading = $('<div>').addClass('loading-overlay').appendTo($wizard).css('z-index', '10000');
 
+                    // Pass network IPs
+                    data['my-network-ips'] = [];
+                    $form.find('.my-networks .select .specify-ip input[type=text]').each(function() {
+                        var $input = $(this);
+
+                        if (!$input.closest('.select').find('input[type=checkbox]').is(':checked')) return true;
+
+                        data['my-network-ips'].push(
+                            $input.closest('.select').hasClass('advanced') ?
+                                $input.val() : null
+                        );
+                    });
+                    data['new-network-ip'] = $form.find('.new-network .select.advanced .specify-ip input[type=text]').val();
+
+                    // Handle multi-disk service offerings
+                    if ($form.find('.multi-disk-select-container').size()) {
+                        data['disk-offerings-multi'] = [];
+
+                        var $diskGroups = $form.find('.disk-select-group');
+                        var $selectedDisks = $.grep($diskGroups, function (diskGroup) {
+                            return $(diskGroup).find('input[type=checkbox]:checked').size();
+                        });
+
+                        $selectedDisks.map(function (disk) {
+                            data['disk-offerings-multi'].push(
+                                $.extend($(disk).data('json-obj'), {
+                                    _diskOfferingId: $(disk).find('input[type=radio]:checked').val()
+                                })
+                            );
+                        });
+                    }
+
                     args.action({
                         // Populate data
                         context: context,
@@ -310,7 +342,7 @@
                                         var $templateHypervisor = $step.find('input[type=hidden][wizard-field=hypervisor]');
 
                                         // Get hypervisor from template
-                                        if (type == 'featuredtemplates' || type == 'communitytemplates' || type == 'mytemplates') {
+                                        if (type == 'featuredtemplates' || type == 'communitytemplates' || type == 'mytemplates' || type == 'sharedtemplates') {
                                             $selects.each(function() {
                                                 var $select = $(this);
                                                 var template = $.grep(args.data.templates[type], function(tmpl, v) {
@@ -327,7 +359,7 @@
                                             $templateHypervisor.attr('disabled', 'disabled');
                                         }
 
-                                        if (type == 'featuredisos' || type == 'communityisos' || type == 'myisos') {
+                                        if (type == 'featuredisos' || type == 'communityisos' || type == 'myisos' || type == 'sharedisos') {
                                             // Create hypervisor select
                                             $selects.find('input').bind('click', function() {
                                                 var $select = $(this).closest('.select');
@@ -336,6 +368,7 @@
                                                 $("#instance-wizard-featured-isos .select-container div.selected").removeClass('selected').find('div.hypervisor').remove();
                                                 $("#instance-wizard-community-isos .select-container div.selected").removeClass('selected').find('div.hypervisor').remove();
                                                 $("#instance-wizard-my-isos .select-container div.selected").removeClass('selected').find('div.hypervisor').remove();
+                                                $("#instance-wizard-shared-isos .select-container div.selected").removeClass('selected').find('div.hypervisor').remove();
 
                                                 $select.addClass('selected').append(
                                                     $('<div>').addClass('hypervisor')
@@ -364,13 +397,17 @@
                                     // Featured ISOs
                                     $(
                                         [
+                                            // Templates
                                             ['featuredtemplates', 'instance-wizard-featured-templates'],
                                             ['communitytemplates', 'instance-wizard-community-templates'],
                                             ['mytemplates', 'instance-wizard-my-templates'],
+                                            ['sharedtemplates', 'instance-wizard-shared-templates'],
 
+                                            // ISOs
                                             ['featuredisos', 'instance-wizard-featured-isos'],
                                             ['communityisos', 'instance-wizard-community-isos'],
-                                            ['myisos', 'instance-wizard-my-isos']
+                                            ['myisos', 'instance-wizard-my-isos'],
+                                            ['sharedisos', 'instance-wizard-shared-isos'],
                                             //['isos', 'instance-wizard-all-isos']
                                         ]
                                     ).each(function() {
@@ -444,6 +481,14 @@
                                             $step.removeClass('custom-size');
                                         }
 
+                                        var customIops = item[args.customIopsFlag];
+
+                                        if (customIops && args.canShowCustomIops) {
+                                            $step.addClass('custom-iops');
+                                        } else {
+                                            $step.removeClass('custom-iops');
+                                        }
+
                                         return true;
                                     });
 
@@ -469,7 +514,11 @@
                         return {
                             response: {
                                 success: function(args) {
+                                    var multiDisk = args.multiDisk;
+
+                                    $step.find('.multi-disk-select-container').remove();
                                     $step.removeClass('custom-disk-size');
+
                                     if (args.required) {
                                         $step.find('.section.no-thanks').hide();
                                         $step.addClass('required');
@@ -478,15 +527,68 @@
                                         $step.removeClass('required');
                                     }
 
-                                    $step.find('.content .select-container').append(
-                                        makeSelects('diskofferingid', args.data.diskOfferings, {
-                                            id: 'id',
-                                            name: 'name',
-                                            desc: 'displaytext'
-                                        }, {
-                                            'wizard-field': 'disk-offering'
-                                        })
-                                    );
+                                    var $selectContainer = $step.find('.content .select-container:not(.multi-disk)');
+
+                                    if (multiDisk) { // Render as multiple groups for each disk
+                                        var $multiDiskSelect = $('<div>').addClass('multi-disk-select-container');
+
+                                        $(multiDisk).map(function(index, disk) {
+                                            var $group = $('<div>').addClass('disk-select-group');
+                                            var $header = $('<div>').addClass('disk-select-header').append(
+                                                $('<div>').addClass('title').html(disk.label)
+                                            ).appendTo($group);
+                                            var $checkbox = $('<input>').addClass('multi-disk-select')
+                                            .attr({
+                                                type: 'checkbox',
+                                                'disk-id': disk.id
+                                            })
+                                            .prependTo($header);
+                                            var $multiSelectContainer = $selectContainer.clone().append(
+                                                makeSelects('diskofferingid.' + disk.id, args.data.diskOfferings, {
+                                                    id: 'id',
+                                                    name: 'name',
+                                                    desc: 'displaytext'
+                                                }, {
+                                                    'wizard-field': 'disk-offering'
+                                                })
+                                            ).appendTo($group).addClass('multi-disk');
+
+                                            $group.appendTo($multiDiskSelect);
+                                            $group.data('json-obj', disk);
+
+                                            // Show-hide disk group selects
+                                            $checkbox.click(function() {
+                                                $group.toggleClass('selected');
+                                                $group.find('.select:first input[type=radio]').click();
+
+                                                if (!$multiDiskSelect.find('input[type=checkbox]:checked').size()) {
+                                                    $step.find('.no-thanks input[type=radio]').click();
+                                                } else {
+                                                    $step.find('.no-thanks input[type=radio]').attr('checked', false);
+                                                }
+                                            });
+
+                                            // Add custom disk size box
+                                            $step.find('.section.custom-size').clone().hide().appendTo($group);
+                                        });
+
+                                        $multiDiskSelect.insertAfter($selectContainer);
+                                        $selectContainer.hide();
+
+                                        // Fix issue with containers always showing after reload
+                                        $multiDiskSelect.find('.select-container').attr('style', null); 
+                                    } else {
+                                        $selectContainer.show();
+                                        $step.find('.content .select-container').append(
+                                            makeSelects('diskofferingid', args.data.diskOfferings, {
+                                                id: 'id',
+                                                name: 'name',
+                                                desc: 'displaytext'
+                                            }, {
+                                                'wizard-field': 'disk-offering'
+                                            })
+                                        );
+                                    }
 
                                     $step.find('input[type=radio]').bind('change', function() {
                                         var $target = $(this);
@@ -494,44 +596,81 @@
                                         var item = $.grep(args.data.diskOfferings, function(elem) {
                                             return elem.id == val;
                                         })[0];
+                                        var isMultiDisk = $step.find('.multi-disk-select').size();
 
-                                        if (!item) return true;
+                                        // Uncheck any multi-select groups
+                                        if ($target.closest('.no-thanks').size() && isMultiDisk) {
+                                            $step.find('.disk-select-group input[type=checkbox]:checked').click();
+                                            $(this).attr('checked', true);
+
+                                            return true;
+                                        }
+
+                                        if (!item) {
+                                            if (isMultiDisk) {
+                                                $(this).closest('.disk-select-group .section.custom-size').hide();
+                                                $(this).closest('.disk-select-group').removeClass('custom-size');
+                                            } else {
+                                                // handle removal of custom size controls
+                                                $step.find('.section.custom-size').hide();
+                                                $step.removeClass('custom-disk-size');
+
+                                                // handle removal of custom IOPS controls
+                                                $step.removeClass('custom-iops-do');
+                                            }
+                                            
+                                            return true;
+                                        }
 
                                         var custom = item[args.customFlag];
 
-                                        $step.find('.custom-size-label').remove();
+                                        if (!isMultiDisk) $step.find('.custom-size-label').remove();
 
-                                        if (custom) {
+                                        if (custom && !isMultiDisk) {
                                             $target.parent().find('.name')
+                                            .append(
+                                                $('<span>').addClass('custom-size-label')
+                                                .append(': ')
                                                 .append(
-                                                    $('<span>').addClass('custom-size-label')
-                                                    .append(': ')
-                                                    .append(
-                                                        $('<span>').addClass('custom-disk-size').html(
-                                                            $step.find('.custom-size input[name=size]').val()
-                                                        )
-                                                    )
-                                                    .append(' GB')
+                                                    $('<span>').addClass('custom-disk-size').html(
+                                                        $step.find('.custom-size input[name=size]').val()
+                                                )
+                                                )
+                                                .append(' GB')
                                             );
                                             $target.parent().find('.select-desc .desc')
+                                            .append(
+                                                $('<span>').addClass('custom-size-label')
+                                                .append(', ')
                                                 .append(
-                                                    $('<span>').addClass('custom-size-label')
-                                                    .append(', ')
-                                                    .append(
-                                                        $('<span>').addClass('custom-disk-size').html(
-                                                            $step.find('.custom-size input[name=size]').val()
-                                                        )
-                                                    )
-                                                    .append(' GB')
+                                                    $('<span>').addClass('custom-disk-size').html(
+                                                        $step.find('.custom-size input[name=size]').val()
+                                                )
+                                                )
+                                                .append(' GB')
                                             );
                                             $step.find('.section.custom-size').show();
                                             $step.addClass('custom-disk-size');
                                             $target.closest('.select-container').scrollTop(
                                                 $target.position().top
                                             );
+                                        } else if (custom && isMultiDisk) {
+                                            $(this).closest('.disk-select-group').addClass('custom-size');
                                         } else {
-                                            $step.find('.section.custom-size').hide();
-                                            $step.removeClass('custom-disk-size');
+                                            if (isMultiDisk) {
+                                                $(this).closest('.disk-select-group').removeClass('custom-size');
+                                            } else {
+                                                $step.find('.section.custom-size').hide();
+                                                $step.removeClass('custom-disk-size');
+                                            }
+                                        }
+
+                                        var customIops = item[args.customIopsDoFlag];
+
+                                        if (customIops) {
+                                            $step.addClass('custom-iops-do');
+                                        } else {
+                                            $step.removeClass('custom-iops-do');
                                         }
 
                                         return true;
@@ -574,6 +713,51 @@
                                     } else {
                                         $step.find('.select-container').append(
                                             $('<p>').addClass('no-affinity-groups').html(_l('message.no.affinity.groups'))
+                                        );
+                                    }
+                                }
+                            }
+                        };
+                    },
+
+                    'sshkeyPairs': function($step, formData) {
+                        var originalValues = function(formData) {
+                            if (formData.sshkeypair) {
+                                $step.find('input[type=radio]').filter(function() {
+                                    return $(this).val() == formData.sshkeypair;
+                                }).click();
+                            } else {
+                                $step.find('input[type=radio]:first').click();
+                            }
+                        };
+                        return {
+                            response: {
+                                success: function(args) {
+                                    $step.find('.main-desc, p.no-sshkey-pairs').remove();
+
+                                    if (args.data.sshkeyPairs && args.data.sshkeyPairs.length) {
+                                        $step.prepend(
+                                            $('<div>').addClass('main-desc').append(
+                                                $('<p>').html(_l('Please select a ssh key pair you want this VM to use:'))
+                                            )
+                                        );
+                                        $step.find('.section.no-thanks').show();
+                                        $step.find('.select-container').append(
+                                            makeSelects(
+                                                'sshkeypair',
+                                                args.data.sshkeyPairs, {
+                                                    name: 'name',
+                                                    id: 'name'
+                                                }, {
+                                                    'wizard-field': 'sshkey-pairs'
+                                                }
+                                            )
+                                        );
+                                        originalValues(formData); // if we can select only one.
+                                    } else {
+                                        $step.find('.section.no-thanks').hide();
+                                        $step.find('.select-container').append(
+                                            $('<p>').addClass('no-sshkey-pairs').html(_l('You do not have any ssh key pairs. Please continue to the next step.'))
                                         );
                                     }
                                 }
@@ -770,6 +954,26 @@
                                         })
                                     );
 
+                                    // Add IP/advanced option fields
+                                    $step.find('.my-networks .select-container .select, .select.new-network .select').each(function () {
+                                        var $select = $(this);
+                                        var $advancedLink = $('<div>').addClass('advanced-options hide-if-unselected');
+                                        var $specifyIpField = $('<div>').addClass('specify-ip hide-if-unselected').append(
+                                            $('<label>').html(_l('label.ip.address')),
+                                            $('<input>').attr({ type: 'text' })
+                                        );
+
+                                        // Cleanup
+                                        if ($select.closest('.new-network').size()) {
+                                            $select.find('.advanced-options, .specify-ip').remove();
+                                        }
+
+                                        $select.append($advancedLink, $specifyIpField);
+                                        $advancedLink.click(function() {
+                                            $select.toggleClass('advanced');
+                                        });
+                                    });
+
                                     // Show non-VPC networks by default
                                     filterNetworkList(-1);
 
@@ -850,6 +1054,10 @@
                     }
                 };
 
+                $wizard.bind('cloudStack.instanceWizard.showStep', function(e, args) {
+                    showStep(args.index, { refresh: true });
+                });
+
                 // Go to specified step in wizard,
                 // updating nav items and diagram
                 var showStep = function(index, options) {
@@ -865,6 +1073,10 @@
                     var $targetStep = $($steps.hide()[targetIndex]).show();
                     var stepID = $targetStep.attr('wizard-step-id');
                     var formData = cloudStack.serializeForm($form);
+
+                    if (options.refresh) {
+                        $targetStep.removeClass('loaded');
+                    }
 
                     if (!$targetStep.hasClass('loaded')) {
                         // Remove previous content
@@ -924,15 +1136,21 @@
 
                     // Next button
                     if ($target.closest('div.button.next').size()) {
-                        // Make sure ISO or template is selected
-                        if ($activeStep.hasClass('select-iso') && !$activeStep.find('.content:visible input:checked').size()) {
-                            cloudStack.dialog.notice({
-                                message: 'message.step.1.continue'
-                            });
-                            return false;
-                        }
-
-                        //step 5 - select network
+                        //step 2 - select template/ISO
+                    	if($activeStep.hasClass('select-iso')) {	                        
+                    		if ($activeStep.find('.content:visible input:checked').size() == 0) {
+	                            cloudStack.dialog.notice({
+	                                message: 'message.step.1.continue'
+	                            });
+	                            return false;
+	                        }	
+	                        $(window).trigger("cloudStack.module.instanceWizard.clickNextButton", {
+	                        	$form: $form,
+                            	currentStep: 2
+                            });   	                       
+                    	}                    	
+                        
+                        //step 6 - select network
                         if ($activeStep.find('.wizard-step-conditional.select-network:visible').size() > 0) {
                             var data = $activeStep.data('my-networks');
 
@@ -1046,17 +1264,22 @@
                     $futureSteps.removeClass('loaded');
                 });
 
+                var minCustomDiskSize = args.minDiskOfferingSize ?
+                                    args.minDiskOfferingSize() : 1;
+
                 var maxCustomDiskSize = args.maxDiskOfferingSize ?
                     args.maxDiskOfferingSize() : 100;
 
                 // Setup tabs and slider
+                $wizard.find('.section.custom-size .size.min span').html(minCustomDiskSize);
+                $wizard.find('.section.custom-size input[type=text]').val(minCustomDiskSize);
                 $wizard.find('.section.custom-size .size.max span').html(maxCustomDiskSize);
                 $wizard.find('.tab-view').tabs();
                 $wizard.find('.slider').each(function() {
                    var $slider = $(this);
-
+                   
                     $slider.slider({
-                        min: 1,
+                        min: minCustomDiskSize,
                         max: maxCustomDiskSize,
                         start: function(event) {
                             $slider.closest('.section.custom-size').find('input[type=radio]').click();
@@ -1080,7 +1303,7 @@
 
                 return $wizard.dialog({
                     title: _l('label.vm.add'),
-                    width: 800,
+                    width: 896,
                     height: 570,
                     closeOnEscape: false,
                     zIndex: 5000

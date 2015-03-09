@@ -41,7 +41,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "addNetworkDevice",
             description = "Adds a network device of one of the following types: ExternalDhcp, ExternalFirewall, ExternalLoadBalancer, PxeServer",
-            responseObject = NetworkDeviceResponse.class)
+            responseObject = NetworkDeviceResponse.class,
+            requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddNetworkDeviceCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddNetworkDeviceCmd.class);
     private static final String s_name = "addnetworkdeviceresponse";

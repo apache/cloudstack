@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
@@ -46,6 +47,7 @@ public class UsageEventUtils {
     private static DataCenterDao s_dcDao;
     private static final Logger s_logger = Logger.getLogger(UsageEventUtils.class);
     protected static EventBus s_eventBus = null;
+    protected static ConfigurationDao s_configDao;
 
     @Inject
     UsageEventDao usageEventDao;
@@ -53,6 +55,8 @@ public class UsageEventUtils {
     AccountDao accountDao;
     @Inject
     DataCenterDao dcDao;
+    @Inject
+    ConfigurationDao configDao;
 
     public UsageEventUtils() {
     }
@@ -62,12 +66,22 @@ public class UsageEventUtils {
         s_usageEventDao = usageEventDao;
         s_accountDao = accountDao;
         s_dcDao = dcDao;
+        s_configDao = configDao;
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
         Long size, String entityType, String entityUUID) {
         saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size);
         publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
+    }
+
+    public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
+                                         Long size, String entityType, String entityUUID, boolean displayResource) {
+        if(displayResource){
+            saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, size);
+        }
+        publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
+
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
@@ -81,6 +95,13 @@ public class UsageEventUtils {
         publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
     }
 
+    public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, String entityType, String entityUUID, boolean diplayResource) {
+        if (diplayResource){
+            saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName);
+            publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
+        }
+    }
+
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long ipAddressId, String ipAddress, boolean isSourceNat, String guestType,
         boolean isSystem, String entityType, String entityUUID) {
         saveUsageEvent(usageType, accountId, zoneId, ipAddressId, ipAddress, isSourceNat, guestType, isSystem);
@@ -88,9 +109,12 @@ public class UsageEventUtils {
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
-        String resourceType, String entityType, String entityUUID) {
-        saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, resourceType);
+        String resourceType, String entityType, String entityUUID, boolean displayResource) {
+        if(displayResource){
+            saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, resourceType);
+        }
         publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
+
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long vmId, long securityGroupId, String entityType, String entityUUID) {
@@ -99,9 +123,12 @@ public class UsageEventUtils {
     }
 
     public static void publishUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
-        String resourceType, String entityType, String entityUUID, Map<String, String> details) {
-        saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, resourceType, details);
+        String resourceType, String entityType, String entityUUID, Map<String, String> details, boolean displayResource) {
+        if(displayResource){
+            saveUsageEvent(usageType, accountId, zoneId, resourceId, resourceName, offeringId, templateId, resourceType, details);
+        }
         publishUsageEvent(usageType, accountId, zoneId, entityType, entityUUID);
+
     }
 
     private static void saveUsageEvent(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId,
@@ -139,7 +166,11 @@ public class UsageEventUtils {
     }
 
     private static void publishUsageEvent(String usageEventType, Long accountId, Long zoneId, String resourceType, String resourceUUID) {
-
+        String configKey = "publish.usage.events";
+        String value = s_configDao.getValue(configKey);
+        boolean configValue = Boolean.parseBoolean(value);
+        if( !configValue)
+            return;
         try {
             s_eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {

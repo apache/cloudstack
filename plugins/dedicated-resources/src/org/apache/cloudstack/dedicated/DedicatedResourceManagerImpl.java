@@ -158,14 +158,14 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                         throw new CloudRuntimeException("Pod " + pod.getName() + " under this Zone " + dc.getName() + " is dedicated to different account/domain");
                     }
                     if (accountId != null) {
-                        if (dPod.getAccountId() == accountId) {
+                        if (dPod.getAccountId().equals(accountId)) {
                             podsToRelease.add(dPod);
                         } else {
                             s_logger.error("Pod " + pod.getName() + " under this Zone " + dc.getName() + " is dedicated to different account/domain");
                             throw new CloudRuntimeException("Pod " + pod.getName() + " under this Zone " + dc.getName() + " is dedicated to different account/domain");
                         }
                     } else {
-                        if (dPod.getAccountId() == null && dPod.getDomainId() == domainId) {
+                        if (dPod.getAccountId() == null && dPod.getDomainId().equals(domainId)) {
                             podsToRelease.add(dPod);
                         }
                     }
@@ -184,7 +184,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                         throw new CloudRuntimeException("Cluster " + cluster.getName() + " under this Zone " + dc.getName() + " is dedicated to different account/domain");
                     }
                     if (accountId != null) {
-                        if (dCluster.getAccountId() == accountId) {
+                        if (dCluster.getAccountId().equals(accountId)) {
                             clustersToRelease.add(dCluster);
                         } else {
                             s_logger.error("Cluster " + cluster.getName() + " under this Zone " + dc.getName() + " is dedicated to different account/domain");
@@ -192,7 +192,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                                 " is dedicated to different account/domain");
                         }
                     } else {
-                        if (dCluster.getAccountId() == null && dCluster.getDomainId() == domainId) {
+                        if (dCluster.getAccountId() == null && dCluster.getDomainId().equals(domainId)) {
                             clustersToRelease.add(dCluster);
                         }
                     }
@@ -211,14 +211,14 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                         throw new CloudRuntimeException("Host " + host.getName() + " under this Zone " + dc.getName() + " is dedicated to different account/domain");
                     }
                     if (accountId != null) {
-                        if (dHost.getAccountId() == accountId) {
+                        if (dHost.getAccountId().equals(accountId)) {
                             hostsToRelease.add(dHost);
                         } else {
                             s_logger.error("Host " + host.getName() + " under this Zone " + dc.getName() + " is dedicated to different account/domain");
                             throw new CloudRuntimeException("Host " + host.getName() + " under this Zone " + dc.getName() + " is dedicated to different account/domain");
                         }
                     } else {
-                        if (dHost.getAccountId() == null && dHost.getDomainId() == domainId) {
+                        if (dHost.getAccountId() == null && dHost.getDomainId().equals(domainId)) {
                             hostsToRelease.add(dHost);
                         }
                     }
@@ -300,7 +300,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                 boolean domainIdInChildreanList = getDomainChildIds(dedicatedZoneOfPod.getDomainId()).contains(domainId);
                 //can dedicate a pod to an account/domain if zone is dedicated to parent-domain
                 if (dedicatedZoneOfPod.getAccountId() != null || (accountId == null && !domainIdInChildreanList) ||
-                    (accountId != null && !(dedicatedZoneOfPod.getDomainId() == domainId || domainIdInChildreanList))) {
+                    (accountId != null && !(dedicatedZoneOfPod.getDomainId().equals(domainId) || domainIdInChildreanList))) {
                     DataCenterVO zone = _zoneDao.findById(pod.getDataCenterId());
                     s_logger.error("Cannot dedicate Pod. Its zone is already dedicated");
                     throw new CloudRuntimeException("Pod's Zone " + zone.getName() + " is already dedicated");
@@ -320,7 +320,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                     /*if all dedicated resources belongs to same account and domain then we should release dedication
                     and make new entry for this Pod*/
                     if (accountId != null) {
-                        if (dCluster.getAccountId() == accountId) {
+                        if (dCluster.getAccountId().equals(accountId)) {
                             clustersToRelease.add(dCluster);
                         } else {
                             s_logger.error("Cluster " + cluster.getName() + " under this Pod " + pod.getName() + " is dedicated to different account/domain");
@@ -328,7 +328,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                                 " is dedicated to different account/domain");
                         }
                     } else {
-                        if (dCluster.getAccountId() == null && dCluster.getDomainId() == domainId) {
+                        if (dCluster.getAccountId() == null && dCluster.getDomainId().equals(domainId)) {
                             clustersToRelease.add(dCluster);
                         }
                     }
@@ -347,14 +347,14 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                         throw new CloudRuntimeException("Host " + host.getName() + " under this Pod " + pod.getName() + " is dedicated to different account/domain");
                     }
                     if (accountId != null) {
-                        if (dHost.getAccountId() == accountId) {
+                        if (dHost.getAccountId().equals(accountId)) {
                             hostsToRelease.add(dHost);
                         } else {
                             s_logger.error("Host " + host.getName() + " under this Pod " + pod.getName() + " is dedicated to different account/domain");
                             throw new CloudRuntimeException("Host " + host.getName() + " under this Pod " + pod.getName() + " is dedicated to different account/domain");
                         }
                     } else {
-                        if (dHost.getAccountId() == null && dHost.getDomainId() == domainId) {
+                        if (dHost.getAccountId() == null && dHost.getDomainId().equals(domainId)) {
                             hostsToRelease.add(dHost);
                         }
                     }
@@ -429,7 +429,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                 boolean domainIdInChildreanList = getDomainChildIds(dedicatedPodOfCluster.getDomainId()).contains(domainId);
                 //can dedicate a cluster to an account/domain if pod is dedicated to parent-domain
                 if (dedicatedPodOfCluster.getAccountId() != null || (accountId == null && !domainIdInChildreanList) ||
-                    (accountId != null && !(dedicatedPodOfCluster.getDomainId() == domainId || domainIdInChildreanList))) {
+                    (accountId != null && !(dedicatedPodOfCluster.getDomainId().equals(domainId) || domainIdInChildreanList))) {
                     s_logger.error("Cannot dedicate Cluster. Its Pod is already dedicated");
                     HostPodVO pod = _podDao.findById(cluster.getPodId());
                     throw new CloudRuntimeException("Cluster's Pod " + pod.getName() + " is already dedicated");
@@ -440,7 +440,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                 boolean domainIdInChildreanList = getDomainChildIds(dedicatedZoneOfCluster.getDomainId()).contains(domainId);
                 //can dedicate a cluster to an account/domain if zone is dedicated to parent-domain
                 if (dedicatedZoneOfCluster.getAccountId() != null || (accountId == null && !domainIdInChildreanList) ||
-                    (accountId != null && !(dedicatedZoneOfCluster.getDomainId() == domainId || domainIdInChildreanList))) {
+                    (accountId != null && !(dedicatedZoneOfCluster.getDomainId().equals(domainId) || domainIdInChildreanList))) {
                     s_logger.error("Cannot dedicate Cluster. Its zone is already dedicated");
                     DataCenterVO zone = _zoneDao.findById(cluster.getDataCenterId());
                     throw new CloudRuntimeException("Cluster's Zone " + zone.getName() + " is already dedicated");
@@ -460,14 +460,14 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                     /*if all dedicated resources belongs to same account and domain then we should release dedication
                     and make new entry for this cluster */
                     if (accountId != null) {
-                        if (dHost.getAccountId() == accountId) {
+                        if (dHost.getAccountId().equals(accountId)) {
                             hostsToRelease.add(dHost);
                         } else {
                             s_logger.error("Cannot dedicate Cluster " + cluster.getName() + " to account" + accountName);
                             throw new CloudRuntimeException("Cannot dedicate Cluster " + cluster.getName() + " to account" + accountName);
                         }
                     } else {
-                        if (dHost.getAccountId() == null && dHost.getDomainId() == domainId) {
+                        if (dHost.getAccountId() == null && dHost.getDomainId().equals(domainId)) {
                             hostsToRelease.add(dHost);
                         }
                     }
@@ -544,7 +544,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                 boolean domainIdInChildreanList = getDomainChildIds(dedicatedClusterOfHost.getDomainId()).contains(domainId);
                 //can dedicate a host to an account/domain if cluster is dedicated to parent-domain
                 if (dedicatedClusterOfHost.getAccountId() != null || (accountId == null && !domainIdInChildreanList) ||
-                    (accountId != null && !(dedicatedClusterOfHost.getDomainId() == domainId || domainIdInChildreanList))) {
+                    (accountId != null && !(dedicatedClusterOfHost.getDomainId().equals(domainId) || domainIdInChildreanList))) {
                     ClusterVO cluster = _clusterDao.findById(host.getClusterId());
                     s_logger.error("Host's Cluster " + cluster.getName() + " is already dedicated");
                     throw new CloudRuntimeException("Host's Cluster " + cluster.getName() + " is already dedicated");
@@ -555,7 +555,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                 boolean domainIdInChildreanList = getDomainChildIds(dedicatedPodOfHost.getDomainId()).contains(domainId);
                 //can dedicate a host to an account/domain if pod is dedicated to parent-domain
                 if (dedicatedPodOfHost.getAccountId() != null || (accountId == null && !domainIdInChildreanList) ||
-                    (accountId != null && !(dedicatedPodOfHost.getDomainId() == domainId || domainIdInChildreanList))) {
+                    (accountId != null && !(dedicatedPodOfHost.getDomainId().equals(domainId) || domainIdInChildreanList))) {
                     HostPodVO pod = _podDao.findById(host.getPodId());
                     s_logger.error("Host's Pod " + pod.getName() + " is already dedicated");
                     throw new CloudRuntimeException("Host's Pod " + pod.getName() + " is already dedicated");
@@ -566,7 +566,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                 boolean domainIdInChildreanList = getDomainChildIds(dedicatedZoneOfHost.getDomainId()).contains(domainId);
                 //can dedicate a host to an account/domain if zone is dedicated to parent-domain
                 if (dedicatedZoneOfHost.getAccountId() != null || (accountId == null && !domainIdInChildreanList) ||
-                    (accountId != null && !(dedicatedZoneOfHost.getDomainId() == domainId || domainIdInChildreanList))) {
+                    (accountId != null && !(dedicatedZoneOfHost.getDomainId().equals(domainId) || domainIdInChildreanList))) {
                     DataCenterVO zone = _zoneDao.findById(host.getDataCenterId());
                     s_logger.error("Host's Data Center " + zone.getName() + " is already dedicated");
                     throw new CloudRuntimeException("Host's Data Center " + zone.getName() + " is already dedicated");
@@ -701,7 +701,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         if (accountId != null) {
             AccountVO account = _accountDao.findById(accountId);
             if (account == null || domainId != account.getDomainId()) {
-                throw new InvalidParameterValueException("Please specify the domain id of the account: " + account.getAccountName());
+                throw new InvalidParameterValueException("Please specify the domain id of the account id " + accountId);
             }
         }
     }

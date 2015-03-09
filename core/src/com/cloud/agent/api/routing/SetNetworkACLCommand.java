@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,16 +15,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
 package com.cloud.agent.api.routing;
+
+import com.cloud.agent.api.to.NetworkACLTO;
+import com.cloud.agent.api.to.NicTO;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
-import com.cloud.agent.api.to.NetworkACLTO;
-import com.cloud.agent.api.to.NicTO;
 
 public class SetNetworkACLCommand extends NetworkElementCommand {
     NetworkACLTO[] rules;
@@ -96,5 +98,10 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
 
     public NicTO getNic() {
         return nic;
+    }
+
+    @Override
+    public int getAnswersCount() {
+        return rules.length;
     }
 }

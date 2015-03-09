@@ -164,13 +164,13 @@ KEY_UP = 6;
 KEYBOARD_TYPE_COOKED = "us";
 KEYBOARD_TYPE_JP = "jp";
 KEYBOARD_TYPE_UK = "uk";
+KEYBOARD_TYPE_FR = "fr";
 
 //JP keyboard type
 
 var	keyboardTables = [
            {tindex: 0, keyboardType: KEYBOARD_TYPE_COOKED, mappingTable:
-               {X11: [  {keycode: 220, entry: X11_KEY_YEN_MARK},
-                        {keycode: 226, entry: X11_KEY_REVERSE_SOLIUS},
+               {X11: [  {keycode: 226, entry: X11_KEY_REVERSE_SOLIUS},
 
                         {keycode: 240, entry: [
                             {type: KEY_DOWN, code: X11_KEY_CAPSLOCK, modifiers: 0 },
@@ -230,114 +230,417 @@ var	keyboardTables = [
                   {keycode: JS_KEY_ALT,					entry : X11_KEY_ALT},
                   //{keycode: JS_KEY_GRAVE_ACCENT,		entry : X11_KEY_GRAVE_ACCENT},
                   //[192 / 64 = "' @"]
-                  {keycode: 192,	entry : 0x5b,	browser: "IE"},
-                  {keycode: 64,		entry : 0x5b, 	browser: "Firefox"},
+                  {keycode: 192,	entry : 0x40,	guestos: "windows",	browser: "IE"},
+                  {keycode: 64,		entry : 0x40,	guestos: "windows",	browser: "Firefox"},
                   //{keycode: JS_KEY_ADD,					entry : X11_KEY_ADD},
                   //[187 / 59 = "; +"]
-                  {keycode: 187,	entry : 0x3a,	browser: "IE"},
-                  {keycode: 59,		entry : 0x3b, 	browser: "Firefox"},
+                  {keycode: 187,	entry : 0x3b,	guestos: "windows",	browser: "IE"},
+                  {keycode: 59,		entry : 0x3b,	guestos: "windows",	browser: "Firefox"},
                   //{keycode: JS_KEY_OPEN_BRACKET,		entry : X11_KEY_OPEN_BRACKET},
                   //[219 = "[{"]
-                  {keycode: 219,	entry : 0x5d,	browser: "IE"},
-                  {keycode: 219,	entry : 0x5d, 	browser: "Firefox"},
+                  {keycode: 219,	entry : 0x5b,	guestos: "windows",	browser: "IE"},
+                  {keycode: 219,	entry : 0x5b,	guestos: "windows",	browser: "Firefox"},
                   //{keycode: JS_KEY_CLOSE_BRACKET,		entry : X11_KEY_CLOSE_BRACKET},
                   //[221 = "]}"]
-                  {keycode: 221,	entry : 0x5c,	browser: "IE"},
-                  {keycode: 221,	entry : 0x5c,	browser: "Firefox"},
-                  {keycode: JS_KEY_BACK_SLASH,			entry : X11_KEY_BACK_SLASH},
+                  {keycode: 221,	entry : 0x5d,	guestos: "windows",	browser: "IE"},
+                  {keycode: 221,	entry : 0x5d,	guestos: "windows",	browser: "Firefox"},
+                  {keycode: JS_KEY_BACK_SLASH,		entry : X11_KEY_BACK_SLASH,	guestos: "windows"},
                   //{keycode: JS_KEY_SINGLE_QUOTE,		entry : X11_KEY_SINGLE_QUOTE},
                   //[222 / 160 = "~^"]
-                  {keycode: 222,		entry : 0x3d,	browser: "IE"},
-                  {keycode: 160,		entry : 0x3d,	browser: "Firefox"},
+                  {keycode: 222,	entry : 0x5e,	guestos: "windows",	browser: "IE"},
+                  {keycode: 160,	entry : 0x5e,	guestos: "windows",	browser: "Firefox"},
                   //[173 = "-=" ] specific to Firefox browser
-                  {keycode: 173,		entry : 0x2d,	browser: "Firefox"},
-                  {keycode: JS_KEY_COMMA,				entry : X11_KEY_COMMA},
-                  {keycode: JS_KEY_PERIOD, 				entry : X11_KEY_PERIOD},
-                  {keycode: JS_KEY_FORWARD_SLASH,		entry : X11_KEY_FORWARD_SLASH},
-                  {keycode: JS_KEY_DASH,				entry : X11_KEY_DASH},
-                  {keycode: JS_KEY_SEMI_COLON,			entry : X11_KEY_SEMI_COLON},
-                  {keycode: JS_KEY_NUMPAD0,				entry : X11_KEY_KP_0},
-                  {keycode: JS_KEY_NUMPAD1,				entry : X11_KEY_KP_1},
-                  {keycode: JS_KEY_NUMPAD2,				entry : X11_KEY_KP_2},
-                  {keycode: JS_KEY_NUMPAD3,				entry : X11_KEY_KP_3},
-                  {keycode: JS_KEY_NUMPAD4,				entry : X11_KEY_KP_4},
-                  {keycode: JS_KEY_NUMPAD5,				entry : X11_KEY_KP_5},
-                  {keycode: JS_KEY_NUMPAD6,				entry : X11_KEY_KP_6},
-                  {keycode: JS_KEY_NUMPAD7,				entry : X11_KEY_KP_7},
-                  {keycode: JS_KEY_NUMPAD8,				entry : X11_KEY_KP_8},
-                  {keycode: JS_KEY_NUMPAD9,				entry : X11_KEY_KP_9},
-                  {keycode: JS_KEY_DECIMAL_POINT,		entry : X11_KEY_KP_Decimal},
-                  {keycode: JS_KEY_DIVIDE,				entry : 0xffaf},
-                  {keycode: JS_KEY_MULTIPLY,			entry : 0xffaa},
-                  {keycode: JS_KEY_ADD,					entry : 0xffab},
-                  {keycode: JS_KEY_SUBSTRACT,			entry : 0xffad},
+                  {keycode: 173,	entry : 0x2d,	guestos: "windows",	browser: "Firefox"},
+                  {keycode: JS_KEY_COMMA,				entry : X11_KEY_COMMA, guestos: "windows"},
+                  {keycode: JS_KEY_PERIOD, 				entry : X11_KEY_PERIOD, guestos: "windows"},
+                  {keycode: JS_KEY_FORWARD_SLASH,		entry : X11_KEY_FORWARD_SLASH, guestos: "windows"},
+                  {keycode: JS_KEY_DASH,				entry : X11_KEY_DASH, guestos: "windows"},
+                  {keycode: JS_KEY_SEMI_COLON,			entry : 0x3a,	guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD0,				entry : X11_KEY_NUMPAD0, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD1,				entry : X11_KEY_NUMPAD1, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD2,				entry : X11_KEY_NUMPAD2, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD3,				entry : X11_KEY_NUMPAD3, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD4,				entry : X11_KEY_NUMPAD4, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD5,				entry : X11_KEY_NUMPAD5, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD6,				entry : X11_KEY_NUMPAD6, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD7,				entry : X11_KEY_NUMPAD7, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD8,				entry : X11_KEY_NUMPAD8, guestos: "windows"},
+                  {keycode: JS_KEY_NUMPAD9,				entry : X11_KEY_NUMPAD9, guestos: "windows"},
+                  {keycode: JS_KEY_DECIMAL_POINT,		entry : X11_KEY_PERIOD, guestos: "windows"},
+                  {keycode: JS_KEY_DIVIDE,				entry : 0xffaf, guestos: "windows"},
+                  {keycode: JS_KEY_MULTIPLY,			entry : 0xffaa, guestos: "windows"},
+                  {keycode: JS_KEY_ADD,					entry : 0xffab, guestos: "windows"},
+                  {keycode: JS_KEY_SUBSTRACT,			entry : 0xffad, guestos: "windows"},
                   //Kanji Key = 243 / 244
                   {keycode: 243,	entry : 0x7e,	browser: "IE"},
                   {keycode: 244,	entry : 0x7e,	browser: "IE"},
                   //Caps Lock = 240
                   {keycode: 240,			entry : 0xffe5},
-                  /*
-                  {keycode: JS_KEY_MULTIPLY,    entry : [
-                                                         {type: KEY_DOWN, code: X11_KEY_SHIFT, modifiers: 0 },
-                                                         {type: KEY_DOWN, code: X11_KEY_ASTERISK, modifiers: 0 },
-                                                         {type: KEY_UP, code: X11_KEY_ASTERISK, modifiers: 0 },
-                                                         {type: KEY_UP, code: X11_KEY_SHIFT, modifiers: 0 }
-                                                         ]},
-                  {keycode: JS_KEY_ADD,         entry : false}
-                   */
                   //[186 / 58 = "~^"]
-                  {keycode: 186,		entry : 0x22, browser: "IE"},
-                  {keycode: 58,		entry : 0x22, browser: "Firefox"},
+                  {keycode: 186,	entry : 0x3a, guestos: "windows", browser: "IE"},
+                  {keycode: 58,		entry : 0x3a, guestos: "windows",	browser: "Firefox"},
+                  //[226 = "_"]
+                  {keycode: 226,	entry : 0x5f, guestos: "windows"},
                   ],
                   keyPress: [
-                             {keycode: 61,      entry:  [
-                                                         {type: KEY_DOWN, code: X11_KEY_ADD, modifiers: 0, shift: false },
-                                                         {type: KEY_UP, code: X11_KEY_ADD, modifiers: 0, shift: false }
-                                                         ]},
-                                                         ]
+                             // These mappings are for japanese guestOS. it is recommended that admin should deploy
+                             // the VM with "keyboard=jp" paramenter or change the VM properties in hypervisor to use jp mapping.
+                             {keycode: 42,       entry:  0xffaa}, // *
+                             {keycode: 43,       entry:  0xffab}, // +
+                            ]
            }
            }, {tindex: 2, keyboardType: KEYBOARD_TYPE_UK, mappingTable:
-                 {X11: [
-                          //[223 = `¬¦]
-                          {keycode: 223,		entry : 0x60, 	browser: "IE"},
-                          ],
+                 {X11: [],
                   keyPress: [
-                             //[34 = "]
-                          {keycode: 34, entry:
-                              [{type : KEY_DOWN, code : 0x40, modifiers : 64, shift : true}]
-                          },
+                          //[34 = "]
+                          {keycode: 34,		entry: 0x40,	guestos: "windows"},
                           //[35 = #]
-                          {keycode: 35, entry:
-                              [{type : KEY_DOWN, code : 0x5c, modifiers : 0, shift : false}]
-                          },
+                          {keycode: 35,		entry: 0x5c,	guestos: "windows"},
                           // [64 = @]
-                          {keycode: 64, entry:
-                              [{type : KEY_DOWN, code : 0x22, modifiers : 64, shift : true}]
-                          },
+                          {keycode: 64,		entry: 0x22,	guestos: "windows"},
                           // [92 = \]
-                          {keycode: 92, entry:
-                              [{type : KEY_DOWN, code : 0xa6, modifiers : 0, shift : false}]
-                          },
+                          {keycode: 92,		entry: 0xa6,	guestos: "windows"},
                           // [124 = |]
-                          {keycode: 124, entry:
-                              [{type : KEY_DOWN, code : 0xa6, modifiers : 64, shift : true}]
-                          },
+                          {keycode: 124,	entry: 0xa6,	guestos: "windows"},
                           // [126 = ~]
-                          {keycode: 126, entry:
-                              [{type : KEY_DOWN, code : 0x7c, modifiers : 64, shift : true}]
-                          },
+                          {keycode: 126,	entry: 0x7c,	guestos: "windows"},
                           // [163 = £]
-                          {keycode: 163, entry:
-                              [{type : KEY_DOWN, code : 0x23, modifiers : 64, shift : true}]
-                          },
+                          {keycode: 163,	entry: 0x23,	guestos: "windows"},
                           // [172 = ¬]
-                          {keycode: 172, entry:
-                              [{type : KEY_DOWN, code : 0x7e, modifiers : 64, shift : true}]
-                          },
+                          {keycode: 172,	entry: 0x7e,	guestos: "windows"},
                           // [166 = ¦]
-                          {keycode: 166, entry:
-                              [{type : KEY_DOWN, code : 0x60, modifiers : 896, shift : false}]
-                          }
+                          {keycode: 166,	entry: [{type : KEY_DOWN, code : 0x60, modifiers : 896, shift : false}],	guestos: "windows"}
                           ]
            }
-           }]
+           },
+        {tindex: 3, keyboardType: KEYBOARD_TYPE_FR, mappingTable:{
+                X11: [
+                        // '*' doesn't work
+                        {keycode: 220, browser: "Chrome", entry: 0x5c},
+                        {keycode: 170, browser: "Firefox", entry: 0x5c},
+//ROW 1 AltGr
+                        //[50 = ~]
+                        {keycode: 50, entry: [
+                                {type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+                                {type: KEY_DOWN, code: 0x32, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0x32, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+                        ]},
+                        //[51 = #]
+                        {keycode: 51, entry: [
+                                {type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+                                {type: KEY_DOWN, code: 0x33, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0x33, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+                        ]},
+                        //[52 = {]
+                        {keycode: 52, entry: [
+                                {type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+                                {type: KEY_DOWN, code: 0x34, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0x34, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+                        ]},
+                        //[53 = []
+                        {keycode: 53, entry: [
+                                {type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+                                {type: KEY_DOWN, code: 0x35, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0x35, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+                        ]},
+                        //[54 = |]
+                        {keycode: 54, entry: [
+                                {type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+                                {type: KEY_DOWN, code: 0x36, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0x36, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+                        ]},
+                        //[55 = `]
+                        {keycode: 55, entry: [
+                                {type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+                                {type: KEY_DOWN, code: 0x37, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0x37, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+                        ]},
+                        //[56 = \]
+                        {keycode: 56, entry: [
+                                {type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+                                {type: KEY_DOWN, code: 0x38, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0x38, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+                        ]},
+                        //[57 = ^]
+                        {keycode: 57, entry: [
+                                {type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+                                {type: KEY_DOWN, code: 0x39, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0x39, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+                        ]},
+                        //[48 = @]
+                        {keycode: 48, entry: [
+                                {type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+                                {type: KEY_DOWN, code: 0x30, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0x30, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+                        ]},
+                        //[219 = ]]
+                        {keycode: 219, browser: "Chrome", entry: [
+                                {type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+                                {type: KEY_DOWN, code: 0x2d, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0x2d, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+                        ]},
+                        //[169 = ]]
+                        {keycode: 169, browser: "Firefox", entry: [
+                                {type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+                                {type: KEY_DOWN, code: 0x2d, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0x2d, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+                        ]},
+                        //[187 = }]
+                        {keycode: 187, browser: "Chrome", entry: [
+                                {type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+                                {type: KEY_DOWN, code: 0x3d, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0x3d, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+                        ]},
+                        //[61 = }]
+                        {keycode: 61, browser: "Firefox", entry: [
+                                {type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+                                {type: KEY_DOWN, code: 0x3d, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0x3d, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+                        ]},
+//ROW 2 AltGr
+                        //[69 = €]
+                        {keycode: 69, entry: [
+                                {type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+                                {type: KEY_DOWN, code: 0x65, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0x65, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+                        ]},
+                        //[186 = ¤]
+                        {keycode: 186, browser: "Chrome", entry: [
+                                {type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+                                {type: KEY_DOWN, code: 0x5d, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0x5d, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+                        ]},
+                        //[164 = ¤]
+                        {keycode: 164, browser: "Firefox", entry: [
+                                {type: KEY_DOWN, code: 0xffea, modifiers: 0, altgr: true},
+                                {type: KEY_DOWN, code: 0x5d, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0x5d, modifiers: 0, altgr: true},
+                                {type: KEY_UP, code: 0xffea, modifiers: 0, altgr: true}
+                        ]}
+                ],
+                keyPress: [
+//ROW 1
+                        //[178 = ²]
+                        {keycode: 178, entry: [
+                                {type: KEY_DOWN, code: 0x60, modifiers: 0},
+                                {type: KEY_UP, code: 0x60, modifiers: 0}
+                        ]},
+                        //[38 = &]
+                        {keycode: 38, entry: [
+                                {type: KEY_DOWN, code: 0x31, modifiers: 0},
+                                {type: KEY_UP, code: 0x31, modifiers: 0}
+                        ]},
+                        //[233 = é]
+                        {keycode: 233, entry: [
+                                {type: KEY_DOWN, code: 0x32, modifiers: 0},
+                                {type: KEY_UP, code: 0x32, modifiers: 0}
+                        ]},
+                        //[34 = "]
+                        {keycode: 34, entry: [
+                                {type: KEY_DOWN, code: 0x33, modifiers: 0},
+                                {type: KEY_UP, code: 0x33, modifiers: 0}
+                        ]},
+                        //[39 = ']
+                        {keycode: 39, entry: [
+                                {type: KEY_DOWN, code: 0x34, modifiers: 0},
+                                {type: KEY_UP, code: 0x34, modifiers: 0}
+                        ]},
+                        //[40 = (]
+                        {keycode: 40, entry: [
+                                {type: KEY_DOWN, code: 0x35, modifiers: 0},
+                                {type: KEY_UP, code: 0x35, modifiers: 0}
+                        ]},
+                        //[45 = -]
+                        {keycode: 45, entry: [
+                                {type: KEY_DOWN, code: 0x36, modifiers: 0},
+                                {type: KEY_UP, code: 0x36, modifiers: 0}
+                        ]},
+                        //[232 = è]
+                        {keycode: 232, entry: [
+                                {type: KEY_DOWN, code: 0x37, modifiers: 0},
+                                {type: KEY_UP, code: 0x37, modifiers: 0}
+                        ]},
+                        //[95 = _]
+                        {keycode: 95, entry: [
+                                {type: KEY_DOWN, code: 0x38, modifiers: 0},
+                                {type: KEY_UP, code: 0x38, modifiers: 0}
+                        ]},
+                        //[231 = ç]
+                        {keycode: 231, entry: [
+                                {type: KEY_DOWN, code: 0x39, modifiers: 0},
+                                {type: KEY_UP, code: 0x39, modifiers: 0}
+                        ]},
+                        //[224 = à]
+                        {keycode: 224, entry: [
+                                {type: KEY_DOWN, code: 0x30, modifiers: 0},
+                                {type: KEY_UP, code: 0x30, modifiers: 0}
+                        ]},
+                        //[41 = )]
+                        {keycode: 41, entry: [
+                                {type: KEY_DOWN, code: 0x2d, modifiers: 0},
+                                {type: KEY_UP, code: 0x2d, modifiers: 0}
+                        ]},
+                        //[176 = =]
+                        {keycode: 176, entry: [
+                                {type: KEY_DOWN, code: 0x2d, modifiers: 64},
+                                {type: KEY_UP, code: 0x2d, modifiers: 64}
+                        ]},
+                        //[181 = µ]
+                        {keycode: 181, entry: [
+                                {type: KEY_DOWN, code: 0x5c, modifiers: 64},
+                                {type: KEY_UP, code: 0x5c, modifiers: 64}
+                        ]},
+
+//ROW 2
+                        //[97 = a]
+                        {keycode: 97, entry: [
+                                {type: KEY_DOWN, code: 0x71, modifiers: 0},
+                                {type: KEY_UP, code: 0x71, modifiers: 0}
+                        ]},
+                        //[65 = A]
+                        {keycode: 65, entry: [
+                                {type: KEY_DOWN, code: 0x51, modifiers: 64},
+                                {type: KEY_UP, code: 0x51, modifiers: 64}
+                        ]},
+                        //[122 = z]
+                        {keycode: 122, entry: [
+                                {type: KEY_DOWN, code: 0x77, modifiers: 0},
+                                {type: KEY_UP, code: 0x77, modifiers: 0}
+                        ]},
+                        //[90 = Z]
+                        {keycode: 90, entry: [
+                                {type: KEY_DOWN, code: 0x57, modifiers: 64},
+                                {type: KEY_UP, code: 0x57, modifiers: 64}
+                        ]},
+                        //[94 = ^]
+                        {keycode: 94, entry: [
+                                {type: KEY_DOWN, code: 0x5b, modifiers: 0},
+                                {type: KEY_UP, code: 0x5b, modifiers: 0}
+                        ]},
+                        //[168 = ¨]
+                        {keycode: 168, entry: [
+                                {type: KEY_DOWN, code: 0x5b, modifiers: 64},
+                                {type: KEY_UP, code: 0x5b, modifiers: 64}
+                        ]},
+                        //[36 = $]
+                        {keycode: 36, entry: [
+                                {type: KEY_DOWN, code: 0x5d, modifiers: 0},
+                                {type: KEY_UP, code: 0x5d, modifiers: 0}
+                        ]},
+                        //[163 = £]
+                        {keycode: 163, entry: [
+                                {type: KEY_DOWN, code: 0x5d, modifiers: 64},
+                                {type: KEY_UP, code: 0x5d, modifiers: 64}
+                        ]},
+
+//ROW 3
+                        //[113 = q]
+                        {keycode: 113, entry: [
+                                {type: KEY_DOWN, code: 0x61, modifiers: 0},
+                                {type: KEY_UP, code: 0x61, modifiers: 0}
+                        ]},
+                        //[81 = Q]
+                        {keycode: 81, entry: [
+                                {type: KEY_DOWN, code: 0x41, modifiers: 64},
+                                {type: KEY_UP, code: 0x41, modifiers: 64}
+                        ]},
+                        //[109 = m]
+                        {keycode: 109, entry: [
+                                {type: KEY_DOWN, code: 0x3b, modifiers: 0},
+                                {type: KEY_UP, code: 0x3b, modifiers: 0}
+                        ]},
+                        //[77 = M]
+                        {keycode: 77, entry: [
+                                {type: KEY_DOWN, code: 0x3b, modifiers: 64},
+                                {type: KEY_UP, code: 0x3b, modifiers: 64}
+                        ]},
+                        //[249 = ù]
+                        {keycode: 249, entry: [
+                                {type: KEY_DOWN, code: 0x27, modifiers: 0},
+                                {type: KEY_UP, code: 0x27, modifiers: 0}
+                        ]},
+                        //[37 = %]
+                        {keycode: 37, entry: [
+                                {type: KEY_DOWN, code: 0x27, modifiers: 64},
+                                {type: KEY_UP, code: 0x27, modifiers: 64}
+                        ]},
+
+//ROW 4
+                        //[60 = <]
+                        {keycode: 60, entry: [
+                                {type: KEY_DOWN, code: 0xa6, modifiers: 0},
+                                {type: KEY_UP, code: 0xa6, modifiers: 0}
+                        ]},
+                        //[62 = >]
+                        {keycode: 62, entry: [
+                                {type: KEY_DOWN, code: 0xa6, modifiers: 64},
+                                {type: KEY_UP, code: 0xa6, modifiers: 64}
+                        ]},
+                        //[119 = w]
+                        {keycode: 119, entry: [
+                                {type: KEY_DOWN, code: 0x7a, modifiers: 0},
+                                {type: KEY_UP, code: 0x7a, modifiers: 0}
+                        ]},
+                        //[87 = W]
+                        {keycode: 87, entry: [
+                                {type: KEY_DOWN, code: 0x5a, modifiers: 64},
+                                {type: KEY_UP, code: 0x5a, modifiers: 64}
+                        ]},
+                        //[44 = ,]
+                        {keycode: 44, entry: [
+                                {type: KEY_DOWN, code: 0x6d, modifiers: 0},
+                                {type: KEY_UP, code: 0x6d, modifiers: 0}
+                        ]},
+                        //[63 = ?]
+                        {keycode: 63, entry: [
+                                {type: KEY_DOWN, code: 0x4d, modifiers: 64},
+                                {type: KEY_UP, code: 0x4d, modifiers: 64}
+                        ]},
+                        //[59 = ;]
+                        {keycode: 59, entry: [
+                                {type: KEY_DOWN, code: 0x2c, modifiers: 0},
+                                {type: KEY_UP, code: 0x2c, modifiers: 0}
+                        ]},
+                        //[46 = .]
+                        {keycode: 46, entry: [
+                                {type: KEY_DOWN, code: 0x2c, modifiers: 64},
+                                {type: KEY_UP, code: 0x2c, modifiers: 64}
+                        ]},
+                        //[58 = :]
+                        {keycode: 58, entry: [
+                                {type: KEY_DOWN, code: 0x2e, modifiers: 0},
+                                {type: KEY_UP, code: 0x2e, modifiers: 0}
+                        ]},
+                        //[47 = /]
+                        {keycode: 47, entry: [
+                                {type: KEY_DOWN, code: 0x2e, modifiers: 64},
+                                {type: KEY_UP, code: 0x2e, modifiers: 64}
+                        ]},
+                        //[33 = !]
+                        {keycode: 33, entry: [
+                                {type: KEY_DOWN, code: 0x2f, modifiers: 0},
+                                {type: KEY_UP, code: 0x2f, modifiers: 0}
+                        ]},
+                        //[167 = §]
+                        {keycode: 167, entry: [
+                                {type: KEY_DOWN, code: 0x2f, modifiers: 64},
+                                {type: KEY_UP, code: 0x2f, modifiers: 64}
+                        ]},
+                ]
+        }}
+]

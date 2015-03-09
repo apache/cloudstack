@@ -285,6 +285,9 @@
             .appendTo(this);
         var context = args.context;
 
+        // Cleanup login
+        $('.login').remove();
+
         // Create pageElems
         $.each(pageElems, function(id, fn) {
             var $elem = $('<div>').attr({
@@ -363,7 +366,7 @@
             function(value, element) {
                 return (value.indexOf("<") == -1 && value.indexOf(">") == -1);
             },
-            jQuery.format("Disallowed characters: <, >")
+            jQuery.validator.format('message.disallowed.characters')
         );
 
         // Check for pending project invitations

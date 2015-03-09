@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.usage.dao;
 
-import java.util.List;
-
 import com.cloud.usage.UsageVO;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
@@ -26,6 +24,8 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchCriteria;
+
+import java.util.List;
 
 public interface UsageDao extends GenericDao<UsageVO, Long> {
     void deleteRecordsForAccount(Long accountId);
@@ -53,4 +53,6 @@ public interface UsageDao extends GenericDao<UsageVO, Long> {
     void saveVmDiskStats(List<VmDiskStatisticsVO> vmDiskStats);
 
     void saveUsageRecords(List<UsageVO> usageRecords);
+
+    void removeOldUsageRecords(int days);
 }

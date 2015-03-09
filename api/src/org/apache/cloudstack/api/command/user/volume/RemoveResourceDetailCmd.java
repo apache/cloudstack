@@ -28,7 +28,8 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.server.ResourceTag;
 
-@APICommand(name = "removeResourceDetail", description = "Removes detail for the Resource.", responseObject = SuccessResponse.class)
+@APICommand(name = "removeResourceDetail", description = "Removes detail for the Resource.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RemoveResourceDetailCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveResourceDetailCmd.class.getName());
     private static final String s_name = "removeresourcedetailresponse";

@@ -24,7 +24,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 
-@APICommand(name = "listTags", description = "List resource tag(s)", responseObject = ResourceTagResponse.class, since = "4.0.0")
+import com.cloud.server.ResourceTag;
+
+@APICommand(name = "listTags", description = "List resource tag(s)", responseObject = ResourceTagResponse.class, since = "4.0.0", entityType = {ResourceTag.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd {
     private static final String s_name = "listtagsresponse";
 
@@ -52,7 +55,7 @@ public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd {
 
         ListResponse<ResourceTagResponse> response = _queryService.listTags(this);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
     public String getResourceType() {

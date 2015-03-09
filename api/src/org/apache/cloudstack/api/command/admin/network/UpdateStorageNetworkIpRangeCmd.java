@@ -37,7 +37,9 @@ import com.cloud.user.Account;
 @APICommand(name = "updateStorageNetworkIpRange",
             description = "Update a Storage network IP range, only allowed when no IPs in this range have been allocated.",
             responseObject = StorageNetworkIpRangeResponse.class,
-            since = "3.0.0")
+            since = "3.0.0",
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class UpdateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateStorageNetworkIpRangeCmd.class);
     private static final String s_name = "updatestoragenetworkiprangeresponse";

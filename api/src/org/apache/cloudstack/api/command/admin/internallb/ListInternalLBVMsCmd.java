@@ -33,12 +33,14 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "listInternalLoadBalancerVMs", description = "List internal LB VMs.", responseObject = DomainRouterResponse.class)
+@APICommand(name = "listInternalLoadBalancerVMs", description = "List internal LB VMs.", responseObject = DomainRouterResponse.class, entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListInternalLBVMsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListInternalLBVMsCmd.class.getName());
 
-    private static final String s_name = "listinternallbvmssresponse";
+    private static final String s_name = "listinternallbvmsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -133,6 +135,6 @@ public class ListInternalLBVMsCmd extends BaseListProjectAndAccountResourcesCmd 
     public void execute() {
         ListResponse<DomainRouterResponse> response = _queryService.searchForInternalLbVms(this);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

@@ -32,7 +32,8 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "listHypervisors", description = "List hypervisors", responseObject = HypervisorResponse.class)
+@APICommand(name = "listHypervisors", description = "List hypervisors", responseObject = HypervisorResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListHypervisorsCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeRouterCmd.class.getName());
     private static final String s_name = "listhypervisorsresponse";

@@ -1,12 +1,13 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// the License.  You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils.nio;
 
 import java.io.IOException;
@@ -30,6 +33,7 @@ public class NioServer extends NioConnection {
     private final static Logger s_logger = Logger.getLogger(NioServer.class);
 
     protected InetSocketAddress _localAddr;
+    private ServerSocketChannel _serverSocket;
 
     protected WeakHashMap<InetSocketAddress, Link> _links;
 
@@ -43,15 +47,24 @@ public class NioServer extends NioConnection {
     protected void init() throws IOException {
         _selector = SelectorProvider.provider().openSelector();
 
-        ServerSocketChannel ssc = ServerSocketChannel.open();
-        ssc.configureBlocking(false);
+        _serverSocket = ServerSocketChannel.open();
+        _serverSocket.configureBlocking(false);
 
         _localAddr = new InetSocketAddress(_port);
-        ssc.socket().bind(_localAddr);
+        _serverSocket.socket().bind(_localAddr);
 
-        ssc.register(_selector, SelectionKey.OP_ACCEPT, null);
+        _serverSocket.register(_selector, SelectionKey.OP_ACCEPT, null);
 
         s_logger.info("NioConnection started and listening on " + _localAddr.toString());
+    }
+
+    @Override
+    public void cleanUp() throws IOException {
+        super.cleanUp();
+        if (_serverSocket != null) {
+            _serverSocket.close();
+        }
+        s_logger.info("NioConnection stopped on " + _localAddr.toString());
     }
 
     @Override

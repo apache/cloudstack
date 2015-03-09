@@ -34,6 +34,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -128,23 +129,23 @@ public class StoragePoolVO implements StoragePool {
     }
 
     public StoragePoolVO() {
-        this.status = StoragePoolStatus.Initial;
+        status = StoragePoolStatus.Initial;
     }
 
     public StoragePoolVO(long poolId, String name, String uuid, StoragePoolType type, long dataCenterId, Long podId, long availableBytes, long capacityBytes,
             String hostAddress, int port, String hostPath) {
         this.name = name;
-        this.id = poolId;
+        id = poolId;
         this.uuid = uuid;
-        this.poolType = type;
+        poolType = type;
         this.dataCenterId = dataCenterId;
-        this.usedBytes = availableBytes;
+        usedBytes = availableBytes;
         this.capacityBytes = capacityBytes;
         this.hostAddress = hostAddress;
-        this.path = hostPath;
         this.port = port;
         this.podId = podId;
-        this.setStatus(StoragePoolStatus.Initial);
+        setStatus(StoragePoolStatus.Initial);
+        setPath(hostPath);
     }
 
     public StoragePoolVO(StoragePoolVO that) {
@@ -152,12 +153,12 @@ public class StoragePoolVO implements StoragePool {
     }
 
     public StoragePoolVO(StoragePoolType type, String hostAddress, int port, String path) {
-        this.poolType = type;
+        poolType = type;
         this.hostAddress = hostAddress;
         this.port = port;
-        this.path = path;
-        this.setStatus(StoragePoolStatus.Initial);
-        this.uuid = UUID.randomUUID().toString();
+        setStatus(StoragePoolStatus.Initial);
+        uuid = UUID.randomUUID().toString();
+        setPath(path);
     }
 
     @Override
@@ -176,7 +177,7 @@ public class StoragePoolVO implements StoragePool {
     }
 
     public void setPoolType(StoragePoolType protocol) {
-        this.poolType = protocol;
+        poolType = protocol;
     }
 
     @Override
@@ -257,12 +258,20 @@ public class StoragePoolVO implements StoragePool {
     }
 
     public void setHostAddress(String host) {
-        this.hostAddress = host;
+        hostAddress = host;
     }
 
     @Override
     public String getPath() {
-        return path;
+        String updatedPath = path;
+        if (poolType == StoragePoolType.SMB) {
+            updatedPath = UriUtils.getUpdateUri(updatedPath, false);
+            if (updatedPath.contains("password") && updatedPath.contains("?")) {
+                updatedPath = updatedPath.substring(0, updatedPath.indexOf('?'));
+            }
+        }
+
+        return updatedPath;
     }
 
     @Override
@@ -279,7 +288,7 @@ public class StoragePoolVO implements StoragePool {
     }
 
     public void setDataCenterId(long dcId) {
-        this.dataCenterId = dcId;
+        dataCenterId = dcId;
     }
 
     public void setPodId(Long podId) {
@@ -321,9 +330,10 @@ public class StoragePoolVO implements StoragePool {
     }
 
     public ScopeType getScope() {
-        return this.scope;
+        return scope;
     }
 
+    @Override
     public HypervisorType getHypervisor() {
         return hypervisor;
     }
@@ -338,7 +348,7 @@ public class StoragePoolVO implements StoragePool {
             return false;
         }
         StoragePoolVO that = (StoragePoolVO)obj;
-        return this.id == that.id;
+        return id == that.id;
     }
 
     @Override
@@ -353,7 +363,7 @@ public class StoragePoolVO implements StoragePool {
 
     @Override
     public boolean isShared() {
-        return this.scope == ScopeType.HOST ? false : true;
+        return scope == ScopeType.HOST ? false : true;
     }
 
     @Override

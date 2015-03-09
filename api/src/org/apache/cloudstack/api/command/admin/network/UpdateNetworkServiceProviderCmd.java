@@ -36,7 +36,9 @@ import com.cloud.user.Account;
 @APICommand(name = "updateNetworkServiceProvider",
             description = "Updates a network serviceProvider of a physical network",
             responseObject = ProviderResponse.class,
-            since = "3.0.0")
+            since = "3.0.0",
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkServiceProviderCmd.class.getName());
 

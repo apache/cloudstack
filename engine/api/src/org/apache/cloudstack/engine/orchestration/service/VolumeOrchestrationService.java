@@ -21,7 +21,10 @@ package org.apache.cloudstack.engine.orchestration.service;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.dc.DataCenter;
@@ -44,7 +47,6 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.framework.config.ConfigKey;
 
 /**
  * VolumeOrchestrationService is a PURE orchestration service on CloudStack
@@ -84,17 +86,21 @@ public interface VolumeOrchestrationService {
 
     Volume migrateVolume(Volume volume, StoragePool destPool) throws StorageUnavailableException;
 
+    void cleanupStorageJobs();
+
     void destroyVolume(Volume volume);
 
-    DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, VirtualMachine vm, VirtualMachineTemplate template, Account owner);
+    DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template, Account owner);
 
-    VolumeInfo createVolumeOnPrimaryStorage(VirtualMachine vm, Volume rootVolumeOfVm, VolumeInfo volume, HypervisorType rootDiskHyperType) throws NoTransitionException;
+    VolumeInfo createVolumeOnPrimaryStorage(VirtualMachine vm, VolumeInfo volume, HypervisorType rootDiskHyperType, StoragePool storagePool) throws NoTransitionException;
 
     void release(VirtualMachineProfile profile);
 
     void cleanupVolumes(long vmId) throws ConcurrentOperationException;
 
-    void disconnectVolumesFromHost(long vmId, long hostId);
+    void revokeAccess(DataObject dataObject, Host host, DataStore dataStore);
+
+    void revokeAccess(long vmId, long hostId);
 
     void migrateVolumes(VirtualMachine vm, VirtualMachineTO vmTo, Host srcHost, Host destHost, Map<Volume, StoragePool> volumeToPool);
 
@@ -106,7 +112,7 @@ public interface VolumeOrchestrationService {
 
     boolean canVmRestartOnAnotherServer(long vmId);
 
-    DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, VirtualMachineTemplate template, VirtualMachine vm,
+    DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
         Account owner);
 
     String getVmNameFromVolumeId(long volumeId);

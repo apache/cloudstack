@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
@@ -28,6 +31,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
@@ -42,7 +46,8 @@ import com.cloud.network.Network;
 import com.cloud.network.element.NiciraNvpElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listNiciraNvpDeviceNetworks", responseObject = NetworkResponse.class, description = "lists network that are using a nicira nvp device")
+@APICommand(name = "listNiciraNvpDeviceNetworks", responseObject = NetworkResponse.class, description = "lists network that are using a nicira nvp device",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNiciraNvpDeviceNetworksCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListNiciraNvpDeviceNetworksCmd.class.getName());
@@ -83,7 +88,7 @@ public class ListNiciraNvpDeviceNetworksCmd extends BaseListCmd {
 
             if (networks != null && !networks.isEmpty()) {
                 for (Network network : networks) {
-                    NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(network);
+                    NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(ResponseView.Full, network);
                     networkResponses.add(networkResponse);
                 }
             }
@@ -91,7 +96,7 @@ public class ListNiciraNvpDeviceNetworksCmd extends BaseListCmd {
             response.setResponses(networkResponses);
             response.setResponseName(getCommandName());
             setResponseObject(response);
-        } catch (InvalidParameterValueException invalidParamExcp) {
+        }  catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

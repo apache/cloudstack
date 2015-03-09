@@ -31,7 +31,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateTrafficType", description = "Updates traffic type of a physical network", responseObject = TrafficTypeResponse.class, since = "3.0.0")
+@APICommand(name = "updateTrafficType", description = "Updates traffic type of a physical network", responseObject = TrafficTypeResponse.class, since = "3.0.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateTrafficTypeCmd.class.getName());
 
@@ -44,7 +45,7 @@ public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TrafficTypeResponse.class, required = true, description = "traffic type id")
     private Long id;
 
-    @Parameter(name = ApiConstants.XEN_NETWORK_LABEL,
+    @Parameter(name = ApiConstants.XENSERVER_NETWORK_LABEL,
                type = CommandType.STRING,
                description = "The network name label of the physical device dedicated to this traffic on a XenServer host")
     private String xenLabel;

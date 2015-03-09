@@ -21,11 +21,14 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
@@ -37,8 +40,9 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateAutoScaleVmProfile", description = "Updates an existing autoscale vm profile.", responseObject = AutoScaleVmProfileResponse.class)
-public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
+@APICommand(name = "updateAutoScaleVmProfile", description = "Updates an existing autoscale vm profile.", responseObject = AutoScaleVmProfileResponse.class, entityType = {AutoScaleVmProfile.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateAutoScaleVmProfileCmd.class.getName());
 
     private static final String s_name = "updateautoscalevmprofileresponse";
@@ -47,6 +51,7 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID,
                type = CommandType.UUID,
                entityType = AutoScaleVmProfileResponse.class,
@@ -76,6 +81,9 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
                description = "the ID of the user used to launch and destroy the VMs")
     private Long autoscaleUserId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the profile to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
@@ -87,7 +95,7 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
         if (result != null) {
             AutoScaleVmProfileResponse response = _responseGenerator.createAutoScaleVmProfileResponse(result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update autoscale vm profile");
         }
@@ -115,6 +123,10 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
 
     public Integer getDestroyVmGraceperiod() {
         return destroyVmGraceperiod;
+    }
+
+    public Boolean getDisplay() {
+        return display;
     }
 
     @Override
@@ -145,5 +157,12 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
     @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.AutoScaleVmProfile;
+    }
+
+    @Override
+    public void checkUuid() {
+        if (getCustomId() != null) {
+            _uuidMgr.checkUuid(getCustomId(), AutoScaleVmProfile.class);
+        }
     }
 }

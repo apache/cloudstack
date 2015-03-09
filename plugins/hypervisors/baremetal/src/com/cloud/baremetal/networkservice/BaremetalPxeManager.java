@@ -44,7 +44,7 @@ public interface BaremetalPxeManager extends Manager, PluggableService {
         PING, KICK_START,
     }
 
-    boolean prepare(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context);
+    boolean prepare(VirtualMachineProfile profile, NicProfile nic, Network network, DeployDestination dest, ReservationContext context);
 
     boolean prepareCreateTemplate(Long pxeServerId, UserVm vm, String templateUrl);
 

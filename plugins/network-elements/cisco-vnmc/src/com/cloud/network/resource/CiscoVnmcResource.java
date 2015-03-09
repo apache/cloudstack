@@ -668,9 +668,10 @@ public class CiscoVnmcResource implements ServerResource {
             s_logger.error(msg, e);
             return new Answer(cmd, false, msg);
         } finally {
-            helper.disconnect();
+            if( helper != null) {
+                helper.disconnect();
+            }
         }
-
         return new Answer(cmd, true, "Success");
     }
 

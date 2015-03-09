@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils;
 
 import java.io.File;
@@ -38,6 +41,14 @@ public class PropertiesUtilsTest {
         FileUtils.writeStringToFile(file, "a=b\nc=d\n");
         Properties properties = new Properties();
         PropertiesUtil.loadFromFile(properties, file);
+        Assert.assertEquals("b", properties.get("a"));
+    }
+
+    @Test
+    public void loadPropertiesFromFile() throws IOException {
+        File file = File.createTempFile("test", ".properties");
+        FileUtils.writeStringToFile(file, "a=b\nc=d\n");
+        Properties properties = PropertiesUtil.loadFromFile(file);
         Assert.assertEquals("b", properties.get("a"));
     }
 

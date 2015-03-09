@@ -98,6 +98,11 @@ public class LoadBalancerUsageParser {
                 lbCreateDate = startDate;
             }
 
+            if (lbCreateDate.after(endDate)) {
+                //Ignore records created after endDate
+                continue;
+            }
+
             long currentDuration = (lbDeleteDate.getTime() - lbCreateDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
 
             updateLBUsageData(usageMap, key, usageLB.getId(), currentDuration);

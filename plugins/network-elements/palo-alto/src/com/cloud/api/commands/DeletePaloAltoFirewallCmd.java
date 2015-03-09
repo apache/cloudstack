@@ -39,7 +39,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.PaloAltoFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deletePaloAltoFirewall", responseObject = SuccessResponse.class, description = " delete a Palo Alto firewall device")
+@APICommand(name = "deletePaloAltoFirewall", responseObject = SuccessResponse.class, description = " delete a Palo Alto firewall device",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeletePaloAltoFirewallCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePaloAltoFirewallCmd.class.getName());
     private static final String s_name = "deletepaloaltofirewallresponse";

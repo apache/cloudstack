@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.utils.db.GenericDao;
 
+
 @Entity
 @Table(name = ("s2s_vpn_connection"))
 public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, InternalIdentity {
@@ -69,14 +70,17 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
     @Column(name = "passive")
     private boolean passive;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     public Site2SiteVpnConnectionVO() {
     }
 
     public Site2SiteVpnConnectionVO(long accountId, long domainId, long vpnGatewayId, long customerGatewayId, boolean passive) {
-        this.uuid = UUID.randomUUID().toString();
-        this.setVpnGatewayId(vpnGatewayId);
-        this.setCustomerGatewayId(customerGatewayId);
-        this.setState(State.Pending);
+        uuid = UUID.randomUUID().toString();
+        setVpnGatewayId(vpnGatewayId);
+        setCustomerGatewayId(customerGatewayId);
+        setState(State.Pending);
         this.accountId = accountId;
         this.domainId = domainId;
         this.passive = passive;
@@ -154,5 +158,23 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
 
     public void setPassive(boolean passive) {
         this.passive = passive;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return Site2SiteVpnConnection.class;
     }
 }

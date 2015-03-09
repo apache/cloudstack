@@ -31,14 +31,14 @@ import socket
 import cloudstack_pluginlib as lib
 import logging
 
-lib.setup_logging("/var/log/cloud/vmops.log")
+lib.setup_logging("/var/log/cloud/cloud.log")
 
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        logging.debug("#### VMOPS enter  %s ####" % name )
+        logging.debug("#### CLOUD enter  %s ####" % name )
         res = fn(*v, **k)
-        logging.debug("#### VMOPS exit  %s ####" % name )
+        logging.debug("#### CLOUD exit  %s ####" % name )
         return res
     return wrapped
 
@@ -101,6 +101,16 @@ def copy_vhd_from_secondarystorage(session, args):
     return txt
 
 @echo
+def remove_corrupt_vdi(session, args):
+    vdifile = args['vdifile']
+    try:
+        cmd = ['rm', '-f', vdifile]
+        txt = util.pread2(cmd)
+    except:
+        txt = '10#failed'
+    return txt
+
+@echo
 def setup_heartbeat_sr(session, args):
     host = args['host']
     sr = args['sr']
@@ -123,24 +133,14 @@ def setup_heartbeat_file(session, args):
         txt = ''
     return txt
 
-@echo
-def check_heartbeat(session, args):
-    host = args['host']
-    interval = args['interval']
-    try:
-       cmd = ["bash", "/opt/cloud/bin/check_heartbeat.sh", host, interval]
-       txt = util.pread2(cmd)
-    except:
-       txt=''
-    return txt
-    
-   
+ 
 @echo
 def heartbeat(session, args):
     host = args['host']
+    timeout = args['timeout']
     interval = args['interval']
     try: 
-       cmd = ["/bin/bash", "/opt/cloud/bin/launch_hb.sh", host, interval]
+       cmd = ["/bin/bash", "/opt/cloud/bin/launch_hb.sh", host, timeout, interval]
        txt = util.pread2(cmd)
     except:
        txt='fail'
@@ -156,5 +156,4 @@ def asmonitor(session, args):
         return 'fail'
 
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"forceShutdownVM":forceShutdownVM, "upgrade_snapshot":upgrade_snapshot, "create_privatetemplate_from_snapshot":create_privatetemplate_from_snapshot, "copy_vhd_to_secondarystorage":copy_vhd_to_secondarystorage, "copy_vhd_from_secondarystorage":copy_vhd_from_secondarystorage, "setup_heartbeat_sr":setup_heartbeat_sr, "setup_heartbeat_file":setup_heartbeat_file, "check_heartbeat":check_heartbeat, "heartbeat": heartbeat, "asmonitor": asmonitor})
-
+    XenAPIPlugin.dispatch({"forceShutdownVM":forceShutdownVM, "upgrade_snapshot":upgrade_snapshot, "create_privatetemplate_from_snapshot":create_privatetemplate_from_snapshot, "copy_vhd_to_secondarystorage":copy_vhd_to_secondarystorage, "copy_vhd_from_secondarystorage":copy_vhd_from_secondarystorage, "setup_heartbeat_sr":setup_heartbeat_sr, "setup_heartbeat_file":setup_heartbeat_file, "heartbeat": heartbeat, "asmonitor": asmonitor, "remove_corrupt_vdi": remove_corrupt_vdi})

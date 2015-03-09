@@ -26,4 +26,6 @@ public interface DataStoreTO {
     String getUuid();
 
     String getUrl();
+
+    String getPathSeparator();
 }

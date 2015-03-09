@@ -16,19 +16,6 @@
 // under the License.
 package com.cloud.usage.dao;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
-
-import javax.ejb.Local;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.usage.UsageVO;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
@@ -40,6 +27,17 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.TimeZone;
 
 @Component
 @Local(value = {UsageDao.class})
@@ -47,14 +45,15 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
     public static final Logger s_logger = Logger.getLogger(UsageDaoImpl.class.getName());
     private static final String DELETE_ALL = "DELETE FROM cloud_usage";
     private static final String DELETE_ALL_BY_ACCOUNTID = "DELETE FROM cloud_usage WHERE account_id = ?";
+    private static final String DELETE_ALL_BY_INTERVAL = "DELETE FROM cloud_usage WHERE end_date < DATE_SUB(CURRENT_DATE(), INTERVAL ? DAY)";
     private static final String INSERT_ACCOUNT = "INSERT INTO cloud_usage.account (id, account_name, type, domain_id, removed, cleanup_needed) VALUES (?,?,?,?,?,?)";
     private static final String INSERT_USER_STATS =
-        "INSERT INTO cloud_usage.user_statistics (id, data_center_id, account_id, public_ip_address, device_id, device_type, network_id, net_bytes_received,"
-            + " net_bytes_sent, current_bytes_received, current_bytes_sent, agg_bytes_received, agg_bytes_sent) VALUES (?,?,?,?,?,?,?,?,?,?, ?, ?, ?)";
+            "INSERT INTO cloud_usage.user_statistics (id, data_center_id, account_id, public_ip_address, device_id, device_type, network_id, net_bytes_received,"
+                    + " net_bytes_sent, current_bytes_received, current_bytes_sent, agg_bytes_received, agg_bytes_sent) VALUES (?,?,?,?,?,?,?,?,?,?, ?, ?, ?)";
 
     private static final String UPDATE_ACCOUNT = "UPDATE cloud_usage.account SET account_name=?, removed=? WHERE id=?";
     private static final String UPDATE_USER_STATS =
-        "UPDATE cloud_usage.user_statistics SET net_bytes_received=?, net_bytes_sent=?, current_bytes_received=?, current_bytes_sent=?, agg_bytes_received=?, agg_bytes_sent=? WHERE id=?";
+            "UPDATE cloud_usage.user_statistics SET net_bytes_received=?, net_bytes_sent=?, current_bytes_received=?, current_bytes_sent=?, agg_bytes_received=?, agg_bytes_sent=? WHERE id=?";
 
     private static final String GET_LAST_ACCOUNT = "SELECT id FROM cloud_usage.account ORDER BY id DESC LIMIT 1";
     private static final String GET_LAST_USER_STATS = "SELECT id FROM cloud_usage.user_statistics ORDER BY id DESC LIMIT 1";
@@ -62,15 +61,16 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 
     private static final String GET_LAST_VM_DISK_STATS = "SELECT id FROM cloud_usage.vm_disk_statistics ORDER BY id DESC LIMIT 1";
     private static final String INSERT_VM_DISK_STATS =
-        "INSERT INTO cloud_usage.vm_disk_statistics (id, data_center_id, account_id, vm_id, volume_id, net_io_read, net_io_write, current_io_read, "
-            + "current_io_write, agg_io_read, agg_io_write, net_bytes_read, net_bytes_write, current_bytes_read, current_bytes_write, agg_bytes_read, agg_bytes_write) "
-            + " VALUES (?,?,?,?,?,?,?,?,?,?, ?, ?, ?, ?,?, ?, ?)";
+            "INSERT INTO cloud_usage.vm_disk_statistics (id, data_center_id, account_id, vm_id, volume_id, net_io_read, net_io_write, current_io_read, "
+                    + "current_io_write, agg_io_read, agg_io_write, net_bytes_read, net_bytes_write, current_bytes_read, current_bytes_write, agg_bytes_read, agg_bytes_write) "
+                    + " VALUES (?,?,?,?,?,?,?,?,?,?, ?, ?, ?, ?,?, ?, ?)";
     private static final String UPDATE_VM_DISK_STATS =
-        "UPDATE cloud_usage.vm_disk_statistics SET net_io_read=?, net_io_write=?, current_io_read=?, current_io_write=?, agg_io_read=?, agg_io_write=?, "
-            + "net_bytes_read=?, net_bytes_write=?, current_bytes_read=?, current_bytes_write=?, agg_bytes_read=?, agg_bytes_write=?  WHERE id=?";
-    private static final String INSERT_USGAE_RECORDS = "INSERT INTO cloud_usage.cloud_usage (zone_id, account_id, domain_id, description, usage_display, " +
-        "usage_type, raw_usage, vm_instance_id, vm_name, offering_id, template_id, "
-        + "usage_id, type, size, network_id, start_date, end_date, virtual_size) VALUES (?,?,?,?,?,?,?,?,?, ?, ?, ?,?,?,?,?,?,?)";
+            "UPDATE cloud_usage.vm_disk_statistics SET net_io_read=?, net_io_write=?, current_io_read=?, current_io_write=?, agg_io_read=?, agg_io_write=?, "
+                    + "net_bytes_read=?, net_bytes_write=?, current_bytes_read=?, current_bytes_write=?, agg_bytes_read=?, agg_bytes_write=?  WHERE id=?";
+    private static final String INSERT_USAGE_RECORDS = "INSERT INTO cloud_usage.cloud_usage (zone_id, account_id, domain_id, description, usage_display, "
+            +
+            "usage_type, raw_usage, vm_instance_id, vm_name, offering_id, template_id, "
+            + "usage_id, type, size, network_id, start_date, end_date, virtual_size) VALUES (?,?,?,?,?,?,?,?,?, ?, ?, ?,?,?,?,?,?,?)";
 
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
 
@@ -390,7 +390,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
-            String sql = INSERT_USGAE_RECORDS;
+            String sql = INSERT_USAGE_RECORDS;
             PreparedStatement pstmt = null;
             pstmt = txn.prepareAutoCloseStatement(sql); // in reality I just want CLOUD_USAGE dataSource connection
             for (UsageVO usageRecord : usageRecords) {
@@ -436,7 +436,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                 pstmt.setString(16, DateUtil.getDateDisplayString(s_gmtTimeZone, usageRecord.getStartDate()));
                 pstmt.setString(17, DateUtil.getDateDisplayString(s_gmtTimeZone, usageRecord.getEndDate()));
                 if (usageRecord.getVirtualSize() != null) {
-                    pstmt.setLong(18, usageRecord.getSize());
+                    pstmt.setLong(18, usageRecord.getVirtualSize());
                 } else {
                     pstmt.setNull(18, Types.BIGINT);
                 }
@@ -448,6 +448,25 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             txn.rollback();
             s_logger.error("error saving usage records to cloud_usage db", ex);
             throw new CloudRuntimeException(ex.getMessage());
+        }
+    }
+
+    @Override
+    public void removeOldUsageRecords(int days) {
+        String sql = DELETE_ALL_BY_INTERVAL;
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        PreparedStatement pstmt = null;
+        try {
+            txn.start();
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setLong(1, days);
+            pstmt.executeUpdate();
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            s_logger.error("error removing old cloud_usage records for interval: " + days);
+        } finally {
+            txn.close();
         }
     }
 }

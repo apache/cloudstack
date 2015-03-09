@@ -18,6 +18,7 @@ package com.cloud.vm;
 
 import java.net.URI;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -35,12 +36,10 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
-import com.cloud.offering.DiskOffering;
+import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -75,16 +74,16 @@ public interface VirtualMachineManager extends Manager {
      * @param hyperType Hypervisor type
      * @throws InsufficientCapacityException If there are insufficient capacity to deploy this vm.
      */
-    void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering, Pair<? extends DiskOffering, Long> rootDiskOffering,
-        LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferings, LinkedHashMap<? extends Network, ? extends NicProfile> auxiliaryNetworks, DeploymentPlan plan,
+    void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering, DiskOfferingInfo rootDiskOfferingInfo,
+        List<DiskOfferingInfo> dataDiskOfferings, LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, DeploymentPlan plan,
         HypervisorType hyperType) throws InsufficientCapacityException;
 
     void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering,
-        LinkedHashMap<? extends Network, ? extends NicProfile> networkProfiles, DeploymentPlan plan, HypervisorType hyperType) throws InsufficientCapacityException;
+        LinkedHashMap<? extends Network, List<? extends NicProfile>> networkProfiles, DeploymentPlan plan, HypervisorType hyperType) throws InsufficientCapacityException;
 
     void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params);
 
-    void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy);
+    void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy, DeploymentPlanner planner);
 
     void stop(String vmUuid) throws ResourceUnavailableException;
 
@@ -109,11 +108,11 @@ public interface VirtualMachineManager extends Manager {
 
     void destroy(String vmUuid) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
-    void migrateAway(String vmUuid, long hostId, DeploymentPlanner planner) throws InsufficientServerCapacityException;
+    void migrateAway(String vmUuid, long hostId) throws InsufficientServerCapacityException;
 
     void migrate(String vmUuid, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException;
 
-    void migrateWithStorage(String vmUuid, long srcId, long destId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException, ConcurrentOperationException;
+    void migrateWithStorage(String vmUuid, long srcId, long destId, Map<Long, Long> volumeToPool) throws ResourceUnavailableException, ConcurrentOperationException;
 
     void reboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException;
 

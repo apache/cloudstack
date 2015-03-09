@@ -42,7 +42,8 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.user.Account;
 
-@APICommand(name = "createIpForwardingRule", description = "Creates an ip forwarding rule", responseObject = FirewallRuleResponse.class)
+@APICommand(name = "createIpForwardingRule", description = "Creates an ip forwarding rule", responseObject = FirewallRuleResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements StaticNatRule {
     public static final Logger s_logger = Logger.getLogger(CreateIpForwardingRuleCmd.class.getName());
 
@@ -126,7 +127,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
             StaticNatRule staticNatRule = _rulesService.buildStaticNatRule(rule, false);
             IpForwardingRuleResponse fwResponse = _responseGenerator.createIpForwardingRuleResponse(staticNatRule);
             fwResponse.setResponseName(getCommandName());
-            this.setResponseObject(fwResponse);
+            setResponseObject(fwResponse);
         } finally {
             if (!result || rule == null) {
 
@@ -152,8 +153,8 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
 
         try {
             StaticNatRule rule = _rulesService.createStaticNatRule(this, getOpenFirewall());
-            this.setEntityId(rule.getId());
-            this.setEntityUuid(rule.getUuid());
+            setEntityId(rule.getId());
+            setEntityUuid(rule.getUuid());
         } catch (NetworkRuleConflictException e) {
             s_logger.info("Unable to create Static Nat Rule due to ", e);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
@@ -179,7 +180,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     @Override
     public String getEventDescription() {
         IpAddress ip = _networkService.getIp(ipAddressId);
-        return ("Applying an ipforwarding 1:1 NAT rule for Ip: " + ip.getAddress() + " with virtual machine:" + this.getVirtualMachineId());
+        return ("Applying an ipforwarding 1:1 NAT rule for Ip: " + ip.getAddress() + " with virtual machine:" + getVirtualMachineId());
     }
 
     private long getVirtualMachineId() {
@@ -315,6 +316,16 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     @Override
     public TrafficType getTrafficType() {
         return null;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return true;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return FirewallRule.class;
     }
 
 }

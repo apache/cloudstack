@@ -32,16 +32,12 @@ public class HostVmStateReportEntry {
     // host name or host uuid
     String host;
 
-    // XS needs Xen Tools version info
-    String hostToolsVersion;
-
     public HostVmStateReportEntry() {
     }
 
-    public HostVmStateReportEntry(PowerState state, String host, String hostToolsVersion) {
+    public HostVmStateReportEntry(PowerState state, String host) {
         this.state = state;
         this.host = host;
-        this.hostToolsVersion = hostToolsVersion;
     }
 
     public PowerState getState() {
@@ -50,9 +46,5 @@ public class HostVmStateReportEntry {
 
     public String getHost() {
         return host;
-    }
-
-    public String getHostToolsVersion() {
-        return hostToolsVersion;
     }
 }

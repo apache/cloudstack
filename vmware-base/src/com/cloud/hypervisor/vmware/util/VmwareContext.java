@@ -26,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -40,6 +41,7 @@ import javax.net.ssl.SSLSession;
 import javax.xml.ws.soap.SOAPFaultException;
 
 import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.security.SSLUtils;
 
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
@@ -78,7 +80,7 @@ public class VmwareContext {
             javax.net.ssl.TrustManager[] trustAllCerts = new javax.net.ssl.TrustManager[1];
             javax.net.ssl.TrustManager tm = new TrustAllManager();
             trustAllCerts[0] = tm;
-            javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext.getInstance("SSL");
+            javax.net.ssl.SSLContext sc = SSLUtils.getSSLContext();
             sc.init(null, trustAllCerts, null);
             javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
 
@@ -375,7 +377,7 @@ public class VmwareContext {
         }
     }
 
-    public void uploadVmdkFile(String httpMethod, String urlString, String localFileName, long totalBytesUpdated, ActionDelegate progressUpdater) throws Exception {
+    public void uploadVmdkFile(String httpMethod, String urlString, String localFileName, long totalBytesUpdated, ActionDelegate<Long> progressUpdater) throws Exception {
 
         HttpURLConnection conn = getRawHTTPConnection(urlString);
 
@@ -418,7 +420,7 @@ public class VmwareContext {
         }
     }
 
-    public long downloadVmdkFile(String urlString, String localFileName, long totalBytesDownloaded, ActionDelegate progressUpdater) throws Exception {
+    public long downloadVmdkFile(String urlString, String localFileName, long totalBytesDownloaded, ActionDelegate<Long> progressUpdater) throws Exception {
         HttpURLConnection conn = getRawHTTPConnection(urlString);
 
         String cookie = _vimClient.getServiceCookie();
@@ -547,7 +549,7 @@ public class VmwareContext {
         </table>
           </body>
         </html>
-    */
+     */
     public String[] listDatastoreDirContent(String urlString) throws Exception {
         List<String> fileList = new ArrayList<String>();
         String content = new String(getResourceContent(urlString));
@@ -583,8 +585,12 @@ public class VmwareContext {
         sb.append(_serverAddress);
         sb.append("/folder/");
         sb.append(relativePath);
-        sb.append("?dcPath=").append(URLEncoder.encode(dcName)).append("&dsName=");
-        sb.append(URLEncoder.encode(datastoreName));
+        try {
+            sb.append("?dcPath=").append(URLEncoder.encode(dcName, "UTF-8"));
+            sb.append("&dsName=").append(URLEncoder.encode(datastoreName, "UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            s_logger.error("Unable to encode URL. dcPath : " + dcName + ", dsName :" + datastoreName, e);
+        }
         return sb.toString();
     }
 

@@ -30,7 +30,6 @@ import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
-import com.cloud.agent.api.SetupGuestNetworkAnswer;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
@@ -203,18 +202,18 @@ public class MockNetworkManagerImpl extends ManagerBase implements MockNetworkMa
     }
 
     @Override
-    public SetupGuestNetworkAnswer setUpGuestNetwork(SetupGuestNetworkCommand cmd) {
+    public Answer setUpGuestNetwork(SetupGuestNetworkCommand cmd) {
         String domrName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         try {
             MockVMVO vms = _mockVmDao.findByVmName(domrName);
             if (vms == null) {
-                return new SetupGuestNetworkAnswer(cmd, false, "Can not find VM " + domrName);
+                return new Answer(cmd, false, "Can not find VM " + domrName);
             }
-            return new SetupGuestNetworkAnswer(cmd, true, "success");
+            return new Answer(cmd, true, "success");
         } catch (Exception e) {
             String msg = "Creating guest network failed due to " + e.toString();
             s_logger.warn(msg, e);
-            return new SetupGuestNetworkAnswer(cmd, false, msg);
+            return new Answer(cmd, false, msg);
         }
     }
 

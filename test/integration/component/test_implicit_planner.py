@@ -21,9 +21,9 @@ import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 #Import System modules
 import time
@@ -91,12 +91,13 @@ class TestImplicitPlanner(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestImplicitPlanner, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
+        cls.testClient = super(TestImplicitPlanner, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
+        cls.services = Services().services
         # Get Zone, Domain and templates
-        domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -144,7 +145,7 @@ class TestImplicitPlanner(cloudstackTestCase):
     # be running on that host). It uses an implicit planner to deploy instances and the
     # instances of a new account should go to an host that doesn't have vms of any other
     # account.
-    @attr(tags = ["advanced", "basic", "multihosts", "implicitplanner"])
+    @attr(tags=["advanced", "basic", "multihosts", "implicitplanner"], required_hardware="false")
     def test_01_deploy_vm_with_implicit_planner(self):
         """Test implicit planner is placing vms of an account on implicitly dedicated hosts.
         """

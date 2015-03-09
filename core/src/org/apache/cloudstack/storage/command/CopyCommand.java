@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package org.apache.cloudstack.storage.command;
 
 import java.util.HashMap;
@@ -26,8 +29,9 @@ public final class CopyCommand extends Command implements StorageSubSystemComman
     private DataTO srcTO;
     private DataTO destTO;
     private DataTO cacheTO;
-    boolean executeInSequence = false;
-    Map<String, String> options = new HashMap<String, String>();
+    private boolean executeInSequence = false;
+    private Map<String, String> options = new HashMap<String, String>();
+    private Map<String, String> options2 = new HashMap<String, String>();
 
     public CopyCommand(DataTO srcData, DataTO destData, int timeout, boolean executeInSequence) {
         super();
@@ -78,4 +82,16 @@ public final class CopyCommand extends Command implements StorageSubSystemComman
         return options;
     }
 
+    public void setOptions2(Map<String, String> options2) {
+        this.options2 = options2;
+    }
+
+    public Map<String, String> getOptions2() {
+        return options2;
+    }
+
+    @Override
+    public void setExecuteInSequence(boolean inSeq) {
+        this.executeInSequence = inSeq;
+    }
 }

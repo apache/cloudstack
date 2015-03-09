@@ -250,6 +250,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
     @Override
     public Pair<String, Long> allocatePrivateIpAddress(long dcId, long podId, long instanceId, String reservationId) {
+        _ipAllocDao.releaseIpAddress(instanceId);
         DataCenterIpAddressVO vo = _ipAllocDao.takeIpAddress(dcId, podId, instanceId, reservationId);
         if (vo == null) {
             return null;
@@ -375,7 +376,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
         List<DataCenterDetailVO> resourceDetails = new ArrayList<DataCenterDetailVO>();
         for (String key : details.keySet()) {
-            resourceDetails.add(new DataCenterDetailVO(zone.getId(), key, details.get(key)));
+            resourceDetails.add(new DataCenterDetailVO(zone.getId(), key, details.get(key), true));
         }
 
         _detailsDao.saveDetails(resourceDetails);
@@ -411,7 +412,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
                     Long dcId = Long.parseLong(tokenOrIdOrName);
                     return findById(dcId);
                 } catch (NumberFormatException nfe) {
-
+                    s_logger.debug("Cannot parse " + tokenOrIdOrName + " into long. " + nfe);
                 }
             }
         }

@@ -22,6 +22,9 @@ import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 
+import java.util.Collection;
+import java.util.Map;
+
 public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIsoCmd.class.getName());
 
@@ -63,6 +66,9 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ROUTING, type = CommandType.BOOLEAN, description = "true if the template type is routing i.e., if template is used to deploy router")
     protected Boolean isRoutingType;
+
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format details[i].keyname=keyvalue. Example: \"details[0].hypervisortoolsversion=xenserver61\"")
+    protected Map details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -106,5 +112,14 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
 
     public Boolean isRoutingType() {
         return isRoutingType;
+    }
+
+    public Map getDetails() {
+        if (this.details == null || this.details.isEmpty()) {
+            return null;
+        }
+
+        Collection paramsCollection = this.details.values();
+        return (Map) (paramsCollection.toArray())[0];
     }
 }

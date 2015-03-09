@@ -34,7 +34,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteStorageNetworkIpRange", description = "Deletes a storage network IP Range.", responseObject = SuccessResponse.class, since = "3.0.0")
+@APICommand(name = "deleteStorageNetworkIpRange", description = "Deletes a storage network IP Range.", responseObject = SuccessResponse.class, since = "3.0.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteStorageNetworkIpRangeCmd.class);
 

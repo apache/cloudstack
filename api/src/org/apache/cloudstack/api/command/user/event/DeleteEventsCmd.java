@@ -31,10 +31,12 @@ import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.event.Event;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteEvents", description = "Delete one or more events.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteEvents", description = "Delete one or more events.", responseObject = SuccessResponse.class, entityType = {Event.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteEventsCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteEventsCmd.class.getName());
@@ -111,7 +113,7 @@ public class DeleteEventsCmd extends BaseCmd {
         boolean result = _mgr.deleteEvents(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to delete Events, one or more parameters has invalid values");
         }

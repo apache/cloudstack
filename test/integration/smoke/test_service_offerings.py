@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,116 +16,39 @@
 # under the License.
 """ BVT tests for Service offerings"""
 
-#Import Local Modules
+# Import Local Modules
+from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import changeServiceForVirtualMachine,updateServiceOffering
-from marvin.integration.lib.utils import (isAlmostEqual,
-                                          cleanup_resources,
-                                          random_gen)
-from marvin.integration.lib.base import (ServiceOffering,
-                                         Account,
-                                         VirtualMachine)
-from marvin.integration.lib.common import (list_service_offering,
-                                           list_virtual_machines,
-                                           get_domain,
-                                           get_zone,
-                                           get_template)
+from marvin.cloudstackAPI import (changeServiceForVirtualMachine,
+                                  updateServiceOffering)
+from marvin.lib.utils import (isAlmostEqual,
+                              cleanup_resources,
+                              random_gen)
+from marvin.lib.base import (ServiceOffering,
+                             Account,
+                             VirtualMachine)
+from marvin.lib.common import (list_service_offering,
+                               list_virtual_machines,
+                               get_domain,
+                               get_zone,
+                               get_template)
 from nose.plugins.attrib import attr
 
 
 _multiprocess_shared_ = True
 
-class Services:
-    """Test Service offerings Services
-    """
-
-    def __init__(self):
-        self.services = {
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                # Random characters are appended in create account to
-                # ensure unique username generated each time
-                "password": "password",
-                },
-            "off":
-                {
-                    "name": "Service Offering",
-                    "displaytext": "Service Offering",
-                    "cpunumber": 1,
-                    "cpuspeed": 100, # MHz
-                    "memory": 128, # in MBs
-                },
-            "small":
-            # Create a small virtual machine instance with disk offering
-                {
-                    "displayname": "testserver",
-                    "username": "root", # VM creds for SSH
-                    "password": "password",
-                    "ssh_port": 22,
-                    "hypervisor": 'XenServer',
-                    "privateport": 22,
-                    "publicport": 22,
-                    "protocol": 'TCP',
-                },
-            "medium": # Create a medium virtual machine instance
-                {
-                    "displayname": "testserver",
-                    "username": "root",
-                    "password": "password",
-                    "ssh_port": 22,
-                    "hypervisor": 'XenServer',
-                    "privateport": 22,
-                    "publicport": 22,
-                    "protocol": 'TCP',
-                },
-            "service_offerings":
-                {
-                    "tiny":
-                        {
-                            "name": "Tiny Instance",
-                            "displaytext": "Tiny Instance",
-                            "cpunumber": 1,
-                            "cpuspeed": 100, # in MHz
-                            "memory": 128, # In MBs
-                        },
-                    "small":
-                        {
-                            # Small service offering ID to for change VM
-                            # service offering from medium to small
-                            "name": "Small Instance",
-                            "displaytext": "Small Instance",
-                            "cpunumber": 1,
-                            "cpuspeed": 100,
-                            "memory": 128,
-                        },
-                    "medium":
-                        {
-                            # Medium service offering ID to for
-                            # change VM service offering from small to medium
-                            "name": "Medium Instance",
-                            "displaytext": "Medium Instance",
-                            "cpunumber": 1,
-                            "cpuspeed": 100,
-                            "memory": 256,
-                        }
-                },
-            "ostype": 'CentOS 5.3 (64-bit)',
-        }
-
 
 class TestCreateServiceOffering(cloudstackTestCase):
+
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
-        self.services = Services().services
+        self.services = self.testClient.getParsedTestDataConfig()
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created templates
+            # Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 
         except Exception as e:
@@ -133,21 +56,32 @@ class TestCreateServiceOffering(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke", "basic", "eip", "sg"])
+    @attr(
+        tags=[
+            "advanced",
+            "advancedns",
+            "smoke",
+            "basic",
+            "eip",
+            "sg"],
+        required_hardware="false")
     def test_01_create_service_offering(self):
         """Test to create service offering"""
 
         # Validate the following:
-        # 1. createServiceOfferings should return a valid information for newly created offering
+        # 1. createServiceOfferings should return a valid information
+        #    for newly created offering
         # 2. The Cloud Database contains the valid information
 
         service_offering = ServiceOffering.create(
             self.apiclient,
-            self.services["off"]
+            self.services["service_offerings"]
         )
         self.cleanup.append(service_offering)
 
-        self.debug("Created service offering with ID: %s" % service_offering.id)
+        self.debug(
+            "Created service offering with ID: %s" %
+            service_offering.id)
 
         list_service_response = list_service_offering(
             self.apiclient,
@@ -164,37 +98,37 @@ class TestCreateServiceOffering(cloudstackTestCase):
             0,
             "Check Service offering is created"
         )
-        service_response = list_service_response[0]
 
         self.assertEqual(
             list_service_response[0].cpunumber,
-            self.services["off"]["cpunumber"],
+            self.services["service_offerings"]["cpunumber"],
             "Check server id in createServiceOffering"
         )
         self.assertEqual(
             list_service_response[0].cpuspeed,
-            self.services["off"]["cpuspeed"],
+            self.services["service_offerings"]["cpuspeed"],
             "Check cpuspeed in createServiceOffering"
         )
         self.assertEqual(
             list_service_response[0].displaytext,
-            self.services["off"]["displaytext"],
+            self.services["service_offerings"]["displaytext"],
             "Check server displaytext in createServiceOfferings"
         )
         self.assertEqual(
             list_service_response[0].memory,
-            self.services["off"]["memory"],
+            self.services["service_offerings"]["memory"],
             "Check memory in createServiceOffering"
         )
         self.assertEqual(
             list_service_response[0].name,
-            self.services["off"]["name"],
+            self.services["service_offerings"]["name"],
             "Check name in createServiceOffering"
         )
         return
 
 
 class TestServiceOfferings(cloudstackTestCase):
+
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
@@ -202,7 +136,7 @@ class TestServiceOfferings(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            #Clean up, terminate the created templates
+            # Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
 
         except Exception as e:
@@ -212,25 +146,32 @@ class TestServiceOfferings(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestServiceOfferings, cls).getClsTestClient().getApiClient()
-        cls.services = Services().services
-        domain = get_domain(cls.api_client, cls.services)
-        cls.zone = get_zone(cls.api_client, cls.services)
+        testClient = super(TestServiceOfferings, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+        cls.hypervisor = testClient.getHypervisorInfo()
+
+        domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
         cls.service_offering_1 = ServiceOffering.create(
-            cls.api_client,
-            cls.services["off"]
+            cls.apiclient,
+            cls.services["service_offerings"]
         )
         cls.service_offering_2 = ServiceOffering.create(
-            cls.api_client,
-            cls.services["off"]
+            cls.apiclient,
+            cls.services["service_offerings"]
         )
         template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
+        if template == FAILED:
+            assert False, "get_template() failed to return\
+                    template with description %s" % cls.services["ostype"]
+
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
@@ -240,47 +181,57 @@ class TestServiceOfferings(cloudstackTestCase):
 
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
-                            cls.api_client,
-                            cls.services["account"],
-                            domainid=domain.id
-                            )
+            cls.apiclient,
+            cls.services["account"],
+            domainid=domain.id
+        )
 
         cls.small_offering = ServiceOffering.create(
-                                    cls.api_client,
-                                    cls.services["service_offerings"]["small"]
-                                    )
+            cls.apiclient,
+            cls.services["service_offerings"]["small"]
+        )
 
         cls.medium_offering = ServiceOffering.create(
-                                    cls.api_client,
-                                    cls.services["service_offerings"]["medium"]
-                                    )
+            cls.apiclient,
+            cls.services["service_offerings"]["medium"]
+        )
         cls.medium_virtual_machine = VirtualMachine.create(
-                                       cls.api_client,
-                                       cls.services["medium"],
-                                       accountid=cls.account.name,
-                                       domainid=cls.account.domainid,
-                                       serviceofferingid=cls.medium_offering.id,
-                                       mode=cls.services["mode"]
-                                    )
+            cls.apiclient,
+            cls.services["medium"],
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.medium_offering.id,
+            mode=cls.services["mode"]
+        )
         cls._cleanup = [
-                        cls.small_offering,
-                        cls.medium_offering,
-                        cls.account
-                        ]
+            cls.small_offering,
+            cls.medium_offering,
+            cls.account
+        ]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
-            cls.api_client = super(TestServiceOfferings, cls).getClsTestClient().getApiClient()
-            #Clean up, terminate the created templates
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cls.apiclient = super(
+                TestServiceOfferings,
+                cls).getClsTestClient().getApiClient()
+            # Clean up, terminate the created templates
+            cleanup_resources(cls.apiclient, cls._cleanup)
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke", "basic", "eip", "sg"])
+    @attr(
+        tags=[
+            "advanced",
+            "advancedns",
+            "smoke",
+            "basic",
+            "eip",
+            "sg"],
+        required_hardware="false")
     def test_02_edit_service_offering(self):
         """Test to update existing service offering"""
 
@@ -288,7 +239,7 @@ class TestServiceOfferings(cloudstackTestCase):
         # 1. updateServiceOffering should return
         #    a valid information for newly created offering
 
-        #Generate new name & displaytext from random data
+        # Generate new name & displaytext from random data
         random_displaytext = random_gen()
         random_name = random_gen()
 
@@ -296,7 +247,7 @@ class TestServiceOfferings(cloudstackTestCase):
                    self.service_offering_1.id)
 
         cmd = updateServiceOffering.updateServiceOfferingCmd()
-        #Add parameters for API call
+        # Add parameters for API call
         cmd.id = self.service_offering_1.id
         cmd.displaytext = random_displaytext
         cmd.name = random_name
@@ -331,7 +282,15 @@ class TestServiceOfferings(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke", "basic", "eip", "sg"])
+    @attr(
+        tags=[
+            "advanced",
+            "advancedns",
+            "smoke",
+            "basic",
+            "eip",
+            "sg"],
+        required_hardware="false")
     def test_03_delete_service_offering(self):
         """Test to delete service offering"""
 
@@ -357,7 +316,7 @@ class TestServiceOfferings(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"])
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_04_change_offering_small(self):
         """Test to change service to a small capacity
         """
@@ -367,23 +326,10 @@ class TestServiceOfferings(cloudstackTestCase):
         # 2. Using  listVM command verify that this Vm
         #    has Small service offering Id.
 
-        self.debug("Stopping VM - ID: %s" % self.medium_virtual_machine.id)
-        self.medium_virtual_machine.stop(self.apiclient)
-        # Ensure that VM is in stopped state
-        list_vm_response = list_virtual_machines(
-            self.apiclient,
-            id=self.medium_virtual_machine.id
-        )
-        if isinstance(list_vm_response, list):
-            vm = list_vm_response[0]
-            if vm.state == 'Stopped':
-                self.debug("VM state: %s" % vm.state)
-            else:
-                raise Exception(
-                    "Failed to stop VM (ID: %s) in change service offering" % vm.id)
-
-        self.debug("Change Service offering VM - ID: %s" %
-                   self.medium_virtual_machine.id)
+        try:
+            self.medium_virtual_machine.stop(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to stop VM: %s" % e)
 
         cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
         cmd.id = self.medium_virtual_machine.id
@@ -404,22 +350,23 @@ class TestServiceOfferings(cloudstackTestCase):
                 self.debug("VM state: %s" % vm.state)
             else:
                 raise Exception(
-                    "Failed to start VM (ID: %s) after changing service offering" % vm.id)
+                    "Failed to start VM (ID: %s) after changing\
+                            service offering" % vm.id)
 
         try:
             ssh = self.medium_virtual_machine.get_ssh_client()
         except Exception as e:
             self.fail(
-                "SSH Access failed for %s: %s" %\
+                "SSH Access failed for %s: %s" %
                 (self.medium_virtual_machine.ipaddress, e)
             )
 
         cpuinfo = ssh.execute("cat /proc/cpuinfo")
         cpu_cnt = len([i for i in cpuinfo if "processor" in i])
-        #'cpu MHz\t\t: 2660.499'
+        # 'cpu MHz\t\t: 2660.499'
         cpu_speed = [i for i in cpuinfo if "cpu MHz" in i][0].split()[3]
         meminfo = ssh.execute("cat /proc/meminfo")
-        #MemTotal:        1017464 kB
+        # MemTotal:        1017464 kB
         total_mem = [i for i in meminfo if "MemTotal" in i][0].split()[1]
 
         self.debug(
@@ -427,7 +374,7 @@ class TestServiceOfferings(cloudstackTestCase):
                 cpu_cnt,
                 cpu_speed,
                 total_mem
-                ))
+            ))
         self.assertAlmostEqual(
             int(cpu_cnt),
             self.small_offering.cpunumber,
@@ -438,11 +385,19 @@ class TestServiceOfferings(cloudstackTestCase):
             self.small_offering.cpuspeed,
             "Check CPU Speed for small offering"
         )
+
+        range = 20
+        if self.hypervisor.lower() == "hyperv":
+            range = 200
+        # TODO: Find the memory allocated to VM on hyperv hypervisor using
+        # powershell commands and use that value to equate instead of
+        # manipulating range, currently we get the memory count much less
+        # because of the UI component
         self.assertTrue(
             isAlmostEqual(int(int(total_mem) / 1024),
-                int(self.small_offering.memory),
-                range=20
-            ),
+                          int(self.small_offering.memory),
+                          range=range
+                          ),
             "Check Memory(kb) for small offering"
         )
         return

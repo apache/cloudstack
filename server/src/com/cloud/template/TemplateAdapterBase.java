@@ -116,11 +116,6 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         return true;
     }
 
-    private static boolean isAdmin(short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
-            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
-    }
-
     @Override
     public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
         Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, Long zoneId, HypervisorType hypervisorType, String accountName,
@@ -175,10 +170,16 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             sshkeyEnabled = Boolean.FALSE;
         }
 
-        boolean isAdmin = _accountDao.findById(templateOwner.getId()).getType() == Account.ACCOUNT_TYPE_ADMIN;
+        boolean isAdmin = _accountMgr.isRootAdmin(templateOwner.getId());
+        boolean isRegionStore = false;
+        List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
+        if (stores != null && stores.size() > 0) {
+            isRegionStore = true;
+        }
 
-        if (!isAdmin && zoneId == null) {
-            throw new InvalidParameterValueException("Please specify a valid zone Id.");
+        if (!isAdmin && zoneId == null && !isRegionStore ) {
+            // domain admin and user should also be able to register template on a region store
+            throw new InvalidParameterValueException("Please specify a valid zone Id. Only admins can create templates in all zones.");
         }
 
         if (url.toLowerCase().contains("file://")) {
@@ -208,10 +209,6 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.template);
 
-        if (templateOwner.getType() != Account.ACCOUNT_TYPE_ADMIN && zoneId == null) {
-            throw new IllegalArgumentException("Only admins can create templates in all zones");
-        }
-
         // If a zoneId is specified, make sure it is valid
         if (zoneId != null) {
             DataCenterVO zone = _dcDao.findById(zoneId);
@@ -219,8 +216,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 throw new IllegalArgumentException("Please specify a valid zone.");
             }
             Account caller = CallContext.current().getCallingAccount();
-            if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
-                throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
+            if(Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())){
+                throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: "+ zoneId );
             }
         }
 
@@ -234,7 +231,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         if (hypervisorType.equals(Hypervisor.HypervisorType.XenServer)) {
             if (details == null || !details.containsKey("hypervisortoolsversion") || details.get("hypervisortoolsversion") == null ||
                 ((String)details.get("hypervisortoolsversion")).equalsIgnoreCase("none")) {
-                String hpvs = _configDao.getValue(Config.XenPVdriverVersion.key());
+                String hpvs = _configDao.getValue(Config.XenServerPVdriverVersion.key());
                 if (hpvs != null) {
                     if (details == null) {
                         details = new HashMap<String, String>();
@@ -323,7 +320,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     private Long accountAndUserValidation(Account account, long userId, UserVmVO vmInstanceCheck, VMTemplateVO template, String msg) throws PermissionDeniedException {
 
         if (account != null) {
-            if (!isAdmin(account.getType())) {
+            if (!_accountMgr.isAdmin(account.getId())) {
                 if ((vmInstanceCheck != null) && (account.getId() != vmInstanceCheck.getAccountId())) {
                     throw new PermissionDeniedException(msg + ". Permission denied.");
                 }
@@ -366,7 +363,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         Account account = CallContext.current().getCallingAccount();
         Long zoneId = cmd.getZoneId();
 
-        VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
+        VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null) {
             throw new InvalidParameterValueException("unable to find template with id " + templateId);
         }
@@ -391,7 +388,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         Long userId = CallContext.current().getCallingUserId();
         Long zoneId = cmd.getZoneId();
 
-        VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
+        VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null) {
             throw new InvalidParameterValueException("unable to find template with id " + templateId);
         }
@@ -405,7 +402,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         Account account = CallContext.current().getCallingAccount();
         Long zoneId = cmd.getZoneId();
 
-        VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
+        VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null) {
             throw new InvalidParameterValueException("unable to find iso with id " + templateId);
         }

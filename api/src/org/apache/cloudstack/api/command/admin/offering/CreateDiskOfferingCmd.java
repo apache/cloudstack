@@ -27,11 +27,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 
+import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
 
-@APICommand(name = "createDiskOffering", description = "Creates a disk offering.", responseObject = DiskOfferingResponse.class)
+@APICommand(name = "createDiskOffering", description = "Creates a disk offering.", responseObject = DiskOfferingResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateDiskOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateDiskOfferingCmd.class.getName());
 
@@ -41,7 +43,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.DISK_SIZE, type = CommandType.LONG, required = false, description = "size of the disk offering in GB")
+    @Parameter(name = ApiConstants.DISK_SIZE, type = CommandType.LONG, required = false, description = "size of the disk offering in GB (1GB = 1,073,741,824 bytes)")
     private Long diskSize;
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "alternate display text of the disk offering", length = 4096)
@@ -65,9 +67,14 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.STORAGE_TYPE, type = CommandType.STRING, description = "the storage type of the disk offering. Values are local and shared.")
     private String storageType = ServiceOffering.StorageType.shared.toString();
 
+    @Parameter(name = ApiConstants.PROVISIONINGTYPE,
+            type = CommandType.STRING,
+            description = "provisioning type used to create volumes. Valid values are thin, sparse, fat.")
+    private String provisioningType = ProvisioningType.THIN.toString();
+
     @Parameter(name = ApiConstants.DISPLAY_OFFERING,
-               type = CommandType.BOOLEAN,
-               description = "an optional field, whether to display the offering to the end user or not.")
+            type = CommandType.BOOLEAN,
+            description = "an optional field, whether to display the offering to the end user or not.")
     private Boolean displayOffering;
 
     @Parameter(name = ApiConstants.BYTES_READ_RATE, type = CommandType.LONG, required = false, description = "bytes read rate of the disk offering")
@@ -92,9 +99,9 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     private Long maxIops;
 
     @Parameter(name = ApiConstants.HYPERVISOR_SNAPSHOT_RESERVE,
-               type = CommandType.INTEGER,
-               required = false,
-               description = "Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)")
+            type = CommandType.INTEGER,
+            required = false,
+            description = "Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware)")
     private Integer hypervisorSnapshotReserve;
 
 /////////////////////////////////////////////////////
@@ -155,6 +162,10 @@ public class CreateDiskOfferingCmd extends BaseCmd {
 
     public String getStorageType() {
         return storageType;
+    }
+
+    public String getProvisioningType(){
+        return provisioningType;
     }
 
     public Boolean getDisplayOffering() {

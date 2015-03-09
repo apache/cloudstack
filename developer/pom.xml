@@ -18,15 +18,9 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.4.0-SNAPSHOT</version>
+    <version>4.6.0-SNAPSHOT</version>
   </parent>
   <dependencies>
-    <!-- specify the dependent jdbc driver here -->
-    <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-	  <scope>runtime</scope>
-    </dependency>
     <dependency>
       <groupId>commons-dbcp</groupId>
       <artifactId>commons-dbcp</artifactId>
@@ -114,6 +108,14 @@
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
             <version>1.2.1</version>
+             <dependencies>
+              <!-- specify the dependent jdbc driver here -->
+              <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${cs.mysql.version}</version>
+              </dependency>
+            </dependencies>
             <executions>
               <execution>
                 <phase>process-resources</phase>
@@ -125,6 +127,7 @@
             </executions>
             <configuration>
               <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+              <includePluginDependencies>true</includePluginDependencies>
               <arguments>
                 <!-- db properties file -->
                 <argument>${basedir}/../utils/conf/db.properties</argument>
@@ -182,6 +185,13 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
+            <dependencies>
+              <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${cs.mysql.version}</version>
+              </dependency>
+	    </dependencies>
             <version>1.2.1</version>
             <executions>
               <execution>
@@ -194,6 +204,7 @@
             </executions>
             <configuration>
               <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+              <includePluginDependencies>true</includePluginDependencies>
               <arguments>
                 <!-- db properties file -->
                 <argument>${basedir}/../utils/conf/db.properties</argument>

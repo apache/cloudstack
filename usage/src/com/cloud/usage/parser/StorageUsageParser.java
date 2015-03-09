@@ -107,6 +107,11 @@ public class StorageUsageParser {
                 storageCreateDate = startDate;
             }
 
+            if (storageCreateDate.after(endDate)) {
+                //Ignore records created after endDate
+                continue;
+            }
+
             long currentDuration = (storageDeleteDate.getTime() - storageCreateDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
 
             updateStorageUsageData(usageMap, key, usageStorage.getId(), currentDuration);

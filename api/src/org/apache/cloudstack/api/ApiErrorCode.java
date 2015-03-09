@@ -22,6 +22,8 @@ package org.apache.cloudstack.api;
  */
 public enum ApiErrorCode {
 
+    UNAUTHORIZED(401),
+    METHOD_NOT_ALLOWED(405),
     MALFORMED_PARAMETER_ERROR(430),
     PARAM_ERROR(431),
     UNSUPPORTED_ACTION_ERROR(432),

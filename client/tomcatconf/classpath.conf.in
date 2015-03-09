@@ -34,5 +34,8 @@ for vendorconf in "@MSCONF@"/vendor/* ; do
 	CLASSPATH=$vendorconf:$CLASSPATH
 done
 export CLASSPATH
-PATH=/sbin:/usr/sbin:$PATH
+if ([ -z "$JAVA_HOME" ] || [ ! -d "$JAVA_HOME" ]) && [ -d /usr/lib/jvm/jre-1.7.0 ]; then
+     export JAVA_HOME=/usr/lib/jvm/jre-1.7.0
+fi
+PATH=$JAVA_HOME/bin:/sbin:/usr/sbin:$PATH
 export PATH

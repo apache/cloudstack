@@ -207,7 +207,7 @@
         }
     };
        
-    var affinitygroupActionfilter = function(args) {
+    var affinitygroupActionfilter = cloudStack.actionFilter.affinitygroupActionfilter = function(args) {
         var jsonObj = args.context.item;
         var allowedActions = [];       
         if (jsonObj.type != 'ExplicitDedication' || isAdmin()) {

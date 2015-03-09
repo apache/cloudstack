@@ -28,11 +28,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
@@ -50,6 +49,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -147,7 +147,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             sb.and("format", sb.entity().getFormat(), SearchCriteria.Op.EQ);
             sb.and("type", sb.entity().getTemplateType(), SearchCriteria.Op.EQ);
             sb.and("bootable", sb.entity().isBootable(), SearchCriteria.Op.EQ);
-            sb.and("removed", sb.entity().getRemoved(), SearchCriteria.Op.EQ);
+            sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
 
             SearchBuilder<ResourceTagVO> tagSearch = _tagsDao.createSearchBuilder();
             for (int count = 0; count < tags.size(); count++) {
@@ -170,7 +170,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         }
 
         if (!listRemoved) {
-            sc.setParameters("removed", (Object)null);
+            sc.setParameters("state", VirtualMachineTemplate.State.Active);
         }
 
         if (tags != null && !tags.isEmpty()) {
@@ -197,7 +197,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         sc.setParameters("type", TemplateType.USER.toString());
 
         if (!listRemoved) {
-            sc.setParameters("removed", (Object)null);
+            sc.setParameters("state", VirtualMachineTemplate.State.Active);
         }
 
         return listBy(sc);
@@ -217,7 +217,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
         String sql =
             "select * from template_host_ref as thr INNER JOIN vm_template as t ON t.id=thr.template_id "
-                + "where thr.host_id=? and t.public=0 and t.featured=0 and t.type='USER' and t.removed is NULL";
+                + "where thr.host_id=? and t.public=0 and t.featured=0 and t.type='USER' and t.state='Active'";
 
         List<Long> l = new ArrayList<Long>();
 
@@ -232,7 +232,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                 l.add(rs.getLong(1));
             }
         } catch (SQLException e) {
-        } catch (Throwable e) {
+            s_logger.debug("Exception: ", e);
         }
         return l;
     }
@@ -265,6 +265,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     public List<VMTemplateVO> listByAccountId(long accountId) {
         SearchCriteria<VMTemplateVO> sc = AccountIdSearch.create();
         sc.setParameters("accountId", accountId);
+        sc.setParameters("state", VirtualMachineTemplate.State.Active);
         return listBy(sc);
     }
 
@@ -312,12 +313,12 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         PublicIsoSearch.and("format", PublicIsoSearch.entity().getFormat(), SearchCriteria.Op.EQ);
         PublicIsoSearch.and("type", PublicIsoSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
         PublicIsoSearch.and("bootable", PublicIsoSearch.entity().isBootable(), SearchCriteria.Op.EQ);
-        PublicIsoSearch.and("removed", PublicIsoSearch.entity().getRemoved(), SearchCriteria.Op.EQ);
+        PublicIsoSearch.and("state", PublicIsoSearch.entity().getState(), SearchCriteria.Op.EQ);
 
         UserIsoSearch = createSearchBuilder();
         UserIsoSearch.and("format", UserIsoSearch.entity().getFormat(), SearchCriteria.Op.EQ);
         UserIsoSearch.and("type", UserIsoSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
-        UserIsoSearch.and("removed", UserIsoSearch.entity().getRemoved(), SearchCriteria.Op.EQ);
+        UserIsoSearch.and("state", UserIsoSearch.entity().getState(), SearchCriteria.Op.EQ);
 
         tmpltTypeHyperSearch = createSearchBuilder();
         tmpltTypeHyperSearch.and("templateType", tmpltTypeHyperSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
@@ -332,7 +333,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         tmpltTypeHyperSearch.done();
 
         readySystemTemplateSearch = createSearchBuilder();
-        readySystemTemplateSearch.and("removed", readySystemTemplateSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        readySystemTemplateSearch.and("state", readySystemTemplateSearch.entity().getState(), SearchCriteria.Op.EQ);
         readySystemTemplateSearch.and("templateType", readySystemTemplateSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
         SearchBuilder<TemplateDataStoreVO> templateDownloadSearch = _templateDataStoreDao.createSearchBuilder();
         templateDownloadSearch.and("downloadState", templateDownloadSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
@@ -355,13 +356,13 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         tmpltTypeHyperSearch2.and("templateName", tmpltTypeHyperSearch2.entity().getName(), SearchCriteria.Op.EQ);
 
         tmpltTypeSearch = createSearchBuilder();
-        tmpltTypeSearch.and("removed", tmpltTypeSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        tmpltTypeSearch.and("state", tmpltTypeSearch.entity().getState(), SearchCriteria.Op.EQ);
         tmpltTypeSearch.and("templateType", tmpltTypeSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
 
         AccountIdSearch = createSearchBuilder();
         AccountIdSearch.and("accountId", AccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountIdSearch.and("publicTemplate", AccountIdSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);
-        AccountIdSearch.and("removed", AccountIdSearch.entity().getRemoved(), SearchCriteria.Op.NULL); // only list not removed templates for this account
+        AccountIdSearch.and("state", AccountIdSearch.entity().getState(), SearchCriteria.Op.EQ); // only list not removed templates for this account
         AccountIdSearch.done();
 
         SearchBuilder<VMTemplateZoneVO> tmpltZoneSearch = _templateZoneDao.createSearchBuilder();
@@ -369,7 +370,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         tmpltZoneSearch.and("zoneId", tmpltZoneSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
 
         TmpltsInZoneSearch = createSearchBuilder();
-        TmpltsInZoneSearch.and("removed", TmpltsInZoneSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        TmpltsInZoneSearch.and("state", TmpltsInZoneSearch.entity().getState(), SearchCriteria.Op.EQ);
         TmpltsInZoneSearch.and().op("avoidtype", TmpltsInZoneSearch.entity().getTemplateType(), SearchCriteria.Op.NEQ);
         TmpltsInZoneSearch.or("templateType", TmpltsInZoneSearch.entity().getTemplateType(), SearchCriteria.Op.NULL);
         TmpltsInZoneSearch.cp();
@@ -378,12 +379,12 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         TmpltsInZoneSearch.done();
 
         ActiveTmpltSearch = createSearchBuilder();
-        ActiveTmpltSearch.and("removed", ActiveTmpltSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        ActiveTmpltSearch.and("state", ActiveTmpltSearch.entity().getState(), SearchCriteria.Op.EQ);
 
         CountTemplatesByAccount = createSearchBuilder(Long.class);
         CountTemplatesByAccount.select(null, Func.COUNT, null);
         CountTemplatesByAccount.and("account", CountTemplatesByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
-        CountTemplatesByAccount.and("removed", CountTemplatesByAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
+        CountTemplatesByAccount.and("state", CountTemplatesByAccount.entity().getState(), SearchCriteria.Op.EQ);
         CountTemplatesByAccount.done();
 
         //        updateStateSearch = this.createSearchBuilder();
@@ -414,7 +415,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         }
         List<VMTemplateDetailVO> details = new ArrayList<VMTemplateDetailVO>();
         for (String key : detailsStr.keySet()) {
-            VMTemplateDetailVO detail = new VMTemplateDetailVO(tmpl.getId(), key, detailsStr.get(key));
+            VMTemplateDetailVO detail = new VMTemplateDetailVO(tmpl.getId(), key, detailsStr.get(key), true);
             details.add(detail);
         }
 
@@ -750,7 +751,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             if (tmplt.getDetails() != null) {
                 List<VMTemplateDetailVO> details = new ArrayList<VMTemplateDetailVO>();
                 for (String key : tmplt.getDetails().keySet()) {
-                    details.add(new VMTemplateDetailVO(tmplt.getId(), key, tmplt.getDetails().get(key)));
+                    details.add(new VMTemplateDetailVO(tmplt.getId(), key, tmplt.getDetails().get(key), true));
                 }
                 _templateDetailsDao.saveDetails(details);
             }
@@ -774,6 +775,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     public List<VMTemplateVO> listAllInZone(long dataCenterId) {
         SearchCriteria<VMTemplateVO> sc = TmpltsInZoneSearch.create();
         sc.setParameters("avoidtype", TemplateType.PERHOST.toString());
+        sc.setParameters("state", VirtualMachineTemplate.State.Active);
         sc.setJoinParameters("tmpltzone", "zoneId", dataCenterId);
         return listBy(sc);
     }
@@ -781,6 +783,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     @Override
     public List<VMTemplateVO> listAllActive() {
         SearchCriteria<VMTemplateVO> sc = ActiveTmpltSearch.create();
+        sc.setParameters("state", VirtualMachineTemplate.State.Active.toString());
         return listBy(sc);
     }
 
@@ -788,6 +791,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     public List<VMTemplateVO> listDefaultBuiltinTemplates() {
         SearchCriteria<VMTemplateVO> sc = tmpltTypeSearch.create();
         sc.setParameters("templateType", Storage.TemplateType.BUILTIN);
+        sc.setParameters("state", VirtualMachineTemplate.State.Active);
         return listBy(sc);
     }
 
@@ -813,6 +817,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     public VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType) {
         SearchCriteria<VMTemplateVO> sc = readySystemTemplateSearch.create();
         sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
+        sc.setParameters("state", VirtualMachineTemplate.State.Active);
         sc.setJoinParameters("tmplHyper", "type", Host.Type.Routing);
         sc.setJoinParameters("tmplHyper", "zoneId", zoneId);
         sc.setJoinParameters("vmTemplateJoinTemplateStoreRef", "downloadState", VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
@@ -873,6 +878,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     public Long countTemplatesForAccount(long accountId) {
         SearchCriteria<Long> sc = CountTemplatesByAccount.create();
         sc.setParameters("account", accountId);
+        sc.setParameters("state", VirtualMachineTemplate.State.Active.toString());
         return customSearch(sc, null).get(0);
     }
 

@@ -24,6 +24,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.InstanceGroup;
 
 @Entity
 @Table(name = "instance_group_view")
@@ -155,5 +156,10 @@ public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEnt
 
     public Date getCreated() {
         return created;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return InstanceGroup.class;
     }
 }

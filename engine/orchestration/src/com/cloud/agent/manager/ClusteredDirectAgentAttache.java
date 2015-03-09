@@ -24,13 +24,10 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ClusteredDirectAgentAttache extends DirectAgentAttache implements Routable {
-    private final ClusteredAgentManagerImpl _mgr;
     private final long _nodeId;
 
-    public ClusteredDirectAgentAttache(AgentManagerImpl agentMgr, long id, String name, long mgmtId, ServerResource resource, boolean maintenance,
-            ClusteredAgentManagerImpl mgr) {
-        super(agentMgr, id, name, resource, maintenance, mgr);
-        _mgr = mgr;
+    public ClusteredDirectAgentAttache(ClusteredAgentManagerImpl agentMgr, long id, String name, long mgmtId, ServerResource resource, boolean maintenance) {
+        super(agentMgr, id, name, resource, maintenance);
         _nodeId = mgmtId;
     }
 
@@ -56,7 +53,7 @@ public class ClusteredDirectAgentAttache extends DirectAgentAttache implements R
     public boolean processAnswers(long seq, Response response) {
         long mgmtId = response.getManagementServerId();
         if (mgmtId != -1 && mgmtId != _nodeId) {
-            _mgr.routeToPeer(Long.toString(mgmtId), response.getBytes());
+            ((ClusteredAgentManagerImpl)_agentMgr).routeToPeer(Long.toString(mgmtId), response.getBytes());
             if (response.executeInSequence()) {
                 sendNext(response.getSequence());
             }

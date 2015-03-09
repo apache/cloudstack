@@ -40,9 +40,7 @@ do
   case $OPTION in
   v)	VM_IP="$OPTARG"
 		;;
-  p)	
-		ENCODEDPASSWORD="$OPTARG"
-		PASSWORD=$(echo $ENCODEDPASSWORD | tr '[a-m][n-z][A-M][N-Z]' '[n-z][a-m][N-Z][A-M]')
+  p)    PASSWORD="$OPTARG"
 		;;
   ?)	echo "Incorrect usage"
                 unlock_exit 1 $lock $locked
@@ -52,7 +50,7 @@ done
 
 [ -f $PASSWD_FILE ] ||  touch $PASSWD_FILE
 
-sed -i /$VM_IP/d $PASSWD_FILE
+sed -i /$VM_IP=/d $PASSWD_FILE
 
 ps aux | grep serve_password.sh |grep -v grep 2>&1 > /dev/null
 if [ $? -eq 0 ]

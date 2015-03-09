@@ -48,8 +48,8 @@ pip -q install lib/python2.7/site-packages/marvin/
 #Deploy the configuration - yes/no
 if [[ $DEPLOY == "yes" ]]; then
     cd cloud-autodeploy
-    if [[ $hypervisor == 'xen' ]];then
-        profile='xen602'
+    if [[ $hypervisor == 'xenserver' ]];then
+        profile='xenserver602'
     else
         profile='rhel63-kvm'
     fi

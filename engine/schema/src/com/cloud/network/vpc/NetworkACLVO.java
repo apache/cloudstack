@@ -47,6 +47,9 @@ public class NetworkACLVO implements NetworkACL {
     @Column(name = "description")
     private String description;
 
+    @Column(name = "display", updatable = true, nullable = false)
+    protected boolean display = true;
+
     public NetworkACLVO() {
     }
 
@@ -82,4 +85,16 @@ public class NetworkACLVO implements NetworkACL {
         return name;
     }
 
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return display;
+    }
 }

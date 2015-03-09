@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.resource;
 
 import java.io.PrintWriter;
@@ -23,6 +26,7 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -97,9 +101,9 @@ public abstract class ServerResourceBase implements ServerResource {
                 final String nicName = nic.getName();
                 //  try {
                 if (//!nic.isLoopback() &&
-                    //nic.isUp() &&
-                !nic.isVirtual() && !nicName.startsWith("vnif") && !nicName.startsWith("vnbr") && !nicName.startsWith("peth") && !nicName.startsWith("vif") &&
-                    !nicName.startsWith("virbr") && !nicName.contains(":")) {
+                        //nic.isUp() &&
+                        !nic.isVirtual() && !nicName.startsWith("vnif") && !nicName.startsWith("vnbr") && !nicName.startsWith("peth") && !nicName.startsWith("vif") &&
+                        !nicName.startsWith("virbr") && !nicName.contains(":")) {
                     final String[] info = NetUtils.getNicParams(nicName);
                     if (info != null && info[0] != null) {
                         _privateNic = nic;
@@ -118,6 +122,10 @@ public abstract class ServerResourceBase implements ServerResource {
             }
         }
         String infos[] = NetUtils.getNetworkParams(_privateNic);
+        if (infos == null) {
+            s_logger.warn("Incorrect details for private Nic during initialization of ServerResourceBase");
+            return false;
+        }
         params.put("host.ip", infos[0]);
         params.put("host.mac.address", infos[1]);
 
@@ -233,17 +241,17 @@ public abstract class ServerResourceBase implements ServerResource {
     }
 
     protected List<String> getWarnings() {
-        synchronized (this) {
-            final ArrayList<String> results = _warnings;
-            _warnings = new ArrayList<String>();
+        synchronized (_warnings) {
+            final List<String> results = new LinkedList<String>(_warnings);
+            _warnings.clear();
             return results;
         }
     }
 
     protected List<String> getErrors() {
-        synchronized (this) {
-            final ArrayList<String> result = _errors;
-            _errors = new ArrayList<String>();
+        synchronized (_errors) {
+            final List<String> result = new LinkedList<String>(_errors);
+            _errors.clear();
             return result;
         }
     }

@@ -16,7 +16,9 @@
 // under the License.
 package com.cloud.server;
 
+import com.cloud.host.DetailVO;
 import com.cloud.host.HostVO;
+import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
@@ -47,9 +49,13 @@ public interface ManagementServer extends ManagementService, PluggableService {
      */
     HostVO getHostBy(long hostId);
 
+    DetailVO findDetail(long hostId, String name);
+
     String getConsoleAccessUrlRoot(long vmId);
 
     GuestOSVO getGuestOs(Long guestOsId);
+
+    GuestOSHypervisorVO getGuestOsHypervisor(Long guestOsHypervisorId);
 
     /**
      * Returns the vnc port of the vm.
@@ -60,13 +66,5 @@ public interface ManagementServer extends ManagementService, PluggableService {
     Pair<String, Integer> getVncPort(VirtualMachine vm);
 
     public long getMemoryOrCpuCapacityByHost(Long hostId, short capacityType);
-
-    String getHashKey();
-
-    String getEncryptionKey();
-
-    String getEncryptionIV();
-
-    void resetEncryptionKeyIV();
 
 }

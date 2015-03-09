@@ -314,6 +314,7 @@ def check_cgroups():
 def check_selinux():
 	if distro not in [Fedora,CentOS,RHEL6]: return # no selinux outside of those
 	enforcing = False
+	config_enforcing = False
 	try:
 		output = getenforce().stdout.strip()
 		if "nforcing" in output:

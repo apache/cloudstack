@@ -19,11 +19,24 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackAPI import (migrateVirtualMachine,
+                                  prepareHostForMaintenance,
+                                  cancelHostMaintenance)
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import (Account,
+                             VirtualMachine,
+                             ServiceOffering,
+                             Cluster,
+                             Host,
+                             Configurations)
+from marvin.lib.common import (get_zone,
+                               get_domain,
+                               get_template,
+                               list_hosts,
+                               list_virtual_machines,
+                               list_service_offering)
+import time
 
 
 class Services:
@@ -76,26 +89,49 @@ class TestHostHighAvailability(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(
-            TestHostHighAvailability,
-            cls
-        ).getClsTestClient().getApiClient()
+        cls.testClient = super(TestHostHighAvailability, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+
         cls.services = Services().services
         # Get Zone, Domain and templates
-        cls.domain = get_domain(
-            cls.api_client,
-            cls.services
-        )
-        cls.zone = get_zone(
-            cls.api_client,
-            cls.services
-        )
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
 
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
             cls.services["ostype"]
         )
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['lxc']:
+            raise unittest.SkipTest("Template creation from root volume is not supported in LXC")
+
+
+        clusterWithSufficientHosts = None
+        clusters = Cluster.list(cls.api_client, zoneid=cls.zone.id)
+        for cluster in clusters:
+            cls.hosts = Host.list(cls.api_client, clusterid=cluster.id, type="Routing")
+            if len(cls.hosts) >= 3:
+                clusterWithSufficientHosts = cluster
+                break
+
+        if clusterWithSufficientHosts is None:
+            raise unittest.SkipTest("No Cluster with 3 hosts found")
+
+        configs = Configurations.list(
+                                      cls.api_client,
+                                      name='ha.tag'
+                                      )
+
+        assert isinstance(configs, list), "Config list not\
+                retrieved for ha.tag"
+
+        if configs[0].value != "ha":
+            raise unittest.SkipTest("Please set the global config\
+                    value for ha.tag as 'ha'")
+
+        Host.update(cls.api_client, id=cls.hosts[2].id, hosttags="ha")
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
@@ -120,6 +156,8 @@ class TestHostHighAvailability(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
+            # Remove the host from HA
+            Host.update(cls.api_client, id=cls.hosts[2].id, hosttags="")
             #Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
@@ -342,14 +380,20 @@ class TestHostHighAvailability(cloudstackTestCase):
         """ Verify you can not migrate VMs to hosts with an ha.tag (positive) """
 
         # Steps,
-        #1. Create a Compute service offering with the 'Offer HA' option selected.
-        #2. Create a Guest VM with the compute service offering created above.
-        #3. Select the VM and migrate VM to another host. Choose a 'Suitable' host (i.e. host2)
+        # 1. Create a Compute service offering with the 'Offer HA' option selected.
+        # 2. Create a Guest VM with the compute service offering created above.
+        # 3. Select the VM and migrate VM to another host. Choose a 'Suitable' host (i.e. host2)
         # Validations
-        #The option from the 'Migrate instance to another host' dialog box' should list host3 as 'Not Suitable' for migration.
-        #Confirm that the VM is migrated to the 'Suitable' host you selected (i.e. host2)
+        # The option from the 'Migrate instance to another host' dialog box' should list host3 as 'Not Suitable' for migration.
+        # Confirm that the VM is migrated to the 'Suitable' host you selected
+        # (i.e. host2)
 
-        #create and verify the virtual machine with HA enabled service offering
+        # create and verify the virtual machine with HA enabled service
+        # offering
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
+
         virtual_machine_with_ha = VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
@@ -380,9 +424,10 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         self.debug("Deployed VM on host: %s" % vm.hostid)
 
-        #Find out a Suitable host for VM migration
+        # Find out a Suitable host for VM migration
         list_hosts_response = list_hosts(
             self.apiclient,
+            virtualmachineid = vm.id
         )
         self.assertEqual(
             isinstance(list_hosts_response, list),
@@ -397,21 +442,25 @@ class TestHostHighAvailability(cloudstackTestCase):
         )
         suitableHost = None
         for host in list_hosts_response:
-            if host.suitableformigration == True and host.hostid != vm.hostid:
+            if host.suitableformigration and host.hostid != vm.hostid:
                 suitableHost = host
                 break
 
-        self.assertTrue(suitableHost is not None, "suitablehost should not be None")
+        self.assertTrue(
+            suitableHost is not None,
+            "suitablehost should not be None")
 
-        #Migration of the VM to a suitable host
-        self.debug("Migrating VM-ID: %s to Host: %s" % (self.vm.id, suitableHost.id))
+        # Migration of the VM to a suitable host
+        self.debug(
+            "Migrating VM-ID: %s to Host: %s" %
+            (vm.id, suitableHost.id))
 
         cmd = migrateVirtualMachine.migrateVirtualMachineCmd()
         cmd.hostid = suitableHost.id
-        cmd.virtualmachineid = self.vm.id
+        cmd.virtualmachineid = vm.id
         self.apiclient.migrateVirtualMachine(cmd)
 
-        #Verify that the VM migrated to a targeted Suitable host
+        # Verify that the VM migrated to a targeted Suitable host
         list_vm_response = list_virtual_machines(
             self.apiclient,
             id=vm.id
@@ -456,6 +505,9 @@ class TestHostHighAvailability(cloudstackTestCase):
         #By design, The Guest VM can STILL can be migrated to host3 if the admin chooses to do so.
 
         #create and verify virtual machine with HA enabled service offering
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
         virtual_machine_with_ha = VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
@@ -489,6 +541,7 @@ class TestHostHighAvailability(cloudstackTestCase):
         #Find out Non-Suitable host for VM migration
         list_hosts_response = list_hosts(
             self.apiclient,
+            type="Routing"
         )
         self.assertEqual(
             isinstance(list_hosts_response, list),
@@ -504,7 +557,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         notSuitableHost = None
         for host in list_hosts_response:
-            if not host.suitableformigration and host.hostid != vm.hostid:
+            if not host.suitableformigration and host.id != vm.hostid:
                 notSuitableHost = host
                 break
 
@@ -565,6 +618,9 @@ class TestHostHighAvailability(cloudstackTestCase):
         #2. Putting host1 into maintenance mode should trigger a live migration. Make sure the VMs are not migrated to HA enabled host3.
 
         # create and verify virtual machine with HA disabled service offering
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
         virtual_machine_with_ha = VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
@@ -626,11 +682,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         #verify the VM live migration happened to another running host
         self.debug("Waiting for VM to come up")
-        wait_for_vm(
-            self.apiclient,
-            virtualmachineid=vm_with_ha_enabled.id,
-            interval=timeout
-        )
+        time.sleep(timeout)
 
         vms = VirtualMachine.list(
             self.apiclient,
@@ -697,6 +749,9 @@ class TestHostHighAvailability(cloudstackTestCase):
         #2. Putting host1 into maintenance mode should trigger a live migration. Make sure the VMs are not migrated to HA enabled host3.
 
         # create and verify virtual machine with HA disabled service offering
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            self.skipTest("vm migrate is not supported in %s" % self.hypervisor)
         virtual_machine_without_ha = VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
@@ -758,11 +813,7 @@ class TestHostHighAvailability(cloudstackTestCase):
 
         #verify the VM live migration happened to another running host
         self.debug("Waiting for VM to come up")
-        wait_for_vm(
-            self.apiclient,
-            virtualmachineid=vm_with_ha_disabled.id,
-            interval=timeout
-        )
+        time.sleep(timeout)
 
         vms = VirtualMachine.list(
             self.apiclient,

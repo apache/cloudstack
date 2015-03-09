@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -40,6 +41,8 @@ import com.cloud.agent.api.CreateVMSnapshotAnswer;
 import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
+import com.cloud.agent.api.FenceAnswer;
+import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetVmStatsAnswer;
@@ -86,7 +89,7 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.PowerState;
 
 @Component
 @Local(value = {MockVmManager.class})
@@ -142,7 +145,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             vm = new MockVMVO();
             vm.setCpu(cpuHz);
             vm.setMemory(ramSize);
-            vm.setState(State.Running);
+            vm.setPowerState(PowerState.PowerOn);
             vm.setName(vmName);
             vm.setVncPort(vncPort);
             vm.setHostId(host.getId());
@@ -170,8 +173,8 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
                 txn.close();
             }
         } else {
-            if (vm.getState() == State.Stopped) {
-                vm.setState(State.Running);
+            if (vm.getPowerState() == PowerState.PowerOff) {
+                vm.setPowerState(PowerState.PowerOn);
                 txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
                 try {
                     txn.start();
@@ -188,7 +191,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             }
         }
 
-        if (vm.getState() == State.Running && vmName.startsWith("s-")) {
+        if (vm.getPowerState() == PowerState.PowerOn && vmName.startsWith("s-")) {
             String prvIp = null;
             String prvMac = null;
             String prvNetMask = null;
@@ -284,18 +287,18 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public Map<String, State> getVmStates(String hostGuid) {
+    public Map<String, PowerState> getVmStates(String hostGuid) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
-            Map<String, State> states = new HashMap<String, State>();
+            Map<String, PowerState> states = new HashMap<String, PowerState>();
             List<MockVMVO> vms = _mockVmDao.findByHostGuid(hostGuid);
             if (vms.isEmpty()) {
                 txn.commit();
                 return states;
             }
             for (MockVm vm : vms) {
-                states.put(vm.getName(), vm.getState());
+                states.put(vm.getName(), vm.getPowerState());
             }
             txn.commit();
             return states;
@@ -350,7 +353,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             }
 
             txn.commit();
-            return new CheckVirtualMachineAnswer(cmd, vm.getState(), vm.getVncPort());
+            return new CheckVirtualMachineAnswer(cmd, vm.getPowerState(), vm.getVncPort());
         } catch (Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("unable to fetch vm state " + cmd.getVmName(), ex);
@@ -387,10 +390,6 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             MockVMVO vm = _mockVmDao.findByVmNameAndHost(vmName, info.getHostUuid());
             if (vm == null) {
                 return new MigrateAnswer(cmd, false, "can't find vm:" + vmName + " on host:" + info.getHostUuid(), null);
-            } else {
-                if (vm.getState() == State.Migrating) {
-                    vm.setState(State.Running);
-                }
             }
 
             MockHost destHost = _mockHostDao.findByGuid(destGuid);
@@ -418,7 +417,6 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         try {
             txn.start();
             MockVMVO vm = _mockVmDao.findById(vmTo.getId());
-            vm.setState(State.Migrating);
             _mockVmDao.update(vm.getId(), vm);
             txn.commit();
         } catch (Exception ex) {
@@ -484,22 +482,23 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     public Answer deleteVmSnapshot(DeleteVMSnapshotCommand cmd) {
         String vm = cmd.getVmName();
         String snapshotName = cmd.getTarget().getSnapshotName();
-        if (_mockVmDao.findByVmName(cmd.getVmName()) != null) {
+        if (_mockVmDao.findByVmName(cmd.getVmName()) == null) {
             return new DeleteVMSnapshotAnswer(cmd, false, "No VM by name " + cmd.getVmName());
         }
         s_logger.debug("Removed snapshot " + snapshotName + " of VM " + vm);
-        return new DeleteVMSnapshotAnswer(cmd, true, "success");
+        return new DeleteVMSnapshotAnswer(cmd, cmd.getVolumeTOs());
     }
 
     @Override
     public Answer revertVmSnapshot(RevertToVMSnapshotCommand cmd) {
         String vm = cmd.getVmName();
         String snapshot = cmd.getTarget().getSnapshotName();
-        if (_mockVmDao.findByVmName(cmd.getVmName()) != null) {
+        MockVMVO vmVo = _mockVmDao.findByVmName(cmd.getVmName());
+        if (vmVo == null) {
             return new RevertToVMSnapshotAnswer(cmd, false, "No VM by name " + cmd.getVmName());
         }
         s_logger.debug("Reverted to snapshot " + snapshot + " of VM " + vm);
-        return new RevertToVMSnapshotAnswer(cmd, true, "success");
+        return new RevertToVMSnapshotAnswer(cmd, cmd.getVolumeTOs(), vmVo.getPowerState());
     }
 
     @Override
@@ -510,7 +509,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             String vmName = cmd.getVmName();
             MockVm vm = _mockVmDao.findByVmName(vmName);
             if (vm != null) {
-                vm.setState(State.Stopped);
+                vm.setPowerState(PowerState.PowerOff);
                 _mockVmDao.update(vm.getId(), (MockVMVO)vm);
             }
 
@@ -531,24 +530,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public RebootAnswer rebootVM(RebootCommand cmd) {
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
-        try {
-            txn.start();
-            MockVm vm = _mockVmDao.findByVmName(cmd.getVmName());
-            if (vm != null) {
-                vm.setState(State.Running);
-                _mockVmDao.update(vm.getId(), (MockVMVO)vm);
-            }
-            txn.commit();
-            return new RebootAnswer(cmd, "Rebooted " + cmd.getVmName(), true);
-        } catch (Exception ex) {
-            txn.rollback();
-            throw new CloudRuntimeException("unable to stop vm " + cmd.getVmName(), ex);
-        } finally {
-            txn.close();
-            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-            txn.close();
-        }
+        return new RebootAnswer(cmd, "Rebooted " + cmd.getVmName(), true);
     }
 
     @Override
@@ -568,7 +550,8 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public GetDomRVersionAnswer getDomRVersion(GetDomRVersionCmd cmd) {
-        return new GetDomRVersionAnswer(cmd, null, "CloudStack Release 4.2.0", UUID.randomUUID().toString());
+        String template_version = "CloudStack Release "+ NetworkOrchestrationService.MinVRVersion.defaultValue();
+        return new GetDomRVersionAnswer(cmd, null, template_version, UUID.randomUUID().toString());
     }
 
     @Override
@@ -658,4 +641,8 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         return maps;
     }
 
+    @Override
+    public Answer fence(FenceCommand cmd) {
+       return new FenceAnswer(cmd);
+    }
 }

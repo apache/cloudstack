@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,7 +15,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.nicira;
+
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 
 public class VifAttachment extends Attachment {
     private final String type = "VifAttachment";
@@ -31,7 +39,7 @@ public class VifAttachment extends Attachment {
         return vifUuid;
     }
 
-    public void setVifUuid(String vifUuid) {
+    public void setVifUuid(final String vifUuid) {
         this.vifUuid = vifUuid;
     }
 
@@ -39,4 +47,32 @@ public class VifAttachment extends Attachment {
         return type;
     }
 
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilder.reflectionToString(this, ToStringStyle.DEFAULT_STYLE, false);
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 31)
+                .append(this.getClass())
+                .append(vifUuid)
+                .toHashCode();
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (obj == this) {
+            return true;
+        }
+        if (!(this.getClass().isInstance(obj))) {
+            return false;
+        }
+        final VifAttachment another = (VifAttachment) obj;
+        return new EqualsBuilder().append(vifUuid, another.vifUuid).isEquals();
+    }
 }

@@ -29,7 +29,8 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.user.SSHKeyPair;
 
-@APICommand(name = "registerSSHKeyPair", description = "Register a public key in a keypair under a certain name", responseObject = SSHKeyPairResponse.class)
+@APICommand(name = "registerSSHKeyPair", description = "Register a public key in a keypair under a certain name", responseObject = SSHKeyPairResponse.class, entityType = {SSHKeyPair.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RegisterSSHKeyPairCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterSSHKeyPairCmd.class.getName());
     private static final String s_name = "registersshkeypairresponse";
@@ -87,7 +88,7 @@ public class RegisterSSHKeyPairCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -98,10 +99,10 @@ public class RegisterSSHKeyPairCmd extends BaseCmd {
     @Override
     public void execute() {
         SSHKeyPair result = _mgr.registerSSHKeyPair(this);
-        SSHKeyPairResponse response = new SSHKeyPairResponse(result.getName(), result.getFingerprint());
+        SSHKeyPairResponse response = _responseGenerator.createSSHKeyPairResponse(result, false);
         response.setResponseName(getCommandName());
         response.setObjectName("keypair");
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
     @Override

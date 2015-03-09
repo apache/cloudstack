@@ -34,10 +34,11 @@ import com.cloud.event.EventTypes;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteIso", description = "Deletes an ISO file.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteIso", description = "Deletes an ISO file.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteIsoCmd.class.getName());
-    private static final String s_name = "deleteisosresponse";
+    private static final String s_name = "deleteisoresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

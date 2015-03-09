@@ -33,7 +33,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.api.response.netapp.AssociateLunCmdResponse;
 
-@APICommand(name = "associateLun", description = "Associate a LUN with a guest IQN", responseObject = AssociateLunCmdResponse.class)
+@APICommand(name = "associateLun", description = "Associate a LUN with a guest IQN", responseObject = AssociateLunCmdResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AssociateLunCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateLunCmd.class.getName());
     private static final String s_name = "associatelunresponse";

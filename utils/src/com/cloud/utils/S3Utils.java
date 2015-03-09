@@ -1,21 +1,22 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
+//
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+//
+
 package com.cloud.utils;
 
 import static com.amazonaws.Protocol.HTTP;
@@ -56,13 +57,14 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
-
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public final class S3Utils {
@@ -337,14 +339,21 @@ public final class S3Utils {
 
     private static List<S3ObjectSummary> listDirectory(final String bucketName, final String directory, final AmazonS3 client) {
 
-        final List<S3ObjectSummary> objects = client.listObjects(bucketName, directory + SEPARATOR).getObjectSummaries();
+        List<S3ObjectSummary> objects = new ArrayList<S3ObjectSummary>();
+        ListObjectsRequest listObjectsRequest = new ListObjectsRequest().withBucketName(bucketName).withPrefix(directory + SEPARATOR);
 
-        if (objects == null) {
+        ObjectListing ol = client.listObjects(listObjectsRequest);
+        while (ol != null && ol.isTruncated()) {
+            objects.addAll(ol.getObjectSummaries());
+            listObjectsRequest.setMarker(ol.getNextMarker());
+            ol = client.listObjects(listObjectsRequest);
+        }
+
+        if (objects.isEmpty()) {
             return emptyList();
         }
 
         return unmodifiableList(objects);
-
     }
 
     public static void putDirectory(final ClientOptions clientOptions, final String bucketName, final File directory, final FilenameFilter fileNameFilter,

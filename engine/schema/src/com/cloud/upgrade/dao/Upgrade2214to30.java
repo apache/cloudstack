@@ -986,8 +986,9 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                 pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`networks` DROP COLUMN `switch_to_isolated`");
                 pstmt2Close.add(pstmt);
                 pstmt.executeUpdate();
-            } catch (Exception ex) {
+            } catch (SQLException ex) {
                 // do nothing here
+                s_logger.debug("Caught SQLException when trying to drop switch_to_isolated column ", ex);
             }
 
         } catch (SQLException e) {

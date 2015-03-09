@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api;
 
+
 public abstract class BaseListAccountResourcesCmd extends BaseListDomainResourcesCmd {
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "list resources by account. Must be used with the domainId parameter.")
@@ -23,5 +24,9 @@ public abstract class BaseListAccountResourcesCmd extends BaseListDomainResource
 
     public String getAccountName() {
         return accountName;
+    }
+
+    public Boolean getDisplay() {
+        return true;
     }
 }

@@ -72,7 +72,7 @@
         )
             .hide();
         var $regionSwitcherButton = $('<div>').addClass('region-switcher')
-            .attr('title', 'Select region')
+            .attr('title', _l('label.select.region'))
             .append(
                 $('<span>').addClass('icon').html('&nbsp;'),
                 $('<span>').addClass('title').html('')

@@ -32,6 +32,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
@@ -143,6 +144,9 @@ public class VolumeVO implements Volume {
     @Column(name = "format")
     private Storage.ImageFormat format;
 
+    @Column(name = "provisioning_type")
+    private Storage.ProvisioningType provisioningType;
+
     @Column(name = "display_volume", updatable = true, nullable = false)
     protected boolean displayVolume = true;
 
@@ -160,61 +164,70 @@ public class VolumeVO implements Volume {
     String reservationId;
 
     @Column(name = "hv_ss_reserve")
-    Integer hypervisorSnapshotReserve;
+    private Integer hypervisorSnapshotReserve;
 
     // Real Constructor
-    public VolumeVO(Type type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size, Long minIops, Long maxIops, String iScsiName) {
+    public VolumeVO(Type type, String name, long dcId, long domainId,
+            long accountId, long diskOfferingId, Storage.ProvisioningType provisioningType, long size,
+            Long minIops, Long maxIops, String iScsiName) {
         this.volumeType = type;
         this.name = name;
-        this.dataCenterId = dcId;
+        dataCenterId = dcId;
         this.accountId = accountId;
         this.domainId = domainId;
+        this.provisioningType = provisioningType;
         this.size = size;
         this.minIops = minIops;
         this.maxIops = maxIops;
-        this._iScsiName = iScsiName;
+        _iScsiName = iScsiName;
         this.diskOfferingId = diskOfferingId;
-        this.state = State.Allocated;
-        this.uuid = UUID.randomUUID().toString();
+        state = State.Allocated;
+        uuid = UUID.randomUUID().toString();
     }
 
-    public VolumeVO(String name, long dcId, Long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Long minIops,
-            Long maxIops, String iScsiName, Volume.Type vType) {
+    public VolumeVO(String name, long dcId, Long podId, long accountId,
+            long domainId, Long instanceId, String folder, String path, Storage.ProvisioningType provisioningType,
+            long size, Long minIops, Long maxIops, String iScsiName,
+            Volume.Type vType) {
         this.name = name;
         this.accountId = accountId;
         this.domainId = domainId;
         this.instanceId = instanceId;
         this.folder = folder;
         this.path = path;
+        this.provisioningType = provisioningType;
         this.size = size;
         this.minIops = minIops;
         this.maxIops = maxIops;
-        this._iScsiName = iScsiName;
+        _iScsiName = iScsiName;
         this.podId = podId;
-        this.dataCenterId = dcId;
-        this.volumeType = vType;
-        this.state = Volume.State.Allocated;
-        this.recreatable = false;
-        this.uuid = UUID.randomUUID().toString();
+        dataCenterId = dcId;
+        volumeType = vType;
+        state = Volume.State.Allocated;
+        recreatable = false;
+        uuid = UUID.randomUUID().toString();
     }
 
-    public VolumeVO(String name, long dcId, long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Volume.Type vType) {
+    public VolumeVO(String name, long dcId, long podId, long accountId,
+            long domainId, Long instanceId, String folder, String path, Storage.ProvisioningType provisioningType,
+            long size, Volume.Type vType) {
         this.name = name;
         this.accountId = accountId;
         this.domainId = domainId;
         this.instanceId = instanceId;
         this.folder = folder;
         this.path = path;
+        this.provisioningType = provisioningType;
         this.size = size;
-        this.minIops = null;
-        this.maxIops = null;
-        this._iScsiName = null;
+        minIops = null;
+        maxIops = null;
+        _iScsiName = null;
         this.podId = podId;
-        this.dataCenterId = dcId;
-        this.volumeType = vType;
-        this.state = Volume.State.Allocated;
-        this.recreatable = false;
-        this.uuid = UUID.randomUUID().toString();
+        dataCenterId = dcId;
+        volumeType = vType;
+        state = Volume.State.Allocated;
+        recreatable = false;
+        uuid = UUID.randomUUID().toString();
     }
 
     // Copy Constructor
@@ -227,39 +240,41 @@ public class VolumeVO implements Volume {
             that.getInstanceId(),
             that.getFolder(),
             that.getPath(),
+            that.getProvisioningType(),
             that.getSize(),
             that.getMinIops(),
             that.getMaxIops(),
             that.get_iScsiName(),
             that.getVolumeType());
-        this.recreatable = that.isRecreatable();
-        this.state = that.getState();
-        this.size = that.getSize();
-        this.minIops = that.getMinIops();
-        this.maxIops = that.getMaxIops();
-        this._iScsiName = that.get_iScsiName();
-        this.diskOfferingId = that.getDiskOfferingId();
-        this.poolId = that.getPoolId();
-        this.attached = that.getAttached();
-        this.chainInfo = that.getChainInfo();
-        this.templateId = that.getTemplateId();
-        this.deviceId = that.getDeviceId();
-        this.format = that.getFormat();
-        this.uuid = UUID.randomUUID().toString();
+        recreatable = that.isRecreatable();
+        state = State.Allocated; //This should be in Allocated state before going into Ready state
+        size = that.getSize();
+        minIops = that.getMinIops();
+        maxIops = that.getMaxIops();
+        _iScsiName = that.get_iScsiName();
+        diskOfferingId = that.getDiskOfferingId();
+        poolId = that.getPoolId();
+        attached = that.getAttached();
+        chainInfo = that.getChainInfo();
+        templateId = that.getTemplateId();
+        deviceId = that.getDeviceId();
+        format = that.getFormat();
+        provisioningType = that.getProvisioningType();
+        uuid = UUID.randomUUID().toString();
     }
 
     @Override
     public long getUpdatedCount() {
-        return this.updatedCount;
+        return updatedCount;
     }
 
     @Override
     public void incrUpdatedCount() {
-        this.updatedCount++;
+        updatedCount++;
     }
 
     public void decrUpdatedCount() {
-        this.updatedCount--;
+        updatedCount--;
     }
 
     @Override
@@ -481,7 +496,7 @@ public class VolumeVO implements Volume {
 
     @Override
     public Date getAttached() {
-        return this.attached;
+        return attached;
     }
 
     public void setAttached(Date attached) {
@@ -490,7 +505,7 @@ public class VolumeVO implements Volume {
 
     @Override
     public String getChainInfo() {
-        return this.chainInfo;
+        return chainInfo;
     }
 
     public void setChainInfo(String chainInfo) {
@@ -498,11 +513,11 @@ public class VolumeVO implements Volume {
     }
 
     public Long getLastPoolId() {
-        return this.lastPoolId;
+        return lastPoolId;
     }
 
     public void setLastPoolId(Long poolId) {
-        this.lastPoolId = poolId;
+        lastPoolId = poolId;
     }
 
     @Override
@@ -521,17 +536,17 @@ public class VolumeVO implements Volume {
 
     @Override
     public String getReservationId() {
-        return this.reservationId;
+        return reservationId;
     }
 
     @Override
     public void setReservationId(String reserv) {
-        this.reservationId = reserv;
+        reservationId = reserv;
     }
 
     @Override
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     public void setUuid(String uuid) {
@@ -540,15 +555,25 @@ public class VolumeVO implements Volume {
 
     @Override
     public String get_iScsiName() {
-        return this._iScsiName;
+        return _iScsiName;
     }
 
     public void set_iScsiName(String iScsiName) {
-        this._iScsiName = iScsiName;
+        _iScsiName = iScsiName;
     }
 
+    @Override
     public boolean isDisplayVolume() {
         return displayVolume;
+    }
+
+    @Override
+    public  boolean isDisplay(){
+        return displayVolume;
+    }
+
+    public void setDisplay(boolean display){
+        this.displayVolume = display;
     }
 
     public void setDisplayVolume(boolean displayVolume) {
@@ -564,17 +589,26 @@ public class VolumeVO implements Volume {
         this.format = format;
     }
 
-    public void setVmSnapshotChainSize(Long vmSnapshotChainSize) {
+    @Override
+    public ProvisioningType getProvisioningType(){
+        return provisioningType;
+    }
+
+    public void setProvisioningType(ProvisioningType provisioningType){
+        this.provisioningType = provisioningType;
+    }
+
+    public void setVmSnapshotChainSize(Long vmSnapshotChainSize){
         this.vmSnapshotChainSize = vmSnapshotChainSize;
     }
 
     @Override
     public Long getVmSnapshotChainSize() {
-        return this.vmSnapshotChainSize;
+        return vmSnapshotChainSize;
     }
 
     public Long getIsoId() {
-        return this.isoId;
+        return isoId;
     }
 
     public void setIsoId(Long isoId) {
@@ -594,5 +628,10 @@ public class VolumeVO implements Volume {
     @Override
     public Integer getHypervisorSnapshotReserve() {
         return hypervisorSnapshotReserve;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return Volume.class;
     }
 }

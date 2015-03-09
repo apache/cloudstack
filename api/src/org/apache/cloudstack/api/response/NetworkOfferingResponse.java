@@ -109,12 +109,16 @@ public class NetworkOfferingResponse extends BaseResponse {
     private Map details;
 
     @SerializedName(ApiConstants.EGRESS_DEFAULT_POLICY)
-    @Param(description = "true if network offering supports persistent networks, false otherwise")
+    @Param(description = "true if guest network default egress policy is allow; false if default egress policy is deny")
     private Boolean egressDefaultPolicy;
 
     @SerializedName(ApiConstants.MAX_CONNECTIONS)
     @Param(description = "maximum number of concurrents connections to be handled by lb")
     private Integer concurrentConnections;
+
+    @SerializedName(ApiConstants.SUPPORTS_STRECHED_L2_SUBNET)
+    @Param(description = "true if network offering supports network that span multiple zones", since = "4.4")
+    private Boolean supportsStrechedL2Subnet;
 
     public void setId(String id) {
         this.id = id;
@@ -200,4 +204,7 @@ public class NetworkOfferingResponse extends BaseResponse {
         this.concurrentConnections = concurrentConnections;
     }
 
+    public void setSupportsStrechedL2Subnet(Boolean supportsStrechedL2Subnet) {
+        this.supportsStrechedL2Subnet = supportsStrechedL2Subnet;
+    }
 }

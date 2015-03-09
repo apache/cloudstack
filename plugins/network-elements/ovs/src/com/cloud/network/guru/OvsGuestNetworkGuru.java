@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network.guru;
 
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
@@ -32,7 +34,7 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Service;
@@ -61,6 +63,8 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
     OvsTunnelManager _ovsTunnelMgr;
     @Inject
     NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
+    @Inject
+    VpcDao _vpcDao;
 
     OvsGuestNetworkGuru() {
         super();
@@ -113,7 +117,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     public Network implement(Network network, NetworkOffering offering,
         DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException {
+        throws InsufficientVirtualNetworkCapacityException {
         assert (network.getState() == State.Implementing) : "Why are we implementing "
             + network;
 
@@ -144,14 +148,15 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
         if (network.getCidr() != null) {
             implemented.setCidr(network.getCidr());
         }
-        String name = network.getName();
-        if (name == null || name.isEmpty()) {
-            name = ((NetworkVO)network).getUuid();
-        }
-
-        // do we need to create switch right now?
 
         implemented.setBroadcastDomainType(BroadcastDomainType.Vswitch);
+
+        // for the networks that are part of VPC enabled for distributed routing use scheme vs://vpcid.GRE key for network
+        if (network.getVpcId() != null && isVpcEnabledForDistributedRouter(network.getVpcId())) {
+            String keyStr = BroadcastDomainType.getValue(implemented.getBroadcastUri());
+            Long vpcid= network.getVpcId();
+            implemented.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(vpcid.toString() + "." + keyStr));
+        }
 
         return implemented;
     }
@@ -160,7 +165,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
     public void reserve(NicProfile nic, Network network,
         VirtualMachineProfile vm,
         DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException,
+        throws InsufficientVirtualNetworkCapacityException,
         InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
         super.reserve(nic, network, vm, dest, context);
@@ -184,7 +189,12 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
             return;
         }
 
-        super.shutdown(profile, offering);
+        if (profile.getBroadcastDomainType() == BroadcastDomainType.Vswitch ) {
+            s_logger.debug("Releasing vnet for the network id=" + profile.getId());
+            _dcDao.releaseVnet(BroadcastDomainType.getValue(profile.getBroadcastUri()), profile.getDataCenterId(), profile.getPhysicalNetworkId(),
+                    profile.getAccountId(), profile.getReservationId());
+        }
+        profile.setBroadcastUri(null);
     }
 
     @Override
@@ -195,13 +205,13 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     protected void allocateVnet(Network network, NetworkVO implemented,
         long dcId, long physicalNetworkId, String reservationId)
-        throws InsufficientVirtualNetworkCapcityException {
+        throws InsufficientVirtualNetworkCapacityException {
         if (network.getBroadcastUri() == null) {
             String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId,
                 network.getAccountId(), reservationId,
                 UseSystemGuestVlans.valueIn(network.getAccountId()));
             if (vnet == null) {
-                throw new InsufficientVirtualNetworkCapcityException(
+                throw new InsufficientVirtualNetworkCapacityException(
                     "Unable to allocate vnet as a part of network "
                         + network + " implement ", DataCenter.class,
                     dcId);
@@ -218,5 +228,10 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
         }
+    }
+
+    boolean isVpcEnabledForDistributedRouter(long vpcId) {
+        VpcVO vpc = _vpcDao.findById(vpcId);
+        return vpc.usesDistributedRouter();
     }
 }

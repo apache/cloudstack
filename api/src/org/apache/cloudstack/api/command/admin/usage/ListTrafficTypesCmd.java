@@ -34,10 +34,11 @@ import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listTrafficTypes", description = "Lists traffic types of a given physical network.", responseObject = ProviderResponse.class, since = "3.0.0")
+@APICommand(name = "listTrafficTypes", description = "Lists traffic types of a given physical network.", responseObject = ProviderResponse.class, since = "3.0.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTrafficTypesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListTrafficTypesCmd.class.getName());
-    private static final String Name = "listtraffictypesresponse";
+    private static final String s_name = "listtraffictypesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -66,7 +67,7 @@ public class ListTrafficTypesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     @Override
     public String getCommandName() {
-        return Name;
+        return s_name;
     }
 
     @Override
@@ -79,13 +80,14 @@ public class ListTrafficTypesCmd extends BaseListCmd {
         Pair<List<? extends PhysicalNetworkTrafficType>, Integer> trafficTypes = _networkService.listTrafficTypes(getPhysicalNetworkId());
         ListResponse<TrafficTypeResponse> response = new ListResponse<TrafficTypeResponse>();
         List<TrafficTypeResponse> trafficTypesResponses = new ArrayList<TrafficTypeResponse>();
-        for (PhysicalNetworkTrafficType trafficType : trafficTypes.first()) {
-            TrafficTypeResponse trafficTypeResponse = _responseGenerator.createTrafficTypeResponse(trafficType);
-            trafficTypesResponses.add(trafficTypeResponse);
+        if(trafficTypes != null) {
+            for (PhysicalNetworkTrafficType trafficType : trafficTypes.first()) {
+                TrafficTypeResponse trafficTypeResponse = _responseGenerator.createTrafficTypeResponse(trafficType);
+                trafficTypesResponses.add(trafficTypeResponse);
+            }
+            response.setResponses(trafficTypesResponses, trafficTypes.second());
+            response.setResponseName(getCommandName());
         }
-
-        response.setResponses(trafficTypesResponses, trafficTypes.second());
-        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

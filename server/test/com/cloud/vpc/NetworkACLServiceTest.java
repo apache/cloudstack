@@ -22,6 +22,10 @@ import javax.inject.Inject;
 
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
@@ -39,11 +43,6 @@ import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
-
-import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.NetworkModel;
@@ -155,8 +154,8 @@ public class NetworkACLServiceTest extends TestCase {
     @Test
     public void testCreateACL() throws Exception {
         Mockito.when(_entityMgr.findById(Matchers.eq(Vpc.class), Matchers.anyLong())).thenReturn(new VpcVO());
-        Mockito.when(_networkAclMgr.createNetworkACL("acl_new", "acl desc", 1L)).thenReturn(acl);
-        assertNotNull(_aclService.createNetworkACL("acl_new", "acl desc", 1L));
+        Mockito.when(_networkAclMgr.createNetworkACL("acl_new", "acl desc", 1L, true)).thenReturn(acl);
+        assertNotNull(_aclService.createNetworkACL("acl_new", "acl desc", 1L, true));
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -172,7 +171,8 @@ public class NetworkACLServiceTest extends TestCase {
         Mockito.when(_networkAclMgr.getNetworkACL(Matchers.anyLong())).thenReturn(acl);
         Mockito.when(
             _networkAclMgr.createNetworkACLItem(Matchers.anyInt(), Matchers.anyInt(), Matchers.anyString(), Matchers.anyList(), Matchers.anyInt(), Matchers.anyInt(),
-                Matchers.any(NetworkACLItem.TrafficType.class), Matchers.anyLong(), Matchers.anyString(), Matchers.anyInt())).thenReturn(new NetworkACLItemVO());
+                        Matchers.any(NetworkACLItem.TrafficType.class), Matchers.anyLong(), Matchers.anyString(), Matchers.anyInt(), Matchers.anyBoolean())).thenReturn(
+                new NetworkACLItemVO());
         Mockito.when(_networkACLItemDao.findByAclAndNumber(Matchers.anyLong(), Matchers.anyInt())).thenReturn(null);
         assertNotNull(_aclService.createNetworkACLItem(createACLItemCmd));
     }

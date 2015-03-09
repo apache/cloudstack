@@ -46,6 +46,7 @@ db.cloud.keyStore=
 db.cloud.keyStorePassword=
 db.cloud.trustStore=
 db.cloud.trustStorePassword=
+db.cloud.keyStorePassphrase=vmops.com
 
 # Encryption Settings
 db.cloud.encryption.type=none

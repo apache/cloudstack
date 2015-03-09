@@ -168,7 +168,7 @@ public class SObjectItemVO {
         }
 
         if (theObject.getId() != null) {
-            if (!theObject.getId().equals(((SObjectItemVO)other).getTheObject()))
+            if (!theObject.getId().equals(((SObjectItemVO)other).getTheObject().getId()))
                 return false;
         } else {
             if (((SObjectItemVO)other).getTheObject() != null)

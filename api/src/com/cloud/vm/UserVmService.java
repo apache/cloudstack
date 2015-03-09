@@ -21,7 +21,6 @@ import java.util.Map;
 
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
-import org.apache.cloudstack.api.command.admin.vm.ExpungeVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
@@ -457,8 +456,20 @@ public interface UserVmService {
     UserVm upgradeVirtualMachine(ScaleVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
         VirtualMachineMigrationException;
 
-    UserVm expungeVm(ExpungeVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
-
     UserVm expungeVm(long vmId) throws ResourceUnavailableException, ConcurrentOperationException;
+
+    /**
+     * Finds and returns an encrypted password for a VM.
+     *
+     * @param  userVmId
+     * @return Base64 encoded userdata
+     */
+    String getVmUserData(long vmId);
+
+    /**
+     * determin whether the uservm should be visible to the end user
+     * @return  value of the display flag
+     */
+    public boolean isDisplayResourceEnabled(Long vmId);
 
 }

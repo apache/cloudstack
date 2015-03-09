@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,6 +29,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
@@ -55,7 +57,8 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.projects.Project;
 import com.cloud.user.Account;
 
-@APICommand(name = "associateIpAddress", description = "Acquires and associates a public IP to an account.", responseObject = IPAddressResponse.class)
+@APICommand(name = "associateIpAddress", description = "Acquires and associates a public IP to an account.", responseObject = IPAddressResponse.class, responseView = ResponseView.Restricted,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateIPAddrCmd.class.getName());
     private static final String s_name = "associateipaddressresponse";
@@ -103,6 +106,9 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
                description = "region ID from where portable ip is to be associated.")
     private Integer regionId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the ip to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -136,7 +142,8 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             }
         }
 
-        throw new InvalidParameterValueException("Unable to figure out zone to assign ip to");
+        throw new InvalidParameterValueException("Unable to figure out zone to assign ip to."
+                + " Please specify either zoneId, or networkId, or vpcId in the call");
     }
 
     public Long getVpcId() {
@@ -165,10 +172,6 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         }
         Long zoneId = getZoneId();
 
-        if (zoneId == null) {
-            return null;
-        }
-
         DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
         if (zone.getNetworkType() == NetworkType.Advanced) {
             List<? extends Network> networks = _networkService.getIsolatedNetworksOwnedByAccountInZone(getZoneId(), _accountService.getAccount(getEntityOwnerId()));
@@ -193,6 +196,19 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
                 return defaultGuestNetwork.getId();
             }
         }
+    }
+
+    @Deprecated
+    public Boolean getDisplayIp() {
+        return display;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        if(display == null)
+            return true;
+        else
+            return display;
     }
 
     @Override
@@ -252,7 +268,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "associating ip to network id: " + getNetworkId() + " in zone " + getZoneId();
+        return  "associating ip to network id: " + getNetworkId() + " in zone " + getZoneId();
     }
 
     /////////////////////////////////////////////////////
@@ -274,7 +290,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             IpAddress ip = null;
 
             if (!isPortable()) {
-                ip = _networkService.allocateIP(_accountService.getAccount(getEntityOwnerId()), getZoneId(), getNetworkId());
+                ip = _networkService.allocateIP(_accountService.getAccount(getEntityOwnerId()), getZoneId(), getNetworkId(), getDisplayIp());
             } else {
                 ip = _networkService.allocatePortableIP(_accountService.getAccount(getEntityOwnerId()), 1, getZoneId(), getNetworkId(), getVpcId());
             }
@@ -308,7 +324,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         }
 
         if (result != null) {
-            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(result);
+            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(ResponseView.Restricted, result);
             ipResponse.setResponseName(getCommandName());
             setResponseObject(ipResponse);
         } else {

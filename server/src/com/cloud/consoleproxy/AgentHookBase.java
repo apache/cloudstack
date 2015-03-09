@@ -17,15 +17,18 @@
 
 package com.cloud.consoleproxy;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Date;
-import java.util.Random;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 
 import com.cloud.agent.AgentManager;
@@ -45,7 +48,6 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
-import com.cloud.server.ManagementServer;
 import com.cloud.servlet.ConsoleProxyPasswordBasedEncryptor;
 import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.utils.Ternary;
@@ -65,17 +67,15 @@ public abstract class AgentHookBase implements AgentHook {
     ConfigurationDao _configDao;
     AgentManager _agentMgr;
     KeystoreManager _ksMgr;
-    ManagementServer _ms;
-    final Random _random = new Random(System.currentTimeMillis());
-    private String _hashKey;
+    KeysManager _keysMgr;
 
-    public AgentHookBase(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr, AgentManager agentMgr, ManagementServer ms) {
-        this._instanceDao = instanceDao;
-        this._hostDao = hostDao;
-        this._agentMgr = agentMgr;
-        this._configDao = cfgDao;
-        this._ksMgr = ksMgr;
-        this._ms = ms;
+    public AgentHookBase(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr, AgentManager agentMgr, KeysManager keysMgr) {
+        _instanceDao = instanceDao;
+        _hostDao = hostDao;
+        _agentMgr = agentMgr;
+        _configDao = cfgDao;
+        _ksMgr = ksMgr;
+        _keysMgr = keysMgr;
     }
 
     @Override
@@ -146,7 +146,7 @@ public abstract class AgentHookBase implements AgentHook {
 
         String sid = cmd.getSid();
         if (sid == null || !sid.equals(vm.getVncPassword())) {
-            s_logger.warn("sid " + sid + " in url does not match stored sid " + vm.getVncPassword());
+            s_logger.warn("sid " + sid + " in url does not match stored sid.");
             return new ConsoleAccessAuthenticationAnswer(cmd, false);
         }
 
@@ -188,28 +188,36 @@ public abstract class AgentHookBase implements AgentHook {
     @Override
     public void startAgentHttpHandlerInVM(StartupProxyCommand startupCmd) {
         StartConsoleProxyAgentHttpHandlerCommand cmd = null;
-        String storePassword = String.valueOf(_random.nextLong());
-        byte[] ksBits = _ksMgr.getKeystoreBits(ConsoleProxyManager.CERTIFICATE_NAME, ConsoleProxyManager.CERTIFICATE_NAME, storePassword);
-
-        assert (ksBits != null);
-        if (ksBits == null) {
-            s_logger.error("Could not find and construct a valid SSL certificate");
-        }
-        cmd = new StartConsoleProxyAgentHttpHandlerCommand(ksBits, storePassword);
-        cmd.setEncryptorPassword(getEncryptorPassword());
 
         try {
+            SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+
+            byte[] randomBytes = new byte[16];
+            random.nextBytes(randomBytes);
+            String storePassword = Base64.encodeBase64String(randomBytes);
+
+            byte[] ksBits = _ksMgr.getKeystoreBits(ConsoleProxyManager.CERTIFICATE_NAME, ConsoleProxyManager.CERTIFICATE_NAME, storePassword);
+
+            assert (ksBits != null);
+            if (ksBits == null) {
+                s_logger.error("Could not find and construct a valid SSL certificate");
+            }
+            cmd = new StartConsoleProxyAgentHttpHandlerCommand(ksBits, storePassword);
+            cmd.setEncryptorPassword(getEncryptorPassword());
 
             HostVO consoleProxyHost = findConsoleProxyHost(startupCmd);
 
             assert (consoleProxyHost != null);
-
-            Answer answer = _agentMgr.send(consoleProxyHost.getId(), cmd);
-            if (answer == null || !answer.getResult()) {
-                s_logger.error("Console proxy agent reported that it failed to execute http handling startup command");
-            } else {
-                s_logger.info("Successfully sent out command to start HTTP handling in console proxy agent");
+            if (consoleProxyHost != null) {
+                Answer answer = _agentMgr.send(consoleProxyHost.getId(), cmd);
+                if (answer == null || !answer.getResult()) {
+                    s_logger.error("Console proxy agent reported that it failed to execute http handling startup command");
+                } else {
+                    s_logger.info("Successfully sent out command to start HTTP handling in console proxy agent");
+                }
             }
+        }catch (NoSuchAlgorithmException e) {
+            s_logger.error("Unexpected exception in SecureRandom Algorithm selection ", e);
         } catch (AgentUnavailableException e) {
             s_logger.error("Unable to send http handling startup command to the console proxy resource for proxy:" + startupCmd.getProxyVmId(), e);
         } catch (OperationTimedoutException e) {
@@ -230,15 +238,15 @@ public abstract class AgentHookBase implements AgentHook {
 
         // if we failed after reset, something is definitely wrong
         for (int i = 0; i < 2; i++) {
-            key = _ms.getEncryptionKey();
-            iv = _ms.getEncryptionIV();
+            key = _keysMgr.getEncryptionKey();
+            iv = _keysMgr.getEncryptionIV();
 
             keyIvPair = new ConsoleProxyPasswordBasedEncryptor.KeyIVPair(key, iv);
 
             if (keyIvPair.getIvBytes() == null || keyIvPair.getIvBytes().length != 16 || keyIvPair.getKeyBytes() == null || keyIvPair.getKeyBytes().length != 16) {
 
                 s_logger.warn("Console access AES KeyIV sanity check failed, reset and regenerate");
-                _ms.resetEncryptionKeyIV();
+                _keysMgr.resetEncryptionKeyIV();
             } else {
                 break;
             }

@@ -139,4 +139,14 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
         ClusterDetailsVO vo = findDetail(id, key.key());
         return vo == null ? null : vo.getValue();
     }
+
+    @Override
+    public String getVmwareDcName(Long clusterId) {
+        String dcName = null;
+        String url = findDetail(clusterId, "url").getValue();
+        String[] tokens = url.split("/"); // Cluster URL format is 'http://vcenter/dc/cluster'
+        if (tokens != null && tokens.length > 3)
+            dcName = tokens[3];
+        return dcName;
+    }
 }

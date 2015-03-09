@@ -38,6 +38,7 @@ import com.cloud.utils.db.TransactionLegacy;
 public class VMNetworkMapDaoImpl extends GenericDaoBase<VMNetworkMapVO, Long> implements VMNetworkMapDao {
 
     protected SearchBuilder<VMNetworkMapVO> VmIdSearch;
+    protected SearchBuilder<VMNetworkMapVO> VmNetworkSearch;
 
     @Inject
     protected NetworkDao _networkDao;
@@ -50,6 +51,11 @@ public class VMNetworkMapDaoImpl extends GenericDaoBase<VMNetworkMapVO, Long> im
         VmIdSearch = createSearchBuilder();
         VmIdSearch.and("vmId", VmIdSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         VmIdSearch.done();
+
+        VmNetworkSearch = createSearchBuilder();
+        VmNetworkSearch.and("vmId", VmNetworkSearch.entity().getVmId(), SearchCriteria.Op.EQ);
+        VmNetworkSearch.and("networkId", VmNetworkSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        VmNetworkSearch.done();
 
     }
 
@@ -85,4 +91,14 @@ public class VMNetworkMapDaoImpl extends GenericDaoBase<VMNetworkMapVO, Long> im
         return networks;
     }
 
+    @Override
+    public VMNetworkMapVO findByVmAndNetworkId(long vmId, long networkId) {
+
+        SearchCriteria<VMNetworkMapVO> sc = VmNetworkSearch.create();
+        sc.setParameters("vmId", vmId);
+        sc.setParameters("networkId", networkId);
+        VMNetworkMapVO network = findOneBy(sc);
+
+        return network;
+    }
 }

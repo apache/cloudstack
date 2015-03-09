@@ -35,3 +35,16 @@ do
     fi
 done < /tmp/iflist
 ip route add default via [GATEWAY] dev eth2
+
+while read line
+do
+dev=$(echo $line | awk '{print $1'})
+gw=$(echo $line | awk '{print $2'})
+
+if [ "$dev" == "eth2" ]
+then
+    continue;
+fi
+ip route add default via $gw table Table_$dev proto static
+
+done < /var/cache/cloud/ifaceGwIp

@@ -20,51 +20,19 @@
 
 
 #!/usr/bin/env python
-
-import marvin
-from marvin import cloudstackTestCase
-from marvin.cloudstackTestCase import *
-import unittest
-import hashlib
-import random
-from marvin.cloudstackAPI import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackAPI import (updateConfiguration,
+                                  createAccount,
+                                  deleteAccount,
+                                  addLdapConfiguration,
+                                  deleteLdapConfiguration)
 from marvin.cloudstackAPI import login
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import cleanup_resources
 from nose.plugins.attrib import attr
-import urllib
-
-
-
-class Services:
-    """Test LDAP Configuration
-    """
-
-    def __init__(self):
-        self.services = {
-            "account": {
-                "email": "rmurphy@cloudstack.org",
-                "firstname": "Ryan",
-                "lastname": "Murphy",
-                "username": "rmurphy",
-                "password": "internalcloudstackpassword",
-                },
-            "ldapConfiguration_1":
-                {
-                "basedn": "dc=cloudstack,dc=org",
-                "emailAttribute": "mail",
-                "userObject": "inetOrgPerson",
-                "usernameAttribute": "uid",
-                "hostname": "localhost",
-                "port": "10389",
-                "ldapUsername": "rmurphy",
-                "ldapPassword": "password"
-                }
-        }
 
 
 class TestLdap(cloudstackTestCase):
+
     """
     This tests attempts to register a LDAP server and authenticate as an LDAP user.
     """
@@ -72,15 +40,10 @@ class TestLdap(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
 
-        cls.api_client = super(
-            TestLdap,
-            cls
-        ).getClsTestClient().getApiClient()
-        cls.services = Services().services
-        cls.account = cls.services["account"]
+        testClient = super(TestLdap, cls).getClsTestClient()
+        cls.api_client = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
         cls._cleanup = []
-
-
 
     @classmethod
     def tearDownClass(cls):
@@ -97,12 +60,18 @@ class TestLdap(cloudstackTestCase):
 
         self.acct = createAccount.createAccountCmd()
         self.acct.accounttype = 0
-        self.acct.firstname = self.services["account"]["firstname"]
-        self.acct.lastname = self.services["account"]["lastname"]
-        self.acct.password = self.services["account"]["password"]
-        self.acct.username = self.services["account"]["username"]
-        self.acct.email = self.services["account"]["email"]
-        self.acct.account = self.services["account"]["username"]
+        self.acct.firstname = self.services[
+            "configurableData"]["ldap_account"]["firstname"]
+        self.acct.lastname = self.services[
+            "configurableData"]["ldap_account"]["lastname"]
+        self.acct.password = self.services[
+            "configurableData"]["ldap_account"]["password"]
+        self.acct.username = self.services[
+            "configurableData"]["ldap_account"]["username"]
+        self.acct.email = self.services[
+            "configurableData"]["ldap_account"]["email"]
+        self.acct.account = self.services[
+            "configurableData"]["ldap_account"]["username"]
         self.acct.domainid = 1
 
         self.acctRes = self.apiClient.createAccount(self.acct)
@@ -115,49 +84,55 @@ class TestLdap(cloudstackTestCase):
             deleteAcct = deleteAccount.deleteAccountCmd()
             deleteAcct.id = self.acctRes.id
 
-            acct_name=self.acctRes.name
+            acct_name = self.acctRes.name
 
             self.apiClient.deleteAccount(deleteAcct)
 
-            self.debug("Deleted the the following account name %s:" %acct_name)
+            self.debug(
+                "Deleted the the following account name %s:" %
+                acct_name)
 
-            if(self.ldapconfRes==1):
-                self._deleteLdapConfiguration(self.services["ldapConfiguration_1"])
+            if(self.ldapconfRes == 1):
+                self._deleteLdapConfiguration(
+                    self.services["configurableData"]["ldap_configuration"])
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "basic"])
+    @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_01_addLdapConfiguration(self):
         """
         This test configures LDAP and attempts to authenticate as a user.
         """
 
-
         self.debug("start test")
 
-        self.ldapconfRes=self._addLdapConfiguration(self.services["ldapConfiguration_1"])
+        self.ldapconfRes = self._addLdapConfiguration(
+            self.services["configurableData"]["ldap_configuration"])
 
-        if(self.ldapconfRes==1):
+        if(self.ldapconfRes == 1):
 
             self.debug("Ldap Configuration was succcessful")
 
-            loginRes = self._checkLogin(self.services["ldapConfiguration_1"]["ldapUsername"],self.services["ldapConfiguration_1"]["ldapPassword"])
+            loginRes = self._checkLogin(
+                self.services["configurableData"]["ldap_configuration"]["ldapUsername"],
+                self.services["configurableData"]["ldap_configuration"]["ldapPassword"])
             self.debug(loginRes)
-            self.assertEquals(loginRes,1,"Ldap Authentication")
+            self.assertEquals(loginRes, 1, "Ldap Authentication")
 
         else:
 
             self.debug("LDAP Configuration failed with exception")
 
-            self.assertEquals(self.ldapconfRes,1,"addLdapConfiguration failed")
-
+            self.assertEquals(
+                self.ldapconfRes,
+                1,
+                "addLdapConfiguration failed")
 
         self.debug("end test")
 
-    def _addLdapConfiguration(self,ldapConfiguration):
-
+    def _addLdapConfiguration(self, ldapConfiguration):
         """
 
         :param ldapConfiguration
@@ -169,27 +144,42 @@ class TestLdap(cloudstackTestCase):
         updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
         updateConfigurationCmd.name = "ldap.basedn"
         updateConfigurationCmd.value = ldapConfiguration['basedn']
-        updateConfigurationResponse = self.apiClient.updateConfiguration(updateConfigurationCmd)
-        self.debug("updated the parameter %s with value %s"%(updateConfigurationResponse.name, updateConfigurationResponse.value))
+        updateConfigurationResponse = self.apiClient.updateConfiguration(
+            updateConfigurationCmd)
+        self.debug(
+            "updated the parameter %s with value %s" %
+            (updateConfigurationResponse.name,
+             updateConfigurationResponse.value))
 
         updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
         updateConfigurationCmd.name = "ldap.email.attribute"
         updateConfigurationCmd.value = ldapConfiguration['emailAttribute']
-        updateConfigurationResponse = self.apiClient.updateConfiguration(updateConfigurationCmd)
-        self.debug("updated the parameter %s with value %s"%(updateConfigurationResponse.name, updateConfigurationResponse.value))
+        updateConfigurationResponse = self.apiClient.updateConfiguration(
+            updateConfigurationCmd)
+        self.debug(
+            "updated the parameter %s with value %s" %
+            (updateConfigurationResponse.name,
+             updateConfigurationResponse.value))
 
         updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
         updateConfigurationCmd.name = "ldap.user.object"
         updateConfigurationCmd.value = ldapConfiguration['userObject']
-        updateConfigurationResponse = self.apiClient.updateConfiguration(updateConfigurationCmd)
-        self.debug("updated the parameter %s with value %s"%(updateConfigurationResponse.name, updateConfigurationResponse.value))
-
+        updateConfigurationResponse = self.apiClient.updateConfiguration(
+            updateConfigurationCmd)
+        self.debug(
+            "updated the parameter %s with value %s" %
+            (updateConfigurationResponse.name,
+             updateConfigurationResponse.value))
 
         updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
         updateConfigurationCmd.name = "ldap.username.attribute"
         updateConfigurationCmd.value = ldapConfiguration['usernameAttribute']
-        updateConfigurationResponse = self.apiClient.updateConfiguration(updateConfigurationCmd)
-        self.debug("updated the parameter %s with value %s"%(updateConfigurationResponse.name, updateConfigurationResponse.value))
+        updateConfigurationResponse = self.apiClient.updateConfiguration(
+            updateConfigurationCmd)
+        self.debug(
+            "updated the parameter %s with value %s" %
+            (updateConfigurationResponse.name,
+             updateConfigurationResponse.value))
 
         self.debug("start addLdapConfiguration test")
 
@@ -202,12 +192,11 @@ class TestLdap(cloudstackTestCase):
             self.apiClient.addLdapConfiguration(ldapServer)
             self.debug("addLdapConfiguration was successful")
             return 1
-        except Exception, e:
-            self.debug("addLdapConfiguration failed %s" %e)
+        except Exception as e:
+            self.debug("addLdapConfiguration failed %s" % e)
             return 0
 
-    def _deleteLdapConfiguration(self,ldapConfiguration):
-
+    def _deleteLdapConfiguration(self, ldapConfiguration):
         """
 
         :param ldapConfiguration
@@ -221,8 +210,8 @@ class TestLdap(cloudstackTestCase):
             self.apiClient.deleteLdapConfiguration(ldapServer)
             self.debug("deleteLdapConfiguration was successful")
             return 1
-        except Exception, e:
-            self.debug("deleteLdapConfiguration failed %s" %e)
+        except Exception as e:
+            self.debug("deleteLdapConfiguration failed %s" % e)
             return 0
 
     def _checkLogin(self, username, password):
@@ -247,6 +236,6 @@ class TestLdap(cloudstackTestCase):
                 self.debug("login successful")
                 return 1
 
-        except Exception, p:
-            self.debug("login operation failed %s" %p)
+        except Exception as p:
+            self.debug("login operation failed %s" % p)
         self.debug("end of Login")

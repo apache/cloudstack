@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
@@ -33,7 +34,8 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listPortForwardingRules", description = "Lists all port forwarding rules for an IP address.", responseObject = FirewallRuleResponse.class)
+@APICommand(name = "listPortForwardingRules", description = "Lists all port forwarding rules for an IP address.", responseObject = FirewallRuleResponse.class, entityType = {PortForwardingRule.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPortForwardingRulesCmd.class.getName());
 
@@ -59,6 +61,9 @@ public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
                since = "4.3")
     private Long networkId;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -73,6 +78,14 @@ public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
 
     public Long getNetworkId() {
         return networkId;
+    }
+
+    @Override
+    public Boolean getDisplay() {
+        if (display != null) {
+            return display;
+        }
+        return super.getDisplay();
     }
 
     /////////////////////////////////////////////////////
@@ -97,6 +110,6 @@ public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
         }
         response.setResponses(fwResponses, result.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

@@ -39,7 +39,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Networks.AddressFormat;
@@ -94,7 +94,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapacityException,
         InsufficientAddressCapacityException, ConcurrentOperationException {
 
         DataCenterVO dc = _dcDao.findById(network.getDataCenterId());
@@ -127,7 +127,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     @Override
     @DB
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
 
         String oldIp = nic.getIp4Address();
         boolean getNewIp = false;
@@ -166,7 +166,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     }
 
     @DB
-    protected void getIp(final NicProfile nic, final Pod pod, final VirtualMachineProfile vm, final Network network) throws InsufficientVirtualNetworkCapcityException,
+    protected void getIp(final NicProfile nic, final Pod pod, final VirtualMachineProfile vm, final Network network) throws InsufficientVirtualNetworkCapacityException,
         InsufficientAddressCapacityException, ConcurrentOperationException {
         final DataCenter dc = _dcDao.findById(pod.getDataCenterId());
         if (nic.getIp4Address() == null) {

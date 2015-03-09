@@ -1,12 +1,13 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// the License.  You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.utils.ssh;
 
 import java.io.IOException;
@@ -107,17 +110,28 @@ public class SSHCmdHelper {
             InputStream stderr = sshSession.getStderr();
 
             byte[] buffer = new byte[8192];
+            StringBuffer sbResult = new StringBuffer();
+
+            int currentReadBytes = 0;
             while (true) {
                 if (stdout == null || stderr == null) {
                     throw new SshException("stdout or stderr of ssh session is null");
                 }
-
                 if ((stdout.available() == 0) && (stderr.available() == 0)) {
-                    int conditions = sshSession.waitForCondition(ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA | ChannelCondition.EOF, 120000);
+                    int conditions = sshSession.waitForCondition(ChannelCondition.STDOUT_DATA
+                                | ChannelCondition.STDERR_DATA | ChannelCondition.EOF | ChannelCondition.EXIT_STATUS,
+                                120000);
 
                     if ((conditions & ChannelCondition.TIMEOUT) != 0) {
-                        s_logger.info("Timeout while waiting for data from peer.");
-                        break;
+                        String msg = "Timed out in waiting SSH execution result";
+                        s_logger.error(msg);
+                        throw new Exception(msg);
+                    }
+
+                    if ((conditions & ChannelCondition.EXIT_STATUS) != 0) {
+                        if ((conditions & (ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA)) == 0) {
+                            break;
+                        }
                     }
 
                     if ((conditions & ChannelCondition.EOF) != 0) {
@@ -128,19 +142,28 @@ public class SSHCmdHelper {
                 }
 
                 while (stdout.available() > 0) {
-                    stdout.read(buffer);
+                    currentReadBytes = stdout.read(buffer);
+                    sbResult.append(new String(buffer, 0, currentReadBytes));
                 }
 
                 while (stderr.available() > 0) {
-                    stderr.read(buffer);
+                    currentReadBytes = stderr.read(buffer);
+                    sbResult.append(new String(buffer, 0, currentReadBytes));
                 }
             }
 
-            if (buffer[0] != 0)
-                s_logger.debug(cmd + " output:" + new String(buffer));
-
-            Thread.sleep(1000);
-            return sshSession.getExitStatus();
+            String result = sbResult.toString();
+            if (result != null && !result.isEmpty())
+                s_logger.debug(cmd + " output:" + result);
+            // exit status delivery might get delayed
+            for(int i = 0 ; i<10 ; i++ ) {
+                Integer status = sshSession.getExitStatus();
+                if( status != null ) {
+                    return status;
+                }
+                Thread.sleep(100);
+            }
+            return -1;
         } catch (Exception e) {
             s_logger.debug("Ssh executed failed", e);
             throw new SshException("Ssh executed failed " + e.getMessage());

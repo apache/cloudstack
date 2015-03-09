@@ -63,6 +63,50 @@ public class Upgrade421to430 implements DbUpgrade {
     @Override
     public void performDataMigration(Connection conn) {
         encryptLdapConfigParams(conn);
+        encryptImageStoreDetails(conn);
+        upgradeMemoryOfSsvmOffering(conn);
+    }
+
+    private void upgradeMemoryOfSsvmOffering(Connection conn) {
+        PreparedStatement updatePstmt = null;
+        PreparedStatement selectPstmt = null;
+        ResultSet selectResultSet = null;
+        int newRamSize = 512; //512MB
+        long serviceOfferingId = 0;
+
+            /**
+             * Pick first row in service_offering table which has system vm type as secondary storage vm. User added offerings would start from 2nd row onwards.
+             * We should not update/modify any user-defined offering.
+             */
+
+        try {
+            selectPstmt = conn.prepareStatement("SELECT id FROM `cloud`.`service_offering` WHERE vm_type='secondarystoragevm'");
+            updatePstmt = conn.prepareStatement("UPDATE `cloud`.`service_offering` SET ram_size=? WHERE id=?");
+            selectResultSet = selectPstmt.executeQuery();
+            if(selectResultSet.next()) {
+                serviceOfferingId = selectResultSet.getLong("id");
+            }
+
+            updatePstmt.setInt(1, newRamSize);
+            updatePstmt.setLong(2, serviceOfferingId);
+            updatePstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to upgrade ram_size of service offering for secondary storage vm. ", e);
+        } finally {
+            try {
+                if (selectPstmt != null) {
+                    selectPstmt.close();
+                }
+                if (selectResultSet != null) {
+                    selectResultSet.close();
+                }
+                if (updatePstmt != null) {
+                    updatePstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Done upgrading RAM for service offering of Secondary Storage VM to " + newRamSize);
     }
 
     private void encryptLdapConfigParams(Connection conn) {
@@ -80,17 +124,19 @@ public class Upgrade421to430 implements DbUpgrade {
 
         try {
 
+            pstmt = conn.prepareStatement(insertSql);
             for (String[] ldapParam : ldapParams) {
                 String name = ldapParam[0];
                 String value = ldapParam[1];
                 String desc = ldapParam[2];
                 String encryptedValue = DBEncryptionUtil.encrypt(value);
-                pstmt = conn.prepareStatement(insertSql);
                 pstmt.setString(1, name);
                 pstmt.setBytes(2, encryptedValue.getBytes("UTF-8"));
                 pstmt.setString(3, desc);
                 pstmt.executeUpdate();
             }
+
+            pstmt.close();
 
             /**
              * if encrypted, decrypt the ldap hostname and port and then update as they are not encrypted now.
@@ -104,6 +150,8 @@ public class Upgrade421to430 implements DbUpgrade {
                 hostname = DBEncryptionUtil.decrypt(resultSet.getString(1));
             }
 
+            pstmt.close();
+
             pstmt = conn.prepareStatement("SELECT conf.value FROM `cloud`.`configuration` conf WHERE conf.name='ldap.port'");
             resultSet = pstmt.executeQuery();
             if (resultSet.next()) {
@@ -112,6 +160,7 @@ public class Upgrade421to430 implements DbUpgrade {
                     portNumber = Integer.valueOf(port);
                 }
             }
+            pstmt.close();
 
             if (StringUtils.isNotBlank(hostname)) {
                 pstmt = conn.prepareStatement("INSERT INTO `cloud`.`ldap_configuration`(hostname, port) VALUES(?,?)");
@@ -122,6 +171,7 @@ public class Upgrade421to430 implements DbUpgrade {
                     pstmt.setNull(2, Types.INTEGER);
                 }
                 pstmt.executeUpdate();
+                pstmt.close();
             }
 
         } catch (SQLException e) {
@@ -138,6 +188,44 @@ public class Upgrade421to430 implements DbUpgrade {
         }
         s_logger.debug("Done encrypting ldap Config values");
 
+    }
+
+    private void encryptImageStoreDetails(Connection conn) {
+        s_logger.debug("Encrypting image store details");
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement("select id, value from `cloud`.`image_store_details` where name = 'key' or name = 'secretkey'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                String value = rs.getString(2);
+                if (value == null) {
+                    continue;
+                }
+                String encryptedValue = DBEncryptionUtil.encrypt(value);
+                pstmt = conn.prepareStatement("update `cloud`.`image_store_details` set value=? where id=?");
+                pstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
+                pstmt.setLong(2, id);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable encrypt image_store_details values ", e);
+        } catch (UnsupportedEncodingException e) {
+            throw new CloudRuntimeException("Unable encrypt image_store_details values ", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Done encrypting image_store_details");
     }
 
     @Override

@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,13 +15,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.agent.api.routing;
+
+import com.cloud.agent.api.to.FirewallRuleTO;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import com.cloud.agent.api.to.FirewallRuleTO;
 
 /**
  *
@@ -50,7 +53,7 @@ public class SetFirewallRulesCommand extends NetworkElementCommand {
              *  each entry format      <ip>:protocol:srcport:destport:scidr:
              *  reverted entry format  <ip>:reverted:0:0:0:
              */
-            if (fwTO.revoked() == true) {
+            if (fwTO.revoked()) {
                 StringBuilder sb = new StringBuilder();
                 /* This entry is added just to make sure atleast there will one entry in the list to get the ipaddress */
                 sb.append(fwTO.getSrcIp()).append(":reverted:0:0:0:");
@@ -74,7 +77,7 @@ public class SetFirewallRulesCommand extends NetworkElementCommand {
             if (cidr == null || cidr.isEmpty()) {
                 sb.append("0.0.0.0/0");
             } else {
-                Boolean firstEntry = true;
+                boolean firstEntry = true;
                 for (String tag : cidr) {
                     if (!firstEntry)
                         sb.append("-");
@@ -91,5 +94,10 @@ public class SetFirewallRulesCommand extends NetworkElementCommand {
         result[0] = toAdd.toArray(new String[toAdd.size()]);
 
         return result;
+    }
+
+    @Override
+    public int getAnswersCount() {
+        return rules.length;
     }
 }

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.utils.db;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
@@ -60,7 +61,7 @@ import com.cloud.utils.mgmt.JmxUtil;
  * Note that this class is not synchronous but it doesn't need to be because
  * it is stored with TLS and is one per thread.  Use appropriately.
  */
-public class TransactionLegacy {
+public class TransactionLegacy implements Closeable {
     private static final Logger s_logger = Logger.getLogger(Transaction.class.getName() + "." + "Transaction");
     private static final Logger s_stmtLogger = Logger.getLogger(Transaction.class.getName() + "." + "Statement");
     private static final Logger s_lockLogger = Logger.getLogger(Transaction.class.getName() + "." + "Lock");
@@ -112,9 +113,6 @@ public class TransactionLegacy {
         TransactionLegacy txn = tls.get();
         if (check) {
             assert txn != null : "No Transaction on stack.  Did you mark the method with @DB?";
-
-            assert checkAnnotation(4, txn) : "Did you even read the guide to use Transaction...IOW...other people's code? Try method can't be private.  What about @DB? hmmm... could that be it? " +
-                txn;
         }
         return txn;
     }
@@ -326,11 +324,11 @@ public class TransactionLegacy {
                 }
 
                 str.append("-")
-                    .append(stacks[i].getClassName().substring(stacks[i].getClassName().lastIndexOf(".") + 1))
-                    .append(".")
-                    .append(stacks[i].getMethodName())
-                    .append(":")
-                    .append(stacks[i].getLineNumber());
+                .append(stacks[i].getClassName().substring(stacks[i].getClassName().lastIndexOf(".") + 1))
+                .append(".")
+                .append(stacks[i].getMethodName())
+                .append(":")
+                .append(stacks[i].getLineNumber());
                 j++;
                 i++;
             }
@@ -340,7 +338,7 @@ public class TransactionLegacy {
         return "";
     }
 
-    public TransactionLegacy(final String name, final boolean forLocking, final short databaseId) {
+    private TransactionLegacy(final String name, final boolean forLocking, final short databaseId) {
         _name = name;
         _conn = null;
         _stack = new LinkedList<StackElement>();
@@ -557,42 +555,42 @@ public class TransactionLegacy {
     public Connection getConnection() throws SQLException {
         if (_conn == null) {
             switch (_dbId) {
-                case CLOUD_DB:
-                    if (s_ds != null) {
-                        _conn = s_ds.getConnection();
-                    } else {
-                        s_logger.warn("A static-initialized variable becomes null, process is dying?");
-                        throw new CloudRuntimeException("Database is not initialized, process is dying?");
-                    }
-                    break;
-                case USAGE_DB:
-                    if (s_usageDS != null) {
-                        _conn = s_usageDS.getConnection();
-                    } else {
-                        s_logger.warn("A static-initialized variable becomes null, process is dying?");
-                        throw new CloudRuntimeException("Database is not initialized, process is dying?");
-                    }
-                    break;
-                case AWSAPI_DB:
-                    if (s_awsapiDS != null) {
-                        _conn = s_awsapiDS.getConnection();
-                    } else {
-                        s_logger.warn("A static-initialized variable becomes null, process is dying?");
-                        throw new CloudRuntimeException("Database is not initialized, process is dying?");
-                    }
-                    break;
+            case CLOUD_DB:
+                if (s_ds != null) {
+                    _conn = s_ds.getConnection();
+                } else {
+                    s_logger.warn("A static-initialized variable becomes null, process is dying?");
+                    throw new CloudRuntimeException("Database is not initialized, process is dying?");
+                }
+                break;
+            case USAGE_DB:
+                if (s_usageDS != null) {
+                    _conn = s_usageDS.getConnection();
+                } else {
+                    s_logger.warn("A static-initialized variable becomes null, process is dying?");
+                    throw new CloudRuntimeException("Database is not initialized, process is dying?");
+                }
+                break;
+            case AWSAPI_DB:
+                if (s_awsapiDS != null) {
+                    _conn = s_awsapiDS.getConnection();
+                } else {
+                    s_logger.warn("A static-initialized variable becomes null, process is dying?");
+                    throw new CloudRuntimeException("Database is not initialized, process is dying?");
+                }
+                break;
 
-                case SIMULATOR_DB:
-                    if (s_simulatorDS != null) {
-                        _conn = s_simulatorDS.getConnection();
-                    } else {
-                        s_logger.warn("A static-initialized variable becomes null, process is dying?");
-                        throw new CloudRuntimeException("Database is not initialized, process is dying?");
-                    }
-                    break;
-                default:
+            case SIMULATOR_DB:
+                if (s_simulatorDS != null) {
+                    _conn = s_simulatorDS.getConnection();
+                } else {
+                    s_logger.warn("A static-initialized variable becomes null, process is dying?");
+                    throw new CloudRuntimeException("Database is not initialized, process is dying?");
+                }
+                break;
+            default:
 
-                    throw new CloudRuntimeException("No database selected for the transaction");
+                throw new CloudRuntimeException("No database selected for the transaction");
             }
             _conn.setAutoCommit(!_txn);
 
@@ -604,7 +602,7 @@ public class TransactionLegacy {
             _stack.push(new StackElement(CREATE_CONN, null));
             if (s_connLogger.isTraceEnabled()) {
                 s_connLogger.trace("Creating a DB connection with " + (_txn ? " txn: " : " no txn: ") + " for " + _dbId + ": dbconn" + System.identityHashCode(_conn) +
-                    ". Stack: " + buildName());
+                        ". Stack: " + buildName());
             }
         } else {
             s_logger.trace("conn: Using existing DB connection");
@@ -666,6 +664,7 @@ public class TransactionLegacy {
         }
     }
 
+    @Override
     public void close() {
         removeUpTo(CURRENT_TXN, null);
 
@@ -791,7 +790,7 @@ public class TransactionLegacy {
             it.remove();
 
             try {
-                if (item.type == type && (ref == null || item.ref == ref)) {
+                if ( (type == null || type.equals(item.type)) && (ref == null || ref.equals(item.ref))) {
                     break;
                 }
 
@@ -981,7 +980,7 @@ public class TransactionLegacy {
         return _stack;
     }
 
-    protected TransactionLegacy() {
+    private TransactionLegacy() {
         _name = null;
         _conn = null;
         _stack = null;
@@ -1094,18 +1093,18 @@ public class TransactionLegacy {
             }
 
             final GenericObjectPool cloudConnectionPool =
-                new GenericObjectPool(null, cloudMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, cloudMaxWait, cloudMaxIdle, cloudTestOnBorrow, false,
-                    cloudTimeBtwEvictionRunsMillis, 1, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle);
+                    new GenericObjectPool(null, cloudMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, cloudMaxWait, cloudMaxIdle, cloudTestOnBorrow, false,
+                            cloudTimeBtwEvictionRunsMillis, 1, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle);
 
             final ConnectionFactory cloudConnectionFactory =
-                new DriverManagerConnectionFactory("jdbc:mysql://" + cloudHost + (s_dbHAEnabled ? "," + cloudSlaves : "") + ":" + cloudPort + "/" + cloudDbName +
-                    "?autoReconnect=" + cloudAutoReconnect + (url != null ? "&" + url : "") + (useSSL ? "&useSSL=true" : "") +
-                    (s_dbHAEnabled ? "&" + cloudDbHAParams : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : ""), cloudUsername, cloudPassword);
+                    new DriverManagerConnectionFactory("jdbc:mysql://" + cloudHost + (s_dbHAEnabled ? "," + cloudSlaves : "") + ":" + cloudPort + "/" + cloudDbName +
+                            "?autoReconnect=" + cloudAutoReconnect + (url != null ? "&" + url : "") + (useSSL ? "&useSSL=true" : "") +
+                            (s_dbHAEnabled ? "&" + cloudDbHAParams : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : ""), cloudUsername, cloudPassword);
 
             final KeyedObjectPoolFactory poolableObjFactory = (cloudPoolPreparedStatements ? new StackKeyedObjectPoolFactory() : null);
 
             final PoolableConnectionFactory cloudPoolableConnectionFactory =
-                new PoolableConnectionFactory(cloudConnectionFactory, cloudConnectionPool, poolableObjFactory, cloudValidationQuery, false, false, isolationLevel);
+                    new PoolableConnectionFactory(cloudConnectionFactory, cloudConnectionPool, poolableObjFactory, cloudValidationQuery, false, false, isolationLevel);
 
             // Default Data Source for CloudStack
             s_ds = new PoolingDataSource(cloudPoolableConnectionFactory.getPool());
@@ -1123,16 +1122,16 @@ public class TransactionLegacy {
             final String usageUrl = dbProps.getProperty("db.usage.url.params");
 
             final GenericObjectPool usageConnectionPool =
-                new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, usageMaxWait, usageMaxIdle);
+                    new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, usageMaxWait, usageMaxIdle);
 
             final ConnectionFactory usageConnectionFactory =
-                new DriverManagerConnectionFactory("jdbc:mysql://" + usageHost + (s_dbHAEnabled ? "," + dbProps.getProperty("db.cloud.slaves") : "") + ":" + usagePort +
-                    "/" + usageDbName + "?autoReconnect=" + usageAutoReconnect + (usageUrl != null ? "&" + usageUrl : "") +
-                    (s_dbHAEnabled ? "&" + getDBHAParams("usage", dbProps) : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : ""), usageUsername,
-                    usagePassword);
+                    new DriverManagerConnectionFactory("jdbc:mysql://" + usageHost + (s_dbHAEnabled ? "," + dbProps.getProperty("db.cloud.slaves") : "") + ":" + usagePort +
+                            "/" + usageDbName + "?autoReconnect=" + usageAutoReconnect + (usageUrl != null ? "&" + usageUrl : "") +
+                            (s_dbHAEnabled ? "&" + getDBHAParams("usage", dbProps) : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : ""), usageUsername,
+                            usagePassword);
 
             final PoolableConnectionFactory usagePoolableConnectionFactory =
-                new PoolableConnectionFactory(usageConnectionFactory, usageConnectionPool, new StackKeyedObjectPoolFactory(), null, false, false);
+                    new PoolableConnectionFactory(usageConnectionFactory, usageConnectionPool, new StackKeyedObjectPoolFactory(), null, false, false);
 
             // Data Source for usage server
             s_usageDS = new PoolingDataSource(usagePoolableConnectionFactory.getPool());
@@ -1140,13 +1139,13 @@ public class TransactionLegacy {
             // Configure awsapi db
             final String awsapiDbName = dbProps.getProperty("db.awsapi.name");
             final GenericObjectPool awsapiConnectionPool =
-                new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, usageMaxWait, usageMaxIdle);
+                    new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, usageMaxWait, usageMaxIdle);
             final ConnectionFactory awsapiConnectionFactory =
-                new DriverManagerConnectionFactory("jdbc:mysql://" + cloudHost + (s_dbHAEnabled ? "," + cloudSlaves : "") + ":" + cloudPort + "/" + awsapiDbName +
-                    "?autoReconnect=" + cloudAutoReconnect + (s_dbHAEnabled ? "&" + cloudDbHAParams : "") +
-                    (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : ""), cloudUsername, cloudPassword);
+                    new DriverManagerConnectionFactory("jdbc:mysql://" + cloudHost + (s_dbHAEnabled ? "," + cloudSlaves : "") + ":" + cloudPort + "/" + awsapiDbName +
+                            "?autoReconnect=" + cloudAutoReconnect + (s_dbHAEnabled ? "&" + cloudDbHAParams : "") +
+                            (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : ""), cloudUsername, cloudPassword);
             final PoolableConnectionFactory awsapiPoolableConnectionFactory =
-                new PoolableConnectionFactory(awsapiConnectionFactory, awsapiConnectionPool, new StackKeyedObjectPoolFactory(), null, false, false);
+                    new PoolableConnectionFactory(awsapiConnectionFactory, awsapiConnectionPool, new StackKeyedObjectPoolFactory(), null, false, false);
 
             // Data Source for awsapi
             s_awsapiDS = new PoolingDataSource(awsapiPoolableConnectionFactory.getPool());
@@ -1164,14 +1163,14 @@ public class TransactionLegacy {
                 final boolean simulatorAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.simulator.autoReconnect"));
 
                 final GenericObjectPool simulatorConnectionPool =
-                    new GenericObjectPool(null, simulatorMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, simulatorMaxWait, simulatorMaxIdle);
+                        new GenericObjectPool(null, simulatorMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, simulatorMaxWait, simulatorMaxIdle);
 
                 final ConnectionFactory simulatorConnectionFactory =
-                    new DriverManagerConnectionFactory("jdbc:mysql://" + simulatorHost + ":" + simulatorPort + "/" + simulatorDbName + "?autoReconnect=" +
-                        simulatorAutoReconnect, simulatorUsername, simulatorPassword);
+                        new DriverManagerConnectionFactory("jdbc:mysql://" + simulatorHost + ":" + simulatorPort + "/" + simulatorDbName + "?autoReconnect=" +
+                                simulatorAutoReconnect, simulatorUsername, simulatorPassword);
 
                 final PoolableConnectionFactory simulatorPoolableConnectionFactory =
-                    new PoolableConnectionFactory(simulatorConnectionFactory, simulatorConnectionPool, new StackKeyedObjectPoolFactory(), null, false, false);
+                        new PoolableConnectionFactory(simulatorConnectionFactory, simulatorConnectionPool, new StackKeyedObjectPoolFactory(), null, false, false);
                 s_simulatorDS = new PoolingDataSource(simulatorPoolableConnectionFactory.getPool());
             } catch (Exception e) {
                 s_logger.debug("Simulator DB properties are not available. Not initializing simulator DS");
@@ -1181,8 +1180,8 @@ public class TransactionLegacy {
             s_usageDS = getDefaultDataSource("cloud_usage");
             s_simulatorDS = getDefaultDataSource("cloud_simulator");
             s_logger.warn(
-                "Unable to load db configuration, using defaults with 5 connections. Falling back on assumed datasource on localhost:3306 using username:password=cloud:cloud. Please check your configuration",
-                e);
+                    "Unable to load db configuration, using defaults with 5 connections. Falling back on assumed datasource on localhost:3306 using username:password=cloud:cloud. Please check your configuration",
+                    e);
         }
     }
 
@@ -1203,7 +1202,7 @@ public class TransactionLegacy {
         final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/" + database, "cloud", "cloud");
         final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, connectionPool, null, null, false, true);
         return new PoolingDataSource(
-            /* connectionPool */poolableConnectionFactory.getPool());
+                /* connectionPool */poolableConnectionFactory.getPool());
     }
 
     /**

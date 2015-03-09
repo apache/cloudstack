@@ -42,17 +42,17 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
     protected final LinkedList<Request> _transferRequests;
     protected boolean _transferMode = false;
 
-    static public void initialize(ClusteredAgentManagerImpl agentMgr) {
+    static public void initialize(final ClusteredAgentManagerImpl agentMgr) {
         s_clusteredAgentMgr = agentMgr;
     }
 
-    public ClusteredAgentAttache(AgentManagerImpl agentMgr, long id, String name) {
+    public ClusteredAgentAttache(final AgentManagerImpl agentMgr, final long id, final String name) {
         super(agentMgr, id, name, null, false);
         _forward = true;
         _transferRequests = new LinkedList<Request>();
     }
 
-    public ClusteredAgentAttache(AgentManagerImpl agentMgr, long id, String name, Link link, boolean maintenance) {
+    public ClusteredAgentAttache(final AgentManagerImpl agentMgr, final long id, final String name, final Link link, final boolean maintenance) {
         super(agentMgr, id, name, link, maintenance);
         _forward = link == null;
         _transferRequests = new LinkedList<Request>();
@@ -84,7 +84,7 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
     }
 
     @Override
-    public void cancel(long seq) {
+    public void cancel(final long seq) {
         if (forForward()) {
             Listener listener = getListener(seq);
             if (listener != null && listener instanceof SynchronousListener) {
@@ -106,7 +106,7 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
     }
 
     @Override
-    public void routeToAgent(byte[] data) throws AgentUnavailableException {
+    public void routeToAgent(final byte[] data) throws AgentUnavailableException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(log(Request.getSequence(data), "Routing from " + Request.getManagementServerId(data)));
         }
@@ -136,7 +136,7 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
     }
 
     @Override
-    public void send(Request req, Listener listener) throws AgentUnavailableException {
+    public void send(final Request req, final Listener listener) throws AgentUnavailableException {
         if (_link != null) {
             super.send(req, listener);
             return;
@@ -220,7 +220,7 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
         _transferMode = transfer;
     }
 
-    public boolean getTransferMode() {
+    public synchronized boolean getTransferMode() {
         return _transferMode;
     }
 
@@ -232,13 +232,13 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
         }
     }
 
-    protected synchronized void addRequestToTransfer(Request req) {
+    protected synchronized void addRequestToTransfer(final Request req) {
         int index = findTransferRequest(req);
         assert (index < 0) : "How can we get index again? " + index + ":" + req.toString();
         _transferRequests.add(-index - 1, req);
     }
 
-    protected synchronized int findTransferRequest(Request req) {
+    protected synchronized int findTransferRequest(final Request req) {
         return Collections.binarySearch(_transferRequests, req, s_reqComparator);
     }
 

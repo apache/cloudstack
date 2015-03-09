@@ -34,7 +34,6 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
-import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -52,6 +51,9 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name = "display_name", updatable = false, nullable = false, length = 255)
     private String displayName = null;
+
+    @Column(name = "user_id")
+    private long userId;
 
     @Column(name = "account_id")
     private long accountId;
@@ -120,10 +122,6 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name = "ha_enabled", updatable = true, nullable = true)
     private boolean haEnabled;
-
-    @Encrypt
-    @Column(name = "vnc_password", updatable = true, nullable = false, length = 255)
-    protected String vncPassword;
 
     @Column(name = "limit_cpu_use", updatable = true, nullable = true)
     private boolean limitCpuUse;
@@ -402,11 +400,6 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "dynamically_scalable")
     private boolean isDynamicallyScalable;
 
-    @Column(name = "detail_name")
-    private String detailName;
-
-    @Column(name = "detail_value")
-    private String detailValue;
 
     public UserVmJoinVO() {
     }
@@ -447,6 +440,10 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public String getDisplayName() {
         return displayName;
+    }
+
+    public long getUserId() {
+        return userId;
     }
 
     @Override
@@ -535,10 +532,6 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public boolean isHaEnabled() {
         return haEnabled;
-    }
-
-    public String getVncPassword() {
-        return vncPassword;
     }
 
     public String getPrivateIpAddress() {
@@ -911,11 +904,9 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
         return isDynamicallyScalable;
     }
 
-    public String getDetailName() {
-        return detailName;
-    }
 
-    public String getDetailValue() {
-        return detailValue;
+    @Override
+    public Class<?> getEntityType() {
+        return VirtualMachine.class;
     }
 }

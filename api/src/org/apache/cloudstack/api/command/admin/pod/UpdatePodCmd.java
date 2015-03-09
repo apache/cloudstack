@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.response.PodResponse;
 import com.cloud.dc.Pod;
 import com.cloud.user.Account;
 
-@APICommand(name = "updatePod", description = "Updates a Pod.", responseObject = PodResponse.class)
+@APICommand(name = "updatePod", description = "Updates a Pod.", responseObject = PodResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdatePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdatePodCmd.class.getName());
 

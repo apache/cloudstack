@@ -36,7 +36,7 @@ public class ImageFormatHelper {
 
     public static ImageFormat getFormat(String format) {
         for (ImageFormat fm : formats) {
-            if (fm.equals(format)) {
+            if (fm.toString().equals(format)) {
                 return fm;
             }
         }

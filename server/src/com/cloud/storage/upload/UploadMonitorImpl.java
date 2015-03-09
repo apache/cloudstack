@@ -67,8 +67,6 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.UploadDao;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -89,35 +87,30 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
     static final Logger s_logger = Logger.getLogger(UploadMonitorImpl.class);
 
     @Inject
-    UploadDao _uploadDao;
+    private UploadDao _uploadDao;
     @Inject
-    SecondaryStorageVmDao _secStorageVmDao;
+    private SecondaryStorageVmDao _secStorageVmDao;
 
     @Inject
-    HostDao _serverDao = null;
-    @Inject
-    VMTemplateDao _templateDao = null;
+    private final HostDao _serverDao = null;
     @Inject
     private AgentManager _agentMgr;
     @Inject
-    ConfigurationDao _configDao;
+    private ConfigurationDao _configDao;
     @Inject
-    ResourceManager _resourceMgr;
+    private ResourceManager _resourceMgr;
     @Inject
-    SecondaryStorageVmManager _ssvmMgr;
+    private EndPointSelector _epSelector;
     @Inject
-    EndPointSelector _epSelector;
-    @Inject
-    DataStoreManager storeMgr;
+    private DataStoreManager storeMgr;
 
-    private String _name;
-    private Boolean _sslCopy = new Boolean(false);
+    private boolean _sslCopy = false;
     private String _ssvmUrlDomain;
     private ScheduledExecutorService _executor = null;
 
-    Timer _timer;
-    int _cleanupInterval;
-    int _urlExpirationInterval;
+    private Timer _timer;
+    private int _cleanupInterval;
+    private int _urlExpirationInterval;
 
     final Map<UploadVO, UploadListener> _listenerMap = new ConcurrentHashMap<UploadVO, UploadListener>();
 
@@ -269,7 +262,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)store).getMountPoint(), path, uuid, null);
             Answer ans = ep.sendMessage(cmd);
             if (ans == null || !ans.getResult()) {
-                errorString = "Unable to create a link for " + type + " id:" + template.getId() + "," + ans.getDetails();
+                errorString = "Unable to create a link for " + type + " id:" + template.getId() + "," + (ans == null ? "" : ans.getDetails());
                 s_logger.error(errorString);
                 throw new CloudRuntimeException(errorString);
             }
@@ -325,7 +318,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)secStore).getMountPoint(), path, uuid, null);
             Answer ans = ep.sendMessage(cmd);
             if (ans == null || !ans.getResult()) {
-                errorString = "Unable to create a link for " + type + " id:" + entityId + "," + ans.getDetails();
+                errorString = "Unable to create a link for " + type + " id:" + entityId + "," + (ans == null ? "" : ans.getDetails());
                 s_logger.warn(errorString);
                 throw new CloudRuntimeException(errorString);
             }

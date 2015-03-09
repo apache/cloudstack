@@ -34,4 +34,6 @@ public interface NetworkACLItemDao extends GenericDao<NetworkACLItemVO, Long> {
     int getMaxNumberByACL(long aclId);
 
     NetworkACLItemVO findByAclAndNumber(long aclId, int number);
+
+    void loadCidrs(NetworkACLItemVO item);
 }

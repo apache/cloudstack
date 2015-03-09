@@ -20,8 +20,7 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
-import junit.framework.Assert;
-
+import org.junit.Assert;
 import org.junit.Test;
 
 public class AgentShellTest {

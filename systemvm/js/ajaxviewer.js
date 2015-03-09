@@ -100,12 +100,13 @@ function KeyboardMapper() {
 KeyboardMapper.KEYBOARD_TYPE_RAW = 0;
 KeyboardMapper.KEYBOARD_TYPE_COOKED = 1;
 KeyboardMapper.KEYBOARD_TYPE_UK = 2;
+KeyboardMapper.KEYBOARD_TYPE_FR = 3;
 
 KeyboardMapper.prototype = {
 
 	setKeyboardType : function(keyboardType) {
 		this.keyboardType = keyboardType;
-		if(keyboardType == KeyboardMapper.KEYBOARD_TYPE_COOKED || keyboardType == KeyboardMapper.KEYBOARD_TYPE_UK) {
+		if(keyboardType == KeyboardMapper.KEYBOARD_TYPE_COOKED || keyboardType == KeyboardMapper.KEYBOARD_TYPE_UK || keyboardType == KeyboardMapper.KEYBOARD_TYPE_FR) {
 			// initialize mapping for COOKED keyboard
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_CAPSLOCK] 		= AjaxViewer.X11_KEY_CAPSLOCK;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_BACKSPACE] 		= AjaxViewer.X11_KEY_BACKSPACE;
@@ -138,7 +139,7 @@ KeyboardMapper.prototype = {
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_CTRL] 			= AjaxViewer.X11_KEY_CTRL;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_ALT] 				= AjaxViewer.X11_KEY_ALT;
 			this.jsX11KeysymMap[AjaxViewer.JS_KEY_SELECT_KEY] 		= AjaxViewer.X11_KEY_SELECT_KEY;
-			this.jsX11KeysymMap[AjaxViewer.JS_KEY_DECIMAL_POINT] 	= AjaxViewer.X11_KEY_DECIMAL_POINT;
+			//this.jsX11KeysymMap[AjaxViewer.JS_KEY_DECIMAL_POINT] 	= AjaxViewer.X11_KEY_DECIMAL_POINT;
 			this.jsKeyPressX11KeysymMap[45] 				= [{type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SUBSTRACT, modifiers: 0, shift: true },
 															   {type: AjaxViewer.KEY_UP, code: AjaxViewer.X11_KEY_SUBSTRACT, modifiers: 0, shift: true },
 															   {type: AjaxViewer.KEY_DOWN, code: AjaxViewer.X11_KEY_SUBSTRACT, modifiers: 0, shift: false },
@@ -161,7 +162,7 @@ KeyboardMapper.prototype = {
 			}
 			
 			var X11Keysym = code;
-			if(this.jsX11KeysymMap[code] != undefined) {
+			if(this.jsX11KeysymMap[code] != undefined && (guestos == 'windows' || modifiers != AjaxViewer.SHIFT_KEY_MASK || code == AjaxViewer.JS_KEY_CAPSLOCK)) {
 				X11Keysym = this.jsX11KeysymMap[code];
 				if(typeof this.jsX11KeysymMap[code] == "boolean") {
 					return;
@@ -175,15 +176,19 @@ KeyboardMapper.prototype = {
 				} else {
 					this.mappedInput.push({type : eventType, code: X11Keysym, modifiers: modifiers});
 				}
-			} else {
+			} else if(guestos == 'windows' || ((modifiers & (AjaxViewer.CTRL_KEY_MASK | AjaxViewer.ALT_KEY_MASK)) != 0)){
 				this.mappedInput.push({type : eventType, code: X11Keysym, modifiers: modifiers});
 			}
 
 			// special handling for ALT/CTRL key
-			if(eventType == AjaxViewer.KEY_UP && (code == AjaxViewer.JS_KEY_ALT || code == code == AjaxViewer.JS_KEY_CTRL))
+			if(eventType == AjaxViewer.KEY_UP && (code == AjaxViewer.JS_KEY_ALT || code == AjaxViewer.JS_KEY_CTRL))
 				this.mappedInput.push({type : eventType, code: this.jsX11KeysymMap[code], modifiers: modifiers});
 			
-		} else if(eventType == AjaxViewer.KEY_PRESS) {
+		} else if(eventType == AjaxViewer.KEY_PRESS && guestos == 'null') {
+			// ENTER/BACKSPACE key should already have been sent through KEY DOWN/KEY UP event
+			if(code == AjaxViewer.JS_KEY_ENTER || code == AjaxViewer.JS_KEY_BACKSPACE)
+				return;
+
 			var X11Keysym = code;
 			X11Keysym = this.jsKeyPressX11KeysymMap[code];
 			if(X11Keysym) {
@@ -196,6 +201,9 @@ KeyboardMapper.prototype = {
 					this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: X11Keysym, modifiers: modifiers});
 					this.mappedInput.push({type : AjaxViewer.KEY_UP, code: X11Keysym, modifiers: modifiers});
 				}
+			} else if(!(code == 48 && modifiers == AjaxViewer.SHIFT_KEY_MASK) && !(code == 95 && modifiers == 0)){
+				this.mappedInput.push({type : AjaxViewer.KEY_DOWN, code: code, modifiers: modifiers});
+				this.mappedInput.push({type : AjaxViewer.KEY_UP, code: code, modifiers: modifiers});
 			}
 		}
 	},
@@ -232,9 +240,9 @@ KeyboardMapper.prototype = {
 			}
 
 			// special handling for ALT/CTRL key
-			if(eventType == AjaxViewer.KEY_UP && (code == AjaxViewer.JS_KEY_ALT || code == code == AjaxViewer.JS_KEY_CTRL))
+			if(eventType == AjaxViewer.KEY_UP && (code == AjaxViewer.JS_KEY_ALT || code == code == AjaxViewer.JS_KEY_CTRL)) {
 				this.mappedInput.push({type : eventType, code: this.jsX11KeysymMap[code], modifiers: modifiers});
-			
+			}
 		} else if(eventType == AjaxViewer.KEY_PRESS) {
 			// special handling for * and + key on number pad
 			if(code == AjaxViewer.JS_NUMPAD_MULTIPLY) {
@@ -305,7 +313,14 @@ KeyboardMapper.prototype = {
 			if(entry.shift ^ shift)
 				return false;
 		}
-		
+
+                // Consider Alt+Ctrl as AltGr
+                if(entry.altgr != undefined){
+                        var altgr = ((modifiers & AjaxViewer.ALT_KEY_MASK) && (modifiers & AjaxViewer.CTRL_KEY_MASK)) != 0 ? true : false;
+                        if(entry.altgr ^ altgr)
+                                return false;
+                }
+
 		if(entry.guestos != undefined) {
 			if(entry.guestos != guestos)
 				return false;
@@ -332,7 +347,7 @@ KeyboardMapper.prototype = {
 /////////////////////////////////////////////////////////////////////////////
 // class AjaxViewer
 //
-function AjaxViewer(panelId, imageUrl, updateUrl, locale, tileMap, width, height, tileWidth, tileHeight) {
+function AjaxViewer(panelId, imageUrl, updateUrl, locale, guestos, tileMap, width, height, tileWidth, tileHeight) {
 	// logging is disabled by default so that it won't have negative impact on performance
 	// however, a back door key-sequence can trigger to open the logger window, it is designed to help
 	// trouble-shooting
@@ -352,6 +367,7 @@ function AjaxViewer(panelId, imageUrl, updateUrl, locale, tileMap, width, height
 	
 	this.updateUrl = updateUrl;
 	this.tileMap = tileMap;
+	this.guestos = guestos;
 	this.dirty = true;
 	this.width = width;
 	this.height = height;
@@ -359,7 +375,7 @@ function AjaxViewer(panelId, imageUrl, updateUrl, locale, tileMap, width, height
 	this.tileHeight = tileHeight;
 	this.maxTileZIndex = 1;
 
-	if (locale == AjaxViewer.KEYBOARD_TYPE_UK_ENGLISH || locale == AjaxViewer.KEYBOARD_TYPE_JAPANESE)
+	if (locale == AjaxViewer.KEYBOARD_TYPE_UK_ENGLISH || locale == AjaxViewer.KEYBOARD_TYPE_JAPANESE || locale == AjaxViewer.KEYBOARD_TYPE_FRENCH)
 		this.currentKeyboard = locale;
 	else
 		this.currentKeyboard = AjaxViewer.KEYBOARD_TYPE_ENGLISH;
@@ -411,6 +427,7 @@ AjaxViewer.STATUS_SENT = 4;
 AjaxViewer.KEYBOARD_TYPE_ENGLISH = "us";
 AjaxViewer.KEYBOARD_TYPE_UK_ENGLISH = "uk";
 AjaxViewer.KEYBOARD_TYPE_JAPANESE = "jp";
+AjaxViewer.KEYBOARD_TYPE_FRENCH = "fr";
 
 AjaxViewer.JS_KEY_BACKSPACE = 8;
 AjaxViewer.JS_KEY_TAB = 9;
@@ -680,6 +697,10 @@ AjaxViewer.prototype = {
 		this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_JAPANESE] = mapper;
 		mapper.setKeyboardType(KeyboardMapper.KEYBOARD_TYPE_RAW);
 
+                var mapper = new KeyboardMapper();
+                this.keyboardMappers[AjaxViewer.KEYBOARD_TYPE_FRENCH] = mapper;
+                mapper.setKeyboardType(KeyboardMapper.KEYBOARD_TYPE_FR);
+
 		// JP keyboard plugged in a English host OS
 /*		
 		mapper.jsX11KeysymMap[AjaxViewer.JS_KEY_JP_COLON] = AjaxViewer.X11_KEY_COLON;
@@ -745,13 +766,17 @@ AjaxViewer.prototype = {
 			for (var j = 0; j < x11Maps.length; j++) {
 				var code = x11Maps[j].keycode;
 				var mappedEntry = x11Maps[j].entry;
-				this.keyboardMappers[keyboardType].jsX11KeysymMap[code] = mappedEntry;
+				if(x11Maps[j].guestos == undefined || x11Maps[j].guestos == this.guestos) {
+					this.keyboardMappers[keyboardType].jsX11KeysymMap[code] = mappedEntry;
+				}
 			}
 			var keyPressMaps = mappings.keyPress;
 			for (var j = 0; j < keyPressMaps.length; j++) {
 				var code = keyPressMaps[j].keycode;
 				var mappedEntry = keyPressMaps[j].entry;
-				this.keyboardMappers[keyboardType].jsKeyPressX11KeysymMap[code] = mappedEntry;
+				if(keyPressMaps[j].guestos == undefined || keyPressMaps[j].guestos == this.guestos) {
+					this.keyboardMappers[keyboardType].jsKeyPressX11KeysymMap[code] = mappedEntry;
+				}
 			}
 		}
 	}
@@ -810,6 +835,9 @@ AjaxViewer.prototype = {
 		} else if(cmd == "keyboard_uk") {
 			$("#toolbar").find(".pulldown").find("ul").hide();
 			this.currentKeyboard = AjaxViewer.KEYBOARD_TYPE_UK_ENGLISH;
+                } else if(cmd == "keyboard_fr") {
+                        $("#toolbar").find(".pulldown").find("ul").hide();
+                        this.currentKeyboard = AjaxViewer.KEYBOARD_TYPE_FRENCH;
 		} else if(cmd == "sendCtrlAltDel") {
 			this.sendKeyboardEvent(AjaxViewer.KEY_DOWN, 0xffe9, 0);		// X11 Alt
 			this.sendKeyboardEvent(AjaxViewer.KEY_DOWN, 0xffe3, 0);		// X11 Ctrl

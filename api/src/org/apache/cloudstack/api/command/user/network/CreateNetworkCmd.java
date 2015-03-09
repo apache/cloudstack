@@ -16,13 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
+import com.cloud.utils.net.NetUtils;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
@@ -42,7 +45,8 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.offering.NetworkOffering;
 
-@APICommand(name = "createNetwork", description = "Creates a network", responseObject = NetworkResponse.class)
+@APICommand(name = "createNetwork", description = "Creates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkCmd.class.getName());
 
@@ -89,9 +93,6 @@ public class CreateNetworkCmd extends BaseCmd {
         + " range. If not specified, will be defaulted to startIP")
     private String endIp;
 
-    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "the ID or VID of the network")
-    private String vlan;
-
     @Parameter(name = ApiConstants.ISOLATED_PVLAN, type = CommandType.STRING, description = "the isolated private vlan for this network")
     private String isolatedPvlan;
 
@@ -127,8 +128,7 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name = ApiConstants.END_IPV6, type = CommandType.STRING, description = "the ending IPv6 address in the IPv6 network range")
     private String endIpv6;
 
-    @Parameter(name = ApiConstants.IP6_GATEWAY, type = CommandType.STRING, description = "the gateway of the IPv6 network. Required "
-        + "for Shared networks and Isolated networks when it belongs to VPC")
+    @Parameter(name = ApiConstants.IP6_GATEWAY, type = CommandType.STRING, description = "the gateway of the IPv6 network. Required for Shared networks")
     private String ip6Gateway;
 
     @Parameter(name = ApiConstants.IP6_CIDR, type = CommandType.STRING, description = "the CIDR of IPv6 network, must be at least /64")
@@ -136,7 +136,7 @@ public class CreateNetworkCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_NETWORK,
                type = CommandType.BOOLEAN,
-               description = "an optional field, whether to the display the network to the end user or not.")
+ description = "an optional field, whether to the display the network to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayNetwork;
 
     @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, description = "Network ACL Id associated for the network")
@@ -151,10 +151,6 @@ public class CreateNetworkCmd extends BaseCmd {
 
     public String getGateway() {
         return gateway;
-    }
-
-    public String getVlan() {
-        return vlan;
     }
 
     public String getIsolatedPvlan() {
@@ -213,6 +209,14 @@ public class CreateNetworkCmd extends BaseCmd {
         return displayNetwork;
     }
 
+    @Override
+    public boolean isDisplay() {
+        if(displayNetwork == null)
+            return true;
+        else
+            return displayNetwork;
+    }
+
     public Long getZoneId() {
         Long physicalNetworkId = getPhysicalNetworkId();
 
@@ -247,28 +251,28 @@ public class CreateNetworkCmd extends BaseCmd {
         if (startIpv6 == null) {
             return null;
         }
-        return startIpv6.toLowerCase();
+        return NetUtils.standardizeIp6Address(startIpv6);
     }
 
     public String getEndIpv6() {
         if (endIpv6 == null) {
             return null;
         }
-        return endIpv6.toLowerCase();
+        return NetUtils.standardizeIp6Address(endIpv6);
     }
 
     public String getIp6Gateway() {
         if (ip6Gateway == null) {
             return null;
         }
-        return ip6Gateway.toLowerCase();
+        return NetUtils.standardizeIp6Address(ip6Gateway);
     }
 
     public String getIp6Cidr() {
         if (ip6Cidr == null) {
             return null;
         }
-        return ip6Cidr.toLowerCase();
+        return NetUtils.standardizeIp6Cidr(ip6Cidr);
     }
 
     public Long getAclId() {
@@ -285,7 +289,7 @@ public class CreateNetworkCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -299,7 +303,7 @@ public class CreateNetworkCmd extends BaseCmd {
         void execute() throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
         Network result = _networkService.createGuestNetwork(this);
         if (result != null) {
-            NetworkResponse response = _responseGenerator.createNetworkResponse(result);
+            NetworkResponse response = _responseGenerator.createNetworkResponse(ResponseView.Restricted, result);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {

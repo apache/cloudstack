@@ -23,15 +23,14 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -39,6 +38,7 @@ import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -129,7 +129,12 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
             // if the storage scope is ZONE wide, then get all the hosts for which hypervisor ZWSP created to send Modifystoragepoolcommand
             //TODO: if it's zone wide, this code will list a lot of hosts in the zone, which may cause performance/OOM issue.
             if (pool.getScope().equals(ScopeType.ZONE)) {
-                hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(pool.getHypervisor(), pool.getDataCenterId());
+                if (HypervisorType.Any.equals(pool.getHypervisor())) {
+                    hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZone(pool.getDataCenterId());
+                }
+                else {
+                    hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(pool.getHypervisor(), pool.getDataCenterId());
+                }
             } else {
                 hosts = _resourceMgr.listHostsInClusterByStatus(pool.getClusterId(), Status.Up);
             }
@@ -291,7 +296,12 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
         List<HostVO> hosts = new ArrayList<HostVO>();
         // if the storage scope is ZONE wide, then get all the hosts for which hypervisor ZWSP created to send Modifystoragepoolcommand
         if (poolVO.getScope().equals(ScopeType.ZONE)) {
-            hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(poolVO.getHypervisor(), pool.getDataCenterId());
+            if (HypervisorType.Any.equals(pool.getHypervisor())) {
+                hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZone(pool.getDataCenterId());
+            }
+            else {
+                hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(poolVO.getHypervisor(), pool.getDataCenterId());
+            }
         } else {
             hosts = _resourceMgr.listHostsInClusterByStatus(pool.getClusterId(), Status.Up);
         }
@@ -361,13 +371,19 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
 
                 // if the instance is of type user vm, call the user vm manager
                 if (vmInstance.getType().equals(VirtualMachine.Type.User)) {
-                    UserVmVO userVm = userVmDao.findById(vmInstance.getId());
+                    // check if the vm has a root volume. If not, remove the item from the queue, the vm should be
+                    // started only when it has at least one root volume attached to it
+                    // don't allow to start vm that doesn't have a root volume
+                    if (volumeDao.findByInstanceAndType(vmInstance.getId(), Volume.Type.ROOT).isEmpty()) {
+                        _storagePoolWorkDao.remove(work.getId());
+                    } else {
+                        UserVmVO userVm = userVmDao.findById(vmInstance.getId());
 
-                    vmMgr.advanceStart(userVm.getUuid(), null, null);                        // update work queue
-                    work.setStartedAfterMaintenance(true);
-                    _storagePoolWorkDao.update(work.getId(), work);
+                        vmMgr.advanceStart(userVm.getUuid(), null, null);
+                        work.setStartedAfterMaintenance(true);
+                        _storagePoolWorkDao.update(work.getId(), work);
+                    }
                 }
-                return true;
             } catch (Exception e) {
                 s_logger.debug("Failed start vm", e);
                 throw new CloudRuntimeException(e.toString());

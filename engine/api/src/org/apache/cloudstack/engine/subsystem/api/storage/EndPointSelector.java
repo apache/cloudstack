@@ -36,4 +36,6 @@ public interface EndPointSelector {
     EndPoint select(Scope scope, Long storeId);
 
     EndPoint selectHypervisorHost(Scope scope);
+
+    EndPoint select(DataStore store, String downloadUrl);
 }

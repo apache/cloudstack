@@ -20,9 +20,9 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.lib.utils import *
+from marvin.lib.base import *
+from marvin.lib.common import *
 from nose.plugins.attrib import attr
 
 #Import System modules
@@ -33,7 +33,7 @@ class TestSecStorageServices(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestSecStorageServices, cls).getClsTestClient().getApiClient()
+        cls.apiclient = super(TestSecStorageServices, cls).getClsTestClient().getApiClient()
         cls._cleanup = []
         return
 
@@ -41,7 +41,7 @@ class TestSecStorageServices(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -81,7 +81,7 @@ class TestSecStorageServices(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="false")
     def test_01_sys_vm_start(self):
         """Test system VM start
         """
@@ -160,7 +160,7 @@ class TestSecStorageServices(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"])
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="false")
     def test_02_sys_template_ready(self):
         """Test system templates are ready
         """
@@ -187,6 +187,8 @@ class TestSecStorageServices(cloudstackTestCase):
                                         listall=True,
                                         account='system'
                                         )
+                self.assertEqual(validateList(list_template_response)[0], PASS,\
+                        "templates list validation failed")
 
                 # Ensure all BUILTIN templates are downloaded
                 templateid = None

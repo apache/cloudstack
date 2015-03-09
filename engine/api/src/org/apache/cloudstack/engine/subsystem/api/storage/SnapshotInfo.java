@@ -36,4 +36,6 @@ public interface SnapshotInfo extends DataObject, Snapshot {
     ObjectInDataStoreStateMachine.State getStatus();
 
     boolean isRevertable();
+
+    long getPhysicalSize();
 }

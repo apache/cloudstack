@@ -87,7 +87,7 @@ public class VolumeUsageParser {
             long zoneId = usageVol.getZoneId();
             Long templateId = usageVol.getTemplateId();
             long size = usageVol.getSize();
-            String key = "" + volId;
+            String key = volId + "-" + doId + "-" + size;
 
             diskOfferingMap.put(key, new VolInfo(volId, zoneId, doId, templateId, size));
 
@@ -101,6 +101,11 @@ public class VolumeUsageParser {
             // clip the start date to the beginning of our aggregation range if the vm has been running for a while
             if (volCreateDate.before(startDate)) {
                 volCreateDate = startDate;
+            }
+
+            if (volCreateDate.after(endDate)) {
+                //Ignore records created after endDate
+                continue;
             }
 
             long currentDuration = (volDeleteDate.getTime() - volCreateDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)

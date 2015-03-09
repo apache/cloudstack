@@ -146,7 +146,8 @@ fw_entry() {
 
 #Hot reconfigure HA Proxy in the routing domain
 reconfig_lb() {
-  /root/reconfigLB.sh
+  logger -t cloud "Reconfiguring loadbalancer using $1"
+  /root/reconfigLB.sh $1
   return $?
 }
 
@@ -159,16 +160,17 @@ restore_lb() {
   if [ $? -eq 0 ]
   then
     # Run reconfigLB.sh again
-    /root/reconfigLB.sh
+    /root/reconfigLB.sh /etc/haproxy/haproxy.cfg.new
   fi
 }
 
 iflag=
 aflag=
 dflag=
+fflag=
 sflag=
 
-while getopts 'i:a:d:s:' OPTION
+while getopts 'i:a:d:f:s:' OPTION
 do
   case $OPTION in
   i)	iflag=1
@@ -182,6 +184,9 @@ do
 		;;
   s)	sflag=1
 		statsIp="$OPTARG"
+		;;
+  f)	fflag=1
+		cfgfile="$OPTARG"
 		;;
   ?)	usage
                 unlock_exit 2 $lock $locked
@@ -203,7 +208,7 @@ then
 fi
 
 # hot reconfigure haproxy
-reconfig_lb
+reconfig_lb $cfgfile
 
 if [ $? -gt 0 ]
 then

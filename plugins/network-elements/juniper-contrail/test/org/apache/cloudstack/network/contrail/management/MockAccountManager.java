@@ -19,6 +19,7 @@ package org.apache.cloudstack.network.contrail.management;
 
 import java.util.List;
 import java.util.Map;
+import java.net.InetAddress;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -34,7 +35,6 @@ import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
@@ -42,6 +42,8 @@ import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -68,8 +70,6 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     @Inject
     ResourceCountDao _resourceCountDao;
 
-    @Inject
-    AccountJoinDao _accountJoinDao;
     @Inject
     UserDao _userDao;
 
@@ -99,13 +99,24 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
+    public UserAccount getUserAccountById(Long userId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public void checkAccess(Account arg0, AccessType arg1, boolean arg2, ControlledEntity... arg3) throws PermissionDeniedException {
         // TODO Auto-generated method stub
-
     }
 
     @Override
     public String[] createApiKeyAndSecretKey(RegisterCmd arg0) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String[] createApiKeyAndSecretKey(final long userId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -130,6 +141,19 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
 
     @Override
     public Account getActiveAccountByName(String arg0, Long arg1) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public UserAccount getActiveUserAccount(String username, Long domainId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public UserAccount updateUser(Long userId, String firstName, String lastName, String email, String userName, String password, String apiKey, String secretKey,
+                                  String timeZone) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -174,15 +198,33 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public boolean isAdmin(short arg0) {
+    public boolean isAdmin(Long accountId) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean isRootAdmin(short arg0) {
+    public boolean isRootAdmin(Long accountId) {
         // TODO Auto-generated method stub
-        return true;
+        return false;
+    }
+
+    @Override
+    public boolean isDomainAdmin(Long accountId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean isNormalUser(long accountId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public List<String> listAclGroupsByAccount(Long accountId) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     @Override
@@ -198,40 +240,46 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public UserAccount authenticateUser(String arg0, String arg1, Long arg2, String arg3, Map<String, Object[]> arg4) {
+    public UserAccount authenticateUser(String arg0, String arg1, Long arg2, InetAddress arg3, Map<String, Object[]> arg4) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> arg0, Long arg1, boolean arg2, List<Long> arg3, ListProjectResourcesCriteria arg4) {
+    public void buildACLSearchBuilder(
+            SearchBuilder<? extends ControlledEntity> arg0, Long arg1,
+            boolean arg2, List<Long> arg3, ListProjectResourcesCriteria arg4) {
         // TODO Auto-generated method stub
 
     }
 
     @Override
-    public void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> arg0, Long arg1, boolean arg2, List<Long> arg3, ListProjectResourcesCriteria arg4) {
+    public void buildACLSearchCriteria(
+            SearchCriteria<? extends ControlledEntity> arg0, Long arg1,
+            boolean arg2, List<Long> arg3, ListProjectResourcesCriteria arg4) {
         // TODO Auto-generated method stub
 
     }
 
     @Override
-    public void buildACLSearchParameters(Account arg0, Long arg1, String arg2, Long arg3, List<Long> arg4, Ternary<Long, Boolean, ListProjectResourcesCriteria> arg5,
-        boolean arg6, boolean arg7) {
+    public void buildACLSearchParameters(Account arg0, Long arg1, String arg2,
+            Long arg3, List<Long> arg4,
+            Ternary<Long, Boolean, ListProjectResourcesCriteria> arg5,
+            boolean arg6, boolean arg7) {
         // TODO Auto-generated method stub
 
     }
 
     @Override
-    public void
-        buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> arg0, Long arg1, boolean arg2, List<Long> arg3, ListProjectResourcesCriteria arg4) {
+    public void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
+            ListProjectResourcesCriteria listProjectResourcesCriteria) {
         // TODO Auto-generated method stub
 
     }
 
     @Override
-    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> arg0, Long arg1, boolean arg2, List<Long> arg3,
-        ListProjectResourcesCriteria arg4) {
+    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
+            ListProjectResourcesCriteria listProjectResourcesCriteria) {
         // TODO Auto-generated method stub
 
     }
@@ -350,4 +398,25 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
 
     }
 
+    @Override
+    public void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName,
+            ControlledEntity... entities) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+    }
 }

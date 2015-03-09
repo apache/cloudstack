@@ -19,6 +19,7 @@ package com.cloud.hypervisor.hyperv.discoverer;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,13 +43,11 @@ import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.configuration.Config;
 import com.cloud.alert.AlertManager;
-import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
@@ -58,13 +57,11 @@ import com.cloud.host.Host;
 import com.cloud.host.HostEnvironment;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.hyperv.resource.HypervDirectConnectResource;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
-import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
@@ -78,27 +75,14 @@ import com.cloud.storage.StorageLayer;
 @Local(value = Discoverer.class)
 public class HypervServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(HypervServerDiscoverer.class);
-
-    private String _instance;
-    private String _mountParent;
-    private int _timeout;
     Random _rand = new Random(System.currentTimeMillis());
 
     Map<String, String> _storageMounts = new HashMap<String, String>();
     StorageLayer _storage;
 
     @Inject
-    private HostDao _hostDao = null;
-    @Inject
-    private ClusterDao _clusterDao;
-    @Inject
-    private ClusterDetailsDao _clusterDetailsDao;
-    @Inject
-    private ResourceManager _resourceMgr;
-    @Inject
     private HostPodDao _podDao;
-    @Inject
-    private DataCenterDao _dcDao;
+
 
     // TODO: AgentManager and AlertManager not being used to transmit info,
     // may want to reconsider.
@@ -272,7 +256,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             // pool in the database
             // This GUID may change.
             if (cluster.getGuid() == null) {
-                cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes()).toString());
+                cluster.setGuid(UUID.nameUUIDFromBytes(String.valueOf(clusterId).getBytes(Charset.forName("UTF-8"))).toString());
                 _clusterDao.update(clusterId, cluster);
             }
 
@@ -292,6 +276,8 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             details.put("cluster.guid", cluster.getGuid());
 
             params.putAll(details);
+
+            params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
 
             HypervDirectConnectResource resource = new HypervDirectConnectResource();
             resource.configure(agentIp, params);
@@ -336,7 +322,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
      * @return GUID in form of a string.
      */
     public static String calcServerResourceGuid(final String uuidSeed) {
-        String guid = UUID.nameUUIDFromBytes(uuidSeed.getBytes()).toString();
+        String guid = UUID.nameUUIDFromBytes(uuidSeed.getBytes(Charset.forName("UTF-8"))).toString();
         return guid;
     }
 

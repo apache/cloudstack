@@ -18,5 +18,13 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import java.util.Map;
+
+import com.cloud.storage.StoragePool;
+
 public interface PrimaryDataStoreLifeCycle extends DataStoreLifeCycle {
+    public static final String CAPACITY_BYTES = "capacityBytes";
+    public static final String CAPACITY_IOPS = "capacityIops";
+
+    void updateStoragePool(StoragePool storagePool, Map<String, String> details);
 }

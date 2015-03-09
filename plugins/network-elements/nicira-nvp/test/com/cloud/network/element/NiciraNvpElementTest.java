@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,6 +15,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
+
 package com.cloud.network.element;
 
 import static org.junit.Assert.assertFalse;
@@ -101,7 +104,7 @@ public class NiciraNvpElementTest {
 
     @Test
     public void canHandleTest() {
-        Network net = mock(Network.class);
+        final Network net = mock(Network.class);
         when(net.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Lswitch);
         when(net.getId()).thenReturn(NETWORK_ID);
 
@@ -131,43 +134,43 @@ public class NiciraNvpElementTest {
 
     @Test
     public void implementTest() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        Network network = mock(Network.class);
+        final Network network = mock(Network.class);
         when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Lswitch);
         when(network.getId()).thenReturn(NETWORK_ID);
 
-        NetworkOffering offering = mock(NetworkOffering.class);
+        final NetworkOffering offering = mock(NetworkOffering.class);
         when(offering.getId()).thenReturn(NETWORK_ID);
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
 
         mock(DeployDestination.class);
 
-        Domain dom = mock(Domain.class);
+        final Domain dom = mock(Domain.class);
         when(dom.getName()).thenReturn("domain");
-        Account acc = mock(Account.class);
+        final Account acc = mock(Account.class);
         when(acc.getAccountName()).thenReturn("accountname");
-        ReservationContext context = mock(ReservationContext.class);
+        final ReservationContext context = mock(ReservationContext.class);
         when(context.getDomain()).thenReturn(dom);
         when(context.getAccount()).thenReturn(acc);
     }
 
     @Test
     public void applyIpTest() throws ResourceUnavailableException {
-        Network network = mock(Network.class);
+        final Network network = mock(Network.class);
         when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Lswitch);
         when(network.getId()).thenReturn(NETWORK_ID);
         when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
 
-        NetworkOffering offering = mock(NetworkOffering.class);
+        final NetworkOffering offering = mock(NetworkOffering.class);
         when(offering.getId()).thenReturn(NETWORK_ID);
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
 
-        List<PublicIpAddress> ipAddresses = new ArrayList<PublicIpAddress>();
-        PublicIpAddress pipReleased = mock(PublicIpAddress.class);
-        PublicIpAddress pipAllocated = mock(PublicIpAddress.class);
-        Ip ipReleased = new Ip("42.10.10.10");
-        Ip ipAllocated = new Ip("10.10.10.10");
+        final List<PublicIpAddress> ipAddresses = new ArrayList<PublicIpAddress>();
+        final PublicIpAddress pipReleased = mock(PublicIpAddress.class);
+        final PublicIpAddress pipAllocated = mock(PublicIpAddress.class);
+        final Ip ipReleased = new Ip("42.10.10.10");
+        final Ip ipAllocated = new Ip("10.10.10.10");
         when(pipAllocated.getState()).thenReturn(IpAddress.State.Allocated);
         when(pipAllocated.getAddress()).thenReturn(ipAllocated);
         when(pipAllocated.getNetmask()).thenReturn("255.255.255.0");
@@ -177,25 +180,25 @@ public class NiciraNvpElementTest {
         ipAddresses.add(pipAllocated);
         ipAddresses.add(pipReleased);
 
-        Set<Service> services = new HashSet<Service>();
+        final Set<Service> services = new HashSet<Service>();
         services.add(Service.SourceNat);
         services.add(Service.StaticNat);
         services.add(Service.PortForwarding);
 
-        List<NiciraNvpDeviceVO> deviceList = new ArrayList<NiciraNvpDeviceVO>();
-        NiciraNvpDeviceVO nndVO = mock(NiciraNvpDeviceVO.class);
-        NiciraNvpRouterMappingVO nnrmVO = mock(NiciraNvpRouterMappingVO.class);
+        final List<NiciraNvpDeviceVO> deviceList = new ArrayList<NiciraNvpDeviceVO>();
+        final NiciraNvpDeviceVO nndVO = mock(NiciraNvpDeviceVO.class);
+        final NiciraNvpRouterMappingVO nnrmVO = mock(NiciraNvpRouterMappingVO.class);
         when(niciraNvpRouterMappingDao.findByNetworkId(NETWORK_ID)).thenReturn(nnrmVO);
         when(nnrmVO.getLogicalRouterUuid()).thenReturn("abcde");
         when(nndVO.getHostId()).thenReturn(NETWORK_ID);
-        HostVO hvo = mock(HostVO.class);
+        final HostVO hvo = mock(HostVO.class);
         when(hvo.getId()).thenReturn(NETWORK_ID);
         when(hvo.getDetail("l3gatewayserviceuuid")).thenReturn("abcde");
         when(hostDao.findById(NETWORK_ID)).thenReturn(hvo);
         deviceList.add(nndVO);
         when(niciraNvpDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(deviceList);
 
-        ConfigurePublicIpsOnLogicalRouterAnswer answer = mock(ConfigurePublicIpsOnLogicalRouterAnswer.class);
+        final ConfigurePublicIpsOnLogicalRouterAnswer answer = mock(ConfigurePublicIpsOnLogicalRouterAnswer.class);
         when(answer.getResult()).thenReturn(true);
         when(agentManager.easySend(eq(NETWORK_ID), any(ConfigurePublicIpsOnLogicalRouterCommand.class))).thenReturn(answer);
 
@@ -203,8 +206,8 @@ public class NiciraNvpElementTest {
 
         verify(agentManager, atLeast(1)).easySend(eq(NETWORK_ID), argThat(new ArgumentMatcher<ConfigurePublicIpsOnLogicalRouterCommand>() {
             @Override
-            public boolean matches(Object argument) {
-                ConfigurePublicIpsOnLogicalRouterCommand command = (ConfigurePublicIpsOnLogicalRouterCommand)argument;
+            public boolean matches(final Object argument) {
+                final ConfigurePublicIpsOnLogicalRouterCommand command = (ConfigurePublicIpsOnLogicalRouterCommand)argument;
                 if (command.getPublicCidrs().size() == 1)
                     return true;
                 return false;

@@ -1,4 +1,5 @@
-
+Apache CloudStack
+Copyright 2014 The Apache Software Foundation
   
   This product includes software developed at
   The Apache Software Foundation (http://www.apache.org/).
@@ -28,7 +29,7 @@
     jquery.js
   
 
-        jQuery JavaScript Library v1.6.1
+        jQuery JavaScript Library v1.6.4
         http://jquery.com/
         
         Copyright 2011, John Resig
@@ -40,7 +41,7 @@
         Copyright 2011, The Dojo Foundation
         Released under the MIT, BSD, and GPL Licenses.
         
-        Date: Thu May 12 15:04:36 2011 -0400
+        Date: Mon Sep 12 18:54:48 2011 -0400
 
     
   For 

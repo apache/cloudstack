@@ -39,6 +39,10 @@ public class KVMPhysicalDisk {
             rbdOpts += ":id=" + authUserName;
             rbdOpts += ":key=" + authSecret;
         }
+
+        rbdOpts += ":rbd_default_format=2";
+        rbdOpts += ":client_mount_timeout=30";
+
         return rbdOpts;
     }
 
@@ -87,4 +91,9 @@ public class KVMPhysicalDisk {
     public KVMStoragePool getPool() {
         return this.pool;
     }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
 }

@@ -33,7 +33,8 @@ import org.apache.cloudstack.region.PortableIpRange;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "listPortableIpRanges", description = "list portable IP ranges", responseObject = PortableIpRangeResponse.class)
+@APICommand(name = "listPortableIpRanges", description = "list portable IP ranges", responseObject = PortableIpRangeResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListPortableIpRangesCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListPortableIpRangesCmd.class.getName());
@@ -97,8 +98,8 @@ public class ListPortableIpRangesCmd extends BaseListCmd {
                 }
                 responses.add(rangeResponse);
             }
+            response.setResponses(responses, portableIpRanges.size());
         }
-        response.setResponses(responses, portableIpRanges.size());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

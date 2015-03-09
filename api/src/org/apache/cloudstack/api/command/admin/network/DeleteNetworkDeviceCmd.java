@@ -37,7 +37,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteNetworkDevice", description = "Deletes network device.", responseObject = SuccessResponse.class)
+@APICommand(name = "deleteNetworkDevice", description = "Deletes network device.", responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteNetworkDeviceCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteNetworkDeviceCmd.class);
     private static final String s_name = "deletenetworkdeviceresponse";

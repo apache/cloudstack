@@ -31,7 +31,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
@@ -72,7 +72,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     // Only change is to make broadcast domain type Mido
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network network, Account owner) {
-        s_logger.debug("design called with network: " + network.toString());
+        s_logger.debug("design called with network: " + network);
         if (!canHandle(offering)) {
             return null;
         }
@@ -92,11 +92,11 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     }
 
     @Override
-    protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network) throws InsufficientVirtualNetworkCapcityException,
+    protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network) throws InsufficientVirtualNetworkCapacityException,
         InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null) {
             PublicIp ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), Vlan.VlanType.VirtualNetwork, null, null, false);
-            nic.setIp4Address(ip.getAddress().toString());
+            nic.setIp4Address(ip.getAddress().addr());
 
             nic.setGateway(ip.getGateway());
 
@@ -121,7 +121,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
 
     @Override
     public void updateNicProfile(NicProfile profile, Network network) {
-        s_logger.debug("updateNicProfile called with network: " + network.toString() + " profile: " + profile.toString());
+        s_logger.debug("updateNicProfile called with network: " + network + " profile: " + profile);
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
         if (profile != null) {
@@ -131,18 +131,17 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapacityException,
         InsufficientAddressCapacityException, ConcurrentOperationException {
-
-        s_logger.debug("allocate called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
-        DataCenter dc = _dcDao.findById(network.getDataCenterId());
-
-        if (nic != null && nic.getRequestedIpv4() != null) {
-            throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
-        }
 
         if (nic == null) {
             nic = new NicProfile(Nic.ReservationStrategy.Create, null, null, null, null);
+        }
+        s_logger.debug("allocate called with network: " + network + " nic: " + nic + " vm: " + vm);
+        DataCenter dc = _dcDao.findById(network.getDataCenterId());
+
+        if (nic.getRequestedIpv4() != null) {
+            throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
         }
 
         getIp(nic, dc, vm, network);
@@ -162,8 +161,8 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
 
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
-        s_logger.debug("reserve called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
+        s_logger.debug("reserve called with network: " + network + " nic: " + nic + " vm: " + vm);
         if (nic.getIp4Address() == null) {
             getIp(nic, dest.getDataCenter(), vm, network);
         }
@@ -171,14 +170,14 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
 
     @Override
     public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
-        s_logger.debug("release called with nic: " + nic.toString() + " vm: " + vm.toString());
+        s_logger.debug("release called with nic: " + nic + " vm: " + vm);
         return true;
     }
 
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException {
-        s_logger.debug("implement called with network: " + network.toString());
+        throws InsufficientVirtualNetworkCapacityException {
+        s_logger.debug("implement called with network: " + network);
         long dcId = destination.getDataCenter().getId();
 
         //get physical network id
@@ -205,7 +204,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     @Override
     @DB
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
-        s_logger.debug("deallocate called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
+        s_logger.debug("deallocate called with network: " + network + " nic: " + nic + " vm: " + vm);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("public network deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIp4Address());
         }
@@ -229,12 +228,12 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
 
     @Override
     public void shutdown(NetworkProfile network, NetworkOffering offering) {
-        s_logger.debug("shutdown called with network: " + network.toString());
+        s_logger.debug("shutdown called with network: " + network);
     }
 
     @Override
     public boolean trash(Network network, NetworkOffering offering) {
-        s_logger.debug("trash called with network: " + network.toString());
+        s_logger.debug("trash called with network: " + network);
         return true;
     }
 

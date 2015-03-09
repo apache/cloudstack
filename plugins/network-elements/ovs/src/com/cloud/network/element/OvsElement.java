@@ -26,13 +26,15 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.network.topology.NetworkTopology;
+import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupOvsCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -40,10 +42,12 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkMigrationResponder;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -54,7 +58,6 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.network.router.VirtualRouter.Role;
-import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.network.rules.LoadBalancerContainer;
@@ -71,16 +74,19 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.UserVmDao;
+import com.google.gson.Gson;
 
 @Local(value = {NetworkElement.class, ConnectivityProvider.class,
-    SourceNatServiceProvider.class, StaticNatServiceProvider.class,
-    PortForwardingServiceProvider.class, IpDeployer.class})
+        SourceNatServiceProvider.class, StaticNatServiceProvider.class,
+        PortForwardingServiceProvider.class, IpDeployer.class, NetworkMigrationResponder.class})
 public class OvsElement extends AdapterBase implements NetworkElement,
-        OvsElementService, ConnectivityProvider, ResourceStateAdapter,
-        PortForwardingServiceProvider, LoadBalancingServiceProvider,
-        StaticNatServiceProvider, IpDeployer {
+OvsElementService, ConnectivityProvider, ResourceStateAdapter,
+PortForwardingServiceProvider, LoadBalancingServiceProvider, NetworkMigrationResponder,
+StaticNatServiceProvider, IpDeployer {
     @Inject
     OvsTunnelManager _ovsTunnelMgr;
     @Inject
@@ -92,7 +98,14 @@ public class OvsElement extends AdapterBase implements NetworkElement,
     @Inject
     DomainRouterDao _routerDao;
     @Inject
-    VpcVirtualNetworkApplianceManager _routerMgr;
+    UserVmDao _userVmDao;
+    @Inject
+    HostDao _hostDao;
+    @Inject
+    DataCenterDao _dcDao;
+
+    @Inject
+    NetworkTopologyContext _networkTopologyContext;
 
     private static final Logger s_logger = Logger.getLogger(OvsElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -107,23 +120,23 @@ public class OvsElement extends AdapterBase implements NetworkElement,
         return Provider.Ovs;
     }
 
-    protected boolean canHandle(Network network, Service service) {
+    protected boolean canHandle(final Network network, final Service service) {
         s_logger.debug("Checking if OvsElement can handle service "
-            + service.getName() + " on network " + network.getDisplayText());
+                + service.getName() + " on network " + network.getDisplayText());
         if (network.getBroadcastDomainType() != BroadcastDomainType.Vswitch) {
             return false;
         }
 
         if (!_networkModel.isProviderForNetwork(getProvider(), network.getId())) {
             s_logger.debug("OvsElement is not a provider for network "
-                + network.getDisplayText());
+                    + network.getDisplayText());
             return false;
         }
 
         if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(),
-            service, Network.Provider.Ovs)) {
+                service, Network.Provider.Ovs)) {
             s_logger.debug("OvsElement can't provide the " + service.getName()
-                + " service on network " + network.getDisplayText());
+                    + " service on network " + network.getDisplayText());
             return false;
         }
 
@@ -131,21 +144,21 @@ public class OvsElement extends AdapterBase implements NetworkElement,
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params)
-        throws ConfigurationException {
+    public boolean configure(final String name, final Map<String, Object> params)
+            throws ConfigurationException {
         super.configure(name, params);
         _resourceMgr.registerResourceStateAdapter(name, this);
         return true;
     }
 
     @Override
-    public boolean implement(Network network, NetworkOffering offering,
-        DeployDestination dest, ReservationContext context)
-        throws ConcurrentOperationException, ResourceUnavailableException,
-        InsufficientCapacityException {
+    public boolean implement(final Network network, final NetworkOffering offering,
+            final DeployDestination dest, final ReservationContext context)
+                    throws ConcurrentOperationException, ResourceUnavailableException,
+                    InsufficientCapacityException {
         s_logger.debug("entering OvsElement implement function for network "
-            + network.getDisplayText() + " (state " + network.getState()
-            + ")");
+                + network.getDisplayText() + " (state " + network.getState()
+                + ")");
 
         if (!canHandle(network, Service.Connectivity)) {
             return false;
@@ -154,11 +167,11 @@ public class OvsElement extends AdapterBase implements NetworkElement,
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic,
-        VirtualMachineProfile vm,
-        DeployDestination dest, ReservationContext context)
-        throws ConcurrentOperationException, ResourceUnavailableException,
-        InsufficientCapacityException {
+    public boolean prepare(final Network network, final NicProfile nic,
+            final VirtualMachineProfile vm,
+            final DeployDestination dest, final ReservationContext context)
+                    throws ConcurrentOperationException, ResourceUnavailableException,
+                    InsufficientCapacityException {
         if (!canHandle(network, Service.Connectivity)) {
             return false;
         }
@@ -171,16 +184,21 @@ public class OvsElement extends AdapterBase implements NetworkElement,
             return false;
         }
 
-        _ovsTunnelMgr.VmCheckAndCreateTunnel(vm, network, dest);
+        if (vm.getType() != VirtualMachine.Type.User && vm.getType() != VirtualMachine.Type.DomainRouter) {
+            return false;
+        }
+
+        // prepare the tunnel network on the host, in order for VM to get launched
+        _ovsTunnelMgr.checkAndPrepareHostForTunnelNetwork(network, dest.getHost());
 
         return true;
     }
 
     @Override
-    public boolean release(Network network, NicProfile nic,
-        VirtualMachineProfile vm,
-        ReservationContext context) throws ConcurrentOperationException,
-        ResourceUnavailableException {
+    public boolean release(final Network network, final NicProfile nic,
+            final VirtualMachineProfile vm,
+            final ReservationContext context) throws ConcurrentOperationException,
+            ResourceUnavailableException {
         if (!canHandle(network, Service.Connectivity)) {
             return false;
         }
@@ -192,14 +210,15 @@ public class OvsElement extends AdapterBase implements NetworkElement,
             return false;
         }
 
-        _ovsTunnelMgr.CheckAndDestroyTunnel(vm.getVirtualMachine(), network);
+        HostVO host = _hostDao.findById(vm.getVirtualMachine().getHostId());
+        _ovsTunnelMgr.checkAndRemoveHostFromTunnelNetwork(network, host);
         return true;
     }
 
     @Override
-    public boolean shutdown(Network network, ReservationContext context,
-        boolean cleanup) throws ConcurrentOperationException,
-        ResourceUnavailableException {
+    public boolean shutdown(final Network network, final ReservationContext context,
+            final boolean cleanup) throws ConcurrentOperationException,
+            ResourceUnavailableException {
         if (!canHandle(network, Service.Connectivity)) {
             return false;
         }
@@ -207,8 +226,8 @@ public class OvsElement extends AdapterBase implements NetworkElement,
     }
 
     @Override
-    public boolean destroy(Network network, ReservationContext context)
-        throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean destroy(final Network network, final ReservationContext context)
+            throws ConcurrentOperationException, ResourceUnavailableException {
         if (!canHandle(network, Service.Connectivity)) {
             return false;
         }
@@ -216,14 +235,14 @@ public class OvsElement extends AdapterBase implements NetworkElement,
     }
 
     @Override
-    public boolean isReady(PhysicalNetworkServiceProvider provider) {
+    public boolean isReady(final PhysicalNetworkServiceProvider provider) {
         return true;
     }
 
     @Override
     public boolean shutdownProviderInstances(
-        PhysicalNetworkServiceProvider provider, ReservationContext context)
-        throws ConcurrentOperationException, ResourceUnavailableException {
+            final PhysicalNetworkServiceProvider provider, final ReservationContext context)
+                    throws ConcurrentOperationException, ResourceUnavailableException {
         return true;
     }
 
@@ -233,7 +252,7 @@ public class OvsElement extends AdapterBase implements NetworkElement,
     }
 
     @Override
-    public boolean verifyServicesCombination(Set<Service> services) {
+    public boolean verifyServicesCombination(final Set<Service> services) {
         if (!services.contains(Service.Connectivity)) {
             s_logger.warn("Unable to provide services without Connectivity service enabled for this element");
             return false;
@@ -246,7 +265,12 @@ public class OvsElement extends AdapterBase implements NetworkElement,
         Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
 
         // L2 Support : SDN provisioning
-        capabilities.put(Service.Connectivity, null);
+        Map<Capability, String> connectivityCapabilities = new HashMap<Capability, String>();
+        connectivityCapabilities.put(Capability.DistributedRouter, null);
+        connectivityCapabilities.put(Capability.StretchedL2Subnet, null);
+        connectivityCapabilities.put(Capability.RegionLevelVpc, null);
+        capabilities.put(Service.Connectivity, connectivityCapabilities);
+
 
         // L3 Support : Port Forwarding
         capabilities.put(Service.PortForwarding, null);
@@ -275,90 +299,90 @@ public class OvsElement extends AdapterBase implements NetworkElement,
         method = new LbStickinessMethod(StickinessMethodType.LBCookieBased, "This is loadbalancer cookie based stickiness method.");
         method.addParam("cookie-name", false, "Cookie name passed in http header by the LB to the client.", false);
         method.addParam("mode", false,
-            "Valid values: insert, rewrite, prefix. Default value: insert.  In the insert mode cookie will be created" +
-                " by the LB. In other modes, cookie will be created by the server and LB modifies it.", false);
+                "Valid values: insert, rewrite, prefix. Default value: insert.  In the insert mode cookie will be created" +
+                        " by the LB. In other modes, cookie will be created by the server and LB modifies it.", false);
         method.addParam(
-            "nocache",
-            false,
-            "This option is recommended in conjunction with the insert mode when there is a cache between the client" +
-                " and HAProxy, as it ensures that a cacheable response will be tagged non-cacheable if  a cookie needs " +
-                "to be inserted. This is important because if all persistence cookies are added on a cacheable home page" +
-                " for instance, then all customers will then fetch the page from an outer cache and will all share the " +
-                "same persistence cookie, leading to one server receiving much more traffic than others. See also the " +
-                "insert and postonly options. ",
-            true);
+                "nocache",
+                false,
+                "This option is recommended in conjunction with the insert mode when there is a cache between the client" +
+                        " and HAProxy, as it ensures that a cacheable response will be tagged non-cacheable if  a cookie needs " +
+                        "to be inserted. This is important because if all persistence cookies are added on a cacheable home page" +
+                        " for instance, then all customers will then fetch the page from an outer cache and will all share the " +
+                        "same persistence cookie, leading to one server receiving much more traffic than others. See also the " +
+                        "insert and postonly options. ",
+                        true);
         method.addParam(
-            "indirect",
-            false,
-            "When this option is specified in insert mode, cookies will only be added when the server was not reached" +
-                " after a direct access, which means that only when a server is elected after applying a load-balancing algorithm," +
-                " or after a redispatch, then the cookie  will be inserted. If the client has all the required information" +
-                " to connect to the same server next time, no further cookie will be inserted. In all cases, when the " +
-                "indirect option is used in insert mode, the cookie is always removed from the requests transmitted to " +
-                "the server. The persistence mechanism then becomes totally transparent from the application point of view.",
-            true);
+                "indirect",
+                false,
+                "When this option is specified in insert mode, cookies will only be added when the server was not reached" +
+                        " after a direct access, which means that only when a server is elected after applying a load-balancing algorithm," +
+                        " or after a redispatch, then the cookie  will be inserted. If the client has all the required information" +
+                        " to connect to the same server next time, no further cookie will be inserted. In all cases, when the " +
+                        "indirect option is used in insert mode, the cookie is always removed from the requests transmitted to " +
+                        "the server. The persistence mechanism then becomes totally transparent from the application point of view.",
+                        true);
         method.addParam(
-            "postonly",
-            false,
-            "This option ensures that cookie insertion will only be performed on responses to POST requests. It is an" +
-                " alternative to the nocache option, because POST responses are not cacheable, so this ensures that the " +
-                "persistence cookie will never get cached.Since most sites do not need any sort of persistence before the" +
-                " first POST which generally is a login request, this is a very efficient method to optimize caching " +
-                "without risking to find a persistence cookie in the cache. See also the insert and nocache options.",
-            true);
+                "postonly",
+                false,
+                "This option ensures that cookie insertion will only be performed on responses to POST requests. It is an" +
+                        " alternative to the nocache option, because POST responses are not cacheable, so this ensures that the " +
+                        "persistence cookie will never get cached.Since most sites do not need any sort of persistence before the" +
+                        " first POST which generally is a login request, this is a very efficient method to optimize caching " +
+                        "without risking to find a persistence cookie in the cache. See also the insert and nocache options.",
+                        true);
         method.addParam(
-            "domain",
-            false,
-            "This option allows to specify the domain at which a cookie is inserted. It requires exactly one parameter:" +
-                " a valid domain name. If the domain begins with a dot, the browser is allowed to use it for any host " +
-                "ending with that name. It is also possible to specify several domain names by invoking this option multiple" +
-                " times. Some browsers might have small limits on the number of domains, so be careful when doing that. " +
-                "For the record, sending 10 domains to MSIE 6 or Firefox 2 works as expected.",
-            false);
+                "domain",
+                false,
+                "This option allows to specify the domain at which a cookie is inserted. It requires exactly one parameter:" +
+                        " a valid domain name. If the domain begins with a dot, the browser is allowed to use it for any host " +
+                        "ending with that name. It is also possible to specify several domain names by invoking this option multiple" +
+                        " times. Some browsers might have small limits on the number of domains, so be careful when doing that. " +
+                        "For the record, sending 10 domains to MSIE 6 or Firefox 2 works as expected.",
+                        false);
         methodList.add(method);
 
         method = new LbStickinessMethod(StickinessMethodType.AppCookieBased,
-            "This is App session based sticky method. Define session stickiness on an existing application cookie. " +
+                "This is App session based sticky method. Define session stickiness on an existing application cookie. " +
                 "It can be used only for a specific http traffic");
         method.addParam("cookie-name", false, "This is the name of the cookie used by the application and which LB will " +
-            "have to learn for each new session. Default value: Auto geneared based on ip", false);
+                "have to learn for each new session. Default value: Auto geneared based on ip", false);
         method.addParam("length", false, "This is the max number of characters that will be memorized and checked in " +
-            "each cookie value. Default value:52", false);
+                "each cookie value. Default value:52", false);
         method.addParam(
-            "holdtime",
-            false,
-            "This is the time after which the cookie will be removed from memory if unused. The value should be in " +
-                "the format Example : 20s or 30m  or 4h or 5d . only seconds(s), minutes(m) hours(h) and days(d) are valid," +
-                " cannot use th combinations like 20h30m. Default value:3h ",
-            false);
+                "holdtime",
+                false,
+                "This is the time after which the cookie will be removed from memory if unused. The value should be in " +
+                        "the format Example : 20s or 30m  or 4h or 5d . only seconds(s), minutes(m) hours(h) and days(d) are valid," +
+                        " cannot use th combinations like 20h30m. Default value:3h ",
+                        false);
         method.addParam(
-            "request-learn",
-            false,
-            "If this option is specified, then haproxy will be able to learn the cookie found in the request in case the server does not specify any in response. This is typically what happens with PHPSESSID cookies, or when haproxy's session expires before the application's session and the correct server is selected. It is recommended to specify this option to improve reliability",
-            true);
+                "request-learn",
+                false,
+                "If this option is specified, then haproxy will be able to learn the cookie found in the request in case the server does not specify any in response. This is typically what happens with PHPSESSID cookies, or when haproxy's session expires before the application's session and the correct server is selected. It is recommended to specify this option to improve reliability",
+                true);
         method.addParam(
-            "prefix",
-            false,
-            "When this option is specified, haproxy will match on the cookie prefix (or URL parameter prefix). "
-                +
-                "The appsession value is the data following this prefix. Example : appsession ASPSESSIONID len 64 timeout 3h prefix  This will match the cookie ASPSESSIONIDXXXX=XXXXX, the appsession value will be XXXX=XXXXX.",
-            true);
+                "prefix",
+                false,
+                "When this option is specified, haproxy will match on the cookie prefix (or URL parameter prefix). "
+                        +
+                        "The appsession value is the data following this prefix. Example : appsession ASPSESSIONID len 64 timeout 3h prefix  This will match the cookie ASPSESSIONIDXXXX=XXXXX, the appsession value will be XXXX=XXXXX.",
+                        true);
         method.addParam(
-            "mode",
-            false,
-            "This option allows to change the URL parser mode. 2 modes are currently supported : - path-parameters " +
-                ": The parser looks for the appsession in the path parameters part (each parameter is separated by a semi-colon), " +
-                "which is convenient for JSESSIONID for example.This is the default mode if the option is not set. - query-string :" +
-                " In this mode, the parser will look for the appsession in the query string.",
-            false);
+                "mode",
+                false,
+                "This option allows to change the URL parser mode. 2 modes are currently supported : - path-parameters " +
+                        ": The parser looks for the appsession in the path parameters part (each parameter is separated by a semi-colon), " +
+                        "which is convenient for JSESSIONID for example.This is the default mode if the option is not set. - query-string :" +
+                        " In this mode, the parser will look for the appsession in the query string.",
+                        false);
         methodList.add(method);
 
         method = new LbStickinessMethod(StickinessMethodType.SourceBased, "This is source based Stickiness method, " +
-            "it can be used for any type of protocol.");
+                "it can be used for any type of protocol.");
         method.addParam("tablesize", false, "Size of table to store source ip addresses. example: tablesize=200k or 300m" +
-            " or 400g. Default value:200k", false);
+                " or 400g. Default value:200k", false);
         method.addParam("expire", false, "Entry in source ip table will expire after expire duration. units can be s,m,h,d ." +
-            " example: expire=30m 20s 50h 4d. Default value:3h", false);
+                " example: expire=30m 20s 50h 4d. Default value:3h", false);
         methodList.add(method);
 
         Gson gson = new Gson();
@@ -373,15 +397,15 @@ public class OvsElement extends AdapterBase implements NetworkElement,
     }
 
     @Override
-    public HostVO createHostVOForConnectedAgent(HostVO host,
-        StartupCommand[] cmd) {
+    public HostVO createHostVOForConnectedAgent(final HostVO host,
+            final StartupCommand[] cmd) {
         return null;
     }
 
     @Override
-    public HostVO createHostVOForDirectConnectAgent(HostVO host,
-        StartupCommand[] startup, ServerResource resource,
-        Map<String, String> details, List<String> hostTags) {
+    public HostVO createHostVOForDirectConnectAgent(final HostVO host,
+            final StartupCommand[] startup, final ServerResource resource,
+            final Map<String, String> details, final List<String> hostTags) {
         if (!(startup[0] instanceof StartupOvsCommand)) {
             return null;
         }
@@ -390,8 +414,8 @@ public class OvsElement extends AdapterBase implements NetworkElement,
     }
 
     @Override
-    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced,
-        boolean isForceDeleteStorage) throws UnableDeleteHostException {
+    public DeleteHostAnswer deleteHost(final HostVO host, final boolean isForced,
+            final boolean isForceDeleteStorage) throws UnableDeleteHostException {
         if (!(host.getType() == Host.Type.L2Networking)) {
             return null;
         }
@@ -399,14 +423,14 @@ public class OvsElement extends AdapterBase implements NetworkElement,
     }
 
     @Override
-    public IpDeployer getIpDeployer(Network network) {
+    public IpDeployer getIpDeployer(final Network network) {
         return this;
     }
 
     @Override
-    public boolean applyIps(Network network,
-        List<? extends PublicIpAddress> ipAddress, Set<Service> services)
-        throws ResourceUnavailableException {
+    public boolean applyIps(final Network network,
+            final List<? extends PublicIpAddress> ipAddress, final Set<Service> services)
+                    throws ResourceUnavailableException {
         boolean canHandle = true;
         for (Service service : services) {
             // check if Ovs can handle services except SourceNat & Firewall
@@ -417,75 +441,87 @@ public class OvsElement extends AdapterBase implements NetworkElement,
         }
         if (canHandle) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
-                network.getId(), Role.VIRTUAL_ROUTER);
+                    network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router element doesn't need to associate ip addresses on the backend; virtual "
-                    + "router doesn't exist in the network "
-                    + network.getId());
+                        + "router doesn't exist in the network "
+                        + network.getId());
                 return true;
             }
 
-            return _routerMgr.associatePublicIP(network, ipAddress, routers);
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            return networkTopology.associatePublicIP(network, ipAddress, routers);
         } else {
             return false;
         }
     }
 
     @Override
-    public boolean applyStaticNats(Network network, List<? extends StaticNat> rules)
-        throws ResourceUnavailableException {
+    public boolean applyStaticNats(final Network network, final List<? extends StaticNat> rules)
+            throws ResourceUnavailableException {
         if (!canHandle(network, Service.StaticNat)) {
             return false;
         }
         List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
-            network.getId(), Role.VIRTUAL_ROUTER);
+                network.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
             s_logger.debug("Ovs element doesn't need to apply static nat on the backend; virtual "
-                + "router doesn't exist in the network " + network.getId());
+                    + "router doesn't exist in the network " + network.getId());
             return true;
         }
 
-        return _routerMgr.applyStaticNats(network, rules, routers);
+        DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+        return networkTopology.applyStaticNats(network, rules, routers);
     }
 
     @Override
-    public boolean applyPFRules(Network network, List<PortForwardingRule> rules)
-        throws ResourceUnavailableException {
+    public boolean applyPFRules(final Network network, final List<PortForwardingRule> rules)
+            throws ResourceUnavailableException {
         if (!canHandle(network, Service.PortForwarding)) {
             return false;
         }
         List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
-            network.getId(), Role.VIRTUAL_ROUTER);
+                network.getId(), Role.VIRTUAL_ROUTER);
         if (routers == null || routers.isEmpty()) {
             s_logger.debug("Ovs element doesn't need to apply firewall rules on the backend; virtual "
-                + "router doesn't exist in the network " + network.getId());
+                    + "router doesn't exist in the network " + network.getId());
             return true;
         }
 
-        return _routerMgr.applyFirewallRules(network, rules, routers);
+        DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+        return networkTopology.applyFirewallRules(network, rules, routers);
     }
 
     @Override
-    public boolean applyLBRules(Network network, List<LoadBalancingRule> rules)
-        throws ResourceUnavailableException {
+    public boolean applyLBRules(final Network network, final List<LoadBalancingRule> rules)
+            throws ResourceUnavailableException {
         if (canHandle(network, Service.Lb)) {
             if (!canHandleLbRules(rules)) {
                 return false;
             }
 
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
-                network.getId(), Role.VIRTUAL_ROUTER);
+                    network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual "
-                    + "router doesn't exist in the network "
-                    + network.getId());
+                        + "router doesn't exist in the network "
+                        + network.getId());
                 return true;
             }
 
-            if (!_routerMgr.applyLoadBalancingRules(network, rules, routers)) {
+            DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            NetworkTopology networkTopology = _networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+            if (!networkTopology.applyLoadBalancingRules(network, rules, routers)) {
                 throw new CloudRuntimeException(
-                    "Failed to apply load balancing rules in network "
-                        + network.getId());
+                        "Failed to apply load balancing rules in network "
+                                + network.getId());
             } else {
                 return true;
             }
@@ -495,12 +531,12 @@ public class OvsElement extends AdapterBase implements NetworkElement,
     }
 
     @Override
-    public boolean validateLBRule(Network network, LoadBalancingRule rule) {
+    public boolean validateLBRule(final Network network, final LoadBalancingRule rule) {
         List<LoadBalancingRule> rules = new ArrayList<LoadBalancingRule>();
         rules.add(rule);
         if (canHandle(network, Service.Lb) && canHandleLbRules(rules)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
-                network.getId(), Role.VIRTUAL_ROUTER);
+                    network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 return true;
             }
@@ -510,22 +546,22 @@ public class OvsElement extends AdapterBase implements NetworkElement,
     }
 
     @Override
-    public List<LoadBalancerTO> updateHealthChecks(Network network,
-        List<LoadBalancingRule> lbrules) {
+    public List<LoadBalancerTO> updateHealthChecks(final Network network,
+            final List<LoadBalancingRule> lbrules) {
         // TODO Auto-generated method stub
         return null;
     }
 
-    private boolean canHandleLbRules(List<LoadBalancingRule> rules) {
-        Map<Capability, String> lbCaps = this.getCapabilities().get(Service.Lb);
+    private boolean canHandleLbRules(final List<LoadBalancingRule> rules) {
+        Map<Capability, String> lbCaps = getCapabilities().get(Service.Lb);
         if (!lbCaps.isEmpty()) {
             String schemeCaps = lbCaps.get(Capability.LbSchemes);
             if (schemeCaps != null) {
                 for (LoadBalancingRule rule : rules) {
                     if (!schemeCaps.contains(rule.getScheme().toString())) {
                         s_logger.debug("Scheme " + rules.get(0).getScheme()
-                            + " is not supported by the provider "
-                            + this.getName());
+                                + " is not supported by the provider "
+                                + getName());
                         return false;
                     }
                 }
@@ -534,18 +570,18 @@ public class OvsElement extends AdapterBase implements NetworkElement,
         return true;
     }
 
-    public static boolean validateHAProxyLBRule(LoadBalancingRule rule) {
+    public static boolean validateHAProxyLBRule(final LoadBalancingRule rule) {
         String timeEndChar = "dhms";
 
         for (LbStickinessPolicy stickinessPolicy : rule.getStickinessPolicies()) {
             List<Pair<String, String>> paramsList = stickinessPolicy
-                .getParams();
+                    .getParams();
 
             if (StickinessMethodType.LBCookieBased.getName().equalsIgnoreCase(
-                stickinessPolicy.getMethodName())) {
+                    stickinessPolicy.getMethodName())) {
 
             } else if (StickinessMethodType.SourceBased.getName()
-                .equalsIgnoreCase(stickinessPolicy.getMethodName())) {
+                    .equalsIgnoreCase(stickinessPolicy.getMethodName())) {
                 String tablesize = "200k"; // optional
                 String expire = "30m"; // optional
 
@@ -553,61 +589,56 @@ public class OvsElement extends AdapterBase implements NetworkElement,
                 for (Pair<String, String> paramKV : paramsList) {
                     String key = paramKV.first();
                     String value = paramKV.second();
-                    if ("tablesize".equalsIgnoreCase(key))
+                    if ("tablesize".equalsIgnoreCase(key)) {
                         tablesize = value;
-                    if ("expire".equalsIgnoreCase(key))
+                    }
+                    if ("expire".equalsIgnoreCase(key)) {
                         expire = value;
+                    }
                 }
                 if ((expire != null)
-                    && !containsOnlyNumbers(expire, timeEndChar)) {
+                        && !containsOnlyNumbers(expire, timeEndChar)) {
                     throw new InvalidParameterValueException(
-                        "Failed LB in validation rule id: " + rule.getId()
+                            "Failed LB in validation rule id: " + rule.getId()
                             + " Cause: expire is not in timeformat: "
                             + expire);
                 }
                 if ((tablesize != null)
-                    && !containsOnlyNumbers(tablesize, "kmg")) {
+                        && !containsOnlyNumbers(tablesize, "kmg")) {
                     throw new InvalidParameterValueException(
-                        "Failed LB in validation rule id: "
-                            + rule.getId()
-                            + " Cause: tablesize is not in size format: "
-                            + tablesize);
+                            "Failed LB in validation rule id: "
+                                    + rule.getId()
+                                    + " Cause: tablesize is not in size format: "
+                                    + tablesize);
 
                 }
             } else if (StickinessMethodType.AppCookieBased.getName()
-                .equalsIgnoreCase(stickinessPolicy.getMethodName())) {
-                /*
-                 * FORMAT : appsession <cookie> len <length> timeout <holdtime>
-                 * [request-learn] [prefix] [mode
-                 * <path-parameters|query-string>]
-                 */
-                /* example: appsession JSESSIONID len 52 timeout 3h */
-                String cookieName = null; // optional
+                    .equalsIgnoreCase(stickinessPolicy.getMethodName())) {
                 String length = null; // optional
                 String holdTime = null; // optional
 
                 for (Pair<String, String> paramKV : paramsList) {
                     String key = paramKV.first();
                     String value = paramKV.second();
-                    if ("cookie-name".equalsIgnoreCase(key))
-                        cookieName = value;
-                    if ("length".equalsIgnoreCase(key))
+                    if ("length".equalsIgnoreCase(key)) {
                         length = value;
-                    if ("holdtime".equalsIgnoreCase(key))
+                    }
+                    if ("holdtime".equalsIgnoreCase(key)) {
                         holdTime = value;
+                    }
                 }
 
                 if ((length != null) && (!containsOnlyNumbers(length, null))) {
                     throw new InvalidParameterValueException(
-                        "Failed LB in validation rule id: " + rule.getId()
+                            "Failed LB in validation rule id: " + rule.getId()
                             + " Cause: length is not a number: "
                             + length);
                 }
                 if ((holdTime != null)
-                    && (!containsOnlyNumbers(holdTime, timeEndChar) && !containsOnlyNumbers(
-                        holdTime, null))) {
+                        && (!containsOnlyNumbers(holdTime, timeEndChar) && !containsOnlyNumbers(
+                                holdTime, null))) {
                     throw new InvalidParameterValueException(
-                        "Failed LB in validation rule id: " + rule.getId()
+                            "Failed LB in validation rule id: " + rule.getId()
                             + " Cause: holdtime is not in timeformat: "
                             + holdTime);
                 }
@@ -621,16 +652,19 @@ public class OvsElement extends AdapterBase implements NetworkElement,
      * like 12 2) time or tablesize like 12h, 34m, 45k, 54m , here last
      * character is non-digit but from known characters .
      */
-    private static boolean containsOnlyNumbers(String str, String endChar) {
-        if (str == null)
+    private static boolean containsOnlyNumbers(final String str, final String endChar) {
+        if (str == null) {
             return false;
+        }
 
         String number = str;
         if (endChar != null) {
             boolean matchedEndChar = false;
             if (str.length() < 2)
+            {
                 return false; // atleast one numeric and one char. example:
-                              // 3h
+            }
+            // 3h
             char strEnd = str.toCharArray()[str.length() - 1];
             for (char c : endChar.toCharArray()) {
                 if (strEnd == c) {
@@ -639,14 +673,49 @@ public class OvsElement extends AdapterBase implements NetworkElement,
                     break;
                 }
             }
-            if (!matchedEndChar)
+            if (!matchedEndChar) {
                 return false;
+            }
         }
         try {
-            int i = Integer.parseInt(number);
+            Integer.parseInt(number);
         } catch (NumberFormatException e) {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public boolean prepareMigration(final NicProfile nic, final Network network, final VirtualMachineProfile vm, final DeployDestination dest, final ReservationContext context) {
+        if (!canHandle(network, Service.Connectivity)) {
+            return false;
+        }
+
+        if (nic.getBroadcastType() != Networks.BroadcastDomainType.Vswitch) {
+            return false;
+        }
+
+        if (nic.getTrafficType() != Networks.TrafficType.Guest) {
+            return false;
+        }
+
+        if (vm.getType() != VirtualMachine.Type.User && vm.getType() != VirtualMachine.Type.DomainRouter) {
+            return false;
+        }
+
+        // prepare the tunnel network on the host, in order for VM to get launched
+        _ovsTunnelMgr.checkAndPrepareHostForTunnelNetwork(network, dest.getHost());
+
+        return true;
+    }
+
+    @Override
+    public void rollbackMigration(final NicProfile nic, final Network network, final VirtualMachineProfile vm, final ReservationContext src, final ReservationContext dst) {
+        return;
+    }
+
+    @Override
+    public void commitMigration(final NicProfile nic, final Network network, final VirtualMachineProfile vm, final ReservationContext src, final ReservationContext dst) {
+        return;
     }
 }

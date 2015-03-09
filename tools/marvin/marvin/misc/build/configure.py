@@ -102,7 +102,7 @@ def cobblerHomeResolve(ip_address, param="gateway"):
 
 def configureManagementServer(mgmt_host):
     """
-    We currently configure all mgmt servers on a single xen HV. In the future
+    We currently configure all mgmt servers on a single xenserver HV. In the future
     replace this by launching instances via the API on a IaaS cloud using
     desired template
     """
@@ -123,15 +123,15 @@ def configureManagementServer(mgmt_host):
     bash("puppet cert clean %s.%s"%(mgmt_host, DOMAIN))
 
     #Start VM on xenserver
-    xenssh = \
-    sshClient.SshClient(macinfo["infraxen"]["address"],
+    xenserverssh = \
+    sshClient.SshClient(macinfo["infraxenserver"]["address"],
                                     22, "root",
-                                    macinfo["infraxen"]["password"])
+                                    macinfo["infraxenserver"]["password"])
 
     logging.debug("bash vm-uninstall.sh -n %s"%(mgmt_host))
-    xenssh.execute("xe vm-uninstall force=true vm=%s"%mgmt_host)
+    xenserverssh.execute("xe vm-uninstall force=true vm=%s"%mgmt_host)
     logging.debug("bash vm-start.sh -n %s -m %s"%(mgmt_host, mgmt_vm["ethernet"]))
-    out = xenssh.execute("bash vm-start.sh -n %s -m %s"%(mgmt_host,
+    out = xenserverssh.execute("bash vm-start.sh -n %s -m %s"%(mgmt_host,
                                                   mgmt_vm["ethernet"]))
 
     logging.info("started mgmt server with uuid: %s. Waiting for services .."%out);
@@ -179,7 +179,7 @@ def seedSecondaryStorage(cscfg, hypervisor):
             bash("echo '/bin/bash /root/redeploy.sh -s %s -h %s' >> /etc/puppet/modules/cloudstack/files/secseeder.sh"%(spath, hypervisor))
     bash("chmod +x /etc/puppet/modules/cloudstack/files/secseeder.sh")
 
-def refreshHosts(cscfg, hypervisor="xen", profile="xen602"):
+def refreshHosts(cscfg, hypervisor="xenserver", profile="xenserver602"):
     """
     Removes cobbler system from previous run. 
     Creates a new system for current run.
@@ -354,7 +354,7 @@ if __name__ == '__main__':
                       dest="distro", help="management server distro")
     parser.add_argument("-v", "--hypervisor", action="store",
             dest="hypervisor", help="hypervisor type")
-    parser.add_argument("-p", "--profile", action="store", default="xen602",
+    parser.add_argument("-p", "--profile", action="store", default="xenserver602",
                       dest="profile", help="cobbler profile for hypervisor")
     parser.add_argument("-e","--environment", help="environment properties file",
                       dest="system", action="store")

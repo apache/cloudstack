@@ -46,7 +46,7 @@ public class DataMotionServiceImpl implements DataMotionService {
     StorageStrategyFactory storageStrategyFactory;
 
     @Override
-    public void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
+    public void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
         if (srcData.getDataStore() == null || destData.getDataStore() == null) {
             throw new CloudRuntimeException("can't find data store");
         }
@@ -65,7 +65,12 @@ public class DataMotionServiceImpl implements DataMotionService {
                 destData.getType().name() + " '" + destData.getUuid() + "'");
         }
 
-        strategy.copyAsync(srcData, destData, callback);
+        strategy.copyAsync(srcData, destData, destHost, callback);
+    }
+
+    @Override
+    public void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
+        copyAsync(srcData, destData, null, callback);
     }
 
     @Override

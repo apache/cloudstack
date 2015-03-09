@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.Pair;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.events.Event;
@@ -35,24 +34,29 @@ import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.framework.events.EventSubscriber;
 import org.apache.cloudstack.framework.events.EventTopic;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 
 @Local(value = EventBus.class)
 public class InMemoryEventBus extends ManagerBase implements EventBus {
 
-    private String name;
     private static final Logger s_logger = Logger.getLogger(InMemoryEventBus.class);
-    private static ConcurrentHashMap<UUID, Pair<EventTopic, EventSubscriber>> s_subscribers;
+
+    private final static Map<UUID, Pair<EventTopic, EventSubscriber>> subscribers;
+
+    static {
+        subscribers = new ConcurrentHashMap<UUID, Pair<EventTopic, EventSubscriber>>();
+    }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        s_subscribers = new ConcurrentHashMap<UUID, Pair<EventTopic, EventSubscriber>>();
+        _name = name;
         return true;
     }
 
     @Override
     public void setName(String name) {
-        this.name = name;
+        _name = name;
     }
 
     @Override
@@ -62,29 +66,35 @@ public class InMemoryEventBus extends ManagerBase implements EventBus {
         }
         UUID subscriberId = UUID.randomUUID();
 
-        s_subscribers.put(subscriberId, new Pair(topic, subscriber));
+        subscribers.put(subscriberId, new Pair<EventTopic, EventSubscriber>(topic, subscriber));
         return subscriberId;
     }
 
     @Override
     public void unsubscribe(UUID subscriberId, EventSubscriber subscriber) throws EventBusException {
-        if (s_subscribers != null && s_subscribers.isEmpty()) {
+        if (subscriberId == null) {
+            throw new EventBusException("Cannot unregister a null subscriberId.");
+        }
+
+        if (subscribers.isEmpty()) {
             throw new EventBusException("There are no registered subscribers to unregister.");
         }
-        if (s_subscribers.get(subscriberId) == null) {
+
+        if (!subscribers.containsKey(subscriberId)) {
             throw new EventBusException("No subscriber found with subscriber id " + subscriberId);
+        } else {
+            subscribers.remove(subscriberId);
         }
-        s_subscribers.remove(subscriberId);
     }
 
     @Override
     public void publish(Event event) throws EventBusException {
-        if (s_subscribers == null || s_subscribers.isEmpty()) {
+        if (subscribers == null || subscribers.isEmpty()) {
             return; // no subscriber to publish to, so just return
         }
 
-        for (UUID subscriberId : s_subscribers.keySet()) {
-            Pair<EventTopic, EventSubscriber>  subscriberDetails =  s_subscribers.get(subscriberId);
+        for (UUID subscriberId : subscribers.keySet()) {
+            Pair<EventTopic, EventSubscriber>  subscriberDetails =  subscribers.get(subscriberId);
             // if the event matches subscribers interested event topic then call back the subscriber with the event
             if (isEventMatchesTopic(event, subscriberDetails.first())) {
                 EventSubscriber subscriber =  subscriberDetails.second();
@@ -108,6 +118,10 @@ public class InMemoryEventBus extends ManagerBase implements EventBus {
         return true;
     }
 
+    public int totalSubscribers() {
+        return subscribers.size();
+    }
+
     private String replaceNullWithWildcard(String key) {
         if (key == null || key.isEmpty()) {
             return "*";
@@ -122,7 +136,7 @@ public class InMemoryEventBus extends ManagerBase implements EventBus {
         eventTopicSource = eventTopicSource.replace(".", "-");
         String eventSource = replaceNullWithWildcard(event.getEventSource());
         eventSource = eventSource.replace(".", "-");
-        if (eventTopicSource != "*" && eventSource != "*" && !eventTopicSource.equalsIgnoreCase(eventSource)) {
+        if (!eventTopicSource.equals("*") && !eventSource.equals("*") && !eventTopicSource.equalsIgnoreCase(eventSource)) {
             return false;
         }
 
@@ -130,7 +144,7 @@ public class InMemoryEventBus extends ManagerBase implements EventBus {
         eventTopicCategory = eventTopicCategory.replace(".", "-");
         String eventCategory = replaceNullWithWildcard(event.getEventCategory());
         eventCategory = eventCategory.replace(".", "-");
-        if (eventTopicCategory != "*" && eventCategory != "*" && !eventTopicCategory.equalsIgnoreCase(eventCategory)) {
+        if (!eventTopicCategory.equals("*") && !eventCategory.equals("*") && !eventTopicCategory.equalsIgnoreCase(eventCategory)) {
             return false;
         }
 
@@ -138,7 +152,7 @@ public class InMemoryEventBus extends ManagerBase implements EventBus {
         eventTopicType = eventTopicType.replace(".", "-");
         String eventType = replaceNullWithWildcard(event.getEventType());
         eventType = eventType.replace(".", "-");
-        if (eventTopicType != "*" && eventType != "*" && !eventTopicType.equalsIgnoreCase(eventType)) {
+        if (!eventTopicType.equals("*") && !eventType.equals("*") && !eventTopicType.equalsIgnoreCase(eventType)) {
             return false;
         }
 
@@ -146,7 +160,7 @@ public class InMemoryEventBus extends ManagerBase implements EventBus {
         eventTopicResourceType = eventTopicResourceType.replace(".", "-");
         String resourceType = replaceNullWithWildcard(event.getResourceType());
         resourceType = resourceType.replace(".", "-");
-        if (eventTopicResourceType != "*" && resourceType != "*" && !eventTopicResourceType.equalsIgnoreCase(resourceType)) {
+        if (!eventTopicResourceType.equals("*") && !resourceType.equals("*") && !eventTopicResourceType.equalsIgnoreCase(resourceType)) {
             return false;
         }
 
@@ -154,7 +168,7 @@ public class InMemoryEventBus extends ManagerBase implements EventBus {
         resourceUuid = resourceUuid.replace(".", "-");
         String eventTopicresourceUuid = replaceNullWithWildcard(topic.getResourceUUID());
         eventTopicresourceUuid = eventTopicresourceUuid.replace(".", "-");
-        if (resourceUuid != "*" && eventTopicresourceUuid != "*" && !resourceUuid.equalsIgnoreCase(eventTopicresourceUuid)) {
+        if (!resourceUuid.equals("*") && !eventTopicresourceUuid.equals("*") && !resourceUuid.equalsIgnoreCase(eventTopicresourceUuid)) {
             return false;
         }
 

@@ -79,7 +79,7 @@ public class Filter {
         String name = column != null ? column.name() : field;
 
         StringBuilder order = new StringBuilder();
-        if (column.table() == null || column.table().length() == 0) {
+        if (column == null || column.table() == null || column.table().length() == 0) {
             order.append(DbUtil.getTableName(clazz));
         } else {
             order.append(column.table());

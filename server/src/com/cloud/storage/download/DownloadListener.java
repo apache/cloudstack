@@ -298,10 +298,14 @@ public class DownloadListener implements Listener {
             }
         }*/
         else if (cmd instanceof StartupSecondaryStorageCommand) {
-            List<DataStore> imageStores = _storeMgr.getImageStoresByScope(new ZoneScope(agent.getDataCenterId()));
-            for (DataStore store : imageStores) {
-                _volumeSrv.handleVolumeSync(store);
-                _imageSrv.handleTemplateSync(store);
+            try{
+                List<DataStore> imageStores = _storeMgr.getImageStoresByScope(new ZoneScope(agent.getDataCenterId()));
+                for (DataStore store : imageStores) {
+                    _volumeSrv.handleVolumeSync(store);
+                    _imageSrv.handleTemplateSync(store);
+                }
+            }catch (Exception e){
+                s_logger.error("Caught exception while doing template/volume sync ", e);
             }
         }
     }

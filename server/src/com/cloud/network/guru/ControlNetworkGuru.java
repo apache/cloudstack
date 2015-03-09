@@ -34,7 +34,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
@@ -112,7 +112,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     }
 
     @Override
-    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapacityException,
         InsufficientAddressCapacityException {
 
         if (vm.getHypervisorType() == HypervisorType.VMware && !isRouterVm(vm)) {
@@ -135,7 +135,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
     @Override
     public void reserve(NicProfile nic, Network config, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+        throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         assert nic.getTrafficType() == TrafficType.Control;
 
         // we have to get management/private ip for the control nic for vmware/hyperv due ssh issues.
@@ -208,7 +208,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
     @Override
     public Network implement(Network config, NetworkOffering offering, DeployDestination destination, ReservationContext context)
-        throws InsufficientVirtualNetworkCapcityException {
+        throws InsufficientVirtualNetworkCapacityException {
         assert config.getTrafficType() == TrafficType.Control : "Why are you sending this configuration to me " + config;
         return config;
     }
@@ -224,12 +224,12 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
         Map<String, String> dbParams = _configDao.getConfiguration(params);
 
-        _cidr = dbParams.get(Config.ControlCidr);
+        _cidr = dbParams.get(Config.ControlCidr.toString());
         if (_cidr == null) {
             _cidr = "169.254.0.0/16";
         }
 
-        _gateway = dbParams.get(Config.ControlGateway);
+        _gateway = dbParams.get(Config.ControlGateway.toString());
         if (_gateway == null) {
             _gateway = NetUtils.getLinkLocalGateway();
         }

@@ -41,11 +41,12 @@ public interface RulesService {
      *            vm to be linked to. If specified the destination ip address is ignored.
      * @param openFirewall
      *            TODO
+     * @param forDisplay TODO
      * @return PortForwardingRule if created.
      * @throws NetworkRuleConflictException
      *             if conflicts in the network rules are detected.
      */
-    PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId, Ip vmIp, boolean openFirewall) throws NetworkRuleConflictException;
+    PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId, Ip vmIp, boolean openFirewall, Boolean forDisplay) throws NetworkRuleConflictException;
 
     /**
      * Revokes a port forwarding rule
@@ -79,5 +80,7 @@ public interface RulesService {
     StaticNatRule buildStaticNatRule(FirewallRule rule, boolean forRevoke);
 
     boolean disableStaticNat(long ipId) throws ResourceUnavailableException, NetworkRuleConflictException, InsufficientAddressCapacityException;
+
+    PortForwardingRule updatePortForwardingRule(long id, Integer privatePort, Long virtualMachineId, Ip vmGuestIp, String customId, Boolean forDisplay);
 
 }
