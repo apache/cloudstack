@@ -336,7 +336,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpDiskOfferingDiskSize: {
-        desc: 'Appears only if Custom Disk Size is not selected. Define the volume size in GB.',
+        desc: 'Appears only if Custom Disk Size is not selected. Define the volume size in GB. (1GB = 1,073,741,824 bytes)',
         externalLink: ''
     },
     helpDiskOfferingDiskBytesReadRate: {
@@ -1017,6 +1017,10 @@ cloudStack.docs = {
     },
     helpVolumeDiskOffering: {
         desc: 'Choose the characteristics of the storage.',
+        externalLink: ''
+    },
+    helpVolumeSizeGb: {
+        desc: 'Volume size in GB (1GB = 1,073,741,824 bytes)',
         externalLink: ''
     },
     // Add VPC

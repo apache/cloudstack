@@ -169,6 +169,7 @@
                                     ,
                                     diskSize: {
                                         label: 'label.disk.size.gb',
+                                        docID: 'helpVolumeSizeGb',
                                         validation: {
                                             required: true,
                                             number: true
