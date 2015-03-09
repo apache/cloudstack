@@ -64,6 +64,17 @@ public class NetworkACLItemCidrsDaoImpl extends GenericDaoBase<NetworkACLItemCid
         txn.commit();
     }
 
+    @Override
+    public void updateCidrs(long networkACLItemId, List<String> cidrs) {
+        List<String> oldCidrs = getCidrs(networkACLItemId);
+        if (!(oldCidrs.size() == cidrs.size() && oldCidrs.equals(cidrs))) {
+            SearchCriteria<NetworkACLItemCidrsVO> sc = cidrsSearch.create();
+            sc.setParameters("networkAclItemId", networkACLItemId);
+            remove(sc);
+            persist(networkACLItemId, cidrs);
+        }
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.dao.NetworkAclItemCidrsDao#getCidrs(long)
      */
