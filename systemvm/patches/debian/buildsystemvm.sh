@@ -67,14 +67,14 @@ EOF
   fi
 
   cat > etc/apt/sources.list << EOF
-deb http://ftp.us.debian.org/debian/ wheezy main contrib non-free
-deb-src http://ftp.us.debian.org/debian/ wheezy main contrib non-free
+deb http://http.debian.net/debian/ wheezy main contrib non-free
+deb-src http://http.debian.net/debian/ wheezy main contrib non-free
 
 deb http://security.debian.org/ wheezy/updates main
 deb-src http://security.debian.org/ wheezy/updates main
 
-deb http://ftp.us.debian.org/debian/ wheezy-backports main
-deb-src http://ftp.us.debian.org/debian/ wheezy-backports main
+deb http://http.debian.net/debian/ wheezy-backports main
+deb-src http://http.debian.net/debian/ wheezy-backports main
 EOF
 
   cat >> etc/apt/apt.conf << EOF
