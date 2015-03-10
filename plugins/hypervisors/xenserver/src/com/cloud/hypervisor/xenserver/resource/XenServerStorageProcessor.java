@@ -850,6 +850,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 VDI tmplVdi = getVDIbyUuid(conn, tmplUuid);
 
                 final String uuidToReturn;
+                Long physicalSize = tmplVdi.getPhysicalUtilisation(conn);
 
                 if (managed) {
                     uuidToReturn = tmplUuid;
@@ -876,6 +877,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
                 newVol.setUuid(uuidToReturn);
                 newVol.setPath(uuidToReturn);
+                newVol.setSize(physicalSize);
                 newVol.setFormat(ImageFormat.VHD);
 
                 return new CopyCmdAnswer(newVol);

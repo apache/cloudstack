@@ -573,11 +573,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             totalAllocatedSize += templateSize + _extraBytesPerVolume;
         }
 
-        // Add the size for the templateForVmCreation if its not already present
-        /*if ((templateForVmCreation != null) && !tmpinstalled) {
-
-        }*/
-
         return totalAllocatedSize;
     }
 
