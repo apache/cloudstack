@@ -54,6 +54,7 @@
     <module>hypervisors/kvm</module>
     <module>event-bus/rabbitmq</module>
     <module>event-bus/inmemory</module>
+    <module>event-bus/kafka</module>
     <module>hypervisors/baremetal</module>
     <module>hypervisors/ucs</module>
     <module>hypervisors/hyperv</module>
