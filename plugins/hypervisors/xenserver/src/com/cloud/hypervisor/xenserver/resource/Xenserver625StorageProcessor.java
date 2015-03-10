@@ -236,6 +236,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                 VDI tmplVdi = Types.toVDI(task, conn);
 
                 final String uuidToReturn;
+                Long physicalSize = tmplVdi.getPhysicalUtilisation(conn);
 
                 if (managed) {
                     uuidToReturn = tmplVdi.getUuid(conn);
@@ -262,6 +263,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
                 newVol.setUuid(uuidToReturn);
                 newVol.setPath(uuidToReturn);
+                newVol.setSize(physicalSize);
                 newVol.setFormat(Storage.ImageFormat.VHD);
 
                 return new CopyCmdAnswer(newVol);

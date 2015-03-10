@@ -219,6 +219,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             if (destData.getObjectType() == DataObjectType.TEMPLATE) {
                 TemplateObjectTO newTemplate = new TemplateObjectTO();
                 newTemplate.setPath(primaryVol.getName());
+                newTemplate.setSize(primaryVol.getSize());
                 if (primaryPool.getType() == StoragePoolType.RBD) {
                     newTemplate.setFormat(ImageFormat.RAW);
                 } else {
@@ -228,6 +229,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             } else if (destData.getObjectType() == DataObjectType.VOLUME) {
                 VolumeObjectTO volumeObjectTO = new VolumeObjectTO();
                 volumeObjectTO.setPath(primaryVol.getName());
+                volumeObjectTO.setSize(primaryVol.getSize());
                 if (primaryVol.getFormat() == PhysicalDiskFormat.RAW)
                     volumeObjectTO.setFormat(ImageFormat.RAW);
                 else if (primaryVol.getFormat() == PhysicalDiskFormat.QCOW2) {
