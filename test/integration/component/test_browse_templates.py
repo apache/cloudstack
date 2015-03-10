@@ -58,7 +58,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls._cleanup = []
         cls.cleanup = []
-        cls.uploadvolumeformat="VHD"
+        cls.uploadtemplateformat="VHD"
         cls.storagetype = 'shared'
 
         hosts = list_hosts(
@@ -71,20 +71,23 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                 "There are no hypervisor's available.Check listhosts response")
         for hypervisorhost in hosts :
                  if hypervisorhost.hypervisor == "XenServer":
-                     cls.uploadvolumeformat="VHD"
+                     cls.uploadtemplateformat="VHD"
                      break
                  elif hypervisorhost.hypervisor== "VMware":
-                     cls.uploadvolumeformat="OVA"
+                     cls.uploadtemplateformat="OVA"
                      break
                  elif hypervisorhost.hypervisor=="KVM":
-                     cls.uploadvolumeformat="QCOW2"
+                     cls.uploadtemplateformat="QCOW2"
                      break
                  else:
                      break
 
-        cls.uploadurl=cls.testdata["browser_upload_volume"][cls.uploadvolumeformat]["url"]
-        cls.volname=cls.testdata["browser_upload_volume"][cls.uploadvolumeformat]["diskname"]
-        cls.md5sum=cls.testdata["browser_upload_volume"][cls.uploadvolumeformat]["checksum"]
+        cls.uploadurl=cls.testdata["browser_upload_template"][cls.uploadtemplateformat]["url"]
+        cls.templatename=cls.testdata["browser_upload_template"][cls.uploadtemplateformat]["templatename"]
+        cls.md5sum=cls.testdata["browser_upload_template"][cls.uploadtemplateformat]["checksum"]
+        cls.templatedisplaytext=cls.testdata["browser_upload_template"][cls.uploadtemplateformat]["displaytext"]
+        cls.templatehypervisor=cls.testdata["browser_upload_template"][cls.uploadtemplateformat]["hypervisor"]
+        cls.templateostypeid=cls.testdata["browser_upload_template"][cls.uploadtemplateformat]["ostypeid"]
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
         cls.pod = get_pod(cls.apiclient, cls.zone.id)
@@ -140,32 +143,36 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     (exp_val, act_val))
         return return_flag
 
-    def validate_uploaded_volume(self,up_volid,volumestate):
+    def validate_uploaded_template(self,up_templateid,templatestate):
 
-        list_volume_response = Volume.list(
+        list_template_response = Template.list(
                     self.apiclient,
-                    id=up_volid
+                    id=up_templateid
                 )
         self.assertNotEqual(
                     list_volume_response,
                     None,
-                    "Check if volume exists in ListVolumes"
+                    "Check if template exists in ListTemplates"
                 )
 
         self.assertEqual(
-                    list_volume_response[0].state,
-                    volumestate,
-                    "Check volume state in ListVolumes"
+                    list_template_response[0].state,
+                    templatestate,
+                    "Check template state in List templates"
                 )
 
-    def browse_upload_volume(self):
-        cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
+    def browse_upload_template(self):
+        cmd = getUploadParamsForTemplate.getUploadParamsForTemplateCmd()
         cmd.zoneid = self.zone.id
-        cmd.format = self.uploadvolumeformat
-        cmd.name=self.volname+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.format = self.uploadtemplateformat
+        cmd.name=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
         cmd.account=self.account.name
         cmd.domainid=self.domain.id
-        getuploadparamsresponce=self.apiclient.getUploadParamsForVolume(cmd)
+        cmd.displaytext=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.hypervisor=self.templatehypervisor
+        cmd.ostypeid=self.templateostypeid
+        #cmd.type="template"
+        getuploadparamsresponce=self.apiclient.getUploadParamsForTemplate(cmd)
 
         signt=getuploadparamsresponce.signature
         posturl=getuploadparamsresponce.postURL
@@ -199,19 +206,22 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         if results.status_code !=200: 
             self.fail("Upload is not fine")
 
-        self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
+        self.validate_uploaded_template(getuploadparamsresponce.id,'Uploaded')
 
         return(getuploadparamsresponce)
 
-    def browse_upload_volume_with_md5(self):
-        cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
+    def uploadtemplate(self):
+        cmd = getUploadParamsForTemplate.getUploadParamsForTemplateCmd()
         cmd.zoneid = self.zone.id
-        cmd.format = self.uploadvolumeformat
-        cmd.name=self.volname+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.format = self.uploadtemplateformat
+        cmd.name=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
         cmd.account=self.account.name
         cmd.domainid=self.domain.id
-        cmd.checksum=self.md5sum
-        getuploadparamsresponce=self.apiclient.getUploadParamsForVolume(cmd)
+        cmd.displaytext=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.hypervisor=self.templatehypervisor
+        cmd.ostypeid=self.templateostypeid
+        #cmd.type="template"
+        getuploadparamsresponce=self.apiclient.getUploadParamsForTemplate(cmd)
 
         signt=getuploadparamsresponce.signature
         posturl=getuploadparamsresponce.postURL
@@ -245,9 +255,17 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         if results.status_code !=200: 
             self.fail("Upload is not fine")
 
-        self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
-
         return(getuploadparamsresponce)
+
+    def multiple_browse_upload_template(self):
+
+        templ1=self.uploadtemplate()
+        templ2=self.uploadtemplate()
+        templ3=self.uploadtemplate()
+        self.validate_uploaded_template(templ1.id,'Uploaded')
+        self.validate_uploaded_template(templ2.id,'Uploaded')
+        self.validate_uploaded_template(templ3.id,'Uploaded')
+        return
 
     def validate_vm(self,vmdetails,vmstate):
 
@@ -276,11 +294,11 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                 "Check the state of VM"
             )
 
-    def deploy_vm(self):
+    def deploy_vm(self,template):
             virtual_machine = VirtualMachine.create(
                                                     self.apiclient,
                                                     self.testdata["virtual_machine"],
-                                                    templateid=self.template.id,
+                                                    templateid=template.id,
                                                     zoneid=self.zone.id,
                                                     accountid=self.account.name,
                                                     domainid=self.account.domainid,
@@ -413,25 +431,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         return
 
-    def deletevolume_fail(self,volumeid):
-        """Delete a Volume attached to a VM
-        """
-
-        cmd = deleteVolume.deleteVolumeCmd()
-        cmd.id = volumeid
-        success= False
-        try:
-            self.apiclient.deleteVolume(cmd)
-        except Exception as ex:
-            if "Please specify a volume that is not attached to any VM" in str(ex):
-                success = True
-        self.assertEqual(
-                success,
-                True,
-                "DeleteVolume - verify Ready State volume (attached to a VM) is handled appropriately not to get deleted ")
-
-        return
-
     def deletevolume(self,volumeid):
         """Delete a Volume attached to a VM
         """
@@ -453,133 +452,15 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     )
         return
 
-    def download_volume(self,volumeid):
-
-        cmd = extractVolume.extractVolumeCmd()
-        cmd.id = volumeid
-        cmd.mode = "HTTP_DOWNLOAD"
-        cmd.zoneid = self.zone.id
-        extract_vol = self.apiclient.extractVolume(cmd)
-
-        try:
-            formatted_url = urllib.unquote_plus(extract_vol.url)
-            self.debug("Attempting to download volume at url %s" % formatted_url)
-            response = urllib.urlopen(formatted_url)
-            self.debug("response from volume url %s" % response.getcode())
-            fd, path = tempfile.mkstemp()
-            self.debug("Saving volume %s to path %s" %(volumeid, path))
-            os.close(fd)
-            with open(path, 'wb') as fd:
-                fd.write(response.read())
-            self.debug("Saved volume successfully")
-        except Exception:
-            self.fail(
-                "Extract Volume Failed with invalid URL %s (vol id: %s)" \
-                % (extract_vol.url, volumeid)
-            )
-
-
-
-    def resize_fail(self,volumeid):
-
-        cmd                = resizeVolume.resizeVolumeCmd()
-        cmd.id             = volumeid
-        cmd.diskofferingid = self.disk_offering.id
-        success            = False
-        try:
-            self.apiclient.resizeVolume(cmd)
-        except Exception as ex:
-            if "Volume should be in ready or allocated state before attempting a resize" in str(ex):
-                success = True
-        self.assertEqual(
-                success,
-                True,
-                "ResizeVolume - verify Uploaded State volume is handled appropriately")
-
-
-    def resize_volume(self,volumeid):
-
-        """Test resize a volume"""
-
-        self.testdata["browser_upload_volume"]["browser_resized_disk_offering"]["disksize"] = 20
-
-        disk_offering_20_GB = DiskOffering.create(
-                                    self.apiclient,
-                                    self.testdata["browser_upload_volume"]["browser_resized_disk_offering"]
-                                    )
-        self.cleanup.append(disk_offering_20_GB)
-
-        cmd= resizeVolume.resizeVolumeCmd()
-        cmd.id= volumeid
-        cmd.diskofferingid = disk_offering_20_GB.id
-
-        self.apiclient.resizeVolume(cmd)
-
-        count = 0
-        success = False
-        while count < 3:
-            list_volume_response = Volume.list(
-                                                self.apiclient,
-                                                id=volumeid,
-                                                type='DATADISK'
-                                                )
-            for vol in list_volume_response:
-                if vol.id == volumeid and int(vol.size) == (int(disk_offering_20_GB.disksize) * (1024** 3)) and vol.state == 'Ready':
-                    success = True
-            if success:
-                break
-            else:
-                time.sleep(10)
-                count += 1
-
-        self.assertEqual(
-                         success,
-                         True,
-                         "Check if the data volume resized appropriately"
-                         )
-
-        return
-
 
     def destroy_vm(self,vmdetails):
 
-        success            = False
         vmdetails.delete(self.apiclient, expunge=False)
-
-        try:
-            list_vm_response1 = VirtualMachine.list(
-                                            self.apiclient,
-                                            id=vmdetails.id
-                                            )
-        except Exception as ex:
-            if "Unable to find a virtual machine with specified vmId" in str(ex):
-                success = True
-
-        if success == "True": 
-            self.debug("VM is already expunged")
-            return
-
-        list_vm_response1 = VirtualMachine.list(
-                                            self.apiclient,
-                                            id=vmdetails.id
-                                            )
-
-        if list_vm_response1 is None:
-            self.debug("VM already expunged")
-            return
-
-        if list_vm_response1[0].state=="Expunging":
-            self.debug("VM already getting expunged")
-            return
 
         list_vm_response = VirtualMachine.list(
                                             self.apiclient,
                                             id=vmdetails.id
                                             )
-        if list_vm_response is None:
-            self.debug("VM already expunged")
-            return
-
         self.assertEqual(
                             isinstance(list_vm_response, list),
                             True,
@@ -602,33 +483,9 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
     def recover_destroyed_vm(self,vmdetails):
 
-        list_vm_response1 = VirtualMachine.list(
-                                            self.apiclient,
-                                            id=vmdetails.id
-                                            )
-        if list_vm_response1 is None:
-            self.debug("VM already expunged")
-            return
-
         cmd = recoverVirtualMachine.recoverVirtualMachineCmd()
         cmd.id = vmdetails.id
         self.apiclient.recoverVirtualMachine(cmd)
-
-        list_vm_response1 = VirtualMachine.list(
-                                            self.apiclient,
-                                            id=vmdetails.id
-                                            )
-        if list_vm_response1 is None:
-            self.debug("VM already expunged")
-            return
-
-        list_vm_response1 = VirtualMachine.list(
-                                            self.apiclient,
-                                            id=vmdetails.id
-                                            )
-        if list_vm_response1[0].state=="Expunging":
-            self.debug("VM already getting expunged")
-            return
 
         list_vm_response = VirtualMachine.list(
                                             self.apiclient,
@@ -692,163 +549,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         self.debug("listVirtualMachines response: %s" % list_vm_response)
 
         self.assertEqual(list_vm_response,None,"Check Expunged virtual machine is in listVirtualMachines response")
-        return
-
-    def volume_snapshot(self,volumedetails):
-        """
-        @summary: Test to verify creation of snapshot from volume
-        and creation of template, volume from snapshot
-        """
-
-        list_volumes = Volume.list(
-            self.apiclient,
-            id=volumedetails.id
-        )
-        # Creating Snapshot from volume
-        snapshot_created = Snapshot.create(
-            self.apiclient,
-            volumedetails.id,
-        )
-
-        self.assertIsNotNone(snapshot_created, "Snapshot not created")
-
-        self.cleanup.append(snapshot_created)
-
-        # Creating expected and actual values dictionaries
-        expected_dict = {
-            "id": volumedetails.id,
-            "intervaltype": "MANUAL",
-            "snapshottype": "MANUAL",
-            "volumetype": list_volumes[0].type,
-            "domain": self.domain.id
-        }
-        actual_dict = {
-            "id": snapshot_created.volumeid,
-            "intervaltype": snapshot_created.intervaltype,
-            "snapshottype": snapshot_created.snapshottype,
-            "volumetype": snapshot_created.volumetype,
-            "domain": snapshot_created.domainid,
-        }
-        status = self.__verify_values(
-            expected_dict,
-            actual_dict
-        )
-        self.assertEqual(
-            True,
-            status,
-            "Snapshot created from Volume details are not as expected"
-        )
-        return(snapshot_created)
-
-    def volume_snapshot_volume(self,snapshot_created):
-
-        # Creating Volume from snapshot
-        cmd = createVolume.createVolumeCmd()
-        cmd.name = "-".join([self.testdata["volume"]
-                             ["diskname"], random_gen()])
-        cmd.snapshotid = snapshot_created.id
-
-        volume_from_snapshot = Volume(
-            self.apiclient.createVolume(cmd).__dict__)
-
-        self.assertIsNotNone(
-            volume_from_snapshot,
-            "Volume creation failed from snapshot"
-        )
-
-        # Creating expected and actual values dictionaries
-        #expected_dict = {
-            #"snapshotid": snapshot_created.id,
-            #"volumetype": snapshot_created.volumetype,
-           # "size": self.disk_offering.disksize,
-          #  "storagetype": self.storagetype,
-         #   "zone": self.zone.id
-        #}
-        #actual_dict = {
-         #   "snapshotid": volume_from_snapshot.snapshotid,
-         #   "volumetype": volume_from_snapshot.type,
-          #  "size": volume_from_snapshot.size / (1024 * 1024 * 1024),
-           # "storagetype": volume_from_snapshot.storagetype,
-            #"zone": volume_from_snapshot.zoneid,
-        #}
-        #status = self.__verify_values(
-         #   expected_dict,
-          #  actual_dict
-        #)
-        #self.assertEqual(
-         #   True,
-          #  status,
-           # "Volume created from Snapshot details are not as expected"
-        #)
-        return
-
-    def volume_snapshot_template(self,snapshot_created):
-        # Creating Template from Snapshot
-        list_templates_before = Template.list(
-            self.apiclient,
-            templatefilter='self')
-
-        if list_templates_before is None:
-            templates_before_size = 0
-        else:
-            templates_before_size = len(list_templates_before)
-
-        cmd = createTemplate.createTemplateCmd()
-        cmd.name = self.testdata["ostype"]
-        cmd.displaytext = self.testdata["ostype"]
-        cmd.ostypeid = self.template.ostypeid
-        cmd.snapshotid = snapshot_created.id
-        cmd.ispublic = False
-        cmd.passwordenabled = False
-
-        template_from_snapshot = Template(
-            self.apiclient.createTemplate(cmd).__dict__)
-
-        self.assertIsNotNone(
-            template_from_snapshot,
-            "Template creation failed from snapshot"
-        )
-
-        self.cleanup.append(template_from_snapshot)
-
-        # Creating expected and actual values dictionaries
-        expected_dict = {
-            "name": self.testdata["ostype"],
-            "ostypeid": self.template.ostypeid,
-            "type": "USER",
-            "zone": self.zone.id,
-            "passwordenabled": False,
-            "ispublic": False,
-            "size": self.disk_offering.disksize
-        }
-        actual_dict = {
-            "name": template_from_snapshot.name,
-            "ostypeid": template_from_snapshot.ostypeid,
-            "type": template_from_snapshot.templatetype,
-            "zone": template_from_snapshot.zoneid,
-            "passwordenabled": template_from_snapshot.passwordenabled,
-            "ispublic": template_from_snapshot.ispublic,
-            "size": template_from_snapshot.size / (1024 * 1024 * 1024)
-        }
-        status = self.__verify_values(
-            expected_dict,
-            actual_dict
-        )
-        #self.assertEqual(
-         #   True,
-          #  status,
-           # "Template created from Snapshot details are not as expected"
-        #)
-
-        list_templates_after = Template.list(
-            self.apiclient,
-            templatefilter='self')
-
-        self.assertEquals(
-            templates_before_size + 1,
-            len(list_templates_after),
-            "Template creation failed from snapshot"
-        )
         return
 
 
@@ -1298,163 +998,268 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         return
 
+    def create_data_volume(self):
+
+        diskoffering = DiskOffering.list(self.apiclient)
+        self.assertTrue(
+            isinstance(
+                diskoffering,
+                list),
+            msg="DiskOffering list is not a list?")
+        self.assertTrue(
+            len(diskoffering) > 0,
+            "no disk offerings in the deployment")
+
+        vol = Volume.create(
+            self.apiclient,
+            services=self.testdata["volume"],
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.domain.id,
+            diskofferingid=diskoffering[0].id
+        )
+        self.assertTrue(
+            vol is not None, "volume creation fails in domain %s as user %s" %
+            (self.domain.name, self.account.name))
+
+        listed_vol = Volume.list(self.apiclient, id=vol.id)
+        self.assertTrue(
+            listed_vol is not None and isinstance(
+                listed_vol,
+                list),
+            "invalid response from listVolumes for volume %s" %
+            vol.id)
+        self.assertTrue(
+            listed_vol[0].id == vol.id,
+            "Volume returned by list volumes %s not matching with queried\
+                    volume %s in domain %s" %
+            (listed_vol[0].id,
+                vol.id,
+                self.account.name))
+        return(listed_vol[0])
+
+    def attach_data_volume(self,volume,vmdetails):
+
+        list_volume_response = Volume.list(
+            self.apiclient,
+            id=volume.id
+        )
+        self.assertNotEqual(
+            list_volume_response,
+            None,
+            "Check if volume exists in ListVolumes"
+        )
+        self.assertEqual(
+            isinstance(list_volume_response, list),
+            True,
+            "Check list volumes response for valid list"
+        )
+        volume = list_volume_response[0]
+
+        self.assertEqual(
+            volume.type,
+            'DATADISK',
+            "Check volume type from list volume response"
+        )
+
+        self.assertEqual(
+            hasattr(volume, 'vmname'),
+            True,
+            "Check whether volume has vmname field"
+        )
+        self.assertEqual(
+            hasattr(volume, 'virtualmachineid'),
+            True,
+            "Check whether volume has virtualmachineid field"
+        )
+
+        # Attach volume to VM
+        self.debug("Attach volume: %s to VM: %s" % (
+            volume.id,
+            vmdetails.id
+        ))
+        vmdetails.attach_volume(self.apiclient, volume)
+
+        # Check all volumes attached to same VM
+        list_volume_response = Volume.list(
+            self.apiclient,
+            virtualmachineid=vmdetails.id,
+            type='DATADISK',
+            listall=True
+        )
+        self.assertNotEqual(
+            list_volume_response,
+            None,
+            "Check if volume exists in ListVolumes"
+        )
+        self.assertEqual(
+            isinstance(list_volume_response, list),
+            True,
+            "Check list volumes response for valid list"
+        )
+        volume = list_volume_response[0]
+        self.assertEqual(
+            volume.vmname,
+            vmdetails.name,
+            "Check virtual machine name in list volumes response"
+        )
+        self.assertEqual(
+            volume.virtualmachineid,
+            vmdetails.id,
+            "Check VM ID in list Volume response"
+        )
+        return
+
+
+    def delete_template(self,templatedetails):
+
+        list_template_response = Template.list(
+                                    self.apiclient,
+                                    templatefilter=\
+                                    self.testdata["template"]["templatefilter"],
+                                    id=templatedetails.id,
+                                    zoneid=self.zone.id)
+        self.assertEqual(
+                        isinstance(list_template_response, list),
+                        True,
+                        "Check for list template response return valid list"
+                        )
+
+        self.assertNotEqual(
+                            len(list_template_response),
+                            0,
+                            "Check template available in List Templates"
+                        )
+        template_response = list_template_response[0]
+
+        self.assertEqual(
+                            template_response.id,
+                            templatedetails.id,
+                            "Template id %s in the list is not matching with created template id %s" %
+                            (template_response.id, templatedetails.id)
+                        )
+
+        self.debug("Deleting template: %s" % self.template)
+        # Delete the template
+        templatedetails.delete(self.apiclient)
+        self.debug("Delete template: %s successful" % templatedetails)
+
+        list_template_response = Template.list(
+                                    self.apiclient,
+                                    templatefilter=\
+                                    self.services["template"]["templatefilter"],
+                                    id=templatedetails.id,
+                                    zoneid=self.zone.id
+                                    )
+        self.assertEqual(
+                            list_template_response,
+                            None,
+                            "Check template available in List Templates"
+                        )
+        return
+
+
+
+    def detach_data_volume(self,volume,vmdetails):
+
+        self.debug("Detach volume: %s to VM: %s" % (
+            volume.id,
+            vmdetails.id
+        ))
+        vmdetails.detach_volume(self.apiclient, volume)
+
+        # Sleep to ensure the current state will reflected in other calls
+        time.sleep(self.testdata["sleep"])
+
+        list_volume_response = Volume.list(
+            self.apiclient,
+            id=volume.id
+        )
+        self.assertNotEqual(
+            list_volume_response,
+            None,
+            "Check if volume exists in ListVolumes"
+        )
+        self.assertEqual(
+            isinstance(list_volume_response, list),
+            True,
+            "Check list volumes response for valid list"
+        )
+        volumelist = list_volume_response[0]
+        self.assertEqual(
+            volumelist.virtualmachineid,
+            None,
+            "Check if volume state (detached) is reflected"
+        )
+
+        self.assertEqual(
+            volumelist.vmname,
+            None,
+            "Check if volume state (detached) is reflected"
+        )
+        return
+
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
-    def test_01_Browser_volume_Life_cycle_tpath(self):
+    def test_01_Browser_template_Life_cycle_tpath(self):
         """
-        Test Browser_volume_Life_cycle - This includes upload volume,attach to a VM, write data ,Stop ,Start, Reboot,Reset  of a VM, detach,attach back to the VM, delete volumes  
+        Test Browser_template_Life_cycle
         """
         try:
 
-            self.debug("========================= Test 1: Upload Browser based volume and validate ========================= ")
-            browseup_vol=self.browse_upload_volume()
+            self.debug("========================= Test 1: Upload Browser based template and validate ========================= ")
+            browseup_template=self.browse_upload_template()
 
-            self.debug("========================= Test 2: Deploy a VM , Attach Uploaded Browser based volume and validate VM Operations========================= ")
+            self.debug("========================= Test 2: Deploy a VM with uploaded template and validate VM Operations========================= ")
 
-            vm1details=self.deploy_vm()
+            vm1details=self.deploy_vm(browseup_template)
 
-            self.attach_volume(vm1details,browseup_vol.id)
+            #vm1details=self.deploy_vm(self.template)
 
             self.vmoperations(vm1details)
 
-            self.debug("========================= Test 3: Restore VM with Uploaded volume attached========================= ")
+            self.debug("========================= Test 3: Attach DATA DISK to the VM ")
+
+            cvolume=self.create_data_volume()
+            self.attach_data_volume(cvolume, vm1details)
+            self.vmoperations(vm1details)
+
+
+
+            self.debug("========================= Test 4: Restore VM created with Uploaded template========================= ")
 
             self.restore_vm(vm1details)
 
-            self.debug("========================= Test 4: Detach Uploaded volume and validation of VM operations after detach========================= ")
+            self.debug("========================= Test 5: Detach DATA DISK to the VM ")
 
-            self.detach_volume(vm1details,browseup_vol.id)
-
+            self.detach_data_volume(cvolume,vm1details)
             self.vmoperations(vm1details)
 
-            self.destroy_vm(vm1details)
-
-            self.debug("========================= Test 5: Deploy New VM,Attach the detached Uploaded volume and validate VM operations after attach========================= ")
-
-            vm2details=self.deploy_vm()
-
-            self.attach_volume(vm2details,browseup_vol.id)
-
-            self.vmoperations(vm2details)
-
-            self.debug("========================= Test 6: Detach Uploaded volume and resize detached uploaded volume========================= ")
-
-            self.detach_volume(vm2details,browseup_vol.id)
-
-            self.resize_volume(browseup_vol.id)
-
-            self.debug("========================= Test 7: Attach resized uploaded volume and validate VM operations========================= ")
-
-            self.attach_volume(vm2details,browseup_vol.id)
-
-            self.vmoperations(vm2details)
-            self.detach_volume(vm2details,browseup_vol.id)
-
-            self.deletevolume(browseup_vol.id)
-
-            self.debug("========================= Test 8: Try resizing uploaded state volume and validate the error scenario========================= ")
-
-            browseup_vol2=self.browse_upload_volume()
-
-            self.resize_fail(browseup_vol2.id)
-
-            self.debug("========================= Test 9: Attach multiple uploaded volumes to a VM and validate VM operations========================= ")
-
-            browseup_vol3=self.browse_upload_volume()
-
-            self.attach_volume(vm2details,browseup_vol2.id)
-
-            self.attach_volume(vm2details,browseup_vol3.id)
-
-            self.vmoperations(vm2details)
-
-            self.debug("========================= Test 10:  Detach and delete uploaded volume========================= ")
-
-            self.detach_volume(vm2details,browseup_vol2.id)
-
-            self.deletevolume(browseup_vol2.id)
-
-            self.debug("========================= Test 11:  Detach and download uploaded volume========================= ")
-
-            self.detach_volume(vm2details,browseup_vol3.id)
-
-            self.download_volume(browseup_vol3.id)
-
-            self.debug("========================= Test 12:  Delete detached uploaded volume========================= ")
+            self.deletevolume(cvolume.id)
 
 
-            self.deletevolume(browseup_vol3.id)
+            self.debug("========================= Test 6: Expunge VM created with Uploaded template========================= ")
 
-            self.debug("========================= Deletion of UnUsed VM's after test is complete========================= ")
+            self.expunge_vm(vm1details)
 
+            self.debug("========================= Test 7:  Destroy VM ========================= ")
+
+            #vm2details=self.deploy_vm(self.template)
+
+            vm2details=self.deploy_vm(browseup_template)
+            self.destroy_vm(vm2details)
+
+            self.debug("========================= Test 8:  Recover destroyed VM which has Uploaded volumes attached========================= ")
+
+            self.recover_destroyed_vm(vm2details)
             self.expunge_vm(vm2details)
 
-            self.debug("========================= Test 13:  Delete Uploaded State volume========================= ")
+            self.debug("========================= Test 9:  Delete the Uploaded Template========================= ")
 
-            browseup_vol4=self.browse_upload_volume()
+            self.delete_template(browseup_template)
 
-            self.deletevolume(browseup_vol4.id)
+            self.debug("========================= Test 10:  Upload Multiple templates========================= ")
 
-            self.debug("========================= Test 14:  Destroy VM which has Uploaded volumes attached========================= ")
-
-            vm4details=self.deploy_vm()
-
-            newvolumetodestoy_VM=self.browse_upload_volume()
-
-            self.attach_volume(vm4details,newvolumetodestoy_VM.id)
-
-            self.destroy_vm(vm4details)
-
-            self.debug("========================= Test 15:  Recover destroyed VM which has Uploaded volumes attached========================= ")
-
-            self.recover_destroyed_vm(vm4details)
-            self.destroy_vm(vm4details)
-
-            self.deletevolume(newvolumetodestoy_VM.id)
-
-            self.debug("========================= Test 16:  Delete attached Uploaded volume which is in ready state and it should not be allowed to delete========================= ")
-
-            vm5details=self.deploy_vm()
-            browseup_vol5=self.browse_upload_volume()
-            self.attach_volume(vm5details,browseup_vol5.id)
-            self.deletevolume_fail(browseup_vol5.id)
-
-            self.debug("========================= Test 17:  Create Volume Backup Snapshot uploaded volume attached to the VM========================= ")
-
-            vm6details=self.deploy_vm()
-            browseup_vol6=self.browse_upload_volume()
-
-            self.attach_volume(vm6details,browseup_vol6.id)
-
-            snapshotdetails=self.volume_snapshot(browseup_vol6)
-
-            self.debug("========================= Test 18:  Create Volume from Backup Snapshot of attached uploaded volume========================= ")
-
-            self.volume_snapshot_volume(snapshotdetails)
-
-            self.debug("========================= Test 19:  Create template from Backup Snapshot of attached uploaded volume========================= ")
-            self.volume_snapshot_template(snapshotdetails)
-
-            self.deletevolume(browseup_vol6.id)
-            self.expunge_vm(vm6details)
-
-            self.debug("========================= Test 20: Upload Browser based volume with checksum and validate ========================= ")
-            browseup_vol_withchecksum=self.browse_upload_volume_with_md5()
-
-            self.debug("========================= Test 21: Deploy a VM , Attach Uploaded Browser based volume with checksum and validate VM Operations========================= ")
-
-            vm7details=self.deploy_vm()
-
-            self.attach_volume(vm7details,browseup_vol_withchecksum.id)
-
-            self.debug("========================= Test 22: Detach Uploaded volume with checksum and validation of VM operations after detach========================= ")
-
-            self.detach_volume(vm7details,browseup_vol_withchecksum.id)
-            self.deletevolume(browseup_vol_withchecksum.id)
-
-            self.vmoperations(vm7details)
-
-            self.expunge_vm(vm7details)
-
+            self.multiple_browse_upload_template()
 
         except Exception as e:
             self.fail("Exception occurred  : %s" % e)
@@ -1462,59 +1267,45 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
-    def xtest_02_SSVM_Life_Cycle_With_Browser_Volume_TPath(self):
+    def test_02_SSVM_Life_Cycle_With_Browser_Template_TPath(self):
         """
-        Test SSVM_Life_Cycle_With_Browser_Volume_TPath - This includes SSVM life cycle followed by Browser volume upload operations
+        Test SSVM_Life_Cycle_With_Browser_template_TPath 
         """
         try:
             
-            self.debug("========================= Test 23: Stop and Start SSVM and Perform Browser based volume validations ========================= ")
+            self.debug("========================= Test 11: Stop and Start SSVM and Perform Browser based volume validations ========================= ")
 
             self.stop_ssvm()
-            ssvm1browseup_vol=self.browse_upload_volume()
+            ssvm1browseup_template=self.browse_upload_template()
 
-            ssvm1vm1details=self.deploy_vm()
-
-            self.attach_volume(ssvm1vm1details,ssvm1browseup_vol.id)
+            ssvm1vm1details=self.deploy_vm(ssvm1browseup_template)
+            #ssvm1vm1details=self.deploy_vm(self.template)
 
             self.vmoperations(ssvm1vm1details)
 
-            self.detach_volume(ssvm1vm1details,ssvm1browseup_vol.id)
-
-            self.deletevolume(ssvm1browseup_vol.id)
             self.expunge_vm(ssvm1vm1details)
 
-            self.debug("========================= Test 24: Reboot SSVM and Perform Browser based volume validations ========================= ")
+            self.debug("========================= Test 12: Reboot SSVM and Perform Browser based volume validations ========================= ")
 
             self.reboot_ssvm()
-            ssvm2browseup_vol=self.browse_upload_volume()
+            ssvm2browseup_template=self.browse_upload_template()
 
-            ssvm2vm1details=self.deploy_vm()
+            ssvm2vm1details=self.deploy_vm(ssvm2browseup_template)
 
-            self.attach_volume(ssvm2vm1details,ssvm2browseup_vol.id)
-
+            #ssvm2vm1details=self.deploy_vm(self.template)
             self.vmoperations(ssvm2vm1details)
-
-            self.detach_volume(ssvm2vm1details,ssvm2browseup_vol.id)
-
-            self.deletevolume(ssvm2browseup_vol.id)
 
             self.expunge_vm(ssvm2vm1details)
 
-            self.debug("========================= Test 25: Reboot SSVM and Perform Browser based volume validations ========================= ")
+            self.debug("========================= Test 13: Destroy SSVM and Perform Browser based volume validations ========================= ")
 
             self.destroy_ssvm()
-            ssvm3browseup_vol=self.browse_upload_volume()
+            ssvm3browseup_template=self.browse_upload_template()
 
-            ssvm3vm1details=self.deploy_vm()
+            ssvm3vm1details=self.deploy_vm(ssvm3browseup_template)
 
-            self.attach_volume(ssvm3vm1details,ssvm3browseup_vol.id)
-
+            #ssvm2vm1details=self.deploy_vm(self.template)
             self.vmoperations(ssvm3vm1details)
-
-            self.detach_volume(ssvm3vm1details,ssvm3browseup_vol.id)
-
-            self.deletevolume(ssvm3browseup_vol.id)
 
             self.expunge_vm(ssvm3vm1details)
 

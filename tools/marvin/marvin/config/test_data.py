@@ -884,21 +884,29 @@ test_data = {
 },
     "browser_upload_template": {
           "VHD": {
-        "diskname": "XenUploadVol",
-        "url": "http://10.147.28.7/templates/rajani-thin-volume.vhd",
+        "templatename": "XenUploadtemplate",
+        "displaytext": "XenUploadtemplate",
+        "url": "http://10.147.28.7/templates/builtin/centos56-x86_64.vhd.bz2",
+        "hypervisor":"XenServer",
         "checksum": "09b08b6abb1b903fca7711d3ac8d6598",
+        "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
                 },
           "OVA": {
-        "diskname": "VMwareUploadVol",
-        "url": "http://10.147.28.7/templates/Autoscale_Template/CentOS5.5(64bit)-vmware-autoscale.ova",
+        "templatename": "VMwareUploadtemplate",
+        "displaytext": "VMwareUploadtemplate",
+        "url": "http://nfs1.lab.vmops.com/templates/vmware/CentOS5.3-x86_64.ova",
         "checksum": "02de0576dd3a61ab59c03fd795fc86ac",
+        "hypervisor":"VMware",
+        "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
                 },
           "QCOW2": {
-        "diskname": "KVMUploadVol",
-        "url": "http://10.147.28.7/templates/rajani-thin-volume.qcow2",
+        "templatename": "KVMUploadtemplate",
+        "displaytext": "VMwareUploadtemplate",
+        "url": "http://10.147.28.7/templates/builtin/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2",
         "checksum": "da997b697feaa2f1f6e0d4785b0cece2",
+        "hypervisor":"KVM",
+        "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
                 },
-                              },
                               },
     "recurring_snapshot": {
         "maxsnaps": 2,
