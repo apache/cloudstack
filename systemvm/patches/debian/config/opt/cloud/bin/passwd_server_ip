@@ -20,13 +20,12 @@
 addr=$1;
 while [ "$ENABLED" == "1" ]
 do
-	socat -lf /var/log/cloud.log TCP4-LISTEN:8080,reuseaddr,fork,crnl,bind=$addr SYSTEM:"/opt/cloud/bin/serve_password.sh \"\$SOCAT_PEERADDR\""
-
-	rc=$?
-	if [ $rc -ne 0 ]
-	then
-		logger -t cloud "Password server failed with error code $rc. Restarting socat..."
-		sleep 3
-	fi
-        . /etc/default/cloud-passwd-srvr
+    python /opt/cloud/bin/passwd_server_ip.py $addr >/dev/null 2>/dev/null
+    rc=$?
+    if [ $rc -ne 0 ]
+    then
+        logger -t cloud "Password server failed with error code $rc. Restarting it..."
+        sleep 3
+    fi
+    . /etc/default/cloud-passwd-srvr
 done
