@@ -37,9 +37,6 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
     @SerializedName("iprange") @Param(description="the range of ips to allocate to the clients")
     private String ipRange;
 
-    @SerializedName("presharedkey") @Param(description="the ipsec preshared key")
-    private String presharedKey;
-
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account of the remote access vpn")
     private String accountName;
 
@@ -67,10 +64,6 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
 
     public void setIpRange(String ipRange) {
         this.ipRange = ipRange;
-    }
-
-    public void setPresharedKey(String presharedKey) {
-        this.presharedKey = presharedKey;
     }
 
     public void setAccountName(String accountName) {
