@@ -349,6 +349,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             tmpTemplateDataStore.setPhysicalSize(answer.getPhysicalSize());
                             tmpTemplateDataStore.setSize(answer.getVirtualSize());
                             tmpTemplateDataStore.setDownloadPercent(100);
+                            tmpTemplateDataStore.setExtractUrl(null);
 
                             VMTemplateVO templateUpdate = _templateDao.createForUpdate();
                             templateUpdate.setSize(answer.getVirtualSize());
