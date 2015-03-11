@@ -31,6 +31,7 @@ public class Hypervisor {
         BareMetal,
         Simulator,
         Ovm,
+        Ovm3,
         LXC,
 
         Any; /*If you don't care about the hypervisor type*/
@@ -61,6 +62,8 @@ public class Hypervisor {
                 return HypervisorType.LXC;
             } else if (hypervisor.equalsIgnoreCase("Any")) {
                 return HypervisorType.Any;
+            } else if (hypervisor.equalsIgnoreCase("Ovm3")) {
+                return HypervisorType.Ovm3;
             } else {
                 return HypervisorType.None;
             }
@@ -80,6 +83,8 @@ public class Hypervisor {
             } else if (hyperType == HypervisorType.VMware) {
                 return ImageFormat.OVA;
             } else if (hyperType == HypervisorType.Ovm) {
+                return ImageFormat.RAW;
+            } else if (hyperType == HypervisorType.Ovm3) {
                 return ImageFormat.RAW;
             } else {
                 return null;

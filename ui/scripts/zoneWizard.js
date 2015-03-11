@@ -91,6 +91,9 @@
             case 'LXC':
                 hypervisorAttr = 'lxcnetworklabel';
                 break;
+            case 'Ovm3':
+                hypervisorAttr = 'ovm3networklabel';
+                break;
         }
 
         trafficLabelStr = trafficLabel ? '&' + hypervisorAttr + '=' + trafficLabel : '';
@@ -494,6 +497,7 @@
                                         nonSupportedHypervisors["BareMetal"] = 1;
                                         nonSupportedHypervisors["Hyperv"] = 1;
                                         nonSupportedHypervisors["Ovm"] = 1;
+                                        nonSupportedHypervisors["Ovm3"] = 1;
                                     }
 
                                     if (args.context.zones[0]['network-model'] == "Advanced") { //CLOUDSTACK-7681: UI > zone wizard > Advanced zone > hypervisor => do not support BareMetal                                    
@@ -1006,6 +1010,13 @@
                                         $vsmFields.css('display', 'none');
                                     }
                                     //$("#cluster_name_label", $dialogAddCluster).text("vCenter Cluster:");
+                                } else if ($(this).val() == "Ovm3") {
+                                    $form.find('.form-item[rel=ovm3pool]').css('display', 'inline-block');
+                                    $form.find('.form-item[rel=ovm3pool]').find('input[type=checkbox]').removeAttr('checked');
+
+                                    $form.find('.form-item[rel=ovm3cluster]').css('display', 'inline-block');
+                                    $form.find('.form-item[rel=ovm3cluster]').find('input[type=checkbox]').removeAttr('checked');
+                                    $form.find('[rel=ovm3vip]').css('display', 'block');
                                 } else {
                                     //$('li[input_group="vmware"]', $dialogAddCluster).hide();
 
@@ -1276,6 +1287,14 @@
                         //$('li[input_group="Ovm"]', $dialogAddHost).hide();
                         $form.find('[rel=agentUsername]').hide();
                         $form.find('[rel=agentPassword]').hide();
+
+                        //$('li[input_group="Ovm3"]', $dialogAddHost).hide();
+                        $form.find('.form-item[rel=agentUsername]').hide();
+                        $form.find('.form-item[rel=agentPassword]').hide();
+                        $form.find('.form-item[rel=agentPort]').hide();
+                        $form.find('.form-item[rel=ovm3vip]').hide();
+                        $form.find('.form-item[rel=ovm3pool]').hide();
+                        $form.find('.form-item[rel=ovm3cluster]').hide();
                     } else if (selectedClusterObj.hypervisortype == "BareMetal") {
                         //$('li[input_group="general"]', $dialogAddHost).show();
                         $form.find('[rel=hostname]').css('display', 'block');
@@ -1294,6 +1313,14 @@
                         //$('li[input_group="Ovm"]', $dialogAddHost).hide();
                         $form.find('[rel=agentUsername]').hide();
                         $form.find('[rel=agentPassword]').hide();
+
+                        //$('li[input_group="Ovm3"]', $dialogAddHost).hide();
+                        $form.find('.form-item[rel=agentUsername]').hide();
+                        $form.find('.form-item[rel=agentPassword]').hide();
+                        $form.find('.form-item[rel=agentPort]').hide();
+                        $form.find('.form-item[rel=ovm3vip]').hide();
+                        $form.find('.form-item[rel=ovm3pool]').hide();
+                        $form.find('.form-item[rel=ovm3cluster]').hide();
                     } else if (selectedClusterObj.hypervisortype == "Ovm") {
                         //$('li[input_group="general"]', $dialogAddHost).show();
                         $form.find('[rel=hostname]').css('display', 'block');
@@ -1313,6 +1340,36 @@
                         $form.find('[rel=agentUsername]').css('display', 'block');
                         $form.find('[rel=agentUsername]').find('input').val("oracle");
                         $form.find('[rel=agentPassword]').css('display', 'block');
+
+                        //$('li[input_group="Ovm3"]', $dialogAddHost).hide();
+                        $form.find('.form-item[rel=agentPort]').hide();
+                        $form.find('.form-item[rel=ovm3vip]').hide();
+                        $form.find('.form-item[rel=ovm3pool]').hide();
+                        $form.find('.form-item[rel=ovm3cluster]').hide();
+                   } else if (selectedClusterObj.hypervisortype == "Ovm3") {
+                        //$('li[input_group="general"]', $dialogAddHost).show();
+                        $form.find('.form-item[rel=hostname]').css('display', 'inline-block');
+                        $form.find('.form-item[rel=username]').css('display', 'inline-block');
+                        $form.find('.form-item[rel=password]').css('display', 'inline-block');
+
+                        //$('li[input_group="vmware"]', $dialogAddHost).hide();
+                        $form.find('.form-item[rel=vcenterHost]').hide();
+
+                        //$('li[input_group="baremetal"]', $dialogAddHost).hide();
+                        $form.find('.form-item[rel=baremetalCpuCores]').hide();
+                        $form.find('.form-item[rel=baremetalCpu]').hide();
+                        $form.find('.form-item[rel=baremetalMemory]').hide();
+                        $form.find('.form-item[rel=baremetalMAC]').hide();
+
+                         //$('li[input_group="Ovm3"]', $dialogAddHost).show();
+                        $form.find('.form-item[rel=agentUsername]').css('display', 'inline-block');
+                        $form.find('.form-item[rel=agentUsername]').find('input').val("oracle");
+                        $form.find('.form-item[rel=agentPassword]').css('display', 'inline-block');
+                        $form.find('.form-item[rel=agentPort]').css('display', 'inline-block');
+                        $form.find('.form-item[rel=agentPort]').find('input').val("8899");
+                        $form.find('.form-item[rel=ovm3vip]').css('display', 'inline-block');
+                        $form.find('.form-item[rel=ovm3pool]').css('display', 'inline-block');
+                        $form.find('.form-item[rel=ovm3cluster]').css('display', 'inline-block');
                     } else {
                         //$('li[input_group="general"]', $dialogAddHost).show();
                         $form.find('[rel=hostname]').css('display', 'block');
@@ -1331,6 +1388,11 @@
                         //$('li[input_group="Ovm"]', $dialogAddHost).hide();
                         $form.find('[rel=agentUsername]').hide();
                         $form.find('[rel=agentPassword]').hide();
+                        //$('li[input_group="Ovm3"]', $dialogAddHost).hide();
+                        $form.find('.form-item[rel=agentPort]').hide();
+                        $form.find('.form-item[rel=ovm3vip]').hide();
+                        $form.find('.form-item[rel=ovm3pool]').hide();
+                        $form.find('.form-item[rel=ovm3cluster]').hide();
                     }
                 },
                 fields: {
@@ -1418,6 +1480,16 @@
                         isPassword: true
                     },
                     //input_group="OVM" ends here
+
+                    //input_group="OVM3" starts here
+                    agentPort: {
+                        label: 'label.agent.port',
+                        validation: {
+                            required: false
+                        },
+                        isHidden: true
+                    },
+                    //input_group="OVM3" ends here
 
                     //always appear (begin)
                     hosttags: {
@@ -1579,6 +1651,15 @@
                                 items.push({
                                     id: "SharedMountPoint",
                                     description: "SharedMountPoint"
+                                });
+                                args.response.success({
+                                    data: items
+                                });
+                            } else if (selectedClusterObj.hypervisortype == "Ovm3") {
+                                var items = [];
+                                items.push({
+                                    id: "nfs",
+                                    description: "nfs"
                                 });
                                 args.response.success({
                                     data: items

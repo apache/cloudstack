@@ -111,11 +111,11 @@ public interface NetworkService {
     long findPhysicalNetworkId(long zoneId, String tag, TrafficType trafficType);
 
     PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficType, String isolationMethod, String xenLabel, String kvmLabel, String vmwareLabel,
-        String simulatorLabel, String vlan, String hypervLabel);
+        String simulatorLabel, String vlan, String hypervLabel, String ovm3label);
 
     PhysicalNetworkTrafficType getPhysicalNetworkTrafficType(Long id);
 
-    PhysicalNetworkTrafficType updatePhysicalNetworkTrafficType(Long id, String xenLabel, String kvmLabel, String vmwareLabel, String hypervLabel);
+    PhysicalNetworkTrafficType updatePhysicalNetworkTrafficType(Long id, String xenLabel, String kvmLabel, String vmwareLabel, String hypervLabel, String ovm3label);
 
     boolean deletePhysicalNetworkTrafficType(Long id);
 

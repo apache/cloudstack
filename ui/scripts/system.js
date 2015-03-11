@@ -139,6 +139,8 @@
         trafficType.lxcnetworklabel = _l( 'label.network.label.display.for.blank.value');
         if (trafficType.hypervnetworklabel == null || trafficType.hypervnetworklabel == 0)
         trafficType.hypervnetworklabel = _l( 'label.network.label.display.for.blank.value');
+        if (trafficType.ovm3networklabel == null || trafficType.ovm3networklabel == 0)
+        trafficType.ovm3networklabel = _l( 'label.network.label.display.for.blank.value');
         
         return trafficType;
     };
@@ -157,6 +159,8 @@
         array1.push("&lxcnetworklabel=" + labels.lxcnetworklabel);
         if (labels.hypervnetworklabel != _l( 'label.network.label.display.for.blank.value'))
         array1.push("&hypervnetworklabel=" + labels.hypervnetworklabel);
+        if (labels.ovm3networklabel != _l( 'label.network.label.display.for.blank.value'))
+        array1.push("&ovm3networklabel=" + labels.ovm3networklabel);
         
         $.ajax({
             url: createURL('updateTrafficType' + array1.join("")),
@@ -597,6 +601,10 @@
                                     hypervnetworklabel: {
                                         label: 'label.hyperv.traffic.label',
                                         isEditable: true
+                                    },
+                                    ovm3networklabel: {
+                                        label: 'label.ovm3.traffic.label',
+                                        isEditable: true
                                     }
                                 }],
                                 
@@ -620,7 +628,7 @@
                                             selectedPublicNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
                                             selectedPublicNetworkObj.lxcnetworklabel = trafficType.lxcnetworklabel;
                                             selectedPublicNetworkObj.hypervnetworklabel = trafficType.hypervnetworklabel;
-                                            
+                                            selectedPublicNetworkObj.ovm3networklabel = trafficType.ovm3networklabel;
                                             args.response.success({
                                                 data: selectedPublicNetworkObj
                                             });
@@ -907,6 +915,10 @@
                                     hypervnetworklabel: {
                                         label: 'label.hyperv.traffic.label',
                                         isEditable: true
+                                    },
+                                    ovm3networklabel: {
+                                        label: 'label.ovm3.traffic.label',
+                                        isEditable: true
                                     }
                                 }],
                                 
@@ -926,7 +938,7 @@
                                             selectedPublicNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
                                             selectedPublicNetworkObj.lxcnetworklabel = trafficType.lxcnetworklabel;
                                             selectedPublicNetworkObj.hypervnetworklabel = trafficType.hypervnetworklabel;
-                                            
+                                            selectedPublicNetworkObj.ovm3networklabel = trafficType.ovm3networklabel;
                                             args.response.success({
                                                 data: selectedPublicNetworkObj
                                             });
@@ -1119,6 +1131,10 @@
                                     hypervnetworklabel: {
                                         label: 'label.hyperv.traffic.label',
                                         isEditable: true
+                                    },
+                                    ovm3networklabel: {
+                                        label: 'label.ovm3.traffic.label',
+                                        isEditable: true
                                     }
                                 }],
                                 dataProvider: function (args) {
@@ -1136,7 +1152,7 @@
                                             selectedManagementNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
                                             selectedManagementNetworkObj.lxcnetworklabel = trafficType.lxcnetworklabel;
                                             selectedManagementNetworkObj.hypervnetworklabel = trafficType.hypervnetworklabel;
-                                            
+                                            selectedManagementNetworkObj.ovm3networklabel = trafficType.ovm3networklabel;
                                             args.response.success({
                                                 data: selectedManagementNetworkObj
                                             });
@@ -1308,6 +1324,10 @@
                                     hypervnetworklabel: {
                                         label: 'label.hyperv.traffic.label',
                                         isEditable: true
+                                    },
+                                    ovm3networklabel: {
+                                        label: 'label.ovm3.traffic.label',
+                                        isEditable: true
                                     }
                                 }],
                                 dataProvider: function (args) {
@@ -1347,7 +1367,7 @@
                                             selectedPhysicalNetworkObj[ "ovmnetworklabel"] = trafficType.ovmnetworklabel;
                                             selectedPhysicalNetworkObj[ "lxcnetworklabel"] = trafficType.lxcnetworklabel;
                                             selectedPhysicalNetworkObj[ "hypervnetworklabel"] = trafficType.hypervnetworklabel;
-                                            
+                                            selectedPhysicalNetworkObj[ "ovm3networklabel"] = trafficType.ovm3networklabel;
                                             args.response.success({
                                                 actionFilter: function () {
                                                     var allowedActions =[ 'edit', 'addVlanRange', 'removeVlanRange'];
@@ -9241,12 +9261,13 @@
                                 	var array1 = [];
                                 	
                                 	// ***** non XenServer (begin) *****
-                                	var hypervisors = ["Hyperv", "KVM", "VMware", "BareMetal", "LXC"];
-                                	
+					var hypervisors = ["Hyperv", "KVM", "VMware", "BareMetal", "LXC", "Ovm3"];
+
                                         	var supportSocketHypervisors = {
-                                        		"Hyperv": 1, 
-                                        		"KVM": 1, 
-                                        		"VMware": 1
+                                                "Hyperv": 1,
+                                                "KVM": 1,
+                                                "VMware": 1,
+                                                "Ovm3": 1
                                         	};                                        	
                                         	
                                 	for (var h = 0; h < hypervisors.length; h++) {
@@ -14023,7 +14044,31 @@
                                             required: false
                                         }
                                     },
-                                    
+
+                                    //hypervisor==Ovm3 begins here
+                                    ovm3pool: {
+                                        label: 'label.ovm3.pool',
+                                        isHidden: true,
+                                        isBoolean: true,
+                                        isChecked: true,
+                                        docID: 'helpOvm3pool'
+                                    },
+                                    ovm3cluster: {
+                                        label: 'label.ovm3.cluster',
+                                        isHidden: true,
+                                        isBoolean: true,
+                                        isChecked: false,
+                                        docID: 'helpOvm3cluster'
+                                    },
+                                    ovm3vip: {
+                                        label: 'label.ovm3.vip',
+                                        isHidden: true,
+                                        docID: 'helpOvm3Vip',
+                                        validation: {
+                                            required: false
+                                        }
+                                    },
+
                                     //hypervisor==VMWare begins here
                                     vCenterHost: {
                                         label: 'label.vcenter.host',
@@ -14253,7 +14298,11 @@
                                 array1.push("&podId=" + args.data.podId);
                                 
                                 var clusterName = args.data.name;
-                                
+                                if (args.data.hypervisor == "Ovm3") {
+                                     array1.push("&ovm3pool=" + todb(args.data.ovm3pool));
+                                     array1.push("&ovm3cluster=" + todb(args.data.ovm3cluster));
+                                     array1.push("&ovm3vip=" + todb(args.data.ovm3vip));
+                                }
                                 if (args.data.hypervisor == "VMware") {
                                     array1.push("&username=" + todb(args.data.vCenterUsername));
                                     array1.push("&password=" + todb(args.data.vCenterPassword));
@@ -15243,6 +15292,14 @@
                                                     //$('li[input_group="Ovm"]', $dialogAddHost).hide();
                                                     $form.find('.form-item[rel=agentUsername]').hide();
                                                     $form.find('.form-item[rel=agentPassword]').hide();
+
+                                                    //$('li[input_group="Ovm3"]', $dialogAddHost).hide();
+                                                    $form.find('.form-item[rel=agentUsername]').hide();
+                                                    $form.find('.form-item[rel=agentPassword]').hide();
+                                                    $form.find('.form-item[rel=agentPort]').hide();
+                                                    $form.find('.form-item[rel=ovm3vip]').hide();
+                                                    $form.find('.form-item[rel=ovm3pool]').hide();
+                                                    $form.find('.form-item[rel=ovm3cluster]').hide();
                                                 } else if (selectedClusterObj.hypervisortype == "BareMetal") {
                                                     //$('li[input_group="general"]', $dialogAddHost).show();
                                                     $form.find('.form-item[rel=hostname]').css('display', 'inline-block');
@@ -15257,10 +15314,18 @@
                                                     
                                                     //$('li[input_group="vmware"]', $dialogAddHost).hide();
                                                     $form.find('.form-item[rel=vcenterHost]').hide();
-                                                    
+
                                                     //$('li[input_group="Ovm"]', $dialogAddHost).hide();
                                                     $form.find('.form-item[rel=agentUsername]').hide();
                                                     $form.find('.form-item[rel=agentPassword]').hide();
+
+                                                    //$('li[input_group="Ovm3"]', $dialogAddHost).hide();
+                                                    $form.find('.form-item[rel=agentUsername]').hide();
+                                                    $form.find('.form-item[rel=agentPassword]').hide();
+                                                    $form.find('.form-item[rel=agentPort]').hide();
+                                                    $form.find('.form-item[rel=ovm3vip]').hide();
+                                                    $form.find('.form-item[rel=ovm3pool]').hide();
+                                                    $form.find('.form-item[rel=ovm3cluster]').hide();
                                                 } else if (selectedClusterObj.hypervisortype == "Ovm") {
                                                     //$('li[input_group="general"]', $dialogAddHost).show();
                                                     $form.find('.form-item[rel=hostname]').css('display', 'inline-block');
@@ -15280,6 +15345,38 @@
                                                     $form.find('.form-item[rel=agentUsername]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=agentUsername]').find('input').val("oracle");
                                                     $form.find('.form-item[rel=agentPassword]').css('display', 'inline-block');
+
+                                                    //$('li[input_group="Ovm3"]', $dialogAddHost).hide();
+                                                    $form.find('.form-item[rel=agentUsername]').hide();
+                                                    $form.find('.form-item[rel=agentPassword]').hide();
+                                                    $form.find('.form-item[rel=agentPort]').hide();
+                                                    $form.find('.form-item[rel=ovm3vip]').hide();
+                                                    $form.find('.form-item[rel=ovm3pool]').hide();
+                                                    $form.find('.form-item[rel=ovm3cluster]').hide();
+                                                } else if (selectedClusterObj.hypervisortype == "Ovm3") {
+                                                    //$('li[input_group="general"]', $dialogAddHost).show();
+                                                    $form.find('.form-item[rel=hostname]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=username]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=password]').css('display', 'inline-block');
+
+                                                    //$('li[input_group="vmware"]', $dialogAddHost).hide();
+                                                    $form.find('.form-item[rel=vcenterHost]').hide();
+
+                                                    //$('li[input_group="baremetal"]', $dialogAddHost).hide();
+                                                    $form.find('.form-item[rel=baremetalCpuCores]').hide();
+                                                    $form.find('.form-item[rel=baremetalCpu]').hide();
+                                                    $form.find('.form-item[rel=baremetalMemory]').hide();
+                                                    $form.find('.form-item[rel=baremetalMAC]').hide();
+
+                                                     //$('li[input_group="Ovm3"]', $dialogAddHost).show();
+                                                    $form.find('.form-item[rel=agentUsername]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=agentUsername]').find('input').val("oracle");
+                                                    $form.find('.form-item[rel=agentPassword]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=agentPort]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=agentPort]').find('input').val("8899");
+                                                    $form.find('.form-item[rel=ovm3vip]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=ovm3pool]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=ovm3cluster]').css('display', 'inline-block');
                                                 } else {
                                                     //$('li[input_group="general"]', $dialogAddHost).show();
                                                     $form.find('.form-item[rel=hostname]').css('display', 'inline-block');
@@ -15298,6 +15395,14 @@
                                                     //$('li[input_group="Ovm"]', $dialogAddHost).hide();
                                                     $form.find('.form-item[rel=agentUsername]').hide();
                                                     $form.find('.form-item[rel=agentPassword]').hide();
+
+                                                    //$('li[input_group="Ovm3"]', $dialogAddHost).hide();
+                                                    $form.find('.form-item[rel=agentUsername]').hide();
+                                                    $form.find('.form-item[rel=agentPassword]').hide();
+                                                    $form.find('.form-item[rel=agentPort]').hide();
+                                                    $form.find('.form-item[rel=ovm3vip]').hide();
+                                                    $form.find('.form-item[rel=ovm3pool]').hide();
+                                                    $form.find('.form-item[rel=ovm3cluster]').hide();
                                                 }
                                             });
                                             
@@ -15442,7 +15547,17 @@
                                         isPassword: true
                                     },
                                     //input_group="OVM" ends here
-                                    
+
+                                    //input_group="OVM3" starts here
+                                    agentPort: {
+                                        label: 'label.agent.port',
+                                        validation: {
+                                            required: false
+                                        },
+                                        isHidden: true
+                                    },
+                                    //input_group="OVM3" ends here
+
                                     //always appear (begin)
                                     hosttags: {
                                         label: 'label.host.tags',
@@ -15540,6 +15655,12 @@
                                             agentusername: args.data.agentUsername,
                                             agentpassword: args.data.agentPassword
                                         });
+                                    } else if (selectedClusterObj.hypervisortype == "Ovm3") {
+                                        $.extend(data, {
+                                            agentusername: args.data.agentUsername,
+                                            agentpassword: args.data.agentPassword,
+                                            agentport: args.data.agentPort,
+                                       });
                                     }
                                 }
                                 
@@ -16689,6 +16810,13 @@
                                                 });
                                                 args.response.success({
                                                     data: items
+                                                });
+                                            // 3.3.2 has ceph/ocfs2/iscsi etc
+                                            } else if (selectedClusterObj.hypervisortype == "Ovm3") {
+                                                var items =[];
+                                                items.push({
+                                                    id: "nfs",
+                                                    description: "nfs"
                                                 });
                                             } else {
                                                 args.response.success({
