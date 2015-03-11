@@ -452,7 +452,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             snapshotResponse.setVolumeId(volume.getUuid());
             snapshotResponse.setVolumeName(volume.getName());
             snapshotResponse.setVolumeType(volume.getVolumeType().name());
-            DataCenter zone = ApiDBUtils.findZoneById(volume.getDeviceId());
+            DataCenter zone = ApiDBUtils.findZoneById(volume.getDataCenterId());
             if (zone != null) {
                 snapshotResponse.setZoneId(zone.getUuid());
             }
@@ -1300,7 +1300,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             vpnResponse.setPublicIp(ip.getAddress().addr());
         }
         vpnResponse.setIpRange(vpn.getIpRange());
-        vpnResponse.setPresharedKey(vpn.getIpsecPresharedKey());
         populateOwner(vpnResponse, vpn);
         vpnResponse.setState(vpn.getState().toString());
         vpnResponse.setId(vpn.getUuid());
