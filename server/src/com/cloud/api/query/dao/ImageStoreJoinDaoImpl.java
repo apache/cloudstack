@@ -33,7 +33,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.storage.ImageStore;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
