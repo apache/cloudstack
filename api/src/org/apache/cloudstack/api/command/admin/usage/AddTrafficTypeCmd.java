@@ -75,6 +75,11 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
                description = "The network name label of the physical device dedicated to this traffic on a Hyperv host")
     private String hypervLabel;
 
+    @Parameter(name = ApiConstants.OVM3_NETWORK_LABEL,
+               type = CommandType.STRING,
+               description = "The network name of the physical device dedicated to this traffic on an OVM3 host")
+    private String ovm3Label;
+
     @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "The VLAN id to be used for Management traffic by VMware host")
     private String vlan;
 
@@ -113,6 +118,10 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     public String getSimulatorLabel() {
         //simulators will have no labels
         return null;
+    }
+
+    public String getOvm3Label() {
+        return ovm3Label;
     }
 
     public void setVlan(String vlan) {
@@ -162,7 +171,7 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     public void create() throws ResourceAllocationException {
         PhysicalNetworkTrafficType result =
             _networkService.addTrafficTypeToPhysicalNetwork(getPhysicalNetworkId(), getTrafficType(), getIsolationMethod(), getXenLabel(), getKvmLabel(), getVmwareLabel(),
-                getSimulatorLabel(), getVlan(), getHypervLabel());
+                getSimulatorLabel(), getVlan(), getHypervLabel(), getOvm3Label());
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());

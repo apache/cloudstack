@@ -66,7 +66,7 @@ public class AddClusterCmd extends BaseCmd {
     @Parameter(name = ApiConstants.HYPERVISOR,
                type = CommandType.STRING,
                required = true,
-               description = "hypervisor type of the cluster: XenServer,KVM,VMware,Hyperv,BareMetal,Simulator")
+               description = "hypervisor type of the cluster: XenServer,KVM,VMware,Hyperv,BareMetal,Simulator,Ovm3")
     private String hypervisor;
 
     @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, required = true, description = "type of the cluster: CloudManaged, ExternalManaged")
@@ -107,6 +107,22 @@ public class AddClusterCmd extends BaseCmd {
                required = false,
                description = "Name of virtual switch used for public traffic in the cluster.  This would override zone wide traffic label setting.")
     private String vSwitchNamePublicTraffic;
+
+    @Parameter(name = ApiConstants.OVM3_POOL, type = CommandType.STRING, required = false, description = "Ovm3 native pooling enabled for cluster")
+    private String ovm3pool;
+    @Parameter(name = ApiConstants.OVM3_CLUSTER, type = CommandType.STRING, required = false, description = "Ovm3 native OCFS2 clustering enabled for cluster")
+    private String ovm3cluster;
+    @Parameter(name = ApiConstants.OVM3_VIP, type = CommandType.STRING, required = false,  description = "Ovm3 vip to use for pool (and cluster)")
+    private String ovm3vip;
+    public String getOvm3Pool() {
+         return ovm3pool;
+    }
+    public String getOvm3Cluster() {
+        return ovm3cluster;
+    }
+    public String getOvm3Vip() {
+        return ovm3vip;
+    }
 
     public String getVSwitchTypeGuestTraffic() {
         return vSwitchTypeGuestTraffic;

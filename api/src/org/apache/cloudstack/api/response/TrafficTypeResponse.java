@@ -56,6 +56,10 @@ public class TrafficTypeResponse extends BaseResponse {
     @Param(description = "The network name label of the physical device dedicated to this traffic on a HyperV host")
     private String hypervNetworkLabel;
 
+    @SerializedName(ApiConstants.OVM3_NETWORK_LABEL)
+    @Param(description = "The network name of the physical device dedicated to this traffic on an OVM3 host")
+    private String ovm3NetworkLabel;
+
     @Override
     public String getObjectId() {
         return this.id;
@@ -115,5 +119,13 @@ public class TrafficTypeResponse extends BaseResponse {
 
     public String getVmwareLabel() {
         return vmwareNetworkLabel;
+    }
+
+    public String getOvm3Label() {
+        return ovm3NetworkLabel;
+    }
+
+    public void setOvm3Label(String ovm3Label) {
+        this.ovm3NetworkLabel = ovm3Label;
     }
 }

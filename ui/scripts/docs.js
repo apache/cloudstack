@@ -1297,5 +1297,17 @@ cloudStack.docs = {
     helpVspRetryInterval: {
         desc: 'The interval of time in milliseconds to wait on failure before attempting to resend the command to Nuage VSD.  Valid values [0 - 10000].',
         externalLink: ''
+    },
+    helpOvm3pool: {
+        desc: 'Pool the Ovm3 nodes in this cluster, required for vm node migrations',
+        externalLink: ''
+    },
+    helpOvm3cluster: {
+        desc: 'Use the native Ovm3 OCFS2 clustering, required for native HA and requires pooling',
+        externalLink: ''
+    },
+    helpOvm3Vip: {
+        desc: 'The VIP used by the pool and cluster',
+        externalLink: ''
     }
 };

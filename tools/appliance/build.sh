@@ -415,7 +415,7 @@ function ovm_export() {
   mv img.raw ${appliance_build_name}-ovm.raw
   bzip2 "${appliance_build_name}-ovm.raw"
   mv "${appliance_build_name}-ovm.raw.bz2" dist/
-  log INFO "${appliance} exported for OracleVM: dist/${appliance_build_name}-ovm.vhd.bz2"
+  log INFO "${appliance} exported for OracleVM: dist/${appliance_build_name}-ovm.raw.bz2"
 }
 
 function kvm_export() {

@@ -20,9 +20,9 @@
 
 
 usage() {
-  printf "Usage: %s: -m <secondary storage mount point> -f <system vm template file> [-h <hypervisor name: kvm|vmware|xenserver|hyperv> ] [ -s <mgmt server secret key, if you specified any when running cloudstack-setup-database, default is password>][-u <Url to system vm template>] [-F <clean up system templates of specified hypervisor>] [-e <Template suffix, e.g vhd, ova, qcow2>] [-o <Database server hostname or ip, e.g localhost>] [-r <Database user name, e.g root>] [-d <Database password. Fllowed by nothing if the password is empty>]\n" $(basename $0) >&2
+  printf "Usage: %s: -m <secondary storage mount point> -f <system vm template file> [-h <hypervisor name: kvm|vmware|xenserver|hyperv|ovm3> ] [ -s <mgmt server secret key, if you specified any when running cloudstack-setup-database, default is password>][-u <Url to system vm template>] [-F <clean up system templates of specified hypervisor>] [-e <Template suffix, e.g vhd, ova, qcow2>] [-o <Database server hostname or ip, e.g localhost>] [-r <Database user name, e.g root>] [-d <Database password. Fllowed by nothing if the password is empty>]\n" $(basename $0) >&2
   printf "or\n" >&2
-  printf "%s: -m <secondary storage mount point> -u <http url for system vm template> [-h <hypervisor name: kvm|vmware|xenserver|hyperv> ] [ -s <mgmt server secret key>]\n" $(basename $0) >&2
+  printf "%s: -m <secondary storage mount point> -u <http url for system vm template> [-h <hypervisor name: kvm|vmware|xenserver|hyperv|ovm3> ] [ -s <mgmt server secret key>]\n" $(basename $0) >&2
 }
 
 failed() {
@@ -165,6 +165,10 @@ then
    then
       ext="vhd"
       templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"Hyperv\" and removed is null"`)
+   elif [ "$hyper" == "ovm3" ]
+   then
+      ext="raw"
+      templateId=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "select max(id) from cloud.vm_template where type = \"SYSTEM\" and hypervisor_type = \"Ovm3\" and removed is null"`)
    else
       usage
       failed 2
@@ -177,7 +181,10 @@ then
 	failed 8
 fi
 
-localfile=$(uuidgen).$ext
+_uuid=$(uuidgen)
+localfile=$_uuid.$ext
+
+_res=(`mysql -h $dbHost --user=$dbUser --password=$dbPassword --skip-column-names -U cloud -e "update cloud.vm_template set uuid=\"$_uuid\" where id=\"$templateId\""`)
 
 mntpoint=`echo "$mntpoint" | sed 's|/*$||'`
 

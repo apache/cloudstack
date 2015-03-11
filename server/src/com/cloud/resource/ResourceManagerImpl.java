@@ -484,6 +484,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if (clusterType == Cluster.ClusterType.CloudManaged) {
             Map<String, String> details = new HashMap<String, String>();
+            // should do this nicer perhaps ?
+            if (hypervisorType == HypervisorType.Ovm3) {
+                Map<String, String> allParams = cmd.getFullUrlParams();
+                details.put("ovm3vip", allParams.get("ovm3vip"));
+                details.put("ovm3pool", allParams.get("ovm3pool"));
+                details.put("ovm3cluster", allParams.get("ovm3cluster"));
+            }
             details.put("cpuOvercommitRatio", CapacityManager.CpuOverprovisioningFactor.value().toString());
             details.put("memoryOvercommitRatio", CapacityManager.MemOverprovisioningFactor.value().toString());
             _clusterDetailsDao.persist(cluster.getId(), details);

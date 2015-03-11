@@ -226,6 +226,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         this.hTypes.add(HypervisorType.Simulator);
         this.hTypes.add(HypervisorType.LXC);
         this.hTypes.add(HypervisorType.Hyperv);
+        this.hTypes.add(HypervisorType.Ovm3);
     }
 
     @Override
