@@ -16,6 +16,5 @@
 -- under the License.
 
 --
--- Schema cleanup from 4.5.0 to 4.6.0
+-- Schema cleanup from 4.5.1 to 4.6.0
 --
-

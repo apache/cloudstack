@@ -16,7 +16,7 @@
 -- under the License.
 
 --
--- Schema upgrade from 4.5.0 to 4.6.0
+-- Schema upgrade from 4.5.1 to 4.6.0
 --
 
 ALTER TABLE `cloud`.`snapshots` ADD COLUMN `min_iops` bigint(20) unsigned COMMENT 'Minimum IOPS';
