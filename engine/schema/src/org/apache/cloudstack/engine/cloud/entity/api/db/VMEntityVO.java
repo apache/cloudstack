@@ -16,11 +16,13 @@
 // under the License.
 package org.apache.cloudstack.engine.cloud.entity.api.db;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.utils.db.Encrypt;
+import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.StateMachine;
+import com.cloud.utils.fsm.FiniteStateObject;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
@@ -36,14 +38,11 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
-
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.utils.db.Encrypt;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.StateMachine;
-import com.cloud.utils.fsm.FiniteStateObject;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
+import java.security.SecureRandom;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Entity
 @Table(name = "vm_instance")
@@ -190,7 +189,7 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
         this.type = type;
         this.guestOSId = guestOSId;
         this.haEnabled = haEnabled;
-        vncPassword = Long.toHexString(new Random().nextLong());
+        vncPassword = Long.toHexString(new SecureRandom().nextLong());
         state = State.Stopped;
         this.accountId = accountId;
         this.domainId = domainId;
