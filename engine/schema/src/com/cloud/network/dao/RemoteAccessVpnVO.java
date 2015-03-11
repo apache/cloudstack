@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.network.dao;
 
-import java.util.UUID;
+import com.cloud.network.RemoteAccessVpn;
+import com.cloud.utils.db.Encrypt;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -24,8 +25,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import com.cloud.network.RemoteAccessVpn;
+import java.util.UUID;
 
 @Entity
 @Table(name = ("remote_access_vpn"))
@@ -48,6 +48,7 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     @Column(name = "ip_range")
     private String ipRange;
 
+    @Encrypt
     @Column(name = "ipsec_psk")
     private String ipsecPresharedKey;
 
