@@ -37,6 +37,7 @@
                     id: cloudStack.context.users[0].userid,
                     password: md5Hashed ? $.md5(args.data.password) : args.data.password
                 },
+                type: 'POST',
                 dataType: 'json',
                 async: true,
                 success: function(data) {
