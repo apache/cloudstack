@@ -23,7 +23,7 @@ CLOUDSTACK_RELEASE=4.5.0
 
 add_backports () {
     sed -i '/backports/d' /etc/apt/sources.list
-    echo 'deb http://http.us.debian.org/debian wheezy-backports main' >> /etc/apt/sources.list
+    echo 'deb http://http.debian.net/debian/ wheezy-backports main' >> /etc/apt/sources.list
     apt-get update
 }
 
