@@ -1284,7 +1284,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             vpnResponse.setPublicIp(ip.getAddress().addr());
         }
         vpnResponse.setIpRange(vpn.getIpRange());
-        vpnResponse.setPresharedKey(vpn.getIpsecPresharedKey());
         populateOwner(vpnResponse, vpn);
         vpnResponse.setState(vpn.getState().toString());
         vpnResponse.setId(vpn.getUuid());
