@@ -16,14 +16,16 @@
 # under the License.
 
 # Import Local Modules
-from marvin.codes import FAILED, KVM
+from marvin.codes import FAILED, KVM, PASS
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
-from marvin.lib.utils import random_gen, cleanup_resources
+from marvin.lib.utils import random_gen, cleanup_resources, validateList
 from marvin.lib.base import (Account,
                              ServiceOffering,
                              VirtualMachine,
-                             VmSnapshot)
+                             VmSnapshot,
+                             Volume,
+                             Snapshot)
 from marvin.lib.common import (get_zone,
                                get_domain,
                                get_template)
@@ -273,3 +275,116 @@ class TestVmSnapshot(cloudstackTestCase):
             None,
             "Check list vm snapshot has be deleted"
         )
+
+class TestSnapshots(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            cls._cleanup = []
+            cls.testClient = super(TestSnapshots, cls).getClsTestClient()
+            cls.api_client = cls.testClient.getApiClient()
+            cls.services = cls.testClient.getParsedTestDataConfig()
+            cls.hypervisor = cls.testClient.getHypervisorInfo()
+            if cls.hypervisor.lower() in (KVM.lower(), "hyperv", "lxc"):
+                raise unittest.SkipTest(
+                    "VM snapshot feature is not supported on KVM, Hyper-V or LXC")
+            # Get Domain, Zone, Template
+            cls.domain = get_domain(cls.api_client)
+            cls.zone = get_zone(
+                cls.api_client,
+                cls.testClient.getZoneForTests())
+            cls.template = get_template(
+                cls.api_client,
+                cls.zone.id,
+                cls.services["ostype"]
+            )
+            if cls.zone.localstorageenabled:
+                cls.storagetype = 'local'
+                cls.services["service_offerings"][
+                    "tiny"]["storagetype"] = 'local'
+            else:
+                cls.storagetype = 'shared'
+                cls.services["service_offerings"][
+                    "tiny"]["storagetype"] = 'shared'
+
+            cls.services['mode'] = cls.zone.networktype
+            cls.services["virtual_machine"]["hypervisor"] = cls.hypervisor
+            cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+            cls.services["virtual_machine"]["template"] = cls.template.id
+            cls.services["custom_volume"]["zoneid"] = cls.zone.id
+            # Creating Disk offering, Service Offering and Account
+            cls.service_offering = ServiceOffering.create(
+                cls.api_client,
+                cls.services["service_offerings"]["tiny"]
+            )
+            cls._cleanup.append(cls.service_offering)
+            cls.account = Account.create(
+                cls.api_client,
+                cls.services["account"],
+                domainid=cls.domain.id
+            )
+            cls._cleanup.append(cls.account)
+        except Exception as e:
+            cls.tearDownClass()
+            raise Exception("Warning: Exception in setup : %s" % e)
+        return
+
+    def setUp(self):
+
+        self.apiclient = self.testClient.getApiClient()
+        self.cleanup = []
+
+    def tearDown(self):
+        # Clean up, terminate the created resources
+        cleanup_resources(self.apiclient, self.cleanup)
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+
+        return
+
+    @attr(tags=["advanced", "basic", "smoke"], required_hardware="true")
+    def test_01_test_vm_volume_snapshot(self):
+        """
+        @Desc: Test that Volume snapshot for root volume not allowed
+        when VM snapshot is present for the VM
+        @Steps:
+        1: Deploy a VM and create a VM snapshot for VM
+        2: Try to create snapshot for the root volume of the VM,
+        It should fail
+        """
+
+        # Creating Virtual Machine
+        virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+        )
+
+        VmSnapshot.create(
+            self.apiclient,
+            virtual_machine.id,
+        )
+
+        volumes = Volume.list(self.apiclient,
+                              virtualmachineid=virtual_machine.id,
+                              type="ROOT",
+                              listall=True)
+
+        self.assertEqual(validateList(volumes)[0], PASS,
+                "Failed to get root volume of the VM")
+
+        volume = volumes[0]
+
+        with self.assertRaises(Exception):
+            Snapshot.create(self.apiclient,
+                    volume_id=volume.id)
+        return
