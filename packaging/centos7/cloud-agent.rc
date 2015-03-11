@@ -64,7 +64,7 @@ export CLASSPATH="/usr/share/java/commons-daemon.jar:$ACP:$PCP:/etc/cloudstack/a
 start() {
     echo -n $"Starting $PROGNAME: "
     if hostname --fqdn >/dev/null 2>&1 ; then
-        $JSVC -cp "$CLASSPATH" -pidfile "$PIDFILE" \
+        $JSVC -Xms256m -Xmx2048m -cp "$CLASSPATH" -pidfile "$PIDFILE" \
             -errfile $LOGDIR/cloudstack-agent.err -outfile $LOGDIR/cloudstack-agent.out $CLASS
         RETVAL=$?
         echo
