@@ -1509,6 +1509,20 @@ test_data = {
                     "ostype": 'CentOS 6.3 (64-bit)',
                     "mode": 'HTTP_DOWNLOAD'
         },
-     "setHostConfigurationForIngressRule": False
+     "setHostConfigurationForIngressRule": False,
+     "vmxnet3template": {
+            "displaytext": "VMXNET3 Template",
+            "name": "VMXNET3 template",
+            "ostype": "CentOS 5.6 (64-bit)",
+            "isfeatured": True,
+            "ispublic": False,
+            "isextractable": True,
+            "mode": "HTTP_DOWNLOAD",
+            "templatefilter": "self",
+            "url": "http://10.147.28.7/templates/4.3.0.2/systemvm64template-2014-09-30-4.3-vmware.ova",
+            "hypervisor": "vmware",
+            "format": "OVA",
+            "nicadapter": "vmxnet3"
+        }
     }
 }
