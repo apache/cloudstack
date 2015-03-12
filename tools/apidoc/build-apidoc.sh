@@ -62,7 +62,17 @@ set -e
  sed -e 's,%API_HEADER%,Root Admin API,g' "$thisdir/generatetoc_header.xsl" >generatetocforadmin.xsl
  sed -e 's,%API_HEADER%,Domain Admin API,g' "$thisdir/generatetoc_header.xsl" >generatetocfordomainadmin.xsl
 
- python "$thisdir/gen_toc.py" $(find . -type f)
+ PLATFORM=`uname -s`
+ if [[ "$PLATFORM" =~ .*WIN.* ]]
+ then
+     gen_toc_file="`cygpath -w $thisdir`\\gen_toc.py"
+     for file in `find . -type f`; do
+         echo "Parse file $file";
+         python $gen_toc_file $file;
+     done
+ else
+     python "$thisdir/gen_toc.py" $(find . -type f)
+ fi
 
  cat generatetocforuser_include.xsl >>generatetocforuser.xsl
  cat generatetocforadmin_include.xsl >>generatetocforadmin.xsl
