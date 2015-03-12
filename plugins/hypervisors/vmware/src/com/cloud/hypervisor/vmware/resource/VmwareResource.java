@@ -5145,7 +5145,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             ClusterMO clusterMo = new ClusterMO(context, morCluster);
 
             VirtualMachineMO vmMo = clusterMo.findVmOnHyperHost(vol.getPath());
-            if (vmMo != null) {
+            if (vmMo != null && vmMo.isTemplate()) {
                 if (s_logger.isInfoEnabled()) {
                     s_logger.info("Destroy template volume " + vol.getPath());
                 }
