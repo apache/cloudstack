@@ -1679,17 +1679,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 if (s_logger.isInfoEnabled()) {
                     s_logger.info("Destroy root volume directly from datastore");
                 }
-            } else {
-                // evitTemplate will be converted into DestroyCommand, test if we are running in this case
-                VirtualMachineMO vmMo = clusterMo.findVmOnHyperHost(vol.getPath());
-                if (vmMo != null) {
-                    if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Destroy template volume " + vol.getPath());
-                    }
-
-                    vmMo.destroy();
-                    return new Answer(cmd, true, "Success");
-                }
             }
 
             VmwareStorageLayoutHelper.deleteVolumeVmdkFiles(dsMo, vol.getPath(), new DatacenterMO(context, morDc));
