@@ -542,11 +542,11 @@ class TestStorageMigration(cloudstackTestCase):
         """
 
         # Skipping test case for XenSever because ZWPS scenarios present in the test case
-        # Skipping for Vmware because at a time either ZWPS or CWPS can exists in vmware
+        # Skipping for Vmware because on Vmware zwps and cwps can not exist at the same time
         # so the test case for Vmware is written separately
 
-        if self.hypervisor in ["xenserver", "vmware"]:
-            self.skipTest("Skip test case for %s" % self.hypervisor)
+        if self.hypervisor.lower() in ["xenserver", "vmware"]:
+            self.skipTest("Skip test case for %s" % self.hypervisor.lower())
 
         try:
             self.pools = StoragePool.list(self.apiclient, zoneid=self.zone.id)
@@ -1226,7 +1226,7 @@ class TestStorageMigration(cloudstackTestCase):
         """
 
         # Check if Hypervisor is Xenserver
-        if self.hypervisor != "xenserver":
+        if self.hypervisor.lower() != "xenserver":
             self.skipTest("This test case is written specifically for xenserver,\
                     it does not include ZWPS scenarios")
 
@@ -1671,8 +1671,8 @@ class TestStorageMigration(cloudstackTestCase):
         """
         # Test case only written for Vmware hypervisor as it
         # does not run CWPS and ZWPS scenatios together
-        if self.hypervisor is not "vmware":
-            self.skipTest("Skip test case for %s" % self.hypervisor)
+        if self.hypervisor.lower() is not "vmware":
+            self.skipTest("Skip test case for %s" % self.hypervisor.lower())
 
         try:
             self.pools = StoragePool.list(self.apiclient, zoneid=self.zone.id)
@@ -2102,8 +2102,8 @@ class TestStorageMigration(cloudstackTestCase):
         """
         # Test case only written for Vmware hypervisor as it
         # does not run CWPS and ZWPS scenatios together
-        if self.hypervisor is not "vmware":
-            self.skipTest("Skip test case for %s" % self.hypervisor)
+        if self.hypervisor.lower() is not "vmware":
+            self.skipTest("Skip test case for %s" % self.hypervisor.lower())
 
         try:
             self.pools = StoragePool.list(self.apiclient, zoneid=self.zone.id)
