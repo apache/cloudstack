@@ -203,6 +203,36 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         return(getuploadparamsresponce)
 
+    def validate_max_vol_size(self,up_vol,volumestate):
+
+        list_volume_response = Volume.list(
+                    self.apiclient,
+                    id=up_vol.id
+                )
+        self.assertNotEqual(
+                    list_volume_response,
+                    None,
+                    "Check if volume exists in ListVolumes"
+                )
+
+        self.assertEqual(
+                    list_volume_response[0].state,
+                    volumestate,
+                    "Check volume state in ListVolumes"
+                )
+
+        config = Configurations.list(
+                                     self.apiclient,
+                                     name='storage.max.volume.upload.size'
+                                     )
+
+        max_size = int(config[0].value)
+
+        if int(list_volume_response[0].size) > max_size:
+            self.fail("Global Config storage.max.volume.upload.size is not considered with Browser Based Upload volumes")
+
+
+
     def browse_upload_volume_with_md5(self):
         cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
         cmd.zoneid = self.zone.id
@@ -1407,7 +1437,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.debug("========================= Test 15:  Recover destroyed VM which has Uploaded volumes attached========================= ")
 
             self.recover_destroyed_vm(vm4details)
-            self.destroy_vm(vm4details)
+            self.expunge_vm(vm4details)
 
             self.deletevolume(newvolumetodestoy_VM.id)
 
@@ -1434,6 +1464,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.debug("========================= Test 19:  Create template from Backup Snapshot of attached uploaded volume========================= ")
             self.volume_snapshot_template(snapshotdetails)
 
+            self.detach_volume(vm6details,browseup_vol6.id)
             self.deletevolume(browseup_vol6.id)
             self.expunge_vm(vm6details)
 
@@ -1517,6 +1548,22 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.deletevolume(ssvm3browseup_vol.id)
 
             self.expunge_vm(ssvm3vm1details)
+
+        except Exception as e:
+            self.fail("Exception occurred  : %s" % e)
+        return
+
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_03_Browser_Upload_Volume_Global_Config_TPath(self):
+        """
+        Test Browser_Upload_Volume_Global_Config limits 
+        """
+        try:
+            
+            self.debug("========================= Test 1 Validate Storage.max.upload.size ========================= ")
+            globalconfig_browse_up_vol=self.browse_upload_volume()
+            self.validate_max_vol_size(globalconfig_browse_up_vol,"Uploaded")
 
         except Exception as e:
             self.fail("Exception occurred  : %s" % e)
