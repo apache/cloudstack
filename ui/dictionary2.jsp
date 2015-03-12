@@ -1051,6 +1051,9 @@ under the License.
 'label.of.month': '<fmt:message key="label.of.month" />',
 'label.minutes.past.hour': '<fmt:message key="label.minutes.past.hour" />',
 'label.snapshots': '<fmt:message key="label.snapshots" />',
-'label.add.private.gateway': '<fmt:message key="label.add.private.gateway" />'
+'label.add.private.gateway': '<fmt:message key="label.add.private.gateway" />',
+'label.ovm3.pool': '<fmt:message key="label.ovm3.pool" />',
+'label.ovm3.cluster': '<fmt:message key="label.ovm3.cluster" />',
+'label.ovm3.vip': '<fmt:message key="label.ovm3.vip" />'
 });
 </script>
