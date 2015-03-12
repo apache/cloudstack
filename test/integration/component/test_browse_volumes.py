@@ -1462,7 +1462,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
-    def xtest_02_SSVM_Life_Cycle_With_Browser_Volume_TPath(self):
+    def test_02_SSVM_Life_Cycle_With_Browser_Volume_TPath(self):
         """
         Test SSVM_Life_Cycle_With_Browser_Volume_TPath - This includes SSVM life cycle followed by Browser volume upload operations
         """
