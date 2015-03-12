@@ -15,7 +15,8 @@ Network-as-a-Service, user and account management, a full and open native API,
 resource accounting, and a first-class User Interface (UI).
 
 CloudStack currently supports the most popular hypervisors:
-VMware vSphere, KVM, XenServer, XenProject and Hyper-V as well as LXC containers.
+VMware vSphere, KVM, XenServer, XenProject and Hyper-V as well as
+OVM and LXC containers.
 
 Users can manage their cloud with an easy to use Web interface, command line
 tools, and/or a full-featured query based API.
