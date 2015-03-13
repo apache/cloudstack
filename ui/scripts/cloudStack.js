@@ -117,14 +117,22 @@
                         }
                         return cookieValue;
                     };
-                    g_sessionKey = unBoxCookieValue('JSESSIONID');
+                    unBoxCookieValue('sessionkey');
+                    // if sessionkey cookie exists use this to set g_sessionKey
+                    // and destroy sessionkey cookie
+                    if ($.cookie('sessionkey')) {
+                        g_sessionKey = $.cookie('sessionkey');
+                        $.cookie('sessionkey', null);
+                    } else {
+                        g_sessionKey = unBoxCookieValue('JSESSIONID');
+                    }
                     g_role = unBoxCookieValue('role');
                     g_userid = unBoxCookieValue('userid');
                     g_domainid = unBoxCookieValue('domainid');
                     g_account = unBoxCookieValue('account');
                     g_username = unBoxCookieValue('username');
                     g_userfullname = unBoxCookieValue('userfullname');
-                    g_timezone = unBoxCookieValue('timezone');                    
+                    g_timezone = unBoxCookieValue('timezone');
                 } else { //single-sign-on	(bypass login screen)
                     g_sessionKey = encodeURIComponent(g_loginResponse.sessionkey);
                     g_role = g_loginResponse.type;
@@ -322,6 +330,7 @@
                         g_loginCmdText = null;
                         
                         $.cookie('JSESSIONID', null);
+                        $.cookie('sessionkey', null);
                         $.cookie('username', null);
                         $.cookie('account', null);
                         $.cookie('domainid', null);
@@ -345,6 +354,7 @@
 
             samlLoginAction: function(args) {
                 $.cookie('JSESSIONID', null);
+                $.cookie('sessionkey', null);
                 $.cookie('username', null);
                 $.cookie('account', null);
                 $.cookie('domainid', null);
