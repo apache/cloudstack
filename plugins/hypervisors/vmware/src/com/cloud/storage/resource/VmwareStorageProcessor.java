@@ -345,6 +345,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             else {
                 newTemplate.setPath(templateUuidName);
             }
+            newTemplate.setSize(new Long(0)); // TODO: replace 0 with correct template physical_size.
 
             return new CopyCmdAnswer(newTemplate);
         } catch (Throwable e) {
