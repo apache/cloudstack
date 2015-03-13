@@ -217,18 +217,18 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public long getEntityOwnerId() {
         Long volumeId = getVolumeId();
         Long snapshotId = getSnapshotId();
-        Long accountId = null;
+        Account callingAccount = CallContext.current().getCallingAccount();
         if (volumeId != null) {
             Volume volume = _entityMgr.findById(Volume.class, volumeId);
             if (volume != null) {
-                _accountService.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.UseEntry, false, volume);
+                _accountService.checkAccess(callingAccount, SecurityChecker.AccessType.UseEntry, false, volume);
             } else {
                 throw new InvalidParameterValueException("Unable to find volume by id=" + volumeId);
             }
         } else {
             Snapshot snapshot = _entityMgr.findById(Snapshot.class, snapshotId);
             if (snapshot != null) {
-                _accountService.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.UseEntry, false, snapshot);
+                _accountService.checkAccess(callingAccount, SecurityChecker.AccessType.UseEntry, false, snapshot);
             } else {
                 throw new InvalidParameterValueException("Unable to find snapshot by id=" + snapshotId);
             }
@@ -239,7 +239,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
             if (project != null) {
                 if (project.getState() == Project.State.Active) {
                     Account projectAccount= _accountService.getAccount(project.getProjectAccountId());
-                    _accountService.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.UseEntry, false, projectAccount);
+                    _accountService.checkAccess(callingAccount, SecurityChecker.AccessType.UseEntry, false, projectAccount);
                     return project.getProjectAccountId();
                 } else {
                     final PermissionDeniedException ex =
@@ -253,7 +253,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
             }
         }
 
-        return CallContext.current().getCallingAccount().getId();
+        return callingAccount.getId();
     }
 
     @Override
