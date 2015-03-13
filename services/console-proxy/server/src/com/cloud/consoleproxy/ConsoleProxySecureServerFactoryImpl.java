@@ -16,12 +16,10 @@
 // under the License.
 package com.cloud.consoleproxy;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.security.KeyStore;
-
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsParameters;
+import com.sun.net.httpserver.HttpsServer;
 import org.apache.cloudstack.utils.security.SSLUtils;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -30,13 +28,10 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
-
-import org.apache.log4j.Logger;
-
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsParameters;
-import com.sun.net.httpserver.HttpsServer;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.security.KeyStore;
 
 public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFactory {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxySecureServerFactoryImpl.class);
@@ -51,32 +46,8 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
         s_logger.info("Start initializing SSL");
 
         if (ksBits == null) {
-            try {
-                s_logger.info("Initializing SSL from built-in default certificate");
-
-                char[] passphrase = "vmops.com".toCharArray();
-                KeyStore ks = KeyStore.getInstance("JKS");
-
-                ks.load(new FileInputStream("certs/realhostip.keystore"), passphrase);
-                // ks.load(ConsoleProxy.class.getResourceAsStream("/realhostip.keystore"), passphrase);
-
-                s_logger.info("SSL certificate loaded");
-
-                KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-                kmf.init(ks, passphrase);
-                s_logger.info("Key manager factory is initialized");
-
-                TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-                tmf.init(ks);
-                s_logger.info("Trust manager factory is initialized");
-
-                sslContext = SSLUtils.getSSLContext();
-                sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-                s_logger.info("SSL context is initialized");
-            } catch (Exception ioe) {
-                s_logger.error(ioe.toString(), ioe);
-            }
-
+            // this should not be the case
+            s_logger.info("No certificates passed, recheck global configuration and certificates");
         } else {
             char[] passphrase = ksPassword != null ? ksPassword.toCharArray() : null;
             try {

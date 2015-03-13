@@ -382,7 +382,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         KeystoreVO ksVo = _ksDao.findByName(ConsoleProxyManager.CERTIFICATE_NAME);
-        assert (ksVo != null);
+        if (proxy.isSslEnabled() && ksVo == null) {
+            s_logger.warn("SSL enabled for console proxy but no server certificate found in database");
+        }
 
         if (_staticPublicIp == null) {
             return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), _consoleProxyPort, proxy.getPort(), _consoleProxyUrlDomain);
@@ -1156,27 +1158,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return "consoleproxy.alloc";
     }
 
-    private void prepareDefaultCertificate() {
-        GlobalLock lock = GlobalLock.getInternLock("consoleproxy.cert.setup");
-        try {
-            if (lock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
-                KeystoreVO ksVo = _ksDao.findByName(CERTIFICATE_NAME);
-                if (ksVo == null) {
-                    _ksDao.save(CERTIFICATE_NAME, ConsoleProxyVO.certContent, ConsoleProxyVO.keyContent, "realhostip.com");
-                    KeystoreVO caRoot = new KeystoreVO();
-                    caRoot.setCertificate(ConsoleProxyVO.rootCa);
-                    caRoot.setDomainSuffix("realhostip.com");
-                    caRoot.setName("root");
-                    caRoot.setIndex(0);
-                    _ksDao.persist(caRoot);
-                }
-                lock.unlock();
-            }
-        } finally {
-            lock.releaseRef();
-        }
-    }
-
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         if (s_logger.isInfoEnabled()) {
@@ -1233,8 +1214,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         if (_instance == null) {
             _instance = "DEFAULT";
         }
-
-        prepareDefaultCertificate();
 
         Map<String, String> agentMgrConfigs = _configDao.getConfiguration("AgentManager", params);
 
