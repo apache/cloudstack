@@ -17,7 +17,13 @@
 package com.cloud.consoleproxy.util;
 
 import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,12 +37,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 
 //
 // This file is originally from XenConsole with modifications
@@ -151,7 +151,7 @@ public final class RawHTTP {
             SSLSocket ssl = null;
             try {
                 context.init(null, trustAllCerts, new SecureRandom());
-                SocketFactory factory = context.getSocketFactory();
+                SocketFactory factory = new SecureSSLSocketFactory(context);
                 ssl = (SSLSocket)factory.createSocket(host, port);
                 ssl.setEnabledProtocols(SSLUtils.getSupportedProtocols(ssl.getEnabledProtocols()));
                 /* ssl.setSSLParameters(context.getDefaultSSLParameters()); */
@@ -160,6 +160,8 @@ public final class RawHTTP {
                 throw e;
             } catch (KeyManagementException e) {
                 s_logger.error("KeyManagementException: " + e.getMessage(), e);
+            } catch (NoSuchAlgorithmException e) {
+                s_logger.error("NoSuchAlgorithmException: " + e.getMessage(), e);
             }
             return ssl;
         } else {
