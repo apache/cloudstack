@@ -61,6 +61,7 @@ import com.cloud.cluster.ManagementServerHost;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Predicate;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -179,7 +180,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         publishOnEventBus(job, "submit");
         scheduleExecution(job, scheduleJobExecutionInContext);
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("submit async job-" + job.getId() + ", details: " + job.toString());
+            s_logger.debug("submit async job-" + job.getId() + ", details: " + StringUtils.cleanString(job.toString()));
         }
         return job.getId();
     }
@@ -518,7 +519,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
                     // execute the job
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Executing " + job);
+                        s_logger.debug("Executing " + StringUtils.cleanString(job.toString()));
                     }
 
                     if ((getAndResetPendingSignals(job) & AsyncJob.Constants.SIGNAL_MASK_WAKEUP) != 0) {
