@@ -16,9 +16,18 @@
 // under the License.
 package streamer;
 
-import static streamer.debug.MockServer.Packet.PacketType.CLIENT;
-import static streamer.debug.MockServer.Packet.PacketType.SERVER;
+import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
+import streamer.debug.MockServer;
+import streamer.debug.MockServer.Packet;
+import streamer.ssl.SSLState;
+import streamer.ssl.TrustAllX509TrustManager;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -26,18 +35,8 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.HashMap;
 
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-
-import org.apache.cloudstack.utils.security.SSLUtils;
-
-import streamer.debug.MockServer;
-import streamer.debug.MockServer.Packet;
-import streamer.ssl.SSLState;
-import streamer.ssl.TrustAllX509TrustManager;
+import static streamer.debug.MockServer.Packet.PacketType.CLIENT;
+import static streamer.debug.MockServer.Packet.PacketType.SERVER;
 
 public class SocketWrapperImpl extends PipelineImpl implements SocketWrapper {
 
@@ -137,7 +136,7 @@ public class SocketWrapperImpl extends PipelineImpl implements SocketWrapper {
             // Trust all certificates (FIXME: insecure)
             sslContext.init(null, new TrustManager[] {new TrustAllX509TrustManager(sslState)}, null);
 
-            SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+            SSLSocketFactory sslSocketFactory = new SecureSSLSocketFactory(sslContext);
             sslSocket = (SSLSocket)sslSocketFactory.createSocket(socket, address.getHostName(), address.getPort(), true);
             sslSocket.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslSocket.getEnabledProtocols()));
 

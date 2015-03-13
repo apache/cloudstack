@@ -16,6 +16,26 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.xensource.xenapi.APIVersion;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Pool;
+import com.xensource.xenapi.Session;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.XenAPIException;
+import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+import org.apache.xmlrpc.client.XmlRpcClientException;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -27,29 +47,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Queue;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSession;
-
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-import org.apache.xmlrpc.client.XmlRpcClientException;
-
-import org.apache.cloudstack.utils.security.SSLUtils;
-
-import com.xensource.xenapi.APIVersion;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.Pool;
-import com.xensource.xenapi.Session;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.BadServerResponse;
-import com.xensource.xenapi.Types.XenAPIException;
-
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 public class XenServerConnectionPool {
     private static final Logger s_logger = Logger.getLogger(XenServerConnectionPool.class);
@@ -86,7 +83,7 @@ public class XenServerConnectionPool {
             trustAllCerts[0] = tm;
             javax.net.ssl.SSLContext sc = SSLUtils.getSSLContext();
             sc.init(null, trustAllCerts, null);
-            javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+            javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(new SecureSSLSocketFactory(sc));
             HostnameVerifier hv = new HostnameVerifier() {
                 @Override
                 public boolean verify(String hostName, SSLSession session) {
