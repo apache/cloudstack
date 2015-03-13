@@ -3817,7 +3817,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         String sql = "SELECT i.* FROM vm_instance as i, host as h WHERE h.status = 'UP' " +
                 "AND h.id = ? AND i.power_state_update_time < ? AND i.host_id = h.id " +
                 "AND (i.state ='Starting' OR i.state='Stopping' OR i.state='Migrating') " +
-                "AND i.id NOT IN (SELECT w.vm_instance_id FROM vm_work_job AS w JOIN async_job AS j ON w.id = j.id WHERE j.job_status = ?)";
+                "AND i.id NOT IN (SELECT w.vm_instance_id FROM vm_work_job AS w JOIN async_job AS j ON w.id = j.id WHERE j.job_status = ?)" +
+                "AND i.removed IS NULL";
 
         List<Long> l = new ArrayList<Long>();
         TransactionLegacy txn = null;
@@ -3851,7 +3852,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         String sql = "SELECT i.* FROM vm_instance as i, host as h WHERE h.status = 'UP' " +
                 "AND h.id = ? AND i.power_state_update_time > ? AND i.host_id = h.id " +
                 "AND (i.state ='Starting' OR i.state='Stopping' OR i.state='Migrating') " +
-                "AND i.id NOT IN (SELECT w.vm_instance_id FROM vm_work_job AS w JOIN async_job AS j ON w.id = j.id WHERE j.job_status = ?)";
+                "AND i.id NOT IN (SELECT w.vm_instance_id FROM vm_work_job AS w JOIN async_job AS j ON w.id = j.id WHERE j.job_status = ?)" +
+                "AND i.removed IS NULL";
 
         List<Long> l = new ArrayList<Long>();
         TransactionLegacy txn = null;
@@ -3882,7 +3884,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         String sql = "SELECT i.* FROM vm_instance as i, host as h WHERE h.status != 'UP' " +
                 "AND i.power_state_update_time < ? AND i.host_id = h.id " +
                 "AND (i.state ='Starting' OR i.state='Stopping' OR i.state='Migrating') " +
-                "AND i.id NOT IN (SELECT w.vm_instance_id FROM vm_work_job AS w JOIN async_job AS j ON w.id = j.id WHERE j.job_status = ?)";
+                "AND i.id NOT IN (SELECT w.vm_instance_id FROM vm_work_job AS w JOIN async_job AS j ON w.id = j.id WHERE j.job_status = ?)" +
+                "AND i.removed IS NULL";
 
         List<Long> l = new ArrayList<Long>();
         TransactionLegacy txn = null;
