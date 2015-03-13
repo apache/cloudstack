@@ -42,6 +42,7 @@ import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.agent.api.proxy.StartConsoleProxyAgentHttpHandlerCommand;
+import com.cloud.configuration.Config;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
@@ -196,12 +197,15 @@ public abstract class AgentHookBase implements AgentHook {
             random.nextBytes(randomBytes);
             String storePassword = Base64.encodeBase64String(randomBytes);
 
-            byte[] ksBits = _ksMgr.getKeystoreBits(ConsoleProxyManager.CERTIFICATE_NAME, ConsoleProxyManager.CERTIFICATE_NAME, storePassword);
-
-            assert (ksBits != null);
-            if (ksBits == null) {
-                s_logger.error("Could not find and construct a valid SSL certificate");
+            byte[] ksBits = null;
+            String consoleProxyUrlDomain = _configDao.getValue(Config.ConsoleProxyUrlDomain.key());
+            if (consoleProxyUrlDomain == null || consoleProxyUrlDomain.isEmpty()) {
+                s_logger.debug("SSL is disabled for console proxy based on global config, skip loading certificates");
+            } else {
+                ksBits = _ksMgr.getKeystoreBits(ConsoleProxyManager.CERTIFICATE_NAME, ConsoleProxyManager.CERTIFICATE_NAME, storePassword);
+                //ks manager raises exception if ksBits are null, hence no need to explicltly handle the condition
             }
+
             cmd = new StartConsoleProxyAgentHttpHandlerCommand(ksBits, storePassword);
             cmd.setEncryptorPassword(getEncryptorPassword());
 

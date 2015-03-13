@@ -30,8 +30,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.config.ApiServiceConfiguration;
+import org.apache.log4j.Logger;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -43,7 +47,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -137,8 +140,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 //
 // Possible console proxy state transition cases
@@ -380,7 +381,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         KeystoreVO ksVo = _ksDao.findByName(ConsoleProxyManager.CERTIFICATE_NAME);
-        assert (ksVo != null);
+        if (proxy.isSslEnabled() && ksVo == null) {
+            s_logger.warn("SSL enabled for console proxy but no server certificate found in database");
+        }
 
         if (_staticPublicIp == null) {
             return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), _consoleProxyPort, proxy.getPort(), _consoleProxyUrlDomain);
@@ -1168,27 +1171,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return "consoleproxy.alloc";
     }
 
-    private void prepareDefaultCertificate() {
-        GlobalLock lock = GlobalLock.getInternLock("consoleproxy.cert.setup");
-        try {
-            if (lock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
-                KeystoreVO ksVo = _ksDao.findByName(CERTIFICATE_NAME);
-                if (ksVo == null) {
-                    _ksDao.save(CERTIFICATE_NAME, ConsoleProxyVO.certContent, ConsoleProxyVO.keyContent, "realhostip.com");
-                    KeystoreVO caRoot = new KeystoreVO();
-                    caRoot.setCertificate(ConsoleProxyVO.rootCa);
-                    caRoot.setDomainSuffix("realhostip.com");
-                    caRoot.setName("root");
-                    caRoot.setIndex(0);
-                    _ksDao.persist(caRoot);
-                }
-                lock.unlock();
-            }
-        } finally {
-            lock.releaseRef();
-        }
-    }
-
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         if (s_logger.isInfoEnabled()) {
@@ -1245,8 +1227,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         if (_instance == null) {
             _instance = "DEFAULT";
         }
-
-        prepareDefaultCertificate();
 
         Map<String, String> agentMgrConfigs = _configDao.getConfiguration("AgentManager", params);
 

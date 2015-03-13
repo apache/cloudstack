@@ -19,7 +19,6 @@ package com.cloud.upgrade.dao;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +27,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import com.cloud.vm.ConsoleProxyVO;
 
 public class Upgrade2213to2214 implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade2213to2214.class);
@@ -58,40 +56,11 @@ public class Upgrade2213to2214 implements DbUpgrade {
         return new File[] {new File(script)};
     }
 
-    private void upgradeCerts(Connection conn) {
-        PreparedStatement pstmt;
-        try {
-            pstmt = conn.prepareStatement("select md5(`cloud`.`keystore`.key) from `cloud`.`keystore` where name = 'CPVMCertificate'");
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                String privateKeyMd5 = rs.getString(1);
-                if (privateKeyMd5.equalsIgnoreCase("432ea1370f57ccd774f4f36052c5fd73")) {
-                    s_logger.debug("Need to upgrade cloudstack provided certificate");
-                    pstmt = conn.prepareStatement("update `cloud`.`keystore` set `cloud`.`keystore`.key = ?, certificate = ? where name = 'CPVMCertificate'");
-                    pstmt.setString(1, ConsoleProxyVO.keyContent);
-                    pstmt.setString(2, ConsoleProxyVO.certContent);
-                    pstmt.executeUpdate();
-
-                    pstmt = conn.prepareStatement("insert into `cloud`.`keystore` (name, certificate, seq, domain_suffix) VALUES (?,?,?,?)");
-                    pstmt.setString(1, "root");
-                    pstmt.setString(2, ConsoleProxyVO.rootCa);
-                    pstmt.setInt(3, 0);
-                    pstmt.setString(4, "realhostip.com");
-                    pstmt.executeUpdate();
-                }
-            }
-            rs.close();
-            pstmt.close();
-        } catch (SQLException e) {
-            s_logger.debug("Failed to upgrade keystore: " + e.toString());
-        }
-
-    }
-
     @Override
     public void performDataMigration(Connection conn) {
         fixIndexes(conn);
-        upgradeCerts(conn);
+        //Remove certificate upgrade since RHIP is being retired
+        //upgradeCerts(conn);
     }
 
     @Override
