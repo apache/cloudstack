@@ -515,6 +515,10 @@ public class NetUtils {
     }
 
     public static boolean isValidIp(final String ip) {
+        if (ip.endsWith(".")) {
+            return false;
+        }
+
         final String[] ipAsList = ip.split("\\.");
 
         // The IP address must have four octets
