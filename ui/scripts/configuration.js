@@ -755,7 +755,7 @@
                             success: function(json) {
                                 var items = json.listserviceofferingsresponse.serviceoffering;
                                 args.response.success({
-                                    actionFitler: serviceOfferingActionfilter,
+                                    actionFilter: serviceOfferingActionfilter,
                                     data: items
                                 });
                             },
@@ -982,7 +982,7 @@
                                             }
 
                                             args.response.success({
-                                                actionFitler: serviceOfferingActionfilter,
+                                                actionFilter: serviceOfferingActionfilter,
                                                 data: item
                                             });
                                         }
@@ -1516,7 +1516,7 @@
                                         success: function(json) {
                                             var item = json.listserviceofferingsresponse.serviceoffering[0];
                                             args.response.success({
-                                                actionFitler: systemServiceOfferingActionfilter,
+                                                actionFilter: systemServiceOfferingActionfilter,
                                                 data: item
                                             });
                                         }
