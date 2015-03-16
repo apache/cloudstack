@@ -22,6 +22,7 @@ import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.utils.auth.SAMLUtils;
+import org.apache.cxf.common.util.StringUtils;
 import org.apache.log4j.Logger;
 
 import javax.ejb.Local;
@@ -42,6 +43,12 @@ public class SAML2UserAuthenticator extends DefaultUserAuthenticator {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Trying SAML2 auth for user: " + username);
         }
+
+        if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
+            s_logger.debug("Username or Password cannot be empty");
+            return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+        }
+
         final UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
         if (userAccount == null) {
             s_logger.debug("Unable to find user with " + username + " in domain " + domainId);
