@@ -2634,6 +2634,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 uploadEntity.setHvm(cmd.getRequiresHvm());
                 uploadEntity.setChksum(cmd.getChecksum());
                 uploadEntity.setMaxSizeInGB(maxSizeInGB);
+                uploadEntity.setDescription(cmd.getDescription());
                 // create a install dir
                 if (!_storage.exists(installPathPrefix)) {
                     _storage.mkdir(installPathPrefix);
@@ -2677,9 +2678,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         Script scr = new Script(getScriptLocation(resourceType), timeout, s_logger);
         scr.add("-s", Integer.toString(imgSizeGigs));
         scr.add("-S", Long.toString(UploadEntity.s_maxTemplateSize));
-        //if (uploadEntity.getDescription() != null && dnld.getDescription().length() > 1) {
-        //    scr.add("-d", dnld.getDescription());
-        //}
+        if (uploadEntity.getDescription() != null && uploadEntity.getDescription().length() > 1) {
+            scr.add("-d", uploadEntity.getDescription());
+        }
         if (uploadEntity.isHvm()) {
             scr.add("-h");
         }

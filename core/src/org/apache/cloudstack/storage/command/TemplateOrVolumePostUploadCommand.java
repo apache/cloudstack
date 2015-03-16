@@ -47,6 +47,8 @@ public class TemplateOrVolumePostUploadCommand {
 
     String maxUploadSize;
 
+    String description;
+
     public TemplateOrVolumePostUploadCommand(long entityId, String entityUUID, String absolutePath, String checksum, String type, String name, String imageFormat, String dataTo,
             String dataToRole) {
         this.entityId = entityId;
@@ -165,5 +167,13 @@ public class TemplateOrVolumePostUploadCommand {
 
     public void setMaxUploadSize(String maxUploadSize) {
         this.maxUploadSize = maxUploadSize;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }
