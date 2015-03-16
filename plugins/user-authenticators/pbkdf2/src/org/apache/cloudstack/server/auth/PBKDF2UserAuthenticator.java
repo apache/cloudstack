@@ -53,6 +53,12 @@ public class PBKDF2UserAuthenticator extends DefaultUserAuthenticator {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Retrieving user: " + username);
         }
+
+        if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
+            s_logger.debug("Username or Password cannot be empty");
+            return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+        }
+
         boolean isValidUser = false;
         UserAccount user = this._userAccountDao.getUserAccount(username, domainId);
         if (user != null) {
