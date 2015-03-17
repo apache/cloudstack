@@ -109,6 +109,9 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
     }
 
     public Boolean isDynamicallyScalable() {
+        if (isDynamicallyScalable == null) {
+            return Boolean.FALSE;
+        }
         return isDynamicallyScalable;
     }
 
