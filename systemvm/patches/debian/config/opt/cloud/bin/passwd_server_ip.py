@@ -39,6 +39,7 @@ from SocketServer     import ThreadingMixIn #, ForkingMixIn
 
 passMap = {}
 secureToken = None
+listeningAddress = '127.0.0.1'
 lock = threading.RLock()
 
 def getTokenFile():
@@ -133,7 +134,7 @@ class PasswordRequestHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
         clientAddress = self.client_address[0]
-        if clientAddress not in ['localhost', '127.0.0.1']:
+        if clientAddress not in ['localhost', '127.0.0.1', listeningAddress]:
             syslog.syslog('serve_password: non-localhost IP trying to save password: %s' % clientAddress)
             self.send_response(403)
             return
@@ -162,7 +163,7 @@ class PasswordRequestHandler(BaseHTTPRequestHandler):
 def serve(HandlerClass = PasswordRequestHandler,
           ServerClass = ThreadedHTTPServer):
 
-    listeningAddress = '127.0.0.1'
+    global listeningAddress
     if len(sys.argv) > 1:
         listeningAddress = sys.argv[1]
 
