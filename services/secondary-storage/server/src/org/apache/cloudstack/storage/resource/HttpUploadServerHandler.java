@@ -95,6 +95,13 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
     }
 
     @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        String message = "file receive failed or connection closed prematurely.";
+        logger.error(message);
+        storageResource.updateStateMapWithError(uuid, message);
+    }
+
+    @Override
     public void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws Exception {
         if (msg instanceof HttpRequest) {
             HttpRequest request = this.request = (HttpRequest) msg;

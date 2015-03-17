@@ -2774,7 +2774,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return _ssvmPSK;
     }
 
-    private void updateStateMapWithError(String uuid,String errorMessage) {
+    public void updateStateMapWithError(String uuid,String errorMessage) {
         UploadEntity uploadEntity=null;
         if (uploadEntityStateMap.get(uuid)!=null) {
             uploadEntity=uploadEntityStateMap.get(uuid);
