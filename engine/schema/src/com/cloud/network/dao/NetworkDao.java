@@ -112,6 +112,8 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
 
     List<NetworkVO> listRedundantNetworks();
 
+    List<NetworkVO> listVpcNetworks();
+
     List<NetworkVO> listByAclId(long aclId);
 
     int getNonSystemNetworkCountByVpcId(long vpcId);

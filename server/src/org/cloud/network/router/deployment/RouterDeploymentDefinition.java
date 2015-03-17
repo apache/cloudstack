@@ -71,6 +71,9 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class RouterDeploymentDefinition {
     private static final Logger logger = Logger.getLogger(RouterDeploymentDefinition.class);
 
+    protected static final int LIMIT_NUMBER_OF_ROUTERS = 5;
+    protected static final int MAX_NUMBER_OF_ROUTERS = 2;
+
     protected NetworkDao networkDao;
     protected DomainRouterDao routerDao;
     protected PhysicalNetworkServiceProviderDao physicalProviderDao;
@@ -92,25 +95,24 @@ public class RouterDeploymentDefinition {
     protected DeployDestination dest;
     protected Account owner;
     protected Map<Param, Object> params;
-    protected boolean isRedundant;
     protected DeploymentPlan plan;
     protected List<DomainRouterVO> routers = new ArrayList<>();
-    protected Long offeringId;
+    protected Long serviceOfferingId;
     protected Long tableLockId;
     protected boolean isPublicNetwork;
     protected PublicIp sourceNatIp;
 
-    protected RouterDeploymentDefinition(final Network guestNetwork, final DeployDestination dest, final Account owner, final Map<Param, Object> params, final boolean isRedundant) {
+    protected RouterDeploymentDefinition(final Network guestNetwork, final DeployDestination dest,
+            final Account owner, final Map<Param, Object> params) {
 
         this.guestNetwork = guestNetwork;
         this.dest = dest;
         this.owner = owner;
         this.params = params;
-        this.isRedundant = isRedundant;
     }
 
-    public Long getOfferingId() {
-        return offeringId;
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
     }
 
     public Vpc getVpc() {
@@ -134,7 +136,7 @@ public class RouterDeploymentDefinition {
     }
 
     public boolean isRedundant() {
-        return isRedundant;
+        return guestNetwork.isRedundant();
     }
 
     public DeploymentPlan getPlan() {
@@ -197,6 +199,7 @@ public class RouterDeploymentDefinition {
         try {
             lock();
             checkPreconditions();
+
             // dest has pod=null, for Basic Zone findOrDeployVRs for all Pods
             final List<DeployDestination> destinations = findDestinations();
 
@@ -280,14 +283,14 @@ public class RouterDeploymentDefinition {
 
     protected int getNumberOfRoutersToDeploy() {
         // TODO Are we sure this makes sense? Somebody said 5 was too many?
-        if (routers.size() >= 5) {
+        if (routers.size() >= LIMIT_NUMBER_OF_ROUTERS) {
             logger.error("Too many redundant routers!");
         }
 
         // If old network is redundant but new is single router, then
         // routers.size() = 2 but routerCount = 1
         int routersExpected = 1;
-        if (isRedundant) {
+        if (isRedundant()) {
             routersExpected = 2;
         }
         return routersExpected < routers.size() ? 0 : routersExpected - routers.size();
@@ -312,7 +315,7 @@ public class RouterDeploymentDefinition {
         isPublicNetwork = networkModel.isProviderSupportServiceInNetwork(guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter);
 
         boolean canProceed = true;
-        if (isRedundant && !isPublicNetwork) {
+        if (isRedundant() && !isPublicNetwork) {
             // TODO Shouldn't be this throw an exception instead of log error and empty list of routers
             logger.error("Didn't support redundant virtual router without public network!");
             routers = new ArrayList<DomainRouterVO>();
@@ -331,15 +334,15 @@ public class RouterDeploymentDefinition {
      * @throws InsufficientCapacityException
      * @throws ResourceUnavailableException
      */
-    protected void executeDeployment() throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        // Check current redundant routers, if possible(all routers are
-        // stopped), reset the priority
+    protected void executeDeployment()
+            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        //Check current redundant routers, if possible(all routers are stopped), reset the priority
         planDeploymentRouters();
         setupPriorityOfRedundantRouter();
 
         if (getNumberOfRoutersToDeploy() > 0 && prepareDeployment()) {
             findVirtualProvider();
-            findOfferingId();
+            findServiceOfferingId();
             findSourceNatIP();
             deployAllVirtualRouters();
         }
@@ -352,10 +355,10 @@ public class RouterDeploymentDefinition {
         }
     }
 
-    protected void findOfferingId() {
-        Long networkOfferingId = networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
+    protected void findServiceOfferingId() {
+        final Long networkOfferingId = networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
         if (networkOfferingId != null) {
-            offeringId = networkOfferingId;
+            serviceOfferingId = networkOfferingId;
         }
     }
 
@@ -376,11 +379,11 @@ public class RouterDeploymentDefinition {
     }
 
     protected void deployAllVirtualRouters() throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        int routersToDeploy = getNumberOfRoutersToDeploy();
+        final int routersToDeploy = getNumberOfRoutersToDeploy();
         for (int i = 0; i < routersToDeploy; i++) {
             // Don't start the router as we are holding the network lock that
             // needs to be released at the end of router allocation
-            DomainRouterVO router = nwHelper.deployRouter(this, false);
+            final DomainRouterVO router = nwHelper.deployRouter(this, false);
 
             if (router != null) {
                 routerDao.addRouterToGuestNetwork(router, guestNetwork);
@@ -445,7 +448,7 @@ public class RouterDeploymentDefinition {
      * reset all routers priorities
      */
     protected void setupPriorityOfRedundantRouter() {
-        if (isRedundant && routersNeedReset()) {
+        if (isRedundant() && routersNeedReset()) {
             for (final DomainRouterVO router : routers) {
                 // getUpdatedPriority() would update the value later
                 router.setPriority(0);

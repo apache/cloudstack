@@ -103,6 +103,9 @@ public class NetworkVO implements Network {
     @Enumerated(value = EnumType.STRING)
     State state;
 
+    @Column(name = "redundant")
+    boolean isRedundant;
+
     @Column(name = "dns1")
     String dns1;
 
@@ -184,13 +187,14 @@ public class NetworkVO implements Network {
      * @param physicalNetworkId TODO
      */
     public NetworkVO(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, State state, long dataCenterId,
-            Long physicalNetworkId) {
+            Long physicalNetworkId, final boolean isRedundant) {
         this.trafficType = trafficType;
         this.mode = mode;
         this.broadcastDomainType = broadcastDomainType;
         this.networkOfferingId = networkOfferingId;
         this.dataCenterId = dataCenterId;
         this.physicalNetworkId = physicalNetworkId;
+        this.isRedundant = isRedundant;
         if (state == null) {
             this.state = State.Allocated;
         } else {
@@ -201,7 +205,7 @@ public class NetworkVO implements Network {
     }
 
     public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, long related, String name, String displayText,
-            String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges, Long vpcId) {
+            String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges, Long vpcId, final boolean isRedundant) {
         this(id,
             that.getTrafficType(),
             that.getMode(),
@@ -218,7 +222,8 @@ public class NetworkVO implements Network {
             physicalNetworkId,
             aclType,
             specifyIpRanges,
-            vpcId);
+            vpcId,
+            isRedundant);
         gateway = that.getGateway();
         cidr = that.getCidr();
         networkCidr = that.getNetworkCidr();
@@ -253,8 +258,8 @@ public class NetworkVO implements Network {
      */
     public NetworkVO(long id, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long domainId, long accountId,
             long related, String name, String displayText, String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType,
-            boolean specifyIpRanges, Long vpcId) {
-        this(trafficType, mode, broadcastDomainType, networkOfferingId, State.Allocated, dcId, physicalNetworkId);
+            boolean specifyIpRanges, Long vpcId, final boolean isRedundant) {
+        this(trafficType, mode, broadcastDomainType, networkOfferingId, State.Allocated, dcId, physicalNetworkId, isRedundant);
         this.domainId = domainId;
         this.accountId = accountId;
         this.related = related;
@@ -281,6 +286,11 @@ public class NetworkVO implements Network {
     @Override
     public State getState() {
         return state;
+    }
+
+    @Override
+    public boolean isRedundant() {
+        return this.isRedundant;
     }
 
     // don't use this directly when possible, use Network state machine instead

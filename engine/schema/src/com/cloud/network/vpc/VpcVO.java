@@ -61,6 +61,9 @@ public class VpcVO implements Vpc {
     @Enumerated(value = EnumType.STRING)
     State state;
 
+    @Column(name = "redundant")
+    boolean redundant;
+
     @Column(name = "vpc_offering_id")
     long vpcOfferingId;
 
@@ -89,8 +92,9 @@ public class VpcVO implements Vpc {
         uuid = UUID.randomUUID().toString();
     }
 
-    public VpcVO(long zoneId, String name, String displayText, long accountId, long domainId, long vpcOffId, String cidr,
-                 String networkDomain, boolean useDistributedRouter, boolean regionLevelVpc) {
+    public VpcVO(final long zoneId, final String name, final String displayText, final long accountId, final long domainId,
+            final long vpcOffId, final String cidr, final String networkDomain, final boolean useDistributedRouter,
+            final boolean regionLevelVpc, final boolean isRedundant) {
         this.zoneId = zoneId;
         this.name = name;
         this.displayText = displayText;
@@ -101,8 +105,9 @@ public class VpcVO implements Vpc {
         state = State.Enabled;
         this.networkDomain = networkDomain;
         vpcOfferingId = vpcOffId;
-        this.usesDistributedRouter = useDistributedRouter;
+        usesDistributedRouter = useDistributedRouter;
         this.regionLevelVpc = regionLevelVpc;
+        redundant = isRedundant;
     }
 
     @Override
@@ -145,13 +150,17 @@ public class VpcVO implements Vpc {
         return state;
     }
 
-    public void setState(State state) {
+    public void setState(final State state) {
         this.state = state;
     }
 
     @Override
     public long getVpcOfferingId() {
         return vpcOfferingId;
+    }
+
+    public void setVpcOfferingId(final long vpcOfferingId) {
+        this.vpcOfferingId = vpcOfferingId;
     }
 
     public Date getRemoved() {
@@ -163,17 +172,17 @@ public class VpcVO implements Vpc {
         return displayText;
     }
 
-    public void setName(String name) {
+    public void setName(final String name) {
         this.name = name;
     }
 
-    public void setDisplayText(String displayText) {
+    public void setDisplayText(final String displayText) {
         this.displayText = displayText;
     }
 
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder("[VPC [");
+        final StringBuilder buf = new StringBuilder("[VPC [");
         return buf.append(id).append("-").append(name).append("]").toString();
     }
 
@@ -182,7 +191,7 @@ public class VpcVO implements Vpc {
         return networkDomain;
     }
 
-    public void setRestartRequired(boolean restartRequired) {
+    public void setRestartRequired(final boolean restartRequired) {
         this.restartRequired = restartRequired;
     }
 
@@ -191,7 +200,7 @@ public class VpcVO implements Vpc {
         return restartRequired;
     }
 
-    public void setUuid(String uuid) {
+    public void setUuid(final String uuid) {
         this.uuid = uuid;
     }
 
@@ -201,13 +210,22 @@ public class VpcVO implements Vpc {
     }
 
 
-    public void setDisplay(boolean display) {
+    public void setDisplay(final boolean display) {
         this.display = display;
     }
 
     @Override
     public boolean isDisplay() {
         return display;
+    }
+
+    @Override
+    public boolean isRedundant() {
+        return redundant;
+    }
+
+    public void setRedundant(final boolean isRedundant) {
+        redundant = isRedundant;
     }
 
     @Override

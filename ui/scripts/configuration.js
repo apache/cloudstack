@@ -3711,6 +3711,13 @@
                                         isHidden: true,
                                         dependsOn: 'service.Connectivity.isEnabled',
                                         isBoolean: true
+                                    },
+
+                                    "service.SourceNat.redundantRouterCapabilityCheckbox": {
+                                        label: 'label.redundant.router.capability',
+                                        isHidden: true,
+                                        dependsOn: 'service.SourceNat.isEnabled',
+                                        isBoolean: true
                                     }
                                 },//end of fields
                             }, //end of createForm
@@ -3720,10 +3727,8 @@
                                 var inputData = {};
                                 var serviceProviderMap = {};
                                 var serviceCapabilityIndex = 0;
-
                                 $.each(formData, function(key, value) {
                                     var serviceData = key.split('.');
-
                                     if (serviceData.length > 1) {
                                         if (serviceData[0] == 'service' &&
                                             serviceData[2] == 'isEnabled' &&
@@ -3742,7 +3747,13 @@
                                             inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'DistributedRouter';
                                             inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true;
                                             serviceCapabilityIndex++;
+                                        } else if ((key == 'service.SourceNat.redundantRouterCapabilityCheckbox') && ("SourceNat" in serviceProviderMap)) {
+                                            inputData['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat';
+                                            inputData['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = "RedundantRouter";
+                                            inputData['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true;
+                                            serviceCapabilityIndex++;
                                         }
+
                                     } else if (value != '') { // Normal data
                                         inputData[key] = value;
                                     }

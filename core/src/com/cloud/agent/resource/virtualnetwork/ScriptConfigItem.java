@@ -56,4 +56,14 @@ public class ScriptConfigItem extends ConfigItem {
         return sb.toString();
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("ScriptConfigItem, executing ");
+        sb.append(script);
+        sb.append(' ');
+        sb.append(args);
+        return sb.toString();
+    }
+
 }

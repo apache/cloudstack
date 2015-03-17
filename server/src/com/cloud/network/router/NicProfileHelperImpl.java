@@ -22,6 +22,9 @@ import java.net.URI;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.cloud.network.router.deployment.RouterDeploymentDefinition;
+
+import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.AddressFormat;
@@ -53,30 +56,31 @@ public class NicProfileHelperImpl implements NicProfileHelper {
     protected VpcManager _vpcMgr;
     @Inject
     protected NicDao _nicDao;
-
+    @Inject
+    protected IpAddressManager _ipAddrMgr;
 
     @Override
     @DB
-    public NicProfile createPrivateNicProfileForGateway(VpcGateway privateGateway) {
-        Network privateNetwork = _networkModel.getNetwork(privateGateway.getNetworkId());
-        PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(privateNetwork.getDataCenterId(), privateNetwork.getId(), privateGateway.getIp4Address());
-        Nic privateNic = _nicDao.findByIp4AddressAndNetworkId(ipVO.getIpAddress(), privateNetwork.getId());
+    public NicProfile createPrivateNicProfileForGateway(final VpcGateway privateGateway) {
+        final Network privateNetwork = _networkModel.getNetwork(privateGateway.getNetworkId());
+        final PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(privateNetwork.getDataCenterId(), privateNetwork.getId(), privateGateway.getIp4Address());
+        final Nic privateNic = _nicDao.findByIp4AddressAndNetworkId(ipVO.getIpAddress(), privateNetwork.getId());
 
         NicProfile privateNicProfile = new NicProfile();
 
         if (privateNic != null) {
-            VirtualMachine vm = _vmDao.findById(privateNic.getInstanceId());
+            final VirtualMachine vm = _vmDao.findById(privateNic.getInstanceId());
             privateNicProfile =
-                new NicProfile(privateNic, privateNetwork, privateNic.getBroadcastUri(), privateNic.getIsolationUri(), _networkModel.getNetworkRate(
-                    privateNetwork.getId(), vm.getId()), _networkModel.isSecurityGroupSupportedInNetwork(privateNetwork), _networkModel.getNetworkTag(
-                    vm.getHypervisorType(), privateNetwork));
+                    new NicProfile(privateNic, privateNetwork, privateNic.getBroadcastUri(), privateNic.getIsolationUri(), _networkModel.getNetworkRate(
+                            privateNetwork.getId(), vm.getId()), _networkModel.isSecurityGroupSupportedInNetwork(privateNetwork), _networkModel.getNetworkTag(
+                                    vm.getHypervisorType(), privateNetwork));
         } else {
-            String netmask = NetUtils.getCidrNetmask(privateNetwork.getCidr());
-            PrivateIpAddress ip =
-                new PrivateIpAddress(ipVO, privateNetwork.getBroadcastUri().toString(), privateNetwork.getGateway(), netmask,
-                    NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress())));
+            final String netmask = NetUtils.getCidrNetmask(privateNetwork.getCidr());
+            final PrivateIpAddress ip =
+                    new PrivateIpAddress(ipVO, privateNetwork.getBroadcastUri().toString(), privateNetwork.getGateway(), netmask,
+                            NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress())));
 
-            URI netUri = BroadcastDomainType.fromString(ip.getBroadcastUri());
+            final URI netUri = BroadcastDomainType.fromString(ip.getBroadcastUri());
             privateNicProfile.setIp4Address(ip.getIpAddress());
             privateNicProfile.setGateway(ip.getGateway());
             privateNicProfile.setNetmask(ip.getNetmask());
@@ -94,14 +98,20 @@ public class NicProfileHelperImpl implements NicProfileHelper {
     }
 
     @Override
-    public NicProfile createGuestNicProfileForVpcRouter(final Network guestNetwork) {
-        NicProfile guestNic = new NicProfile();
-        guestNic.setIp4Address(guestNetwork.getGateway());
+    public NicProfile createGuestNicProfileForVpcRouter(final RouterDeploymentDefinition vpcRouterDeploymentDefinition, final Network guestNetwork) {
+        final NicProfile guestNic = new NicProfile();
+
+        if (vpcRouterDeploymentDefinition.isRedundant()) {
+            guestNic.setIp4Address(_ipAddrMgr.acquireGuestIpAddress(guestNetwork, null));
+        } else {
+            guestNic.setIp4Address(guestNetwork.getGateway());
+        }
+
         guestNic.setBroadcastUri(guestNetwork.getBroadcastUri());
         guestNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
         guestNic.setIsolationUri(guestNetwork.getBroadcastUri());
         guestNic.setMode(guestNetwork.getMode());
-        String gatewayCidr = guestNetwork.getCidr();
+        final String gatewayCidr = guestNetwork.getCidr();
         guestNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
 
         return guestNic;

@@ -88,6 +88,7 @@ config = {
         '../../cloud_scripts_shar_archive.sh',
         'configure_systemvm_services.sh',
         'authorized_keys.sh',
+        'configure_persistent_config.sh',
         # cleanup & space-saving
         'cleanup.sh',
         'zerodisk.sh'

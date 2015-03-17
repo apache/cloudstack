@@ -1,0 +1,123 @@
+#-*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+include RbConfig
+basedir = File.dirname(__FILE__)
+
+VAGRANTFILE_API_VERSION = '2'
+
+unless ENV['VPC_IP']
+  STDERR.puts 'You did not specify the VPC IP by settings the VPC_IP environment variable'
+  STDERR.puts 'Using the default VPC_IP=192.168.56.30'
+end
+VPC_IP = ENV['VPC_IP'] || '192.168.56.30'
+VPC_NAME='r-' + VPC_IP.split('.').last + '-VM'
+
+if ARGV[0] == 'up'
+  iso_util=''
+  case CONFIG['host_os']
+    when /mswin|windows/i
+      STDERR.puts 'Windows is not supported'
+      exit 1
+    when /linux|arch/i
+      iso_util = "mkisofs -J -o #{basedir}/systemvm.iso #{basedir}/iso"
+    when /sunos|solaris/i
+      STDERR.puts 'Solaris is not supported'
+      exit 1
+    when /darwin/i
+      iso_util = "hdiutil makehybrid -iso -joliet -o #{basedir}/systemvm.iso #{basedir}/iso/"
+    else
+      STDERR.puts 'This OS is not supported'
+      exit 1
+  end
+
+  system "rm -rf #{basedir}/systemvm.iso"
+  system "mkdir -p #{basedir}/iso/"
+  unless File.exist? "#{basedir}/../../../systemvm/dist/cloud-scripts.tgz"
+    STDERR.puts 'No cloud-scripts.tgz found. Did you run the maven build?'
+    exit 1
+  end
+  system "cp #{basedir}/../../../systemvm/dist/cloud-scripts.tgz #{basedir}/iso/"
+  unless File.exist? "#{basedir}/../../../systemvm/dist/systemvm.zip"
+    STDERR.puts 'No systemvm.zip found. Did you run the maven build?'
+    exit 1
+  end
+  system "cp #{basedir}/../../../systemvm/dist/systemvm.zip #{basedir}/iso/"
+
+  system "cp #{basedir}/vagrant.pub #{basedir}/iso/authorized_keys"
+  system 'chmod 600 iso/authorized_keys'
+
+  system iso_util
+end
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = 'cloudstack/systemvm'
+  config.vm.network 'private_network', ip: VPC_IP, auto_config: false
+  config.vm.network 'private_network', ip: '192.168.56.50' #, auto_config: false
+  config.vm.network 'private_network', ip: '192.168.56.51' #, auto_config: false
+  config.vm.network 'private_network', ip: '192.168.56.52' #, auto_config: false
+
+  config.vm.synced_folder 'vagrant', '/vagrant', disabled: true
+
+  #noinspection RubyStringKeysInHashInspection
+  patches = {
+    'config/opt'  => '/opt',
+    'config/root' => '/root',
+    'config/var'  => '/var',
+    'config/etc/iptables'  => '/etc/iptables',
+    # cannot have two rsyncs pointing to the same dir
+    # 'vpn/etc'     => '/etc',
+    # 'vpn/opt'     => '/opt',
+    'xe'          => '/usr/sbin'
+  }
+
+  patches.each_pair do |patch, dest|
+    config.vm.synced_folder(
+        "#{basedir}/../../../systemvm/patches/debian/#{patch}",
+        dest,
+        type: 'rsync',
+        rsync__chown: false,
+        rsync__args: %w(--verbose --archive --exclude=authorized_keys) # no --delete!
+    )
+  end
+
+  config.ssh.forward_agent = true
+  config.ssh.username = 'root'
+  config.ssh.host = VPC_IP
+  config.ssh.port = 3922
+  config.ssh.guest_port = 3922
+
+  config.vm.provider 'virtualbox' do |vb|
+    # enable or disable headless mode
+    vb.gui = false
+    vb.customize ['modifyvm', :id, '--memory', '256']
+    vb.customize ['storagectl', :id, '--name', 'IDE Controller', '--remove']
+    vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', '1', '--type', 'dvddrive',
+                  '--medium', './systemvm.iso']
+    vb.customize('pre-boot', ['modifyvm', :id, '--nic1', 'none'])
+    extra_data='cmdline:console=hvc0 vpccidr=172.16.0.0/16 domain=devcloud.local dns1=8.8.8.8 dns2=8.8.8.4' +
+        " template=domP name=#{VPC_NAME} eth0ip=#{VPC_IP}" +
+        ' eth0mask=255.255.255.0 type=vpcrouter disable_rp_filter=true'
+    vb.customize('pre-boot', ['setextradata', :id, 'VBoxInternal/Devices/pcbios/0/Config/DmiOEMVBoxRev', extra_data])
+    vb.customize ['modifyvm', :id, '--nic1', 'hostonly', '--hostonlyadapter1', 'vboxnet0']
+    vb.customize ['modifyvm', :id, '--nic2', 'hostonly', '--hostonlyadapter2', 'vboxnet0']
+    vb.customize ['modifyvm', :id, '--nic3', 'hostonly', '--hostonlyadapter3', 'vboxnet0']
+  end
+end

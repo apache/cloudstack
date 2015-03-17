@@ -83,7 +83,8 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         }
 
         NetworkVO config =
-            new NetworkVO(type, Mode.Static, BroadcastDomainType.Native, offering.getId(), Network.State.Setup, plan.getDataCenterId(), plan.getPhysicalNetworkId());
+            new NetworkVO(type, Mode.Static, BroadcastDomainType.Native, offering.getId(), Network.State.Setup, plan.getDataCenterId(),
+                    plan.getPhysicalNetworkId(), offering.getRedundantRouter());
         return config;
     }
 

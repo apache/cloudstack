@@ -49,6 +49,7 @@ import com.cloud.agent.api.routing.AggregationControlCommand.Action;
 import com.cloud.agent.api.routing.GetRouterAlertsCommand;
 import com.cloud.agent.api.routing.GroupAnswer;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.resource.virtualnetwork.facade.AbstractConfigItemFacade;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -168,6 +169,8 @@ public class VirtualRoutingResource {
 
 
     private Answer applyConfig(NetworkElementCommand cmd, List<ConfigItem> cfg) {
+
+
         if (cfg.isEmpty()) {
             return new Answer(cmd, true, "Nothing to do");
         }
@@ -176,7 +179,12 @@ public class VirtualRoutingResource {
         List<String> details = new ArrayList<String>();
         boolean finalResult = false;
         for (ConfigItem configItem : cfg) {
+            long startTimestamp = System.currentTimeMillis();
             ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), configItem);
+            if (s_logger.isDebugEnabled()) {
+                long elapsed = System.currentTimeMillis() - startTimestamp;
+                s_logger.debug("Processing " + configItem + " took " + elapsed + "ms");
+            }
             if (result == null) {
                 result = new ExecutionResult(false, "null execution result");
             }
@@ -189,6 +197,7 @@ public class VirtualRoutingResource {
         if (cmd.getAnswersCount() != results.size()) {
             s_logger.warn("Expected " + cmd.getAnswersCount() + " answers while executing " + cmd.getClass().getSimpleName() + " but received " + results.size());
         }
+
 
         if (results.size() == 1) {
             return new Answer(cmd, finalResult, results.get(0).getDetails());
@@ -317,7 +326,15 @@ public class VirtualRoutingResource {
     }
 
     private List<ConfigItem> generateCommandCfg(NetworkElementCommand cmd) {
-        return ConfigHelper.generateCommandCfg(cmd);
+        /*
+         * [TODO] Still have to migrate LoadBalancerConfigCommand and BumpUpPriorityCommand
+         * [FIXME] Have a look at SetSourceNatConfigItem
+         */
+        s_logger.debug("Transforming " + cmd.getClass().getCanonicalName() + " to ConfigItems");
+
+        final AbstractConfigItemFacade configItemFacade = AbstractConfigItemFacade.getInstance(cmd.getClass());
+
+        return configItemFacade.generateConfig(cmd);
     }
 
     private Answer execute(AggregationControlCommand cmd) {

@@ -81,99 +81,91 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
 
     @Override
     protected void initMocks() {
-        when(this.mockDestination.getDataCenter()).thenReturn(this.mockDataCenter);
-        when(this.mockDataCenter.getId()).thenReturn(DATA_CENTER_ID);
-        when(this.mockPod.getId()).thenReturn(POD_ID1);
-        when(this.mockHostPodVO1.getId()).thenReturn(POD_ID1);
-        when(this.mockHostPodVO2.getId()).thenReturn(POD_ID2);
-        when(this.mockHostPodVO3.getId()).thenReturn(POD_ID3);
-        when(this.mockNw.getId()).thenReturn(NW_ID_1);
+        when(mockDestination.getDataCenter()).thenReturn(mockDataCenter);
+        when(mockDataCenter.getId()).thenReturn(DATA_CENTER_ID);
+        when(mockPod.getId()).thenReturn(POD_ID1);
+        when(mockHostPodVO1.getId()).thenReturn(POD_ID1);
+        when(mockHostPodVO2.getId()).thenReturn(POD_ID2);
+        when(mockHostPodVO3.getId()).thenReturn(POD_ID3);
+        when(mockNw.getId()).thenReturn(NW_ID_1);
     }
 
     @Before
     public void initTest() {
-        this.initMocks();
+        initMocks();
 
-        this.deployment = this.builder.create()
-                .setGuestNetwork(this.mockNw)
-                .setDeployDestination(this.mockDestination)
-                .setAccountOwner(this.mockOwner)
-                .setParams(this.params)
+        deployment = builder.create()
+                .setGuestNetwork(mockNw)
+                .setDeployDestination(mockDestination)
+                .setAccountOwner(mockOwner)
+                .setParams(params)
                 .build();
     }
 
     @Test
     public void testRedundancyProperty() {
         // Set and confirm is redundant
-        RouterDeploymentDefinition deployment1 = this.builder.create()
-                .setGuestNetwork(this.mockNw)
-                .setDeployDestination(this.mockDestination)
-                .makeRedundant()
+        when(mockNw.isRedundant()).thenReturn(true);
+        final RouterDeploymentDefinition deployment = builder.create()
+                .setGuestNetwork(mockNw)
+                .setDeployDestination(mockDestination)
                 .build();
-        assertTrue("The builder ignored \".makeRedundant()\"", deployment1.isRedundant());
-        RouterDeploymentDefinition deployment2 = this.builder.create()
-                .setGuestNetwork(this.mockNw)
-                .setDeployDestination(this.mockDestination)
-                .setRedundant(true)
-                .build();
-        assertTrue("The builder ignored \".setRedundant(true)\"", deployment2.isRedundant());
+        assertTrue("The builder ignored redundancy from its inner network", deployment.isRedundant());
+        when(mockNw.isRedundant()).thenReturn(false);
+        assertFalse("The builder ignored redundancy from its inner network", deployment.isRedundant());
     }
 
     @Test
     public void testConstructionFieldsAndFlags() {
         // Vpc type
-        assertFalse(this.deployment.isVpcRouter());
+        assertFalse(deployment.isVpcRouter());
         // Offering null
-        this.deployment.offeringId = null;
-        assertNull(this.deployment.getOfferingId());
-        this.deployment.offeringId = OFFERING_ID;
-        assertEquals(OFFERING_ID, this.deployment.getOfferingId().longValue());
-        assertNotNull(this.deployment.getRouters());
-        assertNotNull(this.deployment.getGuestNetwork());
-        assertNotNull(this.deployment.getDest());
-        assertNotNull(this.deployment.getOwner());
-        this.deployment.plan = mock(DeploymentPlan.class);
-        assertNotNull(this.deployment.getPlan());
-        // Redundant : by default is not
-        assertFalse(this.deployment.isRedundant());
-        this.deployment.isRedundant = true;
-        assertTrue(this.deployment.isRedundant());
-        assertFalse(this.deployment.isPublicNetwork());
-        this.deployment.isPublicNetwork = true;
-        assertTrue(this.deployment.isPublicNetwork());
+        deployment.serviceOfferingId = null;
+        assertNull(deployment.getServiceOfferingId());
+        deployment.serviceOfferingId = OFFERING_ID;
+        assertEquals(OFFERING_ID, deployment.getServiceOfferingId().longValue());
+        assertNotNull(deployment.getRouters());
+        assertNotNull(deployment.getGuestNetwork());
+        assertNotNull(deployment.getDest());
+        assertNotNull(deployment.getOwner());
+        deployment.plan = mock(DeploymentPlan.class);
+        assertNotNull(deployment.getPlan());
+        assertFalse(deployment.isPublicNetwork());
+        deployment.isPublicNetwork = true;
+        assertTrue(deployment.isPublicNetwork());
         // This could never be a Vpc deployment
-        assertNull(this.deployment.getVpc());
-        assertEquals(this.params, this.deployment.getParams());
+        assertNull(deployment.getVpc());
+        assertEquals(params, deployment.getParams());
     }
 
     @Test
     public void testLock() {
         // Prepare
-        when(this.mockNwDao.acquireInLockTable(NW_ID_1, NetworkOrchestrationService.NetworkLockTimeout.value()))
+        when(mockNwDao.acquireInLockTable(NW_ID_1, NetworkOrchestrationService.NetworkLockTimeout.value()))
         .thenReturn(mockNw);
 
         // Execute
-        this.deployment.lock();
+        deployment.lock();
 
         // Assert
-        verify(this.mockNwDao, times(1)).acquireInLockTable(NW_ID_1, 600);
-        assertNotNull(LOCK_NOT_CORRECTLY_GOT, this.deployment.tableLockId);
-        assertEquals(LOCK_NOT_CORRECTLY_GOT, NW_ID_1, NW_ID_1, this.deployment.tableLockId.longValue());
+        verify(mockNwDao, times(1)).acquireInLockTable(NW_ID_1, 600);
+        assertNotNull(LOCK_NOT_CORRECTLY_GOT, deployment.tableLockId);
+        assertEquals(LOCK_NOT_CORRECTLY_GOT, NW_ID_1, NW_ID_1, deployment.tableLockId.longValue());
     }
 
     @Test(expected = ConcurrentOperationException.class)
     public void testLockFails() {
         // Prepare
-        when(this.mockNwDao.acquireInLockTable(NW_ID_1, NetworkOrchestrationService.NetworkLockTimeout.value()))
+        when(mockNwDao.acquireInLockTable(NW_ID_1, NetworkOrchestrationService.NetworkLockTimeout.value()))
         .thenReturn(null);
 
         // Execute
         try {
-            this.deployment.lock();
+            deployment.lock();
         } finally {
             // Assert
-            verify(this.mockNwDao, times(1)).acquireInLockTable(NW_ID_1, 600);
-            assertNull(this.deployment.tableLockId);
+            verify(mockNwDao, times(1)).acquireInLockTable(NW_ID_1, 600);
+            assertNull(deployment.tableLockId);
         }
 
     }
@@ -181,25 +173,25 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Test
     public void testUnlock() {
         // Prepare
-        this.deployment.tableLockId = NW_ID_1;
+        deployment.tableLockId = NW_ID_1;
 
         // Execute
-        this.deployment.unlock();
+        deployment.unlock();
 
         // Assert
-        verify(this.mockNwDao, times(1)).releaseFromLockTable(NW_ID_1);
+        verify(mockNwDao, times(1)).releaseFromLockTable(NW_ID_1);
     }
 
     @Test
     public void testUnlockWithoutLock() {
         // Prepare
-        this.deployment.tableLockId = null;
+        deployment.tableLockId = null;
 
         // Execute
-        this.deployment.unlock();
+        deployment.unlock();
 
         // Assert
-        verify(this.mockNwDao, times(0)).releaseFromLockTable(anyLong());
+        verify(mockNwDao, times(0)).releaseFromLockTable(anyLong());
     }
 
     /**
@@ -211,13 +203,13 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         when(mockDataCenter.getNetworkType()).thenReturn(NetworkType.Advanced);
 
         // Execute
-        this.deployment.generateDeploymentPlan();
+        deployment.generateDeploymentPlan();
 
         // Assert
-        assertEquals("", DATA_CENTER_ID, (Long) this.deployment.plan.getDataCenterId());
-        assertEquals("", mockDestination, this.deployment.dest);
-        assertEquals("", null, this.deployment.getPod());
-        assertEquals("", null, this.deployment.getPodId());
+        assertEquals("", DATA_CENTER_ID, (Long) deployment.plan.getDataCenterId());
+        assertEquals("", mockDestination, deployment.dest);
+        assertEquals("", null, deployment.getPod());
+        assertEquals("", null, deployment.getPodId());
     }
 
     /**
@@ -226,17 +218,17 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Test
     public void testGenerateDeploymentPlanBasic() {
         // Prepare
-        when(this.mockDestination.getPod()).thenReturn(this.mockPod);
-        when(this.mockDataCenter.getNetworkType()).thenReturn(NetworkType.Basic);
+        when(mockDestination.getPod()).thenReturn(mockPod);
+        when(mockDataCenter.getNetworkType()).thenReturn(NetworkType.Basic);
 
         // Execute
-        this.deployment.generateDeploymentPlan();
+        deployment.generateDeploymentPlan();
 
         // Assert
-        assertEquals("", DATA_CENTER_ID, (Long) this.deployment.plan.getDataCenterId());
-        assertEquals("", mockDestination, this.deployment.dest);
-        assertEquals("", mockPod, this.deployment.getPod());
-        assertEquals("", POD_ID1, this.deployment.getPodId());
+        assertEquals("", DATA_CENTER_ID, (Long) deployment.plan.getDataCenterId());
+        assertEquals("", mockDestination, deployment.dest);
+        assertEquals("", mockPod, deployment.getPod());
+        assertEquals("", POD_ID1, deployment.getPodId());
     }
 
     /**
@@ -246,39 +238,39 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Test(expected = CloudRuntimeException.class)
     public void testGenerateDeploymentPlanBasicFailNoPod() {
         // Prepare
-        when(this.mockDestination.getPod()).thenReturn(null);
+        when(mockDestination.getPod()).thenReturn(null);
         when(mockDataCenter.getNetworkType()).thenReturn(NetworkType.Basic);
 
         // Execute
-        this.deployment.generateDeploymentPlan();
+        deployment.generateDeploymentPlan();
 
         // Assert
-        assertEquals("", DATA_CENTER_ID, (Long) this.deployment.plan.getDataCenterId());
-        assertEquals("", mockDestination, this.deployment.dest);
+        assertEquals("", DATA_CENTER_ID, (Long) deployment.plan.getDataCenterId());
+        assertEquals("", mockDestination, deployment.dest);
     }
 
     @Test
     public void testCheckPreconditions() throws ResourceUnavailableException {
         // Prepare
-        Network.State states[] = {
+        final Network.State states[] = {
                 Network.State.Implemented,
                 Network.State.Setup,
                 Network.State.Implementing
         };
-        when(this.deployment.guestNetwork.getTrafficType()).thenReturn(TrafficType.Guest);
+        when(deployment.guestNetwork.getTrafficType()).thenReturn(TrafficType.Guest);
 
         // Drive specific tests
-        for (Network.State state : states) {
-            this.driveTestCheckPreconditionsCorrectNwState(state);
+        for (final Network.State state : states) {
+            driveTestCheckPreconditionsCorrectNwState(state);
         }
     }
 
-    public void driveTestCheckPreconditionsCorrectNwState(Network.State state) throws ResourceUnavailableException {
+    public void driveTestCheckPreconditionsCorrectNwState(final Network.State state) throws ResourceUnavailableException {
         // Prepare
-        when(this.deployment.guestNetwork.getState()).thenReturn(state);
+        when(deployment.guestNetwork.getState()).thenReturn(state);
 
         // Execute
-        this.deployment.checkPreconditions();
+        deployment.checkPreconditions();
 
         // Assert : It just should raise no exceptions
     }
@@ -286,127 +278,127 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Test(expected = ResourceUnavailableException.class)
     public void testCheckPreconditionsWrongTrafficType() throws ResourceUnavailableException {
         // Prepare wrong traffic type to trigger error
-        when(this.deployment.guestNetwork.getTrafficType()).thenReturn(TrafficType.Public);
+        when(deployment.guestNetwork.getTrafficType()).thenReturn(TrafficType.Public);
 
         // Execute
-        this.driveTestCheckPreconditionsCorrectNwState(Network.State.Implemented);
+        driveTestCheckPreconditionsCorrectNwState(Network.State.Implemented);
     }
 
     @Test(expected = ResourceUnavailableException.class)
     public void testCheckPreconditionsWrongState() throws ResourceUnavailableException {
         // Prepare wrong traffic type to trigger error
-        when(this.deployment.guestNetwork.getTrafficType()).thenReturn(TrafficType.Guest);
+        when(deployment.guestNetwork.getTrafficType()).thenReturn(TrafficType.Guest);
 
         // Execute
-        this.driveTestCheckPreconditionsCorrectNwState(Network.State.Shutdown);
+        driveTestCheckPreconditionsCorrectNwState(Network.State.Shutdown);
     }
 
     @Test
     public void testFindDestinationsNonBasicZone() {
         // Prepare
-        when(this.mockDataCenter.getNetworkType()).thenReturn(NetworkType.Advanced);
+        when(mockDataCenter.getNetworkType()).thenReturn(NetworkType.Advanced);
 
         // Execute
-        List<DeployDestination> destinations = this.deployment.findDestinations();
+        final List<DeployDestination> destinations = deployment.findDestinations();
 
         // Assert
         assertEquals(ONLY_THE_PROVIDED_AS_DEFAULT_DESTINATION_WAS_EXPECTED,
                 1, destinations.size());
         assertEquals(ONLY_THE_PROVIDED_AS_DEFAULT_DESTINATION_WAS_EXPECTED,
-                this.mockDestination, destinations.get(0));
+                mockDestination, destinations.get(0));
     }
 
     @Test
     public void testFindDestinationsPredefinedPod() {
         // Prepare
-        when(this.mockDataCenter.getNetworkType()).thenReturn(NetworkType.Basic);
-        when(this.mockDestination.getPod()).thenReturn(this.mockPod);
+        when(mockDataCenter.getNetworkType()).thenReturn(NetworkType.Basic);
+        when(mockDestination.getPod()).thenReturn(mockPod);
 
         // Execute
-        List<DeployDestination> destinations = this.deployment.findDestinations();
+        final List<DeployDestination> destinations = deployment.findDestinations();
 
         // Assert
         assertEquals(ONLY_THE_PROVIDED_AS_DEFAULT_DESTINATION_WAS_EXPECTED,
                 1, destinations.size());
         assertEquals(ONLY_THE_PROVIDED_AS_DEFAULT_DESTINATION_WAS_EXPECTED,
-                this.mockDestination, destinations.get(0));
+                mockDestination, destinations.get(0));
     }
 
     @Test
     public void testFindDestinations() {
         // Prepare
-        when(this.mockDataCenter.getNetworkType()).thenReturn(NetworkType.Basic);
-        when(this.mockDestination.getPod()).thenReturn(null);
+        when(mockDataCenter.getNetworkType()).thenReturn(NetworkType.Basic);
+        when(mockDestination.getPod()).thenReturn(null);
 
         // Stub local method listByDataCenterIdVMTypeAndStates
-        this.mockPods.add(this.mockHostPodVO1);
-        this.mockPods.add(this.mockHostPodVO2);
-        this.mockPods.add(this.mockHostPodVO3);
-        RouterDeploymentDefinition deployment = spy(this.deployment);
+        mockPods.add(mockHostPodVO1);
+        mockPods.add(mockHostPodVO2);
+        mockPods.add(mockHostPodVO3);
+        final RouterDeploymentDefinition deployment = spy(this.deployment);
         doReturn(mockPods).when(deployment).listByDataCenterIdVMTypeAndStates(
                 DATA_CENTER_ID, VirtualMachine.Type.User,
                 VirtualMachine.State.Starting, VirtualMachine.State.Running);
 
         // Leave this one empty to force adding add destination for this pod
-        List<DomainRouterVO> virtualRouters1 = new ArrayList<>();
-        when(this.mockRouterDao.listByPodIdAndStates(POD_ID1,
+        final List<DomainRouterVO> virtualRouters1 = new ArrayList<>();
+        when(mockRouterDao.listByPodIdAndStates(POD_ID1,
                 VirtualMachine.State.Starting, VirtualMachine.State.Running)).thenReturn(virtualRouters1);
 
         // This list is not empty, so it will not add any for this pod, and continue with next pod
-        List<DomainRouterVO> virtualRouters2 = new ArrayList<>();
-        DomainRouterVO domainRouterVO1 = mock(DomainRouterVO.class);
+        final List<DomainRouterVO> virtualRouters2 = new ArrayList<>();
+        final DomainRouterVO domainRouterVO1 = mock(DomainRouterVO.class);
         virtualRouters2.add(domainRouterVO1);
-        when(this.mockRouterDao.listByPodIdAndStates(POD_ID2,
+        when(mockRouterDao.listByPodIdAndStates(POD_ID2,
                 VirtualMachine.State.Starting, VirtualMachine.State.Running)).thenReturn(virtualRouters2);
 
         // Leave this last one empty to check we finally added more than one afterwards
-        List<DomainRouterVO> virtualRouters3 = new ArrayList<>();
-        when(this.mockRouterDao.listByPodIdAndStates(POD_ID3,
+        final List<DomainRouterVO> virtualRouters3 = new ArrayList<>();
+        when(mockRouterDao.listByPodIdAndStates(POD_ID3,
                 VirtualMachine.State.Starting, VirtualMachine.State.Running)).thenReturn(virtualRouters3);
 
         // Execute
-        List<DeployDestination> destinations = deployment.findDestinations();
+        final List<DeployDestination> destinations = deployment.findDestinations();
 
         // Assert that 2 were added (for the 1st and 3rd
         assertEquals("",
                 2, destinations.size());
         assertEquals("",
-                this.mockDataCenter, destinations.get(0).getDataCenter());
+                mockDataCenter, destinations.get(0).getDataCenter());
         assertEquals("",
-                this.mockHostPodVO1, destinations.get(0).getPod());
+                mockHostPodVO1, destinations.get(0).getPod());
         assertEquals("",
-                this.mockDataCenter, destinations.get(1).getDataCenter());
+                mockDataCenter, destinations.get(1).getDataCenter());
         assertEquals("",
-                this.mockHostPodVO3, destinations.get(1).getPod());
+                mockHostPodVO3, destinations.get(1).getPod());
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testFindDestinationsMoreThan1PodPerBasicZone() {
         // Prepare
-        when(this.mockDataCenter.getNetworkType()).thenReturn(NetworkType.Basic);
-        when(this.mockDestination.getPod()).thenReturn(null);
+        when(mockDataCenter.getNetworkType()).thenReturn(NetworkType.Basic);
+        when(mockDestination.getPod()).thenReturn(null);
 
         // Stub local method listByDataCenterIdVMTypeAndStates
-        this.mockPods.add(this.mockHostPodVO1);
-        this.mockPods.add(this.mockHostPodVO2);
+        mockPods.add(mockHostPodVO1);
+        mockPods.add(mockHostPodVO2);
         // Deployment under test is a Mockito spy
-        RouterDeploymentDefinition deploymentUT = spy(this.deployment);
+        final RouterDeploymentDefinition deploymentUT = spy(deployment);
         doReturn(mockPods).when(deploymentUT).listByDataCenterIdVMTypeAndStates(
                 DATA_CENTER_ID, VirtualMachine.Type.User,
                 VirtualMachine.State.Starting, VirtualMachine.State.Running);
 
         // Leave this one empty to force adding add destination for this pod
-        List<DomainRouterVO> virtualRouters1 = new ArrayList<>();
-        when(this.mockRouterDao.listByPodIdAndStates(POD_ID1,
+        final List<DomainRouterVO> virtualRouters1 = new ArrayList<>();
+        when(mockRouterDao.listByPodIdAndStates(POD_ID1,
                 VirtualMachine.State.Starting, VirtualMachine.State.Running)).thenReturn(virtualRouters1);
 
         // This list is not empty, so it will not add any for this pod, and continue with next pod
-        List<DomainRouterVO> virtualRouters2 = new ArrayList<>();
-        DomainRouterVO domainRouterVO1 = mock(DomainRouterVO.class);
-        DomainRouterVO domainRouterVO2 = mock(DomainRouterVO.class);
+        final List<DomainRouterVO> virtualRouters2 = new ArrayList<>();
+        final DomainRouterVO domainRouterVO1 = mock(DomainRouterVO.class);
+        final DomainRouterVO domainRouterVO2 = mock(DomainRouterVO.class);
         virtualRouters2.add(domainRouterVO1);
         virtualRouters2.add(domainRouterVO2);
-        when(this.mockRouterDao.listByPodIdAndStates(POD_ID2,
+        when(mockRouterDao.listByPodIdAndStates(POD_ID2,
                 VirtualMachine.State.Starting, VirtualMachine.State.Running)).thenReturn(virtualRouters2);
 
         // Execute
@@ -418,14 +410,14 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Test
     public void testPlanDeploymentRoutersBasic() {
         // Prepare
-        when(this.mockDataCenter.getNetworkType()).thenReturn(NetworkType.Basic);
-        when(this.mockDestination.getPod()).thenReturn(this.mockPod);
+        when(mockDataCenter.getNetworkType()).thenReturn(NetworkType.Basic);
+        when(mockDestination.getPod()).thenReturn(mockPod);
 
         // Execute
-        this.deployment.planDeploymentRouters();
+        deployment.planDeploymentRouters();
 
         // Assert
-        verify(this.mockRouterDao, times(1)).listByNetworkAndPodAndRole(this.mockNw.getId(),
+        verify(mockRouterDao, times(1)).listByNetworkAndPodAndRole(mockNw.getId(),
                 POD_ID1, Role.VIRTUAL_ROUTER);
     }
 
@@ -433,41 +425,41 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     public void testPlanDeploymentRoutersNonBasic() {
         // Prepare
         when(mockDataCenter.getNetworkType()).thenReturn(NetworkType.Advanced);
-        when(this.mockDestination.getPod()).thenReturn(this.mockPod);
+        when(mockDestination.getPod()).thenReturn(mockPod);
 
         // Execute
-        this.deployment.planDeploymentRouters();
+        deployment.planDeploymentRouters();
 
         // Assert
-        verify(this.mockRouterDao, times(1)).listByNetworkAndRole(
-                this.mockNw.getId(), Role.VIRTUAL_ROUTER);
+        verify(mockRouterDao, times(1)).listByNetworkAndRole(
+                mockNw.getId(), Role.VIRTUAL_ROUTER);
     }
 
     @Test
     public void testListByDataCenterIdVMTypeAndStates() {
         // Prepare
-        VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+        final VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
         final SearchBuilder<VMInstanceVO> vmInstanceSearch = mock(SearchBuilder.class);
-        when(this.mockVmDao.createSearchBuilder()).thenReturn(vmInstanceSearch);
+        when(mockVmDao.createSearchBuilder()).thenReturn(vmInstanceSearch);
         when(vmInstanceSearch.entity()).thenReturn(vmInstanceVO);
         when(vmInstanceVO.getType()).thenReturn(VirtualMachine.Type.Instance);
         when(vmInstanceVO.getState()).thenReturn(VirtualMachine.State.Stopped);
         when(vmInstanceVO.getPodIdToDeployIn()).thenReturn(POD_ID1);
 
         final SearchBuilder<HostPodVO> podIdSearch = mock(SearchBuilder.class);
-        when(this.mockPodDao.createSearchBuilder()).thenReturn(podIdSearch);
+        when(mockPodDao.createSearchBuilder()).thenReturn(podIdSearch);
         final SearchCriteria<HostPodVO> sc = mock(SearchCriteria.class);
-        HostPodVO hostPodVO = mock(HostPodVO.class);
+        final HostPodVO hostPodVO = mock(HostPodVO.class);
         when(podIdSearch.entity()).thenReturn(hostPodVO);
         when(hostPodVO.getId()).thenReturn(POD_ID1);
         when(hostPodVO.getDataCenterId()).thenReturn(DATA_CENTER_ID);
         when(podIdSearch.create()).thenReturn(sc);
 
         final List<HostPodVO> expectedPods = mock(List.class);
-        when(this.mockPodDao.search(sc, null)).thenReturn(expectedPods);
+        when(mockPodDao.search(sc, null)).thenReturn(expectedPods);
 
         // Execute
-        final List<HostPodVO> pods = this.deployment.listByDataCenterIdVMTypeAndStates(DATA_CENTER_ID,
+        final List<HostPodVO> pods = deployment.listByDataCenterIdVMTypeAndStates(DATA_CENTER_ID,
                 VirtualMachine.Type.User,
                 VirtualMachine.State.Starting,
                 VirtualMachine.State.Running);
@@ -479,40 +471,40 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         verify(sc, times(1)).setJoinParameters("vmInstanceSearch", "type", VirtualMachine.Type.User);
         verify(sc, times(1)).setJoinParameters("vmInstanceSearch", "states",
                 VirtualMachine.State.Starting, VirtualMachine.State.Running);
-        verify(this.mockPodDao, times(1)).search(sc, null);
+        verify(mockPodDao, times(1)).search(sc, null);
     }
 
     @Test
     public void testFindOrDeployVirtualRouter() throws ConcurrentOperationException,
     InsufficientCapacityException, ResourceUnavailableException {
         // Prepare
-        RouterDeploymentDefinition deploymentUT = spy(this.deployment);
+        final RouterDeploymentDefinition deploymentUT = spy(deployment);
         doNothing().when(deploymentUT).findOrDeployVirtualRouter();
 
         // Execute
         deploymentUT.deployVirtualRouter();
 
         // Assert
-        verify(this.mockNetworkHelper, times(1)).startRouters(deploymentUT);
+        verify(mockNetworkHelper, times(1)).startRouters(deploymentUT);
     }
 
     @Test(expected = ConcurrentOperationException.class)
     public void testDeployVirtualRouter() throws ConcurrentOperationException,
-            InsufficientCapacityException, ResourceUnavailableException {
+    InsufficientCapacityException, ResourceUnavailableException {
 
         // Prepare
-        List<DeployDestination> mockDestinations = new ArrayList<>();
+        final List<DeployDestination> mockDestinations = new ArrayList<>();
         mockDestinations.add(mock(DeployDestination.class));
         mockDestinations.add(mock(DeployDestination.class));
 
-        RouterDeploymentDefinition deploymentUT = spy(this.deployment);
+        final RouterDeploymentDefinition deploymentUT = spy(deployment);
         doNothing().when(deploymentUT).lock();
         doNothing().when(deploymentUT).checkPreconditions();
         doReturn(mockDestinations).when(deploymentUT).findDestinations();
         doNothing().when(deploymentUT).planDeploymentRouters();
         doNothing().when(deploymentUT).generateDeploymentPlan();
         // Let's test that if the last step fails in the last iteration it unlocks the table
-        ConcurrentOperationException exception =
+        final ConcurrentOperationException exception =
                 new ConcurrentOperationException(null);
         doNothing().doThrow(exception).when(deploymentUT).executeDeployment();
         doNothing().when(deploymentUT).unlock();
@@ -540,25 +532,25 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Test
     public void testSetupPriorityOfRedundantRouterWithNonRedundantRouters() {
         // Prepare
-        this.deployment.routers = new ArrayList<>();
+        deployment.routers = new ArrayList<>();
         final DomainRouterVO routerVO1 = mock(DomainRouterVO.class);
-        this.deployment.routers.add(routerVO1);
+        deployment.routers.add(routerVO1);
         when(routerVO1.getIsRedundantRouter()).thenReturn(true);
         when(routerVO1.getState()).thenReturn(VirtualMachine.State.Stopped);
         final DomainRouterVO routerVO2 = mock(DomainRouterVO.class);
-        this.deployment.routers.add(routerVO2);
+        deployment.routers.add(routerVO2);
         when(routerVO2.getIsRedundantRouter()).thenReturn(false);
         when(routerVO2.getState()).thenReturn(VirtualMachine.State.Stopped);
         // If this deployment is not redundant nothing will be executed
-        this.deployment.isRedundant = true;
+        when(mockNw.isRedundant()).thenReturn(true);
 
         // Execute
-        this.deployment.setupPriorityOfRedundantRouter();
+        deployment.setupPriorityOfRedundantRouter();
 
         // Assert
         verify(routerVO1, times(0)).setPriority(anyInt());
         verify(routerVO1, times(0)).setIsPriorityBumpUp(anyBoolean());
-        verify(this.mockRouterDao, times(0)).update(anyLong(), (DomainRouterVO) anyObject());
+        verify(mockRouterDao, times(0)).update(anyLong(), (DomainRouterVO) anyObject());
     }
 
     /**
@@ -567,25 +559,25 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Test
     public void testSetupPriorityOfRedundantRouterWithRunningRouters() {
         // Prepare
-        this.deployment.routers = new ArrayList<>();
+        deployment.routers = new ArrayList<>();
         final DomainRouterVO routerVO1 = mock(DomainRouterVO.class);
-        this.deployment.routers.add(routerVO1);
+        deployment.routers.add(routerVO1);
         when(routerVO1.getIsRedundantRouter()).thenReturn(true);
         when(routerVO1.getState()).thenReturn(VirtualMachine.State.Stopped);
         final DomainRouterVO routerVO2 = mock(DomainRouterVO.class);
-        this.deployment.routers.add(routerVO2);
+        deployment.routers.add(routerVO2);
         when(routerVO2.getIsRedundantRouter()).thenReturn(true);
         when(routerVO2.getState()).thenReturn(VirtualMachine.State.Running);
         // If this deployment is not redundant nothing will be executed
-        this.deployment.isRedundant = true;
+        when(mockNw.isRedundant()).thenReturn(true);
 
         // Execute
-        this.deployment.setupPriorityOfRedundantRouter();
+        deployment.setupPriorityOfRedundantRouter();
 
         // Assert
         verify(routerVO1, times(0)).setPriority(anyInt());
         verify(routerVO1, times(0)).setIsPriorityBumpUp(anyBoolean());
-        verify(this.mockRouterDao, times(0)).update(anyLong(), (DomainRouterVO) anyObject());
+        verify(mockRouterDao, times(0)).update(anyLong(), (DomainRouterVO) anyObject());
     }
 
     /**
@@ -594,30 +586,30 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Test
     public void testSetupPriorityOfRedundantRouter() {
         // Prepare
-        this.deployment.routers = new ArrayList<>();
+        deployment.routers = new ArrayList<>();
         final DomainRouterVO routerVO1 = mock(DomainRouterVO.class);
-        this.deployment.routers.add(routerVO1);
+        deployment.routers.add(routerVO1);
         when(routerVO1.getId()).thenReturn(ROUTER1_ID);
         when(routerVO1.getIsRedundantRouter()).thenReturn(true);
         when(routerVO1.getState()).thenReturn(VirtualMachine.State.Stopped);
         final DomainRouterVO routerVO2 = mock(DomainRouterVO.class);
-        this.deployment.routers.add(routerVO2);
+        deployment.routers.add(routerVO2);
         when(routerVO2.getId()).thenReturn(ROUTER2_ID);
         when(routerVO2.getIsRedundantRouter()).thenReturn(true);
         when(routerVO2.getState()).thenReturn(VirtualMachine.State.Stopped);
         // If this deployment is not redundant nothing will be executed
-        this.deployment.isRedundant = true;
+        when(mockNw.isRedundant()).thenReturn(true);
 
         // Execute
-        this.deployment.setupPriorityOfRedundantRouter();
+        deployment.setupPriorityOfRedundantRouter();
 
         // Assert
         verify(routerVO1, times(1)).setPriority(0);
         verify(routerVO1, times(1)).setIsPriorityBumpUp(false);
-        verify(this.mockRouterDao, times(1)).update(ROUTER1_ID, routerVO1);
+        verify(mockRouterDao, times(1)).update(ROUTER1_ID, routerVO1);
         verify(routerVO2, times(1)).setPriority(0);
         verify(routerVO2, times(1)).setIsPriorityBumpUp(false);
-        verify(this.mockRouterDao, times(1)).update(ROUTER2_ID, routerVO2);
+        verify(mockRouterDao, times(1)).update(ROUTER2_ID, routerVO2);
     }
 
     /**
@@ -626,166 +618,166 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Test
     public void testSetupPriorityOfRedundantRouterWithNonRedundantDeployment() {
         // Prepare
-        this.deployment.routers = new ArrayList<>();
+        deployment.routers = new ArrayList<>();
         final DomainRouterVO routerVO1 = mock(DomainRouterVO.class);
-        this.deployment.routers.add(routerVO1);
+        deployment.routers.add(routerVO1);
         when(routerVO1.getIsRedundantRouter()).thenReturn(true);
         when(routerVO1.getState()).thenReturn(VirtualMachine.State.Stopped);
         final DomainRouterVO routerVO2 = mock(DomainRouterVO.class);
-        this.deployment.routers.add(routerVO2);
+        deployment.routers.add(routerVO2);
         when(routerVO2.getIsRedundantRouter()).thenReturn(true);
         when(routerVO2.getState()).thenReturn(VirtualMachine.State.Stopped);
 
         // Execute
-        this.deployment.setupPriorityOfRedundantRouter();
+        deployment.setupPriorityOfRedundantRouter();
 
         // Assert
         verify(routerVO1, times(0)).setPriority(anyInt());
         verify(routerVO1, times(0)).setIsPriorityBumpUp(anyBoolean());
-        verify(this.mockRouterDao, times(0)).update(anyLong(), (DomainRouterVO) anyObject());
+        verify(mockRouterDao, times(0)).update(anyLong(), (DomainRouterVO) anyObject());
     }
 
     @Test
     public void testGetNumberOfRoutersToDeploy() {
         // Prepare
-        this.deployment.routers = new ArrayList<>(); // Empty list
+        deployment.routers = new ArrayList<>(); // Empty list
 
         // Execute and assert
         assertEquals(NUMBER_OF_ROUTERS_TO_DEPLOY_IS_NOT_THE_EXPECTED,
-                1, this.deployment.getNumberOfRoutersToDeploy());
+                1, deployment.getNumberOfRoutersToDeploy());
 
         // Execute and assert, just the same but for redundant deployment
-        this.deployment.isRedundant = true;
+        when(mockNw.isRedundant()).thenReturn(true);
         assertEquals(NUMBER_OF_ROUTERS_TO_DEPLOY_IS_NOT_THE_EXPECTED,
-                2, this.deployment.getNumberOfRoutersToDeploy());
+                2, deployment.getNumberOfRoutersToDeploy());
 
         // Just the same, instead of an empty list, a 1 items list
-        this.deployment.routers.add(mock(DomainRouterVO.class));
-        this.deployment.isRedundant = false;
+        deployment.routers.add(mock(DomainRouterVO.class));
+        when(mockNw.isRedundant()).thenReturn(false);
         assertEquals(NUMBER_OF_ROUTERS_TO_DEPLOY_IS_NOT_THE_EXPECTED,
-                0, this.deployment.getNumberOfRoutersToDeploy());
+                0, deployment.getNumberOfRoutersToDeploy());
 
-        this.deployment.isRedundant = true;
+        when(mockNw.isRedundant()).thenReturn(true);
         assertEquals(NUMBER_OF_ROUTERS_TO_DEPLOY_IS_NOT_THE_EXPECTED,
-                1, this.deployment.getNumberOfRoutersToDeploy());
+                1, deployment.getNumberOfRoutersToDeploy());
     }
 
     @Test
     public void testFindVirtualProvider() {
         // Prepare
-        when(this.mockNetworkModel.getPhysicalNetworkId(this.deployment.guestNetwork)).thenReturn(PHYSICAL_NW_ID);
-        Type type = Type.VirtualRouter;
-        PhysicalNetworkServiceProviderVO physicalNwSrvProvider = mock(PhysicalNetworkServiceProviderVO.class);
-        when(this.physicalProviderDao.findByServiceProvider(PHYSICAL_NW_ID, type.toString()))
-            .thenReturn(physicalNwSrvProvider);
+        when(mockNetworkModel.getPhysicalNetworkId(deployment.guestNetwork)).thenReturn(PHYSICAL_NW_ID);
+        final Type type = Type.VirtualRouter;
+        final PhysicalNetworkServiceProviderVO physicalNwSrvProvider = mock(PhysicalNetworkServiceProviderVO.class);
+        when(physicalProviderDao.findByServiceProvider(PHYSICAL_NW_ID, type.toString()))
+        .thenReturn(physicalNwSrvProvider);
         when(physicalNwSrvProvider.getId()).thenReturn(PROVIDER_ID);
 
-        VirtualRouterProviderVO vrProvider = mock(VirtualRouterProviderVO.class);
-        when(this.mockVrProviderDao.findByNspIdAndType(PROVIDER_ID, type))
-            .thenReturn(vrProvider);
+        final VirtualRouterProviderVO vrProvider = mock(VirtualRouterProviderVO.class);
+        when(mockVrProviderDao.findByNspIdAndType(PROVIDER_ID, type))
+        .thenReturn(vrProvider);
 
         // Execute
-        this.deployment.findVirtualProvider();
+        deployment.findVirtualProvider();
 
         // Assert
         assertEquals("Didn't find and set the VirtualRouterProvider as expected",
-                vrProvider, this.deployment.getVirtualProvider());
+                vrProvider, deployment.getVirtualProvider());
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testFindVirtualProviderWithNullPhyNwSrvProvider() {
         // Prepare
-        when(this.mockNetworkModel.getPhysicalNetworkId(this.deployment.guestNetwork)).thenReturn(PHYSICAL_NW_ID);
-        Type type = Type.VirtualRouter;
-        when(this.physicalProviderDao.findByServiceProvider(PHYSICAL_NW_ID, type.toString()))
-            .thenReturn(null);
+        when(mockNetworkModel.getPhysicalNetworkId(deployment.guestNetwork)).thenReturn(PHYSICAL_NW_ID);
+        final Type type = Type.VirtualRouter;
+        when(physicalProviderDao.findByServiceProvider(PHYSICAL_NW_ID, type.toString()))
+        .thenReturn(null);
 
         // Execute
-        this.deployment.findVirtualProvider();
+        deployment.findVirtualProvider();
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testFindVirtualProviderWithNullVrProvider() {
         // Prepare
-        when(this.mockNetworkModel.getPhysicalNetworkId(this.deployment.guestNetwork)).thenReturn(PHYSICAL_NW_ID);
-        Type type = Type.VirtualRouter;
-        PhysicalNetworkServiceProviderVO physicalNwSrvProvider = mock(PhysicalNetworkServiceProviderVO.class);
-        when(this.physicalProviderDao.findByServiceProvider(PHYSICAL_NW_ID, type.toString()))
-            .thenReturn(physicalNwSrvProvider);
+        when(mockNetworkModel.getPhysicalNetworkId(deployment.guestNetwork)).thenReturn(PHYSICAL_NW_ID);
+        final Type type = Type.VirtualRouter;
+        final PhysicalNetworkServiceProviderVO physicalNwSrvProvider = mock(PhysicalNetworkServiceProviderVO.class);
+        when(physicalProviderDao.findByServiceProvider(PHYSICAL_NW_ID, type.toString()))
+        .thenReturn(physicalNwSrvProvider);
         when(physicalNwSrvProvider.getId()).thenReturn(PROVIDER_ID);
 
-        when(this.mockVrProviderDao.findByNspIdAndType(PROVIDER_ID, type))
-            .thenReturn(null);
+        when(mockVrProviderDao.findByNspIdAndType(PROVIDER_ID, type))
+        .thenReturn(null);
 
         // Execute
-        this.deployment.findVirtualProvider();
+        deployment.findVirtualProvider();
     }
 
     @Test
     public void testFindSourceNatIPPublicNw() throws InsufficientAddressCapacityException, ConcurrentOperationException {
         // Prepare
-        PublicIp sourceNatIp = mock(PublicIp.class);
-        when(this.mockIpAddrMgr.assignSourceNatIpAddressToGuestNetwork(
-                this.mockOwner, this.mockNw)).thenReturn(sourceNatIp);
-        this.deployment.isPublicNetwork = true;
+        final PublicIp sourceNatIp = mock(PublicIp.class);
+        when(mockIpAddrMgr.assignSourceNatIpAddressToGuestNetwork(
+                mockOwner, mockNw)).thenReturn(sourceNatIp);
+        deployment.isPublicNetwork = true;
 
         // It should be null until this method finds it
-        assertNull(this.deployment.sourceNatIp);
+        assertNull(deployment.sourceNatIp);
         // Execute
-        this.deployment.findSourceNatIP();
+        deployment.findSourceNatIP();
 
         // Assert
-        assertEquals("SourceNatIP was not correctly found and set", sourceNatIp, this.deployment.sourceNatIp);
+        assertEquals("SourceNatIP was not correctly found and set", sourceNatIp, deployment.sourceNatIp);
     }
 
     @Test
     public void testFindSourceNatIPNonPublicNw() throws InsufficientAddressCapacityException, ConcurrentOperationException {
         // Prepare
-        PublicIp sourceNatIp = mock(PublicIp.class);
-        when(this.mockIpAddrMgr.assignSourceNatIpAddressToGuestNetwork(
-                this.mockOwner, this.mockNw)).thenReturn(sourceNatIp);
-        this.deployment.isPublicNetwork = false;
+        final PublicIp sourceNatIp = mock(PublicIp.class);
+        when(mockIpAddrMgr.assignSourceNatIpAddressToGuestNetwork(
+                mockOwner, mockNw)).thenReturn(sourceNatIp);
+        deployment.isPublicNetwork = false;
 
         // It should be null until this method finds it
-        assertNull(this.deployment.sourceNatIp);
+        assertNull(deployment.sourceNatIp);
         // Execute
-        this.deployment.findSourceNatIP();
+        deployment.findSourceNatIP();
 
         // Assert
         assertEquals("SourceNatIP should remain null given a non public network",
-                null, this.deployment.sourceNatIp);
+                null, deployment.sourceNatIp);
     }
 
     @Test
     public void testFindOfferingIdReceivingNewOne() {
         // Prepare
-        this.deployment.offeringId = 1L;
-        when(this.mockNw.getNetworkOfferingId()).thenReturn(OFFERING_ID);
-        when(this.mockNetworkOfferingDao.findById(OFFERING_ID)).thenReturn(this.mockNwOfferingVO);
-        when(this.mockNwOfferingVO.getServiceOfferingId()).thenReturn(OFFERING_ID);
+        deployment.serviceOfferingId = 1L;
+        when(mockNw.getNetworkOfferingId()).thenReturn(OFFERING_ID);
+        when(mockNetworkOfferingDao.findById(OFFERING_ID)).thenReturn(mockNwOfferingVO);
+        when(mockNwOfferingVO.getServiceOfferingId()).thenReturn(OFFERING_ID);
 
         // Execute
-        this.deployment.findOfferingId();
+        deployment.findServiceOfferingId();
 
         // Assert
         assertEquals("Given that no Offering was found, the previous Offering Id should be kept",
-                OFFERING_ID, this.deployment.offeringId.longValue());
+                OFFERING_ID, deployment.serviceOfferingId.longValue());
     }
 
     @Test
     public void testFindOfferingIdReceivingKeepingPrevious() {
         // Prepare
-        this.deployment.offeringId = 1L;
-        when(this.mockNw.getNetworkOfferingId()).thenReturn(OFFERING_ID);
-        when(this.mockNetworkOfferingDao.findById(OFFERING_ID)).thenReturn(this.mockNwOfferingVO);
-        when(this.mockNwOfferingVO.getServiceOfferingId()).thenReturn(null);
+        deployment.serviceOfferingId = 1L;
+        when(mockNw.getNetworkOfferingId()).thenReturn(OFFERING_ID);
+        when(mockNetworkOfferingDao.findById(OFFERING_ID)).thenReturn(mockNwOfferingVO);
+        when(mockNwOfferingVO.getServiceOfferingId()).thenReturn(null);
 
         // Execute
-        this.deployment.findOfferingId();
+        deployment.findServiceOfferingId();
 
         // Assert
         assertEquals("Found Offering Id didn't replace previous one",
-                1L, this.deployment.offeringId.longValue());
+                1L, deployment.serviceOfferingId.longValue());
     }
 
     @Test
@@ -793,64 +785,64 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
         // Prepare
-        this.deployment.routers = new ArrayList<>();
-        this.deployment.isRedundant = true;
+        deployment.routers = new ArrayList<>();
+        when(mockNw.isRedundant()).thenReturn(true);
         //this.deployment.routers.add(routerVO1);
-        RouterDeploymentDefinition deploymentUT = spy(this.deployment);
+        final RouterDeploymentDefinition deploymentUT = spy(deployment);
         doReturn(2).when(deploymentUT).getNumberOfRoutersToDeploy();
 
         final DomainRouterVO routerVO1 = mock(DomainRouterVO.class);
         final DomainRouterVO routerVO2 = mock(DomainRouterVO.class);
-        when(this.mockNetworkHelper.deployRouter(deploymentUT, false))
-            .thenReturn(routerVO1).thenReturn(routerVO2);
+        when(mockNetworkHelper.deployRouter(deploymentUT, false))
+        .thenReturn(routerVO1).thenReturn(routerVO2);
 
         // Execute
         deploymentUT.deployAllVirtualRouters();
 
         // Assert
-        verify(this.mockRouterDao, times(1)).addRouterToGuestNetwork(routerVO1, this.mockNw);
-        verify(this.mockRouterDao, times(1)).addRouterToGuestNetwork(routerVO2, this.mockNw);
+        verify(mockRouterDao, times(1)).addRouterToGuestNetwork(routerVO1, mockNw);
+        verify(mockRouterDao, times(1)).addRouterToGuestNetwork(routerVO2, mockNw);
         assertEquals("First router to deploy was not added to list of available routers",
-                routerVO1, this.deployment.routers.get(0));
+                routerVO1, deployment.routers.get(0));
         assertEquals("Second router to deploy was not added to list of available routers",
-                routerVO2, this.deployment.routers.get(1));
+                routerVO2, deployment.routers.get(1));
     }
 
     @Test
     public void testSetupAccountOwner() {
         // Prepare
-        when(this.mockNetworkModel.isNetworkSystem(this.mockNw)).thenReturn(true);
-        Account newAccountOwner = mock(Account.class);
-        when(this.mockAccountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM)).thenReturn(newAccountOwner);
+        when(mockNetworkModel.isNetworkSystem(mockNw)).thenReturn(true);
+        final Account newAccountOwner = mock(Account.class);
+        when(mockAccountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM)).thenReturn(newAccountOwner);
         //Execute
-        this.deployment.setupAccountOwner();
+        deployment.setupAccountOwner();
         // Assert
-        assertEquals("New account owner not properly set", newAccountOwner, this.deployment.owner);
+        assertEquals("New account owner not properly set", newAccountOwner, deployment.owner);
     }
 
     @Test
     public void testSetupAccountOwnerNotNetworkSystem() {
         // Prepare
-        when(this.mockNetworkModel.isNetworkSystem(this.mockNw)).thenReturn(false);
-        when(this.mockNw.getGuestType()).thenReturn(Network.GuestType.Shared);
-        Account newAccountOwner = mock(Account.class);
-        when(this.mockAccountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM)).thenReturn(newAccountOwner);
+        when(mockNetworkModel.isNetworkSystem(mockNw)).thenReturn(false);
+        when(mockNw.getGuestType()).thenReturn(Network.GuestType.Shared);
+        final Account newAccountOwner = mock(Account.class);
+        when(mockAccountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM)).thenReturn(newAccountOwner);
         //Execute
-        this.deployment.setupAccountOwner();
+        deployment.setupAccountOwner();
         // Assert
-        assertEquals("New account owner not properly set", newAccountOwner, this.deployment.owner);
+        assertEquals("New account owner not properly set", newAccountOwner, deployment.owner);
     }
 
     @Test
     public void testSetupAccountOwnerNotSharedNeitherNetworkSystem() {
         // Prepare
-        when(this.mockNetworkModel.isNetworkSystem(this.mockNw)).thenReturn(false);
-        when(this.mockNw.getGuestType()).thenReturn(Network.GuestType.Isolated);
-        when(this.mockAccountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM)).thenReturn(null);
+        when(mockNetworkModel.isNetworkSystem(mockNw)).thenReturn(false);
+        when(mockNw.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        when(mockAccountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM)).thenReturn(null);
         //Execute
-        this.deployment.setupAccountOwner();
+        deployment.setupAccountOwner();
         // Assert
-        assertEquals("New account shouldn't have been updated", this.mockOwner, this.deployment.owner);
+        assertEquals("New account shouldn't have been updated", mockOwner, deployment.owner);
     }
 
 
@@ -858,11 +850,11 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
 
     protected void driveTestPrepareDeployment(final boolean isRedundant, final boolean isPublicNw) {
         // Prepare
-        this.deployment.isRedundant = isRedundant;
-        when(this.mockNetworkModel.isProviderSupportServiceInNetwork(
+        when(mockNw.isRedundant()).thenReturn(isRedundant);
+        when(mockNetworkModel.isProviderSupportServiceInNetwork(
                 NW_ID_1, Service.SourceNat, Provider.VirtualRouter)).thenReturn(isPublicNw);
         // Execute
-        final boolean canProceedDeployment = this.deployment.prepareDeployment();
+        final boolean canProceedDeployment = deployment.prepareDeployment();
         // Assert
         boolean shouldProceedDeployment = true;
         if (isRedundant && !isPublicNw) {
@@ -871,34 +863,34 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         assertEquals(shouldProceedDeployment, canProceedDeployment);
         if (!shouldProceedDeployment) {
             assertEquals("Since deployment cannot proceed we should empty the list of routers",
-                    0, this.deployment.routers.size());
+                    0, deployment.routers.size());
         }
     }
 
     @Test
     public void testPrepareDeploymentPublicNw() {
-        this.driveTestPrepareDeployment(true, true);
+        driveTestPrepareDeployment(true, true);
     }
 
     @Test
     public void testPrepareDeploymentNonRedundant() {
-        this.driveTestPrepareDeployment(false, true);
+        driveTestPrepareDeployment(false, true);
     }
 
     @Test
     public void testPrepareDeploymentRedundantNonPublicNw() {
-        this.driveTestPrepareDeployment(true, false);
+        driveTestPrepareDeployment(true, false);
     }
 
-    protected void driveTestExecuteDeployment(final int noOfRoutersToDeploy, boolean passPreparation)
+    protected void driveTestExecuteDeployment(final int noOfRoutersToDeploy, final boolean passPreparation)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         // Prepare
-        RouterDeploymentDefinition deploymentUT = spy(this.deployment);
+        final RouterDeploymentDefinition deploymentUT = spy(deployment);
         doNothing().when(deploymentUT).setupPriorityOfRedundantRouter();
         doReturn(noOfRoutersToDeploy).when(deploymentUT).getNumberOfRoutersToDeploy();
         doReturn(passPreparation).when(deploymentUT).prepareDeployment();
         doNothing().when(deploymentUT).findVirtualProvider();
-        doNothing().when(deploymentUT).findOfferingId();
+        doNothing().when(deploymentUT).findServiceOfferingId();
         doNothing().when(deploymentUT).findSourceNatIP();
         doNothing().when(deploymentUT).deployAllVirtualRouters();
 
@@ -916,7 +908,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
             }
         }
         verify(deploymentUT, times(proceedToDeployment)).findVirtualProvider();
-        verify(deploymentUT, times(proceedToDeployment)).findOfferingId();
+        verify(deploymentUT, times(proceedToDeployment)).findServiceOfferingId();
         verify(deploymentUT, times(proceedToDeployment)).findSourceNatIP();
         verify(deploymentUT, times(proceedToDeployment)).deployAllVirtualRouters();
     }
@@ -924,18 +916,18 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Test
     public void testExecuteDeploymentNoRoutersToDeploy()
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        this.driveTestExecuteDeployment(0, true);
+        driveTestExecuteDeployment(0, true);
     }
 
     @Test
     public void testExecuteDeploymentFailPreparation()
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        this.driveTestExecuteDeployment(2, false);
+        driveTestExecuteDeployment(2, false);
     }
 
     @Test
     public void testExecuteDeployment()
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        this.driveTestExecuteDeployment(2, true);
+        driveTestExecuteDeployment(2, true);
     }
 }

@@ -100,7 +100,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
         NetworkVO config =
             new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.LinkLocal, offering.getId(), Network.State.Setup, plan.getDataCenterId(),
-                plan.getPhysicalNetworkId());
+                plan.getPhysicalNetworkId(), offering.getRedundantRouter());
         config.setCidr(_cidr);
         config.setGateway(_gateway);
 

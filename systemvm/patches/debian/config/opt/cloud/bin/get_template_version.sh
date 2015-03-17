@@ -18,7 +18,7 @@
 
 # As the last command send to router before any rules operation, wait until boot up done
 
-__TIMEOUT=60
+__TIMEOUT=240
 __FLAGFILE=/var/cache/cloud/boot_up_done
 done=0
 for i in `seq 1 $(($__TIMEOUT * 10))`

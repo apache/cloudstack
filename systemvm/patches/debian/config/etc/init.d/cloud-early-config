@@ -869,6 +869,7 @@ setup_redundant_router() {
     sed -i "s/\[ETH2MASK\]/$ETH2_MASK/g" $rrouter_bin_path/enable_pubip.sh
     sed -i "s/\[GATEWAY\]/$GW/g" $rrouter_bin_path/enable_pubip.sh
     sed -i "s/\[GATEWAY\]/$GW/g" $rrouter_bin_path/master.sh
+
     sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/master.sh
     sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/backup.sh
     sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/fault.sh
@@ -942,11 +943,12 @@ setup_router() {
         done
       fi
   fi
-  
-  if [ -n "$ETH2_IP" -a "$RROUTER" == "1" ]
-  then
-    setup_redundant_router
-  fi
+ 
+  # Moved to Cs Python code 
+  #if [ -n "$ETH2_IP" -a "$RROUTER" == "1" ]
+  #then
+    #setup_redundant_router
+  #fi
   
   log_it "Checking udev NIC assignment order changes"
   if [ "$NIC_MACS" != "" ]
@@ -1287,10 +1289,18 @@ start() {
      router)
          [ "$NAME" == "" ] && NAME=router
          setup_router
+         if [ -x /opt/cloud/bin/update_config.py ]
+         then
+	         /opt/cloud/bin/update_config.py cmd_line.json
+         fi
 	  ;;
      vpcrouter)
          [ "$NAME" == "" ] && NAME=vpcrouter
          setup_vpcrouter
+         if [ -x /opt/cloud/bin/update_config.py ]
+         then
+	         /opt/cloud/bin/update_config.py cmd_line.json
+         fi
 	  ;;
      dhcpsrvr)
          [ "$NAME" == "" ] && NAME=dhcpsrvr
@@ -1336,11 +1346,20 @@ STORAGE_NETMASK=""
 STORAGE_CIDR=""
 VM_PASSWORD=""
 
+CHEF_TMP_FILE=/tmp/cmdline.json
+COMMA="\t"
+echo -e "{\n\"type\": \"cmdline\"," > ${CHEF_TMP_FILE}
+echo -e "\n\"cmd_line\": {" >> ${CHEF_TMP_FILE}
+
 for i in $CMDLINE
   do
     # search for foo=bar pattern and cut out foo
     KEY=$(echo $i | cut -d= -f1)
     VALUE=$(echo $i | cut -d= -f2)
+    echo -en ${COMMA} >> ${CHEF_TMP_FILE}
+    # Two lines so values do not accidently interpretted as escapes!!
+    echo -n \"${KEY}\"': '\"${VALUE}\" >> ${CHEF_TMP_FILE}
+    COMMA=",\n\t"
     case $KEY in 
       disable_rp_filter)
           DISABLE_RP_FILTER=$VALUE
@@ -1479,6 +1498,11 @@ for i in $CMDLINE
         ;;
     esac
 done
+echo -e "\n\t}\n}" >> ${CHEF_TMP_FILE}
+if [ "$TYPE" != "unknown" ]
+then
+	mv ${CHEF_TMP_FILE} /var/cache/cloud/cmd_line.json
+fi
 
 [ $ETH0_IP ] && LOCAL_ADDRS=$ETH0_IP
 [ $ETH0_IP6 ] && LOCAL_ADDRS=$ETH0_IP6
