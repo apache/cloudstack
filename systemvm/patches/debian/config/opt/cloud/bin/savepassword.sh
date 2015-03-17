@@ -30,6 +30,7 @@ do
         ;;
   esac
 done
+SERVER_IP=$(/sbin/ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')
 TOKEN_FILE="/tmp/passwdsrvrtoken"
 TOKEN=""
 if [ -f $TOKEN_FILE ]; then
@@ -38,5 +39,5 @@ fi
 ps aux | grep passwd_server_ip.py |grep -v grep 2>&1 > /dev/null
 if [ $? -eq 0 ]
 then
-    curl --header "DomU_Request: save_password" http://127.0.0.1:8080/ -F "ip=$VM_IP" -F "password=$PASSWORD" -F "token=$TOKEN"
+    curl --header "DomU_Request: save_password" "http://$SERVER_IP:8080/" -F "ip=$VM_IP" -F "password=$PASSWORD" -F "token=$TOKEN"
 fi
