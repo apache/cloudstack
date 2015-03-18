@@ -38,7 +38,7 @@ fi
 ps aux | grep passwd_server_ip.py |grep -v grep 2>&1 > /dev/null
 if [ $? -eq 0 ]
 then
-    ips=$(ip addr show dev eth0 | grep inet | grep eth0 | awk '{print $2}')
+    ips=$(ip addr show | grep inet | awk '{print $2}')
     for ip in $ips; do
         server_ip=$(echo $ip | awk -F'/' '{print $1}')
         curl --header "DomU_Request: save_password" "http://$server_ip:8080/" -F "ip=$VM_IP" -F "password=$PASSWORD" -F "token=$TOKEN" >/dev/null 2>/dev/null &
