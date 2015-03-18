@@ -2662,16 +2662,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         UploadEntity.ResourceType resourceType = uploadEntity.getResourceType();
 
         String fileSavedTempLocation = uploadEntity.getInstallPathPrefix() + "/" + filename;
-        //String checkSum = computeCheckSum(originalTemplate);
-        //if (checkSum == null) {
-        //  s_logger.warn("Something wrong happened when try to calculate the checksum of downloaded template!");
-        //}
-        //dnld.setCheckSum(checkSum);
 
         int imgSizeGigs = getSizeInGB(_storage.getSize(fileSavedTempLocation));
         int maxSize = uploadEntity.getMaxSizeInGB();
         if(imgSizeGigs > maxSize) {
-            throw new InvalidParameterValueException("Maximum file upload size exceeded. Physical file size: "+imgSizeGigs+"GB. Maximum allowed size: "+maxSize+"GB.");
+            String errorMessage = "Maximum file upload size exceeded. Physical file size: " + imgSizeGigs + "GB. Maximum allowed size: " + maxSize + "GB.";
+            s_logger.error(errorMessage);
+            return errorMessage;
         }
         imgSizeGigs++; // add one just in case
         long timeout = (long)imgSizeGigs * installTimeoutPerGig;
@@ -2683,6 +2680,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
         if (uploadEntity.isHvm()) {
             scr.add("-h");
+        }
+        String checkSum = uploadEntity.getChksum();
+        if (StringUtils.isNotBlank(checkSum)) {
+            scr.add("-c", checkSum);
         }
 
         // add options common to ISO and template
@@ -2734,7 +2735,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         } catch (IOException e) {
             s_logger.warn("Something is wrong with template location " + resourcePath, e);
             loc.purge();
-            return "Unable to download due to " + e.getMessage();
+            return "Unable to upload due to " + e.getMessage();
         }
 
         Map<String, Processor> processors = _dlMgr.getProcessors();

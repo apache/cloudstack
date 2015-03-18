@@ -333,7 +333,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                   * encoded metadata using the post upload config key
                   */
                 TemplateOrVolumePostUploadCommand command =
-                    new TemplateOrVolumePostUploadCommand(vol.getId(), vol.getUuid(), volumeStore.getInstallPath(), volumeStore.getChecksum(), vol.getType().toString(),
+                    new TemplateOrVolumePostUploadCommand(vol.getId(), vol.getUuid(), volumeStore.getInstallPath(), cmd.getChecksum(), vol.getType().toString(),
                                                           vol.getName(), vol.getFormat().toString(), dataObject.getDataStore().getUri(),
                                                           dataObject.getDataStore().getRole().toString());
                 command.setLocalPath(volumeStore.getLocalDownloadPath());

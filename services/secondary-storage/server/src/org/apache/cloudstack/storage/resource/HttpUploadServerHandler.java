@@ -75,6 +75,8 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
 
     private String uuid;
 
+    private boolean fileReceived = false;
+
     private static final String HEADER_SIGNATURE = "X-signature";
 
     private static final String HEADER_METADATA = "X-metadata";
@@ -92,13 +94,16 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
         if (decoder != null) {
             decoder.cleanFiles();
         }
+        fileReceived = false;
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        String message = "file receive failed or connection closed prematurely.";
-        logger.error(message);
-        storageResource.updateStateMapWithError(uuid, message);
+        if (!fileReceived) {
+            String message = "file receive failed or connection closed prematurely.";
+            logger.error(message);
+            storageResource.updateStateMapWithError(uuid, message);
+        }
     }
 
     @Override
@@ -198,15 +203,8 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                     return;
                 }
                 if (chunk instanceof LastHttpContent) {
-                    try {
-                        readFileUploadData();
-                        writeResponse(ctx.channel(), HttpResponseStatus.OK);
-                        reset();
-                    } catch (InvalidParameterValueException e) {
-                        logger.error("error during the file install.", e);
-                        responseContent.append("\n").append(e.getMessage());
-                        writeResponse(ctx.channel(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
-                    }
+                    writeResponse(ctx.channel(), readFileUploadData());
+                    reset();
                 }
             }
         }
@@ -220,7 +218,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
         decoder = null;
     }
 
-    private void readFileUploadData() throws IOException {
+    private HttpResponseStatus readFileUploadData() throws IOException {
         while (decoder.hasNext()) {
             InterfaceHttpData data = decoder.next();
             if (data != null) {
@@ -229,8 +227,16 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                     if (data.getHttpDataType() == HttpDataType.FileUpload) {
                         FileUpload fileUpload = (FileUpload) data;
                         if (fileUpload.isCompleted()) {
-                            responseContent.append("upload successful.");
-                            storageResource.postUpload(uuid, fileUpload.getFile().getName());
+                            fileReceived = true;
+                            String status = storageResource.postUpload(uuid, fileUpload.getFile().getName());
+                            if (status != null) {
+                                responseContent.append(status);
+                                storageResource.updateStateMapWithError(uuid, status);
+                                return HttpResponseStatus.INTERNAL_SERVER_ERROR;
+                            } else {
+                                responseContent.append("upload successful.");
+                                return HttpResponseStatus.OK;
+                            }
                         }
                     }
                 } finally {
@@ -238,6 +244,8 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                 }
             }
         }
+        responseContent.append("received entity is not a file");
+        return HttpResponseStatus.UNPROCESSABLE_ENTITY;
     }
 
     private void writeResponse(Channel channel, HttpResponseStatus statusCode) {
