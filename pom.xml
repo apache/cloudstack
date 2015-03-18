@@ -741,6 +741,7 @@
               <exclude>**/*.zip</exclude>
               <exclude>**/target/**</exclude>
               <exclude>**/.vagrant</exclude>
+              <exclude>**/*.json</exclude>
               <exclude>awsapi/overlays/**</exclude>
               <exclude>build/build.number</exclude>
               <exclude>services/console-proxy/server/js/jquery.js</exclude>
@@ -764,6 +765,10 @@
               <exclude>services/console-proxy/server/conf/environment.properties</exclude>
               <exclude>services/secondary-storage/conf/agent.properties</exclude>
               <exclude>services/secondary-storage/conf/environment.properties</exclude>
+              <exclude>test/systemvm/README.md</exclude>
+              <exclude>tools/appliance/.ruby-version</exclude>
+              <exclude>tools/vagrant/systemvm/vagrant.pub</exclude>
+              <exclude>tools/vagrant/systemvm/.ruby-version</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
               <exclude>tools/appliance/definitions/devcloud/*</exclude>
               <exclude>tools/appliance/definitions/systemvmtemplate/*</exclude>
