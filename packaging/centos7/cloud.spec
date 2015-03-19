@@ -502,6 +502,7 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/management/web.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/server.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/environment.properties
+%config(noreplace) %{_sysconfdir}/%{name}/management/java.security.ciphers
 %config(noreplace) %{_sysconfdir}/%{name}/management/cloud-bridge.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/commons-logging.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/ec2-service.properties
