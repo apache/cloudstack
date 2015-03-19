@@ -17,9 +17,11 @@
 
 package com.cloud.consoleproxy;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Date;
-import java.util.Random;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -66,7 +68,6 @@ public abstract class AgentHookBase implements AgentHook {
     ConfigurationDao _configDao;
     AgentManager _agentMgr;
     KeystoreManager _ksMgr;
-    final Random _random = new Random(System.currentTimeMillis());
     KeysManager _keysMgr;
 
     public AgentHookBase(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr, AgentManager agentMgr, KeysManager keysMgr) {
@@ -188,8 +189,6 @@ public abstract class AgentHookBase implements AgentHook {
     @Override
     public void startAgentHttpHandlerInVM(StartupProxyCommand startupCmd) {
         StartConsoleProxyAgentHttpHandlerCommand cmd = null;
-        String storePassword = String.valueOf(_random.nextLong());
-        byte[] ksBits = _ksMgr.getKeystoreBits(ConsoleProxyManager.CERTIFICATE_NAME, ConsoleProxyManager.CERTIFICATE_NAME, storePassword);
 
         try {
             SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
@@ -213,13 +212,16 @@ public abstract class AgentHookBase implements AgentHook {
             HostVO consoleProxyHost = findConsoleProxyHost(startupCmd);
 
             assert (consoleProxyHost != null);
-
-            Answer answer = _agentMgr.send(consoleProxyHost.getId(), cmd);
-            if (answer == null || !answer.getResult()) {
-                s_logger.error("Console proxy agent reported that it failed to execute http handling startup command");
-            } else {
-                s_logger.info("Successfully sent out command to start HTTP handling in console proxy agent");
+            if (consoleProxyHost != null) {
+                Answer answer = _agentMgr.send(consoleProxyHost.getId(), cmd);
+                if (answer == null || !answer.getResult()) {
+                    s_logger.error("Console proxy agent reported that it failed to execute http handling startup command");
+                } else {
+                    s_logger.info("Successfully sent out command to start HTTP handling in console proxy agent");
+                }
             }
+        }catch (NoSuchAlgorithmException e) {
+            s_logger.error("Unexpected exception in SecureRandom Algorithm selection ", e);
         } catch (AgentUnavailableException e) {
             s_logger.error("Unable to send http handling startup command to the console proxy resource for proxy:" + startupCmd.getProxyVmId(), e);
         } catch (OperationTimedoutException e) {
