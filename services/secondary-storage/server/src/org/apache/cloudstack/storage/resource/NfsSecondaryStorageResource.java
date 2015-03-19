@@ -66,8 +66,10 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.template.UploadEntity;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -2662,6 +2664,18 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         UploadEntity.ResourceType resourceType = uploadEntity.getResourceType();
 
         String fileSavedTempLocation = uploadEntity.getInstallPathPrefix() + "/" + filename;
+
+        String uploadedFileExtension = FilenameUtils.getExtension(filename);
+        String userSelectedFormat= "vhd";
+        if(uploadedFileExtension.equals("zip") || uploadedFileExtension.equals("bz2") || uploadedFileExtension.equals("gz")) {
+            userSelectedFormat += "." + uploadedFileExtension;
+        }
+        String formatError = ImageStoreUtil.checkTemplateFormat(fileSavedTempLocation, userSelectedFormat);
+        if(StringUtils.isNotBlank(formatError)) {
+            String errorString = "File type mismatch between uploaded file and selected format. Selected file format: " + uploadEntity.getFormat() + ". Received: " + formatError;
+            s_logger.error(errorString);
+            return errorString;
+        }
 
         int imgSizeGigs = getSizeInGB(_storage.getSize(fileSavedTempLocation));
         int maxSize = uploadEntity.getMaxSizeInGB();

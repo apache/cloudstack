@@ -29,7 +29,6 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 
 import com.cloud.utils.EncryptionUtil;
-import com.cloud.utils.ImageStoreUtil;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -39,6 +38,7 @@ import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;

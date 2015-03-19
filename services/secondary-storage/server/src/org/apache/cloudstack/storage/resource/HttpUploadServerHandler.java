@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.cloudstack.storage.template.UploadEntity;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -228,6 +230,14 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                         FileUpload fileUpload = (FileUpload) data;
                         if (fileUpload.isCompleted()) {
                             fileReceived = true;
+                            String format = ImageStoreUtil.checkTemplateFormat(fileUpload.getFile().getAbsolutePath(), fileUpload.getFilename());
+                            if(StringUtils.isNotBlank(format)) {
+                                String errorString = "File type mismatch between the sent file and the actual content. Received: " + format;
+                                logger.error(errorString);
+                                responseContent.append(errorString);
+                                storageResource.updateStateMapWithError(uuid, errorString);
+                                return HttpResponseStatus.BAD_REQUEST;
+                            }
                             String status = storageResource.postUpload(uuid, fileUpload.getFile().getName());
                             if (status != null) {
                                 responseContent.append(status);

@@ -35,13 +35,13 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.storage.ImageStoreUploadMonitorImpl;
 import com.cloud.utils.EncryptionUtil;
-import com.cloud.utils.ImageStoreUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
