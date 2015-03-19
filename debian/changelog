@@ -1,3 +1,9 @@
+cloudstack (4.5.1-snapshot) unstable; urgency=low
+
+  * Update the version to 4.5.1.snapshot
+
+ -- Rohit Yadav <bhaisaab@apache.org>  Thu, 19 Mar 2015 14:30:00 +0530
+
 cloudstack (4.5.0-snapshot) unstable; urgency=low
 
   * Update the version to 4.5.0.snapshot
