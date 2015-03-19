@@ -379,6 +379,8 @@ packages() {
   chroot . apt-get --no-install-recommends -q -y --force-yes install keepalived conntrackd ipvsadm libnetfilter-conntrack3 libnl1
   #ipcalc
   chroot . apt-get --no-install-recommends -q -y --force-yes install ipcalc
+  #irqbalance from wheezy-backports
+  chroot . apt-get --no-install-recommends -q -y --force-yes -t wheezy-backports install irqbalance
 
   echo "***** getting jre 7 *********"
   chroot .  apt-get --no-install-recommends -q -y install openjdk-7-jre-headless
