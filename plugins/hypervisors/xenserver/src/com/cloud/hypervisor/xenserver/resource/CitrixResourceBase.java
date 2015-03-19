@@ -2047,7 +2047,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected String networkUsage(final Connection conn, final String privateIpAddress, final String option, final String vif) {
+    public String networkUsage(final Connection conn, final String privateIpAddress, final String option, final String vif) {
         if (option.equals("get")) {
             return "0:0";
         }
@@ -3096,7 +3096,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected Answer execute(final RebootRouterCommand cmd) {
+    public Answer execute(final RebootRouterCommand cmd) {
         final Connection conn = getConnection();
         final RebootAnswer answer = execute((RebootCommand)cmd);
         if (answer.getResult()) {
@@ -3630,7 +3630,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return msg;
     }
 
-    protected String connect(final Connection conn, final String vmname, final String ipAddress) {
+    public String connect(final Connection conn, final String vmname, final String ipAddress) {
         return connect(conn, vmname, ipAddress, 3922);
     }
 
