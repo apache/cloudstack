@@ -120,4 +120,5 @@ zip $appliance-$branch-hyperv.vhd.zip $appliance-$branch-hyperv.vhd
 echo "$appliance exported for HyperV: dist/$appliance-$branch-hyperv.vhd"
 
 mv *-hyperv.vhd *-hyperv.vhd.zip *.bz2 *.ova dist/
+md5sum dist/* > dist/md5sum.txt
 
