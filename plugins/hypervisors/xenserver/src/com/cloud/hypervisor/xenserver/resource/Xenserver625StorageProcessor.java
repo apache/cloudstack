@@ -263,7 +263,9 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
                 newVol.setUuid(uuidToReturn);
                 newVol.setPath(uuidToReturn);
-                newVol.setSize(physicalSize);
+                if (physicalSize != null) {
+                    newVol.setSize(physicalSize);
+                }
                 newVol.setFormat(Storage.ImageFormat.VHD);
 
                 return new CopyCmdAnswer(newVol);

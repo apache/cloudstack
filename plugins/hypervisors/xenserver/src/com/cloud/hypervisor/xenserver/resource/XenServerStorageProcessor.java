@@ -843,7 +843,9 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
                 newVol.setUuid(uuidToReturn);
                 newVol.setPath(uuidToReturn);
-                newVol.setSize(physicalSize);
+                if (physicalSize != null) {
+                    newVol.setSize(physicalSize);
+                }
                 newVol.setFormat(ImageFormat.VHD);
 
                 return new CopyCmdAnswer(newVol);
