@@ -57,10 +57,6 @@ from marvin.cloudstackAPI import (listConfigurations,
                                   listNetworkOfferings,
                                   listResourceLimits,
                                   listVPCOfferings)
-
-
-
-
 from marvin.sshClient import SshClient
 from marvin.codes import (PASS, FAILED, ISOLATED_NETWORK, VPC_NETWORK,
                           BASIC_ZONE, FAIL, NAT_RULE, STATIC_NAT_RULE,
@@ -83,7 +79,8 @@ from marvin.lib.base import (PhysicalNetwork,
                              Network,
                              Host,
                              Resources,
-                             Configurations)
+                             Configurations,
+                             Router)
 import random
 
 
@@ -1395,3 +1392,28 @@ def isNetworkDeleted(apiclient, networkid, timeout=600):
         time.sleep(60)
     #end while
     return networkDeleted
+
+def verifyRouterState(apiclient, routerid, state, listall=True):
+    """List router and check if the router state matches the given state"""
+    retriesCount = 10
+    isRouterInDesiredState = False
+    exceptionOccured = False
+    exceptionMessage = ""
+    try:
+        while retriesCount >= 0:
+            routers = Router.list(apiclient, id=routerid, listall=listall)
+            assert validateList(
+                routers)[0] == PASS, "Routers list validation failed"
+            if str(routers[0].state).lower() == state:
+                isRouterInDesiredState = True
+                break
+            retriesCount -= 1
+            time.sleep(60)
+        if not isRouterInDesiredState:
+            exceptionMessage = "Router state should be %s, it is %s" %\
+                                (state, routers[0].state)
+    except Exception as e:
+        exceptionOccured = True
+        exceptionMessage = e
+        return [exceptionOccured, isRouterInDesiredState, exceptionMessage]
+    return [exceptionOccured, isRouterInDesiredState, exceptionMessage]
