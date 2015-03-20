@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
@@ -93,6 +94,18 @@ public class CitrixRequestWrapperTest {
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(watchConsoleProxyCommand, citrixResourceBase);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testReadyCommandCommand() {
+        final ReadyCommand readyCommand = new ReadyCommand();
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(readyCommand, citrixResourceBase);
 
         assertFalse(answer.getResult());
     }

@@ -25,6 +25,11 @@ import java.util.concurrent.TimeoutException;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.hypervisor.xenserver.resource.XenServer620SP1Resource;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Event;
 import com.xensource.xenapi.EventBatch;
@@ -34,12 +39,6 @@ import com.xensource.xenapi.Task;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VM;
-
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.hypervisor.xenserver.resource.XenServer620SP1Resource;
-import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachine;
 
 /**
  *
@@ -67,16 +66,16 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
 
     @Override
     public StartupCommand[] initialize() throws IllegalArgumentException {
-        StartupCommand[] cmds = super.initialize();
+        final StartupCommand[] cmds = super.initialize();
 
-        Connection conn = getConnection();
+        final Connection conn = getConnection();
         Pool pool;
         try {
-            pool = Pool.getByUuid(conn, _host.pool);
-            Pool.Record poolr = pool.getRecord(conn);
+            pool = Pool.getByUuid(conn, _host.getPool());
+            final Pool.Record poolr = pool.getRecord(conn);
 
-            Host.Record masterRecord = poolr.master.getRecord(conn);
-            if (_host.uuid.equals(masterRecord.uuid)) {
+            final Host.Record masterRecord = poolr.master.getRecord(conn);
+            if (_host.getUuid().equals(masterRecord.uuid)) {
                 _listener = new VmEventListener(true);
 
                 //
@@ -87,36 +86,37 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
             } else {
                 _listener = new VmEventListener(false);
             }
-        } catch (XenAPIException e) {
+        } catch (final XenAPIException e) {
             throw new CloudRuntimeException("Unable to determine who is the master", e);
-        } catch (XmlRpcException e) {
+        } catch (final XmlRpcException e) {
             throw new CloudRuntimeException("Unable to determine who is the master", e);
         }
         return cmds;
     }
 
-    protected void waitForTask2(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException, TimeoutException {
-        long beginTime = System.currentTimeMillis();
+    protected void waitForTask2(final Connection c, final Task task, final long pollInterval, final long timeout) throws XenAPIException, XmlRpcException, TimeoutException {
+        final long beginTime = System.currentTimeMillis();
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Task " + task.getNameLabel(c) + " (" + task.getType(c) + ") sent to " + c.getSessionReference() + " is pending completion with a " + timeout +
-                           "ms timeout");
+                    "ms timeout");
         }
-        Set<String> classes = new HashSet<String>();
+        final Set<String> classes = new HashSet<String>();
         classes.add("Task/" + task.toWireString());
         String token = "";
-        Double t = new Double(timeout / 1000);
+        final Double t = new Double(timeout / 1000);
         while (true) {
-            EventBatch map = Event.from(c, classes, token, t);
+            final EventBatch map = Event.from(c, classes, token, t);
             token = map.token;
             @SuppressWarnings("unchecked")
+            final
             Set<Event.Record> events = map.events;
             if (events.size() == 0) {
-                String msg = "No event for task " + task.toWireString();
+                final String msg = "No event for task " + task.toWireString();
                 s_logger.warn(msg);
                 task.cancel(c);
                 throw new TimeoutException(msg);
             }
-            for (Event.Record rec : events) {
+            for (final Event.Record rec : events) {
                 if (!(rec.snapshot instanceof Task.Record)) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Skipping over " + rec);
@@ -124,7 +124,7 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
                     continue;
                 }
 
-                Task.Record taskRecord = (Task.Record)rec.snapshot;
+                final Task.Record taskRecord = (Task.Record)rec.snapshot;
 
                 if (taskRecord.status != Types.TaskStatusType.PENDING) {
                     if (s_logger.isDebugEnabled()) {
@@ -139,7 +139,7 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
                 }
             }
             if (System.currentTimeMillis() - beginTime > timeout) {
-                String msg = "Async " + timeout / 1000 + " seconds timeout for task " + task.toString();
+                final String msg = "Async " + timeout / 1000 + " seconds timeout for task " + task.toString();
                 s_logger.warn(msg);
                 task.cancel(c);
                 throw new TimeoutException(msg);
@@ -155,7 +155,7 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
         Set<String> _classes;
         String _token = "";
 
-        public VmEventListener(boolean isMaster) {
+        public VmEventListener(final boolean isMaster) {
             _isMaster = isMaster;
             _classes = new HashSet<String>();
             _classes.add("VM");
@@ -163,22 +163,23 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
 
         @Override
         public void run() {
-            setName("XS-Listener-" + _host.ip);
+            setName("XS-Listener-" + _host.getIp());
             while (!_stop) {
                 try {
-                    Connection conn = getConnection();
+                    final Connection conn = getConnection();
                     EventBatch results;
                     try {
                         results = Event.from(conn, _classes, _token, new Double(30));
-                    } catch (Exception e) {
+                    } catch (final Exception e) {
                         s_logger.error("Retrying the waiting on VM events due to: ", e);
                         continue;
                     }
 
                     _token = results.token;
                     @SuppressWarnings("unchecked")
+                    final
                     Set<Event.Record> events = results.events;
-                    for (Event.Record event : events) {
+                    for (final Event.Record event : events) {
                         try {
                             if (!(event.snapshot instanceof VM.Record)) {
                                 if (s_logger.isDebugEnabled()) {
@@ -186,24 +187,24 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
                                 }
                                 continue;
                             }
-                            VM.Record vm = (VM.Record)event.snapshot;
+                            final VM.Record vm = (VM.Record)event.snapshot;
 
                             String hostUuid = null;
                             if (vm.residentOn != null && !vm.residentOn.toWireString().contains("OpaqueRef:NULL")) {
                                 hostUuid = vm.residentOn.getUuid(conn);
                             }
                             recordChanges(conn, vm, hostUuid);
-                        } catch (Exception e) {
+                        } catch (final Exception e) {
                             s_logger.error("Skipping over " + event, e);
                         }
                     }
-                } catch (Throwable th) {
+                } catch (final Throwable th) {
                     s_logger.error("Exception caught in eventlistener thread: ", th);
                 }
             }
         }
 
-        protected void recordChanges(Connection conn, VM.Record rec, String hostUuid) {
+        protected void recordChanges(final Connection conn, final VM.Record rec, final String hostUuid) {
 
         }
 
@@ -211,16 +212,16 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
         public void start() {
             if (_isMaster) {
                 // Throw away the initial set of events because they're history
-                Connection conn = getConnection();
+                final Connection conn = getConnection();
                 EventBatch results;
                 try {
                     results = Event.from(conn, _classes, _token, new Double(30));
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     s_logger.error("Retrying the waiting on VM events due to: ", e);
                     throw new CloudRuntimeException("Unable to start a listener thread to listen to VM events", e);
                 }
                 _token = results.token;
-                s_logger.debug("Starting the event listener thread for " + _host.uuid);
+                s_logger.debug("Starting the event listener thread for " + _host.getUuid());
                 super.start();
             }
         }
@@ -234,7 +235,7 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
                 if (_changes.size() == 0) {
                     return null;
                 }
-                HashMap<String, Pair<String, VirtualMachine.State>> diff = _changes;
+                final HashMap<String, Pair<String, VirtualMachine.State>> diff = _changes;
                 _changes = new HashMap<String, Pair<String, VirtualMachine.State>>();
                 return diff;
             }

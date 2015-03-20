@@ -89,7 +89,7 @@ public class XenServer56Resource extends CitrixResourceBase {
             final String bridge = networkr.bridge.trim();
             for (final PIF pif : networkr.PIFs) {
                 final PIF.Record pifr = pif.getRecord(conn);
-                if (!pifr.host.getUuid(conn).equalsIgnoreCase(_host.uuid)) {
+                if (!pifr.host.getUuid(conn).equalsIgnoreCase(_host.getUuid())) {
                     continue;
                 }
 
@@ -102,13 +102,13 @@ public class XenServer56Resource extends CitrixResourceBase {
                     }
                     try {
                         vlan.destroy(conn);
-                        final Host host = Host.getByUuid(conn, _host.uuid);
+                        final Host host = Host.getByUuid(conn, _host.getUuid());
                         host.forgetDataSourceArchives(conn, "pif_" + bridge + "_tx");
                         host.forgetDataSourceArchives(conn, "pif_" + bridge + "_rx");
                         host.forgetDataSourceArchives(conn, "pif_" + device + "." + vlannum + "_tx");
                         host.forgetDataSourceArchives(conn, "pif_" + device + "." + vlannum + "_rx");
                     } catch (final XenAPIException e) {
-                        s_logger.trace("Catch " + e.getClass().getName() + ": failed to destory VLAN " + device + " on host " + _host.uuid + " due to " + e.toString());
+                        s_logger.trace("Catch " + e.getClass().getName() + ": failed to destory VLAN " + device + " on host " + _host.getUuid() + " due to " + e.toString());
                     }
                 }
                 return;
@@ -210,7 +210,7 @@ public class XenServer56Resource extends CitrixResourceBase {
     }
 
     protected Boolean check_heartbeat(final String hostuuid) {
-        final com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.ip, 22);
+        final com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.getIp(), 22);
         try {
             sshConnection.connect(null, 60000, 60000);
             if (!sshConnection.authenticateWithPassword(_username, _password.peek())) {

@@ -39,6 +39,10 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
+import com.cloud.agent.api.ScaleVmAnswer;
+import com.cloud.agent.api.ScaleVmCommand;
+import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Types;
@@ -46,35 +50,29 @@ import com.xensource.xenapi.VIF;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.XenAPIObject;
 
-import com.cloud.agent.api.ScaleVmAnswer;
-import com.cloud.agent.api.ScaleVmCommand;
-import com.cloud.agent.api.to.IpAddressTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase.XsHost;
-
 public class CitrixResourceBaseTest {
 
     @Spy
     CitrixResourceBase _resource = new CitrixResourceBase() {
 
         @Override
-        public ScaleVmAnswer execute(ScaleVmCommand cmd) {
+        public ScaleVmAnswer execute(final ScaleVmCommand cmd) {
             return super.execute(cmd);
         }
 
         @Override
-        public String callHostPlugin(Connection conn, String plugin, String cmd, String... params) {
+        public String callHostPlugin(final Connection conn, final String plugin, final String cmd, final String... params) {
             return "Success";
         }
 
         @Override
-        protected void scaleVM(Connection conn, VM vm, VirtualMachineTO vmSpec, Host host) throws Types.XenAPIException, XmlRpcException {
-            _host.speed = 500;
+        protected void scaleVM(final Connection conn, final VM vm, final VirtualMachineTO vmSpec, final Host host) throws Types.XenAPIException, XmlRpcException {
+            _host.setSpeed(500);
             super.scaleVM(conn, vm, vmSpec, host);
         }
 
         @Override
-        protected boolean isDmcEnabled(Connection conn, Host host) throws Types.XenAPIException, XmlRpcException {
+        protected boolean isDmcEnabled(final Connection conn, final Host host) throws Types.XenAPIException, XmlRpcException {
             return true;
         }
     };
@@ -105,18 +103,18 @@ public class CitrixResourceBaseTest {
     @Test(expected = XmlRpcException.class)
     public void testScaleVMF1() throws Types.BadServerResponse, Types.XenAPIException, XmlRpcException {
         doReturn(conn).when(_resource).getConnection();
-        Set<VM> vms = mock(Set.class);
+        final Set<VM> vms = mock(Set.class);
 
-        Iterator iter = mock(Iterator.class);
+        final Iterator iter = mock(Iterator.class);
         doReturn(iter).when(vms).iterator();
         when(iter.hasNext()).thenReturn(true).thenReturn(false);
         doReturn(vm).when(iter).next();
-        VM.Record vmr = mock(VM.Record.class);
+        final VM.Record vmr = mock(VM.Record.class);
         when(vm.getRecord(conn)).thenThrow(new XmlRpcException("XmlRpcException"));
         when(vm.getRecord(conn)).thenReturn(vmr);
         vmr.powerState = Types.VmPowerState.RUNNING;
         vmr.residentOn = mock(Host.class);
-        XenAPIObject object = mock(XenAPIObject.class);
+        final XenAPIObject object = mock(XenAPIObject.class);
         doReturn(new String("OpaqueRef:NULL")).when(object).toWireString();
         doNothing().when(_resource).scaleVM(conn, vm, vmSpec, host);
 
@@ -139,7 +137,7 @@ public class CitrixResourceBaseTest {
         doNothing().when(vm).setVCPUsNumberLive(conn, 1L);
         doReturn(500).when(vmSpec).getMinSpeed();
         doReturn(false).when(vmSpec).getLimitCpuUse();
-        Map<String, String> args = mock(HashMap.class);
+        final Map<String, String> args = mock(HashMap.class);
         when(host.callPlugin(conn, "vmops", "add_to_VCPUs_params_live", args)).thenReturn("Success");
         doReturn(null).when(_resource).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "weight", "value", "253", "vmname", "i-2-3-VM");
 
@@ -164,7 +162,7 @@ public class CitrixResourceBaseTest {
         doReturn(500).when(vmSpec).getMaxSpeed();
         doReturn(true).when(vmSpec).getLimitCpuUse();
         doReturn(null).when(_resource).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "cap", "value", "99", "vmname", "i-2-3-VM");
-        Map<String, String> args = mock(HashMap.class);
+        final Map<String, String> args = mock(HashMap.class);
         when(host.callPlugin(conn, "vmops", "add_to_VCPUs_params_live", args)).thenReturn("Success");
         doReturn(null).when(_resource).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "weight", "value", "253", "vmname", "i-2-3-VM");
 
@@ -178,12 +176,12 @@ public class CitrixResourceBaseTest {
 
     @Test
     public void testSetNicDevIdIfCorrectVifIsNotNull() throws Exception {
-        IpAddressTO ip = mock(IpAddressTO.class);
+        final IpAddressTO ip = mock(IpAddressTO.class);
         when(ip.isAdd()).thenReturn(false);
-        VIF correctVif = null;
+        final VIF correctVif = null;
         try {
             _resource.setNicDevIdIfCorrectVifIsNotNull(conn, ip, correctVif);
-        } catch (NullPointerException e) {
+        } catch (final NullPointerException e) {
             fail("this test is meant to show that null pointer is not thrown");
         }
     }
