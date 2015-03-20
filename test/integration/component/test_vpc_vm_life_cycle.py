@@ -491,7 +491,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "dvs"])
     def test_01_deploy_instance_in_network(self):
         """ Test deploy an instance in VPC networks
         """
@@ -524,7 +524,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced", "intervlan"])
+    @attr(tags=["advanced", "intervlan", "dvs"])
     def test_02_stop_instance_in_network(self):
         """ Test stop an instance in VPC networks
         """
@@ -566,7 +566,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced", "intervlan", "dvs"], required_hardware="true")
     def test_03_start_instance_in_network(self):
         """ Test start an instance in VPC networks
         """
@@ -591,7 +591,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         self.validate_network_rules()
         return
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced", "intervlan", "dvs"], required_hardware="true")
     def test_04_reboot_instance_in_network(self):
         """ Test reboot an instance in VPC networks
         """
@@ -620,7 +620,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         self.validate_network_rules()
         return
 
-    @attr(tags=["advanced","multihost", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced","multihost", "intervlan", "dvs"], required_hardware="true")
     def test_05_destroy_instance_in_network(self):
         """ Test destroy an instance in VPC networks
         """
@@ -787,7 +787,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         return
 
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced", "intervlan", "dvs"], required_hardware="true")
     def test_07_migrate_instance_in_network(self):
         """ Test migrate an instance in VPC networks
         """
@@ -823,7 +823,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         self.validate_network_rules()
         return
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced", "intervlan", "dvs"], required_hardware="true")
     def test_08_user_data(self):
         """ Test user data in virtual machines
         """
@@ -866,7 +866,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced", "intervlan", "dvs"], required_hardware="true")
     def test_09_meta_data(self):
         """ Test meta data in virtual machines
         """
@@ -908,7 +908,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced", "intervlan", "dvs"], required_hardware="true")
     def test_10_expunge_instance_in_network(self):
         """ Test expunge an instance in VPC networks
         """
@@ -3066,7 +3066,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced","multihost", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced","multihost", "intervlan", "dvs"], required_hardware="true")
     def test_01_deploy_instance_in_network(self):
         """ Test deploy an instance in VPC networks
         """
@@ -3100,7 +3100,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                              )
         return
 
-    @attr(tags=["advanced","multihost", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced","multihost", "intervlan", "dvs"], required_hardware="true")
     def test_02_stop_instance_in_network(self):
         """ Test stop an instance in VPC networks
         """
@@ -3142,7 +3142,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced","multihost", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced","multihost", "intervlan", "dvs"], required_hardware="true")
     def test_03_start_instance_in_network(self):
         """ Test start an instance in VPC networks
         """
@@ -3193,7 +3193,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         self.validate_network_rules()
         return
 
-    @attr(tags=["advanced","multihost", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced","multihost", "intervlan", "dvs"], required_hardware="true")
     def test_04_reboot_instance_in_network(self):
         """ Test reboot an instance in VPC networks
         """
@@ -3220,7 +3220,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         self.validate_network_rules()
         return
 
-    @attr(tags=["advanced","multihost", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced","multihost", "intervlan", "dvs"], required_hardware="true")
     def test_05_destroy_instance_in_network(self):
         """ Test destroy an instance in VPC networks
         """
@@ -3383,7 +3383,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced","multihost", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced","multihost", "intervlan", "dvs"], required_hardware="true")
     def test_06_migrate_instance_in_network(self):
         """ Test migrate an instance in VPC networks
         """
@@ -3419,7 +3419,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
         self.validate_network_rules()
         return
 
-    @attr(tags=["advanced","multihost", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced","multihost", "intervlan", "dvs"], required_hardware="true")
     def test_07_user_data(self):
         """ Test user data in virtual machines
         """
@@ -3467,7 +3467,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced","multihost", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced","multihost", "intervlan", "dvs"], required_hardware="true")
     def test_08_meta_data(self):
         """ Test meta data in virtual machines
         """
@@ -3514,7 +3514,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                         )
         return
 
-    @attr(tags=["advanced","multihost", "intervlan"], required_hardware="true")
+    @attr(tags=["advanced","multihost", "intervlan", "dvs"], required_hardware="true")
     def test_09_expunge_instance_in_network(self):
         """ Test expunge an instance in VPC networks
         """
