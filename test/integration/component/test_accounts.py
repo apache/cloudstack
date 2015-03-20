@@ -1525,7 +1525,7 @@ class TestDomainForceRemove(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["domains", "advanced", "advancedns", "simulator", "dvs"], required_hardware="false")
+    @attr(tags=["domains", "advanced", "advancedns", "simulator"], required_hardware="false")
     def test_forceDeleteDomain(self):
         """ Test delete domain with force option"""
 

@@ -134,7 +134,7 @@ class TestPublicIP(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_public_ip_admin_account(self):
         """Test for Associate/Disassociate public IP address for admin account"""
 
@@ -188,7 +188,7 @@ class TestPublicIP(cloudstackTestCase):
             self.fail("list public ip response is not empty")
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_public_ip_user_account(self):
         """Test for Associate/Disassociate public IP address for user account"""
 
@@ -304,7 +304,7 @@ class TestPortForwarding(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_01_port_fwd_on_src_nat(self):
         """Test for port forwarding on source NAT"""
 
@@ -433,7 +433,7 @@ class TestPortForwarding(cloudstackTestCase):
             )
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_02_port_fwd_on_non_src_nat(self):
         """Test for port forwarding on non source NAT"""
 
@@ -646,7 +646,7 @@ class TestRebootRouter(cloudstackTestCase):
                         ]
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_reboot_router(self):
         """Test for reboot router"""
 
@@ -804,7 +804,7 @@ class TestReleaseIP(cloudstackTestCase):
     def tearDown(self):
         cleanup_resources(self.apiclient, self.cleanup)
 
-    @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_releaseIP(self):
         """Test for release public IP address"""
 
@@ -1173,7 +1173,7 @@ class TestRouterRules(cloudstackTestCase):
         return
 
     @data(STATIC_NAT_RULE, NAT_RULE, LB_RULE)
-    @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_network_rules_acquired_public_ip(self, value):
         """Test for Router rules for network rules on acquired public IP"""
 

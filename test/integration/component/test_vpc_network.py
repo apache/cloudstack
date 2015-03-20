@@ -2435,7 +2435,7 @@ class TestVPCNetworkGc(cloudstackTestCase):
                          )
         return
 
-    @attr(tags=["advanced", "intervlan", "dvs"], required_hardware="true")
+    @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_03_restart_vpcvr(self):
         """ Test Stop all the Vms that are part of the a Network
             (Wait for network GC).Restart VPCVR.
