@@ -16,7 +16,7 @@
 # under the License.
 
 %define _pythonparamiko Requires: python-paramiko
-%define _javaversion java7
+%define _javaversion java => 1.7.0
 %define _tomcatversion tomcat6
 %define _vlanconfigtool vconfig
 %define _tomcatpathname tomcat6
