@@ -19,11 +19,23 @@
 
 package com.cloud.resource;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
+
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 
 
 public abstract class CommandWrapper<T extends Command, A extends Answer, R extends ServerResource> {
+
+    private static final Logger s_logger = Logger.getLogger(CommandWrapper.class);
 
     /**
      * @param T is the command to be used.
@@ -31,4 +43,56 @@ public abstract class CommandWrapper<T extends Command, A extends Answer, R exte
      * @return A and the Answer from the command.
      */
     public abstract A execute(T command, R serverResource);
+
+    /**
+     * Common method so we added it here.
+     *
+     * @param cmd
+     * @param proxyVmId
+     * @param proxyVmName
+     * @param proxyManagementIp
+     * @param cmdPort
+     * @return
+     */
+    protected Answer executeProxyLoadScan(final Command cmd, final long proxyVmId, final String proxyVmName, final String proxyManagementIp, final int cmdPort) {
+        String result = null;
+
+        final StringBuffer sb = new StringBuffer();
+        sb.append("http://").append(proxyManagementIp).append(":" + cmdPort).append("/cmd/getstatus");
+
+        boolean success = true;
+        try {
+            final URL url = new URL(sb.toString());
+            final URLConnection conn = url.openConnection();
+
+            // setting TIMEOUTs to avoid possible waiting until death situations
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+
+            final InputStream is = conn.getInputStream();
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            final StringBuilder sb2 = new StringBuilder();
+            String line = null;
+            try {
+                while ((line = reader.readLine()) != null) {
+                    sb2.append(line + "\n");
+                }
+                result = sb2.toString();
+            } catch (final IOException e) {
+                success = false;
+            } finally {
+                try {
+                    is.close();
+                } catch (final IOException e) {
+                    s_logger.warn("Exception when closing , console proxy address : " + proxyManagementIp);
+                    success = false;
+                }
+            }
+        } catch (final IOException e) {
+            s_logger.warn("Unable to open console proxy command port url, console proxy address : " + proxyManagementIp);
+            success = false;
+        }
+
+        return new ConsoleProxyLoadAnswer(cmd, proxyVmId, proxyVmName, success, result);
+    }
 }

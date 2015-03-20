@@ -17,6 +17,8 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
+import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
@@ -67,6 +69,30 @@ public class CitrixRequestWrapperTest {
         final Answer answer = wrapper.execute(createCommand, citrixResourceBase);
 
         verify(citrixResourceBase, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testCheckConsoleProxyLoadCommand() {
+        final CheckConsoleProxyLoadCommand consoleProxyCommand = new CheckConsoleProxyLoadCommand();
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(consoleProxyCommand, citrixResourceBase);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testWatchConsoleProxyLoadCommand() {
+        final WatchConsoleProxyLoadCommand watchConsoleProxyCommand = new WatchConsoleProxyLoadCommand(0, 0, "", "", 0);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(watchConsoleProxyCommand, citrixResourceBase);
 
         assertFalse(answer.getResult());
     }

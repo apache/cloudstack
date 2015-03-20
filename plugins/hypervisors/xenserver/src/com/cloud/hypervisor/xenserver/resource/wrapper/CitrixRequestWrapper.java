@@ -24,6 +24,8 @@ import java.util.Hashtable;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
+import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.RequestWrapper;
@@ -49,6 +51,8 @@ public class CitrixRequestWrapper extends RequestWrapper {
     private void init() {
         map.put(RebootRouterCommand.class, new CitrixRebootRouterCommandWrapper());
         map.put(CreateCommand.class, new CitrixCreateCommandWrapper());
+        map.put(CheckConsoleProxyLoadCommand.class, new CitrixCheckConsoleProxyLoadCommandWrapper());
+        map.put(WatchConsoleProxyLoadCommand.class, new CitrixWatchConsoleProxyLoadCommandWrapper());
     }
 
     public static CitrixRequestWrapper getInstance() {
