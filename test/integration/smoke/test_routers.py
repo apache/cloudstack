@@ -313,7 +313,7 @@ class TestRouterServices(cloudstackTestCase):
         self.debug("Haproxy process status: %s" % res)
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="false")
     def test_03_restart_network_cleanup(self):
         """Test restart network
         """
@@ -390,7 +390,7 @@ class TestRouterServices(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="true")
     def test_04_restart_network_wo_cleanup(self):
         """Test restart network without cleanup
         """
@@ -752,7 +752,7 @@ class TestRouterServices(cloudstackTestCase):
             return True
         return False
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="false")
+    @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="false")
     def test_09_reboot_router(self):
         """Test reboot router
         """
