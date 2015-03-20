@@ -718,7 +718,7 @@ class TestNetworkRules(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "dvs"])
     def test_add_PF_rule(self, value):
         """ Add secondary IP to NIC of a VM"""
 
@@ -806,7 +806,7 @@ class TestNetworkRules(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "dvs"])
     def test_delete_PF_nat_rule(self, value):
         """ Add secondary IP to NIC of a VM"""
 
@@ -891,7 +891,7 @@ class TestNetworkRules(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced, "dvs"])
     def test_disassociate_ip_mapped_to_secondary_ip_through_PF_rule(
             self,
             value):
@@ -960,7 +960,7 @@ class TestNetworkRules(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "dvs"])
     def test_add_static_nat_rule(self, value):
         """ Add secondary IP to NIC of a VM"""
 
@@ -1059,7 +1059,7 @@ class TestNetworkRules(cloudstackTestCase):
         return
 
     @data(ISOLATED_NETWORK, SHARED_NETWORK, VPC_NETWORK)
-    @attr(tags=["advanced"])
+    @attr(tags=["advanced", "dvs"])
     def test_disable_static_nat(self, value):
         """ Add secondary IP to NIC of a VM"""
 

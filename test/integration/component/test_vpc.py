@@ -482,7 +482,7 @@ class TestVPC(cloudstackTestCase):
                 )
         return
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="false")
+    @attr(tags=["advanced", "intervlan", "dvs"], required_hardware="false")
     def test_02_restart_vpc_no_networks(self):
         """ Test restart VPC having no networks
         """
@@ -513,7 +513,7 @@ class TestVPC(cloudstackTestCase):
         self.validate_vpc_network(vpc, state='Enabled')
         return
 
-    @attr(tags=["advanced", "intervlan"], required_hardware="false")
+    @attr(tags=["advanced", "intervlan", "dvs"], required_hardware="false")
     def test_03_restart_vpc_with_networks(self):
         """ Test restart VPC having networks
         """
