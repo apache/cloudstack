@@ -24,6 +24,7 @@ import java.util.Hashtable;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.RequestWrapper;
 import com.cloud.resource.ServerResource;
@@ -47,6 +48,7 @@ public class CitrixRequestWrapper extends RequestWrapper {
 
     private void init() {
         map.put(RebootRouterCommand.class, new CitrixRebootRouterCommandWrapper());
+        map.put(CreateCommand.class, new CitrixCreateCommandWrapper());
     }
 
     public static CitrixRequestWrapper getInstance() {

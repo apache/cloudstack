@@ -5851,7 +5851,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     }
 
-    protected VDI getVDIbyUuid(final Connection conn, final String uuid) {
+    public VDI getVDIbyUuid(final Connection conn, final String uuid) {
         return getVDIbyUuid(conn, uuid, true);
     }
 
@@ -6742,7 +6742,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected SR getStorageRepository(final Connection conn, final String srNameLabel) {
+    public SR getStorageRepository(final Connection conn, final String srNameLabel) {
         Set<SR> srs;
         try {
             srs = SR.getByNameLabel(conn, srNameLabel);

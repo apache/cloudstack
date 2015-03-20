@@ -7,6 +7,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -16,7 +17,10 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.storage.CreateAnswer;
+import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
+import com.cloud.vm.DiskProfile;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CitrixRequestWrapperTest {
@@ -25,6 +29,8 @@ public class CitrixRequestWrapperTest {
     protected CitrixResourceBase citrixResourceBase;
     @Mock
     protected RebootAnswer rebootAnswer;
+    @Mock
+    protected CreateAnswer createAnswer;
 
     @Test
     public void testWrapperInstance() {
@@ -44,9 +50,24 @@ public class CitrixRequestWrapperTest {
 
         final Answer answer = wrapper.execute(rebootCommand, citrixResourceBase);
 
+        verify(citrixResourceBase, times(1)).getConnection();
         verify(citrixResourceBase, times(1)).execute((RebootCommand)rebootCommand);
 
         assertFalse(rebootAnswer.getResult());
         assertEquals(answer, rebootAnswer);
+    }
+
+    @Test
+    public void testExecuteCreateCommand() {
+        final CreateCommand createCommand = new CreateCommand(new DiskProfile(null), "", new StoragePoolVO(), false);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(createCommand, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
     }
 }
