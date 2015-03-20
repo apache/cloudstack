@@ -551,6 +551,7 @@ function main() {
   vmware_export "${machine_uuid}" "${hdd_uuid}"
   vagrant_export "${machine_uuid}"
   hyperv_export "${hdd_uuid}"
+  md5sum dist/* > dist/md5sum.txt
   add_on_exit log INFO "BUILD SUCCESSFUL"
 }
 
