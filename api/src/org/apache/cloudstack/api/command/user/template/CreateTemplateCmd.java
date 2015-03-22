@@ -116,7 +116,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "the tag for this template.")
     private String templateTag;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Template details in key/value pairs using format details[i].keyname=keyvalue. Example: \"details[0].hypervisortoolsversion=xenserver61\"")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Template details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].hypervisortoolsversion=xenserver61")
     protected Map details;
 
     @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE,
