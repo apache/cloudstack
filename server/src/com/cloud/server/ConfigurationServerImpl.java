@@ -222,6 +222,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             _configDao.update("user.password.encoders.exclude", "MD5,LDAP,PLAINTEXT");
             s_logger.debug("Configuration server excluded insecure encoders");
 
+            _configDao.update("user.authenticators.exclude", "PLAINTEXT");
+            s_logger.debug("Configuration server excluded plaintext authenticator");
+
             // Save default service offerings
             createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance", ProvisioningType.THIN, false, false, null);
             createServiceOffering(User.UID_SYSTEM, "Medium Instance", 1, 1024, 1000, "Medium Instance", ProvisioningType.THIN, false, false, null);

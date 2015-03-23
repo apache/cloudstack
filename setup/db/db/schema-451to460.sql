@@ -378,3 +378,5 @@ VALUES (12, UUID(), 'routing-12', 'SystemVM Template (Ovm3)', 0, now(), 'SYSTEM'
 INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'ManagementServer', 'ovm3.heartbeat.timeout' , '180', '120', 'Timeout value to send to the checkheartbeat script for guarding the self fencing functionality on ovm3');
 INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `default_value`, `description`) VALUES ('Advanced', 'DEFAULT', 'ManagementServer', 'ovm3.heartbeat.interval' , '10', '1', 'Interval value the checkheartbeat script uses before triggering the timeout for ovm3');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'NetworkManager', 'router.template.ovm3', 'SystemVM Template (Ovm3)', 'Name of the default router template on Ovm3.','SystemVM Template (Ovm3)', NULL, NULL, 0);
+
+UPDATE IGNORE `cloud`.`configuration` SET `value`="PLAINTEXT" WHERE `name`="user.authenticators.exclude";
