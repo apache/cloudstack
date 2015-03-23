@@ -49,7 +49,7 @@ install_packages() {
   # nfs client
   apt-get --no-install-recommends -q -y --force-yes install nfs-common
   # nfs irqbalance
-  apt-get --no-install-recommends -q -y --force-yes install irqbalance
+  apt-get --no-install-recommends -q -y --force-yes -t wheezy-backports install irqbalance
 
   # cifs client
   apt-get --no-install-recommends -q -y --force-yes install samba-common
