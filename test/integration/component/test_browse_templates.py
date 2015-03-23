@@ -147,19 +147,22 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         list_template_response = Template.list(
                     self.apiclient,
-                    id=up_templateid
-                )
+                    id=up_templateid,
+                    templatefilter="all",
+                    zoneid=self.zone.id)
+
         self.assertNotEqual(
-                    list_volume_response,
+                    list_template_response,
                     None,
                     "Check if template exists in ListTemplates"
                 )
 
         self.assertEqual(
-                    list_template_response[0].state,
+                    list_template_response[0].status,
                     templatestate,
-                    "Check template state in List templates"
+                    "Check template status in List templates"
                 )
+        return
 
     def browse_upload_template(self):
         cmd = getUploadParamsForTemplate.getUploadParamsForTemplateCmd()
@@ -171,6 +174,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.displaytext=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
         cmd.hypervisor=self.templatehypervisor
         cmd.ostypeid=self.templateostypeid
+        cmd.isdynamicallyscalable="false"
         #cmd.type="template"
         getuploadparamsresponce=self.apiclient.getUploadParamsForTemplate(cmd)
 
@@ -200,13 +204,13 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
-        time.sleep(60)
+        time.sleep(600)
 
         print results.status_code
         if results.status_code !=200: 
             self.fail("Upload is not fine")
 
-        self.validate_uploaded_template(getuploadparamsresponce.id,'Uploaded')
+        self.validate_uploaded_template(getuploadparamsresponce.id,'Download Complete')
 
         return(getuploadparamsresponce)
 
@@ -262,9 +266,13 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         templ1=self.uploadtemplate()
         templ2=self.uploadtemplate()
         templ3=self.uploadtemplate()
-        self.validate_uploaded_template(templ1.id,'Uploaded')
-        self.validate_uploaded_template(templ2.id,'Uploaded')
-        self.validate_uploaded_template(templ3.id,'Uploaded')
+        time.sleep(600)
+        self.validate_uploaded_template(templ1.id,'Download Complete')
+        self.validate_uploaded_template(templ2.id,'Download Complete')
+        self.validate_uploaded_template(templ3.id,'Download Complete')
+        self.delete_template(templ1)
+        self.delete_template(templ2)
+        self.delete_template(templ3)
         return
 
     def validate_vm(self,vmdetails,vmstate):
@@ -1113,12 +1121,13 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
     def delete_template(self,templatedetails):
 
+        print templatedetails
         list_template_response = Template.list(
                                     self.apiclient,
-                                    templatefilter=\
-                                    self.testdata["template"]["templatefilter"],
+                                    templatefilter="all",
                                     id=templatedetails.id,
                                     zoneid=self.zone.id)
+        print list_template_response
         self.assertEqual(
                         isinstance(list_template_response, list),
                         True,
@@ -1139,15 +1148,13 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                             (template_response.id, templatedetails.id)
                         )
 
-        self.debug("Deleting template: %s" % self.template)
-        # Delete the template
+                # Delete the template
         templatedetails.delete(self.apiclient)
         self.debug("Delete template: %s successful" % templatedetails)
 
         list_template_response = Template.list(
                                     self.apiclient,
-                                    templatefilter=\
-                                    self.services["template"]["templatefilter"],
+                                    templatefilter="all",
                                     id=templatedetails.id,
                                     zoneid=self.zone.id
                                     )
@@ -1254,8 +1261,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.expunge_vm(vm2details)
 
             self.debug("========================= Test 9:  Delete the Uploaded Template========================= ")
-
-            self.delete_template(browseup_template)
+            print browseup_template
+            #self.delete_template(browseup_template)
 
             self.debug("========================= Test 10:  Upload Multiple templates========================= ")
 
@@ -1267,7 +1274,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
-    def test_02_SSVM_Life_Cycle_With_Browser_Template_TPath(self):
+    def xtest_02_SSVM_Life_Cycle_With_Browser_Template_TPath(self):
         """
         Test SSVM_Life_Cycle_With_Browser_template_TPath 
         """
@@ -1312,6 +1319,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         except Exception as e:
             self.fail("Exception occurred  : %s" % e)
         return
+
 
 
     @classmethod
