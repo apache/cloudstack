@@ -1647,7 +1647,10 @@ namespace HypervResource
                                     throw new IOException(errMsg);
                                 }
 
-                                newData = cmd.destTO;
+                                FileInfo destFileInfo = new FileInfo(destFile);
+                                destTemplateObjectTO.size = destFileInfo.Length.ToString();
+                                JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.TemplateObjectTO, destTemplateObjectTO);
+                                newData = ansObj;
                                 result = true;
                             }
                             else
@@ -1786,7 +1789,6 @@ namespace HypervResource
                                 }
                                 destTemplateObject.nfsDataStoreTO = destTemplateObjectTO.nfsDataStoreTO;
                                 destTemplateObject.checksum = destTemplateObjectTO.checksum;
-                                newData = destTemplateObject;
                                 JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.TemplateObjectTO, destTemplateObject);
                                 newData = ansObj;
                                 result = true;
