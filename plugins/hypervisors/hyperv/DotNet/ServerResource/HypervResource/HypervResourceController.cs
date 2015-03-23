@@ -1649,6 +1649,7 @@ namespace HypervResource
 
                                 FileInfo destFileInfo = new FileInfo(destFile);
                                 destTemplateObjectTO.size = destFileInfo.Length.ToString();
+                                destTemplateObjectTO.path = destTemplateObjectTO.uuid;
                                 JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.TemplateObjectTO, destTemplateObjectTO);
                                 newData = ansObj;
                                 result = true;
