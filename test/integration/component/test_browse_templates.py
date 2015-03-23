@@ -1262,7 +1262,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
             self.debug("========================= Test 9:  Delete the Uploaded Template========================= ")
             print browseup_template
-            #self.delete_template(browseup_template)
+            self.delete_template(browseup_template)
 
             self.debug("========================= Test 10:  Upload Multiple templates========================= ")
 
@@ -1274,7 +1274,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
-    def xtest_02_SSVM_Life_Cycle_With_Browser_Template_TPath(self):
+    def test_02_SSVM_Life_Cycle_With_Browser_Template_TPath(self):
         """
         Test SSVM_Life_Cycle_With_Browser_template_TPath 
         """
