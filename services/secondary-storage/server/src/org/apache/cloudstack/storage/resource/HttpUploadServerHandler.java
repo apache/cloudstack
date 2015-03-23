@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.cloudstack.storage.template.UploadEntity;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -75,6 +77,8 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
 
     private String uuid;
 
+    private boolean fileReceived = false;
+
     private static final String HEADER_SIGNATURE = "X-signature";
 
     private static final String HEADER_METADATA = "X-metadata";
@@ -91,6 +95,16 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
         if (decoder != null) {
             decoder.cleanFiles();
+        }
+        fileReceived = false;
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        if (!fileReceived) {
+            String message = "file receive failed or connection closed prematurely.";
+            logger.error(message);
+            storageResource.updateStateMapWithError(uuid, message);
         }
     }
 
@@ -191,15 +205,8 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                     return;
                 }
                 if (chunk instanceof LastHttpContent) {
-                    try {
-                        readFileUploadData();
-                        writeResponse(ctx.channel(), HttpResponseStatus.OK);
-                        reset();
-                    } catch (InvalidParameterValueException e) {
-                        logger.error("error during the file install.", e);
-                        responseContent.append("\n").append(e.getMessage());
-                        writeResponse(ctx.channel(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
-                    }
+                    writeResponse(ctx.channel(), readFileUploadData());
+                    reset();
                 }
             }
         }
@@ -213,7 +220,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
         decoder = null;
     }
 
-    private void readFileUploadData() throws IOException {
+    private HttpResponseStatus readFileUploadData() throws IOException {
         while (decoder.hasNext()) {
             InterfaceHttpData data = decoder.next();
             if (data != null) {
@@ -222,8 +229,24 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                     if (data.getHttpDataType() == HttpDataType.FileUpload) {
                         FileUpload fileUpload = (FileUpload) data;
                         if (fileUpload.isCompleted()) {
-                            responseContent.append("upload successful.");
-                            storageResource.postUpload(uuid, fileUpload.getFile().getName());
+                            fileReceived = true;
+                            String format = ImageStoreUtil.checkTemplateFormat(fileUpload.getFile().getAbsolutePath(), fileUpload.getFilename());
+                            if(StringUtils.isNotBlank(format)) {
+                                String errorString = "File type mismatch between the sent file and the actual content. Received: " + format;
+                                logger.error(errorString);
+                                responseContent.append(errorString);
+                                storageResource.updateStateMapWithError(uuid, errorString);
+                                return HttpResponseStatus.BAD_REQUEST;
+                            }
+                            String status = storageResource.postUpload(uuid, fileUpload.getFile().getName());
+                            if (status != null) {
+                                responseContent.append(status);
+                                storageResource.updateStateMapWithError(uuid, status);
+                                return HttpResponseStatus.INTERNAL_SERVER_ERROR;
+                            } else {
+                                responseContent.append("upload successful.");
+                                return HttpResponseStatus.OK;
+                            }
                         }
                     }
                 } finally {
@@ -231,6 +254,8 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                 }
             }
         }
+        responseContent.append("received entity is not a file");
+        return HttpResponseStatus.UNPROCESSABLE_ENTITY;
     }
 
     private void writeResponse(Channel channel, HttpResponseStatus statusCode) {

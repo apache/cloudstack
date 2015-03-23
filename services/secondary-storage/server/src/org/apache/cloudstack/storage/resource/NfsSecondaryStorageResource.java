@@ -66,8 +66,10 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.template.UploadEntity;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -2634,6 +2636,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 uploadEntity.setHvm(cmd.getRequiresHvm());
                 uploadEntity.setChksum(cmd.getChecksum());
                 uploadEntity.setMaxSizeInGB(maxSizeInGB);
+                uploadEntity.setDescription(cmd.getDescription());
                 // create a install dir
                 if (!_storage.exists(installPathPrefix)) {
                     _storage.mkdir(installPathPrefix);
@@ -2661,27 +2664,40 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         UploadEntity.ResourceType resourceType = uploadEntity.getResourceType();
 
         String fileSavedTempLocation = uploadEntity.getInstallPathPrefix() + "/" + filename;
-        //String checkSum = computeCheckSum(originalTemplate);
-        //if (checkSum == null) {
-        //  s_logger.warn("Something wrong happened when try to calculate the checksum of downloaded template!");
-        //}
-        //dnld.setCheckSum(checkSum);
+
+        String uploadedFileExtension = FilenameUtils.getExtension(filename);
+        String userSelectedFormat= "vhd";
+        if(uploadedFileExtension.equals("zip") || uploadedFileExtension.equals("bz2") || uploadedFileExtension.equals("gz")) {
+            userSelectedFormat += "." + uploadedFileExtension;
+        }
+        String formatError = ImageStoreUtil.checkTemplateFormat(fileSavedTempLocation, userSelectedFormat);
+        if(StringUtils.isNotBlank(formatError)) {
+            String errorString = "File type mismatch between uploaded file and selected format. Selected file format: " + uploadEntity.getFormat() + ". Received: " + formatError;
+            s_logger.error(errorString);
+            return errorString;
+        }
 
         int imgSizeGigs = getSizeInGB(_storage.getSize(fileSavedTempLocation));
         int maxSize = uploadEntity.getMaxSizeInGB();
         if(imgSizeGigs > maxSize) {
-            throw new InvalidParameterValueException("Maximum file upload size exceeded. Physical file size: "+imgSizeGigs+"GB. Maximum allowed size: "+maxSize+"GB.");
+            String errorMessage = "Maximum file upload size exceeded. Physical file size: " + imgSizeGigs + "GB. Maximum allowed size: " + maxSize + "GB.";
+            s_logger.error(errorMessage);
+            return errorMessage;
         }
         imgSizeGigs++; // add one just in case
         long timeout = (long)imgSizeGigs * installTimeoutPerGig;
         Script scr = new Script(getScriptLocation(resourceType), timeout, s_logger);
         scr.add("-s", Integer.toString(imgSizeGigs));
         scr.add("-S", Long.toString(UploadEntity.s_maxTemplateSize));
-        //if (uploadEntity.getDescription() != null && dnld.getDescription().length() > 1) {
-        //    scr.add("-d", dnld.getDescription());
-        //}
+        if (uploadEntity.getDescription() != null && uploadEntity.getDescription().length() > 1) {
+            scr.add("-d", uploadEntity.getDescription());
+        }
         if (uploadEntity.isHvm()) {
             scr.add("-h");
+        }
+        String checkSum = uploadEntity.getChksum();
+        if (StringUtils.isNotBlank(checkSum)) {
+            scr.add("-c", checkSum);
         }
 
         // add options common to ISO and template
@@ -2733,7 +2749,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         } catch (IOException e) {
             s_logger.warn("Something is wrong with template location " + resourcePath, e);
             loc.purge();
-            return "Unable to download due to " + e.getMessage();
+            return "Unable to upload due to " + e.getMessage();
         }
 
         Map<String, Processor> processors = _dlMgr.getProcessors();
@@ -2773,7 +2789,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return _ssvmPSK;
     }
 
-    private void updateStateMapWithError(String uuid,String errorMessage) {
+    public void updateStateMapWithError(String uuid,String errorMessage) {
         UploadEntity uploadEntity=null;
         if (uploadEntityStateMap.get(uuid)!=null) {
             uploadEntity=uploadEntityStateMap.get(uuid);

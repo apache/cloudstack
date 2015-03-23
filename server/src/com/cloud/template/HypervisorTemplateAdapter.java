@@ -258,12 +258,13 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             }
 
             TemplateOrVolumePostUploadCommand payload = new TemplateOrVolumePostUploadCommand(template.getId(), template.getUuid(), tmpl.getInstallPath(), tmpl.getChecksum(), tmpl
-                    .getType().toString(), template.getName(), template.getFormat().toString(), templateOnStore.getDataStore().getUri(), templateOnStore.getDataStore().getRole()
+                    .getType().toString(), template.getUniqueName(), template.getFormat().toString(), templateOnStore.getDataStore().getUri(), templateOnStore.getDataStore().getRole()
                     .toString());
             //using the existing max template size configuration
             payload.setMaxUploadSize(_configDao.getValue(Config.MaxTemplateAndIsoSize.key()));
             payload.setRemoteEndPoint(ep.getPublicAddr());
             payload.setRequiresHvm(template.requiresHvm());
+            payload.setDescription(template.getDisplayText());
             payloads.add(payload);
         }
         _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);

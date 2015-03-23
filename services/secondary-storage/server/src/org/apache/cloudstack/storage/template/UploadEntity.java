@@ -32,6 +32,7 @@ public class UploadEntity {
     private String chksum;
     private long physicalSize;
     private int maxSizeInGB;
+    private String description;
 
     public static enum ResourceType {
         VOLUME, TEMPLATE
@@ -179,5 +180,13 @@ public class UploadEntity {
 
     public void setMaxSizeInGB(int maxSizeInGB) {
         this.maxSizeInGB = maxSizeInGB;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }
