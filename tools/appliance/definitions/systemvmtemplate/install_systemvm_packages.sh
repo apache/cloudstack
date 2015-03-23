@@ -42,16 +42,16 @@ function install_packages() {
   debconf_packages
   install_vhd_util
 
-  local apt_install="apt-get --no-install-recommends -q -y --force-yes install"
+  local apt_get="apt-get --no-install-recommends -q -y --force-yes"
 
   #32 bit architecture support:: not required for 32 bit template
   if [ "${arch}" != "i386" ]; then
     dpkg --add-architecture i386
     apt-get update
-    ${apt_install} links:i386 libuuid1:i386
+    ${apt_get} install links:i386 libuuid1:i386
   fi
 
-  ${apt_install} \
+  ${apt_get} install \
     rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables \
     openssh-server e2fsprogs dhcp3-client tcpdump socat wget \
     python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps \
@@ -60,7 +60,7 @@ function install_packages() {
     sysstat python-netaddr \
     apache2 ssl-cert \
     dnsmasq dnsmasq-utils \
-    nfs-common irqbalance \
+    nfs-common \
     samba-common cifs-utils \
     xl2tpd bcrelay ppp ipsec-tools tdb-tools \
     openswan=1:2.6.37-3 \
@@ -76,13 +76,15 @@ function install_packages() {
     radvd \
     sharutils
 
+  ${apt_get} -t wheezy-backports install irqbalance
+
   # hold on installed openswan version, upgrade rest of the packages (if any)
   apt-mark hold openswan
   apt-get update
   apt-get -y --force-yes upgrade
 
   # commented out installation of vmware-tools as we are using the open source open-vm-tools:
-  # ${apt_install} build-essential linux-headers-`uname -r`
+  # ${apt_get} install build-essential linux-headers-`uname -r`
   # df -h
   # PREVDIR=$PWD
   # cd /opt
