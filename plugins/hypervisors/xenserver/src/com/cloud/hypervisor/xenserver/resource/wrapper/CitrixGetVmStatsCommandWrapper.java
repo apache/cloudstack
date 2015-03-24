@@ -37,9 +37,9 @@ import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VM;
 
-public final class GetVmStatsCommandWrapper extends CommandWrapper<GetVmStatsCommand, Answer, CitrixResourceBase> {
+public final class CitrixGetVmStatsCommandWrapper extends CommandWrapper<GetVmStatsCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(GetVmStatsCommandWrapper.class);
+    private static final Logger s_logger = Logger.getLogger(CitrixGetVmStatsCommandWrapper.class);
 
     @Override
     public Answer execute(final GetVmStatsCommand command, final CitrixResourceBase citrixResourceBase) {

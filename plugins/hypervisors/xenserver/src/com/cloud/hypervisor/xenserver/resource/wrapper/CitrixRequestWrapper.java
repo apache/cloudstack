@@ -60,11 +60,11 @@ public class CitrixRequestWrapper extends RequestWrapper {
         map.put(CheckConsoleProxyLoadCommand.class, new CitrixCheckConsoleProxyLoadCommandWrapper());
         map.put(WatchConsoleProxyLoadCommand.class, new CitrixWatchConsoleProxyLoadCommandWrapper());
         map.put(ReadyCommand.class, new CitrixReadyCommandWrapper());
-        map.put(GetHostStatsCommand.class, new GetHostStatsCommandWrapper());
-        map.put(GetVmStatsCommand.class, new GetVmStatsCommandWrapper());
-        map.put(GetVmDiskStatsCommand.class, new GetVmDiskStatsCommandWrapper());
-        map.put(CheckHealthCommand.class, new CheckHealthCommandWrapper());
-        map.put(StopCommand.class, new StopCommandWrapper());
+        map.put(GetHostStatsCommand.class, new CitrixGetHostStatsCommandWrapper());
+        map.put(GetVmStatsCommand.class, new CitrixGetVmStatsCommandWrapper());
+        map.put(GetVmDiskStatsCommand.class, new CitrixGetVmDiskStatsCommandWrapper());
+        map.put(CheckHealthCommand.class, new CitrixCheckHealthCommandWrapper());
+        map.put(StopCommand.class, new CitrixStopCommandWrapper());
     }
 
     public static CitrixRequestWrapper getInstance() {

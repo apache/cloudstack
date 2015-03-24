@@ -44,9 +44,9 @@ import com.xensource.xenapi.VGPU;
 import com.xensource.xenapi.VIF;
 import com.xensource.xenapi.VM;
 
-public final class StopCommandWrapper extends CommandWrapper<StopCommand, Answer, CitrixResourceBase> {
+public final class CitrixStopCommandWrapper extends CommandWrapper<StopCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(StopCommandWrapper.class);
+    private static final Logger s_logger = Logger.getLogger(CitrixStopCommandWrapper.class);
 
     @Override
     public Answer execute(final StopCommand command, final CitrixResourceBase citrixResourceBase) {

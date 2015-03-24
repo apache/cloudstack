@@ -25,7 +25,7 @@ import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
 
-public final class GetVmDiskStatsCommandWrapper extends CommandWrapper<GetVmDiskStatsCommand, Answer, CitrixResourceBase> {
+public final class CitrixGetVmDiskStatsCommandWrapper extends CommandWrapper<GetVmDiskStatsCommand, Answer, CitrixResourceBase> {
 
     @Override
     public Answer execute(final GetVmDiskStatsCommand command, final CitrixResourceBase citrixResourceBase) {
