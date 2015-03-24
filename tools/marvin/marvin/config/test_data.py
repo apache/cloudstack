@@ -41,6 +41,15 @@ test_data = {
             "name": "Project",
         "displaytext": "Test project"
     },
+    "publiciprange": {
+        "gateway": "",
+        "netmask": "",
+        "startip": "",
+        "endip": "",
+        "forvirtualnetwork": "true",
+        "vlan": "",
+        "zoneid": ""
+    },
     "private_gateway": {
        "ipaddress": "172.16.1.2",
        "gateway": "172.16.1.1",
