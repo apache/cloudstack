@@ -25,6 +25,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
@@ -37,6 +38,7 @@ import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.storage.CreateCommand;
+import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.RequestWrapper;
 import com.cloud.resource.ServerResource;
@@ -73,6 +75,8 @@ public class CitrixRequestWrapper extends RequestWrapper {
         map.put(CheckVirtualMachineCommand.class, new CitrixCheckVirtualMachineCommandWrapper());
         map.put(PrepareForMigrationCommand.class, new CitrixPrepareForMigrationCommandWrapper());
         map.put(MigrateCommand.class, new CitrixMigrateCommandWrapper());
+        map.put(DestroyCommand.class, new CitrixDestroyCommandWrapper());
+        map.put(CreateStoragePoolCommand.class, new CitrixCreateStoragePoolCommandWrapper());
     }
 
     public static CitrixRequestWrapper getInstance() {

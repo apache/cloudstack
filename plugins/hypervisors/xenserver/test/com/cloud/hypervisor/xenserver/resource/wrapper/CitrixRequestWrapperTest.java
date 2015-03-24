@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 
@@ -12,12 +13,14 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
@@ -32,8 +35,11 @@ import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
+import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
+import com.cloud.hypervisor.xenserver.resource.XsHost;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.vm.DiskProfile;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -80,7 +86,9 @@ public class CitrixRequestWrapperTest {
 
     @Test
     public void testExecuteCreateCommand() {
-        final CreateCommand createCommand = new CreateCommand(new DiskProfile(null), "", new StoragePoolVO(), false);
+        final StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
+        final DiskProfile diskProfile = Mockito.mock(DiskProfile.class);
+        final CreateCommand createCommand = new CreateCommand(diskProfile, "", poolVO, false);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -216,7 +224,8 @@ public class CitrixRequestWrapperTest {
 
     @Test
     public void testPrepareForMigrationCommand() {
-        final PrepareForMigrationCommand prepareCommand = new PrepareForMigrationCommand(new VirtualMachineTO(0, "Test", null, 2, 200, 256, 512, null, "CentOS", true, false, "123"));
+        final VirtualMachineTO machineTO = Mockito.mock(VirtualMachineTO.class);
+        final PrepareForMigrationCommand prepareCommand = new PrepareForMigrationCommand(machineTO);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -228,12 +237,46 @@ public class CitrixRequestWrapperTest {
 
     @Test
     public void testMigrateCommand() {
-        final MigrateCommand migrateCommand = new MigrateCommand("Test", "127.0.0.1", false, new VirtualMachineTO(0, "Test", null, 2, 200, 256, 512, null, "CentOS", true, false, "123"), false);
+        final VirtualMachineTO machineTO = Mockito.mock(VirtualMachineTO.class);
+        final MigrateCommand migrateCommand = new MigrateCommand("Test", "127.0.0.1", false, machineTO, false);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(migrateCommand, citrixResourceBase);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testDestroyCommand() {
+
+        final VMTemplateStorageResourceAssoc templateStorage = Mockito.mock(VMTemplateStorageResourceAssoc.class);
+        final StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
+
+        final DestroyCommand destroyCommand = new DestroyCommand(poolVO, templateStorage);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(destroyCommand, citrixResourceBase);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testCreateStoragePoolCommand() {
+        final StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
+        final XsHost xsHost = Mockito.mock(XsHost.class);
+
+        final CreateStoragePoolCommand destroyCommand = new CreateStoragePoolCommand(false, poolVO);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getHost()).thenReturn(xsHost);
+
+        final Answer answer = wrapper.execute(destroyCommand, citrixResourceBase);
 
         assertFalse(answer.getResult());
     }

@@ -441,12 +441,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (cmd instanceof NetworkElementCommand) {
             return _vrResource.executeRequest((NetworkElementCommand)cmd);
-        } else if (clazz == PrepareForMigrationCommand.class) {
-            return execute((PrepareForMigrationCommand)cmd);
-        } else if (clazz == MigrateCommand.class) {
-            return execute((MigrateCommand)cmd);
-        } else if (clazz == DestroyCommand.class) {
-            return execute((DestroyCommand)cmd);
         } else if (clazz == CreateStoragePoolCommand.class) {
             return execute((CreateStoragePoolCommand)cmd);
         } else if (clazz == ModifyStoragePoolCommand.class) {
@@ -5863,7 +5857,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected SR getIscsiSR(final Connection conn, final String srNameLabel, final String target, String path, final String chapInitiatorUsername, final String chapInitiatorPassword,
+    public SR getIscsiSR(final Connection conn, final String srNameLabel, final String target, String path, final String chapInitiatorUsername, final String chapInitiatorPassword,
             final boolean ignoreIntroduceException) {
         synchronized (srNameLabel.intern()) {
             final Map<String, String> deviceConfig = new HashMap<String, String>();
@@ -6007,7 +6001,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected SR getNfsSR(final Connection conn, final String poolid, final String uuid, final String server, String serverpath, final String pooldesc) {
+    public SR getNfsSR(final Connection conn, final String poolid, final String uuid, final String server, String serverpath, final String pooldesc) {
         final Map<String, String> deviceConfig = new HashMap<String, String>();
         try {
             serverpath = serverpath.replace("//", "/");
