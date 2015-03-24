@@ -8,6 +8,8 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.util.ArrayList;
+
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,6 +19,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsCommand;
+import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
@@ -128,6 +131,18 @@ public class CitrixRequestWrapperTest {
     @Test
     public void testGetHostStatsCommandCommand() {
         final GetHostStatsCommand statsCommand = new GetHostStatsCommand(null, null, 0);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(statsCommand, citrixResourceBase);
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testGetVmStatsCommandCommand() {
+        final GetVmStatsCommand statsCommand = new GetVmStatsCommand(new ArrayList<String>(), null, null);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);

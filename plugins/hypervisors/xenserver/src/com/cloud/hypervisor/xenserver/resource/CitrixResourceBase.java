@@ -2358,7 +2358,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected HashMap<String, VmStatsEntry> getVmStats(final Connection conn, final GetVmStatsCommand cmd, final List<String> vmUUIDs, final String hostGuid) {
+    public HashMap<String, VmStatsEntry> getVmStats(final Connection conn, final GetVmStatsCommand cmd, final List<String> vmUUIDs, final String hostGuid) {
         final HashMap<String, VmStatsEntry> vmResponseMap = new HashMap<String, VmStatsEntry>();
 
         for (final String vmUUID : vmUUIDs) {
@@ -6674,7 +6674,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return false;
     }
 
-    protected VM getVM(final Connection conn, final String vmName) {
+    public VM getVM(final Connection conn, final String vmName) {
         // Look up VMs with the specified name
         Set<VM> vms;
         try {
