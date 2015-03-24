@@ -339,6 +339,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return _host;
     }
 
+    public boolean canBridgeFirewall() {
+        return _canBridgeFirewall;
+    }
+
     private static boolean isAlienVm(final VM vm, final Connection conn) throws XenAPIException, XmlRpcException {
         // TODO : we need a better way to tell whether or not the VM belongs to CloudStack
         final String vmName = vm.getNameLabel(conn);
@@ -374,7 +378,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return success;
     }
 
-    protected boolean isRefNull(final XenAPIObject object) {
+    public boolean isRefNull(final XenAPIObject object) {
         return object == null || object.toWireString().equals("OpaqueRef:NULL") || object.toWireString().equals("<not in database>");
     }
 
@@ -1311,7 +1315,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
 
-    protected HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUGroupDetails(final Connection conn) throws XenAPIException, XmlRpcException {
+    public HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUGroupDetails(final Connection conn) throws XenAPIException, XmlRpcException {
         return null;
     }
 
@@ -2877,7 +2881,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     }
 
-    protected void removeSR(final Connection conn, final SR sr) {
+    public void removeSR(final Connection conn, final SR sr) {
         if (sr == null) {
             return;
         }
@@ -3272,7 +3276,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    void shutdownVM(final Connection conn, final VM vm, final String vmName) throws XmlRpcException {
+    public void shutdownVM(final Connection conn, final VM vm, final String vmName) throws XmlRpcException {
         Task task = null;
         try {
             task = vm.cleanShutdownAsync(conn);
@@ -3672,7 +3676,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         throw new CloudRuntimeException("Could not find an available slot in VM with name to attach a new disk.");
     }
 
-    protected String callHostPlugin(final Connection conn, final String plugin, final String cmd, final String... params) {
+    public String callHostPlugin(final Connection conn, final String plugin, final String cmd, final String... params) {
         final Map<String, String> args = new HashMap<String, String>();
         String msg;
         try {
@@ -4056,7 +4060,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return vlanNetwork;
     }
 
-    protected void disableVlanNetwork(final Connection conn, final Network network) {
+    public void disableVlanNetwork(final Connection conn, final Network network) {
     }
 
     protected SR getLocalLVMSR(final Connection conn) {
@@ -5736,7 +5740,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected SR getISOSRbyVmName(final Connection conn, final String vmName) {
+    public SR getISOSRbyVmName(final Connection conn, final String vmName) {
         try {
             final Set<SR> srs = SR.getByNameLabel(conn, vmName + "-ISO");
             if (srs.size() == 0) {

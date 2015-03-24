@@ -26,6 +26,7 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
@@ -169,6 +170,18 @@ public class CitrixRequestWrapperTest {
     @Test
     public void testCheckHealthCommandCommand() {
         final CheckHealthCommand statsCommand = new CheckHealthCommand();
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(statsCommand, citrixResourceBase);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testStopCommandCommand() {
+        final StopCommand statsCommand = new StopCommand("Test", false, false);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
