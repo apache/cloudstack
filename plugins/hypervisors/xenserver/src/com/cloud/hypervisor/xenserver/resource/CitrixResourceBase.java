@@ -394,7 +394,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     }
 
-    protected boolean pingXAPI() {
+    public boolean pingXAPI() {
         final Connection conn = getConnection();
         try {
             final Host host = Host.getByUuid(conn, _host.getUuid());

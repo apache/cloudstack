@@ -17,8 +17,10 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsCommand;
+import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
@@ -150,6 +152,30 @@ public class CitrixRequestWrapperTest {
         final Answer answer = wrapper.execute(statsCommand, citrixResourceBase);
 
         assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testGetVmDiskStatsCommandCommand() {
+        final GetVmDiskStatsCommand statsCommand = new GetVmDiskStatsCommand(new ArrayList<String>(), null, null);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(statsCommand, citrixResourceBase);
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testCheckHealthCommandCommand() {
+        final CheckHealthCommand statsCommand = new CheckHealthCommand();
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(statsCommand, citrixResourceBase);
+
+        assertFalse(answer.getResult());
     }
 }
 

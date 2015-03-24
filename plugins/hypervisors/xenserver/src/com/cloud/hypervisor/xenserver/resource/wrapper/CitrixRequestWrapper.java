@@ -22,8 +22,10 @@ package com.cloud.hypervisor.xenserver.resource.wrapper;
 import java.util.Hashtable;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsCommand;
+import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootRouterCommand;
@@ -59,6 +61,8 @@ public class CitrixRequestWrapper extends RequestWrapper {
         map.put(ReadyCommand.class, new CitrixReadyCommandWrapper());
         map.put(GetHostStatsCommand.class, new GetHostStatsCommandWrapper());
         map.put(GetVmStatsCommand.class, new GetVmStatsCommandWrapper());
+        map.put(GetVmDiskStatsCommand.class, new GetVmDiskStatsCommandWrapper());
+        map.put(CheckHealthCommand.class, new CheckHealthCommandWrapper());
     }
 
     public static CitrixRequestWrapper getInstance() {
