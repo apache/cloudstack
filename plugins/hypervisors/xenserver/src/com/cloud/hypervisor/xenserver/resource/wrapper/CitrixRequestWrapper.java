@@ -23,6 +23,7 @@ import java.util.Hashtable;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
@@ -55,6 +56,7 @@ public class CitrixRequestWrapper extends RequestWrapper {
         map.put(CheckConsoleProxyLoadCommand.class, new CitrixCheckConsoleProxyLoadCommandWrapper());
         map.put(WatchConsoleProxyLoadCommand.class, new CitrixWatchConsoleProxyLoadCommandWrapper());
         map.put(ReadyCommand.class, new CitrixReadyCommandWrapper());
+        map.put(GetHostStatsCommand.class, new GetHostStatsCommandWrapper());
     }
 
     public static CitrixRequestWrapper getInstance() {
@@ -65,6 +67,10 @@ public class CitrixRequestWrapper extends RequestWrapper {
     public Answer execute(final Command command, final ServerResource serverResource) {
         @SuppressWarnings("unchecked")
         final CommandWrapper<Command, Answer, ServerResource> commandWrapper = map.get(command.getClass());
+
+        if (commandWrapper == null) {
+            throw new NullPointerException("No key found for '" + command.getClass() + "' in the Map!");
+        }
 
         return commandWrapper.execute(command, serverResource);
     }

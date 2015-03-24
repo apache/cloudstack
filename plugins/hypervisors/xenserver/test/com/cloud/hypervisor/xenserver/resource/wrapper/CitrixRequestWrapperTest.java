@@ -3,6 +3,7 @@ package com.cloud.hypervisor.xenserver.resource.wrapper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -14,6 +15,8 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
@@ -39,6 +42,18 @@ public class CitrixRequestWrapperTest {
     public void testWrapperInstance() {
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
+    }
+
+    @Test
+    public void testUnknownCommand() {
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        try {
+            wrapper.execute(new NotAValidCommand(), citrixResourceBase);
+        } catch (final Exception e) {
+            assertTrue(e instanceof NullPointerException);
+        }
     }
 
     @Test
@@ -109,4 +124,25 @@ public class CitrixRequestWrapperTest {
 
         assertFalse(answer.getResult());
     }
+
+    @Test
+    public void testGetHostStatsCommandCommand() {
+        final GetHostStatsCommand statsCommand = new GetHostStatsCommand(null, null, 0);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(statsCommand, citrixResourceBase);
+
+        assertTrue(answer.getResult());
+    }
+}
+
+class NotAValidCommand extends Command {
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
+
 }
