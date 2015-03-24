@@ -5033,11 +5033,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return null;
     }
 
-    protected String callHostPluginPremium(final Connection conn, final String cmd, final String... params) {
+    public String callHostPluginPremium(final Connection conn, final String cmd, final String... params) {
         return callHostPlugin(conn, "vmopspremium", cmd, params);
     }
 
-    protected String setupHeartbeatSr(final Connection conn, final SR sr, final boolean force) throws XenAPIException, XmlRpcException {
+    public String setupHeartbeatSr(final Connection conn, final SR sr, final boolean force) throws XenAPIException, XmlRpcException {
         final SR.Record srRec = sr.getRecord(conn);
         final String srUuid = srRec.uuid;
         if (!srRec.shared || !SRType.LVMOHBA.equals(srRec.type) && !SRType.LVMOISCSI.equals(srRec.type) && !SRType.NFS.equals(srRec.type)) {
