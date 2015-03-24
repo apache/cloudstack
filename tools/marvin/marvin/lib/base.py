@@ -2346,6 +2346,14 @@ class Cluster:
             cmd.listall = True
         return(apiclient.listClusters(cmd))
 
+    @classmethod
+    def update(cls, apiclient, **kwargs):
+        """Update cluster information"""
+
+        cmd = updateCluster.updateClusterCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.updateCluster(cmd))
+
 
 class Host:
     """Manage Host life cycle"""
@@ -3002,7 +3010,6 @@ class Zone:
             cmd.listall = True
         return(apiclient.listZones(cmd))
 
-
 class Pod:
     """Manage Pod"""
 
@@ -3039,6 +3046,13 @@ class Pod:
             cmd.listall = True
         return apiclient.listPods(cmd)
 
+    @classmethod
+    def update(self, apiclient, **kwargs):
+        """Update the pod"""
+
+        cmd = updatePod.updatePodCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.updatePod(cmd)
 
 class PublicIpRange:
     """Manage VlanIpRange"""
