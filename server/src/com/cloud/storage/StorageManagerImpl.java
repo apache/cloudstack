@@ -70,6 +70,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
@@ -150,6 +151,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.listener.StoragePoolMonitor;
 import com.cloud.storage.listener.VolumeStateListener;
 import com.cloud.template.TemplateManager;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
@@ -1082,7 +1084,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         }
                     }
 
-                    // destroy uploaded volumes in UploadAbandoned/UploadError state
+                    // destroy uploaded volumes in abandoned/error state
                     List<VolumeDataStoreVO> volumeDataStores = _volumeDataStoreDao.listByVolumeState(Volume.State.UploadError, Volume.State.UploadAbandoned);
                     for (VolumeDataStoreVO volumeDataStore : volumeDataStores) {
                         VolumeVO volume = _volumeDao.findById(volumeDataStore.getVolumeId());
@@ -1111,12 +1113,64 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                     if (volOnSecondary != null) {
                                         s_logger.info("Expunging volume " + volume.getUuid() + " uploaded using HTTP POST from secondary data store");
                                         AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volOnSecondary);
-                                        future.get();
+                                        VolumeApiResult result = future.get();
+                                        if (!result.isSuccess()) {
+                                            s_logger.warn("Failed to expunge volume " + volume.getUuid() + " from the image store " + dataStore.getName() + " due to: " + result.getResult());
+                                        }
                                     }
                                 }
                             }
                         } catch (Throwable th) {
                             s_logger.warn("Unable to destroy uploaded volume " + volume.getUuid() + ". Error details: " + th.getMessage());
+                        }
+                    }
+
+                    // destroy uploaded templates in abandoned/error state
+                    List<TemplateDataStoreVO> templateDataStores = _templateStoreDao.listByTemplateState(VirtualMachineTemplate.State.UploadError, VirtualMachineTemplate.State.UploadAbandoned);
+                    for (TemplateDataStoreVO templateDataStore : templateDataStores) {
+                        VMTemplateVO template = _templateDao.findById(templateDataStore.getTemplateId());
+                        if (template == null) {
+                            s_logger.warn("Uploaded template with id " + templateDataStore.getTemplateId() + " not found, so cannot be destroyed");
+                            continue;
+                        }
+                        try {
+                            DataStore dataStore = _dataStoreMgr.getDataStore(templateDataStore.getDataStoreId(), DataStoreRole.Image);
+                            EndPoint ep = _epSelector.select(dataStore, templateDataStore.getExtractUrl());
+                            if (ep == null) {
+                                s_logger.warn("There is no secondary storage VM for image store " + dataStore.getName() + ", cannot destroy uploaded template " + template.getUuid());
+                                continue;
+                            }
+                            Host host = _hostDao.findById(ep.getId());
+                            if (host != null && host.getManagementServerId() != null) {
+                                if (_serverId == host.getManagementServerId().longValue()) {
+                                    AsyncCallFuture<TemplateApiResult> future = _imageSrv.deleteTemplateAsync(tmplFactory.getTemplate(template.getId(), dataStore));
+                                    TemplateApiResult result = future.get();
+                                    if (!result.isSuccess()) {
+                                        s_logger.warn("Failed to delete template " + template.getUuid() + " from the image store " + dataStore.getName() + " due to: " + result.getResult());
+                                        continue;
+                                    }
+                                    // remove from template_zone_ref
+                                    List<VMTemplateZoneVO> templateZones = _vmTemplateZoneDao.listByZoneTemplate(((ImageStoreEntity)dataStore).getDataCenterId(), template.getId());
+                                    if (templateZones != null) {
+                                        for (VMTemplateZoneVO templateZone : templateZones) {
+                                            _vmTemplateZoneDao.remove(templateZone.getId());
+                                        }
+                                    }
+                                    // mark all the occurrences of this template in the given store as destroyed
+                                    _templateStoreDao.removeByTemplateStore(template.getId(), dataStore.getId());
+                                    // find all eligible image stores for this template
+                                    List<DataStore> imageStores = _tmpltMgr.getImageStoreByTemplate(template.getId(), null);
+                                    if (imageStores == null || imageStores.size() == 0) {
+                                        template.setState(VirtualMachineTemplate.State.Inactive);
+                                        _templateDao.update(template.getId(), template);
+
+                                        // decrement template resource count
+                                        _resourceLimitMgr.decrementResourceCount(template.getAccountId(), ResourceType.template);
+                                    }
+                                }
+                            }
+                        } catch (Throwable th) {
+                            s_logger.warn("Unable to destroy uploaded template " + template.getUuid() + ". Error details: " + th.getMessage());
                         }
                     }
                 } finally {
