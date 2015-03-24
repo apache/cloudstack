@@ -3202,7 +3202,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         if (showRemovedTmpl) {
             uniqueTmplPair = _templateJoinDao.searchIncludingRemovedAndCount(sc, searchFilter);
         } else {
-            sc.addAnd("templateState", SearchCriteria.Op.EQ, State.Active);
+            sc.addAnd("templateState", SearchCriteria.Op.IN, new State[]{State.Active, State.NotUploaded, State.UploadInProgress});
             uniqueTmplPair = _templateJoinDao.searchAndCount(sc, searchFilter);
         }
 
