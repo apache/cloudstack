@@ -28,6 +28,7 @@ import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.ReadyCommand;
+import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
@@ -65,6 +66,7 @@ public class CitrixRequestWrapper extends RequestWrapper {
         map.put(GetVmDiskStatsCommand.class, new CitrixGetVmDiskStatsCommandWrapper());
         map.put(CheckHealthCommand.class, new CitrixCheckHealthCommandWrapper());
         map.put(StopCommand.class, new CitrixStopCommandWrapper());
+        map.put(RebootCommand.class, new CitrixRebootCommandWrapper());
     }
 
     public static CitrixRequestWrapper getInstance() {

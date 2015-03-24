@@ -94,7 +94,7 @@ public class XenServer620SP1Resource extends XenServer620Resource {
     }
 
     @Override
-    protected HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUGroupDetails(final Connection conn) throws XenAPIException, XmlRpcException {
+    public HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUGroupDetails(final Connection conn) throws XenAPIException, XmlRpcException {
         final HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = new HashMap<String, HashMap<String, VgpuTypesInfo>>();
         final Host host = Host.getByUuid(conn, _host.getUuid());
         final Set<PGPU> pgpus = host.getPGPUs(conn);

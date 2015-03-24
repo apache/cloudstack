@@ -80,7 +80,7 @@ public class XenServer56Resource extends CitrixResourceBase {
     }
 
     @Override
-    protected void disableVlanNetwork(final Connection conn, final Network network) {
+    public void disableVlanNetwork(final Connection conn, final Network network) {
         try {
             final Network.Record networkr = network.getRecord(conn);
             if (!networkr.nameLabel.startsWith("VLAN")) {

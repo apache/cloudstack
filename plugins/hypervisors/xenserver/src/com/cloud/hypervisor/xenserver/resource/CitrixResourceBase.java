@@ -3228,7 +3228,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    void rebootVM(final Connection conn, final VM vm, final String vmName) throws Exception {
+    public void rebootVM(final Connection conn, final VM vm, final String vmName) throws Exception {
         Task task = null;
         try {
             task = vm.cleanRebootAsync(conn);

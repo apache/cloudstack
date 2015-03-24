@@ -20,7 +20,6 @@
 package com.cloud.hypervisor.xenserver.resource.wrapper;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
@@ -33,7 +32,10 @@ public final class CitrixRebootRouterCommandWrapper extends CommandWrapper<Reboo
     public Answer execute(final RebootRouterCommand command, final CitrixResourceBase citrixResourceBase) {
         final Connection conn = citrixResourceBase.getConnection();
 
-        final RebootAnswer answer = citrixResourceBase.execute((RebootCommand)command);
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+
+        final RebootCommand rebootCommand = new RebootCommand(command.getVmName());
+        final Answer answer = wrapper.execute(rebootCommand, citrixResourceBase);
 
         if (answer.getResult()) {
             final String cnct = citrixResourceBase.connect(conn, command.getVmName(), command.getPrivateIpAddress());
