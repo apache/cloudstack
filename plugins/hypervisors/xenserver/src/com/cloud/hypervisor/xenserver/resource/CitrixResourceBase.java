@@ -189,6 +189,7 @@ import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.xenserver.resource.wrapper.CitrixRequestWrapper;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
@@ -426,33 +427,20 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     @Override
     public Answer executeRequest(final Command cmd) {
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        try {
+            final Answer answer = wrapper.execute(cmd, this);
+            return answer;
+        } catch (final Exception e) {
+            // Ignore it for now. Just removing the command that have already been
+            // replaced by the new code.
+        }
+
         final Class<? extends Command> clazz = cmd.getClass();
-        if (clazz == CreateCommand.class) {
-            return execute((CreateCommand)cmd);
-        } else if (cmd instanceof NetworkElementCommand) {
+
+        if (cmd instanceof NetworkElementCommand) {
             return _vrResource.executeRequest((NetworkElementCommand)cmd);
-        } else if (clazz == CheckConsoleProxyLoadCommand.class) {
-            return execute((CheckConsoleProxyLoadCommand)cmd);
-        } else if (clazz == WatchConsoleProxyLoadCommand.class) {
-            return execute((WatchConsoleProxyLoadCommand)cmd);
-        } else if (clazz == ReadyCommand.class) {
-            return execute((ReadyCommand)cmd);
-        } else if (clazz == GetHostStatsCommand.class) {
-            return execute((GetHostStatsCommand)cmd);
-        } else if (clazz == GetVmStatsCommand.class) {
-            return execute((GetVmStatsCommand)cmd);
-        } else if (clazz == GetVmDiskStatsCommand.class) {
-            return execute((GetVmDiskStatsCommand)cmd);
-        } else if (clazz == CheckHealthCommand.class) {
-            return execute((CheckHealthCommand)cmd);
-        } else if (clazz == StopCommand.class) {
-            return execute((StopCommand)cmd);
-        } else if (clazz == RebootRouterCommand.class) {
-            return execute((RebootRouterCommand)cmd);
-        } else if (clazz == RebootCommand.class) {
-            return execute((RebootCommand)cmd);
-        } else if (clazz == CheckVirtualMachineCommand.class) {
-            return execute((CheckVirtualMachineCommand)cmd);
         } else if (clazz == PrepareForMigrationCommand.class) {
             return execute((PrepareForMigrationCommand)cmd);
         } else if (clazz == MigrateCommand.class) {
@@ -2621,7 +2609,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return vmStates;
     }
 
-    protected PowerState getVmState(final Connection conn, final String vmName) {
+    public PowerState getVmState(final Connection conn, final String vmName) {
         int retry = 3;
         while (retry-- > 0) {
             try {

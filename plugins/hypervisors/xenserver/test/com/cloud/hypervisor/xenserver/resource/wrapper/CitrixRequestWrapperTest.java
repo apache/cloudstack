@@ -16,12 +16,14 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
+import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
@@ -181,6 +183,32 @@ public class CitrixRequestWrapperTest {
         final Answer answer = wrapper.execute(statsCommand, citrixResourceBase);
 
         assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testRebootCommand() {
+        final RebootCommand rebootCommand = new RebootCommand("Test");
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(rebootCommand, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testCheckVirtualMachineCommandCommand() {
+        final CheckVirtualMachineCommand statsCommand = new CheckVirtualMachineCommand("Test");
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(statsCommand, citrixResourceBase);
+
+        assertTrue(answer.getResult());
     }
 }
 

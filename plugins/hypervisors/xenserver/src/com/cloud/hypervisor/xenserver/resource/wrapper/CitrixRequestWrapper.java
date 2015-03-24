@@ -23,6 +23,7 @@ import java.util.Hashtable;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
@@ -67,6 +68,7 @@ public class CitrixRequestWrapper extends RequestWrapper {
         map.put(CheckHealthCommand.class, new CitrixCheckHealthCommandWrapper());
         map.put(StopCommand.class, new CitrixStopCommandWrapper());
         map.put(RebootCommand.class, new CitrixRebootCommandWrapper());
+        map.put(CheckVirtualMachineCommand.class, new CitrixCheckVirtualMachineCommandWrapper());
     }
 
     public static CitrixRequestWrapper getInstance() {
