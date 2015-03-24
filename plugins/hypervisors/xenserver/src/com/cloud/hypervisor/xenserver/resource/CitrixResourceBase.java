@@ -1013,7 +1013,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected Network getNetwork(final Connection conn, final NicTO nic) throws XenAPIException, XmlRpcException {
+    public Network getNetwork(final Connection conn, final NicTO nic) throws XenAPIException, XmlRpcException {
         final String name = nic.getName();
         final XsLocalNetwork network = getNativeNetworkForTraffic(conn, nic.getType(), name);
         if (network == null) {
@@ -1125,7 +1125,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return vif;
     }
 
-    protected void prepareISO(final Connection conn, final String vmName) throws XmlRpcException, XenAPIException {
+    public void prepareISO(final Connection conn, final String vmName) throws XmlRpcException, XenAPIException {
 
         final Set<VM> vms = VM.getByNameLabel(conn, vmName);
         if (vms == null || vms.size() != 1) {
@@ -3355,7 +3355,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    private void migrateVM(final Connection conn, final Host destHost, final VM vm, final String vmName) throws Exception {
+    public void migrateVM(final Connection conn, final Host destHost, final VM vm, final String vmName) throws Exception {
         Task task = null;
         try {
             final Map<String, String> other = new HashMap<String, String>();

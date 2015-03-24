@@ -21,6 +21,8 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
+import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
@@ -30,6 +32,7 @@ import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.vm.DiskProfile;
 
@@ -37,11 +40,11 @@ import com.cloud.vm.DiskProfile;
 public class CitrixRequestWrapperTest {
 
     @Mock
-    protected CitrixResourceBase citrixResourceBase;
+    private CitrixResourceBase citrixResourceBase;
     @Mock
-    protected RebootAnswer rebootAnswer;
+    private RebootAnswer rebootAnswer;
     @Mock
-    protected CreateAnswer createAnswer;
+    private CreateAnswer createAnswer;
 
     @Test
     public void testWrapperInstance() {
@@ -114,7 +117,7 @@ public class CitrixRequestWrapperTest {
     }
 
     @Test
-    public void testReadyCommandCommand() {
+    public void testReadyCommand() {
         final ReadyCommand readyCommand = new ReadyCommand();
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
@@ -126,7 +129,7 @@ public class CitrixRequestWrapperTest {
     }
 
     @Test
-    public void testGetHostStatsCommandCommand() {
+    public void testGetHostStatsCommand() {
         final GetHostStatsCommand statsCommand = new GetHostStatsCommand(null, null, 0);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
@@ -138,7 +141,7 @@ public class CitrixRequestWrapperTest {
     }
 
     @Test
-    public void testGetVmStatsCommandCommand() {
+    public void testGetVmStatsCommand() {
         final GetVmStatsCommand statsCommand = new GetVmStatsCommand(new ArrayList<String>(), null, null);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
@@ -150,7 +153,7 @@ public class CitrixRequestWrapperTest {
     }
 
     @Test
-    public void testGetVmDiskStatsCommandCommand() {
+    public void testGetVmDiskStatsCommand() {
         final GetVmDiskStatsCommand statsCommand = new GetVmDiskStatsCommand(new ArrayList<String>(), null, null);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
@@ -162,7 +165,7 @@ public class CitrixRequestWrapperTest {
     }
 
     @Test
-    public void testCheckHealthCommandCommand() {
+    public void testCheckHealthCommand() {
         final CheckHealthCommand statsCommand = new CheckHealthCommand();
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
@@ -200,15 +203,39 @@ public class CitrixRequestWrapperTest {
     }
 
     @Test
-    public void testCheckVirtualMachineCommandCommand() {
-        final CheckVirtualMachineCommand statsCommand = new CheckVirtualMachineCommand("Test");
+    public void testCheckVirtualMachineCommand() {
+        final CheckVirtualMachineCommand virtualMachineCommand = new CheckVirtualMachineCommand("Test");
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
 
-        final Answer answer = wrapper.execute(statsCommand, citrixResourceBase);
+        final Answer answer = wrapper.execute(virtualMachineCommand, citrixResourceBase);
 
         assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testPrepareForMigrationCommand() {
+        final PrepareForMigrationCommand prepareCommand = new PrepareForMigrationCommand(new VirtualMachineTO(0, "Test", null, 2, 200, 256, 512, null, "CentOS", true, false, "123"));
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(prepareCommand, citrixResourceBase);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testMigrateCommand() {
+        final MigrateCommand migrateCommand = new MigrateCommand("Test", "127.0.0.1", false, new VirtualMachineTO(0, "Test", null, 2, 200, 256, 512, null, "CentOS", true, false, "123"), false);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(migrateCommand, citrixResourceBase);
+
+        assertFalse(answer.getResult());
     }
 }
 
