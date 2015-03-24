@@ -25,6 +25,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.GetHostStatsCommand;
+import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.MigrateCommand;
@@ -41,11 +42,14 @@ import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.hypervisor.xenserver.resource.XsHost;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.vm.DiskProfile;
@@ -399,6 +403,42 @@ public class CitrixRequestWrapperTest {
         verify(citrixResourceBase, times(0)).getConnection();
 
         assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testGetStorageStatsCommand() {
+        final XsHost xsHost = Mockito.mock(XsHost.class);
+        final DataStoreTO store = Mockito.mock(DataStoreTO.class);
+
+        final GetStorageStatsCommand storageStatsCommand = new GetStorageStatsCommand(store);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getHost()).thenReturn(xsHost);
+
+        final Answer answer = wrapper.execute(storageStatsCommand, citrixResourceBase);
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testPrimaryStorageDownloadCommand() {
+        final XsHost xsHost = Mockito.mock(XsHost.class);
+        final StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
+
+        final PrimaryStorageDownloadCommand storageDownloadCommand = new PrimaryStorageDownloadCommand("Test", "http://127.0.0.1", ImageFormat.VHD, 1l, poolVO, 200);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getHost()).thenReturn(xsHost);
+
+        final Answer answer = wrapper.execute(storageDownloadCommand, citrixResourceBase);
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
     }
 }
 

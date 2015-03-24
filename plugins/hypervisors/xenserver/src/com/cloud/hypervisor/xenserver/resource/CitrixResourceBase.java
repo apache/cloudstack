@@ -441,12 +441,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (cmd instanceof NetworkElementCommand) {
             return _vrResource.executeRequest((NetworkElementCommand)cmd);
-        } else if (clazz == AttachVolumeCommand.class) {
-            return execute((AttachVolumeCommand)cmd);
-        } else if (clazz == AttachIsoCommand.class) {
-            return execute((AttachIsoCommand) cmd);
-        } else if (clazz == UpgradeSnapshotCommand.class) {
-            return execute((UpgradeSnapshotCommand)cmd);
         } else if (clazz == GetStorageStatsCommand.class) {
             return execute((GetStorageStatsCommand)cmd);
         } else if (clazz == PrimaryStorageDownloadCommand.class) {
@@ -2751,7 +2745,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    String copy_vhd_from_secondarystorage(final Connection conn, final String mountpoint, final String sruuid, final int wait) {
+    public String copyVhdFromSecondaryStorage(final Connection conn, final String mountpoint, final String sruuid, final int wait) {
         final String nameLabel = "cloud-" + UUID.randomUUID().toString();
         final String results =
                 callHostPluginAsync(conn, "vmopspremium", "copy_vhd_from_secondarystorage", wait, "mountpoint", mountpoint, "sruuid", sruuid, "namelabel", nameLabel);
@@ -2794,7 +2788,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             final String pUuid = poolsr.getUuid(conn);
             final boolean isISCSI = IsISCSI(poolsr.getType(conn));
-            final String uuid = copy_vhd_from_secondarystorage(conn, tmplpath, pUuid, wait);
+            final String uuid = copyVhdFromSecondaryStorage(conn, tmplpath, pUuid, wait);
             final VDI tmpl = getVDIbyUuid(conn, uuid);
             final VDI snapshotvdi = tmpl.snapshot(conn, new HashMap<String, String>());
             final String snapshotUuid = snapshotvdi.getUuid(conn);
@@ -6589,7 +6583,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    boolean IsISCSI(final String type) {
+    public boolean IsISCSI(final String type) {
         return SRType.LVMOHBA.equals(type) || SRType.LVMOISCSI.equals(type) || SRType.LVM.equals(type);
     }
 
@@ -6838,7 +6832,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return success;
     }
 
-    protected String getVhdParent(final Connection conn, final String primaryStorageSRUuid, final String snapshotUuid, final Boolean isISCSI) {
+    public String getVhdParent(final Connection conn, final String primaryStorageSRUuid, final String snapshotUuid, final Boolean isISCSI) {
         final String parentUuid =
                 callHostPlugin(conn, "vmopsSnapshot", "getVhdParent", "primaryStorageSRUuid", primaryStorageSRUuid, "snapshotUuid", snapshotUuid, "isISCSI",
                         isISCSI.toString());
