@@ -22,6 +22,8 @@ package com.cloud.hypervisor.xenserver.resource.wrapper;
 import java.util.Hashtable;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.AttachIsoCommand;
+import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
@@ -37,6 +39,7 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.storage.CreateCommand;
@@ -83,6 +86,9 @@ public class CitrixRequestWrapper extends RequestWrapper {
         map.put(ModifyStoragePoolCommand.class, new CitrixModifyStoragePoolCommandWrapper());
         map.put(DeleteStoragePoolCommand.class, new CitrixDeleteStoragePoolCommandWrapper());
         map.put(ResizeVolumeCommand.class, new CitrixResizeVolumeCommandWrapper());
+        map.put(AttachVolumeCommand.class, new CitrixAttachVolumeCommandWrapper());
+        map.put(AttachIsoCommand.class, new CitrixAttachIsoCommandWrapper());
+        map.put(UpgradeSnapshotCommand.class, new CitrixUpgradeSnapshotCommandWrapper());
     }
 
     public static CitrixRequestWrapper getInstance() {

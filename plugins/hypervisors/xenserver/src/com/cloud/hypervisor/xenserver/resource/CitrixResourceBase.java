@@ -441,14 +441,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (cmd instanceof NetworkElementCommand) {
             return _vrResource.executeRequest((NetworkElementCommand)cmd);
-        } else if (clazz == CreateStoragePoolCommand.class) {
-            return execute((CreateStoragePoolCommand)cmd);
-        } else if (clazz == ModifyStoragePoolCommand.class) {
-            return execute((ModifyStoragePoolCommand)cmd);
-        } else if (clazz == DeleteStoragePoolCommand.class) {
-            return execute((DeleteStoragePoolCommand) cmd);
-        }else if (clazz == ResizeVolumeCommand.class) {
-            return execute((ResizeVolumeCommand) cmd);
         } else if (clazz == AttachVolumeCommand.class) {
             return execute((AttachVolumeCommand)cmd);
         } else if (clazz == AttachIsoCommand.class) {
@@ -2679,7 +2671,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    String upgradeSnapshot(final Connection conn, final String templatePath, final String snapshotPath) {
+    public String upgradeSnapshot(final Connection conn, final String templatePath, final String snapshotPath) {
         final String results = callHostPluginAsync(conn, "vmopspremium", "upgrade_snapshot", 2 * 60 * 60, "templatePath", templatePath, "snapshotPath", snapshotPath);
 
         if (results == null || results.isEmpty()) {
@@ -3620,7 +3612,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return connect(conn, vmname, ipAddress, 3922);
     }
 
-    protected boolean isDeviceUsed(final Connection conn, final VM vm, final Long deviceId) {
+    public boolean isDeviceUsed(final Connection conn, final VM vm, final Long deviceId) {
         // Figure out the disk number to attach the VM to
 
         String msg = null;
@@ -3640,7 +3632,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         throw new CloudRuntimeException("When check deviceId " + msg);
     }
 
-    protected String getUnusedDeviceNum(final Connection conn, final VM vm) {
+    public String getUnusedDeviceNum(final Connection conn, final VM vm) {
         // Figure out the disk number to attach the VM to
         try {
             final Set<String> allowedVBDDevices = vm.getAllowedVBDDevices(conn);
@@ -5841,7 +5833,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return getVDIbyUuid(conn, uuid, true);
     }
 
-    protected VDI getVDIbyUuid(final Connection conn, final String uuid, final boolean throwExceptionIfNotFound) {
+    public VDI getVDIbyUuid(final Connection conn, final String uuid, final boolean throwExceptionIfNotFound) {
         try {
             return VDI.getByUuid(conn, uuid);
         } catch (final Exception e) {
@@ -6099,7 +6091,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new Answer(cmd, true, "Success");
     }
 
-    protected VDI createVdi(final SR sr, final String vdiNameLabel, final Long volumeSize) throws Types.XenAPIException, XmlRpcException {
+    public VDI createVdi(final SR sr, final String vdiNameLabel, final Long volumeSize) throws Types.XenAPIException, XmlRpcException {
         final Connection conn = getConnection();
 
         final VDI.Record vdir = new VDI.Record();
@@ -6121,7 +6113,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return VDI.create(conn, vdir);
     }
 
-    protected void handleSrAndVdiDetach(final String iqn, final Connection conn) throws Exception {
+    public void handleSrAndVdiDetach(final String iqn, final Connection conn) throws Exception {
         final SR sr = getStorageRepository(conn, iqn);
 
         removeSR(conn, sr);
@@ -6685,7 +6677,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return vms.iterator().next();
     }
 
-    protected VDI getIsoVDIByURL(final Connection conn, final String vmName, final String isoURL) {
+    public VDI getIsoVDIByURL(final Connection conn, final String vmName, final String isoURL) {
         SR isoSR = null;
         String mountpoint = null;
         if (isoURL.startsWith("xs-tools")) {
