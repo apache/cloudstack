@@ -28,6 +28,12 @@
        <Bug pattern="DM_DEFAULT_ENCODING" />
      </Match>
 
+     <Match>
+       <Class name="CitrixResourceBase" />
+       <Method name="transferManagementNetwork" />
+       <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE" />
+     </Match>
+
      <!-- project: utils -->
      <Match>
        <Class name="SSHCmdHelper" />
