@@ -1,9 +1,0 @@
-/var/log/ppp-connect-errors {
-	daily
-	rotate 5
-	missingok
-	notifempty
-	compress
-	nocreate
-}
-
