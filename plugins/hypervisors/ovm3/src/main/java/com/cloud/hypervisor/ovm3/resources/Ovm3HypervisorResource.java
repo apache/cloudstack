@@ -17,6 +17,7 @@
 
 package com.cloud.hypervisor.ovm3.resources;
 
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -25,13 +26,14 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -89,11 +91,11 @@ import com.cloud.hypervisor.ovm3.objects.OvmObject;
 import com.cloud.hypervisor.ovm3.objects.Xen;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3Configuration;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3HypervisorNetwork;
+import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3HypervisorSupport;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3StoragePool;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3VirtualRoutingSupport;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3VmGuestTypes;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3VmSupport;
-import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3HypervisorSupport;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.resource.hypervisor.HypervisorResource;
@@ -124,13 +126,13 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
     private Ovm3VirtualRoutingSupport virtualroutingsupport;
     private Ovm3Configuration configuration;
     private Ovm3VmGuestTypes guesttypes;
-    private OvmObject ovmObject = new OvmObject();
+    private final OvmObject ovmObject = new OvmObject();
 
     /*
      * TODO: Add a network map, so we know which tagged interfaces we can remove
      * and switch to ConcurrentHashMap
      */
-    private Map<String, Xen.Vm> vmMap = new HashMap<String, Xen.Vm>();
+    private final Map<String, Xen.Vm> vmMap = new HashMap<String, Xen.Vm>();
 
     @Override
     public Type getType() {
@@ -379,7 +381,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
         storageHandler = new StorageSubsystemCommandHandlerBase(storageprocessor);
         virtualroutingsupport = new Ovm3VirtualRoutingSupport(c, configuration,
                 virtualroutingresource);
-        this.setConfigParams(params);
+        setConfigParams(params);
         return true;
     }
 
@@ -412,8 +414,8 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements
             vm.setVmCpus(vmSpec.getCpus());
             /* in mb not in bytes */
             vm.setVmMemory(vmSpec.getMinRam() / 1024 / 1024);
-            vm.setVmUuid(UUID.nameUUIDFromBytes(vmSpec.getName().getBytes())
-                    .toString());
+            vm.setVmUuid(UUID.nameUUIDFromBytes(vmSpec.getName().
+                    getBytes(Charset.defaultCharset())).toString());
             vm.setVmName(vmName);
 
             String domType = guesttypes.getOvm3GuestType(vmSpec.getOs());
