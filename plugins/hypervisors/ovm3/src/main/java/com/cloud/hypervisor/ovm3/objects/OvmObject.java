@@ -19,6 +19,7 @@ package com.cloud.hypervisor.ovm3.objects;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -70,7 +71,7 @@ public class OvmObject {
 
     /* generate a uuid */
     public String newUuid(String str) {
-        return UUID.nameUUIDFromBytes(str.getBytes()).toString();
+        return UUID.nameUUIDFromBytes(str.getBytes(Charset.defaultCharset())).toString();
     }
 
     /* capture most of the calls here */
