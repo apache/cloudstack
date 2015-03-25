@@ -27,7 +27,7 @@ public interface Investigator extends Adapter {
      *
      * @param vm to work on.
      */
-    public Boolean isVmAlive(VirtualMachine vm, Host host) throws UnknownVM;
+    public boolean isVmAlive(VirtualMachine vm, Host host) throws UnknownVM;
 
     public Status isAgentAlive(Host agent);
 

@@ -42,7 +42,7 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
     private final NetworkModel _networkMgr = null;
 
     @Override
-    public Boolean isVmAlive(VirtualMachine vm, Host host) throws UnknownVM {
+    public boolean isVmAlive(VirtualMachine vm, Host host) throws UnknownVM {
         if (!vm.getType().isUsedBySystem()) {
             s_logger.debug("Not a System Vm, unable to determine state of " + vm + " returning null");
         }

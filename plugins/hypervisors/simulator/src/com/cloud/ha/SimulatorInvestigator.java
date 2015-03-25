@@ -80,7 +80,7 @@ public class SimulatorInvestigator extends AdapterBase implements Investigator {
     }
 
     @Override
-    public Boolean isVmAlive(VirtualMachine vm, Host host) throws UnknownVM {
+    public boolean isVmAlive(VirtualMachine vm, Host host) throws UnknownVM {
         CheckVirtualMachineCommand cmd = new CheckVirtualMachineCommand(vm.getInstanceName());
         try {
             Answer answer = _agentMgr.send(vm.getHostId(), cmd);

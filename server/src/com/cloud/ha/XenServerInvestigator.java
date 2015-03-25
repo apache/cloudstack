@@ -77,7 +77,7 @@ public class XenServerInvestigator extends AdapterBase implements Investigator {
     }
 
     @Override
-    public Boolean isVmAlive(VirtualMachine vm, Host host) throws UnknownVM {
+    public boolean isVmAlive(VirtualMachine vm, Host host) throws UnknownVM {
         Status status = isAgentAlive(host);
         if (status == null) {
             throw new UnknownVM();

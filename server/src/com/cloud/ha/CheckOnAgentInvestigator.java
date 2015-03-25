@@ -47,7 +47,7 @@ public class CheckOnAgentInvestigator extends AdapterBase implements Investigato
     }
 
     @Override
-    public Boolean isVmAlive(VirtualMachine vm, Host host) throws UnknownVM {
+    public boolean isVmAlive(VirtualMachine vm, Host host) throws UnknownVM {
         CheckVirtualMachineCommand cmd = new CheckVirtualMachineCommand(vm.getInstanceName());
         try {
             CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer)_agentMgr.send(vm.getHostId(), cmd);
