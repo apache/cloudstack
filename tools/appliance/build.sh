@@ -89,6 +89,7 @@ fi
 set -e
 
 # Export for KVM
+rm -f raw.img
 vboxmanage internalcommands converttoraw -format vdi "$hdd_path" raw.img
 set +e
 qemu-img convert -o compat=0.10 -f raw -c -O qcow2 raw.img $appliance-$branch-kvm.qcow2
