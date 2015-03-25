@@ -71,6 +71,7 @@ import com.cloud.upgrade.dao.Upgrade432to440;
 import com.cloud.upgrade.dao.Upgrade440to441;
 import com.cloud.upgrade.dao.Upgrade441to442;
 import com.cloud.upgrade.dao.Upgrade442to450;
+import com.cloud.upgrade.dao.Upgrade443to450;
 import com.cloud.upgrade.dao.Upgrade450to451;
 import com.cloud.upgrade.dao.UpgradeSnapshot217to224;
 import com.cloud.upgrade.dao.UpgradeSnapshot223to224;
@@ -226,6 +227,8 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         _upgradeMap.put("4.4.1", new DbUpgrade[] {new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451() });
 
         _upgradeMap.put("4.4.2", new DbUpgrade[] {new Upgrade442to450(), new Upgrade450to451()});
+
+        _upgradeMap.put("4.4.3", new DbUpgrade[] {new Upgrade443to450(), new Upgrade450to451()});
 
         _upgradeMap.put("4.5.0", new DbUpgrade[] {new Upgrade450to451()});
 
