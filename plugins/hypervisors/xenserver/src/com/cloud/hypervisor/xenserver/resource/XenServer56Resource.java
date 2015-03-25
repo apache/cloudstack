@@ -263,7 +263,7 @@ public class XenServer56Resource extends CitrixResourceBase {
 
 
     @Override
-    protected boolean transferManagementNetwork(final Connection conn, final Host host, final PIF src, final PIF.Record spr, final PIF dest) throws XmlRpcException, XenAPIException {
+    public boolean transferManagementNetwork(final Connection conn, final Host host, final PIF src, final PIF.Record spr, final PIF dest) throws XmlRpcException, XenAPIException {
         dest.reconfigureIp(conn, spr.ipConfigurationMode, spr.IP, spr.netmask, spr.gateway, spr.DNS);
         Host.managementReconfigure(conn, dest);
         String hostUuid = null;

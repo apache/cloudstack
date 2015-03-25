@@ -74,7 +74,7 @@ public class XcpOssResource extends CitrixResourceBase {
     }
 
     @Override
-    protected boolean launchHeartBeat(final Connection conn) {
+    public boolean launchHeartBeat(final Connection conn) {
         return true;
     }
 

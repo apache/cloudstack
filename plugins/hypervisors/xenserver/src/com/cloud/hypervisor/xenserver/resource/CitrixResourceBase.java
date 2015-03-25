@@ -453,16 +453,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (cmd instanceof NetworkElementCommand) {
             return _vrResource.executeRequest((NetworkElementCommand)cmd);
-        } else if (clazz == GetStorageStatsCommand.class) {
-            return execute((GetStorageStatsCommand)cmd);
-        } else if (clazz == PrimaryStorageDownloadCommand.class) {
-            return execute((PrimaryStorageDownloadCommand)cmd);
-        } else if (clazz == GetVncPortCommand.class) {
-            return execute((GetVncPortCommand)cmd);
-        } else if (clazz == SetupCommand.class) {
-            return execute((SetupCommand)cmd);
-        } else if (clazz == MaintainCommand.class) {
-            return execute((MaintainCommand)cmd);
         } else if (clazz == PingTestCommand.class) {
             return execute((PingTestCommand)cmd);
         } else if (clazz == CheckOnHostCommand.class) {
