@@ -325,8 +325,8 @@ class TestHAProxyStickyness(cloudstackTestCase):
             ssh_1 = SshClient(
                 ip_addr,
                 22,
-                self.services["configurableData"]["host"]["username"],
-                self.services["configurableData"]["host"]["password"]
+                self.virtual_machine.username,
+                self.virtual_machine.password
             )
             hostnames.append(ssh_1.execute("hostname")[0])
             self.debug(hostnames)
