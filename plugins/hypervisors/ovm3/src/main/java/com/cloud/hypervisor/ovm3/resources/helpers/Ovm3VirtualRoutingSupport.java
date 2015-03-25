@@ -35,9 +35,9 @@ public class Ovm3VirtualRoutingSupport {
             .getLogger(Ovm3VirtualRoutingSupport.class);
     private static final String CREATE = "create";
     private static final String SUCCESS = "success";
-    private Connection c;
-    private Ovm3VirtualRoutingResource vrr;
-    private Ovm3Configuration config;
+    private final Connection c;
+    private final Ovm3VirtualRoutingResource vrr;
+    private final Ovm3Configuration config;
     public Ovm3VirtualRoutingSupport(Connection conn, Ovm3Configuration ovm3config, Ovm3VirtualRoutingResource ovm3vrr) {
         c = conn;
         vrr = ovm3vrr;
@@ -97,8 +97,8 @@ public class Ovm3VirtualRoutingSupport {
                 String[] splitResult = result.split(":");
                 int i = 0;
                 while (i < splitResult.length - 1) {
-                    stats[0] += (Long.valueOf(splitResult[i++])).longValue();
-                    stats[1] += (Long.valueOf(splitResult[i++])).longValue();
+                    stats[0] += (Long.parseLong(splitResult[i++]));
+                    stats[1] += (Long.parseLong(splitResult[i++]));
                 }
             } catch (Exception e) {
                 LOGGER.warn(
