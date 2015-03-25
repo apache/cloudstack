@@ -16,6 +16,53 @@
 // under the License.
 package com.cloud.user;
 
+import java.net.InetAddress;
+import java.net.URLEncoder;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.crypto.KeyGenerator;
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.QuerySelector;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
+import org.apache.cloudstack.utils.baremetal.BaremetalUtils;
+
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.configuration.Config;
@@ -121,50 +168,6 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.QuerySelector;
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.affinity.AffinityGroup;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
-import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
-import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
-import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
-import org.apache.cloudstack.utils.baremetal.BaremetalUtils;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
-import javax.crypto.KeyGenerator;
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.net.InetAddress;
-import java.net.URLEncoder;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 @Local(value = {AccountManager.class, AccountService.class})
 public class AccountManagerImpl extends ManagerBase implements AccountManager, Manager {
@@ -987,6 +990,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return success;
     }
 
+    @Override
     public UserAccount createUserAccount(final String userName, final String password, final String firstName, final String lastName, final String email, final String timezone,
             String accountName, final short accountType, Long domainId, final String networkDomain, final Map<String, String> details, String accountUUID, final String userUUID) {
 
@@ -2192,12 +2196,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 s_logger.debug("Unable to authenticate user with username " + username + " in domain " + domainId);
             }
 
-            if (userAccount != null) {
-                if (userAccount.getState().equalsIgnoreCase(Account.State.enabled.toString())) {
-                    if (!isInternalAccount(userAccount.getId())) {
-                        // Internal accounts are not disabled
-                        int attemptsMade = userAccount.getLoginAttempts() + 1;
-                        if (updateIncorrectLoginCount) {
+            if (userAccount.getState().equalsIgnoreCase(Account.State.enabled.toString())) {
+                if (!isInternalAccount(userAccount.getId())) {
+                    // Internal accounts are not disabled
+                    int attemptsMade = userAccount.getLoginAttempts() + 1;
+                    if (updateIncorrectLoginCount) {
                         if (attemptsMade < _allowedLoginAttempts) {
                             updateLoginAttempts(userAccount.getId(), attemptsMade, false);
                             s_logger.warn("Login attempt failed. You have " + (_allowedLoginAttempts - attemptsMade) + " attempt(s) remaining");
@@ -2206,12 +2209,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                             s_logger.warn("User " + userAccount.getUsername() + " has been disabled due to multiple failed login attempts." + " Please contact admin.");
                         }
                     }
-                    }
-                } else {
-                    s_logger.info("User " + userAccount.getUsername() + " is disabled/locked");
                 }
             } else {
-                s_logger.warn("Authentication failure: No user with name " + username + " for domainId " + domainId);
+                s_logger.info("User " + userAccount.getUsername() + " is disabled/locked");
             }
             return null;
         }
@@ -2265,6 +2265,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
         final String[] keys = new String[2];
         Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 keys[0] = AccountManagerImpl.this.createUserApiKey(userId);
                 keys[1] = AccountManagerImpl.this.createUserSecretKey(userId);
