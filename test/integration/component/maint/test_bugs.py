@@ -164,8 +164,8 @@ class Test42xBugsMgmtSvr(cloudstackTestCase):
         # "apply.allocation.algorithm.to.pods" back to false
         Configurations.update(
             self.apiClient,
-            "apply.allocation.algorithm.to.pods",
-            "false"
+            name="apply.allocation.algorithm.to.pods",
+            value="false"
         )
         # TODO:cleanup: Restart management server
         return

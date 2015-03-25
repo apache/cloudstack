@@ -3636,12 +3636,11 @@ class Configurations:
     """Manage Configuration"""
 
     @classmethod
-    def update(cls, apiclient, name, value=None):
+    def update(cls, apiclient, **kwargs):
         """Updates the specified configuration"""
 
         cmd = updateConfiguration.updateConfigurationCmd()
-        cmd.name = name
-        cmd.value = value
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
         apiclient.updateConfiguration(cmd)
 
     @classmethod
