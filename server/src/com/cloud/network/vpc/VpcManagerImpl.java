@@ -509,9 +509,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     private void validateConnectivtyServiceCapabilities(final Set<Provider> providers, final Map serviceCapabilitystList) {
         if (serviceCapabilitystList != null && !serviceCapabilitystList.isEmpty()) {
-            final Collection serviceCapabilityCollection = serviceCapabilitystList.values();
-            final Iterator iter = serviceCapabilityCollection.iterator();
-            final List<Capability> specifiedCapabilities = new ArrayList<>();
 
             while (iter.hasNext()) {
                 final HashMap<String, String> svcCapabilityMap = (HashMap<String, String>)iter.next();
