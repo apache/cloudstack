@@ -340,8 +340,20 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return _host;
     }
 
+    public boolean isSecurityGroupEnabled() {
+        return _securityGroupEnabled;
+    }
+
+    public void setCanBridgeFirewall(final boolean canBridgeFirewall) {
+        _canBridgeFirewall = canBridgeFirewall;
+    }
+
     public boolean canBridgeFirewall() {
         return _canBridgeFirewall;
+    }
+
+    public boolean canBridgeFirewall(final Connection conn) {
+        return Boolean.valueOf(callHostPlugin(conn, "vmops", "can_bridge_firewall", "host_uuid", _host.getUuid(), "instance", _instance));
     }
 
     private static boolean isAlienVm(final VM vm, final Connection conn) throws XenAPIException, XmlRpcException {
@@ -3008,7 +3020,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new ReadyAnswer(cmd);
     }
 
-    protected String getVncUrl(final Connection conn, final VM vm) {
+    public String getVncUrl(final Connection conn, final VM vm) {
         VM.Record record;
         Console c;
         try {
@@ -3679,7 +3691,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return argString.toString();
     }
 
-    protected boolean setIptables(final Connection conn) {
+    public boolean setIptables(final Connection conn) {
         final String result = callHostPlugin(conn, "vmops", "setIptables");
         if (result == null || result.isEmpty()) {
             return false;
@@ -4399,7 +4411,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected boolean transferManagementNetwork(final Connection conn, final Host host, final PIF src, final PIF.Record spr, final PIF dest) throws XmlRpcException, XenAPIException {
+    public boolean transferManagementNetwork(final Connection conn, final Host host, final PIF src, final PIF.Record spr, final PIF dest) throws XmlRpcException, XenAPIException {
         dest.reconfigureIp(conn, spr.ipConfigurationMode, spr.IP, spr.netmask, spr.gateway, spr.DNS);
         Host.managementReconfigure(conn, dest);
         String hostUuid = null;
@@ -4456,7 +4468,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new StartupCommand[] {cmd};
     }
 
-    private void cleanupTemplateSR(final Connection conn) {
+    public void cleanupTemplateSR(final Connection conn) {
         Set<PBD> pbds = null;
         try {
             final Host host = Host.getByUuid(conn, _host.getUuid());
@@ -4493,7 +4505,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected boolean launchHeartBeat(final Connection conn) {
+    public boolean launchHeartBeat(final Connection conn) {
         final String result = callHostPluginPremium(conn, "heartbeat",
                 "host", _host.getUuid(),
                 "timeout", Integer.toString(_heartbeatTimeout),
@@ -4523,7 +4535,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             if (_securityGroupEnabled) {
-                _canBridgeFirewall = can_bridge_firewall(conn);
+                _canBridgeFirewall = canBridgeFirewall(conn);
                 if (!_canBridgeFirewall) {
                     final String msg = "Failed to configure brige firewall";
                     s_logger.warn(msg);
@@ -4657,7 +4669,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     /* return : if setup is needed */
-    protected boolean setupServer(final Connection conn, final Host host) {
+    public boolean setupServer(final Connection conn, final Host host) {
         final String packageVersion = CitrixResourceBase.class.getPackage().getImplementationVersion();
         final String version = this.getClass().getName() + "-" + (packageVersion == null ? Long.toString(System.currentTimeMillis()) : packageVersion);
 
@@ -5108,10 +5120,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
         }
 
-    }
-
-    protected boolean can_bridge_firewall(final Connection conn) {
-        return Boolean.valueOf(callHostPlugin(conn, "vmops", "can_bridge_firewall", "host_uuid", _host.getUuid(), "instance", _instance));
     }
 
     private Answer execute(final OvsSetupBridgeCommand cmd) {

@@ -71,7 +71,7 @@ public class Xenserver625Resource extends XenServerResourceNewBase {
     }
 
     @Override
-    protected boolean setupServer(final Connection conn,final Host host) {
+    public boolean setupServer(final Connection conn,final Host host) {
         final com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.getIp(), 22);
         try {
             sshConnection.connect(null, 60000, 60000);

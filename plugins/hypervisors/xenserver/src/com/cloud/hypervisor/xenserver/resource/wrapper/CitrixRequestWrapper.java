@@ -33,12 +33,15 @@ import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
+import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
@@ -93,6 +96,9 @@ public class CitrixRequestWrapper extends RequestWrapper {
         map.put(UpgradeSnapshotCommand.class, new CitrixUpgradeSnapshotCommandWrapper());
         map.put(GetStorageStatsCommand.class, new CitrixGetStorageStatsCommandWrapper());
         map.put(PrimaryStorageDownloadCommand.class, new CitrixPrimaryStorageDownloadCommandWrapper());
+        map.put(GetVncPortCommand.class, new CitrixGetVncPortCommandWrapper());
+        map.put(SetupCommand.class, new CitrixSetupCommandWrapper());
+        map.put(MaintainCommand.class, new CitrixMaintainCommandWrapper());
     }
 
     public static CitrixRequestWrapper getInstance() {

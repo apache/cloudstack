@@ -3,18 +3,24 @@ package com.cloud.hypervisor.xenserver.resource.wrapper;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Map;
 
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.xmlrpc.client.XmlRpcClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -28,6 +34,8 @@ import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
+import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
@@ -35,6 +43,7 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
@@ -47,14 +56,19 @@ import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.host.HostEnvironment;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.hypervisor.xenserver.resource.XsHost;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.vm.DiskProfile;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Marshalling;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Connection.class, Host.Record.class})
 public class CitrixRequestWrapperTest {
 
     @Mock
@@ -437,6 +451,106 @@ public class CitrixRequestWrapperTest {
 
         final Answer answer = wrapper.execute(storageDownloadCommand, citrixResourceBase);
         verify(citrixResourceBase, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testGetVncPortCommand() {
+        final GetVncPortCommand storageDownloadCommand = new GetVncPortCommand(1l, "Test");
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(storageDownloadCommand, citrixResourceBase);
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testSetupCommand() {
+        final XsHost xsHost = Mockito.mock(XsHost.class);
+        final HostEnvironment env = Mockito.mock(HostEnvironment.class);
+
+        final SetupCommand storageDownloadCommand = new SetupCommand(env);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getHost()).thenReturn(xsHost);
+
+        final Answer answer = wrapper.execute(storageDownloadCommand, citrixResourceBase);
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testMaintainCommand() {
+        // This test needs further work.
+
+        final String uuid = "befc4dcd-f5c6-4015-8791-3c18622b7c7f";
+
+        final Connection conn = Mockito.mock(Connection.class);
+        final XsHost xsHost = Mockito.mock(XsHost.class);
+        final XmlRpcClient client = Mockito.mock(XmlRpcClient.class);
+
+        //        final Host.Record hr = PowerMockito.mock(Host.Record.class);
+        //        final Host host = PowerMockito.mock(Host.class);
+
+        final MaintainCommand storageDownloadCommand = new MaintainCommand();
+
+        final Map<String, Object> map = new Hashtable<String, Object>();
+        map.put("Value", "Xen");
+
+        final Map<String, Object> spiedMap = spy(map);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        when(citrixResourceBase.getHost()).thenReturn(xsHost);
+        when(xsHost.getUuid()).thenReturn(uuid);
+        when(conn.getSessionReference()).thenReturn("befc4dcd");
+
+        try {
+            final Object [] params = {Marshalling.toXMLRPC("befc4dcd"), Marshalling.toXMLRPC(uuid)};
+            when(client.execute("host.get_by_uuid", new Object[]{"befc4dcd", uuid})).thenReturn(spiedMap);
+            PowerMockito.when(conn, "dispatch", "host.get_by_uuid", params).thenReturn(spiedMap);
+        } catch (final Exception e) {
+        }
+
+        //        try {
+        //            PowerMockito.mockStatic(Host.class);
+        //            //BDDMockito.given(Host.getByUuid(conn, xsHost.getUuid())).willReturn(host);
+        //            PowerMockito.when(Host.getByUuid(conn, xsHost.getUuid())).thenReturn(host);
+        //            PowerMockito.verifyStatic(times(1));
+        //        } catch (final BadServerResponse e) {
+        //            fail(e.getMessage());
+        //        } catch (final XenAPIException e) {
+        //            fail(e.getMessage());
+        //        } catch (final XmlRpcException e) {
+        //            fail(e.getMessage());
+        //        }
+        //
+        //        PowerMockito.mockStatic(Types.class);
+        //        PowerMockito.when(Types.toHostRecord(spiedMap)).thenReturn(hr);
+        //        PowerMockito.verifyStatic(times(1));
+        //
+        //        try {
+        //            PowerMockito.mockStatic(Host.Record.class);
+        //            when(host.getRecord(conn)).thenReturn(hr);
+        //            verify(host, times(1)).getRecord(conn);
+        //        } catch (final BadServerResponse e) {
+        //            fail(e.getMessage());
+        //        } catch (final XenAPIException e) {
+        //            fail(e.getMessage());
+        //        } catch (final XmlRpcException e) {
+        //            fail(e.getMessage());
+        //        }
+
+        final Answer answer = wrapper.execute(storageDownloadCommand, citrixResourceBase);
 
         assertFalse(answer.getResult());
     }
