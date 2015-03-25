@@ -49,7 +49,7 @@ public class Xen extends OvmObject {
      */
     public class Vm {
         /* 'vfb': [ 'type=vnc,vncunused=1,vnclisten=127.0.0.1,keymap=en-us'] */
-        private List<String> vmVncElement = new ArrayList<String>();
+        private final List<String> vmVncElement = new ArrayList<String>();
         private Map<String, String> vmVnc = new HashMap<String, String>() {
             {
                 put("type", "vnc");
@@ -63,7 +63,7 @@ public class Xen extends OvmObject {
          * 'disk': [
          * 'file:/OVS/Repositories/0004fb0000030000aeaca859e4a8f8c0/VirtualDisks/0004fb0000120000c444117fd87ea251.img,xvda,w']
          */
-        private List<String> vmDisks = new ArrayList<String>();
+        private final List<String> vmDisks = new ArrayList<String>();
         private Map<String, String> vmDisk = new HashMap<String, String>() {
             {
                 put("id", "");
@@ -79,42 +79,42 @@ public class Xen extends OvmObject {
         };
 
         /* 'vif': [ 'mac=00:21:f6:00:00:00,bridge=c0a80100'] */
-        private ArrayList<String> vmVifs = new ArrayList<String>();
-        private Integer maxVifs = 7;
-        private String[] xvmVifs = new String[maxVifs -1];
-        private String vmSimpleName = "";
-        private String vmName = "";
-        private String vmUuid = "";
+        private final ArrayList<String> vmVifs = new ArrayList<String>();
+        private final Integer maxVifs = 7;
+        private final String[] xvmVifs = new String[maxVifs -1];
+        private final String vmSimpleName = "";
+        private final String vmName = "";
+        private final String vmUuid = "";
         /*
          * the pool the vm.cfg will live on, this is the same as the primary
          * storage pool (should be unified with disk pool ?)
          */
         private String vmPrimaryPoolUuid = "";
-        private String vmOnReboot = "restart";
+        private final String vmOnReboot = "restart";
         /* weight is relative for all VMs compared to each other */
-        private int vmCpuWeight = 27500;
+        private final int vmCpuWeight = 27500;
         /* minimum memory allowed */
-        private int vmMemory = 256;
-        private int vmCpuCap = 0;
+        private final int vmMemory = 256;
+        private final int vmCpuCap = 0;
         /* dynam scaling for cpus */
-        private int vmMaxVcpus = 0;
+        private final int vmMaxVcpus = 0;
         /* default to 1, can't be higher than maxvCpus */
-        private int vmVcpus = 1;
+        private final int vmVcpus = 1;
         /* high available */
-        private Boolean vmHa = false;
-        private String vmDescription = "";
-        private String vmOnPoweroff = "destroy";
-        private String vmOnCrash = "restart";
-        private String vmBootloader = "/usr/bin/pygrub";
-        private String vmBootArgs = "";
-        private String vmExtra = "";
+        private final Boolean vmHa = false;
+        private final String vmDescription = "";
+        private final String vmOnPoweroff = "destroy";
+        private final String vmOnCrash = "restart";
+        private final String vmBootloader = "/usr/bin/pygrub";
+        private final String vmBootArgs = "";
+        private final String vmExtra = "";
         /* default to linux */
-        private String vmOs = "Other Linux";
-        private String vmCpuCompatGroup = "";
+        private final String vmOs = "Other Linux";
+        private final String vmCpuCompatGroup = "";
         /* pv is default */
-        private String vmDomainType = "xen_pvm";
+        private final String vmDomainType = "xen_pvm";
         /* start counting disks at A -> 0 */
-        private int diskZero = 97;
+        private final int diskZero = 97;
         private int diskCount = diskZero;
 
         private Map<String, Object> vmParams = new HashMap<String, Object>() {
@@ -145,31 +145,31 @@ public class Xen extends OvmObject {
         };
 
         public boolean isControlDomain() {
-            if ("Domain-0".equals(this.getVmName())) {
+            if ("Domain-0".equals(getVmName())) {
                 return true;
             }
             return false;
         }
 
         public boolean setPrimaryPoolUuid(String poolId) {
-            this.vmPrimaryPoolUuid = poolId;
+            vmPrimaryPoolUuid = poolId;
             return true;
         }
 
         public String getPrimaryPoolUuid() throws Ovm3ResourceException {
-            if ("".equals(this.vmPrimaryPoolUuid)) {
-                return this.getVmRootDiskPoolId();
+            if ("".equals(vmPrimaryPoolUuid)) {
+                return getVmRootDiskPoolId();
             } else {
-                return this.vmPrimaryPoolUuid;
+                return vmPrimaryPoolUuid;
             }
         }
 
         public Map<String, Object> getVmParams() {
-            return this.vmParams;
+            return vmParams;
         }
 
         public void setVmParams(Map<String, Object> params) {
-            this.vmParams = params;
+            vmParams = params;
         }
 
         public boolean setVmExtra(final String args) {
@@ -257,27 +257,27 @@ public class Xen extends OvmObject {
         }
 
         public void setVmVncs(List<String> vncs) {
-            this.vmVncElement.addAll(vncs);
+            vmVncElement.addAll(vncs);
         }
 
         public List<String> getVmVncs() {
-            return this.vmVncElement;
+            return vmVncElement;
         }
 
         public void setVmDisks(List<String> disks) {
-            this.vmDisks.addAll(disks);
+            vmDisks.addAll(disks);
         }
 
         public List<String> getVmDisks() {
-            return this.vmDisks;
+            return vmDisks;
         }
 
         public void setVmVifs(List<String> vifs) {
-            this.vmVifs.addAll(vifs);
+            vmVifs.addAll(vifs);
         }
 
         public List<String> getVmVifs() {
-            return this.vmVifs;
+            return vmVifs;
         }
 
         public Integer getVifIdByMac(String mac) {
@@ -397,7 +397,7 @@ public class Xen extends OvmObject {
         private Boolean addDiskToDisks(String image, String devName, String mode) {
             for (String disk : vmDisks) {
                 if (disk.contains(image)) {
-                    LOGGER.debug(this.vmName + " already has disk " +image+ ":" + devName + ":" + mode);
+                    LOGGER.debug(vmName + " already has disk " +image+ ":" + devName + ":" + mode);
                     return true;
                 }
             }
@@ -421,7 +421,7 @@ public class Xen extends OvmObject {
         /* The conflict between getVm and getVmConfig becomes clear */
         public String getVmRootDiskPoolId() throws Ovm3ResourceException {
             String poolId = getVmDiskPoolId(0);
-            this.setPrimaryPoolUuid(poolId);
+            setPrimaryPoolUuid(poolId);
             return poolId;
         }
 
@@ -434,7 +434,7 @@ public class Xen extends OvmObject {
                 throw new Ovm3ResourceException("No valid disk found for id: "
                         + disk);
             }
-            String[] st = diskPath.split(File.separator);
+            String[] st = diskPath.split(File.separatorChar == '\\' ? "\\\\" : File.separator);
             return st[fi];
         }
 
@@ -442,7 +442,7 @@ public class Xen extends OvmObject {
             Map<String, Object[]> o = (Map<String, Object[]>) vmParams
                     .get("device");
             if (o == null) {
-                LOGGER.info("No devices found" + this.vmName);
+                LOGGER.info("No devices found" + vmName);
                 return null;
             }
             vmDisk = (Map<String, String>) o.get("vbd")[disk];
@@ -693,7 +693,7 @@ public class Xen extends OvmObject {
 
     public Boolean configureVm(String repoId, String vmId)
             throws Ovm3ResourceException {
-        return configureVm(repoId, vmId, this.defVm.getVmParams());
+        return configureVm(repoId, vmId, defVm.getVmParams());
     }
 
     /*
@@ -893,7 +893,7 @@ public class Xen extends OvmObject {
      * default: None
      */
     public Vm getVmConfig(String vmName) throws Ovm3ResourceException {
-        defVm = this.getRunningVmConfig(vmName);
+        defVm = getRunningVmConfig(vmName);
         if (defVm == null) {
             LOGGER.debug("Unable to retrieve running config for " + vmName);
             return defVm;
