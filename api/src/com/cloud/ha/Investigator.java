@@ -34,7 +34,7 @@ public interface Investigator extends Adapter {
     class UnknownVM extends Exception {
 
         /**
-         * 
+         *
          */
         private static final long serialVersionUID = 1L;
 
