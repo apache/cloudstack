@@ -27,7 +27,16 @@ public interface Investigator extends Adapter {
      *
      * @param vm to work on.
      */
-    public Boolean isVmAlive(VirtualMachine vm, Host host);
+    public Boolean isVmAlive(VirtualMachine vm, Host host) throws UnknownVM;
 
     public Status isAgentAlive(Host agent);
+
+    class UnknownVM extends Exception {
+
+        /**
+         * 
+         */
+        private static final long serialVersionUID = 1L;
+
+    };
 }

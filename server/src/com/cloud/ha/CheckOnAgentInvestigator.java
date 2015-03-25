@@ -47,23 +47,23 @@ public class CheckOnAgentInvestigator extends AdapterBase implements Investigato
     }
 
     @Override
-    public Boolean isVmAlive(VirtualMachine vm, Host host) {
+    public Boolean isVmAlive(VirtualMachine vm, Host host) throws UnknownVM {
         CheckVirtualMachineCommand cmd = new CheckVirtualMachineCommand(vm.getInstanceName());
         try {
             CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer)_agentMgr.send(vm.getHostId(), cmd);
             if (!answer.getResult()) {
                 s_logger.debug("Unable to get vm state on " + vm.toString());
-                return null;
+                throw new UnknownVM();
             }
 
             s_logger.debug("Agent responded with state " + answer.getState().toString());
             return answer.getState() == PowerState.PowerOn;
         } catch (AgentUnavailableException e) {
             s_logger.debug("Unable to reach the agent for " + vm.toString() + ": " + e.getMessage());
-            return null;
+            throw new UnknownVM();
         } catch (OperationTimedoutException e) {
             s_logger.debug("Operation timed out for " + vm.toString() + ": " + e.getMessage());
-            return null;
+            throw new UnknownVM();
         }
     }
 }

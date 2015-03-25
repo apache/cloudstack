@@ -80,23 +80,23 @@ public class SimulatorInvestigator extends AdapterBase implements Investigator {
     }
 
     @Override
-    public Boolean isVmAlive(VirtualMachine vm, Host host) {
+    public Boolean isVmAlive(VirtualMachine vm, Host host) throws UnknownVM {
         CheckVirtualMachineCommand cmd = new CheckVirtualMachineCommand(vm.getInstanceName());
         try {
             Answer answer = _agentMgr.send(vm.getHostId(), cmd);
             if (!answer.getResult()) {
                 s_logger.debug("Unable to get vm state on " + vm.toString());
-                return null;
+                throw new UnknownVM();
             }
             CheckVirtualMachineAnswer cvmAnswer = (CheckVirtualMachineAnswer)answer;
             s_logger.debug("Agent responded with state " + cvmAnswer.getState().toString());
             return cvmAnswer.getState() == PowerState.PowerOn;
         } catch (AgentUnavailableException e) {
             s_logger.debug("Unable to reach the agent for " + vm.toString() + ": " + e.getMessage());
-            return null;
+            throw new UnknownVM();
         } catch (OperationTimedoutException e) {
             s_logger.debug("Operation timed out for " + vm.toString() + ": " + e.getMessage());
-            return null;
+            throw new UnknownVM();
         }
     }
 }

@@ -44,10 +44,10 @@ public class HypervInvestigator extends AdapterBase implements Investigator {
     @Inject ResourceManager _resourceMgr;
 
     @Override
-    public Boolean isVmAlive(com.cloud.vm.VirtualMachine vm, Host host) {
+    public Boolean isVmAlive(com.cloud.vm.VirtualMachine vm, Host host) throws UnknownVM {
         Status status = isAgentAlive(host);
         if (status == null) {
-            return null;
+            throw new UnknownVM();
         }
         return status == Status.Up ? true : null;
     }

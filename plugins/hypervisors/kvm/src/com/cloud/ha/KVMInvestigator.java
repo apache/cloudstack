@@ -47,12 +47,16 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
     ResourceManager _resourceMgr;
 
     @Override
-    public Boolean isVmAlive(com.cloud.vm.VirtualMachine vm, Host host) {
+    public Boolean isVmAlive(com.cloud.vm.VirtualMachine vm, Host host) throws UnknownVM {
         Status status = isAgentAlive(host);
         if (status == null) {
-            return null;
+            throw new UnknownVM();
         }
-        return status == Status.Up ? true : null;
+        if (status == Status.Up) {
+            return true;
+        } else {
+            throw new UnknownVM();
+        }
     }
 
     @Override

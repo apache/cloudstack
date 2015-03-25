@@ -38,10 +38,10 @@ public class VmwareInvestigator extends AdapterBase implements Investigator {
     }
 
     @Override
-    public Boolean isVmAlive(VirtualMachine vm, Host host) {
+    public Boolean isVmAlive(VirtualMachine vm, Host host) throws UnknownVM {
         if (vm.getHypervisorType() == HypervisorType.VMware)
             return true;
 
-        return null;
+        throw new UnknownVM();
     }
 }

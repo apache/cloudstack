@@ -55,6 +55,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.ha.Investigator.UnknownVM;
 import com.cloud.ha.dao.HighAvailabilityDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -481,10 +482,13 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                 Investigator investigator = null;
                 for (Investigator it : investigators) {
                     investigator = it;
-                    alive = investigator.isVmAlive(vm, host);
-                    s_logger.info(investigator.getName() + " found " + vm + "to be alive? " + alive);
-                    if (alive != null) {
+                    try
+                    {
+                        alive = investigator.isVmAlive(vm, host);
+                        s_logger.info(investigator.getName() + " found " + vm + " to be alive? " + alive);
                         break;
+                    } catch (UnknownVM e) {
+                        s_logger.info(investigator.getName() + " could not find " + vm);
                     }
                 }
 
