@@ -18,6 +18,7 @@
 package com.cloud.network.router;
 
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
@@ -1643,7 +1644,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
                 try {
                     final MessageDigest digest = MessageDigest.getInstance("SHA-512");
-                    final byte [] rawDigest = vpc.getUuid().getBytes();
+                    final byte [] rawDigest = vpc.getUuid().getBytes(Charset.defaultCharset());
                     digest.update(rawDigest);
 
                     final BigInteger password = new BigInteger(1, digest.digest());
