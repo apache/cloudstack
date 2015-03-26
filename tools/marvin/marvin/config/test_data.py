@@ -41,6 +41,15 @@ test_data = {
             "name": "Project",
         "displaytext": "Test project"
     },
+    "publiciprange": {
+        "gateway": "",
+        "netmask": "",
+        "startip": "",
+        "endip": "",
+        "forvirtualnetwork": "true",
+        "vlan": "",
+        "zoneid": ""
+    },
     "private_gateway": {
        "ipaddress": "172.16.1.2",
        "gateway": "172.16.1.1",
@@ -62,14 +71,6 @@ test_data = {
         "username": "test-account2",
         "password": "password"
     },
-    "vmware_cluster" : {
-            "hypervisor": 'VMware',
-            "clustertype": 'ExternalManaged',
-            "username": 'administrator',
-            "password": 'password_123',
-            "url": 'http://10.147.60.15/42xescauto spaces/42xesc Clusters',
-            "clustername": 'VMWare Cluster with Space in DC name',
-        },
     "small": {
         "displayname": "testserver",
         "username": "root",
@@ -94,8 +95,8 @@ test_data = {
         "name": "Tiny Instance",
         "displaytext": "Tiny Instance",
         "cpunumber": 1,
-        "cpuspeed": 100,  # in MHz
-        "memory": 128,  # In MBs
+        "cpuspeed": 256,  # in MHz
+        "memory": 256,  # In MBs
     },
     "service_offerings": {
         "name": "Tiny Instance",
@@ -190,24 +191,23 @@ test_data = {
         },
     },
     "nw_off_isolated_netscaler": {
-        "name": "Network offering-ns services",
-        "displaytext": "Network offering-ns services",
-        "guestiptype": "Isolated",
-        "supportedservices":
-        "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat",
-        "traffictype": "GUEST",
-        "availability": "Optional'",
-        "serviceProviderList": {
-            "Dhcp": "VirtualRouter",
-            "Dns": "VirtualRouter",
-            "SourceNat": "VirtualRouter",
-            "PortForwarding": "VirtualRouter",
-            "Vpn": "VirtualRouter",
-            "Firewall": "VirtualRouter",
-            "Lb": "NetScaler",
-            "UserData": "VirtualRouter",
-            "StaticNat": "VirtualRouter"
-        }
+                "name": 'Netscaler',
+                "displaytext": 'Netscaler',
+                "guestiptype": 'Isolated',
+                "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
+                "traffictype": 'GUEST',
+                "availability": 'Optional',
+                "serviceProviderList": {
+                    "Dhcp": 'VirtualRouter',
+                    "Dns": 'VirtualRouter',
+                    "SourceNat": 'VirtualRouter',
+                    "PortForwarding": 'VirtualRouter',
+                    "Vpn": 'VirtualRouter',
+                    "Firewall": 'VirtualRouter',
+                    "Lb": 'Netscaler',
+                    "UserData": 'VirtualRouter',
+                    "StaticNat": 'VirtualRouter',
+                },
     },
     "nw_off_isolated_persistent": {
         "name": 'Test Nw off isolated persistent',
@@ -323,7 +323,21 @@ test_data = {
         "affinity": {
             "name": "webvms",
             "type": "host anti-affinity",
+        }
+    },
+    "virtual_machine_userdata": {
+        "displayname": "Test VM",
+        "username": "root",
+        "password": "password",
+        "ssh_port": 22,
+        "privateport": 22,
+        "publicport": 22,
+        "protocol": "TCP",
+        "affinity": {
+            "name": "webvms",
+            "type": "host anti-affinity",
         },
+        "userdata": "This is sample data"
     },
     "virtual_machine2": {
         "name": "testvm2",
@@ -772,6 +786,11 @@ test_data = {
         "mode": "HTTP_DOWNLOAD",
         "templatefilter": "self"
     },
+    "volume_from_snapshot": {
+        "diskname": 'Volume from snapshot',
+        "size": "1",
+        "zoneid": ""
+    },
     "templatefilter": 'self',
     "templates": {
         "displaytext": 'Template',
@@ -809,6 +828,13 @@ test_data = {
         "endport": "22",
         "cidrlist": "0.0.0.0/0"
     },
+    "ingress_rule_ICMP": {
+        "name": 'ICMP',
+        "protocol": 'ICMP',
+        "startport": -1,
+        "endport": -1,
+        "cidrlist": '0.0.0.0/0',
+    },
     "vpncustomergateway": {
             "ipsecpsk": "secreatKey",
             "ikepolicy": "aes128-sha1",
@@ -817,13 +843,20 @@ test_data = {
             "epslifetime": "3600",
             "dpd": "false"
     },
+    "vlan_ip_range": {
+                "startip": "",
+                "endip": "",
+                "netmask": "",
+                "gateway": "",
+                "forvirtualnetwork": "false",
+                "vlan": "untagged",
+    },
     "ostype": "CentOS 5.6 (64-bit)",
     "sleep": 90,
     "timeout": 10,
     "page": 1,
     "pagesize": 2,
     "listall": 'true',
-    "host_password": "password",
     "advanced_sg": {
         "zone": {
             "name": "",
@@ -848,66 +881,36 @@ test_data = {
         "iscsi://192.168.100.21/iqn.2012-01.localdomain.clo-cstack-cos6:iser/1",
         "name": "Primary iSCSI"
     },
-    "volume": {"diskname": "Test Volume"},
+    "volume": {"diskname": "Test Volume",
+               "size": 1
+    },
+    "volume_write_path": {
+        "diskname": "APP Data Volume",
+        "size": 1,   # in GBs
+        "xenserver": {"rootdiskdevice":"/dev/xvda",
+                     "datadiskdevice_1": '/dev/xvdb',
+                    "datadiskdevice_2": '/dev/xvdc',   # Data Disk
+                    },
+        "KVM":       {"rootdiskdevice": "/dev/vda",
+                    "datadiskdevice_1": "/dev/vdb",
+                    "datadiskdevice_2": "/dev/vdc"
+                    },
+        "vmware":    {"rootdiskdevice": "/dev/hda",
+                    "datadiskdevice_1": "/dev/hdb",
+                    "datadiskdevice_2": "/dev/hdc"
+                    }
+    },
+    "data_write_paths": {
+                "mount_dir": "/mnt/tmp",
+                "sub_dir": "test",
+                "sub_lvl_dir1": "test1",
+                "sub_lvl_dir2": "test2",
+                "random_data": "random.data",
+    },
     "custom_volume": {
         "customdisksize": 1,
         "diskname": "Custom disk",
     },
-    "upload_volume": {
-        "diskname": "UploadVol",
-        "format": "VHD",
-        "url":
-        "http://10.147.28.7/templates/393d3550-05ef-330f-9b8c-745b0e699759.vhd",
-        "checksum": "",
-    },
-    "browser_upload_volume":{
-          "VHD": {
-        "diskname": "XenUploadVol",
-        "url": "http://10.147.28.7/templates/rajani-thin-volume.vhd",
-        "checksum": "09b08b6abb1b903fca7711d3ac8d6598",
-                },
-          "OVA": {
-        "diskname": "VMwareUploadVol",
-        "url": "http://10.147.28.7/templates/Autoscale_Template/CentOS5.5(64bit)-vmware-autoscale.ova",
-        "checksum": "02de0576dd3a61ab59c03fd795fc86ac",
-                },
-          "QCOW2": {
-        "diskname": "KVMUploadVol",
-        "url": "http://10.147.28.7/templates/rajani-thin-volume.qcow2",
-        "checksum": "da997b697feaa2f1f6e0d4785b0cece2",
-                },
-    'browser_resized_disk_offering': {
-        "displaytext": "Resizeddisk",
-        "name": "Resizeddisk",
-        "disksize": 3,
-    }
-},
-    "browser_upload_template": {
-          "VHD": {
-        "templatename": "XenUploadtemplate",
-        "displaytext": "XenUploadtemplate",
-        "url": "http://10.147.28.7/templates/builtin/centos56-x86_64.vhd.bz2",
-        "hypervisor":"XenServer",
-        "checksum": "09b08b6abb1b903fca7711d3ac8d6598",
-        "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
-                },
-          "OVA": {
-        "templatename": "VMwareUploadtemplate",
-        "displaytext": "VMwareUploadtemplate",
-        "url": "http://nfs1.lab.vmops.com/templates/vmware/CentOS5.3-x86_64.ova",
-        "checksum": "02de0576dd3a61ab59c03fd795fc86ac",
-        "hypervisor":"VMware",
-        "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
-                },
-          "QCOW2": {
-        "templatename": "KVMUploadtemplate",
-        "displaytext": "VMwareUploadtemplate",
-        "url": "http://10.147.28.7/templates/builtin/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2",
-        "checksum": "da997b697feaa2f1f6e0d4785b0cece2",
-        "hypervisor":"KVM",
-        "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
-                },
-                              },
     "recurring_snapshot": {
         "maxsnaps": 2,
         "timezone": "US/Arizona",
@@ -961,13 +964,6 @@ test_data = {
     "forvirtualnetwork": "true",
     "customdisksize": 1,
     "diskname": "Test Volume",
-    "portableIpRange": {
-        "gateway": "10.223.252.195",
-        "netmask": "255.255.255.192",
-        "startip": "10.223.252.196",
-        "endip": "10.223.252.197",
-        "vlan": "1001"
-    },
     "sparse": {
         "name": "Sparse Type Disk offering",
         "displaytext":
@@ -1419,24 +1415,6 @@ test_data = {
                 },
                 "ostype": 'CentOS 5.6 (64-bit)',
         },
-        "ldap_account": {
-            "email": "rmurphy@cloudstack.org",
-            "firstname": "Ryan",
-            "lastname": "Murphy",
-            "username": "rmurphy",
-            "password": "internalcloudstackpassword",
-            },
-        "ldapConfiguration_1": {
-            "basedn": "dc=cloudstack,dc=org",
-            "emailAttribute": "mail",
-            "userObject": "inetOrgPerson",
-            "usernameAttribute": "uid",
-            "hostname": "localhost",
-            "port": "10389",
-            "ldapUsername": "rmurphy",
-            "ldapPassword": "password"
-            },
-
       "test_34_DeployVM_in_SecondSGNetwork": {
           "zone": "advsg",
           "config": "D:\ACS-Repo\setup\dev\\advancedsg.cfg",#Absolute path to cfg file
@@ -1467,4 +1445,142 @@ test_data = {
               }
           ]
       },
+    "configurableData":
+    {
+        "portableIpRange": {
+            "gateway": "10.223.59.1",
+            "netmask": "255.255.255.0",
+            "startip": "10.223.59.200",
+            "endip": "10.223.59.240",
+            "vlan": "1000"
+        },
+        "netscaler": {
+            "ipaddress": "",
+            "username": "",
+            "password": "",
+            "networkdevicetype": "",
+            "publicinterface": "",
+            "privateinterface": "",
+            "numretries": "",
+            "lbdevicededicated": "False",
+            "lbdevicecapacity": 2,
+            "port": 22
+        },
+        "iscsi": {
+            "url": "",
+            "name": "Primary iSCSI"
+        },
+        "host": {
+                 "publicport": 22,
+                 "username": "root",
+                 "password": "password",
+        },
+       "ldap_account": {
+            "email": "",
+            "firstname": "",
+            "lastname": "",
+            "username": "",
+            "password": "",
+        },
+        "ldap_configuration": {
+            "basedn": "",
+            "emailAttribute": "",
+            "userObject": "",
+            "usernameAttribute": "",
+            "hostname": "",
+            "port": "",
+            "ldapUsername": "",
+            "ldapPassword": ""
+        },
+        "systemVmDelay": 120,
+	"setUsageConfigurationThroughTestCase": False,
+	"vmware_cluster" : {
+            "hypervisor": 'VMware',
+            "clustertype": 'ExternalManaged',
+            "username": '',
+            "password": '',
+            "url": '',
+            "clustername": 'VMWare Cluster with Space in DC name',
+        },
+        "upload_volume": {
+            "diskname": "UploadVol",
+            "format": "VHD",
+            "url":"http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
+            "checksum": "",
+        },
+    "browser_upload_volume":{
+          "VHD": {
+        "diskname": "XenUploadVol",
+        "url": "http://10.147.28.7/templates/rajani-thin-volume.vhd",
+        "checksum": "09b08b6abb1b903fca7711d3ac8d6598",
+                },
+          "OVA": {
+        "diskname": "VMwareUploadVol",
+        "url": "http://10.147.28.7/templates/Autoscale_Template/CentOS5.5(64bit)-vmware-autoscale.ova",
+        "checksum": "da997b697feaa2f1f6e0d4785b0cece2",
+                },
+          "QCOW2": {
+        "diskname": "KVMUploadVol",
+        "url": "http://10.147.28.7/templates/rajani-thin-volume.qcow2",
+        "checksum": "02de0576dd3a61ab59c03fd795fc86ac",
+                },
+    'browser_resized_disk_offering': {
+        "displaytext": "Resizeddisk",
+        "name": "Resizeddisk",
+        "disksize": 3,
+    }
+},
+    "browser_upload_template": {
+          "VHD": {
+        "templatename": "XenUploadtemplate",
+        "displaytext": "XenUploadtemplate",
+        "url": "http://10.147.28.7/templates/builtin/centos56-x86_64.vhd.bz2",
+        "hypervisor":"XenServer",
+        "checksum": "09b08b6abb1b903fca7711d3ac8d6598",
+        "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
+                },
+          "OVA": {
+        "templatename": "VMwareUploadtemplate",
+        "displaytext": "VMwareUploadtemplate",
+        "url": "http://nfs1.lab.vmops.com/templates/vmware/CentOS5.3-x86_64.ova",
+        "checksum": "02de0576dd3a61ab59c03fd795fc86ac",
+        "hypervisor":"VMware",
+        "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
+                },
+          "QCOW2": {
+        "templatename": "KVMUploadtemplate",
+        "displaytext": "VMwareUploadtemplate",
+        "url": "http://10.147.28.7/templates/builtin/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2",
+        "checksum": "da997b697feaa2f1f6e0d4785b0cece2",
+        "hypervisor":"KVM",
+        "ostypeid":"2e02e376-cdf3-11e4-beb3-8aa6272b57ef"
+                },
+                              },
+        "bootableIso":
+                {
+                    "displaytext": "Test Bootable ISO",
+                    "name": "testISO",
+                    "bootable": True,
+                    "ispublic": False,
+                    "url": "http://10.147.40.145/ISO/CentOS-6.3-x86_64-bin-DVD1.iso",
+                    "ostype": 'CentOS 6.3 (64-bit)',
+                    "mode": 'HTTP_DOWNLOAD'
+        },
+     "setHostConfigurationForIngressRule": False,
+     "vmxnet3template": {
+            "displaytext": "VMXNET3 Template",
+            "name": "VMXNET3 template",
+            "ostype": "CentOS 5.6 (64-bit)",
+            "isfeatured": True,
+            "ispublic": False,
+            "isextractable": True,
+            "mode": "HTTP_DOWNLOAD",
+            "templatefilter": "self",
+            "url": "http://10.147.28.7/templates/4.3.0.2/systemvm64template-2014-09-30-4.3-vmware.ova",
+            "hypervisor": "vmware",
+            "format": "OVA",
+            "nicadapter": "vmxnet3"
+        }
+    }
 }
+
