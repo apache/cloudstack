@@ -3517,7 +3517,22 @@
                                                 label: 'label.algorithm',
                                                 isEditable: true,
                                                 select: function(args) {
-                                                    var data = getLBAlgorithms(args.context.networks[0]);
+                                                    var data = [{
+                                                            id: 'roundrobin',
+                                                            name: 'roundrobin',
+                                                            description: _l('label.lb.algorithm.roundrobin')
+                                                        }, {
+                                                            id: 'leastconn',
+                                                            name: 'leastconn',
+                                                            description: _l('label.lb.algorithm.leastconn')
+                                                        }, {
+                                                            id: 'source',
+                                                            name: 'source',
+                                                            description: _l('label.lb.algorithm.source')
+                                                        }];
+                                                    if (typeof args.context != 'undefined') {
+                                                        data = getLBAlgorithms(args.context.networks[0]);
+                                                    }
                                                     args.response.success({
                                                         data: data
                                                     });
