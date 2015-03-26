@@ -49,10 +49,12 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
+import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
@@ -66,6 +68,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.HostEnvironment;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.hypervisor.xenserver.resource.XsHost;
+import com.cloud.hypervisor.xenserver.resource.XsLocalNetwork;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -586,6 +589,7 @@ public class CitrixRequestWrapperTest {
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(pingTestCommand, citrixResourceBase);
+
         verify(citrixResourceBase, times(1)).getConnection();
 
         assertFalse(answer.getResult());
@@ -627,6 +631,7 @@ public class CitrixRequestWrapperTest {
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(startCommand, citrixResourceBase);
+
         verify(citrixResourceBase, times(1)).getConnection();
 
         assertFalse(answer.getResult());
@@ -658,6 +663,74 @@ public class CitrixRequestWrapperTest {
 
         verify(citrixResourceBase, times(1)).getConnection();
         verify(citrixResourceBase, times(1)).setupvSwitchNetwork(conn);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testCheckSshCommand() {
+        final CheckSshCommand sshCommand = new CheckSshCommand("Test", "127.0.0.1", 22);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(sshCommand, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testSecurityGroupRulesCommand() {
+        final Connection conn = Mockito.mock(Connection.class);
+        final XsHost xsHost = Mockito.mock(XsHost.class);
+
+        final SecurityGroupRulesCmd sshCommand = new SecurityGroupRulesCmd();
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        when(citrixResourceBase.getHost()).thenReturn(xsHost);
+
+        final Answer answer = wrapper.execute(sshCommand, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testOvsFetchInterfaceCommand() {
+        final String label = "[abc]";
+
+        final Connection conn = Mockito.mock(Connection.class);
+        final XsLocalNetwork network = Mockito.mock(XsLocalNetwork.class);
+
+        final XsHost xsHost = Mockito.mock(XsHost.class);
+
+        final SecurityGroupRulesCmd sshCommand = new SecurityGroupRulesCmd();
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.isXcp()).thenReturn(true);
+        when(citrixResourceBase.getLabel()).thenReturn("[abc]");
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        when(citrixResourceBase.getHost()).thenReturn(xsHost);
+
+        try {
+            when(citrixResourceBase.getNetworkByName(conn, label)).thenReturn(network);
+        } catch (final XenAPIException e) {
+            fail(e.getMessage());
+        } catch (final XmlRpcException e) {
+            fail(e.getMessage());
+        }
+
+        final Answer answer = wrapper.execute(sshCommand, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
 
         assertFalse(answer.getResult());
     }

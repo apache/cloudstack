@@ -461,12 +461,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (cmd instanceof NetworkElementCommand) {
             return _vrResource.executeRequest((NetworkElementCommand)cmd);
-        } else if (clazz == CheckSshCommand.class) {
-            return execute((CheckSshCommand)cmd);
-        } else if (clazz == SecurityGroupRulesCmd.class) {
-            return execute((SecurityGroupRulesCmd)cmd);
-        } else if (clazz == OvsFetchInterfaceCommand.class) {
-            return execute((OvsFetchInterfaceCommand)cmd);
         } else if (clazz == OvsCreateGreTunnelCommand.class) {
             return execute((OvsCreateGreTunnelCommand)cmd);
         } else if (clazz == OvsDeleteFlowCommand.class) {
@@ -847,17 +841,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         if (type == TrafficType.Guest) {
-            return new XsLocalNetwork(Network.getByUuid(conn, _host.getGuestNetwork()), null, PIF.getByUuid(conn, _host.getGuestPif()), null);
+            return new XsLocalNetwork(this, Network.getByUuid(conn, _host.getGuestNetwork()), null, PIF.getByUuid(conn, _host.getGuestPif()), null);
         } else if (type == TrafficType.Control) {
             setupLinkLocalNetwork(conn);
-            return new XsLocalNetwork(Network.getByUuid(conn, _host.getLinkLocalNetwork()));
+            return new XsLocalNetwork(this, Network.getByUuid(conn, _host.getLinkLocalNetwork()));
         } else if (type == TrafficType.Management) {
-            return new XsLocalNetwork(Network.getByUuid(conn, _host.getPrivateNetwork()), null, PIF.getByUuid(conn, _host.getPrivatePif()), null);
+            return new XsLocalNetwork(this, Network.getByUuid(conn, _host.getPrivateNetwork()), null, PIF.getByUuid(conn, _host.getPrivatePif()), null);
         } else if (type == TrafficType.Public) {
-            return new XsLocalNetwork(Network.getByUuid(conn, _host.getPublicNetwork()), null, PIF.getByUuid(conn, _host.getPublicPif()), null);
+            return new XsLocalNetwork(this, Network.getByUuid(conn, _host.getPublicNetwork()), null, PIF.getByUuid(conn, _host.getPublicPif()), null);
         } else if (type == TrafficType.Storage) {
             /*   TrafficType.Storage is for secondary storage, while storageNetwork1 is for primary storage, we need better name here */
-            return new XsLocalNetwork(Network.getByUuid(conn, _host.getStorageNetwork1()), null, PIF.getByUuid(conn, _host.getStoragePif1()), null);
+            return new XsLocalNetwork(this, Network.getByUuid(conn, _host.getStorageNetwork1()), null, PIF.getByUuid(conn, _host.getStoragePif1()), null);
         }
 
         throw new CloudRuntimeException("Unsupported network type: " + type);
@@ -3571,7 +3565,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return vdis;
     }
 
-    protected String connect(final Connection conn, final String vmName, final String ipAddress, final int port) {
+    public String connect(final Connection conn, final String vmName, final String ipAddress, final int port) {
         for (int i = 0; i <= _retry; i++) {
             try {
                 final Set<VM> vms = VM.getByNameLabel(conn, vmName);
@@ -3729,7 +3723,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
         final Network nk = mgmtPifRec.network;
         final Network.Record nkRec = nk.getRecord(conn);
-        return new XsLocalNetwork(nk, nkRec, mgmtPif, mgmtPifRec);
+        return new XsLocalNetwork(this, nk, nkRec, mgmtPif, mgmtPifRec);
     }
 
     protected VIF getCorrectVif(final Connection conn, final VM router, final Network network) throws XmlRpcException, XenAPIException {
@@ -3864,10 +3858,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      *
      * @see CitrixResourceBase#enableVlanNetwork
      */
-    protected XsLocalNetwork getNetworkByName(final Connection conn, final String name) throws XenAPIException, XmlRpcException {
+    public XsLocalNetwork getNetworkByName(final Connection conn, final String name) throws XenAPIException, XmlRpcException {
         final Set<Network> networks = Network.getByNameLabel(conn, name);
         if (networks.size() == 1) {
-            return new XsLocalNetwork(networks.iterator().next(), null, null, null);
+            return new XsLocalNetwork(this, networks.iterator().next(), null, null, null);
         }
 
         if (networks.size() == 0) {
@@ -3882,7 +3876,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         long earliestTimestamp = Long.MAX_VALUE;
         int earliestRandom = Integer.MAX_VALUE;
         for (final Network network : networks) {
-            final XsLocalNetwork nic = new XsLocalNetwork(network);
+            final XsLocalNetwork nic = new XsLocalNetwork(this, network);
 
             if (nic.getPif(conn) != null) {
                 return nic;
@@ -3906,7 +3900,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
         }
 
-        return earliestNetwork != null ? new XsLocalNetwork(earliestNetwork, earliestNetworkRecord, null, null) : null;
+        return earliestNetwork != null ? new XsLocalNetwork(this, earliestNetwork, earliestNetworkRecord, null, null) : null;
     }
 
     protected String generateTimeStamp() {
@@ -5314,7 +5308,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         String label = cmd.getLabel();
         //FIXME: this is a tricky to pass the network checking in XCP. I temporary get default label from Host.
-        if (is_xcp()) {
+        if (isXcp()) {
             label = getLabel();
         }
         s_logger.debug("Will look for network with name-label:" + label + " on host " + _host.getIp());
@@ -6894,67 +6888,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new Answer(cmd, true, result);
     }
 
-    /**
-     * XsNic represents a network and the host's specific PIF.
-     */
-    protected class XsLocalNetwork {
-        private final Network _n;
-        private Network.Record _nr;
-        private PIF _p;
-        private PIF.Record _pr;
-
-        public XsLocalNetwork(final Network n) {
-            this(n, null, null, null);
-        }
-
-        public XsLocalNetwork(final Network n, final Network.Record nr, final PIF p, final PIF.Record pr) {
-            _n = n;
-            _nr = nr;
-            _p = p;
-            _pr = pr;
-        }
-
-        public Network getNetwork() {
-            return _n;
-        }
-
-        public Network.Record getNetworkRecord(final Connection conn) throws XenAPIException, XmlRpcException {
-            if (_nr == null) {
-                _nr = _n.getRecord(conn);
-            }
-
-            return _nr;
-        }
-
-        public PIF getPif(final Connection conn) throws XenAPIException, XmlRpcException {
-            if (_p == null) {
-                final Network.Record nr = getNetworkRecord(conn);
-                for (final PIF pif : nr.PIFs) {
-                    final PIF.Record pr = pif.getRecord(conn);
-                    if (_host.getUuid().equals(pr.host.getUuid(conn))) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Found a network called " + nr.nameLabel + " on host=" + _host.getIp() + ";  Network=" + nr.uuid + "; pif=" + pr.uuid);
-                        }
-                        _p = pif;
-                        _pr = pr;
-                        break;
-                    }
-                }
-            }
-            return _p;
-        }
-
-        public PIF.Record getPifRecord(final Connection conn) throws XenAPIException, XmlRpcException {
-            if (_pr == null) {
-                final PIF p = getPif(conn);
-                if (_pr == null) {
-                    _pr = p.getRecord(conn);
-                }
-            }
-            return _pr;
-        }
-    }
-
     protected String getGuestOsType(final String stdType, String platformEmulator, final boolean bootFromCD) {
         if (platformEmulator == null) {
             s_logger.debug("no guest OS type, start it as HVM guest");
@@ -7259,7 +7192,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     public void setRunLevel(final int level) {
     }
 
-    private boolean is_xcp() {
+    public boolean isXcp() {
         final Connection conn = getConnection();
         final String result = callHostPlugin(conn, "ovstunnel", "is_xcp");
         if (result.equals("XCP")) {
@@ -7268,7 +7201,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return false;
     }
 
-    private String getLabel() {
+    public String getLabel() {
         final Connection conn = getConnection();
         final String result = callHostPlugin(conn, "ovstunnel", "getLabel");
         return result;
