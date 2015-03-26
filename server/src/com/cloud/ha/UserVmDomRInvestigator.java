@@ -53,12 +53,12 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
     private final VpcVirtualNetworkApplianceManager _vnaMgr = null;
 
     @Override
-    public Boolean isVmAlive(VirtualMachine vm, Host host) {
+    public boolean isVmAlive(VirtualMachine vm, Host host) throws UnknownVM {
         if (vm.getType() != VirtualMachine.Type.User) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Not a User Vm, unable to determine state of " + vm + " returning null");
             }
-            return null;
+            throw new UnknownVM();
         }
 
         if (s_logger.isDebugEnabled()) {
@@ -100,7 +100,7 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Returning null since we're unable to determine state of " + vm);
         }
-        return null;
+        throw new UnknownVM();
     }
 
     @Override

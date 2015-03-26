@@ -42,7 +42,7 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
     private final NetworkModel _networkMgr = null;
 
     @Override
-    public Boolean isVmAlive(VirtualMachine vm, Host host) {
+    public boolean isVmAlive(VirtualMachine vm, Host host) throws UnknownVM {
         if (!vm.getType().isUsedBySystem()) {
             s_logger.debug("Not a System Vm, unable to determine state of " + vm + " returning null");
         }
@@ -53,13 +53,13 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
 
         if (vm.getHostId() == null) {
             s_logger.debug("There's no host id for " + vm);
-            return null;
+            throw new UnknownVM();
         }
 
         HostVO vmHost = _hostDao.findById(vm.getHostId());
         if (vmHost == null) {
             s_logger.debug("Unable to retrieve the host by using id " + vm.getHostId());
-            return null;
+            throw new UnknownVM();
         }
 
         List<? extends Nic> nics = _networkMgr.getNicsForTraffic(vm.getId(), TrafficType.Management);
@@ -67,7 +67,7 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to find a management nic, cannot ping this system VM, unable to determine state of " + vm + " returning null");
             }
-            return null;
+            throw new UnknownVM();
         }
 
         for (Nic nic : nics) {
@@ -105,7 +105,7 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("unable to determine state of " + vm + " returning null");
         }
-        return null;
+        throw new UnknownVM();
     }
 
     @Override
