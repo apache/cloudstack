@@ -889,7 +889,7 @@ public class VolumeServiceImpl implements VolumeService {
         AsyncCallFuture<VolumeApiResult> future = context.future;
         VolumeApiResult res = new VolumeApiResult(destVolume);
         try {
-            if (res.isFailed()) {
+            if (result.isFailed()) {
                 destVolume.processEvent(Event.OperationFailed);
                 srcVolume.processEvent(Event.OperationFailed);
                 res.setResult(result.getResult());
