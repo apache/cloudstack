@@ -37,6 +37,7 @@ import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootCommand;
@@ -99,6 +100,7 @@ public class CitrixRequestWrapper extends RequestWrapper {
         map.put(GetVncPortCommand.class, new CitrixGetVncPortCommandWrapper());
         map.put(SetupCommand.class, new CitrixSetupCommandWrapper());
         map.put(MaintainCommand.class, new CitrixMaintainCommandWrapper());
+        map.put(PingTestCommand.class, new CitrixPingTestCommandWrapper());
     }
 
     public static CitrixRequestWrapper getInstance() {

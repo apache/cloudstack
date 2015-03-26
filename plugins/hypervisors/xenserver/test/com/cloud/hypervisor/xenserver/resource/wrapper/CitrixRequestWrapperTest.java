@@ -38,6 +38,7 @@ import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
@@ -551,6 +552,19 @@ public class CitrixRequestWrapperTest {
         //        }
 
         final Answer answer = wrapper.execute(storageDownloadCommand, citrixResourceBase);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testPingTestCommandHostIp() {
+        final PingTestCommand storageDownloadCommand = new PingTestCommand("127.0.0.1");
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(storageDownloadCommand, citrixResourceBase);
+        verify(citrixResourceBase, times(1)).getConnection();
 
         assertFalse(answer.getResult());
     }

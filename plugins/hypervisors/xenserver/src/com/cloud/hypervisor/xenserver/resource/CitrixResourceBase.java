@@ -453,8 +453,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (cmd instanceof NetworkElementCommand) {
             return _vrResource.executeRequest((NetworkElementCommand)cmd);
-        } else if (clazz == PingTestCommand.class) {
-            return execute((PingTestCommand)cmd);
         } else if (clazz == CheckOnHostCommand.class) {
             return execute((CheckOnHostCommand)cmd);
         } else if (clazz == ModifySshKeysCommand.class) {
@@ -1945,7 +1943,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new Answer(cmd);
     }
 
-    private boolean doPingTest(final Connection conn, final String computingHostIp) {
+    public boolean doPingTest(final Connection conn, final String computingHostIp) {
         final com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.getIp(), 22);
         try {
             sshConnection.connect(null, 60000, 60000);
@@ -1970,7 +1968,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new CheckOnHostAnswer(cmd, null, "Not Implmeneted");
     }
 
-    private boolean doPingTest(final Connection conn, final String domRIp, final String vmIp) {
+    public boolean doPingTest(final Connection conn, final String domRIp, final String vmIp) {
         final String args = "-i " + domRIp + " -p " + vmIp;
         final String result = callHostPlugin(conn, "vmops", "pingtest", "args", args);
         if (result == null || result.isEmpty()) {
