@@ -227,8 +227,9 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                                      )
 
         max_size = int(config[0].value)
-
-        if int(list_volume_response[0].size) > max_size:
+        self.debug(max_size)
+        self.debug(int(list_volume_response[0].size)/(1024*1024*1024))
+        if (int(list_volume_response[0].size)/(1024*1024*1024)) > max_size:
             self.fail("Global Config storage.max.volume.upload.size is not considered with Browser Based Upload volumes")
 
 
@@ -730,6 +731,14 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         and creation of template, volume from snapshot
         """
 
+        if self.uploadvolumeformat=="QCOW2":
+            config = Configurations.list(
+                                     self.apiclient,
+                                     name='kvm.snapshot.enabled'
+                                     )
+            kvmsnapshotenabled = config[0].value
+            if kvmsnapshotenabled == "false":
+                self.fail("Please enable kvm.snapshot.enable global config")
         list_volumes = Volume.list(
             self.apiclient,
             id=volumedetails.id
