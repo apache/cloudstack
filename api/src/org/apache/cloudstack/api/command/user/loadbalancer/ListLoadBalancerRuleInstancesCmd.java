@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.loadbalancer;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.response.LoadBalancerRuleVmMapResponse;
 import org.apache.log4j.Logger;
 
@@ -129,7 +130,9 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
                     LoadBalancerRuleVmMapResponse lbRuleVmIpResponse = new LoadBalancerRuleVmMapResponse();
                     vmResponses.get(i).setServiceState(serviceStates.get(i));
                     lbRuleVmIpResponse.setUserVmResponse(vmResponses.get(i));
-                    lbRuleVmIpResponse.setIpAddr(_lbService.listLbVmIpAddress(getId(), result.get(i).getId()));
+                    //get vm id from the uuid
+                    VirtualMachine lbvm = _entityMgr.findByUuid(VirtualMachine.class, vmResponses.get(i).getId());
+                    lbRuleVmIpResponse.setIpAddr(_lbService.listLbVmIpAddress(getId(), lbvm.getId()));
                     lbRuleVmIpResponse.setObjectName("lbrulevmidip");
                     listlbVmRes.add(lbRuleVmIpResponse);
                 }
