@@ -340,6 +340,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return _host;
     }
 
+    public boolean isOvs() {
+        return _isOvs;
+    }
+
+    public void setIsOvs(final boolean isOvs) {
+        _isOvs = isOvs;
+    }
+
     public boolean isSecurityGroupEnabled() {
         return _securityGroupEnabled;
     }
@@ -453,12 +461,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (cmd instanceof NetworkElementCommand) {
             return _vrResource.executeRequest((NetworkElementCommand)cmd);
-        } else if (clazz == CheckOnHostCommand.class) {
-            return execute((CheckOnHostCommand)cmd);
-        } else if (clazz == ModifySshKeysCommand.class) {
-            return execute((ModifySshKeysCommand)cmd);
-        } else if (clazz == StartCommand.class) {
-            return execute((StartCommand)cmd);
         } else if (clazz == CheckSshCommand.class) {
             return execute((CheckSshCommand)cmd);
         } else if (clazz == SecurityGroupRulesCmd.class) {
@@ -467,8 +469,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((OvsFetchInterfaceCommand)cmd);
         } else if (clazz == OvsCreateGreTunnelCommand.class) {
             return execute((OvsCreateGreTunnelCommand)cmd);
-        } else if (clazz == OvsSetTagAndFlowCommand.class) {
-            return execute((OvsSetTagAndFlowCommand)cmd);
         } else if (clazz == OvsDeleteFlowCommand.class) {
             return execute((OvsDeleteFlowCommand)cmd);
         } else if (clazz == OvsVpcPhysicalTopologyConfigCommand.class) {
@@ -863,7 +863,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         throw new CloudRuntimeException("Unsupported network type: " + type);
     }
 
-    private synchronized Network setupvSwitchNetwork(final Connection conn) {
+    public synchronized Network setupvSwitchNetwork(final Connection conn) {
         try {
             if (_host.getVswitchNetwork() == null) {
                 Network vswitchNw = null;
@@ -1052,7 +1052,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected VIF createVif(final Connection conn, final String vmName, final VM vm, final VirtualMachineTO vmSpec, final NicTO nic) throws XmlRpcException, XenAPIException {
+    public VIF createVif(final Connection conn, final String vmName, final VM vm, final VirtualMachineTO vmSpec, final NicTO nic) throws XmlRpcException, XenAPIException {
         assert nic.getUuid() != null : "Nic should have a uuid value";
 
         if (s_logger.isDebugEnabled()) {
@@ -1198,7 +1198,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected VBD createVbd(final Connection conn, final DiskTO volume, final String vmName, final VM vm, final BootloaderType bootLoaderType, VDI vdi) throws XmlRpcException, XenAPIException {
+    public VBD createVbd(final Connection conn, final DiskTO volume, final String vmName, final VM vm, final BootloaderType bootLoaderType, VDI vdi) throws XmlRpcException, XenAPIException {
         final Volume.Type type = volume.getType();
 
         if (vdi == null) {
@@ -1287,10 +1287,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return null;
     }
 
-    protected void createVGPU(final Connection conn, final StartCommand cmd, final VM vm, final GPUDeviceTO gpuDevice) throws XenAPIException, XmlRpcException {
+    public void createVGPU(final Connection conn, final StartCommand cmd, final VM vm, final GPUDeviceTO gpuDevice) throws XenAPIException, XmlRpcException {
     }
 
-    protected VM createVmFromTemplate(final Connection conn, final VirtualMachineTO vmSpec, final Host host) throws XenAPIException, XmlRpcException {
+    public VM createVmFromTemplate(final Connection conn, final VirtualMachineTO vmSpec, final Host host) throws XenAPIException, XmlRpcException {
         final String guestOsTypeName = getGuestOsType(vmSpec.getOs(), vmSpec.getPlatformEmulator(), vmSpec.getBootloader() == BootloaderType.CD);
         final Set<VM> templates = VM.getByNameLabel(conn, guestOsTypeName);
         if ( templates == null || templates.isEmpty()) {
@@ -1454,7 +1454,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected String handleVmStartFailure(final Connection conn, final String vmName, final VM vm, final String message, final Throwable th) {
+    public String handleVmStartFailure(final Connection conn, final String vmName, final VM vm, final String message, final Throwable th) {
         final String msg = "Unable to start " + vmName + " due to " + message;
         s_logger.warn(msg, th);
 
@@ -1519,7 +1519,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return msg;
     }
 
-    protected VBD createPatchVbd(final Connection conn, final String vmName, final VM vm) throws XmlRpcException, XenAPIException {
+    public VBD createPatchVbd(final Connection conn, final String vmName, final VM vm) throws XmlRpcException, XenAPIException {
 
         if (_host.getSystemvmisouuid() == null) {
             final Set<SR> srs = SR.getByNameLabel(conn, "XenServer Tools");
@@ -1607,7 +1607,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new CheckSshAnswer(cmd);
     }
 
-    private HashMap<String, String> parseDefaultOvsRuleComamnd(final String str) {
+    public HashMap<String, String> parseDefaultOvsRuleComamnd(final String str) {
         final HashMap<String, String> cmd = new HashMap<String, String>();
         final String[] sarr = str.split("/");
         for (int i = 0; i < sarr.length; i++) {
@@ -1864,7 +1864,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     // the idea here is to see if the DiskTO in question is from managed storage and
     // does not yet have an SR
     // if no SR, create it and create a VDI in it
-    private VDI prepareManagedDisk(final Connection conn, final DiskTO disk, final String vmName) throws Exception {
+    public VDI prepareManagedDisk(final Connection conn, final DiskTO disk, final String vmName) throws Exception {
         final Map<String, String> details = disk.getDetails();
 
         if (details == null) {
@@ -3297,7 +3297,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    void startVM(final Connection conn, final Host host, final VM vm, final String vmName) throws Exception {
+    public void startVM(final Connection conn, final Host host, final VM vm, final String vmName) throws Exception {
         Task task = null;
         try {
             task = vm.startOnAsync(conn, host, false, true);

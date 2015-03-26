@@ -25,6 +25,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreateStoragePoolCommand;
@@ -36,13 +37,16 @@ import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.OvsSetTagAndFlowCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.SetupCommand;
+import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
@@ -101,6 +105,10 @@ public class CitrixRequestWrapper extends RequestWrapper {
         map.put(SetupCommand.class, new CitrixSetupCommandWrapper());
         map.put(MaintainCommand.class, new CitrixMaintainCommandWrapper());
         map.put(PingTestCommand.class, new CitrixPingTestCommandWrapper());
+        map.put(CheckOnHostCommand.class, new CitrixCheckOnHostCommandWrapper());
+        map.put(ModifySshKeysCommand.class, new CitrixModifySshKeysCommandWrapper());
+        map.put(StartCommand.class, new CitrixStartCommandWrapper());
+        map.put(OvsSetTagAndFlowCommand.class, new CitrixOvsSetTagAndFlowCommandWrapper());
     }
 
     public static CitrixRequestWrapper getInstance() {
