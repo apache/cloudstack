@@ -17,11 +17,11 @@
 
 package com.cloud.hypervisor.ovm3.objects;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.w3c.dom.Document;
 
 /*

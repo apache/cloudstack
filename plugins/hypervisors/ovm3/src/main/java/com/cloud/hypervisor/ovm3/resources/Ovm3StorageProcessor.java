@@ -17,7 +17,6 @@
 
 package com.cloud.hypervisor.ovm3.resources;
 
-import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.UUID;
@@ -61,12 +60,12 @@ import com.cloud.hypervisor.ovm3.objects.Linux;
 import com.cloud.hypervisor.ovm3.objects.Ovm3ResourceException;
 import com.cloud.hypervisor.ovm3.objects.OvmObject;
 import com.cloud.hypervisor.ovm3.objects.StoragePlugin;
-import com.cloud.hypervisor.ovm3.objects.Xen;
 import com.cloud.hypervisor.ovm3.objects.StoragePlugin.FileProperties;
+import com.cloud.hypervisor.ovm3.objects.Xen;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3Configuration;
 import com.cloud.hypervisor.ovm3.resources.helpers.Ovm3StoragePool;
-import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Volume;
 import com.cloud.storage.resource.StorageProcessor;
 import com.cloud.vm.DiskProfile;
 

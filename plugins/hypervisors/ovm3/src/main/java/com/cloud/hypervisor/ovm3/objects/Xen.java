@@ -17,7 +17,6 @@
 
 package com.cloud.hypervisor.ovm3.objects;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;

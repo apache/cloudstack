@@ -17,7 +17,6 @@
 
 package com.cloud.hypervisor.ovm3.resources.helpers;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
