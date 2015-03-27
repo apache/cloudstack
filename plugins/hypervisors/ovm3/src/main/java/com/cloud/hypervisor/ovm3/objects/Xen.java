@@ -434,7 +434,7 @@ public class Xen extends OvmObject {
                 throw new Ovm3ResourceException("No valid disk found for id: "
                         + disk);
             }
-            String[] st = diskPath.split("/"Char == '\\' ? "\\\\" : "/");
+            String[] st = diskPath.split("/");
             return st[fi];
         }
 
