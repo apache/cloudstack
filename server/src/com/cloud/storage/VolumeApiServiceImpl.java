@@ -1210,7 +1210,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             destPrimaryStorage = _storagePoolDao.findById(exstingVolumeOfVm.getPoolId());
         }
 
-        if (destPrimaryStorage != null && (volumeToAttach.getState() == Volume.State.Allocated || volumeToAttach.getState() == Volume.State.Uploaded)) {
+        boolean volumeOnSecondary = volumeToAttach.getState() == Volume.State.Uploaded;
+
+        if (destPrimaryStorage != null && (volumeToAttach.getState() == Volume.State.Allocated || volumeOnSecondary)) {
             try {
                 newVolumeOnPrimaryStorage = _volumeMgr.createVolumeOnPrimaryStorage(vm, volumeToAttach, rootDiskHyperType, destPrimaryStorage);
             } catch (NoTransitionException e) {
@@ -1243,6 +1245,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
         VolumeVO newVol = _volsDao.findById(newVolumeOnPrimaryStorage.getId());
+        // Getting the fresh vm object in case of volume migration to check the current state of VM
+        if (moveVolumeNeeded || volumeOnSecondary) {
+            vm = _userVmDao.findById(vmId);
+            if (vm == null) {
+                throw new InvalidParameterValueException("VM not found.");
+            }
+        }
         newVol = sendAttachVolumeCommand(vm, newVol, deviceId);
         return newVol;
     }
