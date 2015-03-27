@@ -463,7 +463,7 @@ public class Ovm3StoragePool {
                     try {
                         StoragePlugin sp = new StoragePlugin(c);
                         FileProperties fp = sp.storagePluginGetFileInfo(
-                                poolUuid, host, destPath + File.separator
+                                poolUuid, host, destPath + "/"
                                         + srcIso.getName());
                         if (fp.getSize() != srcIso.getTotalSpace()) {
                             LOGGER.info(" System VM patch ISO file already exists: "

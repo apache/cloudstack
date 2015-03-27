@@ -392,8 +392,8 @@ public class Ovm3VmSupport {
                         NfsTO nfsStore = (NfsTO) store;
                         String secPoolUuid = pool.setupSecondaryStorage(nfsStore
                                 .getUrl());
-                        String isoPath = config.getAgentSecStoragePath() + File.separator
-                                + secPoolUuid + File.separator
+                        String isoPath = config.getAgentSecStoragePath() + "/"
+                                + secPoolUuid + "/"
                                 + template.getPath();
                         vm.addIso(isoPath);
                         /* check if secondary storage is mounted */

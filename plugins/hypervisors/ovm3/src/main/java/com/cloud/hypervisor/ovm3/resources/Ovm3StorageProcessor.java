@@ -156,8 +156,8 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         /* disk should have a uuid */
         // should also be replaced with getVirtualDiskPath ?
         String fileName = UUID.randomUUID().toString() + ".raw";
-        String dst = primaryStorage.getPath() + File.separator
-                + primaryStorage.getUuid() + File.separator + fileName;
+        String dst = primaryStorage.getPath() + "/"
+                + primaryStorage.getUuid() + "/" + fileName;
         try {
             StoragePlugin store = new StoragePlugin(c);
             if (cmd.getTemplateUrl() != null) {
@@ -198,11 +198,11 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         try {
             String secPoolUuid = pool.setupSecondaryStorage(srcImageStore.getUrl());
             String primaryPoolUuid = destData.getDataStore().getUuid();
-            String destPath = config.getAgentOvmRepoPath() + File.separator
-                    + ovmObject.deDash(primaryPoolUuid) + File.separator
+            String destPath = config.getAgentOvmRepoPath() + "/"
+                    + ovmObject.deDash(primaryPoolUuid) + "/"
                     + config.getTemplateDir();
             String sourcePath = config.getAgentSecStoragePath()
-                    + File.separator + secPoolUuid;
+                    + "/" + secPoolUuid;
             Linux host = new Linux(c);
             String destUuid = destTemplate.getUuid();
             /*
@@ -211,13 +211,13 @@ public class Ovm3StorageProcessor implements StorageProcessor {
              * so we can forget about that.
              */
             /* TODO: add checksumming */
-            String srcFile = sourcePath + File.separator
+            String srcFile = sourcePath + "/"
                     + srcData.getPath();
-            if (srcData.getPath().endsWith(File.separator)) {
-                srcFile = sourcePath + File.separator + srcData.getPath()
-                        + File.separator + destUuid + ".raw";
+            if (srcData.getPath().endsWith("/")) {
+                srcFile = sourcePath + "/" + srcData.getPath()
+                        + "/" + destUuid + ".raw";
             }
-            String destFile = destPath + File.separator + destUuid + ".raw";
+            String destFile = destPath + "/" + destUuid + ".raw";
             LOGGER.debug("CopyFrom: " + srcData.getObjectType() + ","
                     + srcFile + " to " + destData.getObjectType() + ","
                     + destFile);
@@ -303,16 +303,16 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             SnapshotObjectTO srcSnap = (SnapshotObjectTO) srcData;
             String secPoolUuid = pool.setupSecondaryStorage(srcData.getDataStore().getUrl());
             String srcFile = config.getAgentSecStoragePath()
-                    + File.separator + secPoolUuid + File.separator
+                    + "/" + secPoolUuid + "/"
                     + srcSnap.getPath();
             // dest
             DataTO destData = cmd.getDestTO();
             TemplateObjectTO destTemplate = (TemplateObjectTO) destData;
             String secPoolUuidTemplate = pool.setupSecondaryStorage(destData.getDataStore().getUrl());
             String destDir = config.getAgentSecStoragePath()
-                    + File.separator + secPoolUuidTemplate + File.separator
+                    + "/" + secPoolUuidTemplate + "/"
                     + destTemplate.getPath();
-            String destFile = destDir + File.separator
+            String destFile = destDir + "/"
                     + destTemplate.getUuid() + ".raw";
             CloudstackPlugin csp = new CloudstackPlugin(c);
             csp.ovsMkdirs(destDir);
@@ -351,9 +351,9 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             String storeUrl = dest.getDataStore().getUrl();
             String secPoolUuid = pool.setupSecondaryStorage(storeUrl);
             String destDir = config.getAgentSecStoragePath()
-                    + File.separator + secPoolUuid + File.separator
+                    + "/" + secPoolUuid + "/"
                     + dest.getPath();
-            String destFile =  destDir + File.separator + src.getPath();
+            String destFile =  destDir + "/" + src.getPath();
             destFile = destFile.concat(".raw");
             // copy
             Linux host = new Linux(c);
@@ -369,7 +369,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             SnapshotObjectTO newSnap = new SnapshotObjectTO();
             // newSnap.setPath(destFile);
             // damnit frickin crap, no reference whatsoever... could use parent ?
-            newSnap.setPath(dest.getPath() + File.separator + src.getPath() + ".raw");
+            newSnap.setPath(dest.getPath() + "/" + src.getPath() + ".raw");
             newSnap.setParentSnapshotPath(null);
             return new CopyCmdAnswer(newSnap);
         } catch (Ovm3ResourceException e) {
@@ -424,8 +424,8 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         DataStoreTO store = isoTO.getDataStore();
         NfsTO nfsStore = (NfsTO) store;
         String secPoolUuid = pool.setupSecondaryStorage(nfsStore.getUrl());
-        return config.getAgentSecStoragePath() + File.separator
-                + secPoolUuid + File.separator + isoTO.getPath();
+        return config.getAgentSecStoragePath() + "/"
+                + secPoolUuid + "/" + isoTO.getPath();
     }
 
     /**
@@ -436,11 +436,11 @@ public class Ovm3StorageProcessor implements StorageProcessor {
      */
     public String getVirtualDiskPath(String diskUuid, String storeUuid) throws Ovm3ResourceException {
         String d = config.getAgentOvmRepoPath() +
-                File.separator +
+                "/" +
                 ovmObject.deDash(storeUuid) +
-                File.separator +
+                "/" +
                 config.getVirtualDiskDir() +
-                File.separator +
+                "/" +
                 diskUuid;
         if (!d.endsWith(".raw")) {
             d = d.concat(".raw");
@@ -594,9 +594,9 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             Linux host = new Linux(c);
             String uuid = host.newUuid();
             /* for root volumes this works... */
-            String src = vol.getPath() + File.separator + vol.getUuid()
+            String src = vol.getPath() + "/" + vol.getUuid()
                     + ".raw";
-            String dest = vol.getPath() + File.separator + uuid + ".raw";
+            String dest = vol.getPath() + "/" + uuid + ".raw";
             /* seems that sometimes the path is already contains a file
              * in case, we just replace it.... (Seems to happen if not ROOT)
              */
@@ -703,9 +703,9 @@ public class Ovm3StorageProcessor implements StorageProcessor {
 
         try {
             /* missing uuid */
-            String installPath = config.getAgentOvmRepoPath() + File.separator
-                    + config.getTemplateDir() + File.separator
-                    + accountId + File.separator + templateId;
+            String installPath = config.getAgentOvmRepoPath() + "/"
+                    + config.getTemplateDir() + "/"
+                    + accountId + "/" + templateId;
             Linux host = new Linux(c);
             host.copyFile(volumePath, installPath);
             return new CreatePrivateTemplateAnswer(cmd, true, installPath);
@@ -730,7 +730,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             SnapshotObjectTO srcSnap = (SnapshotObjectTO) srcData;
             String secPoolUuid = pool.setupSecondaryStorage(srcImageStore.getUrl());
             String srcFile = config.getAgentSecStoragePath()
-                    + File.separator + secPoolUuid + File.separator
+                    + "/" + secPoolUuid + "/"
                     + srcSnap.getPath();
 
             // dest
@@ -769,7 +769,7 @@ public class Ovm3StorageProcessor implements StorageProcessor {
             // snapshots/accountid/volumeid
             String secPoolUuid = pool.setupSecondaryStorage(storeUrl);
             String filePath = config.getAgentSecStoragePath()
-                    + File.separator + secPoolUuid + File.separator
+                    + "/" + secPoolUuid + "/"
                     + snapUuid + ".raw";
             StoragePlugin sp = new StoragePlugin(c);
             sp.storagePluginDestroy(secPoolUuid, filePath);

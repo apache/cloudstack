@@ -227,7 +227,7 @@ public class StoragePluginTest {
         StorageDetails sd = sPt.storagePluginMountNFS(NFSHOST, NFSPATH,
                 FSMNTUUID, NFSMNT);
         con.setResult(results.simpleResponseWrapWrapper(NFSMOUNTRESPONSEXML));
-        NFSMNT = NFSMNT + File.separator + FSMNTUUID;
+        NFSMNT = NFSMNT + "/" + FSMNTUUID;
         sd = sPt.storagePluginMountNFS(NFSHOST, NFSPATH, FSMNTUUID, NFSMNT);
         results.basicLongTest(Long.valueOf(sd.getSize()), 263166853120L);
         results.basicLongTest(Long.valueOf(sd.getFreeSize()), 259377299456L);
