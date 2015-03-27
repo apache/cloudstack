@@ -469,7 +469,7 @@ public class StoragePlugin extends OvmObject {
         sd.setUuid(mntUuid);
         sd.setAccessPath(nfsHost + ":" + nfsRemotePath);
         if (!mountPoint.contains(mntUuid)) {
-            mountPoint += File.separator + mntUuid;
+            mountPoint += "/" + mntUuid;
         }
         sd.setDetails((HashMap<String, Object>) callWrapper(
                 "storage_plugin_mount", getPluginType, ss.getDetails(),
@@ -504,7 +504,7 @@ public class StoragePlugin extends OvmObject {
         sd.setAccessPath(nfsHost + ":" + remotePath);
         sd.setState(1);
         ss.setStorageType(FILESYS);
-        String mountPoint = localPath + File.separator + mntUuid;
+        String mountPoint = localPath + "/" + mntUuid;
         callWrapper("storage_plugin_unmount", getPluginType,
                 ss.getDetails(), sd.getDetails(), mountPoint, ACTIVE);
         return true;
