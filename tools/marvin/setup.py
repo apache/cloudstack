@@ -50,7 +50,8 @@ setup(name="Marvin",
           "requests >= 2.2.1",
           "paramiko >= 1.13.0",
           "nose >= 1.3.3",
-          "ddt >= 0.4.0"
+          "ddt >= 0.4.0",
+          "pyvmomi >= 5.5.0"
       ],
       py_modules=['marvin.marvinPlugin'],
       zip_safe=False,
