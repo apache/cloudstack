@@ -13,9 +13,11 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.junit.Test;
@@ -30,12 +32,16 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
+import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
+import com.cloud.agent.api.ClusterVMMetaDataSyncCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreateStoragePoolCommand;
+import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
@@ -57,16 +63,21 @@ import com.cloud.agent.api.OvsSetupBridgeCommand;
 import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
 import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
 import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.UnPlugNicCommand;
+import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
+import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
@@ -76,12 +87,14 @@ import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.HostEnvironment;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.hypervisor.xenserver.resource.XsHost;
 import com.cloud.hypervisor.xenserver.resource.XsLocalNetwork;
+import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -92,6 +105,7 @@ import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Marshalling;
 import com.xensource.xenapi.Network;
 import com.xensource.xenapi.PIF;
+import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.XenAPIException;
 
@@ -1264,6 +1278,194 @@ public class CitrixRequestWrapperTest {
         }
 
         final Answer answer = wrapper.execute(destroyTunnel, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testUpdateHostPasswordCommand() {
+        final UpdateHostPasswordCommand updatePwd = new UpdateHostPasswordCommand("test", "123");
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(updatePwd, citrixResourceBase);
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testClusterVMMetaDataSyncCommand() {
+        final String uuid = "6172d8b7-ba10-4a70-93f9-ecaf41f51d53";
+
+        final Connection conn = Mockito.mock(Connection.class);
+        final XsHost xsHost = Mockito.mock(XsHost.class);
+
+        final Pool pool = PowerMockito.mock(Pool.class);
+        final Pool.Record poolr = Mockito.mock(Pool.Record.class);
+        final Host.Record hostr = Mockito.mock(Host.Record.class);
+        final Host master =  Mockito.mock(Host.class);
+
+        final ClusterVMMetaDataSyncCommand vmDataSync = new ClusterVMMetaDataSyncCommand(10, 1l);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        try {
+            when(citrixResourceBase.getHost()).thenReturn(xsHost);
+            when(citrixResourceBase.getHost().getUuid()).thenReturn(uuid);
+
+            PowerMockito.mockStatic(Pool.Record.class);
+
+            when(pool.getRecord(conn)).thenReturn(poolr);
+            poolr.master = master;
+            when(poolr.master.getRecord(conn)).thenReturn(hostr);
+            hostr.uuid = uuid;
+
+        } catch (final BadServerResponse e) {
+            fail(e.getMessage());
+        } catch (final XenAPIException e) {
+            fail(e.getMessage());
+        } catch (final XmlRpcException e) {
+            fail(e.getMessage());
+        }
+
+        final Answer answer = wrapper.execute(vmDataSync, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testCheckNetworkCommandSuccess() {
+        final List<PhysicalNetworkSetupInfo> setupInfos = new ArrayList<PhysicalNetworkSetupInfo>();
+
+        final CheckNetworkCommand checkNet = new CheckNetworkCommand(setupInfos);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(checkNet, citrixResourceBase);
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testCheckNetworkCommandFailure() {
+        final PhysicalNetworkSetupInfo info = new PhysicalNetworkSetupInfo();
+
+        final List<PhysicalNetworkSetupInfo> setupInfos = new ArrayList<PhysicalNetworkSetupInfo>();
+        setupInfos.add(info);
+
+        final CheckNetworkCommand checkNet = new CheckNetworkCommand(setupInfos);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Answer answer = wrapper.execute(checkNet, citrixResourceBase);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testPlugNicCommand() {
+        final NicTO nicTO = Mockito.mock(NicTO.class);
+        final Connection conn = Mockito.mock(Connection.class);
+
+        final PlugNicCommand plugNic = new PlugNicCommand(nicTO, "Test", VirtualMachine.Type.User);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+
+        final Answer answer = wrapper.execute(plugNic, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testUnPlugNicCommand() {
+        final NicTO nicTO = Mockito.mock(NicTO.class);
+        final Connection conn = Mockito.mock(Connection.class);
+
+        final UnPlugNicCommand unplugNic = new UnPlugNicCommand(nicTO, "Test");
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+
+        final Answer answer = wrapper.execute(unplugNic, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testCreateVMSnapshotCommand() {
+        final Connection conn = Mockito.mock(Connection.class);
+
+        final VMSnapshotTO snapshotTO = Mockito.mock(VMSnapshotTO.class);
+        final List<VolumeObjectTO> volumeTOs = new ArrayList<VolumeObjectTO>();
+
+        final CreateVMSnapshotCommand vmSnapshot = new CreateVMSnapshotCommand("Test", snapshotTO, volumeTOs, "Debian");
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+
+        final Answer answer = wrapper.execute(vmSnapshot, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testDeleteVMSnapshotCommand() {
+        final Connection conn = Mockito.mock(Connection.class);
+
+        final VMSnapshotTO snapshotTO = Mockito.mock(VMSnapshotTO.class);
+        final List<VolumeObjectTO> volumeTOs = new ArrayList<VolumeObjectTO>();
+
+        final DeleteVMSnapshotCommand vmSnapshot = new DeleteVMSnapshotCommand("Test", snapshotTO, volumeTOs, "Debian");
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+
+        final Answer answer = wrapper.execute(vmSnapshot, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testRevertToVMSnapshotCommand() {
+        final Connection conn = Mockito.mock(Connection.class);
+
+        final VMSnapshotTO snapshotTO = Mockito.mock(VMSnapshotTO.class);
+        final List<VolumeObjectTO> volumeTOs = new ArrayList<VolumeObjectTO>();
+
+        final RevertToVMSnapshotCommand vmSnapshot = new RevertToVMSnapshotCommand("Test", snapshotTO, volumeTOs, "Debian");
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+
+        final Answer answer = wrapper.execute(vmSnapshot, citrixResourceBase);
 
         verify(citrixResourceBase, times(1)).getConnection();
 

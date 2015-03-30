@@ -346,6 +346,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return _instance;
     }
 
+    public void addToPwdQueue(final String password) {
+        _password.add(password);
+    }
+
     public boolean isOvs() {
         return _isOvs;
     }
@@ -467,24 +471,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (cmd instanceof NetworkElementCommand) {
             return _vrResource.executeRequest((NetworkElementCommand)cmd);
-        } else if (clazz == UpdateHostPasswordCommand.class) {
-            return execute((UpdateHostPasswordCommand)cmd);
-        } else if (cmd instanceof ClusterVMMetaDataSyncCommand) {
-            return execute((ClusterVMMetaDataSyncCommand)cmd);
-        } else if (clazz == CheckNetworkCommand.class) {
-            return execute((CheckNetworkCommand)cmd);
-        } else if (clazz == PlugNicCommand.class) {
-            return execute((PlugNicCommand)cmd);
-        } else if (clazz == UnPlugNicCommand.class) {
-            return execute((UnPlugNicCommand) cmd);
         } else if (cmd instanceof StorageSubSystemCommand) {
             return storageHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
-        } else if (clazz == CreateVMSnapshotCommand.class) {
-            return execute((CreateVMSnapshotCommand) cmd);
-        } else if (clazz == DeleteVMSnapshotCommand.class) {
-            return execute((DeleteVMSnapshotCommand) cmd);
-        } else if (clazz == RevertToVMSnapshotCommand.class) {
-            return execute((RevertToVMSnapshotCommand) cmd);
         } else if (clazz == NetworkRulesVmSecondaryIpCommand.class) {
             return execute((NetworkRulesVmSecondaryIpCommand) cmd);
         } else if (clazz == ScaleVmCommand.class) {
@@ -798,7 +786,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected String revertToSnapshot(final Connection conn, final VM vmSnapshot, final String vmName, final String oldVmUuid, final Boolean snapshotMemory, final String hostUUID) throws XenAPIException,
+    public String revertToSnapshot(final Connection conn, final VM vmSnapshot, final String vmName, final String oldVmUuid, final Boolean snapshotMemory, final String hostUUID) throws XenAPIException,
     XmlRpcException {
 
         final String results =
@@ -3137,7 +3125,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return false;
     }
 
-    protected void waitForTask(final Connection c, final Task task, final long pollInterval, final long timeout) throws XenAPIException, XmlRpcException, TimeoutException {
+    public void waitForTask(final Connection c, final Task task, final long pollInterval, final long timeout) throws XenAPIException, XmlRpcException, TimeoutException {
         final long beginTime = System.currentTimeMillis();
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Task " + task.getNameLabel(c) + " (" + task.getUuid(c) + ") sent to " + c.getSessionReference() + " is pending completion with a " + timeout +
@@ -3161,7 +3149,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected void checkForSuccess(final Connection c, final Task task) throws XenAPIException, XmlRpcException {
+    public void checkForSuccess(final Connection c, final Task task) throws XenAPIException, XmlRpcException {
         if (task.getStatus(c) == Types.TaskStatusType.SUCCESS) {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Task " + task.getNameLabel(c) + " (" + task.getUuid(c) + ") completed");
@@ -3748,7 +3736,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return null;
     }
 
-    protected VIF getVifByMac(final Connection conn, final VM router, String mac) throws XmlRpcException, XenAPIException {
+    public VIF getVifByMac(final Connection conn, final VM router, String mac) throws XmlRpcException, XenAPIException {
         final Set<VIF> routerVIFs = router.getVIFs(conn);
         mac = mac.trim();
         for (final VIF vif : routerVIFs) {
@@ -3760,7 +3748,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return null;
     }
 
-    protected String getLowestAvailableVIFDeviceNum(final Connection conn, final VM vm) {
+    public String getLowestAvailableVIFDeviceNum(final Connection conn, final VM vm) {
         String vmName = "";
         try {
             vmName = vm.getNameLabel(conn);
@@ -4811,7 +4799,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected boolean isNetworkSetupByName(final String nameTag) throws XenAPIException, XmlRpcException {
+    public boolean isNetworkSetupByName(final String nameTag) throws XenAPIException, XmlRpcException {
         if (nameTag != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Looking for network setup by name " + nameTag);
@@ -6194,7 +6182,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     }
 
-    private long getVMSnapshotChainSize(final Connection conn, final VolumeObjectTO volumeTo, final String vmName) throws BadServerResponse, XenAPIException, XmlRpcException {
+    public long getVMSnapshotChainSize(final Connection conn, final VolumeObjectTO volumeTo, final String vmName) throws BadServerResponse, XenAPIException, XmlRpcException {
         final Set<VDI> allvolumeVDIs = VDI.getByNameLabel(conn, volumeTo.getName());
         long size = 0;
         for (final VDI vdi : allvolumeVDIs) {
@@ -6378,7 +6366,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    private VM createWorkingVM(final Connection conn, final String vmName, final String guestOSType, final String platformEmulator, final List<VolumeObjectTO> listVolumeTo) throws BadServerResponse,
+    public VM createWorkingVM(final Connection conn, final String vmName, final String guestOSType, final String platformEmulator, final List<VolumeObjectTO> listVolumeTo) throws BadServerResponse,
     Types.VmBadPowerState, Types.SrFull,
     Types.OperationNotAllowed, XenAPIException, XmlRpcException {
         //below is redundant but keeping for consistency and code readabilty
@@ -6928,7 +6916,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new ClusterVMMetaDataSyncAnswer(cmd.getClusterId(), vmMetadatum);
     }
 
-    protected HashMap<String, String> clusterVMMetaDataSync(final Connection conn) {
+    public HashMap<String, String> clusterVMMetaDataSync(final Connection conn) {
         final HashMap<String, String> vmMetaDatum = new HashMap<String, String>();
         try {
             final Map<VM, VM.Record>  vm_map = VM.getAllRecords(conn);  //USE THIS TO GET ALL VMS FROM  A CLUSTER
