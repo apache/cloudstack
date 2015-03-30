@@ -25,7 +25,7 @@ do
     rc=$?
     if [ $rc -ne 0 ]
     then
-        logger -t cloud "Password server failed with error code $rc. Restarting socat..."
+        logger -t cloud "Password server failed with error code $rc. Restarting password server..."
         sleep 3
     fi
     result=`ip addr show | grep $ip`

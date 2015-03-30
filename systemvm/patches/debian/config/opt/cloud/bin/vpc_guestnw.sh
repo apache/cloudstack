@@ -121,7 +121,7 @@ setup_passwdsvcs() {
 desetup_passwdsvcs() {
   logger -t cloud "Desetting up password service for network $ip/$mask, eth $dev "
   sudo iptables -D INPUT -i $dev -d $ip -p tcp -m state --state NEW --dport 8080 -j ACCEPT
-  pid=`ps -ef | grep socat | grep $ip | grep -v grep | awk '{print $2}'`
+  pid=`ps -ef | grep passwd_server_ip.py | grep $ip | grep -v grep | awk '{print $2}'`
   if [ -n "$pid" ]
   then
     kill -9 $pid
