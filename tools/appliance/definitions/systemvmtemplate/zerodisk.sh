@@ -32,7 +32,7 @@ function cleanup_veewee() {
 function zero_disk() {
   cleanup_veewee
 
-  for path in / /boot /usr /var /opt /tmp /home
+  for path in / /boot /usr /var /var/log /opt /tmp /home
   do
     dd if=/dev/zero of=${path}/zero bs=1M || true
     sync
