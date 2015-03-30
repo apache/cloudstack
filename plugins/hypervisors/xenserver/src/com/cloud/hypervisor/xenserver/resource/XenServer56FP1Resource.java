@@ -66,7 +66,7 @@ public class XenServer56FP1Resource extends XenServer56Resource {
     protected FenceAnswer execute(final FenceCommand cmd) {
         final Connection conn = getConnection();
         try {
-            final Boolean alive = check_heartbeat(cmd.getHostGuid());
+            final Boolean alive = checkHeartbeat(cmd.getHostGuid());
             if ( alive == null ) {
                 s_logger.debug("Failed to check heartbeat,  so unable to fence");
                 return new FenceAnswer(cmd, false, "Failed to check heartbeat, so unable to fence");

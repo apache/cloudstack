@@ -21,8 +21,6 @@ package com.cloud.hypervisor.xenserver.resource.wrapper;
 
 import java.util.Hashtable;
 
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
@@ -83,6 +81,8 @@ import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
+import com.cloud.hypervisor.xenserver.resource.XenServer56Resource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.RequestWrapper;
 import com.cloud.resource.ServerResource;
@@ -95,91 +95,113 @@ public class CitrixRequestWrapper extends RequestWrapper {
         instance = new CitrixRequestWrapper();
     }
 
+    private boolean initialised;
+
     @SuppressWarnings("rawtypes")
-    private final Hashtable<Class<? extends Command>, CommandWrapper> map;
+    private final Hashtable<Class<? extends ServerResource>, Hashtable<Class<? extends Command>, CommandWrapper>> resources;
 
     @SuppressWarnings("rawtypes")
     private CitrixRequestWrapper() {
-        map = new Hashtable<Class<? extends Command>, CommandWrapper>();
+        resources = new Hashtable<Class<? extends ServerResource>, Hashtable<Class<? extends Command>, CommandWrapper>>();
         init();
     }
 
+    @SuppressWarnings("rawtypes")
     private void init() {
-        map.put(RebootRouterCommand.class, new CitrixRebootRouterCommandWrapper());
-        map.put(CreateCommand.class, new CitrixCreateCommandWrapper());
-        map.put(CheckConsoleProxyLoadCommand.class, new CitrixCheckConsoleProxyLoadCommandWrapper());
-        map.put(WatchConsoleProxyLoadCommand.class, new CitrixWatchConsoleProxyLoadCommandWrapper());
-        map.put(ReadyCommand.class, new CitrixReadyCommandWrapper());
-        map.put(GetHostStatsCommand.class, new CitrixGetHostStatsCommandWrapper());
-        map.put(GetVmStatsCommand.class, new CitrixGetVmStatsCommandWrapper());
-        map.put(GetVmDiskStatsCommand.class, new CitrixGetVmDiskStatsCommandWrapper());
-        map.put(CheckHealthCommand.class, new CitrixCheckHealthCommandWrapper());
-        map.put(StopCommand.class, new CitrixStopCommandWrapper());
-        map.put(RebootCommand.class, new CitrixRebootCommandWrapper());
-        map.put(CheckVirtualMachineCommand.class, new CitrixCheckVirtualMachineCommandWrapper());
-        map.put(PrepareForMigrationCommand.class, new CitrixPrepareForMigrationCommandWrapper());
-        map.put(MigrateCommand.class, new CitrixMigrateCommandWrapper());
-        map.put(DestroyCommand.class, new CitrixDestroyCommandWrapper());
-        map.put(CreateStoragePoolCommand.class, new CitrixCreateStoragePoolCommandWrapper());
-        map.put(ModifyStoragePoolCommand.class, new CitrixModifyStoragePoolCommandWrapper());
-        map.put(DeleteStoragePoolCommand.class, new CitrixDeleteStoragePoolCommandWrapper());
-        map.put(ResizeVolumeCommand.class, new CitrixResizeVolumeCommandWrapper());
-        map.put(AttachVolumeCommand.class, new CitrixAttachVolumeCommandWrapper());
-        map.put(AttachIsoCommand.class, new CitrixAttachIsoCommandWrapper());
-        map.put(UpgradeSnapshotCommand.class, new CitrixUpgradeSnapshotCommandWrapper());
-        map.put(GetStorageStatsCommand.class, new CitrixGetStorageStatsCommandWrapper());
-        map.put(PrimaryStorageDownloadCommand.class, new CitrixPrimaryStorageDownloadCommandWrapper());
-        map.put(GetVncPortCommand.class, new CitrixGetVncPortCommandWrapper());
-        map.put(SetupCommand.class, new CitrixSetupCommandWrapper());
-        map.put(MaintainCommand.class, new CitrixMaintainCommandWrapper());
-        map.put(PingTestCommand.class, new CitrixPingTestCommandWrapper());
-        map.put(CheckOnHostCommand.class, new CitrixCheckOnHostCommandWrapper());
-        map.put(ModifySshKeysCommand.class, new CitrixModifySshKeysCommandWrapper());
-        map.put(StartCommand.class, new CitrixStartCommandWrapper());
-        map.put(OvsSetTagAndFlowCommand.class, new CitrixOvsSetTagAndFlowCommandWrapper());
-        map.put(CheckSshCommand.class, new CitrixCheckSshCommandWrapper());
-        map.put(SecurityGroupRulesCmd.class, new CitrixSecurityGroupRulesCommandWrapper());
-        map.put(OvsFetchInterfaceCommand.class, new CitrixOvsFetchInterfaceCommandWrapper());
-        map.put(OvsCreateGreTunnelCommand.class, new CitrixOvsCreateGreTunnelCommandWrapper());
-        map.put(OvsDeleteFlowCommand.class, new CitrixOvsDeleteFlowCommandWrapper());
-        map.put(OvsVpcPhysicalTopologyConfigCommand.class, new CitrixOvsVpcPhysicalTopologyConfigCommandWrapper());
-        map.put(OvsVpcRoutingPolicyConfigCommand.class, new CitrixOvsVpcRoutingPolicyConfigCommandWrapper());
-        map.put(CleanupNetworkRulesCmd.class, new CitrixCleanupNetworkRulesCmdWrapper());
-        map.put(NetworkRulesSystemVmCommand.class, new CitrixNetworkRulesSystemVmCommandWrapper());
-        map.put(OvsCreateTunnelCommand.class, new CitrixOvsCreateTunnelCommandWrapper());
-        map.put(OvsSetupBridgeCommand.class, new CitrixOvsSetupBridgeCommandWrapper());
-        map.put(OvsDestroyBridgeCommand.class, new CitrixOvsDestroyBridgeCommandWrapper());
-        map.put(OvsDestroyTunnelCommand.class, new CitrixOvsDestroyTunnelCommandWrapper());
-        map.put(UpdateHostPasswordCommand.class, new CitrixUpdateHostPasswordCommandWrapper());
-        map.put(ClusterVMMetaDataSyncCommand.class, new CitrixClusterVMMetaDataSyncCommandWrapper());
-        map.put(CheckNetworkCommand.class, new CitrixCheckNetworkCommandWrapper());
-        map.put(PlugNicCommand.class, new CitrixPlugNicCommandWrapper());
-        map.put(UnPlugNicCommand.class, new CitrixUnPlugNicCommandWrapper());
-        map.put(CreateVMSnapshotCommand.class, new CitrixCreateVMSnapshotCommandWrapper());
-        map.put(DeleteVMSnapshotCommand.class, new CitrixDeleteVMSnapshotCommandWrapper());
-        map.put(RevertToVMSnapshotCommand.class, new CitrixRevertToVMSnapshotCommandWrapper());
-        map.put(NetworkRulesVmSecondaryIpCommand.class, new CitrixNetworkRulesVmSecondaryIpCommandWrapper());
-        map.put(ScaleVmCommand.class, new CitrixScaleVmCommandWrapper());
-        map.put(PvlanSetupCommand.class, new CitrixPvlanSetupCommandWrapper());
-        map.put(PerformanceMonitorCommand.class, new CitrixPerformanceMonitorCommandWrapper());
-        map.put(NetworkElementCommand.class, new CitrixNetworkElementCommandWrapper());
+        // CitrixResourceBase commands
+        final Hashtable<Class<? extends Command>, CommandWrapper> citrixCommands = new Hashtable<Class<? extends Command>, CommandWrapper>();
+        citrixCommands.put(RebootRouterCommand.class, new CitrixRebootRouterCommandWrapper());
+        citrixCommands.put(CreateCommand.class, new CitrixCreateCommandWrapper());
+        citrixCommands.put(CheckConsoleProxyLoadCommand.class, new CitrixCheckConsoleProxyLoadCommandWrapper());
+        citrixCommands.put(WatchConsoleProxyLoadCommand.class, new CitrixWatchConsoleProxyLoadCommandWrapper());
+        citrixCommands.put(ReadyCommand.class, new CitrixReadyCommandWrapper());
+        citrixCommands.put(GetHostStatsCommand.class, new CitrixGetHostStatsCommandWrapper());
+        citrixCommands.put(GetVmStatsCommand.class, new CitrixGetVmStatsCommandWrapper());
+        citrixCommands.put(GetVmDiskStatsCommand.class, new CitrixGetVmDiskStatsCommandWrapper());
+        citrixCommands.put(CheckHealthCommand.class, new CitrixCheckHealthCommandWrapper());
+        citrixCommands.put(StopCommand.class, new CitrixStopCommandWrapper());
+        citrixCommands.put(RebootCommand.class, new CitrixRebootCommandWrapper());
+        citrixCommands.put(CheckVirtualMachineCommand.class, new CitrixCheckVirtualMachineCommandWrapper());
+        citrixCommands.put(PrepareForMigrationCommand.class, new CitrixPrepareForMigrationCommandWrapper());
+        citrixCommands.put(MigrateCommand.class, new CitrixMigrateCommandWrapper());
+        citrixCommands.put(DestroyCommand.class, new CitrixDestroyCommandWrapper());
+        citrixCommands.put(CreateStoragePoolCommand.class, new CitrixCreateStoragePoolCommandWrapper());
+        citrixCommands.put(ModifyStoragePoolCommand.class, new CitrixModifyStoragePoolCommandWrapper());
+        citrixCommands.put(DeleteStoragePoolCommand.class, new CitrixDeleteStoragePoolCommandWrapper());
+        citrixCommands.put(ResizeVolumeCommand.class, new CitrixResizeVolumeCommandWrapper());
+        citrixCommands.put(AttachVolumeCommand.class, new CitrixAttachVolumeCommandWrapper());
+        citrixCommands.put(AttachIsoCommand.class, new CitrixAttachIsoCommandWrapper());
+        citrixCommands.put(UpgradeSnapshotCommand.class, new CitrixUpgradeSnapshotCommandWrapper());
+        citrixCommands.put(GetStorageStatsCommand.class, new CitrixGetStorageStatsCommandWrapper());
+        citrixCommands.put(PrimaryStorageDownloadCommand.class, new CitrixPrimaryStorageDownloadCommandWrapper());
+        citrixCommands.put(GetVncPortCommand.class, new CitrixGetVncPortCommandWrapper());
+        citrixCommands.put(SetupCommand.class, new CitrixSetupCommandWrapper());
+        citrixCommands.put(MaintainCommand.class, new CitrixMaintainCommandWrapper());
+        citrixCommands.put(PingTestCommand.class, new CitrixPingTestCommandWrapper());
+        citrixCommands.put(CheckOnHostCommand.class, new CitrixCheckOnHostCommandWrapper());
+        citrixCommands.put(ModifySshKeysCommand.class, new CitrixModifySshKeysCommandWrapper());
+        citrixCommands.put(StartCommand.class, new CitrixStartCommandWrapper());
+        citrixCommands.put(OvsSetTagAndFlowCommand.class, new CitrixOvsSetTagAndFlowCommandWrapper());
+        citrixCommands.put(CheckSshCommand.class, new CitrixCheckSshCommandWrapper());
+        citrixCommands.put(SecurityGroupRulesCmd.class, new CitrixSecurityGroupRulesCommandWrapper());
+        citrixCommands.put(OvsFetchInterfaceCommand.class, new CitrixOvsFetchInterfaceCommandWrapper());
+        citrixCommands.put(OvsCreateGreTunnelCommand.class, new CitrixOvsCreateGreTunnelCommandWrapper());
+        citrixCommands.put(OvsDeleteFlowCommand.class, new CitrixOvsDeleteFlowCommandWrapper());
+        citrixCommands.put(OvsVpcPhysicalTopologyConfigCommand.class, new CitrixOvsVpcPhysicalTopologyConfigCommandWrapper());
+        citrixCommands.put(OvsVpcRoutingPolicyConfigCommand.class, new CitrixOvsVpcRoutingPolicyConfigCommandWrapper());
+        citrixCommands.put(CleanupNetworkRulesCmd.class, new CitrixCleanupNetworkRulesCmdWrapper());
+        citrixCommands.put(NetworkRulesSystemVmCommand.class, new CitrixNetworkRulesSystemVmCommandWrapper());
+        citrixCommands.put(OvsCreateTunnelCommand.class, new CitrixOvsCreateTunnelCommandWrapper());
+        citrixCommands.put(OvsSetupBridgeCommand.class, new CitrixOvsSetupBridgeCommandWrapper());
+        citrixCommands.put(OvsDestroyBridgeCommand.class, new CitrixOvsDestroyBridgeCommandWrapper());
+        citrixCommands.put(OvsDestroyTunnelCommand.class, new CitrixOvsDestroyTunnelCommandWrapper());
+        citrixCommands.put(UpdateHostPasswordCommand.class, new CitrixUpdateHostPasswordCommandWrapper());
+        citrixCommands.put(ClusterVMMetaDataSyncCommand.class, new CitrixClusterVMMetaDataSyncCommandWrapper());
+        citrixCommands.put(CheckNetworkCommand.class, new CitrixCheckNetworkCommandWrapper());
+        citrixCommands.put(PlugNicCommand.class, new CitrixPlugNicCommandWrapper());
+        citrixCommands.put(UnPlugNicCommand.class, new CitrixUnPlugNicCommandWrapper());
+        citrixCommands.put(CreateVMSnapshotCommand.class, new CitrixCreateVMSnapshotCommandWrapper());
+        citrixCommands.put(DeleteVMSnapshotCommand.class, new CitrixDeleteVMSnapshotCommandWrapper());
+        citrixCommands.put(RevertToVMSnapshotCommand.class, new CitrixRevertToVMSnapshotCommandWrapper());
+        citrixCommands.put(NetworkRulesVmSecondaryIpCommand.class, new CitrixNetworkRulesVmSecondaryIpCommandWrapper());
+        citrixCommands.put(ScaleVmCommand.class, new CitrixScaleVmCommandWrapper());
+        citrixCommands.put(PvlanSetupCommand.class, new CitrixPvlanSetupCommandWrapper());
+        citrixCommands.put(PerformanceMonitorCommand.class, new CitrixPerformanceMonitorCommandWrapper());
+        citrixCommands.put(NetworkElementCommand.class, new CitrixNetworkElementCommandWrapper());
+        resources.put(CitrixResourceBase.class, citrixCommands);
+
+        // XenServer56Resource commands
+        final Hashtable<Class<? extends Command>, CommandWrapper> xenServer56Commands = new Hashtable<Class<? extends Command>, CommandWrapper>();
+        xenServer56Commands.put(CheckOnHostCommand.class, new XenServer56CheckOnHostCommandWrapper());
+        resources.put(XenServer56Resource.class, xenServer56Commands);
+
+        initialised = true;
     }
 
     public static CitrixRequestWrapper getInstance() {
         return instance;
     }
 
-    @SuppressWarnings("unchecked")
+    boolean isInitialised() {
+        return initialised;
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public Answer execute(final Command command, final ServerResource serverResource) {
-        CommandWrapper<Command, Answer, ServerResource> commandWrapper = map.get(command.getClass());
+        Hashtable<Class<? extends Command>, CommandWrapper> commands = resources.get(serverResource.getClass());
+
+        // Can't instantiate the CitrixResourceBase because it's abstract. In order to reuse the command with subclasses
+        // I need to do this check here.
+        if (commands == null) {
+            commands = resources.get(serverResource.getClass().getSuperclass());
+        }
+
+        CommandWrapper<Command, Answer, ServerResource> commandWrapper = commands.get(command.getClass());
 
         // This is temporary. We have to map the classes with several sub-classes better.
-        if (commandWrapper == null && command instanceof StorageSubSystemCommand) {
-            commandWrapper = map.get(StorageSubSystemCommand.class);
-        }
         if (commandWrapper == null && command instanceof NetworkElementCommand) {
-            commandWrapper = map.get(NetworkElementCommand.class);
+            commandWrapper = commands.get(NetworkElementCommand.class);
         }
 
         if (commandWrapper == null) {

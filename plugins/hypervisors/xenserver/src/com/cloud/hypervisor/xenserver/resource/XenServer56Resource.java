@@ -27,14 +27,13 @@ import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CheckOnHostAnswer;
-import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.hypervisor.xenserver.resource.wrapper.CitrixRequestWrapper;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -55,15 +54,23 @@ public class XenServer56Resource extends CitrixResourceBase {
 
     @Override
     public Answer executeRequest(final Command cmd) {
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        try {
+            return wrapper.execute(cmd, this);
+        } catch (final Exception e) {
+            // return Answer.createUnsupportedCommandAnswer(cmd);
+            // Ignore this for now. Still working on converting the other commands.
+        }
+
         if (cmd instanceof FenceCommand) {
-            return execute((FenceCommand)cmd);
+            return execute((FenceCommand) cmd);
         } else if (cmd instanceof NetworkUsageCommand) {
-            return execute((NetworkUsageCommand)cmd);
+            return execute((NetworkUsageCommand) cmd);
         } else {
             return super.executeRequest(cmd);
         }
     }
-
 
     @Override
     protected List<File> getPatchFiles() {
@@ -144,7 +151,6 @@ public class XenServer56Resource extends CitrixResourceBase {
 
     protected NetworkUsageAnswer VPCNetworkUsage(final NetworkUsageCommand cmd) {
         try {
-            final Connection conn = getConnection();
             final String option = cmd.getOption();
             final String publicIp = cmd.getGatewayIP();
 
@@ -209,7 +215,7 @@ public class XenServer56Resource extends CitrixResourceBase {
         }
     }
 
-    protected Boolean check_heartbeat(final String hostuuid) {
+    public Boolean checkHeartbeat(final String hostuuid) {
         final com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.getIp(), 22);
         try {
             sshConnection.connect(null, 60000, 60000);
@@ -217,15 +223,14 @@ public class XenServer56Resource extends CitrixResourceBase {
                 throw new CloudRuntimeException("Unable to authenticate");
             }
 
-            final String shcmd = "/opt/cloud/bin/check_heartbeat.sh " + hostuuid + " "
-                    + Integer.toString(_heartbeatInterval * 2);
+            final String shcmd = "/opt/cloud/bin/check_heartbeat.sh " + hostuuid + " " + Integer.toString(_heartbeatInterval * 2);
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, shcmd)) {
                 s_logger.debug("Heart beat is gone so dead.");
                 return false;
             }
             s_logger.debug("Heart beat is still going");
             return true;
-        }  catch (final Exception e) {
+        } catch (final Exception e) {
             s_logger.debug("health check failed due to catch exception " + e.toString());
             return null;
         } finally {
@@ -236,12 +241,12 @@ public class XenServer56Resource extends CitrixResourceBase {
     protected FenceAnswer execute(final FenceCommand cmd) {
         final Connection conn = getConnection();
         try {
-            final Boolean alive = check_heartbeat(cmd.getHostGuid());
-            if ( alive == null ) {
+            final Boolean alive = checkHeartbeat(cmd.getHostGuid());
+            if (alive == null) {
                 s_logger.debug("Failed to check heartbeat,  so unable to fence");
                 return new FenceAnswer(cmd, false, "Failed to check heartbeat, so unable to fence");
             }
-            if ( alive ) {
+            if (alive) {
                 s_logger.debug("Heart beat is still going so unable to fence");
                 return new FenceAnswer(cmd, false, "Heartbeat is still going on unable to fence");
             }
@@ -260,7 +265,6 @@ public class XenServer56Resource extends CitrixResourceBase {
             return new FenceAnswer(cmd, false, e.getMessage());
         }
     }
-
 
     @Override
     public boolean transferManagementNetwork(final Connection conn, final Host host, final PIF src, final PIF.Record spr, final PIF dest) throws XmlRpcException, XenAPIException {
@@ -300,26 +304,7 @@ public class XenServer56Resource extends CitrixResourceBase {
         return cmds;
     }
 
-
-    @Override
-    protected CheckOnHostAnswer execute(final CheckOnHostCommand cmd) {
-        final Boolean alive = check_heartbeat(cmd.getHost().getGuid());
-        String msg = "";
-        if (alive == null) {
-            msg = " cannot determine ";
-        } else if ( alive == true) {
-            msg = "Heart beat is still going";
-        } else {
-            msg = "Heart beat is gone so dead.";
-        }
-        s_logger.debug(msg);
-        return new CheckOnHostAnswer(cmd, alive, msg);
-
-    }
-
-
     public XenServer56Resource() {
         super();
     }
-
 }
