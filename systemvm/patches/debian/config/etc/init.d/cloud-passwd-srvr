@@ -86,16 +86,16 @@ getpid() {
   echo $pid
 }
 
-stop_socat() {
-  spid=$(pidof socat)
-  [ "$spid" != "" ] && kill -9 $spid && echo "Killed socat (pid=$spid)" 
+stop_password_server() {
+  spid=$(pidof -s python passwd_server_ip.py)
+  [ "$spid" != "" ] && kill -9 $spid && echo "Killed password server (pid=$spid)"
   return 0
 }
 
 stop () {
-  stop_socat
+  stop_password_server
   pid=$(getpid)
-  [ "$pid" != "" ] && kill -9 $pid && remove_iptables_rules && echo "Stopped password server (pid=$pid)" && stop_socat && return 0
+  [ "$pid" != "" ] && kill -9 $pid && remove_iptables_rules && echo "Stopped password server (pid=$pid)" && stop_password_server && return 0
 
   echo "Password server is not running" && return 0
 }

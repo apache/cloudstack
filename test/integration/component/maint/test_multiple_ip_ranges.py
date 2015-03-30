@@ -362,7 +362,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
     def test_03_passwd_service_on_alias_IP(self):
         """Deploy guest vm in new CIDR and verify passwd service on alias ip
             1.Deploy guest vm in new cidr
-            2.Verify password service(socat) listens on alias ip in VR
+            2.Verify password service(passwd_server_ip.py) listens on alias ip in VR
         """
         list_router_response = list_routers(
             self.apiclient,
@@ -403,7 +403,7 @@ class TestMultipleIpRanges(cloudstackTestCase):
         # attempt
         SshClient(host.ipaddress, port, username, password)
 
-        proc = "socat"
+        proc = "python passwd_server_ip.py"
         result = get_process_status(
             host.ipaddress,
             port,
