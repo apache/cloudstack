@@ -184,12 +184,11 @@ class Vcenter():
 
 
 if __name__ == '__main__':
-    # vc_object = Vcenter("10.147.60.13", "Administrator", "password_123")
-    vc_object = Vcenter("10.102.192.248", "administrator", "vCenter!9")
+    vc_object = Vcenter("10.x.x.x", "username", "password")
 
 
     print '###get one dc########'
-    print(vc_object.get_datacenters(name='Jayashree DC'))
+    print(vc_object.get_datacenters(name='testDC'))
 
     print '###get multiple dcs########'
     for i in vc_object.get_datacenters():
