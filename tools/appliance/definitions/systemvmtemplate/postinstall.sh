@@ -237,7 +237,7 @@ configure_services() {
   snapshot_dir="/opt/cloudstack*"
   cd /opt
   wget --no-check-certificate $snapshot_url -O cloudstack.tar.gz
-  tar -zxvf cloudstack.tar.gz
+  tar -zxvf cloudstack.tar.gz --wildcards cloudstack*/systemvm
   cp -rv $snapshot_dir/systemvm/patches/debian/config/* /
   cp -rv $snapshot_dir/systemvm/patches/debian/vpn/* /
   mkdir -p /usr/share/cloud/
