@@ -82,9 +82,9 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                  else:
                      break
 
-        cls.uploadurl=cls.testdata["browser_upload_volume"][cls.uploadvolumeformat]["url"]
-        cls.volname=cls.testdata["browser_upload_volume"][cls.uploadvolumeformat]["diskname"]
-        cls.md5sum=cls.testdata["browser_upload_volume"][cls.uploadvolumeformat]["checksum"]
+        cls.uploadurl=cls.testdata["configurableData"]["browser_upload_volume"][cls.uploadvolumeformat]["url"]
+        cls.volname=cls.testdata["configurableData"]["browser_upload_volume"][cls.uploadvolumeformat]["diskname"]
+        cls.md5sum=cls.testdata["configurableData"]["browser_upload_volume"][cls.uploadvolumeformat]["checksum"]
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
         cls.pod = get_pod(cls.apiclient, cls.zone.id)
@@ -108,7 +108,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         )
         cls.disk_offering = DiskOffering.create(
             cls.apiclient,
-            cls.testdata["browser_upload_volume"]["browser_resized_disk_offering"],
+            cls.testdata["configurableData"]["browser_upload_volume"]["browser_resized_disk_offering"],
             custom=True
         )
         cls._cleanup = [

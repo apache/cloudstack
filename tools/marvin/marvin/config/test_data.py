@@ -1537,7 +1537,7 @@ test_data = {
         "url": "http://10.147.28.7/templates/builtin/centos56-x86_64.vhd.bz2",
         "hypervisor":"XenServer",
         "checksum": "09b08b6abb1b903fca7711d3ac8d6598",
-        "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
+        "ostypeid":"fbe5230a-d490-11e4-a923-2611fa84f51d"
                 },
           "OVA": {
         "templatename": "VMwareUploadtemplate",
@@ -1551,9 +1551,9 @@ test_data = {
         "templatename": "KVMUploadtemplate",
         "displaytext": "VMwareUploadtemplate",
         "url": "http://10.147.28.7/templates/builtin/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2",
-        "checksum": "da997b697feaa2f1f6e0d4785b0cece2",
+        "checksum": "d06b5f6a-d44e-11e4-9d99-4af3a393b3ac",
         "hypervisor":"KVM",
-        "ostypeid":"2e02e376-cdf3-11e4-beb3-8aa6272b57ef"
+        "ostypeid":"d084e2c8-d44e-11e4-9d99-4af3a393b3ac"
                 },
                               },
         "bootableIso":
