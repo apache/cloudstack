@@ -1,7 +1,9 @@
 package com.cloud.hypervisor.xenserver.resource.wrapper;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.spy;
@@ -30,6 +32,7 @@ import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
@@ -42,7 +45,12 @@ import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.OvsCreateGreTunnelCommand;
+import com.cloud.agent.api.OvsDeleteFlowCommand;
+import com.cloud.agent.api.OvsFetchInterfaceCommand;
 import com.cloud.agent.api.OvsSetTagAndFlowCommand;
+import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
+import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyCommand;
@@ -77,6 +85,7 @@ import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Marshalling;
 import com.xensource.xenapi.Network;
+import com.xensource.xenapi.PIF;
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.XenAPIException;
 
@@ -663,6 +672,7 @@ public class CitrixRequestWrapperTest {
 
         verify(citrixResourceBase, times(1)).getConnection();
         verify(citrixResourceBase, times(1)).setupvSwitchNetwork(conn);
+        verify(citrixResourceBase, times(1)).setIsOvs(true);
 
         assertFalse(answer.getResult());
     }
@@ -704,13 +714,17 @@ public class CitrixRequestWrapperTest {
     @Test
     public void testOvsFetchInterfaceCommand() {
         final String label = "[abc]";
+        final String uuid = "befc4dcd-f5c6-4015-8791-3c18622b7c7f";
 
         final Connection conn = Mockito.mock(Connection.class);
         final XsLocalNetwork network = Mockito.mock(XsLocalNetwork.class);
+        final Network network2 = Mockito.mock(Network.class);
+        final PIF pif = Mockito.mock(PIF.class);
+        final PIF.Record pifRec = Mockito.mock(PIF.Record.class);
 
         final XsHost xsHost = Mockito.mock(XsHost.class);
 
-        final SecurityGroupRulesCmd sshCommand = new SecurityGroupRulesCmd();
+        final OvsFetchInterfaceCommand fetchInterCommand = new OvsFetchInterfaceCommand(label);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -721,6 +735,11 @@ public class CitrixRequestWrapperTest {
         when(citrixResourceBase.getHost()).thenReturn(xsHost);
 
         try {
+            when(network.getNetwork()).thenReturn(network2);
+            when(network.getPif(conn)).thenReturn(pif);
+            when(network.getPif(conn)).thenReturn(pif);
+            when(pif.getRecord(conn)).thenReturn(pifRec);
+            when(network.getNetwork().getUuid(conn)).thenReturn(uuid);
             when(citrixResourceBase.getNetworkByName(conn, label)).thenReturn(network);
         } catch (final XenAPIException e) {
             fail(e.getMessage());
@@ -728,11 +747,252 @@ public class CitrixRequestWrapperTest {
             fail(e.getMessage());
         }
 
-        final Answer answer = wrapper.execute(sshCommand, citrixResourceBase);
+        final Answer answer = wrapper.execute(fetchInterCommand, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testOvsCreateGreTunnelCommand() {
+        final String bridge = "gre";
+        final Connection conn = Mockito.mock(Connection.class);
+        final Network network = Mockito.mock(Network.class);
+        final XsHost xsHost = Mockito.mock(XsHost.class);
+
+        final OvsCreateGreTunnelCommand createGreCommand = new OvsCreateGreTunnelCommand("172.0.0.1", "KEY", 1l, 2l);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        when(citrixResourceBase.getHost()).thenReturn(xsHost);
+        when(citrixResourceBase.setupvSwitchNetwork(conn)).thenReturn(network);
+        try {
+            when(network.getBridge(conn)).thenReturn(bridge);
+            when(citrixResourceBase.callHostPlugin(conn, "ovsgre", "ovs_create_gre", "bridge", bridge, "remoteIP", createGreCommand.getRemoteIp(), "greKey",
+                    createGreCommand.getKey(), "from", Long.toString(createGreCommand.getFrom()), "to", Long.toString(createGreCommand.getTo()))).thenReturn("1:2");
+
+        } catch (final BadServerResponse e) {
+            fail(e.getMessage());
+        } catch (final XenAPIException e) {
+            fail(e.getMessage());
+        } catch (final XmlRpcException e) {
+            fail(e.getMessage());
+        }
+
+        final Answer answer = wrapper.execute(createGreCommand, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+        verify(citrixResourceBase, times(1)).setIsOvs(true);
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testOvsDeleteFlowCommandSuccess() {
+        final String bridge = "gre";
+        final Connection conn = Mockito.mock(Connection.class);
+        final Network network = Mockito.mock(Network.class);
+
+        final OvsDeleteFlowCommand deleteFlowCommand = new OvsDeleteFlowCommand("Test");
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        when(citrixResourceBase.setupvSwitchNetwork(conn)).thenReturn(network);
+        try {
+            when(network.getBridge(conn)).thenReturn(bridge);
+            when(citrixResourceBase.callHostPlugin(conn, "ovsgre", "ovs_delete_flow", "bridge", bridge, "vmName", deleteFlowCommand.getVmName())).thenReturn("SUCCESS");
+
+        } catch (final BadServerResponse e) {
+            fail(e.getMessage());
+        } catch (final XenAPIException e) {
+            fail(e.getMessage());
+        } catch (final XmlRpcException e) {
+            fail(e.getMessage());
+        }
+
+        final Answer answer = wrapper.execute(deleteFlowCommand, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+        verify(citrixResourceBase, times(1)).setIsOvs(true);
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testOvsDeleteFlowCommandFailure() {
+        final String bridge = "gre";
+        final Connection conn = Mockito.mock(Connection.class);
+        final Network network = Mockito.mock(Network.class);
+
+        final OvsDeleteFlowCommand deleteFlowCommand = new OvsDeleteFlowCommand("Test");
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        when(citrixResourceBase.setupvSwitchNetwork(conn)).thenReturn(network);
+        try {
+            when(network.getBridge(conn)).thenReturn(bridge);
+            when(citrixResourceBase.callHostPlugin(conn, "ovsgre", "ovs_delete_flow", "bridge", bridge, "vmName", deleteFlowCommand.getVmName())).thenReturn("FAILED");
+
+        } catch (final BadServerResponse e) {
+            fail(e.getMessage());
+        } catch (final XenAPIException e) {
+            fail(e.getMessage());
+        } catch (final XmlRpcException e) {
+            fail(e.getMessage());
+        }
+
+        final Answer answer = wrapper.execute(deleteFlowCommand, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+        verify(citrixResourceBase, times(1)).setIsOvs(true);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testOvsVpcPhysicalTopologyConfigCommand() {
+        final String bridge = "gre";
+        final Connection conn = Mockito.mock(Connection.class);
+        final Network network = Mockito.mock(Network.class);
+
+        final OvsVpcPhysicalTopologyConfigCommand.Host[] hosts = new OvsVpcPhysicalTopologyConfigCommand.Host[0];
+        final OvsVpcPhysicalTopologyConfigCommand.Tier[] tiers = new OvsVpcPhysicalTopologyConfigCommand.Tier[0];
+        final OvsVpcPhysicalTopologyConfigCommand.Vm[] vms = new OvsVpcPhysicalTopologyConfigCommand.Vm[0];
+
+        final OvsVpcPhysicalTopologyConfigCommand physicalTopology = new OvsVpcPhysicalTopologyConfigCommand(hosts, tiers, vms, "10.0.0.1/24");
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        try {
+            when(citrixResourceBase.findOrCreateTunnelNetwork(conn, physicalTopology.getBridgeName())).thenReturn(network);
+            when(network.getBridge(conn)).thenReturn(bridge);
+
+            when(citrixResourceBase.callHostPlugin(conn, "ovstunnel", "configure_ovs_bridge_for_network_topology", "bridge",
+                    bridge, "config", physicalTopology.getVpcConfigInJson(), "host-id", ((Long)physicalTopology.getHostId()).toString(),
+                    "seq-no", Long.toString(1))).thenReturn("SUCCESS");
+
+        } catch (final BadServerResponse e) {
+            fail(e.getMessage());
+        } catch (final XenAPIException e) {
+            fail(e.getMessage());
+        } catch (final XmlRpcException e) {
+            fail(e.getMessage());
+        }
+
+        final Answer answer = wrapper.execute(physicalTopology, citrixResourceBase);
 
         verify(citrixResourceBase, times(1)).getConnection();
 
         assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testOvsVpcRoutingPolicyConfigCommand() {
+        final String bridge = "gre";
+        final Connection conn = Mockito.mock(Connection.class);
+        final Network network = Mockito.mock(Network.class);
+
+        final OvsVpcRoutingPolicyConfigCommand.Acl[] acls = new OvsVpcRoutingPolicyConfigCommand.Acl[0];
+        final OvsVpcRoutingPolicyConfigCommand.Tier[] tiers = new OvsVpcRoutingPolicyConfigCommand.Tier[0];
+
+        final OvsVpcRoutingPolicyConfigCommand routingPolicy = new OvsVpcRoutingPolicyConfigCommand("v1", "10.0.0.1/24", acls, tiers);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        try {
+            when(citrixResourceBase.findOrCreateTunnelNetwork(conn, routingPolicy.getBridgeName())).thenReturn(network);
+            when(network.getBridge(conn)).thenReturn(bridge);
+
+            when(citrixResourceBase.callHostPlugin(conn, "ovstunnel", "configure_ovs_bridge_for_routing_policies", "bridge",
+                    bridge, "host-id", ((Long)routingPolicy.getHostId()).toString(), "config",
+                    routingPolicy.getVpcConfigInJson(), "seq-no", Long.toString(1))).thenReturn("SUCCESS");
+
+        } catch (final BadServerResponse e) {
+            fail(e.getMessage());
+        } catch (final XenAPIException e) {
+            fail(e.getMessage());
+        } catch (final XmlRpcException e) {
+            fail(e.getMessage());
+        }
+
+        final Answer answer = wrapper.execute(routingPolicy, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testCleanupNetworkRulesCmd() {
+        final Connection conn = Mockito.mock(Connection.class);
+        final XsHost xsHost = Mockito.mock(XsHost.class);
+
+        final CleanupNetworkRulesCmd cleanupNets = new CleanupNetworkRulesCmd(20);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.canBridgeFirewall()).thenReturn(true);
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        when(citrixResourceBase.getHost()).thenReturn(xsHost);
+        when(citrixResourceBase.getVMInstanceName()).thenReturn("VM");
+        when(citrixResourceBase.callHostPlugin(conn, "vmops", "cleanup_rules", "instance", citrixResourceBase.getVMInstanceName())).thenReturn("1");
+
+        final Answer answer = wrapper.execute(cleanupNets, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testCleanupNetworkRulesCmdLTZ() {
+        final Connection conn = Mockito.mock(Connection.class);
+        final XsHost xsHost = Mockito.mock(XsHost.class);
+
+        final CleanupNetworkRulesCmd cleanupNets = new CleanupNetworkRulesCmd(20);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.canBridgeFirewall()).thenReturn(true);
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        when(citrixResourceBase.getHost()).thenReturn(xsHost);
+        when(citrixResourceBase.getVMInstanceName()).thenReturn("VM");
+        when(citrixResourceBase.callHostPlugin(conn, "vmops", "cleanup_rules", "instance", citrixResourceBase.getVMInstanceName())).thenReturn("-1");
+
+        final Answer answer = wrapper.execute(cleanupNets, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+        verify(xsHost, times(1)).getIp();
+
+        assertFalse(answer.getResult());
+        assertEquals(answer.getDetails(), "-1");
+    }
+
+    @Test
+    public void testCleanupNetworkRulesCmdNullDetails() {
+        final CleanupNetworkRulesCmd cleanupNets = new CleanupNetworkRulesCmd(20);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.canBridgeFirewall()).thenReturn(false);
+        final Answer answer = wrapper.execute(cleanupNets, citrixResourceBase);
+
+        assertTrue(answer.getResult());
+        assertNull(answer.getDetails());
     }
 }
 

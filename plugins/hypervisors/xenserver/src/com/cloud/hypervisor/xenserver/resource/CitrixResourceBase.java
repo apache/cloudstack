@@ -259,8 +259,12 @@ import com.xensource.xenapi.XenAPIObject;
  */
 @Local(value = ServerResource.class)
 public abstract class CitrixResourceBase implements ServerResource, HypervisorResource, VirtualRouterDeployer {
+
     private static final Logger s_logger = Logger.getLogger(CitrixResourceBase.class);
+
+    static final Random Rand = new Random(System.currentTimeMillis());
     protected static final XenServerConnectionPool ConnPool = XenServerConnectionPool.getInstance();
+
     protected String _name;
     protected String _username;
     protected Queue<String> _password = new LinkedList<String>();
@@ -278,9 +282,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected int _wait;
     protected int _migratewait;
     protected String _instance; //instance name (default is usually "VM")
-    static final Random Rand = new Random(System.currentTimeMillis());
     protected boolean _securityGroupEnabled;
-
     protected IAgentControl _agentControl;
 
     final int _maxWeight = 256;
@@ -338,6 +340,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     public XsHost getHost() {
         return _host;
+    }
+
+    public String getVMInstanceName() {
+        return _instance;
     }
 
     public boolean isOvs() {
@@ -461,16 +467,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (cmd instanceof NetworkElementCommand) {
             return _vrResource.executeRequest((NetworkElementCommand)cmd);
-        } else if (clazz == OvsCreateGreTunnelCommand.class) {
-            return execute((OvsCreateGreTunnelCommand)cmd);
-        } else if (clazz == OvsDeleteFlowCommand.class) {
-            return execute((OvsDeleteFlowCommand)cmd);
-        } else if (clazz == OvsVpcPhysicalTopologyConfigCommand.class) {
-            return execute((OvsVpcPhysicalTopologyConfigCommand) cmd);
-        } else if (clazz == OvsVpcRoutingPolicyConfigCommand.class) {
-            return execute((OvsVpcRoutingPolicyConfigCommand) cmd);
-        } else if (clazz == CleanupNetworkRulesCmd.class) {
-            return execute((CleanupNetworkRulesCmd)cmd);
         } else if (clazz == NetworkRulesSystemVmCommand.class) {
             return execute((NetworkRulesSystemVmCommand)cmd);
         } else if (clazz == OvsCreateTunnelCommand.class) {
@@ -889,7 +885,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     /**
      * This method just creates a XenServer network following the tunnel network naming convention
      */
-    private synchronized Network findOrCreateTunnelNetwork(final Connection conn, final String nwName) {
+    public synchronized Network findOrCreateTunnelNetwork(final Connection conn, final String nwName) {
         try {
             Network nw = null;
             final Network.Record rec = new Network.Record();

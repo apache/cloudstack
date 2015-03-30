@@ -27,6 +27,7 @@ import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
@@ -39,8 +40,12 @@ import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.OvsCreateGreTunnelCommand;
+import com.cloud.agent.api.OvsDeleteFlowCommand;
 import com.cloud.agent.api.OvsFetchInterfaceCommand;
 import com.cloud.agent.api.OvsSetTagAndFlowCommand;
+import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
+import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyCommand;
@@ -115,6 +120,11 @@ public class CitrixRequestWrapper extends RequestWrapper {
         map.put(CheckSshCommand.class, new CitrixCheckSshCommandWrapper());
         map.put(SecurityGroupRulesCmd.class, new CitrixSecurityGroupRulesCommandWrapper());
         map.put(OvsFetchInterfaceCommand.class, new CitrixOvsFetchInterfaceCommandWrapper());
+        map.put(OvsCreateGreTunnelCommand.class, new CitrixOvsCreateGreTunnelCommandWrapper());
+        map.put(OvsDeleteFlowCommand.class, new CitrixOvsDeleteFlowCommandWrapper());
+        map.put(OvsVpcPhysicalTopologyConfigCommand.class, new CitrixOvsVpcPhysicalTopologyConfigCommandWrapper());
+        map.put(OvsVpcRoutingPolicyConfigCommand.class, new CitrixOvsVpcRoutingPolicyConfigCommandWrapper());
+        map.put(CleanupNetworkRulesCmd.class, new CitrixCleanupNetworkRulesCmdWrapper());
     }
 
     public static CitrixRequestWrapper getInstance() {
