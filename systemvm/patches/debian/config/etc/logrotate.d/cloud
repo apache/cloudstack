@@ -21,7 +21,4 @@
         notifempty
         compress
         delaycompress
-        postrotate
-                /usr/bin/pkill socat > /dev/null
-        endscript
 }
