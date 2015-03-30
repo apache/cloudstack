@@ -61,7 +61,7 @@ public class Xenserver625Resource extends XenServerResourceNewBase {
     }
 
     @Override
-    protected StorageSubsystemCommandHandler getStorageHandler() {
+    protected StorageSubsystemCommandHandler buildStorageHandler() {
         final XenServerStorageProcessor processor = new Xenserver625StorageProcessor(this);
         return new StorageSubsystemCommandHandlerBase(processor);
     }
@@ -99,7 +99,7 @@ public class Xenserver625Resource extends XenServerResourceNewBase {
     }
 
     @Override
-    protected String revertToSnapshot(final Connection conn, final VM vmSnapshot,
+    public String revertToSnapshot(final Connection conn, final VM vmSnapshot,
             final String vmName, final String oldVmUuid, final Boolean snapshotMemory, final String hostUUID)
                     throws Types.XenAPIException, XmlRpcException {
 

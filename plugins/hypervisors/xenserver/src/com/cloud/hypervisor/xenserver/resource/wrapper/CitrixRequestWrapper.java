@@ -21,6 +21,8 @@ package com.cloud.hypervisor.xenserver.resource.wrapper;
 
 import java.util.Hashtable;
 
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
@@ -45,6 +47,7 @@ import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
+import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
 import com.cloud.agent.api.OvsCreateGreTunnelCommand;
 import com.cloud.agent.api.OvsCreateTunnelCommand;
 import com.cloud.agent.api.OvsDeleteFlowCommand;
@@ -55,13 +58,16 @@ import com.cloud.agent.api.OvsSetTagAndFlowCommand;
 import com.cloud.agent.api.OvsSetupBridgeCommand;
 import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
 import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
+import com.cloud.agent.api.PerformanceMonitorCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
+import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartCommand;
@@ -72,6 +78,7 @@ import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
@@ -151,16 +158,29 @@ public class CitrixRequestWrapper extends RequestWrapper {
         map.put(CreateVMSnapshotCommand.class, new CitrixCreateVMSnapshotCommandWrapper());
         map.put(DeleteVMSnapshotCommand.class, new CitrixDeleteVMSnapshotCommandWrapper());
         map.put(RevertToVMSnapshotCommand.class, new CitrixRevertToVMSnapshotCommandWrapper());
+        map.put(NetworkRulesVmSecondaryIpCommand.class, new CitrixNetworkRulesVmSecondaryIpCommandWrapper());
+        map.put(ScaleVmCommand.class, new CitrixScaleVmCommandWrapper());
+        map.put(PvlanSetupCommand.class, new CitrixPvlanSetupCommandWrapper());
+        map.put(PerformanceMonitorCommand.class, new CitrixPerformanceMonitorCommandWrapper());
+        map.put(NetworkElementCommand.class, new CitrixNetworkElementCommandWrapper());
     }
 
     public static CitrixRequestWrapper getInstance() {
         return instance;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Answer execute(final Command command, final ServerResource serverResource) {
-        @SuppressWarnings("unchecked")
-        final CommandWrapper<Command, Answer, ServerResource> commandWrapper = map.get(command.getClass());
+        CommandWrapper<Command, Answer, ServerResource> commandWrapper = map.get(command.getClass());
+
+        // This is temporary. We have to map the classes with several sub-classes better.
+        if (commandWrapper == null && command instanceof StorageSubSystemCommand) {
+            commandWrapper = map.get(StorageSubSystemCommand.class);
+        }
+        if (commandWrapper == null && command instanceof NetworkElementCommand) {
+            commandWrapper = map.get(NetworkElementCommand.class);
+        }
 
         if (commandWrapper == null) {
             throw new NullPointerException("No key found for '" + command.getClass() + "' in the Map!");

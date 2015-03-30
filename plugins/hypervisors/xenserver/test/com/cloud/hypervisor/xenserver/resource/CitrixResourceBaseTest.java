@@ -66,13 +66,13 @@ public class CitrixResourceBaseTest {
         }
 
         @Override
-        protected void scaleVM(final Connection conn, final VM vm, final VirtualMachineTO vmSpec, final Host host) throws Types.XenAPIException, XmlRpcException {
+        public void scaleVM(final Connection conn, final VM vm, final VirtualMachineTO vmSpec, final Host host) throws Types.XenAPIException, XmlRpcException {
             _host.setSpeed(500);
             super.scaleVM(conn, vm, vmSpec, host);
         }
 
         @Override
-        protected boolean isDmcEnabled(final Connection conn, final Host host) throws Types.XenAPIException, XmlRpcException {
+        public boolean isDmcEnabled(final Connection conn, final Host host) throws Types.XenAPIException, XmlRpcException {
             return true;
         }
     };

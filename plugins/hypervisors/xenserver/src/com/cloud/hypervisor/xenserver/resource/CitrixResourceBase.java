@@ -350,6 +350,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         _password.add(password);
     }
 
+    public VirtualRoutingResource getVirtualRoutingResource() {
+        return _vrResource;
+    }
+
     public boolean isOvs() {
         return _isOvs;
     }
@@ -458,30 +462,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     @Override
     public Answer executeRequest(final Command cmd) {
 
-        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
-        try {
-            final Answer answer = wrapper.execute(cmd, this);
-            return answer;
-        } catch (final Exception e) {
-            // Ignore it for now. Just removing the command that have already been
-            // replaced by the new code.
+        // We need this one because the StorageSubSystemCommand is from another hierarchy.
+        if (cmd instanceof StorageSubSystemCommand) {
+            return storageHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
         }
 
-        final Class<? extends Command> clazz = cmd.getClass();
-
-        if (cmd instanceof NetworkElementCommand) {
-            return _vrResource.executeRequest((NetworkElementCommand)cmd);
-        } else if (cmd instanceof StorageSubSystemCommand) {
-            return storageHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
-        } else if (clazz == NetworkRulesVmSecondaryIpCommand.class) {
-            return execute((NetworkRulesVmSecondaryIpCommand) cmd);
-        } else if (clazz == ScaleVmCommand.class) {
-            return execute((ScaleVmCommand)cmd);
-        } else if (clazz == PvlanSetupCommand.class) {
-            return execute((PvlanSetupCommand)cmd);
-        } else if (clazz == PerformanceMonitorCommand.class) {
-            return execute((PerformanceMonitorCommand)cmd);
-        } else {
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        try {
+            return wrapper.execute(cmd, this);
+        } catch (final Exception e) {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
@@ -564,7 +553,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    private String getPerfMon(final Connection conn, final Map<String, String> params,
+    public String getPerfMon(final Connection conn, final Map<String, String> params,
             final int wait) {
         String result = null;
         try {
@@ -625,7 +614,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return null;
     }
 
-    protected void scaleVM(final Connection conn, final VM vm, final VirtualMachineTO vmSpec, final Host host) throws XenAPIException, XmlRpcException {
+    public void scaleVM(final Connection conn, final VM vm, final VirtualMachineTO vmSpec, final Host host) throws XenAPIException, XmlRpcException {
 
         final Long staticMemoryMax = vm.getMemoryStaticMax(conn);
         final Long staticMemoryMin = vm.getMemoryStaticMin(conn);
@@ -806,7 +795,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         throw new CloudRuntimeException(errMsg);
     }
 
-    protected XsLocalNetwork getNativeNetworkForTraffic(final Connection conn, final TrafficType type, final String name) throws XenAPIException, XmlRpcException {
+    public XsLocalNetwork getNativeNetworkForTraffic(final Connection conn, final TrafficType type, final String name) throws XenAPIException, XmlRpcException {
         if (name != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Looking for network named " + name);
@@ -3121,7 +3110,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      * By default this is disallowed, override the specific xenserver resource
      * if this is enabled
      */
-    protected boolean isDmcEnabled(final Connection conn, final Host host) throws XenAPIException, XmlRpcException {
+    public boolean isDmcEnabled(final Connection conn, final Host host) throws XenAPIException, XmlRpcException {
         return false;
     }
 
@@ -5576,7 +5565,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         CheckXenHostInfo();
 
-        storageHandler = getStorageHandler();
+        storageHandler = buildStorageHandler();
 
         _vrResource = new VirtualRoutingResource(this);
         if (!_vrResource.configure(name, params)) {
@@ -5585,7 +5574,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return true;
     }
 
-    protected StorageSubsystemCommandHandler getStorageHandler() {
+    protected StorageSubsystemCommandHandler buildStorageHandler() {
         final XenServerStorageProcessor processor = new XenServerStorageProcessor(this);
         return new StorageSubsystemCommandHandlerBase(processor);
     }

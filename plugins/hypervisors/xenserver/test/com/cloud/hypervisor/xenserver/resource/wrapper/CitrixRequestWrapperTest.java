@@ -11,6 +11,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -52,6 +53,7 @@ import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
+import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
 import com.cloud.agent.api.OvsCreateGreTunnelCommand;
 import com.cloud.agent.api.OvsCreateTunnelCommand;
 import com.cloud.agent.api.OvsDeleteFlowCommand;
@@ -62,14 +64,17 @@ import com.cloud.agent.api.OvsSetTagAndFlowCommand;
 import com.cloud.agent.api.OvsSetupBridgeCommand;
 import com.cloud.agent.api.OvsVpcPhysicalTopologyConfigCommand;
 import com.cloud.agent.api.OvsVpcRoutingPolicyConfigCommand;
+import com.cloud.agent.api.PerformanceMonitorCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
+import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartCommand;
@@ -81,19 +86,23 @@ import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
+import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.host.HostEnvironment;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.hypervisor.xenserver.resource.XsHost;
 import com.cloud.hypervisor.xenserver.resource.XsLocalNetwork;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkSetupInfo;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -1470,6 +1479,297 @@ public class CitrixRequestWrapperTest {
         verify(citrixResourceBase, times(1)).getConnection();
 
         assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testNetworkRulesVmSecondaryIpCommandSuccess() {
+        final Connection conn = Mockito.mock(Connection.class);
+
+        final NetworkRulesVmSecondaryIpCommand rulesVm = new NetworkRulesVmSecondaryIpCommand("Test", VirtualMachine.Type.User);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        when(citrixResourceBase.callHostPlugin(conn, "vmops", "network_rules_vmSecondaryIp", "vmName", rulesVm.getVmName(), "vmMac", rulesVm.getVmMac(),
+                "vmSecIp", rulesVm.getVmSecIp(), "action", rulesVm.getAction())).thenReturn("true");
+
+        final Answer answer = wrapper.execute(rulesVm, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testNetworkRulesVmSecondaryIpCommandFailure() {
+        final Connection conn = Mockito.mock(Connection.class);
+
+        final NetworkRulesVmSecondaryIpCommand rulesVm = new NetworkRulesVmSecondaryIpCommand("Test", VirtualMachine.Type.User);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        when(citrixResourceBase.callHostPlugin(conn, "vmops", "network_rules_vmSecondaryIp", "vmName", rulesVm.getVmName(), "vmMac", rulesVm.getVmMac(),
+                "vmSecIp", rulesVm.getVmSecIp(), "action", rulesVm.getAction())).thenReturn("false");
+
+        final Answer answer = wrapper.execute(rulesVm, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testScaleVmCommand() {
+        final String uuid = "6172d8b7-ba10-4a70-93f9-ecaf41f51d53";
+
+        final VirtualMachineTO machineTO = Mockito.mock(VirtualMachineTO.class);
+        final Connection conn = Mockito.mock(Connection.class);
+        final XsHost xsHost = Mockito.mock(XsHost.class);
+        final Host host =  Mockito.mock(Host.class);
+
+        final ScaleVmCommand scaleVm = new ScaleVmCommand(machineTO);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        when(citrixResourceBase.getHost()).thenReturn(xsHost);
+        when(citrixResourceBase.getHost().getUuid()).thenReturn(uuid);
+
+        try {
+            when(citrixResourceBase.isDmcEnabled(conn, host)).thenReturn(true);
+        } catch (final XenAPIException e) {
+            fail(e.getMessage());
+        } catch (final XmlRpcException e) {
+            fail(e.getMessage());
+        }
+
+        final Answer answer = wrapper.execute(scaleVm, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testPvlanSetupCommandDhcpSuccess() {
+        final String label = "net";
+
+        final Connection conn = Mockito.mock(Connection.class);
+        final XsLocalNetwork network = Mockito.mock(XsLocalNetwork.class);
+        final Network network2 = Mockito.mock(Network.class);
+
+        final PvlanSetupCommand lanSetup = PvlanSetupCommand.createDhcpSetup("add", URI.create("http://127.0.0.1"), "tag", "dhcp", "0:0:0:0:0:0", "127.0.0.1");
+
+        final String primaryPvlan = lanSetup.getPrimary();
+        final String isolatedPvlan = lanSetup.getIsolated();
+        final String op = lanSetup.getOp();
+        final String dhcpName = lanSetup.getDhcpName();
+        final String dhcpMac = lanSetup.getDhcpMac();
+        final String dhcpIp = lanSetup.getDhcpIp();
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        try {
+            when(citrixResourceBase.getNativeNetworkForTraffic(conn, TrafficType.Guest, "tag")).thenReturn(network);
+            when(network.getNetwork()).thenReturn(network2);
+            when(network2.getNameLabel(conn)).thenReturn(label);
+        } catch (final XenAPIException e) {
+            fail(e.getMessage());
+        } catch (final XmlRpcException e) {
+            fail(e.getMessage());
+        }
+
+        when(citrixResourceBase.callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-dhcp", "op", op, "nw-label", label, "primary-pvlan", primaryPvlan, "isolated-pvlan",
+                isolatedPvlan, "dhcp-name", dhcpName, "dhcp-ip", dhcpIp, "dhcp-mac", dhcpMac)).thenReturn("true");
+
+        final Answer answer = wrapper.execute(lanSetup, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testPvlanSetupCommandDhcpFailure() {
+        final String label = "net";
+
+        final Connection conn = Mockito.mock(Connection.class);
+        final XsLocalNetwork network = Mockito.mock(XsLocalNetwork.class);
+        final Network network2 = Mockito.mock(Network.class);
+
+        final PvlanSetupCommand lanSetup = PvlanSetupCommand.createDhcpSetup("add", URI.create("http://127.0.0.1"), "tag", "dhcp", "0:0:0:0:0:0", "127.0.0.1");
+
+        final String primaryPvlan = lanSetup.getPrimary();
+        final String isolatedPvlan = lanSetup.getIsolated();
+        final String op = lanSetup.getOp();
+        final String dhcpName = lanSetup.getDhcpName();
+        final String dhcpMac = lanSetup.getDhcpMac();
+        final String dhcpIp = lanSetup.getDhcpIp();
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        try {
+            when(citrixResourceBase.getNativeNetworkForTraffic(conn, TrafficType.Guest, "tag")).thenReturn(network);
+            when(network.getNetwork()).thenReturn(network2);
+            when(network2.getNameLabel(conn)).thenReturn(label);
+        } catch (final XenAPIException e) {
+            fail(e.getMessage());
+        } catch (final XmlRpcException e) {
+            fail(e.getMessage());
+        }
+
+        when(citrixResourceBase.callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-dhcp", "op", op, "nw-label", label, "primary-pvlan", primaryPvlan, "isolated-pvlan",
+                isolatedPvlan, "dhcp-name", dhcpName, "dhcp-ip", dhcpIp, "dhcp-mac", dhcpMac)).thenReturn("false");
+
+        final Answer answer = wrapper.execute(lanSetup, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testPvlanSetupCommandVmSuccess() {
+        final String label = "net";
+
+        final Connection conn = Mockito.mock(Connection.class);
+        final XsLocalNetwork network = Mockito.mock(XsLocalNetwork.class);
+        final Network network2 = Mockito.mock(Network.class);
+
+        final PvlanSetupCommand lanSetup = PvlanSetupCommand.createVmSetup("add", URI.create("http://127.0.0.1"), "tag", "0:0:0:0:0:0");
+
+        final String primaryPvlan = lanSetup.getPrimary();
+        final String isolatedPvlan = lanSetup.getIsolated();
+        final String op = lanSetup.getOp();
+        final String vmMac = lanSetup.getVmMac();
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        try {
+            when(citrixResourceBase.getNativeNetworkForTraffic(conn, TrafficType.Guest, "tag")).thenReturn(network);
+            when(network.getNetwork()).thenReturn(network2);
+            when(network2.getNameLabel(conn)).thenReturn(label);
+        } catch (final XenAPIException e) {
+            fail(e.getMessage());
+        } catch (final XmlRpcException e) {
+            fail(e.getMessage());
+        }
+
+        when(citrixResourceBase.callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-vm", "op", op, "nw-label", label, "primary-pvlan", primaryPvlan, "isolated-pvlan",
+                isolatedPvlan, "vm-mac", vmMac)).thenReturn("true");
+
+        final Answer answer = wrapper.execute(lanSetup, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testPvlanSetupCommandVmFailure() {
+        final String label = "net";
+
+        final Connection conn = Mockito.mock(Connection.class);
+        final XsLocalNetwork network = Mockito.mock(XsLocalNetwork.class);
+        final Network network2 = Mockito.mock(Network.class);
+
+        final PvlanSetupCommand lanSetup = PvlanSetupCommand.createVmSetup("add", URI.create("http://127.0.0.1"), "tag", "0:0:0:0:0:0");
+
+        final String primaryPvlan = lanSetup.getPrimary();
+        final String isolatedPvlan = lanSetup.getIsolated();
+        final String op = lanSetup.getOp();
+        final String vmMac = lanSetup.getVmMac();
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        try {
+            when(citrixResourceBase.getNativeNetworkForTraffic(conn, TrafficType.Guest, "tag")).thenReturn(network);
+            when(network.getNetwork()).thenReturn(network2);
+            when(network2.getNameLabel(conn)).thenReturn(label);
+        } catch (final XenAPIException e) {
+            fail(e.getMessage());
+        } catch (final XmlRpcException e) {
+            fail(e.getMessage());
+        }
+
+        when(citrixResourceBase.callHostPlugin(conn, "ovs-pvlan", "setup-pvlan-vm", "op", op, "nw-label", label, "primary-pvlan", primaryPvlan, "isolated-pvlan",
+                isolatedPvlan, "vm-mac", vmMac)).thenReturn("false");
+
+        final Answer answer = wrapper.execute(lanSetup, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testPerformanceMonitorCommandSuccess() {
+        final Connection conn = Mockito.mock(Connection.class);
+
+        final PerformanceMonitorCommand performanceMonitor = new PerformanceMonitorCommand(new Hashtable<String, String>(), 200);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        when(citrixResourceBase.getPerfMon(conn, performanceMonitor.getParams(), performanceMonitor.getWait())).thenReturn("performance");
+
+        final Answer answer = wrapper.execute(performanceMonitor, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testPerformanceMonitorCommandFailure() {
+        final Connection conn = Mockito.mock(Connection.class);
+
+        final PerformanceMonitorCommand performanceMonitor = new PerformanceMonitorCommand(new Hashtable<String, String>(), 200);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getConnection()).thenReturn(conn);
+        when(citrixResourceBase.getPerfMon(conn, performanceMonitor.getParams(), performanceMonitor.getWait())).thenReturn(null);
+
+        final Answer answer = wrapper.execute(performanceMonitor, citrixResourceBase);
+
+        verify(citrixResourceBase, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testNetworkElementCommand() {
+        final VirtualRoutingResource routingResource = Mockito.mock(VirtualRoutingResource.class);
+        final IpAddressTO [] ips = new IpAddressTO[0];
+
+        final IpAssocVpcCommand ipAssociation = new IpAssocVpcCommand(ips);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getVirtualRoutingResource()).thenReturn(routingResource);
+
+        final Answer answer = wrapper.execute(ipAssociation, citrixResourceBase);
+
+        verify(routingResource, times(1)).executeRequest(ipAssociation);
+
+        // Requires more testing, but the VirtualResourceRouting is quite big.
+        assertNull(answer);
     }
 }
 
