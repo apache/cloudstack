@@ -467,16 +467,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         if (cmd instanceof NetworkElementCommand) {
             return _vrResource.executeRequest((NetworkElementCommand)cmd);
-        } else if (clazz == NetworkRulesSystemVmCommand.class) {
-            return execute((NetworkRulesSystemVmCommand)cmd);
-        } else if (clazz == OvsCreateTunnelCommand.class) {
-            return execute((OvsCreateTunnelCommand)cmd);
-        } else if (clazz == OvsSetupBridgeCommand.class) {
-            return execute((OvsSetupBridgeCommand)cmd);
-        } else if (clazz == OvsDestroyBridgeCommand.class) {
-            return execute((OvsDestroyBridgeCommand)cmd);
-        } else if (clazz == OvsDestroyTunnelCommand.class) {
-            return execute((OvsDestroyTunnelCommand)cmd);
         } else if (clazz == UpdateHostPasswordCommand.class) {
             return execute((UpdateHostPasswordCommand)cmd);
         } else if (cmd instanceof ClusterVMMetaDataSyncCommand) {
@@ -917,7 +907,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     /**
      * This method creates a XenServer network and configures it for being used as a L2-in-L3 tunneled network
      */
-    private synchronized Network configureTunnelNetwork(final Connection conn, final Long networkId, final long hostId, final String bridgeName) {
+    public synchronized Network configureTunnelNetwork(final Connection conn, final Long networkId, final long hostId, final String bridgeName) {
         try {
             final Network nw = findOrCreateTunnelNetwork(conn, bridgeName);
             final String nwName = bridgeName;
@@ -964,7 +954,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    private synchronized void destroyTunnelNetwork(final Connection conn, final Network nw, final long hostId) {
+    public synchronized void destroyTunnelNetwork(final Connection conn, final Network nw, final long hostId) {
         try {
             final String bridge = nw.getBridge(conn);
             final String result = callHostPlugin(conn, "ovstunnel", "destroy_ovs_bridge", "bridge", bridge,
@@ -1617,7 +1607,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return cmd;
     }
 
-    private void cleanUpTmpDomVif(final Connection conn, final Network nw) throws XenAPIException, XmlRpcException {
+    public void cleanUpTmpDomVif(final Connection conn, final Network nw) throws XenAPIException, XmlRpcException {
 
         final Pair<VM, VM.Record> vm = getControlDomain(conn);
         final VM dom0 = vm.first();
