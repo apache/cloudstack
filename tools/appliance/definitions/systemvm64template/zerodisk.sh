@@ -6,7 +6,7 @@ rm -fv .veewee_version .veewee_params .vbox_version
 echo "Cleaning up"
 
 # Zero out the free space to save space in the final image:
-for path in / /boot /usr /var /opt /tmp /home
+for path in / /boot /usr /var /var/log /opt /tmp /home
 do
   dd if=/dev/zero of=$path/zero bs=1M
   sync
