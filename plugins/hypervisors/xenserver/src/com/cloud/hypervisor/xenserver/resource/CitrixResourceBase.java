@@ -3088,7 +3088,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return earliestNetwork != null ? new XsLocalNetwork(this, earliestNetwork, earliestNetworkRecord, null, null) : null;
     }
 
-    protected long[] getNetworkStats(final Connection conn, final String privateIP) {
+    public long[] getNetworkStats(final Connection conn, final String privateIP) {
         final String result = networkUsage(conn, privateIP, "get", null);
         final long[] stats = new long[2];
         if (result != null) {

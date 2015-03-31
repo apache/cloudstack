@@ -47,6 +47,7 @@ import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.NetworkRulesVmSecondaryIpCommand;
+import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.OvsCreateGreTunnelCommand;
 import com.cloud.agent.api.OvsCreateTunnelCommand;
 import com.cloud.agent.api.OvsDeleteFlowCommand;
@@ -176,6 +177,7 @@ public class CitrixRequestWrapper extends RequestWrapper {
         final Hashtable<Class<? extends Command>, CommandWrapper> xenServer56Commands = new Hashtable<Class<? extends Command>, CommandWrapper>();
         xenServer56Commands.put(CheckOnHostCommand.class, new XenServer56CheckOnHostCommandWrapper());
         xenServer56Commands.put(FenceCommand.class, new XenServer56FenceCommandWrapper());
+        xenServer56Commands.put(NetworkUsageCommand.class, new XenServer56NetworkUsageCommandWrapper());
         resources.put(XenServer56Resource.class, xenServer56Commands);
 
         // XenServer56FP1Resource commands

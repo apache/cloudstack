@@ -16,8 +16,10 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.FenceCommand;
+import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.xenserver.resource.XenServer56Resource;
+import com.cloud.utils.ExecutionResult;
 import com.cloud.vm.VMInstanceVO;
 import com.xensource.xenapi.Connection;
 
@@ -58,6 +60,80 @@ public class XenServer56WrapperTest {
 
         verify(xenServer56Resource, times(1)).getConnection();
         verify(xenServer56Resource, times(1)).checkHeartbeat(fenceCommand.getHostGuid());
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testNetworkUsageCommandSuccess() {
+        final Connection conn = Mockito.mock(Connection.class);
+
+        final NetworkUsageCommand networkCommand = new NetworkUsageCommand("192.168.10.10", "domRName", false, "192.168.10.1");
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(xenServer56Resource.getConnection()).thenReturn(conn);
+        when(xenServer56Resource.getNetworkStats(conn, networkCommand.getPrivateIP())).thenReturn(new long[]{1, 1});
+
+        final Answer answer = wrapper.execute(networkCommand, xenServer56Resource);
+
+        verify(xenServer56Resource, times(1)).getConnection();
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testNetworkUsageCommandFailure() {
+        final Connection conn = Mockito.mock(Connection.class);
+
+        final NetworkUsageCommand networkCommand = new NetworkUsageCommand("192.168.10.10", "domRName", false, "192.168.10.1");
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(xenServer56Resource.getConnection()).thenReturn(conn);
+        when(xenServer56Resource.getNetworkStats(conn, networkCommand.getPrivateIP())).thenReturn(new long[0]);
+
+        final Answer answer = wrapper.execute(networkCommand, xenServer56Resource);
+
+        verify(xenServer56Resource, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testNetworkUsageCommandCreateVpc() {
+        final ExecutionResult executionResult = Mockito.mock(ExecutionResult.class);
+
+        final NetworkUsageCommand networkCommand = new NetworkUsageCommand("192.168.10.10", "domRName", true, "192.168.10.1", "10.1.1.1/24");
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final String args = " -l 192.168.10.1 -c -v 10.1.1.1/24";
+        when(xenServer56Resource.executeInVR(networkCommand.getPrivateIP(), "vpc_netusage.sh", args)).thenReturn(executionResult);
+        when(executionResult.isSuccess()).thenReturn(true);
+
+        final Answer answer = wrapper.execute(networkCommand, xenServer56Resource);
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testNetworkUsageCommandCreateVpcFailure() {
+        final ExecutionResult executionResult = Mockito.mock(ExecutionResult.class);
+
+        final NetworkUsageCommand networkCommand = new NetworkUsageCommand("192.168.10.10", "domRName", true, "192.168.10.1", "10.1.1.1/24");
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final String args = " -l 192.168.10.1 -c -v 10.1.1.1/24";
+        when(xenServer56Resource.executeInVR(networkCommand.getPrivateIP(), "vpc_netusage.sh", args)).thenReturn(executionResult);
+        when(executionResult.isSuccess()).thenReturn(false);
+
+        final Answer answer = wrapper.execute(networkCommand, xenServer56Resource);
 
         assertFalse(answer.getResult());
     }

@@ -27,12 +27,9 @@ import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.NetworkUsageAnswer;
-import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.hypervisor.xenserver.resource.wrapper.CitrixRequestWrapper;
 import com.cloud.resource.ServerResource;
-import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
@@ -55,13 +52,6 @@ public class XenServer56Resource extends CitrixResourceBase {
         try {
             return wrapper.execute(cmd, this);
         } catch (final Exception e) {
-            // return Answer.createUnsupportedCommandAnswer(cmd);
-            // Ignore this for now. Still working on converting the other commands.
-        }
-
-        if (cmd instanceof NetworkUsageCommand) {
-            return execute((NetworkUsageCommand) cmd);
-        } else {
             return super.executeRequest(cmd);
         }
     }
@@ -141,72 +131,6 @@ public class XenServer56Resource extends CitrixResourceBase {
         }
 
         return executeInVR(privateIpAddress, "netusage.sh", args).getDetails();
-    }
-
-    protected NetworkUsageAnswer VPCNetworkUsage(final NetworkUsageCommand cmd) {
-        try {
-            final String option = cmd.getOption();
-            final String publicIp = cmd.getGatewayIP();
-
-            String args = " -l " + publicIp + " ";
-            if (option.equals("get")) {
-                args += "-g";
-            } else if (option.equals("create")) {
-                args += "-c";
-                final String vpcCIDR = cmd.getVpcCIDR();
-                args += " -v " + vpcCIDR;
-            } else if (option.equals("reset")) {
-                args += "-r";
-            } else if (option.equals("vpn")) {
-                args += "-n";
-            } else if (option.equals("remove")) {
-                args += "-d";
-            } else {
-                return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
-            }
-
-            final ExecutionResult result = executeInVR(cmd.getPrivateIP(), "vpc_netusage.sh", args);
-            final String detail = result.getDetails();
-            if (!result.isSuccess()) {
-                throw new Exception(" vpc network usage plugin call failed ");
-            }
-            if (option.equals("get") || option.equals("vpn")) {
-                final long[] stats = new long[2];
-                if (detail != null) {
-                    final String[] splitResult = detail.split(":");
-                    int i = 0;
-                    while (i < splitResult.length - 1) {
-                        stats[0] += new Long(splitResult[i++]).longValue();
-                        stats[1] += new Long(splitResult[i++]).longValue();
-                    }
-                    return new NetworkUsageAnswer(cmd, "success", stats[0], stats[1]);
-                }
-            }
-            return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
-        } catch (final Exception ex) {
-            s_logger.warn("Failed to get network usage stats due to ", ex);
-            return new NetworkUsageAnswer(cmd, ex);
-        }
-    }
-
-    protected NetworkUsageAnswer execute(final NetworkUsageCommand cmd) {
-        if (cmd.isForVpc()) {
-            return VPCNetworkUsage(cmd);
-        }
-        try {
-            final Connection conn = getConnection();
-            if (cmd.getOption() != null && cmd.getOption().equals("create")) {
-                final String result = networkUsage(conn, cmd.getPrivateIP(), "create", null);
-                final NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
-                return answer;
-            }
-            final long[] stats = getNetworkStats(conn, cmd.getPrivateIP());
-            final NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
-            return answer;
-        } catch (final Exception ex) {
-            s_logger.warn("Failed to get network usage stats due to ", ex);
-            return new NetworkUsageAnswer(cmd, ex);
-        }
     }
 
     public Boolean checkHeartbeat(final String hostuuid) {
