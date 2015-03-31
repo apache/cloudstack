@@ -239,7 +239,6 @@ public class XenServer610Resource extends XenServer600Resource {
         final Map<String, String> token = cmd.getToken();
         final String vmName = vmSpec.getName();
         final Set<VolumeTO> volumeToSet = null;
-        boolean migrated = false;
         Task task = null;
         try {
             final Set<VM> vms = VM.getByNameLabel(connection, vmSpec.getName());
@@ -295,7 +294,6 @@ public class XenServer610Resource extends XenServer600Resource {
                 throw new CloudRuntimeException("Error while migrating vm " + vmName, e);
             }
 
-            migrated = true;
             return new MigrateWithStorageSendAnswer(cmd, volumeToSet);
         } catch (final CloudRuntimeException e) {
             s_logger.error("Migration of vm " + vmName + " with storage failed due to " + e.toString(), e);

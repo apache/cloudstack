@@ -17,8 +17,11 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.NetworkUsageCommand;
+import com.cloud.agent.api.SetupCommand;
 import com.cloud.host.Host;
+import com.cloud.host.HostEnvironment;
 import com.cloud.hypervisor.xenserver.resource.XenServer56Resource;
+import com.cloud.hypervisor.xenserver.resource.XsHost;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.vm.VMInstanceVO;
 import com.xensource.xenapi.Connection;
@@ -134,6 +137,24 @@ public class XenServer56WrapperTest {
         when(executionResult.isSuccess()).thenReturn(false);
 
         final Answer answer = wrapper.execute(networkCommand, xenServer56Resource);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testSetupCommand() {
+        final XsHost xsHost = Mockito.mock(XsHost.class);
+        final HostEnvironment env = Mockito.mock(HostEnvironment.class);
+
+        final SetupCommand setupCommand = new SetupCommand(env);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(xenServer56Resource.getHost()).thenReturn(xsHost);
+
+        final Answer answer = wrapper.execute(setupCommand, xenServer56Resource);
+        verify(xenServer56Resource, times(1)).getConnection();
 
         assertFalse(answer.getResult());
     }

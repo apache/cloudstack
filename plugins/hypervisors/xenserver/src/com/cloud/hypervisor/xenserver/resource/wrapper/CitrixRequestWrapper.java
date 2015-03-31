@@ -21,6 +21,8 @@ package com.cloud.hypervisor.xenserver.resource.wrapper;
 
 import java.util.Hashtable;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
@@ -92,13 +94,13 @@ import com.cloud.resource.ServerResource;
 
 public class CitrixRequestWrapper extends RequestWrapper {
 
+    private static final Logger s_logger = Logger.getLogger(CitrixRequestWrapper.class);
+
     private static CitrixRequestWrapper instance;
 
     static {
         instance = new CitrixRequestWrapper();
     }
-
-    private boolean initialised;
 
     @SuppressWarnings("rawtypes")
     private final Hashtable<Class<? extends ServerResource>, Hashtable<Class<? extends Command>, CommandWrapper>> resources;
@@ -184,40 +186,95 @@ public class CitrixRequestWrapper extends RequestWrapper {
         final Hashtable<Class<? extends Command>, CommandWrapper> xenServer56P1Commands = new Hashtable<Class<? extends Command>, CommandWrapper>();
         xenServer56P1Commands.put(FenceCommand.class, new XenServer56FP1FenceCommandWrapper());
         resources.put(XenServer56FP1Resource.class, xenServer56P1Commands);
-
-        initialised = true;
     }
 
     public static CitrixRequestWrapper getInstance() {
         return instance;
     }
 
-    boolean isInitialised() {
-        return initialised;
-    }
-
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"rawtypes" })
     @Override
     public Answer execute(final Command command, final ServerResource serverResource) {
-        Hashtable<Class<? extends Command>, CommandWrapper> commands = resources.get(serverResource.getClass());
+        final Class<? extends ServerResource> resourceClass = serverResource.getClass();
 
-        // Can't instantiate the CitrixResourceBase because it's abstract. In order to reuse the command with subclasses
-        // I need to do this check here.
-        if (commands == null) {
-            commands = resources.get(serverResource.getClass().getSuperclass());
-        }
+        final Hashtable<Class<? extends Command>, CommandWrapper> resourceCommands = retrieveResource(command, resourceClass);
 
-        CommandWrapper<Command, Answer, ServerResource> commandWrapper = commands.get(command.getClass());
+        CommandWrapper<Command, Answer, ServerResource> commandWrapper = retrieveCommands(command.getClass(), resourceCommands);
 
-        // This is temporary. We have to map the classes with several sub-classes better.
-        if (commandWrapper == null && command instanceof NetworkElementCommand) {
-            commandWrapper = commands.get(NetworkElementCommand.class);
-        }
-
-        if (commandWrapper == null) {
-            throw new NullPointerException("No key found for '" + command.getClass() + "' in the Map!");
+        while (commandWrapper == null) {
+            //Could not find the command in the given resource, will traverse the family tree.
+            commandWrapper = retryWhenAllFails(command, resourceClass, resourceCommands);
         }
 
         return commandWrapper.execute(command, serverResource);
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    protected Hashtable<Class<? extends Command>, CommandWrapper> retrieveResource(final Command command, final Class<? extends ServerResource> resourceClass) {
+        Class<? extends ServerResource> keepResourceClass = resourceClass;
+        Hashtable<Class<? extends Command>, CommandWrapper> resource = resources.get(keepResourceClass);
+        while (resource == null) {
+            try {
+                final Class<? extends ServerResource> keepResourceClass2 = (Class<? extends ServerResource>) keepResourceClass.getSuperclass();
+                resource = resources.get(keepResourceClass2);
+
+                keepResourceClass = keepResourceClass2;
+            } catch (final ClassCastException e) {
+                throw new NullPointerException("No key found for '" + command.getClass() + "' in the Map!");
+            }
+        }
+        return resource;
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    protected CommandWrapper<Command, Answer, ServerResource> retrieveCommands(final Class<? extends Command> commandClass,
+            final Hashtable<Class<? extends Command>, CommandWrapper> resourceCommands) {
+
+        Class<? extends Command> keepCommandClass = commandClass;
+        CommandWrapper<Command, Answer, ServerResource> commandWrapper = resourceCommands.get(keepCommandClass);
+        while (commandWrapper == null) {
+            try {
+                final Class<? extends Command> commandClass2 = (Class<? extends Command>) keepCommandClass.getSuperclass();
+
+                if (commandClass2 == null) {
+                    throw new NullPointerException("All the COMMAND hierarchy tree has been visited but no compliant key has been found for '" + commandClass +"'.");
+                }
+
+                commandWrapper = resourceCommands.get(commandClass2);
+
+                keepCommandClass = commandClass2;
+            } catch (final NullPointerException e) {
+                // Will now traverse all the resource hierarchy. Returning null is not a problem.
+                // It is all being nicely checked and in case we do not have a resource, an Unsupported answer will be thrown by the base class.
+                return null;
+            }
+        }
+        return commandWrapper;
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    protected CommandWrapper<Command, Answer, ServerResource> retryWhenAllFails(final Command command, final Class<? extends ServerResource> resourceClass,
+            final Hashtable<Class<? extends Command>, CommandWrapper> resourceCommands) {
+
+        Class<? extends ServerResource> keepResourceClass = resourceClass;
+        CommandWrapper<Command, Answer, ServerResource> commandWrapper = resourceCommands.get(command.getClass());
+        while (commandWrapper == null) {
+            //Could not find the command in the given resource, will traverse the family tree.
+            try {
+                final Class<? extends ServerResource> resourceClass2 = (Class<? extends ServerResource>) keepResourceClass.getSuperclass();
+
+                if (resourceClass2 == null) {
+                    throw new NullPointerException("All the SERVER-RESOURCE hierarchy tree has been visited but no compliant key has been found for '" + command.getClass() +"'.");
+                }
+
+                final Hashtable<Class<? extends Command>, CommandWrapper> resourceCommands2 = retrieveResource(command, (Class<? extends ServerResource>) keepResourceClass.getSuperclass());
+                keepResourceClass = resourceClass2;
+
+                commandWrapper = retrieveCommands(command.getClass(), resourceCommands2);
+            } catch (final NullPointerException e) {
+                throw e;
+            }
+        }
+        return commandWrapper;
     }
 }

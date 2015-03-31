@@ -41,7 +41,6 @@ import com.xensource.xenapi.VM;
 public class XcpServerResource extends CitrixResourceBase {
     private final static Logger s_logger = Logger.getLogger(XcpServerResource.class);
     private static final long mem_32m = 33554432L;
-    private String version;
 
     public XcpServerResource() {
         super();

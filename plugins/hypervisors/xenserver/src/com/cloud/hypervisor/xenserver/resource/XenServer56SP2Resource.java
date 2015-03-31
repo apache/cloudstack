@@ -22,15 +22,12 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 @Local(value = ServerResource.class)
 public class XenServer56SP2Resource extends XenServer56FP1Resource {
-    private static final Logger s_logger = Logger.getLogger(XenServer56SP2Resource.class);
 
     public XenServer56SP2Resource() {
         super();
@@ -40,13 +37,13 @@ public class XenServer56SP2Resource extends XenServer56FP1Resource {
 
     @Override
     protected List<File> getPatchFiles() {
-        List<File> files = new ArrayList<File>();
-        String patch = "scripts/vm/hypervisor/xenserver/xenserver56fp1/patch";
-        String patchfilePath = Script.findScript("", patch);
+        final List<File> files = new ArrayList<File>();
+        final String patch = "scripts/vm/hypervisor/xenserver/xenserver56fp1/patch";
+        final String patchfilePath = Script.findScript("", patch);
         if (patchfilePath == null) {
             throw new CloudRuntimeException("Unable to find patch file " + patch);
         }
-        File file = new File(patchfilePath);
+        final File file = new File(patchfilePath);
         files.add(file);
         return files;
     }

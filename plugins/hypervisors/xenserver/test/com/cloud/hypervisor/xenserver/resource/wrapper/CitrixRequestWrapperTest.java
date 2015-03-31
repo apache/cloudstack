@@ -86,6 +86,7 @@ import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
+import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
@@ -1753,11 +1754,31 @@ public class CitrixRequestWrapperTest {
     }
 
     @Test
-    public void testNetworkElementCommand() {
+    public void testIpAssocVpcCommand() {
         final VirtualRoutingResource routingResource = Mockito.mock(VirtualRoutingResource.class);
         final IpAddressTO [] ips = new IpAddressTO[0];
 
         final IpAssocVpcCommand ipAssociation = new IpAssocVpcCommand(ips);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(citrixResourceBase.getVirtualRoutingResource()).thenReturn(routingResource);
+
+        final Answer answer = wrapper.execute(ipAssociation, citrixResourceBase);
+
+        verify(routingResource, times(1)).executeRequest(ipAssociation);
+
+        // Requires more testing, but the VirtualResourceRouting is quite big.
+        assertNull(answer);
+    }
+
+    @Test
+    public void testIpAssocCommand() {
+        final VirtualRoutingResource routingResource = Mockito.mock(VirtualRoutingResource.class);
+        final IpAddressTO [] ips = new IpAddressTO[0];
+
+        final IpAssocCommand ipAssociation = new IpAssocCommand(ips);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
