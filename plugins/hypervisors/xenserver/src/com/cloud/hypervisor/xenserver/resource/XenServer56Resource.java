@@ -19,7 +19,6 @@ package com.cloud.hypervisor.xenserver.resource;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import javax.ejb.Local;
 
@@ -28,8 +27,6 @@ import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.FenceAnswer;
-import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -46,7 +43,6 @@ import com.xensource.xenapi.PIF;
 import com.xensource.xenapi.Types.IpConfigurationMode;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VLAN;
-import com.xensource.xenapi.VM;
 
 @Local(value = ServerResource.class)
 public class XenServer56Resource extends CitrixResourceBase {
@@ -63,9 +59,7 @@ public class XenServer56Resource extends CitrixResourceBase {
             // Ignore this for now. Still working on converting the other commands.
         }
 
-        if (cmd instanceof FenceCommand) {
-            return execute((FenceCommand) cmd);
-        } else if (cmd instanceof NetworkUsageCommand) {
+        if (cmd instanceof NetworkUsageCommand) {
             return execute((NetworkUsageCommand) cmd);
         } else {
             return super.executeRequest(cmd);
@@ -235,34 +229,6 @@ public class XenServer56Resource extends CitrixResourceBase {
             return null;
         } finally {
             sshConnection.close();
-        }
-    }
-
-    protected FenceAnswer execute(final FenceCommand cmd) {
-        final Connection conn = getConnection();
-        try {
-            final Boolean alive = checkHeartbeat(cmd.getHostGuid());
-            if (alive == null) {
-                s_logger.debug("Failed to check heartbeat,  so unable to fence");
-                return new FenceAnswer(cmd, false, "Failed to check heartbeat, so unable to fence");
-            }
-            if (alive) {
-                s_logger.debug("Heart beat is still going so unable to fence");
-                return new FenceAnswer(cmd, false, "Heartbeat is still going on unable to fence");
-            }
-            final Set<VM> vms = VM.getByNameLabel(conn, cmd.getVmName());
-            for (final VM vm : vms) {
-                s_logger.info("Fence command for VM " + cmd.getVmName());
-                vm.powerStateReset(conn);
-                vm.destroy(conn);
-            }
-            return new FenceAnswer(cmd);
-        } catch (final XmlRpcException e) {
-            s_logger.warn("Unable to fence", e);
-            return new FenceAnswer(cmd, false, e.getMessage());
-        } catch (final XenAPIException e) {
-            s_logger.warn("Unable to fence", e);
-            return new FenceAnswer(cmd, false, e.getMessage());
         }
     }
 

@@ -35,6 +35,7 @@ import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
+import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
@@ -82,6 +83,7 @@ import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
+import com.cloud.hypervisor.xenserver.resource.XenServer56FP1Resource;
 import com.cloud.hypervisor.xenserver.resource.XenServer56Resource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.RequestWrapper;
@@ -173,7 +175,13 @@ public class CitrixRequestWrapper extends RequestWrapper {
         // XenServer56Resource commands
         final Hashtable<Class<? extends Command>, CommandWrapper> xenServer56Commands = new Hashtable<Class<? extends Command>, CommandWrapper>();
         xenServer56Commands.put(CheckOnHostCommand.class, new XenServer56CheckOnHostCommandWrapper());
+        xenServer56Commands.put(FenceCommand.class, new XenServer56FenceCommandWrapper());
         resources.put(XenServer56Resource.class, xenServer56Commands);
+
+        // XenServer56FP1Resource commands
+        final Hashtable<Class<? extends Command>, CommandWrapper> xenServer56P1Commands = new Hashtable<Class<? extends Command>, CommandWrapper>();
+        xenServer56P1Commands.put(FenceCommand.class, new XenServer56FP1FenceCommandWrapper());
+        resources.put(XenServer56FP1Resource.class, xenServer56P1Commands);
 
         initialised = true;
     }

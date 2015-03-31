@@ -18,32 +18,22 @@ package com.cloud.hypervisor.xenserver.resource;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
-import com.cloud.agent.api.FenceAnswer;
-import com.cloud.agent.api.FenceCommand;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VDI;
-import com.xensource.xenapi.VM;
 
 @Local(value = ServerResource.class)
 public class XenServer56FP1Resource extends XenServer56Resource {
-    private static final long mem_128m = 134217728L;
-    private static final Logger s_logger = Logger.getLogger(XenServer56FP1Resource.class);
 
     public XenServer56FP1Resource() {
         super();
@@ -60,52 +50,6 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         final File file = new File(patchfilePath);
         files.add(file);
         return files;
-    }
-
-    @Override
-    protected FenceAnswer execute(final FenceCommand cmd) {
-        final Connection conn = getConnection();
-        try {
-            final Boolean alive = checkHeartbeat(cmd.getHostGuid());
-            if ( alive == null ) {
-                s_logger.debug("Failed to check heartbeat,  so unable to fence");
-                return new FenceAnswer(cmd, false, "Failed to check heartbeat, so unable to fence");
-            }
-            if ( alive ) {
-                s_logger.debug("Heart beat is still going so unable to fence");
-                return new FenceAnswer(cmd, false, "Heartbeat is still going on unable to fence");
-            }
-            final Set<VM> vms = VM.getByNameLabel(conn, cmd.getVmName());
-            for (final VM vm : vms) {
-                final Set<VDI> vdis = new HashSet<VDI>();
-                final Set<VBD> vbds = vm.getVBDs(conn);
-                for (final VBD vbd : vbds) {
-                    final VDI vdi = vbd.getVDI(conn);
-                    if (!isRefNull(vdi)) {
-                        vdis.add(vdi);
-                    }
-                }
-                s_logger.info("Fence command for VM " + cmd.getVmName());
-                vm.powerStateReset(conn);
-                vm.destroy(conn);
-                for (final VDI vdi : vdis) {
-                    final Map<String, String> smConfig = vdi.getSmConfig(conn);
-                    for (final String key : smConfig.keySet()) {
-                        if (key.startsWith("host_")) {
-                            vdi.removeFromSmConfig(conn, key);
-                            break;
-                        }
-                    }
-                }
-            }
-            return new FenceAnswer(cmd);
-        } catch (final XmlRpcException e) {
-            s_logger.warn("Unable to fence", e);
-            return new FenceAnswer(cmd, false, e.getMessage());
-        } catch (final XenAPIException e) {
-            s_logger.warn("Unable to fence", e);
-            return new FenceAnswer(cmd, false, e.getMessage());
-        }
     }
 
     /**
