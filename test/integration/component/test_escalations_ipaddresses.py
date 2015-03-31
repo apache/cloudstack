@@ -153,7 +153,7 @@ class TestIpAddresses(cloudstackTestCase):
                     (exp_val, act_val))
         return return_flag
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "dvs"], required_hardware="true")
     def test_01_list_ipaddresses_pagination(self):
         """
         @summary: Test List IP Addresses pagination

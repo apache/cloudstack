@@ -315,7 +315,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     @data("isolated","shared")
     def test_01_add_nw_running_vm(self, value):
         """Add network to running VM"""
@@ -347,7 +347,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     @data("isolated","shared")
     def test_02_add_nw_stopped_vm(self, value):
         """Add network to stopped VM"""
@@ -378,7 +378,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     @data("isolated","shared")
     def test_03_add_nw_multiple_times(self, value):
         """Add same network multiple times to running VM"""
@@ -419,7 +419,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     @data("isolated")
     def test_04_vpc_nw_running_vm(self, value):
         """Add VPC network to running VM belonging to isolated network"""
@@ -466,7 +466,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
         vpc_off.update(self.apiclient, state='Disabled')
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     @data("isolated")
     def test_05_add_vpc_nw_stopped_vm(self, value):
         """Add VPC network to stopped VM belonging to isolated network"""
@@ -508,7 +508,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_06_add_nw_ipaddress_running_vm(self):
         """Add network and ip address to running VM"""
 
@@ -536,7 +536,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
         self.addNetworkToVm(self.shared_network, virtual_machine,ipaddress = ipaddress)
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_10_add_nw_invalid_ipaddress_running_vm(self):
         """Add network with invalid ip address to running VM"""
 
@@ -555,7 +555,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     @data("isolated","shared")
     def test_14_add_nw_different_account(self, value):
         """Add network to running VM"""
@@ -593,7 +593,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_24_add_nw_different_domain(self):
         """Add network to running VM"""
 
@@ -654,7 +654,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
             self.debug("Operation failed with exception %s" % e.exception)
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_25_add_nw_above_account_limit(self):
         """Add network to VM with maximum network limit reached"""
 
@@ -813,7 +813,7 @@ class TestRemoveNetworkFromVirtualMachine(cloudstackTestCase):
                         len(self.nics))
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_07_remove_nic_running_vm(self):
         """Remove nic from running VM"""
 
@@ -855,7 +855,7 @@ class TestRemoveNetworkFromVirtualMachine(cloudstackTestCase):
         self.debug("events: %s" % events)
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_08_remove_default_nic(self):
         """Test Remove default nic of running VM"""
 
@@ -878,7 +878,7 @@ class TestRemoveNetworkFromVirtualMachine(cloudstackTestCase):
             self.debug("Removing default nic of vm failed")
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_09_remove_foreign_nic(self):
         """Remove nic which does not belong to VM"""
 
@@ -999,7 +999,7 @@ class TestUpdateVirtualMachineNIC(cloudstackTestCase):
                         len(self.nics))
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_11_update_nic_running_vm(self):
         """update default nic of running VM"""
 
@@ -1064,7 +1064,7 @@ class TestUpdateVirtualMachineNIC(cloudstackTestCase):
         self.debug("events: %s" % events)
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_12_make_default_nic_as_default(self):
         """Try to set default nic of vm again as default"""
 
@@ -1094,7 +1094,7 @@ class TestUpdateVirtualMachineNIC(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_13_set_foreign_nic_as_default(self):
         """set nic which does not belong to VM as its default one"""
 
@@ -1195,7 +1195,7 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_15_add_nic_wrong_vm_id(self):
         """Add network to vm with wrong vm id"""
 
@@ -1214,7 +1214,7 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_16_add_nic_wrong_network_id(self):
         """Add network to vm with wrong network id"""
 
@@ -1233,7 +1233,7 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_17_add_nic_different_zone(self):
         """Add network to vm where both belong to different zones"""
 
@@ -1332,7 +1332,7 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_26_add_nic_insufficient_permission(self):
         """Try to add network to vm with insufficient permission"""
 
@@ -1440,7 +1440,7 @@ class TestFailureScenariosRemoveNicFromVM(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_19_remove_nic_wrong_vm_id(self):
         """Try to remove nic from a vm providing wrong vm id to API"""
 
@@ -1473,7 +1473,7 @@ class TestFailureScenariosRemoveNicFromVM(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_20_remove_nic_wrong_nic_id(self):
         """Try to remove nic from a vm providing wrong nic id to API"""
 
@@ -1506,7 +1506,7 @@ class TestFailureScenariosRemoveNicFromVM(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_27_remove_nic_insufficient_permission(self):
         """Try to remove nic from vm with insufficient permission"""
 
@@ -1625,7 +1625,7 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_21_update_nic_wrong_vm_id(self):
         """update default nic of vm providing wrong vm id to the API"""
 
@@ -1670,7 +1670,7 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_22_update_nic_wrong_nic_id(self):
         """update default nic of vm providing wrong nic id to the API"""
 
@@ -1716,7 +1716,7 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_23_update_nic_incorrect_vm_state(self):
         """update default nic of vm when vm is state is not Running or Stopped"""
 
@@ -1785,7 +1785,7 @@ class TestFailureScenariosUpdateVirtualMachineNIC(cloudstackTestCase):
                     e.exception)
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "dvs"])
     def test_28_update_nic_insufficient_permission(self):
         """Try to update default nic of vm with insufficient permission"""
 

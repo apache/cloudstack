@@ -181,7 +181,7 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["simulator", "advanced"])
+    @attr(tags = ["simulator", "advanced", "dvs"])
     def test_01_add_non_contiguous_ranges(self):
         """
         Test adding different non contiguous vlan ranges
@@ -214,7 +214,7 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["simulator", "advanced"])
+    @attr(tags = ["simulator", "advanced", "dvs"])
     def test_02_add_existing_vlan_range(self):
         """
         Test adding same non contiguous range twice
@@ -236,7 +236,7 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["simulator", "advanced"])
+    @attr(tags = ["simulator", "advanced", "dvs"])
     def test_03_extend_contiguous_range(self):
         """
         Test adding non contiguous range and extend it
@@ -264,7 +264,7 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["simulator", "advanced"])
+    @attr(tags = ["simulator", "advanced", "dvs"])
     def test_04_remove_unused_range(self):
         """
         Test removing unused vlan range
@@ -293,7 +293,7 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["simulator", "advanced"])
+    @attr(tags = ["simulator", "advanced", "dvs"])
     def test_05_remove_used_range(self):
         """
         Test removing used vlan range
