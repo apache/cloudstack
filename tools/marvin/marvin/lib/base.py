@@ -651,6 +651,21 @@ class VirtualMachine:
             cmd.hostid = hostid
         apiclient.migrateVirtualMachine(cmd)
 
+    def migrate_vm_with_volume(self, apiclient, hostid=None, migrateto=None):
+        """migrate an Instance and its volumes"""
+        cmd = migrateVirtualMachineWithVolume.migrateVirtualMachineWithVolumeCmd()
+        cmd.virtualmachineid = self.id
+        if hostid:
+            cmd.hostid = hostid
+        if migrateto:
+            migrateto = []
+            for volume, pool in migrateto.items():
+                cmd.migrateto.append({
+                    'volume': volume,
+                    'pool': pool
+            })
+        apiclient.migrateVirtualMachineWithVolume(cmd)
+
     def attach_volume(self, apiclient, volume):
         """Attach volume to instance"""
         cmd = attachVolume.attachVolumeCmd()
@@ -3636,11 +3651,12 @@ class Configurations:
     """Manage Configuration"""
 
     @classmethod
-    def update(cls, apiclient, **kwargs):
+    def update(cls, apiclient, name, value=None):
         """Updates the specified configuration"""
 
         cmd = updateConfiguration.updateConfigurationCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        cmd.name = name
+        cmd.value = value
         apiclient.updateConfiguration(cmd)
 
     @classmethod

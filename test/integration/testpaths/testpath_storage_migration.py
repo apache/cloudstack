@@ -34,7 +34,10 @@ from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
                                list_volumes,
-                               list_virtual_machines
+                               list_virtual_machines,
+                               list_storage_pools,
+                               list_clusters,
+                               list_hosts
                                )
 from marvin.codes import (ZONETAG1,
                           CLUSTERTAG1)
@@ -3391,3 +3394,455 @@ class TestLiveStorageMigration(cloudstackTestCase):
             ), None, "Volume list should be empty")
 
         return
+
+def MigrateVmWithVolume(self,vm,destinationHost,volumes,pools):
+    """
+        This method is used to migrate a vm and its volumes using migrate virtual machine with volume API
+        INPUTS:
+               1. vm -> virtual machine object
+               2. destinationHost -> the host to which VM will be migrated
+               3. volumes -> list of volumes which are to be migrated
+               4. pools -> list of destination pools
+    """
+    vol_pool_map = {}
+    for vol,pool in zip(volumes,pools):
+        vol_pool_map.update({vol.id:pool.id})
+
+    vm.migrate_vm_with_volume(
+                                  self.apiclient,
+                                  hostid=destinationHost.id,
+                                  migrateto = vol_pool_map
+                                  )
+    vm.getState(
+                    self.apiclient,
+                    "Running"
+                )
+    #check for the VM's host and volume's storage post migration
+    migrated_vm_response = list_virtual_machines(self.apiclient, id=vm.id)
+    self.assertEqual(
+                         isinstance(migrated_vm_response, list),
+                         True,
+                         "Check list virtual machines response for valid list"
+                    )
+    self.assertEqual(
+                         migrated_vm_response[0].hostid,
+                         destinationHost.id,
+                         "VM did not migrate to a specified host"
+                    )
+
+    for vol,pool in zip(volumes,pools):
+        migrated_volume_response = list_volumes(self.apiclient, virtualmachineid = migrated_vm_response[0].id, name=vol.name, listall = True)
+        self.assertEqual(
+                         isinstance(migrated_volume_response, list),
+                         True,
+                         "Check list virtual machines response for valid list"
+                        )
+        self.assertEqual(
+                         migrated_volume_response[0].storageid,
+                         pool.id,
+                         "Volume did not migrate to a specified pool"
+                        )
+
+        self.assertEqual(
+                         str(migrated_volume_response[0].state).lower(),
+                         'ready',
+                         "Check migrated volume is in Ready state"
+                        )
+        """
+        #Take VM snapshot to check data integrity
+        try :
+            vm_snapshot = VmSnapshot.create(self.apiclient, vmid = migrated_vm_response[0].id)
+        except Exception as e:
+            raise Exception("Warning: Exception during VM snapshot creation : %s" % e)
+        
+        #Delete the snapshot
+        try :
+            VmSnapshot.deleteVMSnapshot(self.apiclient, vmsnapshotid = vm_snapshot.id)
+        except Exception as e:
+            raise Exception("Warning: Exception during VM snapshot creation : %s" % e)
+        """
+
+        return migrated_vm_response[0]
+
+def MigrateVm(self, vm, destinationHost):
+    """
+    This method is to migrate a VM using migrate virtual machine API
+    """
+
+    vm.migrate(
+                    self.apiclient,
+                    hostid=destinationHost.id,
+                 )
+    vm.getState(
+                    self.apiclient,
+                    "Running"
+                    )
+    #check for the VM's host and volume's storage post migration
+    migrated_vm_response = list_virtual_machines(self.apiclient, id=vm.id)
+    self.assertEqual(
+                         isinstance(migrated_vm_response, list),
+                         True,
+                         "Check list virtual machines response for valid list"
+                        )
+    self.assertEqual(
+                         migrated_vm_response[0].hostid,
+                         destinationHost.id,
+                         "VM did not migrate to a specified host"
+                        )
+    return migrated_vm_response[0]
+
+def get_destination_pools_hosts(self, vm):
+    """
+    Get destination Pools for all volumes and destination Host for the VM
+    This method is use in case we use the API migrate volume with storage
+    """
+
+    destinationPools = []
+    vol_list = list_volumes(self.apiclient, virtualmachineid=vm.id, listall=True)
+    # For each volume get destination pool
+    for vol in vol_list:
+        pool = GetDestinationPool(self, vol.storage, "CLUSTER")
+        destinationPools.append(pool)
+        #Get destination host
+    destinationHost = self.GetDestinationHost(vm.hostid)
+    return destinationHost, destinationPools, vol_list
+
+
+def check_files(self, vm, destinationHost):
+    """
+    Check for VMX and VMDK files
+            INPUTS :
+                      1. vm -> The Virtual Machine object
+                      2. destinationHost -> The host to which we want to migrate the VM
+    """
+    # list volumes and their pools
+    # Here we list all the volumes of the VM , then login to the destination host
+    # and check for vmx and vmdk files in the storage
+
+    vm_volumes = list_volumes(self.apiclient, virtualmachineid = vm.id, listall=True)
+    print vm_volumes
+    for vol in vm_volumes:
+        spool  =  list_storage_pools(self.apiclient, id=vol.storageid)
+        split_path = spool[0].path.split("/")
+        pool_path = split_path[2]
+        sshclient = SshClient(host = destinationHost.ipaddress, port = 22, user = "root", passwd = "freebsd")
+        pool_data_vmdk = sshclient.execute("ls /vmfs/volumes/" + pool_path + "/" + vm.instancename +  "| grep vmdk")
+        pool_data_vmx = sshclient.execute("ls /vmfs/volumes/" + pool_path + "/" + vm.instancename +  "| grep vmx")
+        if(pool_data_vmx):
+            vmx_file = vm.instancename + ".vmx"
+            if vol.type == "ROOT":
+                self.assertIn(
+                      vmx_file,
+                      pool_data_vmx,
+                      "The VMX files are missing"
+                      )
+        if(pool_data_vmdk):
+            vmdk_file1 = vol.path + ".vmdk"
+            vmdk_file2 = vol.path + "-flat.vmdk"
+
+            self.assertIn(
+                      vmdk_file1,
+                      pool_data_vmdk,
+                      "The VMDK files are missing"
+                      )
+            self.assertIn(
+                      vmdk_file2,
+                      pool_data_vmdk,
+                      "The VMDK flat files are missing"
+                      )
+    return
+
+
+class TestStorageLiveMigrationVmware(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestStorageLiveMigrationVmware, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.testdata = testClient.getParsedTestDataConfig()
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+
+        cls.template = get_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.testdata["ostype"])
+
+        cls._cleanup = []
+
+        if cls.hypervisor.lower() not in [
+                "vmware",
+                "kvm",
+                "xenserver",
+                "hyper-v"]:
+            raise unittest.SkipTest(
+                "Storage migration not supported on %s" %
+                cls.hypervisor)
+        # Get Hosts in the cluster and iscsi/vmfs storages for that cluster
+        iscsi_pools = []
+        try :
+            list_vmware_clusters = list_clusters(cls.apiclient, hypervisor="vmware")
+        except Exception as e:
+            raise unittest.SkipTest(e)
+        
+        if len(list_vmware_clusters) < 1 :
+            raise unittest.SkipTest("There is no cluster available in the setup")
+        else :
+            for cluster in list_vmware_clusters :
+                try:
+                    list_esx_hosts = list_hosts(cls.apiclient, clusterid = cluster.id)
+                except Exception as e:
+                    raise unittest.SkipTest(e)
+                if len(list_esx_hosts) > 1 :
+                    try:
+                        list_storage = list_storage_pools(cls.apiclient, clusterid = cluster.id)
+                    except Exception as e:
+                        raise unittest.SkipTest(e)
+                    for storage in list_storage :
+                        if storage.type == "VMFS" :
+                            iscsi_pools.append(storage)
+                    if len(iscsi_pools) > 1:
+                        my_cluster_id = cluster.id
+                        break
+                    else :
+                        iscsi_pools = []
+        if len(iscsi_pools) < 2 :
+            raise unittest.SkipTest("Not enough resources available in the setup")
+        cls.hosts = list_esx_hosts
+        cls.pools = list_storage
+
+        # Create an account
+        cls.account = Account.create(
+            cls.apiclient,
+            cls.testdata["account"],
+            domainid=cls.domain.id
+        )
+        cls._cleanup.append(cls.account)
+
+        # Create Service offering
+        cls.service_offering = ServiceOffering.create(
+            cls.apiclient,
+            cls.testdata["service_offering"]
+        )
+        cls._cleanup.append(cls.service_offering)
+
+        # Create Disk offering
+        cls.disk_offering = DiskOffering.create(
+            cls.apiclient,
+            cls.testdata["disk_offering"]
+        )
+        # Create disk offering for resize
+        cls.resized_disk_offering = DiskOffering.create(
+            cls.apiclient,
+            cls.testdata["resized_disk_offering"]
+        )
+
+        cls._cleanup.append(cls.disk_offering)
+        cls._cleanup.append(cls.resized_disk_offering)
+
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cleanup_resources(cls.apiclient, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+    def tearDown(self):
+        try:
+            for storagePool in self.pools:
+                StoragePool.update(self.apiclient, id=storagePool.id, tags="")
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def deploy_virtual_machine(self, service_offering_id, vm):
+        """
+        Function to Deploy VMs
+        """
+        virtual_machine = VirtualMachine.create(
+        self.apiclient,
+        self.testdata[vm],
+        accountid=self.account.name,
+        zoneid=self.zone.id,
+        domainid=self.account.domainid,
+        serviceofferingid=service_offering_id,
+        templateid=self.template.id,
+        )
+        virtual_machine.getState(
+                                 self.apiclient,
+                                 "Running"
+                                 )
+
+        return virtual_machine
+    
+    def GetDestinationHost(self, hostsToavoid):
+        """
+        This method gives us the destination host to which VM will be migrated
+        It takes the souce host i.e. hostsToavoid as input
+        """
+        destinationHost = None
+        for host in self.hosts:
+            if host.id not in hostsToavoid:
+                destinationHost = host
+                break
+        return destinationHost
+        
+
+    @attr(tags=["advanced", "basic", "vmware", "vmfs"])
+    def test_01_migrate_root_and_data_disk_live(self):
+        """
+        Migrate VMs/Volumes on VMware with VMFS storage
+        """
+        #List clusters and check if they have multiple hosts
+        #and multiple storages
+        #check if they storages are VMFS type
+        self.debug("---------------This is the test no 1--------------")
+        """
+        Create a VM, live migrate the VM
+        """
+        vm = "virtual_machine2"
+        virtual_machine_1 = self.deploy_virtual_machine(self.service_offering.id, vm)
+
+        #Get destination host
+        destinationHost = self.GetDestinationHost(virtual_machine_1.hostid)
+        #Migrate the VM
+        vm = MigrateVm(self, virtual_machine_1, destinationHost)
+        #self.check_files(vm,destinationHost)
+        
+        self.debug("---------------This is the test no 2--------------")
+        """
+        Migrate the ROOT Volume
+        """
+        # Get ROOT volume and destination pool
+        vol_list = list_volumes(self.apiclient, virtualmachineid=vm.id, type="ROOT", listall=True)
+        root_vol = vol_list[0]
+        destinationPool = GetDestinationPool(self, root_vol.storage, "CLUSTER")
+        #Migrate ROOT volume
+        islive = True
+        MigrateDataVolume(self, root_vol, destinationPool, islive)
+        check_files(self, vm ,destinationHost)
+        
+        self.debug("---------------This is the test no 3--------------")
+        """
+        Migrate the VM and ROOT volume
+        """
+        #Get all volumes to be migrated
+ 
+        destinationHost, destinationPools, vol_list = get_destination_pools_hosts(self, vm)
+        vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
+
+        check_files(self, vm,destinationHost)
+
+        self.debug("---------------This is the test no 4--------------")
+        """
+        Add a data disk and migrate vm, data disk and root disk
+        """
+
+        data_disk_1 = Volume.create(
+                                    self.apiclient,
+                                    self.testdata["volume"],
+                                    zoneid=self.zone.id,
+                                    account=self.account.name,
+                                    domainid=self.account.domainid,
+                                    diskofferingid=self.disk_offering.id
+                                  )
+
+        self.debug("Created volume with ID: %s" % data_disk_1.id)
+
+        virtual_machine_1.attach_volume(
+                         self.apiclient,
+                         data_disk_1
+                         )
+
+        destinationHost, destinationPools, vol_list = get_destination_pools_hosts(self, vm)
+        vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
+
+        check_files(self, vm,destinationHost)
+        self.debug("---------------This is the test no 5--------------")
+        """
+        Upload a Volume, Attach it to the VM, Migrate all the volumes and VM.
+        """
+
+                #upload a volume
+        self.testdata["configurableData"]["upload_volume"]["format"] = "OVA"
+        self.testdata["configurableData"]["upload_volume"]["url"] = "http://nfs1.lab.vmops.com/templates/burbank-systemvm-08012012.ova"
+        upload_volume = Volume.upload(
+                                      self.apiclient,
+                                      self.testdata["configurableData"]["upload_volume"],
+                                      account= self.account.name,
+                                      domainid= self.domain.id,
+                                      zoneid= self.zone.id
+                                      )
+        upload_volume.wait_for_upload(self.apiclient)
+        virtual_machine_1.attach_volume(
+                         self.apiclient,
+                         upload_volume
+                         )
+ 
+        destinationHost, destinationPools, vol_list = get_destination_pools_hosts(self, vm)
+        vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
+
+        check_files(self, vm,destinationHost)
+        
+        self.debug("---------------This is the test no 6--------------")
+        """
+        Create snapshots on all the volumes, Migrate all the volumes and VM.
+        """
+        #Get ROOT Volume
+        vol_for_snap = list_volumes(self.apiclient, virtualmachineid=vm.id, listall=True)
+        for vol in vol_for_snap:
+            snapshot = Snapshot.create(
+                                        self.apiclient,
+                                        volume_id = vol.id
+                                        )
+            snapshot.validateState(
+                                   self.apiclient, 
+                                    snapshotstate="backedup", 
+                                    )
+        # Migrate all volumes and VMs
+
+        destinationHost, destinationPools, vol_list = get_destination_pools_hosts(self, vm)
+        vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
+
+        check_files(self, vm, destinationHost)
+
+        self.debug("---------------This is the test no 7--------------")
+        """
+        Resize the data volume , Migrate all the volumes and VM.
+        """
+        data_disk_1.resize(
+                           self.apiclient,
+                           diskofferingid = self.resized_disk_offering.id
+                           )
+        # Migrate all volumes and VMs
+        destinationHost, destinationPools, vol_list = get_destination_pools_hosts(self, vm)
+        vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
+
+        check_files(self, vm,destinationHost)
+
+        self.debug("---------------This is the test no 8--------------")
+        """
+        Restore the VM , Migrate all the volumes and VM.
+        """
+        virtual_machine_1.restore(self.apiclient)
+        virtual_machine_1.getState(
+                                     self.apiclient,
+                                     "Running"
+                                     )
+        # Migrate the VM and its volumes
+
+        destinationHost, destinationPools, vol_list = get_destination_pools_hosts(self, vm)
+        vm = MigrateVmWithVolume(self, virtual_machine_1, destinationHost, vol_list, destinationPools)
+
+        check_files(self, vm,destinationHost)
