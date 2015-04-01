@@ -88,7 +88,7 @@ To initiate the pull request, do the following:
 3. Validate the pull request will be into the upstream `master` and will be from your `feature_x` branch
 4. Enter a detailed description of the work you have done and then click '**Send pull request**'
 
-If you are requested to make modifications to your proposed changes, make the changes locally on your `feature_x` branch, re-push the changes to your fork and submit the pull request again.
+If you are requested to make modifications to your proposed changes, make the changes locally on your `feature_x` branch, re-push the `feature_x` branch to your fork.  The existing pull request should automatically pick up the change and update accordingly.
 
 
 Cleaning up after a successful pull request
