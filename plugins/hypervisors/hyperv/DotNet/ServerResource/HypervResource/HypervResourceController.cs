@@ -81,7 +81,6 @@ namespace HypervResource
         public string RootDeviceName;
         public ulong ParentPartitionMinMemoryMb;
         public string LocalSecondaryStoragePath;
-        public string systemVmIso;
 
         private string getPrimaryKey(string id)
         {
@@ -157,7 +156,6 @@ namespace HypervResource
         public static HypervResourceControllerConfig config = new HypervResourceControllerConfig();
 
         private static ILog logger = LogManager.GetLogger(typeof(HypervResourceController));
-        private string systemVmIso  = "";
         Dictionary<String, String> contextMap = new Dictionary<String, String>();
 
         public static void Initialize()
@@ -1160,39 +1158,25 @@ namespace HypervResource
 
                 try
                 {
-                    string systemVmIsoPath = systemVmIso;
-                    lock (systemVmIso)
+                    string systemVmIsoPath = null;
+                    String uriStr = (String)cmd.secondaryStorage;
+                    if (!String.IsNullOrEmpty(uriStr))
                     {
-                        systemVmIsoPath = systemVmIso;
-                        String uriStr = (String)cmd.secondaryStorage;
-                        if (!String.IsNullOrEmpty(uriStr))
+                        NFSTO share = new NFSTO();
+                        share.uri = new Uri(uriStr);
+                        string defaultDataPath = wmiCallsV2.GetDefaultDataRoot();
+                        string secondaryPath = Utils.NormalizePath(Path.Combine(share.UncPath, "systemvm"));
+                        string[] choices = Directory.GetFiles(secondaryPath, "systemvm*.iso");
+                        if (choices.Length != 1)
                         {
-                            if (String.IsNullOrEmpty(systemVmIsoPath) || !File.Exists(systemVmIsoPath))
-                            {
-                                NFSTO share = new NFSTO();
-                                share.uri = new Uri(uriStr);
-                                string defaultDataPath = wmiCallsV2.GetDefaultDataRoot();
-
-                                string secondaryPath = Utils.NormalizePath(Path.Combine(share.UncPath, "systemvm"));
-                                string[] choices = Directory.GetFiles(secondaryPath, "systemvm*.iso");
-                                if (choices.Length != 1)
-                                {
-                                    String errMsg = "Couldn't locate the systemvm iso on " + secondaryPath;
-                                    logger.Debug(errMsg);
-                                }
-                                else
-                                {
-                                    systemVmIsoPath = Utils.NormalizePath(Path.Combine(defaultDataPath, Path.GetFileName(choices[0])));
-                                    if (!File.Exists(systemVmIsoPath))
-                                    {
-                                        Utils.DownloadCifsFileToLocalFile(choices[0], share, systemVmIsoPath);
-                                    }
-                                    systemVmIso = systemVmIsoPath;
-                                }
-                            }
+                            String errMsg = "Couldn't locate the systemvm iso on " + secondaryPath;
+                            logger.Error(errMsg);
+                        }
+                        else
+                        {
+                            systemVmIsoPath = choices[0];
                         }
                     }
-
                     wmiCallsV2.DeployVirtualMachine(cmd, systemVmIsoPath);
                     result = true;
                 }
