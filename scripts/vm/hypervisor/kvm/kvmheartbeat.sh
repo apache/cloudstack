@@ -155,7 +155,7 @@ then
   exit 0
 elif [ "$cflag" == "1" ]
 then
-  reboot
+  echo b > /proc/sysrq-trigger
   exit $?
 else
   write_hbLog 
