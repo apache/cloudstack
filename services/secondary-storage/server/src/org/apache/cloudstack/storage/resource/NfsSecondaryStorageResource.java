@@ -2666,13 +2666,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         String fileSavedTempLocation = uploadEntity.getInstallPathPrefix() + "/" + filename;
 
         String uploadedFileExtension = FilenameUtils.getExtension(filename);
-        String userSelectedFormat= "vhd";
+        String userSelectedFormat= uploadEntity.getFormat().toString();
         if(uploadedFileExtension.equals("zip") || uploadedFileExtension.equals("bz2") || uploadedFileExtension.equals("gz")) {
             userSelectedFormat += "." + uploadedFileExtension;
         }
         String formatError = ImageStoreUtil.checkTemplateFormat(fileSavedTempLocation, userSelectedFormat);
         if(StringUtils.isNotBlank(formatError)) {
-            String errorString = "File type mismatch between uploaded file and selected format. Selected file format: " + uploadEntity.getFormat() + ". Received: " + formatError;
+            String errorString = "File type mismatch between uploaded file and selected format. Selected file format: " + userSelectedFormat + ". Received: " + formatError;
             s_logger.error(errorString);
             return errorString;
         }
