@@ -20,9 +20,10 @@ import java.lang.reflect.Field;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.Storage;
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,9 +32,6 @@ import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -45,6 +43,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.Storage;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
@@ -100,13 +99,13 @@ public class InternalLBVMServiceTest extends TestCase {
         Mockito.when(_accountDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn(new AccountVO(2));
         CallContext.register(_accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
 
-        DomainRouterVO validVm =
-            new DomainRouterVO(validVmId, off.getId(), 1, "alena", 1, HypervisorType.XenServer, 1, 1, 1, 1, false, 0, false, null, false, false,
-                VirtualMachine.Type.InternalLoadBalancerVm, null);
+        final DomainRouterVO validVm =
+                new DomainRouterVO(validVmId, off.getId(), 1, "alena", 1, HypervisorType.XenServer, 1, 1, 1, 1, false, null, false, false,
+                        VirtualMachine.Type.InternalLoadBalancerVm, null);
         validVm.setRole(Role.INTERNAL_LB_VM);
-        DomainRouterVO nonInternalLbVm =
-            new DomainRouterVO(validVmId, off.getId(), 1, "alena", 1, HypervisorType.XenServer, 1, 1, 1, 1, false, 0, false, null, false, false,
-                VirtualMachine.Type.DomainRouter, null);
+        final DomainRouterVO nonInternalLbVm =
+                new DomainRouterVO(validVmId, off.getId(), 1, "alena", 1, HypervisorType.XenServer, 1, 1, 1, 1, false, null, false, false,
+                        VirtualMachine.Type.DomainRouter, null);
         nonInternalLbVm.setRole(Role.VIRTUAL_ROUTER);
 
         Mockito.when(_domainRouterDao.findById(validVmId)).thenReturn(validVm);
@@ -124,19 +123,19 @@ public class InternalLBVMServiceTest extends TestCase {
 
     @Test(expected = InvalidParameterValueException.class)
     public void startNonExistingVm() {
-        String expectedExcText = null;
+        final String expectedExcText = null;
         try {
             _lbVmSvc.startInternalLbVm(nonExistingVmId, _accountMgr.getAccount(1L), 1L);
-        } catch (StorageUnavailableException e) {
+        } catch (final StorageUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (InsufficientCapacityException e) {
+        } catch (final InsufficientCapacityException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (ConcurrentOperationException e) {
+        } catch (final ConcurrentOperationException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (ResourceUnavailableException e) {
+        } catch (final ResourceUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
@@ -144,19 +143,19 @@ public class InternalLBVMServiceTest extends TestCase {
 
     @Test(expected = InvalidParameterValueException.class)
     public void startNonInternalLbVmVm() {
-        String expectedExcText = null;
+        final String expectedExcText = null;
         try {
             _lbVmSvc.startInternalLbVm(nonInternalLbVmId, _accountMgr.getAccount(1L), 1L);
-        } catch (StorageUnavailableException e) {
+        } catch (final StorageUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (InsufficientCapacityException e) {
+        } catch (final InsufficientCapacityException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (ConcurrentOperationException e) {
+        } catch (final ConcurrentOperationException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (ResourceUnavailableException e) {
+        } catch (final ResourceUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
@@ -167,16 +166,16 @@ public class InternalLBVMServiceTest extends TestCase {
         VirtualRouter vr = null;
         try {
             vr = _lbVmSvc.startInternalLbVm(validVmId, _accountMgr.getAccount(1L), 1L);
-        } catch (StorageUnavailableException e) {
+        } catch (final StorageUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (InsufficientCapacityException e) {
+        } catch (final InsufficientCapacityException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (ConcurrentOperationException e) {
+        } catch (final ConcurrentOperationException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (ResourceUnavailableException e) {
+        } catch (final ResourceUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         } finally {
@@ -187,16 +186,16 @@ public class InternalLBVMServiceTest extends TestCase {
     //TEST FOR STOP COMMAND
     @Test(expected = InvalidParameterValueException.class)
     public void stopNonExistingVm() {
-        String expectedExcText = null;
+        final String expectedExcText = null;
         try {
             _lbVmSvc.stopInternalLbVm(nonExistingVmId, false, _accountMgr.getAccount(1L), 1L);
-        } catch (StorageUnavailableException e) {
+        } catch (final StorageUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (ConcurrentOperationException e) {
+        } catch (final ConcurrentOperationException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (ResourceUnavailableException e) {
+        } catch (final ResourceUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
@@ -204,16 +203,16 @@ public class InternalLBVMServiceTest extends TestCase {
 
     @Test(expected = InvalidParameterValueException.class)
     public void stopNonInternalLbVmVm() {
-        String expectedExcText = null;
+        final String expectedExcText = null;
         try {
             _lbVmSvc.stopInternalLbVm(nonInternalLbVmId, false, _accountMgr.getAccount(1L), 1L);
-        } catch (StorageUnavailableException e) {
+        } catch (final StorageUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (ConcurrentOperationException e) {
+        } catch (final ConcurrentOperationException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (ResourceUnavailableException e) {
+        } catch (final ResourceUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
@@ -224,13 +223,13 @@ public class InternalLBVMServiceTest extends TestCase {
         VirtualRouter vr = null;
         try {
             vr = _lbVmSvc.stopInternalLbVm(validVmId, false, _accountMgr.getAccount(1L), 1L);
-        } catch (StorageUnavailableException e) {
+        } catch (final StorageUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (ConcurrentOperationException e) {
+        } catch (final ConcurrentOperationException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (ResourceUnavailableException e) {
+        } catch (final ResourceUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         } finally {
@@ -238,16 +237,16 @@ public class InternalLBVMServiceTest extends TestCase {
         }
     }
 
-    private static ServiceOfferingVO setId(ServiceOfferingVO vo, long id) {
-        ServiceOfferingVO voToReturn = vo;
-        Class<?> c = voToReturn.getClass();
+    private static ServiceOfferingVO setId(final ServiceOfferingVO vo, final long id) {
+        final ServiceOfferingVO voToReturn = vo;
+        final Class<?> c = voToReturn.getClass();
         try {
-            Field f = c.getSuperclass().getDeclaredField("id");
+            final Field f = c.getSuperclass().getDeclaredField("id");
             f.setAccessible(true);
             f.setLong(voToReturn, id);
-        } catch (NoSuchFieldException ex) {
+        } catch (final NoSuchFieldException ex) {
             return null;
-        } catch (IllegalAccessException ex) {
+        } catch (final IllegalAccessException ex) {
             return null;
         }
 

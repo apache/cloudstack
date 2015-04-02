@@ -36,8 +36,6 @@ import org.cloud.network.router.deployment.RouterDeploymentDefinition;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.BumpUpPriorityCommand;
-import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
@@ -224,33 +222,6 @@ public class NetworkHelperImpl implements NetworkHelper {
         _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, disconnectedRouter.getDataCenterId(), disconnectedRouter.getPodIdToDeployIn(), title, context);
         disconnectedRouter.setStopPending(true);
         disconnectedRouter = _routerDao.persist(disconnectedRouter);
-
-        final int connRouterPR = getRealPriority(connectedRouter);
-        final int disconnRouterPR = getRealPriority(disconnectedRouter);
-        if (connRouterPR < disconnRouterPR) {
-            // connRouterPR < disconnRouterPR, they won't equal at any time
-            if (!connectedRouter.getIsPriorityBumpUp()) {
-                final BumpUpPriorityCommand command = new BumpUpPriorityCommand();
-                command.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(connectedRouter.getId()));
-                command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, connectedRouter.getInstanceName());
-                final Answer answer = _agentMgr.easySend(connectedRouter.getHostId(), command);
-                if (!answer.getResult()) {
-                    s_logger.error("Failed to bump up " + connectedRouter.getInstanceName() + "'s priority! " + answer.getDetails());
-                }
-            } else {
-                final String t = "Can't bump up virtual router " + connectedRouter.getInstanceName() + "'s priority due to it's already bumped up!";
-                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, connectedRouter.getDataCenterId(), connectedRouter.getPodIdToDeployIn(), t, t);
-            }
-        }
-    }
-
-    @Override
-    public int getRealPriority(final DomainRouterVO router) {
-        int priority = router.getPriority();
-        if (router.getIsPriorityBumpUp()) {
-            priority += VirtualNetworkApplianceManager.DEFAULT_DELTA;
-        }
-        return priority;
     }
 
     @Override
@@ -522,7 +493,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
                 router = new DomainRouterVO(id, routerOffering.getId(), routerDeploymentDefinition.getVirtualProvider().getId(), VirtualMachineName.getRouterName(id,
                         s_vmInstanceName), template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(),
-                        userId, routerDeploymentDefinition.isRedundant(), 0, false, RedundantState.UNKNOWN, offerHA, false, vpcId);
+                        userId, routerDeploymentDefinition.isRedundant(), RedundantState.UNKNOWN, offerHA, false, vpcId);
 
                 router.setDynamicallyScalable(template.isDynamicallyScalable());
                 router.setRole(Role.VIRTUAL_ROUTER);

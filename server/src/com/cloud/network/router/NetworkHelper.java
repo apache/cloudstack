@@ -50,8 +50,6 @@ public interface NetworkHelper {
             List<? extends VirtualRouter> disconnectedRouters, String reason)
                     throws ResourceUnavailableException;
 
-    public abstract int getRealPriority(DomainRouterVO router);
-
     public abstract NicTO getNicTO(VirtualRouter router, Long networkId,
             String broadcastUri);
 

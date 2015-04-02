@@ -21,4 +21,4 @@ if [ "$?" -ne "0" ]
 then
 	   STATUS=MASTER
 fi
-echo "Status: ${STATUS}&Bumped: NO"
+echo "Status: ${STATUS}"

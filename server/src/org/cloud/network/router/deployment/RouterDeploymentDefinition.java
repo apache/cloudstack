@@ -338,7 +338,6 @@ public class RouterDeploymentDefinition {
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         //Check current redundant routers, if possible(all routers are stopped), reset the priority
         planDeploymentRouters();
-        setupPriorityOfRedundantRouter();
 
         if (getNumberOfRoutersToDeploy() > 0 && prepareDeployment()) {
             findVirtualProvider();
@@ -441,20 +440,5 @@ public class RouterDeploymentDefinition {
         }
 
         return needReset;
-    }
-
-    /**
-     * Only for redundant deployment and if any routers needed reset, we shall
-     * reset all routers priorities
-     */
-    protected void setupPriorityOfRedundantRouter() {
-        if (isRedundant() && routersNeedReset()) {
-            for (final DomainRouterVO router : routers) {
-                // getUpdatedPriority() would update the value later
-                router.setPriority(0);
-                router.setIsPriorityBumpUp(false);
-                routerDao.update(router.getId(), router);
-            }
-        }
     }
 }

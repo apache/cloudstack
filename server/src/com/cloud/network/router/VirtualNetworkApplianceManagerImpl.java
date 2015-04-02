@@ -115,7 +115,6 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -1067,7 +1066,6 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         /*
          * In order to make fail-over works well at any time, we have to ensure:
          * 1. Backup router's priority = Master's priority - DELTA + 1
-         * 2. Backup router's priority hasn't been bumped up.
          */
         private void checkSanity(final List<DomainRouterVO> routers) {
             final Set<Long> checkedNetwork = new HashSet<Long>();
@@ -1342,41 +1340,6 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         }
     }
 
-    protected int getUpdatedPriority(final Network network, final List<DomainRouterVO> routers, final DomainRouterVO masterRouter)
-            throws InsufficientVirtualNetworkCapacityException {
-        int priority;
-        if (routers.size() == 0) {
-            priority = DEFAULT_PRIORITY;
-        } else {
-            int maxPriority = 0;
-
-            final DomainRouterVO router0 = routers.get(0);
-            if (router0.getId() == masterRouter.getId()) {
-                if (!router0.getIsRedundantRouter()) {
-                    throw new CloudRuntimeException("Redundant router is mixed with single router in one network!");
-                }
-                maxPriority = _nwHelper.getRealPriority(router0);
-            } else {
-                maxPriority = DEFAULT_PRIORITY;
-            }
-
-            if (maxPriority == 0) {
-                return DEFAULT_PRIORITY;
-            }
-            if (maxPriority < 20) {
-                s_logger.error("Current maximum priority is too low!");
-                throw new InsufficientVirtualNetworkCapacityException("Current maximum priority is too low as " + maxPriority + "!", network.getId());
-            } else if (maxPriority > 200) {
-                s_logger.error("Too many times fail-over happened! Current maximum priority is too high as " + maxPriority + "!");
-                throw new InsufficientVirtualNetworkCapacityException("Too many times fail-over happened! Current maximum priority is too high as " + maxPriority + "!",
-                        network.getId());
-            }
-
-            priority = maxPriority - DEFAULT_DELTA + 1;
-        }
-        return priority;
-    }
-
     @Override
     public boolean finalizeVirtualMachineProfile(final VirtualMachineProfile profile, final DeployDestination dest, final ReservationContext context) {
 
@@ -1621,7 +1584,7 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
         return buf;
     }
 
-    protected StringBuilder createRedundantRouterArgs(final NicProfile nic, DomainRouterVO router) {
+    protected StringBuilder createRedundantRouterArgs(final NicProfile nic, final DomainRouterVO router) {
         final StringBuilder buf = new StringBuilder();
 
         final long networkId = nic.getNetworkId();
@@ -1673,17 +1636,6 @@ Configurable, StateListener<State, VirtualMachine.Event, VirtualMachine> {
             }
 
             buf.append(" redundant_state=").append(redundantState);
-
-            try {
-                final int priority = getUpdatedPriority(network, routers, router);
-                router.setPriority(priority);
-                router = _routerDao.persist(router);
-
-                buf.append(" router_pr=").append(router.getPriority());
-            } catch (final InsufficientVirtualNetworkCapacityException e) {
-                s_logger.error("Failed to get update priority!", e);
-                throw new CloudRuntimeException("Failed to get update priority!");
-            }
         }
 
         return buf;

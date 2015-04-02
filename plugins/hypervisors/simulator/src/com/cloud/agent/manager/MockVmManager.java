@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
@@ -97,8 +96,6 @@ public interface MockVmManager extends Manager {
     GetDomRVersionAnswer getDomRVersion(GetDomRVersionCmd cmd);
 
     CheckRouterAnswer checkRouter(CheckRouterCommand cmd);
-
-    Answer bumpPriority(BumpUpPriorityCommand cmd);
 
     Answer CleanupNetworkRules(CleanupNetworkRulesCmd cmd, SimulatorInfo info);
 

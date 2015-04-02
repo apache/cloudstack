@@ -22,10 +22,7 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -526,117 +523,6 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         fail();
     }
 
-    /**
-     * If any router is NOT redundant, then it shouldn't update routers
-     */
-    @Test
-    public void testSetupPriorityOfRedundantRouterWithNonRedundantRouters() {
-        // Prepare
-        deployment.routers = new ArrayList<>();
-        final DomainRouterVO routerVO1 = mock(DomainRouterVO.class);
-        deployment.routers.add(routerVO1);
-        when(routerVO1.getIsRedundantRouter()).thenReturn(true);
-        when(routerVO1.getState()).thenReturn(VirtualMachine.State.Stopped);
-        final DomainRouterVO routerVO2 = mock(DomainRouterVO.class);
-        deployment.routers.add(routerVO2);
-        when(routerVO2.getIsRedundantRouter()).thenReturn(false);
-        when(routerVO2.getState()).thenReturn(VirtualMachine.State.Stopped);
-        // If this deployment is not redundant nothing will be executed
-        when(mockNw.isRedundant()).thenReturn(true);
-
-        // Execute
-        deployment.setupPriorityOfRedundantRouter();
-
-        // Assert
-        verify(routerVO1, times(0)).setPriority(anyInt());
-        verify(routerVO1, times(0)).setIsPriorityBumpUp(anyBoolean());
-        verify(mockRouterDao, times(0)).update(anyLong(), (DomainRouterVO) anyObject());
-    }
-
-    /**
-     * If any router is NOT Stopped, then it shouldn't update routers
-     */
-    @Test
-    public void testSetupPriorityOfRedundantRouterWithRunningRouters() {
-        // Prepare
-        deployment.routers = new ArrayList<>();
-        final DomainRouterVO routerVO1 = mock(DomainRouterVO.class);
-        deployment.routers.add(routerVO1);
-        when(routerVO1.getIsRedundantRouter()).thenReturn(true);
-        when(routerVO1.getState()).thenReturn(VirtualMachine.State.Stopped);
-        final DomainRouterVO routerVO2 = mock(DomainRouterVO.class);
-        deployment.routers.add(routerVO2);
-        when(routerVO2.getIsRedundantRouter()).thenReturn(true);
-        when(routerVO2.getState()).thenReturn(VirtualMachine.State.Running);
-        // If this deployment is not redundant nothing will be executed
-        when(mockNw.isRedundant()).thenReturn(true);
-
-        // Execute
-        deployment.setupPriorityOfRedundantRouter();
-
-        // Assert
-        verify(routerVO1, times(0)).setPriority(anyInt());
-        verify(routerVO1, times(0)).setIsPriorityBumpUp(anyBoolean());
-        verify(mockRouterDao, times(0)).update(anyLong(), (DomainRouterVO) anyObject());
-    }
-
-    /**
-     * Given all routers are redundant and Stopped, then it should update ALL routers
-     */
-    @Test
-    public void testSetupPriorityOfRedundantRouter() {
-        // Prepare
-        deployment.routers = new ArrayList<>();
-        final DomainRouterVO routerVO1 = mock(DomainRouterVO.class);
-        deployment.routers.add(routerVO1);
-        when(routerVO1.getId()).thenReturn(ROUTER1_ID);
-        when(routerVO1.getIsRedundantRouter()).thenReturn(true);
-        when(routerVO1.getState()).thenReturn(VirtualMachine.State.Stopped);
-        final DomainRouterVO routerVO2 = mock(DomainRouterVO.class);
-        deployment.routers.add(routerVO2);
-        when(routerVO2.getId()).thenReturn(ROUTER2_ID);
-        when(routerVO2.getIsRedundantRouter()).thenReturn(true);
-        when(routerVO2.getState()).thenReturn(VirtualMachine.State.Stopped);
-        // If this deployment is not redundant nothing will be executed
-        when(mockNw.isRedundant()).thenReturn(true);
-
-        // Execute
-        deployment.setupPriorityOfRedundantRouter();
-
-        // Assert
-        verify(routerVO1, times(1)).setPriority(0);
-        verify(routerVO1, times(1)).setIsPriorityBumpUp(false);
-        verify(mockRouterDao, times(1)).update(ROUTER1_ID, routerVO1);
-        verify(routerVO2, times(1)).setPriority(0);
-        verify(routerVO2, times(1)).setIsPriorityBumpUp(false);
-        verify(mockRouterDao, times(1)).update(ROUTER2_ID, routerVO2);
-    }
-
-    /**
-     * If this is not a redundant deployment, then we shouldn't reset priorities
-     */
-    @Test
-    public void testSetupPriorityOfRedundantRouterWithNonRedundantDeployment() {
-        // Prepare
-        deployment.routers = new ArrayList<>();
-        final DomainRouterVO routerVO1 = mock(DomainRouterVO.class);
-        deployment.routers.add(routerVO1);
-        when(routerVO1.getIsRedundantRouter()).thenReturn(true);
-        when(routerVO1.getState()).thenReturn(VirtualMachine.State.Stopped);
-        final DomainRouterVO routerVO2 = mock(DomainRouterVO.class);
-        deployment.routers.add(routerVO2);
-        when(routerVO2.getIsRedundantRouter()).thenReturn(true);
-        when(routerVO2.getState()).thenReturn(VirtualMachine.State.Stopped);
-
-        // Execute
-        deployment.setupPriorityOfRedundantRouter();
-
-        // Assert
-        verify(routerVO1, times(0)).setPriority(anyInt());
-        verify(routerVO1, times(0)).setIsPriorityBumpUp(anyBoolean());
-        verify(mockRouterDao, times(0)).update(anyLong(), (DomainRouterVO) anyObject());
-    }
-
     @Test
     public void testGetNumberOfRoutersToDeploy() {
         // Prepare
@@ -886,7 +772,6 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         // Prepare
         final RouterDeploymentDefinition deploymentUT = spy(deployment);
-        doNothing().when(deploymentUT).setupPriorityOfRedundantRouter();
         doReturn(noOfRoutersToDeploy).when(deploymentUT).getNumberOfRoutersToDeploy();
         doReturn(passPreparation).when(deploymentUT).prepareDeployment();
         doNothing().when(deploymentUT).findVirtualProvider();
@@ -898,7 +783,6 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         deploymentUT.executeDeployment();
 
         // Assert
-        verify(deploymentUT, times(1)).setupPriorityOfRedundantRouter();
         verify(deploymentUT, times(1)).getNumberOfRoutersToDeploy();
         int proceedToDeployment = 0;
         if (noOfRoutersToDeploy > 0) {

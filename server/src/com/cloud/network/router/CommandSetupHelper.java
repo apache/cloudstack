@@ -930,9 +930,8 @@ public class CommandSetupHelper {
         final String dhcpRange = getGuestDhcpRange(guestNic, network, _entityMgr.findById(DataCenter.class, network.getDataCenterId()));
 
         final NicProfile nicProfile = _networkModel.getNicProfile(router, nic.getNetworkId(), null);
-        final int priority = _networkHelper.getRealPriority(router);
 
-        final SetupGuestNetworkCommand setupCmd = new SetupGuestNetworkCommand(dhcpRange, networkDomain, router.getIsRedundantRouter(), priority, defaultDns1, defaultDns2, add, _itMgr.toNicTO(nicProfile,
+        final SetupGuestNetworkCommand setupCmd = new SetupGuestNetworkCommand(dhcpRange, networkDomain, router.getIsRedundantRouter(), defaultDns1, defaultDns2, add, _itMgr.toNicTO(nicProfile,
                 router.getHypervisorType()));
 
         final String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIp4Address()) | ~NetUtils.ip2Long(guestNic.getNetmask()));

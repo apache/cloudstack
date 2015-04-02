@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -16,45 +16,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
-
-source /root/func.sh
-
-nolock=0
-if [ $# -eq 1 ]
+STATUS=$(cat /etc/cloudstack/cmdline.json | grep redundant_state | awk '{print $2;}' | sed -e 's/[,\"]//g')
+if [ "$?" -ne "0" ]
 then
-    if [ $1 == "--no-lock" ]
-    then
-        nolock=1
-    fi
+	   STATUS=MASTER
 fi
-
-if [ $nolock -eq 0 ]
-then
-    lock="biglock"
-    locked=$(getLockFile $lock)
-    if [ "$locked" != "1" ]
-    then
-        exit 1
-    fi
-fi
-
-bumped="Bumped: NO"
-if [ -e /tmp/rrouter_bumped ]
-then
-    bumped="Bumped: YES"
-fi
-
-state="Status: BACKUP"
-isMaster=`grep -Po '(?<="redundant_master": ")[^"]*' /etc/cloudstack/cmdline.json`
-if [ $? -eq 0 ]
-then
-    if [ "$isMaster" = true ] ; then
-        state="Status: MASTER"
-    fi
-    echo "$state&$bumped"
-fi
-
-if [ $nolock -eq 0 ]
-then
-    unlock_exit $? $lock $locked
-fi
+echo "Status: ${STATUS}"

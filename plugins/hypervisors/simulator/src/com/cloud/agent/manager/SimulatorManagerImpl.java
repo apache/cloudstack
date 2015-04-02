@@ -27,20 +27,17 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.routing.SetMonitorServiceCommand;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.BackupSnapshotCommand;
-import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckRouterCommand;
@@ -75,6 +72,7 @@ import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.ScaleVmCommand;
+import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
@@ -95,6 +93,7 @@ import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetMonitorServiceCommand;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
@@ -113,7 +112,6 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.api.commands.CleanupSimulatorMockCmd;
 import com.cloud.api.commands.ConfigureSimulatorCmd;
 import com.cloud.api.commands.QuerySimulatorMockCmd;
-import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.resource.SimulatorStorageProcessor;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.simulator.MockConfigurationVO;
@@ -153,9 +151,9 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
     protected StorageSubsystemCommandHandler storageHandler;
 
     @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        SimulatorStorageProcessor processor = new SimulatorStorageProcessor(this);
-        this.storageHandler = new StorageSubsystemCommandHandlerBase(processor);
+    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
+        final SimulatorStorageProcessor processor = new SimulatorStorageProcessor(this);
+        storageHandler = new StorageSubsystemCommandHandlerBase(processor);
         return true;
     }
 
@@ -191,7 +189,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
 
     @Override
     public List<Class<?>> getCommands() {
-        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        final List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(ConfigureSimulatorCmd.class);
         cmdList.add(QuerySimulatorMockCmd.class);
         cmdList.add(CleanupSimulatorMockCmd.class);
@@ -200,48 +198,48 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
 
     @DB
     @Override
-    public Answer simulate(Command cmd, String hostGuid) {
+    public Answer simulate(final Command cmd, final String hostGuid) {
         Answer answer = null;
         Exception exception = null;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
-            MockHost host = _mockHost.findByGuid(hostGuid);
+            final MockHost host = _mockHost.findByGuid(hostGuid);
             String cmdName = cmd.toString();
-            int index = cmdName.lastIndexOf(".");
+            final int index = cmdName.lastIndexOf(".");
             if (index != -1) {
                 cmdName = cmdName.substring(index + 1);
             }
 
-            SimulatorInfo info = new SimulatorInfo();
+            final SimulatorInfo info = new SimulatorInfo();
             info.setHostUuid(hostGuid);
 
-            MockConfigurationVO config = _mockConfigDao.findByNameBottomUP(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), cmdName);
+            final MockConfigurationVO config = _mockConfigDao.findByNameBottomUP(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), cmdName);
             if (config != null && (config.getCount() == null || config.getCount().intValue() > 0)) {
-                Map<String, String> configParameters = config.getParameters();
-                for (Map.Entry<String, String> entry : configParameters.entrySet()) {
+                final Map<String, String> configParameters = config.getParameters();
+                for (final Map.Entry<String, String> entry : configParameters.entrySet()) {
                     if (entry.getKey().equalsIgnoreCase("enabled")) {
                         info.setEnabled(Boolean.parseBoolean(entry.getValue()));
                     } else if (entry.getKey().equalsIgnoreCase("timeout")) {
                         try {
                             info.setTimeout(Integer.valueOf(entry.getValue()));
-                        } catch (NumberFormatException e) {
+                        } catch (final NumberFormatException e) {
                             s_logger.debug("invalid timeout parameter: " + e.toString());
                         }
                     }
 
                     if (entry.getKey().equalsIgnoreCase("wait")) {
                         try {
-                            int wait = Integer.valueOf(entry.getValue());
+                            final int wait = Integer.valueOf(entry.getValue());
                             Thread.sleep(wait);
-                        } catch (NumberFormatException e) {
+                        } catch (final NumberFormatException e) {
                             s_logger.debug("invalid wait parameter: " + e.toString());
-                        } catch (InterruptedException e) {
+                        } catch (final InterruptedException e) {
                             s_logger.debug("thread is interrupted: " + e.toString());
                         }
                     }
 
                     if (entry.getKey().equalsIgnoreCase("result")) {
-                        String value = entry.getValue();
+                        final String value = entry.getValue();
                         if (value.equalsIgnoreCase("fail")) {
                             answer = new Answer(cmd, false, "Simulated failure");
                         } else if (value.equalsIgnoreCase("fault")) {
@@ -255,20 +253,20 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 }
 
                 if (answer == null) {
-                    String message = config.getJsonResponse();
+                    final String message = config.getJsonResponse();
                     if (message != null) {
                         // json response looks like {"<Type>":....}
-                        String objectType = message.split(":")[0].substring(2).replace("\"", "");
-                        String objectData = message.substring(message.indexOf(':') + 1, message.length() - 1);
+                        final String objectType = message.split(":")[0].substring(2).replace("\"", "");
+                        final String objectData = message.substring(message.indexOf(':') + 1, message.length() - 1);
                         if (objectType != null) {
                             Class<?> clz = null;
                             try {
                                 clz = Class.forName(objectType);
-                            } catch (ClassNotFoundException e) {
+                            } catch (final ClassNotFoundException e) {
                             }
                             if (clz != null) {
-                                StringReader reader = new StringReader(objectData);
-                                JsonReader jsonReader = new JsonReader(reader);
+                                final StringReader reader = new StringReader(objectData);
+                                final JsonReader jsonReader = new JsonReader(reader);
                                 jsonReader.setLenient(true);
                                 answer = (Answer)s_gson.fromJson(jsonReader, clz);
                             }
@@ -378,8 +376,6 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                     answer = _mockVmMgr.getVmStats((GetVmStatsCommand)cmd);
                 } else if (cmd instanceof CheckRouterCommand) {
                     answer = _mockVmMgr.checkRouter((CheckRouterCommand)cmd);
-                } else if (cmd instanceof BumpUpPriorityCommand) {
-                    answer = _mockVmMgr.bumpPriority((BumpUpPriorityCommand)cmd);
                 } else if (cmd instanceof GetDomRVersionCmd) {
                     answer = _mockVmMgr.getDomRVersion((GetDomRVersionCmd)cmd);
                 } else if (cmd instanceof CopyVolumeCommand) {
@@ -419,7 +415,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 } else if (cmd instanceof PvlanSetupCommand) {
                     answer = _mockNetworkMgr.setupPVLAN((PvlanSetupCommand)cmd);
                 } else if (cmd instanceof StorageSubSystemCommand) {
-                    answer = this.storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
+                    answer = storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
                 } else if (cmd instanceof FenceCommand) {
                     answer = _mockVmMgr.fence((FenceCommand)cmd);
                 } else if (cmd instanceof GetRouterAlertsCommand || cmd instanceof VpnUsersCfgCommand || cmd instanceof RemoteAccessVpnCfgCommand || cmd instanceof SetMonitorServiceCommand || cmd instanceof AggregationControlCommand ||
@@ -431,7 +427,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 }
             }
 
-            if (config != null && (config.getCount() != null && config.getCount().intValue() > 0)) {
+            if (config != null && config.getCount() != null && config.getCount().intValue() > 0) {
                 if (answer != null) {
                     config.setCount(config.getCount().intValue() - 1);
                     _mockConfigDao.update(config.getId(), config);
@@ -439,7 +435,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
             }
 
             return answer;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             s_logger.error("Failed execute cmd: ", e);
             txn.rollback();
             return new Answer(cmd, false, e.toString());
@@ -451,29 +447,29 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
     }
 
     @Override
-    public StoragePoolInfo getLocalStorage(String hostGuid) {
+    public StoragePoolInfo getLocalStorage(final String hostGuid) {
         return _mockStorageMgr.getLocalStorage(hostGuid);
     }
 
     @Override
-    public Map<String, PowerState> getVmStates(String hostGuid) {
+    public Map<String, PowerState> getVmStates(final String hostGuid) {
         return _mockVmMgr.getVmStates(hostGuid);
     }
 
     @Override
-    public Map<String, MockVMVO> getVms(String hostGuid) {
+    public Map<String, MockVMVO> getVms(final String hostGuid) {
         return _mockVmMgr.getVms(hostGuid);
     }
 
     @Override
-    public HashMap<String, Pair<Long, Long>> syncNetworkGroups(String hostGuid) {
-        SimulatorInfo info = new SimulatorInfo();
+    public HashMap<String, Pair<Long, Long>> syncNetworkGroups(final String hostGuid) {
+        final SimulatorInfo info = new SimulatorInfo();
         info.setHostUuid(hostGuid);
         return _mockVmMgr.syncNetworkGroups(info);
     }
 
     @Override
-    public Long configureSimulator(Long zoneId, Long podId, Long clusterId, Long hostId, String command, String values, Integer count, String jsonResponse) {
+    public Long configureSimulator(final Long zoneId, final Long podId, final Long clusterId, final Long hostId, final String command, final String values, final Integer count, final String jsonResponse) {
         Long id = null;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
@@ -499,7 +495,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 txn.commit();
             }
             id = config.getId();
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("Unable to configure simulator mock because of " + ex.getMessage(), ex);
         } finally {
@@ -511,12 +507,12 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
     }
 
     @Override
-    public MockConfigurationVO querySimulatorMock(Long id) {
+    public MockConfigurationVO querySimulatorMock(final Long id) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
             return _mockConfigDao.findById(id);
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("Unable to query simulator mock because of " + ex.getMessage(), ex);
         } finally {
@@ -527,19 +523,19 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
     }
 
     @Override
-    public boolean clearSimulatorMock(Long id) {
+    public boolean clearSimulatorMock(final Long id) {
         boolean status = false;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
-            MockConfigurationVO config = _mockConfigDao.findById(id);
+            final MockConfigurationVO config = _mockConfigDao.findById(id);
             if (config != null) {
                 config.setRemoved(new Date());
                 _mockConfigDao.update(config.getId(), config);
                 status = true;
                 txn.commit();
             }
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("Unable to cleanup simulator mock because of " + ex.getMessage(), ex);
         } finally {

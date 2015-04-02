@@ -31,7 +31,6 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
@@ -110,12 +109,12 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
 
         return true;
     }
 
-    public String startVM(String vmName, NicTO[] nics, int cpuHz, long ramSize, String bootArgs, String hostGuid) {
+    public String startVM(final String vmName, final NicTO[] nics, final int cpuHz, final long ramSize, final String bootArgs, final String hostGuid) {
 
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         MockHost host = null;
@@ -129,7 +128,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
             vm = _mockVmDao.findByVmName(vmName);
             txn.commit();
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("Unable to start VM " + vmName, ex);
         } finally {
@@ -139,9 +138,10 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         }
 
         if (vm == null) {
-            int vncPort = 0;
-            if (vncPort < 0)
+            final int vncPort = 0;
+            if (vncPort < 0) {
                 return "Unable to allocate VNC port";
+            }
             vm = new MockVMVO();
             vm.setCpu(cpuHz);
             vm.setMemory(ramSize);
@@ -164,7 +164,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
                 txn.start();
                 vm = _mockVmDao.persist((MockVMVO)vm);
                 txn.commit();
-            } catch (Exception ex) {
+            } catch (final Exception ex) {
                 txn.rollback();
                 throw new CloudRuntimeException("unable to save vm to db " + vm.getName(), ex);
             } finally {
@@ -180,7 +180,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
                     txn.start();
                     _mockVmDao.update(vm.getId(), (MockVMVO)vm);
                     txn.commit();
-                } catch (Exception ex) {
+                } catch (final Exception ex) {
                     txn.rollback();
                     throw new CloudRuntimeException("unable to update vm " + vm.getName(), ex);
                 } finally {
@@ -196,7 +196,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             String prvMac = null;
             String prvNetMask = null;
 
-            for (NicTO nic : nics) {
+            for (final NicTO nic : nics) {
                 if (nic.getType() == TrafficType.Management) {
                     prvIp = nic.getIp();
                     prvMac = nic.getMac();
@@ -208,9 +208,9 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             String name = null;
             String vmType = null;
             String url = null;
-            String[] args = bootArgs.trim().split(" ");
-            for (String arg : args) {
-                String[] params = arg.split("=");
+            final String[] args = bootArgs.trim().split(" ");
+            for (final String arg : args) {
+                final String[] params = arg.split("=");
                 if (params.length < 1) {
                     continue;
                 }
@@ -235,18 +235,18 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public Map<String, MockVMVO> getVms(String hostGuid) {
+    public Map<String, MockVMVO> getVms(final String hostGuid) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
-            List<MockVMVO> vms = _mockVmDao.findByHostGuid(hostGuid);
-            Map<String, MockVMVO> vmMap = new HashMap<String, MockVMVO>();
-            for (MockVMVO vm : vms) {
+            final List<MockVMVO> vms = _mockVmDao.findByHostGuid(hostGuid);
+            final Map<String, MockVMVO> vmMap = new HashMap<String, MockVMVO>();
+            for (final MockVMVO vm : vms) {
                 vmMap.put(vm.getName(), vm);
             }
             txn.commit();
             return vmMap;
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("unable to fetch vms  from host " + hostGuid, ex);
         } finally {
@@ -257,52 +257,40 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public CheckRouterAnswer checkRouter(CheckRouterCommand cmd) {
-        String router_name = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-        MockVm vm = _mockVmDao.findByVmName(router_name);
-        String args = vm.getBootargs();
+    public CheckRouterAnswer checkRouter(final CheckRouterCommand cmd) {
+        final String router_name = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        final MockVm vm = _mockVmDao.findByVmName(router_name);
+        final String args = vm.getBootargs();
         if (args.indexOf("router_pr=100") > 0) {
             s_logger.debug("Router priority is for MASTER");
-            CheckRouterAnswer ans = new CheckRouterAnswer(cmd, "Status: MASTER & Bumped: NO", true);
+            final CheckRouterAnswer ans = new CheckRouterAnswer(cmd, "Status: MASTER", true);
             ans.setState(VirtualRouter.RedundantState.MASTER);
             return ans;
         } else {
             s_logger.debug("Router priority is for BACKUP");
-            CheckRouterAnswer ans = new CheckRouterAnswer(cmd, "Status: BACKUP & Bumped: NO", true);
+            final CheckRouterAnswer ans = new CheckRouterAnswer(cmd, "Status: BACKUP", true);
             ans.setState(VirtualRouter.RedundantState.BACKUP);
             return ans;
         }
     }
 
     @Override
-    public Answer bumpPriority(BumpUpPriorityCommand cmd) {
-        String router_name = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-        MockVm vm = _mockVmDao.findByVmName(router_name);
-        String args = vm.getBootargs();
-        if (args.indexOf("router_pr=100") > 0) {
-            return new Answer(cmd, true, "Status: BACKUP & Bumped: YES");
-        } else {
-            return new Answer(cmd, true, "Status: MASTER & Bumped: YES");
-        }
-    }
-
-    @Override
-    public Map<String, PowerState> getVmStates(String hostGuid) {
+    public Map<String, PowerState> getVmStates(final String hostGuid) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
-            Map<String, PowerState> states = new HashMap<String, PowerState>();
-            List<MockVMVO> vms = _mockVmDao.findByHostGuid(hostGuid);
+            final Map<String, PowerState> states = new HashMap<String, PowerState>();
+            final List<MockVMVO> vms = _mockVmDao.findByHostGuid(hostGuid);
             if (vms.isEmpty()) {
                 txn.commit();
                 return states;
             }
-            for (MockVm vm : vms) {
+            for (final MockVm vm : vms) {
                 states.put(vm.getName(), vm.getPowerState());
             }
             txn.commit();
             return states;
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("unable to fetch vms  from host " + hostGuid, ex);
         } finally {
@@ -328,11 +316,11 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public Answer getVmStats(GetVmStatsCommand cmd) {
-        HashMap<String, VmStatsEntry> vmStatsNameMap = new HashMap<String, VmStatsEntry>();
-        List<String> vmNames = cmd.getVmNames();
-        for (String vmName : vmNames) {
-            VmStatsEntry entry = new VmStatsEntry(0, 0, 0, 0, "vm");
+    public Answer getVmStats(final GetVmStatsCommand cmd) {
+        final HashMap<String, VmStatsEntry> vmStatsNameMap = new HashMap<String, VmStatsEntry>();
+        final List<String> vmNames = cmd.getVmNames();
+        for (final String vmName : vmNames) {
+            final VmStatsEntry entry = new VmStatsEntry(0, 0, 0, 0, "vm");
             entry.setNetworkReadKBs(32768); // default values 256 KBps
             entry.setNetworkWriteKBs(16384);
             entry.setCPUUtilization(10);
@@ -343,18 +331,18 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public CheckVirtualMachineAnswer checkVmState(CheckVirtualMachineCommand cmd) {
+    public CheckVirtualMachineAnswer checkVmState(final CheckVirtualMachineCommand cmd) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
-            MockVMVO vm = _mockVmDao.findByVmName(cmd.getVmName());
+            final MockVMVO vm = _mockVmDao.findByVmName(cmd.getVmName());
             if (vm == null) {
                 return new CheckVirtualMachineAnswer(cmd, "can't find vm:" + cmd.getVmName());
             }
 
             txn.commit();
             return new CheckVirtualMachineAnswer(cmd, vm.getPowerState(), vm.getVncPort());
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("unable to fetch vm state " + cmd.getVmName(), ex);
         } finally {
@@ -365,9 +353,9 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public StartAnswer startVM(StartCommand cmd, SimulatorInfo info) {
-        VirtualMachineTO vm = cmd.getVirtualMachine();
-        String result = startVM(vm.getName(), vm.getNics(), vm.getCpus() * vm.getMaxSpeed(), vm.getMaxRam(), vm.getBootArgs(), info.getHostUuid());
+    public StartAnswer startVM(final StartCommand cmd, final SimulatorInfo info) {
+        final VirtualMachineTO vm = cmd.getVirtualMachine();
+        final String result = startVM(vm.getName(), vm.getNics(), vm.getCpus() * vm.getMaxSpeed(), vm.getMaxRam(), vm.getBootArgs(), info.getHostUuid());
         if (result != null) {
             return new StartAnswer(cmd, result);
         } else {
@@ -376,23 +364,23 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public CheckSshAnswer checkSshCommand(CheckSshCommand cmd) {
+    public CheckSshAnswer checkSshCommand(final CheckSshCommand cmd) {
         return new CheckSshAnswer(cmd);
     }
 
     @Override
-    public MigrateAnswer Migrate(MigrateCommand cmd, SimulatorInfo info) {
+    public MigrateAnswer Migrate(final MigrateCommand cmd, final SimulatorInfo info) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
-            String vmName = cmd.getVmName();
-            String destGuid = cmd.getHostGuid();
-            MockVMVO vm = _mockVmDao.findByVmNameAndHost(vmName, info.getHostUuid());
+            final String vmName = cmd.getVmName();
+            final String destGuid = cmd.getHostGuid();
+            final MockVMVO vm = _mockVmDao.findByVmNameAndHost(vmName, info.getHostUuid());
             if (vm == null) {
                 return new MigrateAnswer(cmd, false, "can't find vm:" + vmName + " on host:" + info.getHostUuid(), null);
             }
 
-            MockHost destHost = _mockHostDao.findByGuid(destGuid);
+            final MockHost destHost = _mockHostDao.findByGuid(destGuid);
             if (destHost == null) {
                 return new MigrateAnswer(cmd, false, "can;t find host:" + info.getHostUuid(), null);
             }
@@ -400,7 +388,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             _mockVmDao.update(vm.getId(), vm);
             txn.commit();
             return new MigrateAnswer(cmd, true, null, 0);
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("unable to migrate vm " + cmd.getVmName(), ex);
         } finally {
@@ -411,15 +399,15 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public PrepareForMigrationAnswer prepareForMigrate(PrepareForMigrationCommand cmd) {
+    public PrepareForMigrationAnswer prepareForMigrate(final PrepareForMigrationCommand cmd) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
-        VirtualMachineTO vmTo = cmd.getVirtualMachine();
+        final VirtualMachineTO vmTo = cmd.getVirtualMachine();
         try {
             txn.start();
-            MockVMVO vm = _mockVmDao.findById(vmTo.getId());
+            final MockVMVO vm = _mockVmDao.findById(vmTo.getId());
             _mockVmDao.update(vm.getId(), vm);
             txn.commit();
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("unable to find vm " + vmTo.getName(), ex);
         } finally {
@@ -431,25 +419,25 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public Answer setVmData(VmDataCommand cmd) {
+    public Answer setVmData(final VmDataCommand cmd) {
         return new Answer(cmd);
     }
 
     @Override
-    public Answer CleanupNetworkRules(CleanupNetworkRulesCmd cmd, SimulatorInfo info) {
+    public Answer CleanupNetworkRules(final CleanupNetworkRulesCmd cmd, final SimulatorInfo info) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
-            List<MockSecurityRulesVO> rules = _mockSecurityDao.findByHost(info.getHostUuid());
-            for (MockSecurityRulesVO rule : rules) {
-                MockVMVO vm = _mockVmDao.findByVmNameAndHost(rule.getVmName(), info.getHostUuid());
+            final List<MockSecurityRulesVO> rules = _mockSecurityDao.findByHost(info.getHostUuid());
+            for (final MockSecurityRulesVO rule : rules) {
+                final MockVMVO vm = _mockVmDao.findByVmNameAndHost(rule.getVmName(), info.getHostUuid());
                 if (vm == null) {
                     _mockSecurityDao.remove(rule.getId());
                 }
             }
             txn.commit();
             return new Answer(cmd);
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("unable to clean up rules", ex);
         } finally {
@@ -460,28 +448,28 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public Answer scaleVm(ScaleVmCommand cmd) {
+    public Answer scaleVm(final ScaleVmCommand cmd) {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
-    public Answer plugSecondaryIp(NetworkRulesVmSecondaryIpCommand cmd) {
+    public Answer plugSecondaryIp(final NetworkRulesVmSecondaryIpCommand cmd) {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
-    public Answer createVmSnapshot(CreateVMSnapshotCommand cmd) {
-        String vmName = cmd.getVmName();
-        String vmSnapshotName = cmd.getTarget().getSnapshotName();
+    public Answer createVmSnapshot(final CreateVMSnapshotCommand cmd) {
+        final String vmName = cmd.getVmName();
+        final String vmSnapshotName = cmd.getTarget().getSnapshotName();
 
         s_logger.debug("Created snapshot " + vmSnapshotName + " for vm " + vmName);
         return new CreateVMSnapshotAnswer(cmd, cmd.getTarget(), cmd.getVolumeTOs());
     }
 
     @Override
-    public Answer deleteVmSnapshot(DeleteVMSnapshotCommand cmd) {
-        String vm = cmd.getVmName();
-        String snapshotName = cmd.getTarget().getSnapshotName();
+    public Answer deleteVmSnapshot(final DeleteVMSnapshotCommand cmd) {
+        final String vm = cmd.getVmName();
+        final String snapshotName = cmd.getTarget().getSnapshotName();
         if (_mockVmDao.findByVmName(cmd.getVmName()) == null) {
             return new DeleteVMSnapshotAnswer(cmd, false, "No VM by name " + cmd.getVmName());
         }
@@ -490,10 +478,10 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public Answer revertVmSnapshot(RevertToVMSnapshotCommand cmd) {
-        String vm = cmd.getVmName();
-        String snapshot = cmd.getTarget().getSnapshotName();
-        MockVMVO vmVo = _mockVmDao.findByVmName(cmd.getVmName());
+    public Answer revertVmSnapshot(final RevertToVMSnapshotCommand cmd) {
+        final String vm = cmd.getVmName();
+        final String snapshot = cmd.getTarget().getSnapshotName();
+        final MockVMVO vmVo = _mockVmDao.findByVmName(cmd.getVmName());
         if (vmVo == null) {
             return new RevertToVMSnapshotAnswer(cmd, false, "No VM by name " + cmd.getVmName());
         }
@@ -502,12 +490,12 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public StopAnswer stopVM(StopCommand cmd) {
+    public StopAnswer stopVM(final StopCommand cmd) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();
-            String vmName = cmd.getVmName();
-            MockVm vm = _mockVmDao.findByVmName(vmName);
+            final String vmName = cmd.getVmName();
+            final MockVm vm = _mockVmDao.findByVmName(vmName);
             if (vm != null) {
                 vm.setPowerState(PowerState.PowerOff);
                 _mockVmDao.update(vm.getId(), (MockVMVO)vm);
@@ -518,7 +506,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             }
             txn.commit();
             return new StopAnswer(cmd, null, true);
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             txn.rollback();
             throw new CloudRuntimeException("unable to stop vm " + cmd.getVmName(), ex);
         } finally {
@@ -529,33 +517,33 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
     }
 
     @Override
-    public RebootAnswer rebootVM(RebootCommand cmd) {
+    public RebootAnswer rebootVM(final RebootCommand cmd) {
         return new RebootAnswer(cmd, "Rebooted " + cmd.getVmName(), true);
     }
 
     @Override
-    public Answer getVncPort(GetVncPortCommand cmd) {
+    public Answer getVncPort(final GetVncPortCommand cmd) {
         return new GetVncPortAnswer(cmd, 0);
     }
 
     @Override
-    public Answer CheckConsoleProxyLoad(CheckConsoleProxyLoadCommand cmd) {
+    public Answer CheckConsoleProxyLoad(final CheckConsoleProxyLoadCommand cmd) {
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
     @Override
-    public Answer WatchConsoleProxyLoad(WatchConsoleProxyLoadCommand cmd) {
+    public Answer WatchConsoleProxyLoad(final WatchConsoleProxyLoadCommand cmd) {
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
     @Override
-    public GetDomRVersionAnswer getDomRVersion(GetDomRVersionCmd cmd) {
-        String template_version = "CloudStack Release "+ NetworkOrchestrationService.MinVRVersion.defaultValue();
+    public GetDomRVersionAnswer getDomRVersion(final GetDomRVersionCmd cmd) {
+        final String template_version = "CloudStack Release "+ NetworkOrchestrationService.MinVRVersion.defaultValue();
         return new GetDomRVersionAnswer(cmd, null, template_version, UUID.randomUUID().toString());
     }
 
     @Override
-    public SecurityGroupRuleAnswer AddSecurityGroupRules(SecurityGroupRulesCmd cmd, SimulatorInfo info) {
+    public SecurityGroupRuleAnswer AddSecurityGroupRules(final SecurityGroupRulesCmd cmd, final SimulatorInfo info) {
         if (!info.isEnabled()) {
             return new SecurityGroupRuleAnswer(cmd, false, "Disabled", SecurityGroupRuleAnswer.FailureReason.CANNOT_BRIDGE_FIREWALL);
         }
@@ -575,11 +563,11 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         return new SecurityGroupRuleAnswer(cmd);
     }
 
-    private boolean logSecurityGroupAction(SecurityGroupRulesCmd cmd, Ternary<String, Long, Long> rule) {
+    private boolean logSecurityGroupAction(final SecurityGroupRulesCmd cmd, final Ternary<String, Long, Long> rule) {
         String action = ", do nothing";
         String reason = ", reason=";
-        Long currSeqnum = rule == null ? null : rule.third();
-        String currSig = rule == null ? null : rule.first();
+        final Long currSeqnum = rule == null ? null : rule.third();
+        final String currSig = rule == null ? null : rule.first();
         boolean updateSeqnoAndSig = false;
         if (currSeqnum != null) {
             if (cmd.getSeqNum() > currSeqnum) {
@@ -587,7 +575,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
                 updateSeqnoAndSig = true;
                 if (!cmd.getSignature().equals(currSig)) {
                     s_logger.info("New seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum + " new signature received:" + cmd.getSignature() + " curr=" +
-                        currSig + ", updated iptables");
+                            currSig + ", updated iptables");
                     action = ", updated iptables";
                     reason = reason + "seqno_increased_sig_changed";
                 } else {
@@ -600,13 +588,13 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             } else {
                 if (!cmd.getSignature().equals(currSig)) {
                     s_logger.info("Identical seqno received: " + cmd.getSeqNum() + " new signature received:" + cmd.getSignature() + " curr=" + currSig +
-                        ", updated iptables");
+                            ", updated iptables");
                     action = ", updated iptables";
                     reason = reason + "seqno_same_sig_changed";
                     updateSeqnoAndSig = true;
                 } else {
                     s_logger.info("Identical seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum + " no change in signature:" + cmd.getSignature() +
-                        ", do nothing");
+                            ", do nothing");
                     reason = reason + "seqno_same_sig_same";
                 }
             }
@@ -617,32 +605,32 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             reason = ", seqno_new";
         }
         s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " seqno=" + cmd.getSeqNum() + " signature=" + cmd.getSignature() + " guestIp=" +
-            cmd.getGuestIp() + ", numIngressRules=" + cmd.getIngressRuleSet().length + ", numEgressRules=" + cmd.getEgressRuleSet().length + " total cidrs=" +
-            cmd.getTotalNumCidrs() + action + reason);
+                cmd.getGuestIp() + ", numIngressRules=" + cmd.getIngressRuleSet().length + ", numEgressRules=" + cmd.getEgressRuleSet().length + " total cidrs=" +
+                cmd.getTotalNumCidrs() + action + reason);
         return updateSeqnoAndSig;
     }
 
     @Override
-    public Answer SavePassword(SavePasswordCommand cmd) {
+    public Answer SavePassword(final SavePasswordCommand cmd) {
         return new Answer(cmd);
     }
 
     @Override
-    public HashMap<String, Pair<Long, Long>> syncNetworkGroups(SimulatorInfo info) {
-        HashMap<String, Pair<Long, Long>> maps = new HashMap<String, Pair<Long, Long>>();
+    public HashMap<String, Pair<Long, Long>> syncNetworkGroups(final SimulatorInfo info) {
+        final HashMap<String, Pair<Long, Long>> maps = new HashMap<String, Pair<Long, Long>>();
 
-        Map<String, Ternary<String, Long, Long>> rules = _securityRules.get(info.getHostUuid());
+        final Map<String, Ternary<String, Long, Long>> rules = _securityRules.get(info.getHostUuid());
         if (rules == null) {
             return maps;
         }
-        for (Map.Entry<String, Ternary<String, Long, Long>> rule : rules.entrySet()) {
+        for (final Map.Entry<String, Ternary<String, Long, Long>> rule : rules.entrySet()) {
             maps.put(rule.getKey(), new Pair<Long, Long>(rule.getValue().second(), rule.getValue().third()));
         }
         return maps;
     }
 
     @Override
-    public Answer fence(FenceCommand cmd) {
-       return new FenceAnswer(cmd);
+    public Answer fence(final FenceCommand cmd) {
+        return new FenceAnswer(cmd);
     }
 }
