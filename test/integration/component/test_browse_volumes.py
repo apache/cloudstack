@@ -60,6 +60,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cls.cleanup = []
         cls.uploadvolumeformat="VHD"
         cls.storagetype = 'shared'
+        cls.globalurl="http://url"
 
         hosts = list_hosts(
             cls.apiclient,
@@ -89,6 +90,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.pod = get_pod(cls.apiclient, cls.zone.id)
 
+        if cls.uploadvolumeformat=="QCOW2" or cls.uploadvolumeformat=="VHD": 
+                cls.extuploadurl=cls.testdata["configurableData"]["browser_upload_volume_extended"][cls.uploadvolumeformat]["url"]
         cls.account = Account.create(
             cls.apiclient,
             cls.testdata["account"],
@@ -142,6 +145,14 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
     def validate_uploaded_volume(self,up_volid,volumestate):
 
+        config = Configurations.list(
+                                     self.apiclient,
+                                     name='upload.operation.timeout'
+                                     )
+
+        uploadtimeout = int(config[0].value)
+        time.sleep(uploadtimeout*60)
+
         list_volume_response = Volume.list(
                     self.apiclient,
                     id=up_volid
@@ -171,6 +182,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         posturl=getuploadparamsresponce.postURL
         metadata=getuploadparamsresponce.metadata
         expiredata=getuploadparamsresponce.expires
+        self.globalurl=getuploadparamsresponce.postURL
         #url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
         url=self.uploadurl
 
@@ -182,11 +194,130 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     f.write(chunk)
                     f.flush()
 
-        #uploadfile='rajani-thin-volume.vhd'
+        files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
 
-        #files={'file':('rajani-thin-volume.vhd',open(uploadfile,'rb'),'application/octet-stream')}
+        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
 
-        #headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+        results = requests.post(posturl,files=files,headers=headers,verify=False)
+
+        print results.status_code
+        if results.status_code !=200: 
+            self.fail("Upload is not fine")
+
+        self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
+
+        return(getuploadparamsresponce)
+
+    def onlyupload(self):
+        cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
+        cmd.zoneid = self.zone.id
+        cmd.format = self.uploadvolumeformat
+        cmd.name=self.volname+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.account=self.account.name
+        cmd.domainid=self.domain.id
+        getuploadparamsresponce=self.apiclient.getUploadParamsForVolume(cmd)
+        return(getuploadparamsresponce)
+
+
+
+    def invalidupload(self):
+
+        success= False
+        try:
+            cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
+            cmd.zoneid = self.zone.id
+            cmd.format = "invalidformat"
+            cmd.name=self.volname+self.account.name+(random.choice(string.ascii_uppercase))
+            cmd.account=self.account.name
+            cmd.domainid=self.domain.id
+            getuploadparamsresponce=self.apiclient.getUploadParamsForVolume(cmd)
+
+        except Exception as ex:
+            if "No enum constant com.cloud.storage.Storage.ImageFormat" in str(ex):
+                success = True
+        self.assertEqual(
+                success,
+                True,
+                "Verify - Upload volume with invalid format is handled")
+
+        return
+
+
+    def invalidposturl(self):
+
+        success= False
+        try:
+            cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
+            cmd.zoneid = self.zone.id
+            cmd.format = self.uploadvolumeformat
+            cmd.name=self.volname+self.account.name+(random.choice(string.ascii_uppercase))
+            cmd.account=self.account.name
+            cmd.domainid=self.domain.id
+            getuploadparamsresponce=self.apiclient.getUploadParamsForVolume(cmd)
+
+
+            signt=getuploadparamsresponce.signature
+            posturl="http://invalidposturl/2999834."+self.uploadvolumeformat
+            metadata=getuploadparamsresponce.metadata
+            expiredata=getuploadparamsresponce.expires
+            #url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
+            url=self.uploadurl
+
+            uploadfile = url.split('/')[-1]
+            r = requests.get(url, stream=True)
+            with open(uploadfile, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=1024): 
+                    if chunk: # filter out keep-alive new chunks
+                        f.write(chunk)
+                        f.flush()
+
+            files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
+
+            headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+
+            results = requests.post(posturl,files=files,headers=headers,verify=False)
+
+            self.debug(results.status_code) 
+            if results.status_code !=200: 
+                self.fail("Upload is not fine")
+
+            self.validate_uploaded_volume(getuploadparamsresponce.id,'UploadedAbandoned')
+
+        except Exception as ex:
+                if "Max retries exceeded with url" in str(ex):
+                    success = True
+
+        self.assertEqual(
+                                 success,
+                                 True,
+                                 "Verify - Tampered Post URL is handled")
+
+        return(getuploadparamsresponce)
+
+
+    def reuse_url(self):
+        cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
+        cmd.zoneid = self.zone.id
+        cmd.format = self.uploadvolumeformat
+        cmd.name=self.volname+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.account=self.account.name
+        cmd.domainid=self.domain.id
+        getuploadparamsresponce=self.apiclient.getUploadParamsForVolume(cmd)
+
+        signt=getuploadparamsresponce.signature
+        posturl=self.globalurl
+        metadata=getuploadparamsresponce.metadata
+        expiredata=getuploadparamsresponce.expires
+        url=self.uploadurl
+        time.sleep(300)
+
+        uploadfile = url.split('/')[-1]
+        r = requests.get(url, stream=True)
+        with open(uploadfile, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=1024): 
+                    if chunk: # filter out keep-alive new chunks
+                        f.write(chunk)
+                        f.flush()
 
         files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
 
@@ -196,12 +327,57 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         time.sleep(60)
 
         print results.status_code
-        if results.status_code !=200: 
-            self.fail("Upload is not fine")
+        if results.status_code == 200: 
+                self.fail("Upload URL is allowed to reuse")
 
-        self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
+        config = Configurations.list(
+                                     self.apiclient,
+                                     name='upload.operation.timeout'
+                                     )
 
-        return(getuploadparamsresponce)
+        uploadtimeout = int(config[0].value)
+        time.sleep(uploadtimeout*60)
+        self.validate_uploaded_volume(getuploadparamsresponce.id,'UploadAbandoned')
+        return
+
+    def validate_storage_cleanup(self,invalidpostvolume,cleanup_interval):
+
+        list_volume_response = Volume.list(
+                    self.apiclient,
+                    id=invalidpostvolume.id
+                )
+        self.assertNotEqual(
+                    list_volume_response,
+                    None,
+                    "Check if volume exists in ListVolumes"
+                )
+
+        config1 = Configurations.list(
+                                     self.apiclient,
+                                     name='upload.operation.timeout'
+                                     )
+        config2 = Configurations.list(
+                                     self.apiclient,
+                                     name='upload.monitoring.interval'
+                                     )
+        uploadtimeout = int(config1[0].value)
+        monitorinterval=int(config2[0].value)
+
+        if cleanup_interval >= ((uploadtimeout*60)+monitorinterval):
+            time.sleep(cleanup_interval)
+        else:
+            time.sleep(((uploadtimeout*60)+monitorinterval))
+
+        list_volume_response = Volume.list(
+                    self.apiclient,
+                    id=invalidpostvolume.id
+                )
+        self.assertEqual(
+                    list_volume_response,
+                    None,
+                    "Storage Cleanup - Verify UploadAbandoned volumes are deleted"
+                )
+
 
     def validate_max_vol_size(self,up_vol,volumestate):
 
@@ -242,6 +418,52 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.account=self.account.name
         cmd.domainid=self.domain.id
         cmd.checksum=self.md5sum
+        getuploadparamsresponce=self.apiclient.getUploadParamsForVolume(cmd)
+
+        signt=getuploadparamsresponce.signature
+        posturl=getuploadparamsresponce.postURL
+        metadata=getuploadparamsresponce.metadata
+        expiredata=getuploadparamsresponce.expires
+        #url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
+        url=self.uploadurl
+
+        uploadfile = url.split('/')[-1]
+        r = requests.get(url, stream=True)
+        with open(uploadfile, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024): 
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+                    f.flush()
+
+        #uploadfile='rajani-thin-volume.vhd'
+
+        #files={'file':('rajani-thin-volume.vhd',open(uploadfile,'rb'),'application/octet-stream')}
+
+        #headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+
+        files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
+
+        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+
+        results = requests.post(posturl,files=files,headers=headers,verify=False)
+        time.sleep(60)
+
+        print results.status_code
+        if results.status_code !=200: 
+            self.fail("Upload is not fine")
+
+        self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
+
+        return(getuploadparamsresponce)
+
+    def browse_upload_volume_with_invalid_md5(self):
+        cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
+        cmd.zoneid = self.zone.id
+        cmd.format = self.uploadvolumeformat
+        cmd.name=self.volname+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.account=self.account.name
+        cmd.domainid=self.domain.id
+        cmd.checksum="xxxxxxxx"
         getuploadparamsresponce=self.apiclient.getUploadParamsForVolume(cmd)
 
         signt=getuploadparamsresponce.signature
@@ -346,6 +568,25 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                 True,
                 "Check list volumes response for valid list")
         self.validate_uploaded_volume(volid,'Ready')
+
+
+    def attach_deleted_volume(self,vmlist,volume):
+
+        success= False
+        try:
+            vmlist.attach_volume(
+                    self.apiclient,
+                    volume
+                )
+        except Exception as ex:
+            if "Please specify a volume with the valid type: DATADISK" in str(ex):
+                success = True
+        self.assertEqual(
+                success,
+                True,
+                "Attaching the Deleted Volume is handled appropriately not to get attached the deleted uploaded volume")
+
+        return
 
 
     def reboot_vm(self,vmdetails):
@@ -508,8 +749,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                 "Extract Volume Failed with invalid URL %s (vol id: %s)" \
                 % (extract_vol.url, volumeid)
             )
-
-
 
     def resize_fail(self,volumeid):
 
@@ -795,30 +1034,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             "Volume creation failed from snapshot"
         )
 
-        # Creating expected and actual values dictionaries
-        #expected_dict = {
-            #"snapshotid": snapshot_created.id,
-            #"volumetype": snapshot_created.volumetype,
-           # "size": self.disk_offering.disksize,
-          #  "storagetype": self.storagetype,
-         #   "zone": self.zone.id
-        #}
-        #actual_dict = {
-         #   "snapshotid": volume_from_snapshot.snapshotid,
-         #   "volumetype": volume_from_snapshot.type,
-          #  "size": volume_from_snapshot.size / (1024 * 1024 * 1024),
-           # "storagetype": volume_from_snapshot.storagetype,
-            #"zone": volume_from_snapshot.zoneid,
-        #}
-        #status = self.__verify_values(
-         #   expected_dict,
-          #  actual_dict
-        #)
-        #self.assertEqual(
-         #   True,
-          #  status,
-           # "Volume created from Snapshot details are not as expected"
-        #)
         return
 
     def volume_snapshot_template(self,snapshot_created):
@@ -1337,6 +1552,243 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         return
 
+
+
+    def uploadvol(self,getuploadparamsresponce):
+
+        signt=getuploadparamsresponce.signature
+        posturl=getuploadparamsresponce.postURL
+        metadata=getuploadparamsresponce.metadata
+        expiredata=getuploadparamsresponce.expires
+        success = False
+        url=self.uploadurl
+
+        uploadfile = url.split('/')[-1]
+        r = requests.get(url, stream=True)
+        with open(uploadfile, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024): 
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+                    f.flush()
+
+        files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
+
+        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+
+        results = requests.post(posturl,files=files,headers=headers,verify=False)
+        list_volume_response = Volume.list(
+                    self.apiclient,
+                    id=getuploadparamsresponce.id
+                )
+        self.debug("======================Before SSVM Reboot==================")
+
+        self.reboot_ssvm()
+        self.debug("======================After SSVM Reboot==================")
+
+        config = Configurations.list(
+                                     self.apiclient,
+                                     name='upload.operation.timeout'
+                                     )
+
+        uploadtimeout = int(config[0].value)
+        time.sleep(uploadtimeout*60)
+
+        self.validate_uploaded_volume(getuploadparamsresponce.id,'UploadAbandoned')
+
+        return()
+
+
+
+    def uploadvolwithssvmreboot(self,getuploadparamsresponce):
+
+        signt=getuploadparamsresponce.signature
+        posturl=getuploadparamsresponce.postURL
+        metadata=getuploadparamsresponce.metadata
+        expiredata=getuploadparamsresponce.expires
+
+        self.debug("======================Before SSVM Reboot==================")
+        list_volume_response = Volume.list(
+                    self.apiclient,
+                    id=getuploadparamsresponce.id
+                )
+
+        self.debug(list_volume_response[0])
+        self.reboot_ssvm()
+
+        success = False
+        url=self.uploadurl
+
+        uploadfile = url.split('/')[-1]
+        r = requests.get(url, stream=True)
+        with open(uploadfile, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024): 
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+                    f.flush()
+
+        files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
+
+        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+
+        results = requests.post(posturl,files=files,headers=headers,verify=False)
+        list_volume_response = Volume.list(
+                    self.apiclient,
+                    id=getuploadparamsresponce.id
+                )
+
+        self.debug("======================Upload After SSVM Reboot==================")
+        self.debug(list_volume_response[0])
+
+        self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
+
+        return()
+
+    def uploadwithcustomoffering(self):
+
+        cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
+        cmd.zoneid = self.zone.id
+        cmd.format = self.uploadvolumeformat
+        cmd.name=self.volname+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.account=self.account.name
+        cmd.domainid=self.domain.id
+        cmd.diskofferingid=self.disk_offering.id
+        getuploadparamsresponce=self.apiclient.getUploadParamsForVolume(cmd)
+
+        signt=getuploadparamsresponce.signature
+        posturl=getuploadparamsresponce.postURL
+        metadata=getuploadparamsresponce.metadata
+        expiredata=getuploadparamsresponce.expires
+        self.globalurl=getuploadparamsresponce.postURL
+        #url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
+        url=self.uploadurl
+
+        uploadfile = url.split('/')[-1]
+        r = requests.get(url, stream=True)
+        with open(uploadfile, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024): 
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+                    f.flush()
+
+        files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
+
+        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+
+        results = requests.post(posturl,files=files,headers=headers,verify=False)
+
+        print results.status_code
+        if results.status_code !=200: 
+            self.fail("Upload is not fine")
+
+        self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
+
+    def uploadwithsamedisplaytext(self,voldetails):
+
+
+        list_volume_response = Volume.list(
+                    self.apiclient,
+                    id=voldetails.id
+                )
+
+        success=True
+        cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
+        cmd.zoneid = self.zone.id
+        cmd.format = self.uploadvolumeformat
+        cmd.name=list_volume_response[0].name
+        cmd.account=self.account.name
+        cmd.domainid=self.domain.id
+        getuploadparamsresponce=self.apiclient.getUploadParamsForVolume(cmd)
+        list_volume_response1 = Volume.list(
+                  self.apiclient,
+                    id=getuploadparamsresponce.id
+                )
+        if list_volume_response1[0].name==voldetails.name:
+           success=False
+
+        self.assertEqual(
+                success,
+                False,
+                "Verify: Upload Multiple volumes with same name is handled")
+
+        return
+
+    def uploadvolwithmultissvm(self):
+
+        ssvmhosts = list_hosts(
+            self.apiclient,
+            type="SecondaryStorageVM"
+        )
+        self.debug("Total SSVMs are:")
+        self.debug(len(ssvmhosts))
+
+        if len(ssvmhosts)==1:
+            return(1)
+
+        config = Configurations.list(
+                                     self.apiclient,
+                                     name='secstorage.session.max'
+                                     )
+
+        multissvmvalue = int(config[0].value)
+        if multissvmvalue !=1:
+            return(0)
+
+        browseup_vol=self.browse_upload_volume()
+
+        vm1details=self.deploy_vm()
+
+        self.attach_volume(vm1details,browseup_vol.id)
+
+        self.vmoperations(vm1details)
+
+        self.destroy_vm(vm1details)
+
+        self.detach_volume(vm1details,browseup_vol.id)
+
+        self.deletevolume(browseup_vol.id)
+
+        return(2)
+
+
+    def uploadwithextendedfileextentions(self):
+
+        cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
+        cmd.zoneid = self.zone.id
+        cmd.format = self.uploadvolumeformat
+        cmd.name=self.volname+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.account=self.account.name
+        cmd.domainid=self.domain.id
+        cmd.diskofferingid=self.disk_offering.id
+        getuploadparamsresponce=self.apiclient.getUploadParamsForVolume(cmd)
+
+        signt=getuploadparamsresponce.signature
+        posturl=getuploadparamsresponce.postURL
+        metadata=getuploadparamsresponce.metadata
+        expiredata=getuploadparamsresponce.expires
+
+        #url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
+        url=self.extuploadurl
+
+        uploadfile = url.split('/')[-1]
+        r = requests.get(url, stream=True)
+        with open(uploadfile, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024): 
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+                    f.flush()
+
+        files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
+
+        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+
+        results = requests.post(posturl,files=files,headers=headers,verify=False)
+
+        print results.status_code
+        if results.status_code !=200: 
+            self.fail("Upload is not fine")
+
+        self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
+
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_01_Browser_volume_Life_cycle_tpath(self):
         """
@@ -1570,15 +2022,141 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         """
         try:
             
-            self.debug("========================= Test 1 Validate Storage.max.upload.size ========================= ")
+            self.debug("========================= Test 26 Validate Storage.max.upload.size ========================= ")
             globalconfig_browse_up_vol=self.browse_upload_volume()
             self.validate_max_vol_size(globalconfig_browse_up_vol,"Uploaded")
+
+
+        except Exception as e:
+            self.fail("Exception occurred  : %s" % e)
+        return
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_04_Browser_Upload_Volume_Negative_Scenarios_TPath(self):
+        """
+        Test Browser_Upload_Volume_Negative_Scenarios
+        """
+        try:
+            self.debug("========================= Test 27 Reuse the POST URL after expiry time========================= ")
+            reuse_browse_up_vol=self.browse_upload_volume()
+            self.reuse_url()
+            self.deletevolume(reuse_browse_up_vol.id)
+
+            self.debug("========================= Test 28 Reboot SSVM before upload is completed=========================")
+            browse_up_vol=self.onlyupload()
+            self.uploadvol(browse_up_vol)
+            self.deletevolume(browse_up_vol.id)
+
+            self.debug("========================= Test 29 Reboot SSVM after getting the upload volume params and before initiating the upload=========================")
+            browse_up_vol=self.onlyupload()
+            self.uploadvolwithssvmreboot(browse_up_vol)
+            self.deletevolume(browse_up_vol.id)
+
+            self.debug("========================= Test 30 Attach Deleted Volume=========================")
+            deleted_browse_up_vol=self.browse_upload_volume()
+            self.deletevolume(deleted_browse_up_vol.id)
+            deletedvm1details=self.deploy_vm()
+            self.attach_deleted_volume(deletedvm1details, deleted_browse_up_vol)
+
+            self.debug("========================= Test 31 Upload Volume with Invalid Format=========================")
+            self.invalidupload()
+
+            self.debug("========================= Test 32 Upload Mutliple Volumes with same display text=========================")
+            samedisplaytext_browse_up_vol=self.browse_upload_volume()
+            self.uploadwithsamedisplaytext(samedisplaytext_browse_up_vol)
+
+            self.debug("========================= Test 33 Upload Volume with custom offering id=========================")
+            self.uploadwithcustomoffering()
+
+
+            self.debug("========================= Test 34 Upload Volume with tampered post URL=========================")
+            invaliduploadvolume=self.invalidposturl()
+
+        except Exception as e:
+            self.fail("Exception occurred  : %s" % e)
+        return
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_05_Browser_Upload_Volume_MultiSSVM_Scenarios_TPath(self):
+        """
+        Test Browser_Upload_Volume_MultiSSVM_Scenarios
+        """
+        try:
+
+            self.debug("========================= Test 35 Upload volume with Multiple SSVM=========================")
+
+            testresult=self.uploadvolwithmultissvm()
+            if testresult==0:
+                raise unittest.SkipTest("secstorage.session.max global config is not set to 1 which means Multiple SSVM's are not present")
+            elif testresult==1:
+                raise unittest.SkipTest("only one SSVM is present")
 
         except Exception as e:
             self.fail("Exception occurred  : %s" % e)
         return
 
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_06_Browser_Upload_Volume_with_extended_file_extenstions(self):
+        """
+        Test Browser_Upload_Volume_with_extended_file_extenstions
+        """
+
+        try:
+            self.debug("========================= Test 36 Upload volume with extended file extenstions=========================")
+            if self.uploadvolumeformat=="OVA":
+                 raise unittest.SkipTest("This test is need not be executed on VMWARE")
+            self.uploadwithextendedfileextentions()
+
+        except Exception as e:
+            self.fail("Exception occurred  : %s" % e)
+        return
+
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_07_Browser_Upload_Volume_Storage_Cleanup_Config_Validation(self):
+        """
+        Test Browser_Upload_Volume_Storage_Cleanup_Config_Validation
+        """
+        self.debug("========================= Test 37 Validate storage.cleanup.enabled and storage.cleanup.interval ========================= ")
+        config1 = Configurations.list(
+                                     self.apiclient,
+                                     name='storage.cleanup.enabled'
+                                     )
+
+        config2 = Configurations.list(
+                                     self.apiclient,
+                                     name='storage.cleanup.interval'
+                                     )
+
+        cleanup_enabled=config1[0].value
+        cleanup_interval = int(config2[0].value)
+
+        if cleanup_enabled=="false":
+                raise unittest.SkipTest("storage.cleanup.enabled is not set to true")
+
+        if cleanup_interval>600:
+                raise unittest.SkipTest("storage.cleanup.interval is set to wait for more than 10 mins before cleanup. Please reduce the interval to less than 10 mins")
+
+        invaliduploadvolume=self.invalidposturl()
+
+        self.validate_storage_cleanup(invaliduploadvolume,cleanup_interval)
+
+        return
+
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_08_Browser_Upload_Volume_TamperedPostURL(self):
+        """
+        Test Browser_Upload_Volume_Negative_Scenarios
+        """
+        try:
+            self.debug("========================= Test 34 Upload Volume with tampered post URL=========================")
+            invaliduploadvolume=self.invalidposturl()
+
+        except Exception as e:
+            self.fail("Exception occurred  : %s" % e)
+        return
     @classmethod
     def tearDownClass(self):
         try:

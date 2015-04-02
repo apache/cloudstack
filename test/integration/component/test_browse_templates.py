@@ -81,13 +81,12 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                      break
                  else:
                      break
-
-        cls.uploadurl=cls.testdata["browser_upload_template"][cls.uploadtemplateformat]["url"]
-        cls.templatename=cls.testdata["browser_upload_template"][cls.uploadtemplateformat]["templatename"]
-        cls.md5sum=cls.testdata["browser_upload_template"][cls.uploadtemplateformat]["checksum"]
-        cls.templatedisplaytext=cls.testdata["browser_upload_template"][cls.uploadtemplateformat]["displaytext"]
-        cls.templatehypervisor=cls.testdata["browser_upload_template"][cls.uploadtemplateformat]["hypervisor"]
-        cls.templateostypeid=cls.testdata["browser_upload_template"][cls.uploadtemplateformat]["ostypeid"]
+        cls.uploadurl=cls.testdata["configurableData"]["browser_upload_template"][cls.uploadtemplateformat]["url"]
+        cls.templatename=cls.testdata["configurableData"]["browser_upload_template"][cls.uploadtemplateformat]["templatename"]
+        cls.md5sum=cls.testdata["configurableData"]["browser_upload_template"][cls.uploadtemplateformat]["checksum"]
+        cls.templatedisplaytext=cls.testdata["configurableData"]["browser_upload_template"][cls.uploadtemplateformat]["displaytext"]
+        cls.templatehypervisor=cls.testdata["configurableData"]["browser_upload_template"][cls.uploadtemplateformat]["hypervisor"]
+        cls.templateostypeid=cls.testdata["configurableData"]["browser_upload_template"][cls.uploadtemplateformat]["ostypeid"]
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
         cls.pod = get_pod(cls.apiclient, cls.zone.id)
@@ -111,7 +110,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         )
         cls.disk_offering = DiskOffering.create(
             cls.apiclient,
-            cls.testdata["browser_upload_volume"]["browser_resized_disk_offering"],
+            cls.testdata["configurableData"]["browser_upload_volume"]["browser_resized_disk_offering"],
             custom=True
         )
         cls._cleanup = [
@@ -145,6 +144,14 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
     def validate_uploaded_template(self,up_templateid,templatestate):
 
+        config = Configurations.list(
+                                     self.apiclient,
+                                     name='upload.operation.timeout'
+                                     )
+
+        uploadtimeout = int(config[0].value)
+        time.sleep(uploadtimeout*60)
+
         list_template_response = Template.list(
                     self.apiclient,
                     id=up_templateid,
@@ -174,7 +181,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.displaytext=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
         cmd.hypervisor=self.templatehypervisor
         cmd.ostypeid=self.templateostypeid
-        cmd.isdynamicallyscalable="false"
+        #cmd.isdynamicallyscalable="false"
         #cmd.type="template"
         getuploadparamsresponce=self.apiclient.getUploadParamsForTemplate(cmd)
 
@@ -204,7 +211,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
-        time.sleep(600)
 
         print results.status_code
         if results.status_code !=200: 
@@ -1121,24 +1127,21 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
     def delete_template(self,templatedetails):
 
-        print templatedetails
+        self.debug(templatedetails)
         list_template_response = Template.list(
                                     self.apiclient,
                                     templatefilter="all",
                                     id=templatedetails.id,
                                     zoneid=self.zone.id)
-        print list_template_response
+        self.debug(list_template_response[0])
+
         self.assertEqual(
-                        isinstance(list_template_response, list),
+                        isinstance(list_template_response[0], list),
                         True,
                         "Check for list template response return valid list"
                         )
 
-        self.assertNotEqual(
-                            len(list_template_response),
-                            0,
-                            "Check template available in List Templates"
-                        )
+
         template_response = list_template_response[0]
 
         self.assertEqual(
@@ -1220,7 +1223,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
             vm1details=self.deploy_vm(browseup_template)
 
-            #vm1details=self.deploy_vm(self.template)
+            vm1details=self.deploy_vm(self.template)
 
             self.vmoperations(vm1details)
 
@@ -1229,8 +1232,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             cvolume=self.create_data_volume()
             self.attach_data_volume(cvolume, vm1details)
             self.vmoperations(vm1details)
-
-
 
             self.debug("========================= Test 4: Restore VM created with Uploaded template========================= ")
 
@@ -1250,7 +1251,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
             self.debug("========================= Test 7:  Destroy VM ========================= ")
 
-            #vm2details=self.deploy_vm(self.template)
+            vm2details=self.deploy_vm(self.template)
 
             vm2details=self.deploy_vm(browseup_template)
             self.destroy_vm(vm2details)
@@ -1260,9 +1261,9 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.recover_destroyed_vm(vm2details)
             self.expunge_vm(vm2details)
 
-            self.debug("========================= Test 9:  Delete the Uploaded Template========================= ")
-            print browseup_template
-            self.delete_template(browseup_template)
+            #self.debug("========================= Test 9:  Delete the Uploaded Template========================= ")
+            #self.debug(browseup_template)
+            #self.delete_template(browseup_template)
 
             self.debug("========================= Test 10:  Upload Multiple templates========================= ")
 

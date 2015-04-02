@@ -1530,6 +1530,18 @@ test_data = {
         "disksize": 3,
     }
 },
+    "browser_upload_volume_extended":{
+          "VHD": {
+        "diskname": "XenUploadVol",
+        "url": "http://10.147.28.7/templates/builtin/centos56-x86_64.vhd.bz2",
+        "checksum": "09b08b6abb1b903fca7711d3ac8d6598",
+                },
+          "QCOW2": {
+        "diskname": "KVMUploadVol",
+        "url": "http://10.147.28.7/templates/builtin/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2",
+        "checksum": "02de0576dd3a61ab59c03fd795fc86ac",
+                },
+},
     "browser_upload_template": {
           "VHD": {
         "templatename": "XenUploadtemplate",
