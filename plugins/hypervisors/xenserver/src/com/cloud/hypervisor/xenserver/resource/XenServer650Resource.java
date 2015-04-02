@@ -18,32 +18,28 @@
  */
 package com.cloud.hypervisor.xenserver.resource;
 
-import com.cloud.resource.ServerResource;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.ejb.Local;
+
+import com.cloud.resource.ServerResource;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
+
 @Local(value=ServerResource.class)
 public class XenServer650Resource extends Xenserver625Resource {
-    private static final Logger s_logger = Logger.getLogger(XenServer650Resource.class);
 
-    public XenServer650Resource() {
-        super();
-    }
-
+    @Override
     protected List<File> getPatchFiles() {
-        List files = new ArrayList();
-        String patch = "scripts/vm/hypervisor/xenserver/xenserver65/patch";
-        String patchfilePath = Script.findScript("", patch);
+        final List<File> files = new ArrayList<File>();
+        final String patch = "scripts/vm/hypervisor/xenserver/xenserver65/patch";
+        final String patchfilePath = Script.findScript("", patch);
         if (patchfilePath == null) {
             throw new CloudRuntimeException("Unable to find patch file " + patch);
         }
-        File file = new File(patchfilePath);
+        final File file = new File(patchfilePath);
         files.add(file);
         return files;
     }

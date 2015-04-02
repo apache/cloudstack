@@ -37,22 +37,13 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
     String primaryStorageUrl;
 
     protected PrimaryStorageDownloadCommand() {
-
     }
 
-    public PrimaryStorageDownloadCommand(String url, StoragePool pool, int wait) {
-        super(null, url, null, null);
-        this.poolId = pool.getId();
-        this.poolUuid = pool.getUuid();
-        this.primaryPool = new StorageFilerTO(pool);
-        setWait(wait);
-    }
-
-    public PrimaryStorageDownloadCommand(String name, String url, ImageFormat format, long accountId, StoragePool pool, int wait) {
+    public PrimaryStorageDownloadCommand(final String name, final String url, final ImageFormat format, final long accountId, final StoragePool pool, final int wait) {
         super(name, url, format, accountId);
-        this.poolId = pool.getId();
-        this.poolUuid = pool.getUuid();
-        this.primaryPool = new StorageFilerTO(pool);
+        poolId = pool.getId();
+        poolUuid = pool.getUuid();
+        primaryPool = new StorageFilerTO(pool);
         setWait(wait);
     }
 
@@ -68,15 +59,15 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
         return primaryPool;
     }
 
-    public void setLocalPath(String path) {
-        this.localPath = path;
+    public void setLocalPath(final String path) {
+        localPath = path;
     }
 
     public String getLocalPath() {
         return localPath;
     }
 
-    public void setSecondaryStorageUrl(String url) {
+    public void setSecondaryStorageUrl(final String url) {
         secondaryStorageUrl = url;
     }
 
@@ -84,7 +75,7 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
         return secondaryStorageUrl;
     }
 
-    public void setPrimaryStorageUrl(String url) {
+    public void setPrimaryStorageUrl(final String url) {
         primaryStorageUrl = url;
     }
 

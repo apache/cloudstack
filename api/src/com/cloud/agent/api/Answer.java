@@ -26,16 +26,16 @@ public class Answer extends Command {
         this(null);
     }
 
-    public Answer(Command command) {
+    public Answer(final Command command) {
         this(command, true, null);
     }
 
-    public Answer(Command command, boolean success, String details) {
+    public Answer(final Command command, final boolean success, final String details) {
         result = success;
         this.details = details;
     }
 
-    public Answer(Command command, Exception e) {
+    public Answer(final Command command, final Exception e) {
         this(command, false, ExceptionUtil.toString(e));
     }
 
@@ -52,11 +52,11 @@ public class Answer extends Command {
         return false;
     }
 
-    public static UnsupportedAnswer createUnsupportedCommandAnswer(Command cmd) {
-        return new UnsupportedAnswer(cmd, "Unsupported command issued:" + cmd.toString() + ".  Are you sure you got the right type of server?");
+    public static UnsupportedAnswer createUnsupportedCommandAnswer(final Command cmd) {
+        return new UnsupportedAnswer(cmd, "Unsupported command issued: " + cmd.toString() + ".  Are you sure you got the right type of server?");
     }
 
-    public static UnsupportedAnswer createUnsupportedVersionAnswer(Command cmd) {
+    public static UnsupportedAnswer createUnsupportedVersionAnswer(final Command cmd) {
         return new UnsupportedAnswer(cmd, "Unsuppored Version.");
     }
 }

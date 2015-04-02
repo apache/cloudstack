@@ -16,10 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-
-import org.apache.log4j.Logger;
 
 import com.xensource.xenapi.Host;
 
@@ -28,18 +25,13 @@ import com.xensource.xenapi.Host;
  *
  */
 public class CitrixHelper {
-    private static final Logger s_logger = Logger.getLogger(CitrixHelper.class);
-
-
     private static final HashMap<String, MemoryValues> XenServerGuestOsMemoryMap = new HashMap<String, MemoryValues>(70);
-    private static final ArrayList<String> GuestOsList = new ArrayList<String>(70);
-
 
     public static class MemoryValues {
         long max;
         long min;
 
-        public MemoryValues(long min, long max) {
+        public MemoryValues(final long min, final long max) {
             this.min = min * 1024 * 1024;
             this.max = max * 1024 * 1024;
         }
@@ -52,8 +44,6 @@ public class CitrixHelper {
             return min;
         }
     }
-
-
 
     static {
         XenServerGuestOsMemoryMap.put("CentOS 4.5 (32-bit)", new MemoryValues(256l, 16 * 1024l));
@@ -207,37 +197,37 @@ public class CitrixHelper {
         XenServerGuestOsMemoryMap.put("Windows XP SP3 (32-bit)", new MemoryValues(256l, 4 * 1024l));
         XenServerGuestOsMemoryMap.put("Ubuntu 10.04 (32-bit)", new MemoryValues(128l, 512l));
         XenServerGuestOsMemoryMap.put("Ubuntu 10.04 (64-bit)", new MemoryValues(128l, 32 * 1024l));
-        XenServerGuestOsMemoryMap.put("Ubuntu 10.10 (32-bit)", new MemoryValues(512l, 16*1024l));
-        XenServerGuestOsMemoryMap.put("Ubuntu 10.10 (64-bit)", new MemoryValues(512l, 16*1024l));
+        XenServerGuestOsMemoryMap.put("Ubuntu 10.10 (32-bit)", new MemoryValues(512l, 16 * 1024l));
+        XenServerGuestOsMemoryMap.put("Ubuntu 10.10 (64-bit)", new MemoryValues(512l, 16 * 1024l));
         XenServerGuestOsMemoryMap.put("Ubuntu 12.04 (32-bit)", new MemoryValues(512l, 32 * 1024l));
         XenServerGuestOsMemoryMap.put("Ubuntu 12.04 (64-bit)", new MemoryValues(512l, 128 * 1024l));
         XenServerGuestOsMemoryMap.put("Ubuntu 14.04 (32-bit)", new MemoryValues(512l, 32 * 1024l));
         XenServerGuestOsMemoryMap.put("Ubuntu 14.04 (64-bit)", new MemoryValues(512l, 128 * 1024l));
     }
 
-    public static long getXenServerStaticMax(String stdType, boolean bootFromCD) {
-        MemoryValues recommendedMaxMinMemory = XenServerGuestOsMemoryMap.get(stdType);
+    public static long getXenServerStaticMax(final String stdType, final boolean bootFromCD) {
+        final MemoryValues recommendedMaxMinMemory = XenServerGuestOsMemoryMap.get(stdType);
         if (recommendedMaxMinMemory == null) {
             return 0l;
         }
         return recommendedMaxMinMemory.getMax();
     }
 
-    public static long getXenServerStaticMin(String stdType, boolean bootFromCD) {
-        MemoryValues recommendedMaxMinMemory = XenServerGuestOsMemoryMap.get(stdType);
+    public static long getXenServerStaticMin(final String stdType, final boolean bootFromCD) {
+        final MemoryValues recommendedMaxMinMemory = XenServerGuestOsMemoryMap.get(stdType);
         if (recommendedMaxMinMemory == null) {
             return 0l;
         }
         return recommendedMaxMinMemory.getMin();
     }
 
-    public static String getProductVersion(Host.Record record) {
+    public static String getProductVersion(final Host.Record record) {
         String prodVersion = record.softwareVersion.get("product_version");
         if (prodVersion == null) {
             prodVersion = record.softwareVersion.get("platform_version").trim();
         } else {
             prodVersion = prodVersion.trim();
-            String[] items = prodVersion.split("\\.");
+            final String[] items = prodVersion.split("\\.");
             if (Integer.parseInt(items[0]) > 6) {
                 prodVersion = "6.5.0";
             } else if (Integer.parseInt(items[0]) == 6 && Integer.parseInt(items[1]) >= 4) {

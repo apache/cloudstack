@@ -27,15 +27,6 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.SR;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VDI;
-import com.xensource.xenapi.VM;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkUsageAnswer;
@@ -49,6 +40,14 @@ import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.SR;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VBD;
+import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VM;
 
 @Local(value = ServerResource.class)
 public class XcpOssResource extends CitrixResourceBase {
@@ -57,55 +56,55 @@ public class XcpOssResource extends CitrixResourceBase {
 
     @Override
     protected List<File> getPatchFiles() {
-        List<File> files = new ArrayList<File>();
-        String patch = "scripts/vm/hypervisor/xenserver/xcposs/patch";
-        String patchfilePath = Script.findScript("", patch);
+        final List<File> files = new ArrayList<File>();
+        final String patch = "scripts/vm/hypervisor/xenserver/xcposs/patch";
+        final String patchfilePath = Script.findScript("", patch);
         if (patchfilePath == null) {
             throw new CloudRuntimeException("Unable to find patch file " + patch);
         }
-        File file = new File(patchfilePath);
+        final File file = new File(patchfilePath);
         files.add(file);
         return files;
     }
 
     @Override
-    protected void fillHostInfo(Connection conn, StartupRoutingCommand cmd) {
+    protected void fillHostInfo(final Connection conn, final StartupRoutingCommand cmd) {
         super.fillHostInfo(conn, cmd);
         cmd.setCaps(cmd.getCapabilities() + " , hvm");
     }
 
     @Override
-    protected boolean launchHeartBeat(Connection conn) {
+    public boolean launchHeartBeat(final Connection conn) {
         return true;
     }
 
     @Override
-    protected StartupStorageCommand initializeLocalSR(Connection conn) {
-        SR extsr = getLocalEXTSR(conn);
+    protected StartupStorageCommand initializeLocalSR(final Connection conn) {
+        final SR extsr = getLocalEXTSR(conn);
         if (extsr != null) {
             try {
-                String extuuid = extsr.getUuid(conn);
-                _host.localSRuuid = extuuid;
-                long cap = extsr.getPhysicalSize(conn);
+                final String extuuid = extsr.getUuid(conn);
+                _host.setLocalSRuuid(extuuid);
+                final long cap = extsr.getPhysicalSize(conn);
                 if (cap > 0) {
-                    long avail = cap - extsr.getPhysicalUtilisation(conn);
-                    String name = "Cloud Stack Local EXT Storage Pool for " + _host.uuid;
+                    final long avail = cap - extsr.getPhysicalUtilisation(conn);
+                    final String name = "Cloud Stack Local EXT Storage Pool for " + _host.getUuid();
                     extsr.setNameDescription(conn, name);
-                    Host host = Host.getByUuid(conn, _host.uuid);
-                    String address = host.getAddress(conn);
-                    StoragePoolInfo pInfo = new StoragePoolInfo(extsr.getNameLabel(conn), address, SRType.EXT.toString(), SRType.EXT.toString(), Storage.StoragePoolType.EXT, cap, avail);
-                    StartupStorageCommand cmd = new StartupStorageCommand();
+                    final Host host = Host.getByUuid(conn, _host.getUuid());
+                    final String address = host.getAddress(conn);
+                    final StoragePoolInfo pInfo = new StoragePoolInfo(extsr.getNameLabel(conn), address, SRType.EXT.toString(), SRType.EXT.toString(), Storage.StoragePoolType.EXT, cap, avail);
+                    final StartupStorageCommand cmd = new StartupStorageCommand();
                     cmd.setPoolInfo(pInfo);
-                    cmd.setGuid(_host.uuid);
+                    cmd.setGuid(_host.getUuid());
                     cmd.setDataCenter(Long.toString(_dcId));
                     cmd.setResourceType(Storage.StorageResourceType.STORAGE_POOL);
                     return cmd;
                 }
-            } catch (XenAPIException e) {
-                String msg = "build local EXT info err in host:" + _host.uuid + e.toString();
+            } catch (final XenAPIException e) {
+                final String msg = "build local EXT info err in host:" + _host.getUuid() + e.toString();
                 s_logger.warn(msg);
-            } catch (XmlRpcException e) {
-                String msg = "build local EXT info err in host:" + _host.uuid + e.getMessage();
+            } catch (final XmlRpcException e) {
+                final String msg = "build local EXT info err in host:" + _host.getUuid() + e.getMessage();
                 s_logger.warn(msg);
             }
         }
@@ -113,7 +112,7 @@ public class XcpOssResource extends CitrixResourceBase {
     }
 
     @Override
-    protected String getGuestOsType(String stdType, String platformEmulator, boolean bootFromCD) {
+    protected String getGuestOsType(final String stdType, final String platformEmulator, final boolean bootFromCD) {
         if (stdType.equalsIgnoreCase("Debian GNU/Linux 6(64-bit)")) {
             return "Debian Squeeze 6.0 (64-bit)";
         } else if (stdType.equalsIgnoreCase("CentOS 5.6 (64-bit)")) {
@@ -124,21 +123,21 @@ public class XcpOssResource extends CitrixResourceBase {
     }
 
     @Override
-    protected synchronized VBD createPatchVbd(Connection conn, String vmName, VM vm) throws XmlRpcException, XenAPIException {
-        if (_host.localSRuuid != null) {
+    public synchronized VBD createPatchVbd(final Connection conn, final String vmName, final VM vm) throws XmlRpcException, XenAPIException {
+        if (_host.getLocalSRuuid() != null) {
             //create an iso vdi on it
-            String result = callHostPlugin(conn, "vmops", "createISOVHD", "uuid", _host.localSRuuid);
+            final String result = callHostPlugin(conn, "vmops", "createISOVHD", "uuid", _host.getLocalSRuuid());
             if (result == null || result.equalsIgnoreCase("Failed")) {
                 throw new CloudRuntimeException("can not create systemvm vdi");
             }
 
-            Set<VDI> vdis = VDI.getByNameLabel(conn, "systemvm-vdi");
+            final Set<VDI> vdis = VDI.getByNameLabel(conn, "systemvm-vdi");
             if (vdis.size() != 1) {
                 throw new CloudRuntimeException("can not find systemvmiso");
             }
-            VDI systemvmVDI = vdis.iterator().next();
+            final VDI systemvmVDI = vdis.iterator().next();
 
-            VBD.Record cdromVBDR = new VBD.Record();
+            final VBD.Record cdromVBDR = new VBD.Record();
             cdromVBDR.VM = vm;
             cdromVBDR.empty = false;
             cdromVBDR.bootable = false;
@@ -146,32 +145,32 @@ public class XcpOssResource extends CitrixResourceBase {
             cdromVBDR.mode = Types.VbdMode.RO;
             cdromVBDR.type = Types.VbdType.DISK;
             cdromVBDR.VDI = systemvmVDI;
-            VBD cdromVBD = VBD.create(conn, cdromVBDR);
+            final VBD cdromVBD = VBD.create(conn, cdromVBDR);
             return cdromVBD;
         } else {
             throw new CloudRuntimeException("can not find local sr");
         }
     }
 
-    protected NetworkUsageAnswer execute(NetworkUsageCommand cmd) {
+    protected NetworkUsageAnswer execute(final NetworkUsageCommand cmd) {
         try {
-            Connection conn = getConnection();
+            final Connection conn = getConnection();
             if (cmd.getOption() != null && cmd.getOption().equals("create")) {
-                String result = networkUsage(conn, cmd.getPrivateIP(), "create", null);
-                NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
+                final String result = networkUsage(conn, cmd.getPrivateIP(), "create", null);
+                final NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
                 return answer;
             }
-            long[] stats = getNetworkStats(conn, cmd.getPrivateIP());
-            NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
+            final long[] stats = getNetworkStats(conn, cmd.getPrivateIP());
+            final NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
             return answer;
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             s_logger.warn("Failed to get network usage stats due to ", ex);
             return new NetworkUsageAnswer(cmd, ex);
         }
     }
 
     @Override
-    public Answer executeRequest(Command cmd) {
+    public Answer executeRequest(final Command cmd) {
         if (cmd instanceof NetworkUsageCommand) {
             return execute((NetworkUsageCommand) cmd);
         } else {
@@ -180,18 +179,18 @@ public class XcpOssResource extends CitrixResourceBase {
     }
 
     @Override
-    public StopAnswer execute(StopCommand cmd) {
-        StopAnswer answer = super.execute(cmd);
-        String vmName = cmd.getVmName();
+    public StopAnswer execute(final StopCommand cmd) {
+        final StopAnswer answer = super.execute(cmd);
+        final String vmName = cmd.getVmName();
         if (vmName.startsWith("v-")) {
-            Connection conn = getConnection();
+            final Connection conn = getConnection();
             callHostPlugin(conn, "vmops", "setDNATRule", "add", "false");
         }
         return answer;
     }
 
     @Override
-    protected void setMemory(Connection conn, VM vm, long minMemsize, long maxMemsize) throws XmlRpcException, XenAPIException {
+    protected void setMemory(final Connection conn, final VM vm, final long minMemsize, final long maxMemsize) throws XmlRpcException, XenAPIException {
         vm.setMemoryLimits(conn, mem_32m, maxMemsize, minMemsize, maxMemsize);
     }
 }

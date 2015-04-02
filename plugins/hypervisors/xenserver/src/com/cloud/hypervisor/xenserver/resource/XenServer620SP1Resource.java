@@ -28,6 +28,15 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.GetGPUStatsAnswer;
+import com.cloud.agent.api.GetGPUStatsCommand;
+import com.cloud.agent.api.StartCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.VgpuTypesInfo;
+import com.cloud.agent.api.to.GPUDeviceTO;
+import com.cloud.resource.ServerResource;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.GPUGroup;
 import com.xensource.xenapi.Host;
@@ -38,16 +47,6 @@ import com.xensource.xenapi.VGPUType;
 import com.xensource.xenapi.VGPUType.Record;
 import com.xensource.xenapi.VM;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.GetGPUStatsAnswer;
-import com.cloud.agent.api.GetGPUStatsCommand;
-import com.cloud.agent.api.StartCommand;
-import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.api.VgpuTypesInfo;
-import com.cloud.agent.api.to.GPUDeviceTO;
-import com.cloud.resource.ServerResource;
-
 @Local(value=ServerResource.class)
 public class XenServer620SP1Resource extends XenServer620Resource {
     private static final Logger s_logger = Logger.getLogger(XenServer620SP1Resource.class);
@@ -57,8 +56,8 @@ public class XenServer620SP1Resource extends XenServer620Resource {
     }
 
     @Override
-    public Answer executeRequest(Command cmd) {
-        Class<? extends Command> clazz = cmd.getClass();
+    public Answer executeRequest(final Command cmd) {
+        final Class<? extends Command> clazz = cmd.getClass();
         if (clazz == GetGPUStatsCommand.class) {
             return execute((GetGPUStatsCommand) cmd);
         } else {
@@ -66,28 +65,28 @@ public class XenServer620SP1Resource extends XenServer620Resource {
         }
     }
 
-    protected GetGPUStatsAnswer execute(GetGPUStatsCommand cmd) {
-        Connection conn = getConnection();
+    protected GetGPUStatsAnswer execute(final GetGPUStatsCommand cmd) {
+        final Connection conn = getConnection();
         HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = new HashMap<String, HashMap<String, VgpuTypesInfo>>();
         try {
             groupDetails = getGPUGroupDetails(conn);
-        } catch (Exception e) {
-            String msg = "Unable to get GPU stats" + e.toString();
+        } catch (final Exception e) {
+            final String msg = "Unable to get GPU stats" + e.toString();
             s_logger.warn(msg, e);
         }
         return new GetGPUStatsAnswer(cmd, groupDetails);
     }
 
     @Override
-    protected void fillHostInfo(Connection conn, StartupRoutingCommand cmd) {
+    protected void fillHostInfo(final Connection conn, final StartupRoutingCommand cmd) {
         super.fillHostInfo(conn, cmd);
         try {
-            HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = getGPUGroupDetails(conn);
+            final HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = getGPUGroupDetails(conn);
             cmd.setGpuGroupDetails(groupDetails);
             if (groupDetails != null && !groupDetails.isEmpty()) {
                 cmd.setHostTags("GPU");
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Error while getting GPU device info from host " + cmd.getName(), e);
             }
@@ -95,26 +94,26 @@ public class XenServer620SP1Resource extends XenServer620Resource {
     }
 
     @Override
-    protected HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUGroupDetails(Connection conn) throws XenAPIException, XmlRpcException {
-        HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = new HashMap<String, HashMap<String, VgpuTypesInfo>>();
-        Host host = Host.getByUuid(conn, _host.uuid);
-        Set<PGPU> pgpus = host.getPGPUs(conn);
-        Iterator<PGPU> iter = pgpus.iterator();
+    public HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUGroupDetails(final Connection conn) throws XenAPIException, XmlRpcException {
+        final HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = new HashMap<String, HashMap<String, VgpuTypesInfo>>();
+        final Host host = Host.getByUuid(conn, _host.getUuid());
+        final Set<PGPU> pgpus = host.getPGPUs(conn);
+        final Iterator<PGPU> iter = pgpus.iterator();
         while (iter.hasNext()) {
-            PGPU pgpu = iter.next();
-            GPUGroup gpuGroup = pgpu.getGPUGroup(conn);
-            Set<VGPUType> enabledVGPUTypes = gpuGroup.getEnabledVGPUTypes(conn);
-            String groupName = gpuGroup.getNameLabel(conn);
+            final PGPU pgpu = iter.next();
+            final GPUGroup gpuGroup = pgpu.getGPUGroup(conn);
+            final Set<VGPUType> enabledVGPUTypes = gpuGroup.getEnabledVGPUTypes(conn);
+            final String groupName = gpuGroup.getNameLabel(conn);
             HashMap<String, VgpuTypesInfo> gpuCapacity = new HashMap<String, VgpuTypesInfo>();
             if (groupDetails.get(groupName) != null) {
                 gpuCapacity = groupDetails.get(groupName);
             }
             // Get remaining capacity of all the enabled VGPU in a PGPU
             if(enabledVGPUTypes != null) {
-                Iterator<VGPUType> it = enabledVGPUTypes.iterator();
+                final Iterator<VGPUType> it = enabledVGPUTypes.iterator();
                 while (it.hasNext()) {
-                    VGPUType type = it.next();
-                    Record record = type.getRecord(conn);
+                    final VGPUType type = it.next();
+                    final Record record = type.getRecord(conn);
                     Long remainingCapacity = pgpu.getRemainingCapacity(conn, type);
                     Long maxCapacity = pgpu.getSupportedVGPUMaxCapacities(conn).get(type);
                     VgpuTypesInfo entry;
@@ -125,7 +124,7 @@ public class XenServer620SP1Resource extends XenServer620Resource {
                         entry.setMaxVmCapacity(maxCapacity);
                         gpuCapacity.put(record.modelName, entry);
                     } else {
-                        VgpuTypesInfo vgpuTypeRecord = new VgpuTypesInfo(null, record.modelName, record.framebufferSize, record.maxHeads,
+                        final VgpuTypesInfo vgpuTypeRecord = new VgpuTypesInfo(null, record.modelName, record.framebufferSize, record.maxHeads,
                                 record.maxResolutionX, record.maxResolutionY, maxCapacity, remainingCapacity, maxCapacity);
                         gpuCapacity.put(record.modelName, vgpuTypeRecord);
                     }
@@ -137,27 +136,27 @@ public class XenServer620SP1Resource extends XenServer620Resource {
     }
 
     @Override
-    protected void createVGPU(Connection conn, StartCommand cmd, VM vm, GPUDeviceTO gpuDevice) throws XenAPIException, XmlRpcException {
+    public void createVGPU(final Connection conn, final StartCommand cmd, final VM vm, final GPUDeviceTO gpuDevice) throws XenAPIException, XmlRpcException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating VGPU of VGPU type [ " + gpuDevice.getVgpuType() + " ] in gpu group" + gpuDevice.getGpuGroup()
                     + " for VM " + cmd.getVirtualMachine().getName());
         }
 
-        Set<GPUGroup> groups = GPUGroup.getByNameLabel(conn, gpuDevice.getGpuGroup());
+        final Set<GPUGroup> groups = GPUGroup.getByNameLabel(conn, gpuDevice.getGpuGroup());
         assert groups.size() == 1 : "Should only have 1 group but found " + groups.size();
-        GPUGroup gpuGroup = groups.iterator().next();
+        final GPUGroup gpuGroup = groups.iterator().next();
 
-        Set<VGPUType> vgpuTypes = gpuGroup.getEnabledVGPUTypes(conn);
-        Iterator<VGPUType> iter = vgpuTypes.iterator();
+        final Set<VGPUType> vgpuTypes = gpuGroup.getEnabledVGPUTypes(conn);
+        final Iterator<VGPUType> iter = vgpuTypes.iterator();
         VGPUType vgpuType = null;
         while (iter.hasNext()) {
-            VGPUType entry = iter.next();
+            final VGPUType entry = iter.next();
             if (entry.getModelName(conn).equals(gpuDevice.getVgpuType())) {
                 vgpuType = entry;
             }
         }
-        String device = "0"; // Only allow device = "0" for now, as XenServer supports just a single vGPU per VM.
-        Map<String, String> other_config = new HashMap<String, String>();
+        final String device = "0"; // Only allow device = "0" for now, as XenServer supports just a single vGPU per VM.
+        final Map<String, String> other_config = new HashMap<String, String>();
         VGPU.create(conn, vm, gpuGroup, device, other_config, vgpuType);
 
         if (s_logger.isDebugEnabled()) {
@@ -166,5 +165,4 @@ public class XenServer620SP1Resource extends XenServer620Resource {
         // Calculate and set remaining GPU capacity in the host.
         cmd.getVirtualMachine().getGpuDevice().setGroupDetails(getGPUGroupDetails(conn));
     }
-
 }

@@ -24,15 +24,9 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.cloudstack.hypervisor.xenserver.XenServerResourceNewBase;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
-
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.VM;
-
-import org.apache.cloudstack.hypervisor.xenserver.XenServerResourceNewBase;
 
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
@@ -40,6 +34,10 @@ import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.VM;
 
 @Local(value=ServerResource.class)
 public class Xenserver625Resource extends XenServerResourceNewBase {
@@ -51,49 +49,48 @@ public class Xenserver625Resource extends XenServerResourceNewBase {
 
     @Override
     protected List<File> getPatchFiles() {
-        List<File> files = new ArrayList<File>();
-        String patch = "scripts/vm/hypervisor/xenserver/xenserver62/patch";
-        String patchfilePath = Script.findScript("", patch);
+        final List<File> files = new ArrayList<File>();
+        final String patch = "scripts/vm/hypervisor/xenserver/xenserver62/patch";
+        final String patchfilePath = Script.findScript("", patch);
         if (patchfilePath == null) {
             throw new CloudRuntimeException("Unable to find patch file " + patch);
         }
-        File file = new File(patchfilePath);
+        final File file = new File(patchfilePath);
         files.add(file);
         return files;
     }
 
     @Override
-    protected StorageSubsystemCommandHandler getStorageHandler() {
-        XenServerStorageProcessor processor = new Xenserver625StorageProcessor(this);
+    protected StorageSubsystemCommandHandler buildStorageHandler() {
+        final XenServerStorageProcessor processor = new Xenserver625StorageProcessor(this);
         return new StorageSubsystemCommandHandlerBase(processor);
     }
 
     @Override
-    protected void umountSnapshotDir(Connection conn, Long dcId) {
-
+    public void umountSnapshotDir(final Connection conn, final Long dcId) {
     }
 
     @Override
-    protected boolean setupServer(Connection conn,Host host) {
-        com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.ip, 22);
+    public boolean setupServer(final Connection conn,final Host host) {
+        final com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.getIp(), 22);
         try {
             sshConnection.connect(null, 60000, 60000);
             if (!sshConnection.authenticateWithPassword(_username, _password.peek())) {
                 throw new CloudRuntimeException("Unable to authenticate");
             }
 
-            String cmd = "rm -f /opt/xensource/sm/hostvmstats.py " +
-                         "/opt/xensource/bin/copy_vhd_to_secondarystorage.sh " +
-                         "/opt/xensource/bin/copy_vhd_from_secondarystorage.sh " +
-                         "/opt/xensource/bin/create_privatetemplate_from_snapshot.sh " +
-                         "/opt/xensource/bin/vhd-util " +
-                         "/opt/cloud/bin/copy_vhd_to_secondarystorage.sh " +
-                         "/opt/cloud/bin/copy_vhd_from_secondarystorage.sh " +
-                         "/opt/cloud/bin/create_privatetemplate_from_snapshot.sh " +
-                         "/opt/cloud/bin/vhd-util";
+            final String cmd = "rm -f /opt/xensource/sm/hostvmstats.py " +
+                    "/opt/xensource/bin/copy_vhd_to_secondarystorage.sh " +
+                    "/opt/xensource/bin/copy_vhd_from_secondarystorage.sh " +
+                    "/opt/xensource/bin/create_privatetemplate_from_snapshot.sh " +
+                    "/opt/xensource/bin/vhd-util " +
+                    "/opt/cloud/bin/copy_vhd_to_secondarystorage.sh " +
+                    "/opt/cloud/bin/copy_vhd_from_secondarystorage.sh " +
+                    "/opt/cloud/bin/create_privatetemplate_from_snapshot.sh " +
+                    "/opt/cloud/bin/vhd-util";
 
             SSHCmdHelper.sshExecuteCmd(sshConnection, cmd);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             s_logger.debug("Catch exception " + e.toString(), e);
         } finally {
             sshConnection.close();
@@ -102,11 +99,11 @@ public class Xenserver625Resource extends XenServerResourceNewBase {
     }
 
     @Override
-    protected String revertToSnapshot(Connection conn, VM vmSnapshot,
-                                      String vmName, String oldVmUuid, Boolean snapshotMemory, String hostUUID)
-            throws Types.XenAPIException, XmlRpcException {
+    public String revertToSnapshot(final Connection conn, final VM vmSnapshot,
+            final String vmName, final String oldVmUuid, final Boolean snapshotMemory, final String hostUUID)
+                    throws Types.XenAPIException, XmlRpcException {
 
-        String results = callHostPluginAsync(conn, "vmopsSnapshot",
+        final String results = callHostPluginAsync(conn, "vmopsSnapshot",
                 "revert_memory_snapshot", 10 * 60 * 1000, "snapshotUUID",
                 vmSnapshot.getUuid(conn), "vmName", vmName, "oldVmUuid",
                 oldVmUuid, "snapshotMemory", snapshotMemory.toString(), "hostUUID", hostUUID);

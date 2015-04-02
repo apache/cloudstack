@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,26 +15,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
-package com.cloud.ha;
+package com.cloud.hypervisor.xenserver.resource.wrapper;
 
-import static org.junit.Assert.assertEquals;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.GetVmDiskStatsAnswer;
+import com.cloud.agent.api.GetVmDiskStatsCommand;
+import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
+import com.cloud.resource.CommandWrapper;
 
-import org.junit.Test;
+public final class CitrixGetVmDiskStatsCommandWrapper extends CommandWrapper<GetVmDiskStatsCommand, Answer, CitrixResourceBase> {
 
-
-public class XenServerFencerTest {
-
-    @Test
-    public void testSetAndGetName() throws Exception {
-        XenServerFencer xenServerFencer = new XenServerFencer();
-        String name = "name";
-
-        xenServerFencer.setName(name);
-        String actual = xenServerFencer.getName();
-
-        assertEquals(name, actual);
-
+    @Override
+    public Answer execute(final GetVmDiskStatsCommand command, final CitrixResourceBase citrixResourceBase) {
+        return new GetVmDiskStatsAnswer(command, null, null, null);
     }
-
 }

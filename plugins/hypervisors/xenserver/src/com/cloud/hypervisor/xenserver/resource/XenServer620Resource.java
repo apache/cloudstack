@@ -20,17 +20,15 @@ import java.util.Set;
 
 import javax.ejb.Local;
 
+import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.resource.ServerResource;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.HostPatch;
 import com.xensource.xenapi.PoolPatch;
-
-import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
-
-import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.resource.ServerResource;
 
 @Local(value = ServerResource.class)
 public class XenServer620Resource extends XenServer610Resource {
@@ -40,34 +38,33 @@ public class XenServer620Resource extends XenServer610Resource {
         super();
     }
 
-
-    protected boolean hostHasHotFix(Connection conn, String hotFixUuid) {
+    protected boolean hostHasHotFix(final Connection conn, final String hotFixUuid) {
         try {
-            Host host = Host.getByUuid(conn, _host.uuid);
-            Host.Record re = host.getRecord(conn);
-            Set<HostPatch> patches = re.patches;
-            PoolPatch poolPatch = PoolPatch.getByUuid(conn, hotFixUuid);
-            for(HostPatch patch : patches) {
-                PoolPatch pp = patch.getPoolPatch(conn);
+            final Host host = Host.getByUuid(conn, _host.getUuid());
+            final Host.Record re = host.getRecord(conn);
+            final Set<HostPatch> patches = re.patches;
+            final PoolPatch poolPatch = PoolPatch.getByUuid(conn, hotFixUuid);
+            for(final HostPatch patch : patches) {
+                final PoolPatch pp = patch.getPoolPatch(conn);
                 if (pp.equals(poolPatch) && patch.getApplied(conn)) {
                     return true;
                 }
             }
-         } catch (Exception e) {
+        } catch (final Exception e) {
             s_logger.debug("can't get patches information for hotFix: " + hotFixUuid);
         }
         return false;
     }
 
     @Override
-    protected void fillHostInfo(Connection conn, StartupRoutingCommand cmd) {
+    protected void fillHostInfo(final Connection conn, final StartupRoutingCommand cmd) {
         super.fillHostInfo(conn, cmd);
-        Map<String, String> details = cmd.getHostDetails();
-        Boolean hotFix62ESP1004 = hostHasHotFix(conn, XenserverConfigs.XSHotFix62ESP1004);
+        final Map<String, String> details = cmd.getHostDetails();
+        final Boolean hotFix62ESP1004 = hostHasHotFix(conn, XenserverConfigs.XSHotFix62ESP1004);
         if( hotFix62ESP1004 != null && hotFix62ESP1004 ) {
             details.put(XenserverConfigs.XS620HotFix , XenserverConfigs.XSHotFix62ESP1004);
         } else {
-            Boolean hotFix62ESP1 = hostHasHotFix(conn, XenserverConfigs.XSHotFix62ESP1);
+            final Boolean hotFix62ESP1 = hostHasHotFix(conn, XenserverConfigs.XSHotFix62ESP1);
             if( hotFix62ESP1 != null && hotFix62ESP1 ) {
                 details.put(XenserverConfigs.XS620HotFix , XenserverConfigs.XSHotFix62ESP1);
             }
