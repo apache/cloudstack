@@ -974,8 +974,8 @@ namespace HypervResource
 
                     if (poolType == StoragePoolType.Filesystem)
                     {
-                        GetCapacityForLocalPath(localPath, out capacityBytes, out availableBytes);
                         hostPath = localPath;
+                        GetCapacityForPath(hostPath, out capacityBytes, out availableBytes);
                     }
                     else if (poolType == StoragePoolType.NetworkFilesystem ||
                         poolType == StoragePoolType.SMB)
@@ -1940,8 +1940,8 @@ namespace HypervResource
                     }
                     else if (poolType == StoragePoolType.Filesystem)
                     {
-                        hostPath = (string)cmd.localPath;;
-                        GetCapacityForLocalPath(hostPath, out capacity, out available);
+                        hostPath = (string)cmd.localPath;
+                        GetCapacityForPath(hostPath, out capacity, out available);
                         used = capacity - available;
                         result = true;
                     }
@@ -2284,8 +2284,8 @@ namespace HypervResource
                 // Read the localStoragePath for virtual disks from the Hyper-V configuration
                 // See http://blogs.msdn.com/b/virtual_pc_guy/archive/2010/05/06/managing-the-default-virtual-machine-location-with-hyper-v.aspx
                 // for discussion of Hyper-V file locations paths.
-                string localStoragePath = wmiCallsV2.GetDefaultVirtualDiskFolder();
-                if (localStoragePath != null)
+                string virtualDiskFolderPath = wmiCallsV2.GetDefaultVirtualDiskFolder();
+                if (virtualDiskFolderPath != null)
                 {
                     // GUID arbitrary.  Host agents deals with storage pool in terms of localStoragePath.
                     // We use HOST guid.
@@ -2303,8 +2303,7 @@ namespace HypervResource
 
                     long capacity;
                     long available;
-                    GetCapacityForLocalPath(localStoragePath, out capacity, out available);
-
+                    GetCapacityForPath(virtualDiskFolderPath, out capacity, out available);
                     logger.Debug(CloudStackTypes.StartupStorageCommand + " set available bytes to " + available);
 
                     string ipAddr = strtRouteCmd.privateIpAddress;
@@ -2314,8 +2313,8 @@ namespace HypervResource
                     StoragePoolInfo pi = new StoragePoolInfo(
                         poolGuid.ToString(),
                         ipAddr,
-                        localStoragePath,
-                        localStoragePath,
+                        virtualDiskFolderPath,
+                        virtualDiskFolderPath,
                         StoragePoolType.Filesystem.ToString(),
                         capacity,
                         available);
@@ -2487,6 +2486,18 @@ namespace HypervResource
                 availableBytes = availableBytes > 0 ? availableBytes : 0;
                 capacityBytes -= config.RootDeviceReservedSpaceBytes;
                 capacityBytes = capacityBytes > 0 ? capacityBytes : 0;
+            }
+        }
+
+        public static void GetCapacityForPath(String hostPath, out long capacityBytes, out long availableBytes)
+        {
+            if (hostPath.Substring(0, 2) == "\\\\")
+            {
+                Utils.GetShareDetails(hostPath, out capacityBytes, out availableBytes);
+            }
+            else
+            {
+                GetCapacityForLocalPath(hostPath, out capacityBytes, out availableBytes);
             }
         }
     }
