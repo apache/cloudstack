@@ -51,7 +51,9 @@ import com.xensource.xenapi.VM;
 
 @Local(value = ServerResource.class)
 public class XcpOssResource extends CitrixResourceBase {
+
     private final static Logger s_logger = Logger.getLogger(XcpOssResource.class);
+
     private static final long mem_32m = 33554432L;
 
     @Override

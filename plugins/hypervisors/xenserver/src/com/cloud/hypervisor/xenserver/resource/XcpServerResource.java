@@ -39,12 +39,9 @@ import com.xensource.xenapi.VM;
 
 @Local(value = ServerResource.class)
 public class XcpServerResource extends CitrixResourceBase {
-    private final static Logger s_logger = Logger.getLogger(XcpServerResource.class);
-    private static final long mem_32m = 33554432L;
 
-    public XcpServerResource() {
-        super();
-    }
+    private final static Logger s_logger = Logger.getLogger(XcpServerResource.class);
+    private final static long mem_32m = 33554432L;
 
     @Override
     public Answer executeRequest(final Command cmd) {

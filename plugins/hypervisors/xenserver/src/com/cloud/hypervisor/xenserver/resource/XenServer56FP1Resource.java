@@ -35,10 +35,6 @@ import com.xensource.xenapi.Types.XenAPIException;
 @Local(value = ServerResource.class)
 public class XenServer56FP1Resource extends XenServer56Resource {
 
-    public XenServer56FP1Resource() {
-        super();
-    }
-
     @Override
     protected List<File> getPatchFiles() {
         final List<File> files = new ArrayList<File>();

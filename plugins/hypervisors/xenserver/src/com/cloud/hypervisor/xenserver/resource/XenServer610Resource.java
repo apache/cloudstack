@@ -63,11 +63,8 @@ import com.xensource.xenapi.VM;
 
 @Local(value = ServerResource.class)
 public class XenServer610Resource extends XenServer600Resource {
-    private static final Logger s_logger = Logger.getLogger(XenServer610Resource.class);
 
-    public XenServer610Resource() {
-        super();
-    }
+    private static final Logger s_logger = Logger.getLogger(XenServer610Resource.class);
 
     @Override
     public Answer executeRequest(final Command cmd) {

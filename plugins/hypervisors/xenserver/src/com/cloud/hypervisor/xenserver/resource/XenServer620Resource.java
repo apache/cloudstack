@@ -32,11 +32,8 @@ import com.xensource.xenapi.PoolPatch;
 
 @Local(value = ServerResource.class)
 public class XenServer620Resource extends XenServer610Resource {
-    private static final Logger s_logger = Logger.getLogger(XenServer620Resource.class);
 
-    public XenServer620Resource() {
-        super();
-    }
+    private static final Logger s_logger = Logger.getLogger(XenServer620Resource.class);
 
     protected boolean hostHasHotFix(final Connection conn, final String hotFixUuid) {
         try {
