@@ -49,7 +49,8 @@ under the License.
 
 # Building CloudStack
 
-See the INSTALL file.
+* See the [INSTALL](INSTALL.md) file.
+* How to [contribute](CONTRIBUTING.md)
 
 # Notice of Cryptographic Software
 
