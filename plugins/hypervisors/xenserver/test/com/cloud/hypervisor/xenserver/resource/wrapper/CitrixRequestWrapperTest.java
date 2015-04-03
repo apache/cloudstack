@@ -589,6 +589,7 @@ public class CitrixRequestWrapperTest {
             when(client.execute("host.get_by_uuid", new Object[] { "befc4dcd", uuid })).thenReturn(spiedMap);
             PowerMockito.when(conn, "dispatch", "host.get_by_uuid", params).thenReturn(spiedMap);
         } catch (final Exception e) {
+            fail(e.getMessage());
         }
 
         // try {

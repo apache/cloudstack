@@ -28,10 +28,6 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.GetGPUStatsAnswer;
-import com.cloud.agent.api.GetGPUStatsCommand;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.VgpuTypesInfo;
@@ -51,28 +47,6 @@ import com.xensource.xenapi.VM;
 public class XenServer620SP1Resource extends XenServer620Resource {
 
     private static final Logger s_logger = Logger.getLogger(XenServer620SP1Resource.class);
-
-    @Override
-    public Answer executeRequest(final Command cmd) {
-        final Class<? extends Command> clazz = cmd.getClass();
-        if (clazz == GetGPUStatsCommand.class) {
-            return execute((GetGPUStatsCommand) cmd);
-        } else {
-            return super.executeRequest(cmd);
-        }
-    }
-
-    protected GetGPUStatsAnswer execute(final GetGPUStatsCommand cmd) {
-        final Connection conn = getConnection();
-        HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = new HashMap<String, HashMap<String, VgpuTypesInfo>>();
-        try {
-            groupDetails = getGPUGroupDetails(conn);
-        } catch (final Exception e) {
-            final String msg = "Unable to get GPU stats" + e.toString();
-            s_logger.warn(msg, e);
-        }
-        return new GetGPUStatsAnswer(cmd, groupDetails);
-    }
 
     @Override
     protected void fillHostInfo(final Connection conn, final StartupRoutingCommand cmd) {

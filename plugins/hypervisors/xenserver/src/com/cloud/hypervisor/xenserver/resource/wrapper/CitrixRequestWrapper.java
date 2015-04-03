@@ -21,8 +21,6 @@ package com.cloud.hypervisor.xenserver.resource.wrapper;
 
 import java.util.Hashtable;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
@@ -38,6 +36,7 @@ import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.FenceCommand;
+import com.cloud.agent.api.GetGPUStatsCommand;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVmDiskStatsCommand;
@@ -93,8 +92,6 @@ import com.cloud.resource.RequestWrapper;
 import com.cloud.resource.ServerResource;
 
 public class CitrixRequestWrapper extends RequestWrapper {
-
-    private static final Logger s_logger = Logger.getLogger(CitrixRequestWrapper.class);
 
     private static CitrixRequestWrapper instance;
 
@@ -186,6 +183,11 @@ public class CitrixRequestWrapper extends RequestWrapper {
         final Hashtable<Class<? extends Command>, CommandWrapper> xenServer56P1Commands = new Hashtable<Class<? extends Command>, CommandWrapper>();
         xenServer56P1Commands.put(FenceCommand.class, new XenServer56FP1FenceCommandWrapper());
         resources.put(XenServer56FP1Resource.class, xenServer56P1Commands);
+
+        // XenServer620SP1Resource commands
+        final Hashtable<Class<? extends Command>, CommandWrapper> xenServer620SP1Commands = new Hashtable<Class<? extends Command>, CommandWrapper>();
+        xenServer620SP1Commands.put(GetGPUStatsCommand.class, new XenServer620SP1GetGPUStatsCommandWrapper());
+        resources.put(XenServer56FP1Resource.class, xenServer620SP1Commands);
     }
 
     public static CitrixRequestWrapper getInstance() {

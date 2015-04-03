@@ -41,11 +41,8 @@ import com.xensource.xenapi.VM;
 
 @Local(value=ServerResource.class)
 public class Xenserver625Resource extends XenServerResourceNewBase {
-    private static final Logger s_logger = Logger.getLogger(Xenserver625Resource.class);
 
-    public Xenserver625Resource() {
-        super();
-    }
+    private static final Logger s_logger = Logger.getLogger(Xenserver625Resource.class);
 
     @Override
     protected List<File> getPatchFiles() {

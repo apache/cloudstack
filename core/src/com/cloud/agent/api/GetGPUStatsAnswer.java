@@ -28,12 +28,16 @@ public class GetGPUStatsAnswer extends Answer {
 
     private HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails;
 
-    public GetGPUStatsAnswer(GetGPUStatsCommand cmd, HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails) {
+    public GetGPUStatsAnswer(final GetGPUStatsCommand cmd, final HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails) {
         super(cmd);
         this.groupDetails = groupDetails;
     }
 
+    public GetGPUStatsAnswer(final GetGPUStatsCommand cmd, final boolean success, final String details) {
+        super(cmd, success, details);
+    }
+
     public HashMap<String, HashMap<String, VgpuTypesInfo>> getGroupDetails() {
-        return this.groupDetails;
+        return groupDetails;
     }
 }
