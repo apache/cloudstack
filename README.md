@@ -58,6 +58,7 @@ via Github pull requests.
 * [Release notes](http://docs.cloudstack.apache.org/projects/cloudstack-release-notes)
 * Design [documents](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Design)
 * API [documentation](http://cloudstack.apache.org/docs/api)
+* How to [contribute](CONTRIBUTING.md)
 
 ## Getting Involved and Contributing
 
