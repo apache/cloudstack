@@ -45,7 +45,9 @@ import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.MigrateWithStorageCommand;
+import com.cloud.agent.api.MigrateWithStorageCompleteCommand;
 import com.cloud.agent.api.MigrateWithStorageReceiveCommand;
+import com.cloud.agent.api.MigrateWithStorageSendCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
@@ -197,6 +199,8 @@ public class CitrixRequestWrapper extends RequestWrapper {
         final Hashtable<Class<? extends Command>, CommandWrapper> xenServer610Commands = new Hashtable<Class<? extends Command>, CommandWrapper>();
         xenServer610Commands.put(MigrateWithStorageCommand.class, new XenServer610MigrateWithStorageCommandWrapper());
         xenServer610Commands.put(MigrateWithStorageReceiveCommand.class, new XenServer610MigrateWithStorageReceiveCommandWrapper());
+        xenServer610Commands.put(MigrateWithStorageSendCommand.class, new XenServer610MigrateWithStorageSendCommandWrapper());
+        xenServer610Commands.put(MigrateWithStorageCompleteCommand.class, new XenServer610MigrateWithStorageCompleteCommandWrapper());
         resources.put(XenServer610Resource.class, xenServer610Commands);
     }
 

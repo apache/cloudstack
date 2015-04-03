@@ -40,6 +40,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.MigrateWithStorageCommand;
 import com.cloud.agent.api.MigrateWithStorageReceiveCommand;
+import com.cloud.agent.api.MigrateWithStorageSendCommand;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
@@ -56,6 +57,7 @@ import com.xensource.xenapi.Network;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VIF;
 
 @RunWith(PowerMockRunner.class)
 public class XenServer610WrapperTest {
@@ -266,6 +268,168 @@ public class XenServer610WrapperTest {
         } catch (final XmlRpcException e) {
             fail(e.getMessage());
         }
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testMigrateWithStorageSendCommand() {
+        final String vmName = "small";
+        final String path = "/";
+        final String mac = "3c:15:c2:c4:4f:18";
+
+        final Connection conn = Mockito.mock(Connection.class);
+        final VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
+
+        final VolumeTO volume1 = Mockito.mock(VolumeTO.class);
+        final VolumeTO volume2 = Mockito.mock(VolumeTO.class);
+
+        final SR sr1 = Mockito.mock(SR.class);
+        final SR sr2 = Mockito.mock(SR.class);
+
+        final VDI vdi1 = Mockito.mock(VDI.class);
+        final VDI vdi2 = Mockito.mock(VDI.class);
+
+        final NicTO nic1 = Mockito.mock(NicTO.class);
+        final NicTO nic2 = Mockito.mock(NicTO.class);
+
+        final Network network1 = Mockito.mock(Network.class);
+        final Network network2 = Mockito.mock(Network.class);
+
+        final Map<VolumeTO, Object> volumeToSr = new HashMap<VolumeTO, Object>();
+        volumeToSr.put(volume1, sr1);
+        volumeToSr.put(volume2, sr2);
+
+        final Map<NicTO, Object> nicToNetwork = new HashMap<NicTO, Object>();
+        nicToNetwork.put(nic1, network1);
+        nicToNetwork.put(nic2, network2);
+
+        final Map<String, String> token = new HashMap<String, String>();
+
+        final VIF vif1 = Mockito.mock(VIF.class);
+        final VIF vif2 = Mockito.mock(VIF.class);
+
+        final MigrateWithStorageSendCommand migrateStorageCommand = new MigrateWithStorageSendCommand(vmSpec, volumeToSr, nicToNetwork, token);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(xenServer610Resource.getConnection()).thenReturn(conn);
+        when(vmSpec.getName()).thenReturn(vmName);
+
+        when(volume1.getPath()).thenReturn(path);
+        when(volume2.getPath()).thenReturn(path);
+
+        when(nic1.getMac()).thenReturn(mac);
+        when(nic2.getMac()).thenReturn(mac);
+
+        when(xenServer610Resource.getVDIbyUuid(conn, volume1.getPath())).thenReturn(vdi1);
+        when(xenServer610Resource.getVDIbyUuid(conn, volume2.getPath())).thenReturn(vdi2);
+
+        try {
+            when(xenServer610Resource.getVifByMac(conn, null, nic1.getMac())).thenReturn(vif1);
+            when(xenServer610Resource.getVifByMac(conn, null, nic2.getMac())).thenReturn(vif2);
+        } catch (final XenAPIException e) {
+            fail(e.getMessage());
+        } catch (final XmlRpcException e) {
+            fail(e.getMessage());
+        }
+
+        final Answer answer = wrapper.execute(migrateStorageCommand, xenServer610Resource);
+
+        verify(xenServer610Resource, times(1)).getConnection();
+
+        try {
+            verify(xenServer610Resource, times(2)).getVDIbyUuid(conn, volume1.getPath());
+            verify(xenServer610Resource, times(2)).getVifByMac(conn, null, nic1.getMac());
+        } catch (final XenAPIException e) {
+            fail(e.getMessage());
+        } catch (final XmlRpcException e) {
+            fail(e.getMessage());
+        }
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testMigrateWithStorageSendCommandSRException() {
+        final String vmName = "small";
+
+        final Connection conn = Mockito.mock(Connection.class);
+        final VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
+
+        final VolumeTO volume1 = Mockito.mock(VolumeTO.class);
+        final VolumeTO volume2 = Mockito.mock(VolumeTO.class);
+
+        final Map<VolumeTO, Object> volumeToSr = new HashMap<VolumeTO, Object>();
+        volumeToSr.put(volume1, new String("a"));
+        volumeToSr.put(volume2, new String("b"));
+
+        final Map<NicTO, Object> nicToNetwork = new HashMap<NicTO, Object>();
+        final Map<String, String> token = new HashMap<String, String>();
+
+        final MigrateWithStorageSendCommand migrateStorageCommand = new MigrateWithStorageSendCommand(vmSpec, volumeToSr, nicToNetwork, token);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(xenServer610Resource.getConnection()).thenReturn(conn);
+        when(vmSpec.getName()).thenReturn(vmName);
+
+        final Answer answer = wrapper.execute(migrateStorageCommand, xenServer610Resource);
+
+        verify(xenServer610Resource, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testMigrateWithStorageSendCommandNetException() {
+        final String vmName = "small";
+        final String path = "/";
+
+        final Connection conn = Mockito.mock(Connection.class);
+        final VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
+
+        final VolumeTO volume1 = Mockito.mock(VolumeTO.class);
+        final VolumeTO volume2 = Mockito.mock(VolumeTO.class);
+
+        final SR sr1 = Mockito.mock(SR.class);
+        final SR sr2 = Mockito.mock(SR.class);
+
+        final VDI vdi1 = Mockito.mock(VDI.class);
+        final VDI vdi2 = Mockito.mock(VDI.class);
+
+        final NicTO nic1 = Mockito.mock(NicTO.class);
+        final NicTO nic2 = Mockito.mock(NicTO.class);
+
+        final Map<VolumeTO, Object> volumeToSr = new HashMap<VolumeTO, Object>();
+        volumeToSr.put(volume1, sr1);
+        volumeToSr.put(volume2, sr2);
+
+        final Map<NicTO, Object> nicToNetwork = new HashMap<NicTO, Object>();
+        nicToNetwork.put(nic1, new String("a"));
+        nicToNetwork.put(nic2, new String("b"));
+
+        final Map<String, String> token = new HashMap<String, String>();
+
+        final MigrateWithStorageSendCommand migrateStorageCommand = new MigrateWithStorageSendCommand(vmSpec, volumeToSr, nicToNetwork, token);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(xenServer610Resource.getConnection()).thenReturn(conn);
+        when(vmSpec.getName()).thenReturn(vmName);
+
+        when(volume1.getPath()).thenReturn(path);
+        when(volume2.getPath()).thenReturn(path);
+
+        when(xenServer610Resource.getVDIbyUuid(conn, volume1.getPath())).thenReturn(vdi1);
+        when(xenServer610Resource.getVDIbyUuid(conn, volume2.getPath())).thenReturn(vdi2);
+
+        final Answer answer = wrapper.execute(migrateStorageCommand, xenServer610Resource);
+
+        verify(xenServer610Resource, times(1)).getConnection();
 
         assertFalse(answer.getResult());
     }
