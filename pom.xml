@@ -708,6 +708,7 @@
               <exclude>INSTALL.md</exclude>
               <exclude>Dockerfile</exclude>
               <exclude>supervisord.conf</exclude>
+              <exclude>CONTRIBUTING.md</exclude>
               <exclude>.idea/</exclude>
               <exclude>**/*.log</exclude>
               <exclude>**/*.patch</exclude>
