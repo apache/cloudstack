@@ -111,6 +111,7 @@ CHILD_DOMAIN_ADMIN="child domain admin"
 Network states
 '''
 ALLOCATED = "Allocated"
+
 '''
 Storage Tags
 '''
@@ -118,3 +119,11 @@ ZONETAG1 = "zwps1"
 ZONETAG2 = "zwps2"
 CLUSTERTAG1 = "cwps1"
 CLUSTERTAG2 = "cwps2"
+
+'''
+Traffic Types
+'''
+PUBLIC_TRAFFIC = "public"
+GUEST_TRAFFIC = "guest"
+MANAGEMENT_TRAFFIC = "management"
+STORAGE_TRAFFIC = "storage"
