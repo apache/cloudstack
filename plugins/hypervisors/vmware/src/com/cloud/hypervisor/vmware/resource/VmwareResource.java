@@ -3036,7 +3036,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         List<VolumeObjectTO> volumeToList =  new ArrayList<VolumeObjectTO>();
         Map<Long, Integer> volumeDeviceKey = new HashMap<Long, Integer>();
 
-        Map<VolumeTO, StorageFilerTO> volToFiler = cmd.getVolumeToFiler();
+        List<Pair<VolumeTO, StorageFilerTO>> volToFiler = cmd.getVolumeToFilerAsList();
         String tgtHost = cmd.getTargetHost();
         String tgtHostMorInfo = tgtHost.split("@")[0];
         morTgtHost.setType(tgtHostMorInfo.split(":")[0]);
@@ -3064,9 +3064,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             vmName = vmMo.getName();
 
             // Specify destination datastore location for each volume
-            for (Entry<VolumeTO, StorageFilerTO> entry : volToFiler.entrySet()) {
-                volume = entry.getKey();
-                filerTo = entry.getValue();
+            for (Pair<VolumeTO, StorageFilerTO> entry : volToFiler) {
+                volume = entry.first();
+                filerTo = entry.second();
 
                 s_logger.debug("Preparing spec for volume : " + volume.getName());
                 morDsAtTarget = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(tgtHyperHost, filerTo.getUuid());
@@ -3195,8 +3195,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             // Update and return volume path for every disk because that could have changed after migration
-            for (Entry<VolumeTO, StorageFilerTO> entry : volToFiler.entrySet()) {
-                volume = entry.getKey();
+            for (Pair<VolumeTO, StorageFilerTO> entry : volToFiler) {
+                volume = entry.first();
                 long volumeId = volume.getId();
                 VirtualDisk[] disks = vmMo.getAllDiskDevice();
                 for (VirtualDisk disk : disks) {

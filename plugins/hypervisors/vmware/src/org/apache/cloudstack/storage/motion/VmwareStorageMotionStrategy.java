@@ -19,7 +19,7 @@
 
 package org.apache.cloudstack.storage.motion;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -53,6 +53,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -130,12 +131,12 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
 
         // Initiate migration of a virtual machine with it's volumes.
         try {
-            Map<VolumeTO, StorageFilerTO> volumeToFilerto = new HashMap<VolumeTO, StorageFilerTO>();
+            List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerto = new ArrayList<Pair<VolumeTO, StorageFilerTO>>();
             for (Map.Entry<VolumeInfo, DataStore> entry : volumeToPool.entrySet()) {
                 VolumeInfo volume = entry.getKey();
                 VolumeTO volumeTo = new VolumeTO(volume, storagePoolDao.findById(volume.getPoolId()));
                 StorageFilerTO filerTo = new StorageFilerTO((StoragePool)entry.getValue());
-                volumeToFilerto.put(volumeTo, filerTo);
+                volumeToFilerto.add(new Pair<VolumeTO, StorageFilerTO>(volumeTo, filerTo));
             }
 
             // Migration across cluster needs to be done in three phases.
@@ -168,12 +169,12 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
 
         // Initiate migration of a virtual machine with it's volumes.
         try {
-            Map<VolumeTO, StorageFilerTO> volumeToFilerto = new HashMap<VolumeTO, StorageFilerTO>();
+            List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerto = new ArrayList<Pair<VolumeTO, StorageFilerTO>>();
             for (Map.Entry<VolumeInfo, DataStore> entry : volumeToPool.entrySet()) {
                 VolumeInfo volume = entry.getKey();
                 VolumeTO volumeTo = new VolumeTO(volume, storagePoolDao.findById(volume.getPoolId()));
                 StorageFilerTO filerTo = new StorageFilerTO((StoragePool)entry.getValue());
-                volumeToFilerto.put(volumeTo, filerTo);
+                volumeToFilerto.add(new Pair<VolumeTO, StorageFilerTO>(volumeTo, filerTo));
             }
 
             MigrateWithStorageCommand command = new MigrateWithStorageCommand(to, volumeToFilerto, destHost.getGuid());
