@@ -82,7 +82,9 @@ public final class XenServer610MigrateWithStorageCommandWrapper extends CommandW
             final Map<VIF, Network> vifMap = new HashMap<VIF, Network>();
             final Map<VDI, SR> vdiMap = new HashMap<VDI, SR>();
             for (final Map.Entry<VolumeTO, StorageFilerTO> entry : volumeToFiler.entrySet()) {
-                vdiMap.put(xenServer610Resource.getVDIbyUuid(connection, entry.getKey().getPath()), xenServer610Resource.getStorageRepository(connection, entry.getValue().getUuid()));
+                final VolumeTO volume = entry.getKey();
+                final StorageFilerTO sotrageFiler = entry.getValue();
+                vdiMap.put(xenServer610Resource.getVDIbyUuid(connection, volume.getPath()), xenServer610Resource.getStorageRepository(connection, sotrageFiler.getUuid()));
             }
 
             // Get the vm to migrate.
