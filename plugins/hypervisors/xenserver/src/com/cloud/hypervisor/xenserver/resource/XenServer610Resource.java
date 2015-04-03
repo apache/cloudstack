@@ -68,9 +68,7 @@ public class XenServer610Resource extends XenServer600Resource {
 
     @Override
     public Answer executeRequest(final Command cmd) {
-        if (cmd instanceof MigrateWithStorageCommand) {
-            return execute((MigrateWithStorageCommand)cmd);
-        } else if (cmd instanceof MigrateWithStorageReceiveCommand) {
+        if (cmd instanceof MigrateWithStorageReceiveCommand) {
             return execute((MigrateWithStorageReceiveCommand)cmd);
         } else if (cmd instanceof MigrateWithStorageSendCommand) {
             return execute((MigrateWithStorageSendCommand)cmd);
@@ -83,7 +81,7 @@ public class XenServer610Resource extends XenServer600Resource {
         }
     }
 
-    private List<VolumeObjectTO> getUpdatedVolumePathsOfMigratedVm(final Connection connection, final VM migratedVm, final DiskTO[] volumes) throws CloudRuntimeException {
+    public List<VolumeObjectTO> getUpdatedVolumePathsOfMigratedVm(final Connection connection, final VM migratedVm, final DiskTO[] volumes) throws CloudRuntimeException {
         final List<VolumeObjectTO> volumeToList = new ArrayList<VolumeObjectTO>();
 
         try {

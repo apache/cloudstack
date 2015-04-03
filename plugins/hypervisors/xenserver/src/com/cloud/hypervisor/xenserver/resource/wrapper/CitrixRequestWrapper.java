@@ -44,6 +44,7 @@ import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.MigrateWithStorageCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
@@ -87,6 +88,8 @@ import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.hypervisor.xenserver.resource.XenServer56FP1Resource;
 import com.cloud.hypervisor.xenserver.resource.XenServer56Resource;
+import com.cloud.hypervisor.xenserver.resource.XenServer610Resource;
+import com.cloud.hypervisor.xenserver.resource.XenServer620SP1Resource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.RequestWrapper;
 import com.cloud.resource.ServerResource;
@@ -187,7 +190,12 @@ public class CitrixRequestWrapper extends RequestWrapper {
         // XenServer620SP1Resource commands
         final Hashtable<Class<? extends Command>, CommandWrapper> xenServer620SP1Commands = new Hashtable<Class<? extends Command>, CommandWrapper>();
         xenServer620SP1Commands.put(GetGPUStatsCommand.class, new XenServer620SP1GetGPUStatsCommandWrapper());
-        resources.put(XenServer56FP1Resource.class, xenServer620SP1Commands);
+        resources.put(XenServer620SP1Resource.class, xenServer620SP1Commands);
+
+        // XenServer610Resource commands
+        final Hashtable<Class<? extends Command>, CommandWrapper> xenServer610Commands = new Hashtable<Class<? extends Command>, CommandWrapper>();
+        xenServer610Commands.put(MigrateWithStorageCommand.class, new XenServer610MigrateWithStorageCommandWrapper());
+        resources.put(XenServer610Resource.class, xenServer610Commands);
     }
 
     public static CitrixRequestWrapper getInstance() {

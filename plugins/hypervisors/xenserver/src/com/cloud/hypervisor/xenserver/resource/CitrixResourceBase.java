@@ -2004,6 +2004,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return _host;
     }
 
+    public int getMigrateWait() {
+        return _migratewait;
+    }
+
     protected boolean getHostInfo(final Connection conn) throws IllegalArgumentException {
         try {
             final Host myself = Host.getByUuid(conn, _host.getUuid());
