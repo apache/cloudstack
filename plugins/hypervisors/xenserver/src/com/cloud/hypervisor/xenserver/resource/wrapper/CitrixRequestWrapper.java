@@ -86,6 +86,7 @@ import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
+import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
@@ -201,6 +202,7 @@ public class CitrixRequestWrapper extends RequestWrapper {
         xenServer610Commands.put(MigrateWithStorageReceiveCommand.class, new XenServer610MigrateWithStorageReceiveCommandWrapper());
         xenServer610Commands.put(MigrateWithStorageSendCommand.class, new XenServer610MigrateWithStorageSendCommandWrapper());
         xenServer610Commands.put(MigrateWithStorageCompleteCommand.class, new XenServer610MigrateWithStorageCompleteCommandWrapper());
+        xenServer610Commands.put(MigrateVolumeCommand.class, new XenServer610MigrateVolumeCommandWrapper());
         resources.put(XenServer610Resource.class, xenServer610Commands);
     }
 

@@ -43,6 +43,7 @@ import com.cloud.agent.api.MigrateWithStorageCompleteCommand;
 import com.cloud.agent.api.MigrateWithStorageReceiveCommand;
 import com.cloud.agent.api.MigrateWithStorageSendCommand;
 import com.cloud.agent.api.SetupCommand;
+import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -53,9 +54,12 @@ import com.cloud.hypervisor.xenserver.resource.XsHost;
 import com.cloud.hypervisor.xenserver.resource.XsLocalNetwork;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkSetupInfo;
+import com.cloud.storage.StoragePool;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Network;
 import com.xensource.xenapi.SR;
+import com.xensource.xenapi.Task;
+import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VIF;
@@ -456,7 +460,65 @@ public class XenServer610WrapperTest {
         when(xsHost.getUuid()).thenReturn(uuid);
 
         final Answer answer = wrapper.execute(createStorageCommand, xenServer610Resource);
+
         verify(xenServer610Resource, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testXenServer610MigrateVolumeCommandWrapper() {
+        final String uuid = "206b21a7-c6ec-40e2-b5e2-f861b9612f04";
+
+        final Connection conn = Mockito.mock(Connection.class);
+        final SR destinationPool = Mockito.mock(SR.class);
+        final VDI srcVolume = Mockito.mock(VDI.class);
+        final Task task = Mockito.mock(Task.class);
+
+        final long volumeId = 1l;
+        final String volumePath = "206b21a7-c6ec-40e2-b5e2-f861b9612f04";
+        final StoragePool pool = Mockito.mock(StoragePool.class);
+        final int timeout = 120;
+
+        final Map<String, String> other = new HashMap<String, String>();
+        other.put("live", "true");
+
+        final MigrateVolumeCommand createStorageCommand = new MigrateVolumeCommand(volumeId, volumePath, pool, timeout);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(xenServer610Resource.getConnection()).thenReturn(conn);
+        when(pool.getUuid()).thenReturn(uuid);
+        when(xenServer610Resource.getStorageRepository(conn, uuid)).thenReturn(destinationPool);
+        when(xenServer610Resource.getVDIbyUuid(conn, volumePath)).thenReturn(srcVolume);
+
+        try {
+            when(srcVolume.poolMigrateAsync(conn, destinationPool, other)).thenReturn(task);
+        } catch (final BadServerResponse e) {
+            fail(e.getMessage());
+        } catch (final XenAPIException e) {
+            fail(e.getMessage());
+        } catch (final XmlRpcException e) {
+            fail(e.getMessage());
+        }
+
+        when(xenServer610Resource.getMigrateWait()).thenReturn(120);
+
+        final Answer answer = wrapper.execute(createStorageCommand, xenServer610Resource);
+
+        verify(xenServer610Resource, times(1)).getConnection();
+
+        //        try {
+        //            verify(xenServer610Resource, times(1)).waitForTask(conn, task, 1000, timeout);
+        //            verify(xenServer610Resource, times(1)).checkForSuccess(conn, task);
+        //        } catch (final XenAPIException e) {
+        //            fail(e.getMessage());
+        //        } catch (final XmlRpcException e) {
+        //            fail(e.getMessage());
+        //        } catch (final TimeoutException e) {
+        //            fail(e.getMessage());
+        //        }
 
         assertFalse(answer.getResult());
     }
