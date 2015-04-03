@@ -30,18 +30,14 @@ import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.MigrateWithStorageCompleteAnswer;
-import com.cloud.agent.api.MigrateWithStorageCompleteCommand;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
 import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.Volume;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Task;
 import com.xensource.xenapi.Types;
@@ -58,9 +54,7 @@ public class XenServer610Resource extends XenServer600Resource {
 
     @Override
     public Answer executeRequest(final Command cmd) {
-        if (cmd instanceof MigrateWithStorageCompleteCommand) {
-            return execute((MigrateWithStorageCompleteCommand)cmd);
-        } else if (cmd instanceof MigrateVolumeCommand) {
+        if (cmd instanceof MigrateVolumeCommand) {
             return execute((MigrateVolumeCommand)cmd);
         } else {
             return super.executeRequest(cmd);
@@ -100,34 +94,6 @@ public class XenServer610Resource extends XenServer600Resource {
         }
 
         return volumeToList;
-    }
-
-    protected MigrateWithStorageCompleteAnswer execute(final MigrateWithStorageCompleteCommand cmd) {
-        final Connection connection = getConnection();
-        final VirtualMachineTO vmSpec = cmd.getVirtualMachine();
-
-        try {
-            final Host host = Host.getByUuid(connection, _host.getUuid());
-            final Set<VM> vms = VM.getByNameLabel(connection, vmSpec.getName());
-            final VM migratedVm = vms.iterator().next();
-
-            // Check the vm is present on the new host.
-            if (migratedVm == null) {
-                throw new CloudRuntimeException("Couldn't find the migrated vm " + vmSpec.getName() + " on the destination host.");
-            }
-
-            // Volume paths would have changed. Return that information.
-            final List<VolumeObjectTO> volumeToSet = getUpdatedVolumePathsOfMigratedVm(connection, migratedVm, vmSpec.getDisks());
-            migratedVm.setAffinity(connection, host);
-
-            return new MigrateWithStorageCompleteAnswer(cmd, volumeToSet);
-        } catch (final CloudRuntimeException e) {
-            s_logger.error("Migration of vm " + vmSpec.getName() + " with storage failed due to " + e.toString(), e);
-            return new MigrateWithStorageCompleteAnswer(cmd, e);
-        } catch (final Exception e) {
-            s_logger.error("Migration of vm " + vmSpec.getName() + " with storage failed due to " + e.toString(), e);
-            return new MigrateWithStorageCompleteAnswer(cmd, e);
-        }
     }
 
     protected MigrateVolumeAnswer execute(final MigrateVolumeCommand cmd) {

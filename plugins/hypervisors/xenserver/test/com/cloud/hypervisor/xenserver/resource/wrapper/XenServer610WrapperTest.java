@@ -39,6 +39,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.MigrateWithStorageCommand;
+import com.cloud.agent.api.MigrateWithStorageCompleteCommand;
 import com.cloud.agent.api.MigrateWithStorageReceiveCommand;
 import com.cloud.agent.api.MigrateWithStorageSendCommand;
 import com.cloud.agent.api.SetupCommand;
@@ -429,6 +430,32 @@ public class XenServer610WrapperTest {
 
         final Answer answer = wrapper.execute(migrateStorageCommand, xenServer610Resource);
 
+        verify(xenServer610Resource, times(1)).getConnection();
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testMigrateWithStorageCompleteCommand() {
+        final String vmName = "small";
+        final String uuid = "206b21a7-c6ec-40e2-b5e2-f861b9612f04";
+
+        final Connection conn = Mockito.mock(Connection.class);
+        final XsHost xsHost = Mockito.mock(XsHost.class);
+
+        final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+
+        final MigrateWithStorageCompleteCommand createStorageCommand = new MigrateWithStorageCompleteCommand(vm);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(xenServer610Resource.getConnection()).thenReturn(conn);
+        when(vm.getName()).thenReturn(vmName);
+        when(xenServer610Resource.getHost()).thenReturn(xsHost);
+        when(xsHost.getUuid()).thenReturn(uuid);
+
+        final Answer answer = wrapper.execute(createStorageCommand, xenServer610Resource);
         verify(xenServer610Resource, times(1)).getConnection();
 
         assertFalse(answer.getResult());
