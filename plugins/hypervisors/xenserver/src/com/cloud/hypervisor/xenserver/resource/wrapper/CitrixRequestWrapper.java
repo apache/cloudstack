@@ -90,6 +90,7 @@ import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
+import com.cloud.hypervisor.xenserver.resource.XcpServerResource;
 import com.cloud.hypervisor.xenserver.resource.XenServer56FP1Resource;
 import com.cloud.hypervisor.xenserver.resource.XenServer56Resource;
 import com.cloud.hypervisor.xenserver.resource.XenServer610Resource;
@@ -204,6 +205,11 @@ public class CitrixRequestWrapper extends RequestWrapper {
         xenServer610Commands.put(MigrateWithStorageCompleteCommand.class, new XenServer610MigrateWithStorageCompleteCommandWrapper());
         xenServer610Commands.put(MigrateVolumeCommand.class, new XenServer610MigrateVolumeCommandWrapper());
         resources.put(XenServer610Resource.class, xenServer610Commands);
+
+        // XcpServerResource commands
+        final Hashtable<Class<? extends Command>, CommandWrapper> xcpServerResourceCommand = new Hashtable<Class<? extends Command>, CommandWrapper>();
+        xcpServerResourceCommand.put(NetworkUsageCommand.class, new XcpServerNetworkUsageCommandWrapper());
+        resources.put(XcpServerResource.class, xcpServerResourceCommand);
     }
 
     public static CitrixRequestWrapper getInstance() {

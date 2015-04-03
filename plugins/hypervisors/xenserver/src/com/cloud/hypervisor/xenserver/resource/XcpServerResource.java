@@ -25,10 +25,6 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.NetworkUsageAnswer;
-import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
@@ -44,15 +40,6 @@ public class XcpServerResource extends CitrixResourceBase {
     private final static long mem_32m = 33554432L;
 
     @Override
-    public Answer executeRequest(final Command cmd) {
-        if (cmd instanceof NetworkUsageCommand) {
-            return execute((NetworkUsageCommand)cmd);
-        } else {
-            return super.executeRequest(cmd);
-        }
-    }
-
-    @Override
     protected List<File> getPatchFiles() {
         final List<File> files = new ArrayList<File>();
         final String patch = "scripts/vm/hypervisor/xenserver/xcpserver/patch";
@@ -63,23 +50,6 @@ public class XcpServerResource extends CitrixResourceBase {
         final File file = new File(patchfilePath);
         files.add(file);
         return files;
-    }
-
-    protected NetworkUsageAnswer execute(final NetworkUsageCommand cmd) {
-        try {
-            final Connection conn = getConnection();
-            if (cmd.getOption() != null && cmd.getOption().equals("create")) {
-                final String result = networkUsage(conn, cmd.getPrivateIP(), "create", null);
-                final NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
-                return answer;
-            }
-            final long[] stats = getNetworkStats(conn, cmd.getPrivateIP());
-            final NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
-            return answer;
-        } catch (final Exception ex) {
-            s_logger.warn("Failed to get network usage stats due to ", ex);
-            return new NetworkUsageAnswer(cmd, ex);
-        }
     }
 
     /**

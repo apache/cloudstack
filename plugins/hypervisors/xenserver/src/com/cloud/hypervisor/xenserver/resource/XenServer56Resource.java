@@ -25,10 +25,7 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.hypervisor.xenserver.resource.wrapper.CitrixRequestWrapper;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
@@ -44,17 +41,6 @@ import com.xensource.xenapi.VLAN;
 @Local(value = ServerResource.class)
 public class XenServer56Resource extends CitrixResourceBase {
     private final static Logger s_logger = Logger.getLogger(XenServer56Resource.class);
-
-    @Override
-    public Answer executeRequest(final Command cmd) {
-
-        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
-        try {
-            return wrapper.execute(cmd, this);
-        } catch (final Exception e) {
-            return super.executeRequest(cmd);
-        }
-    }
 
     @Override
     protected List<File> getPatchFiles() {
@@ -192,9 +178,5 @@ public class XenServer56Resource extends CitrixResourceBase {
         pingXAPI();
         final StartupCommand[] cmds = super.initialize();
         return cmds;
-    }
-
-    public XenServer56Resource() {
-        super();
     }
 }
