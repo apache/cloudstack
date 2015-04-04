@@ -145,29 +145,35 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
     def validate_uploaded_volume(self,up_volid,volumestate):
 
-        config = Configurations.list(
+        config1 = Configurations.list(
                                      self.apiclient,
                                      name='upload.operation.timeout'
                                      )
 
-        uploadtimeout = int(config[0].value)
-        time.sleep(uploadtimeout*60)
+        config2 = Configurations.list(
+                                     self.apiclient,
+                                     name='upload.monitornsving.interval'
+                                     )
+
+        uploadtimeout = int(config1[0].value)
+        monitoringinterval=int(config2[0].value)
+
+        time.sleep((uploadtimeout*60)+monitoringinterval)
 
         list_volume_response = Volume.list(
                     self.apiclient,
                     id=up_volid
                 )
-        self.assertNotEqual(
-                    list_volume_response,
-                    None,
-                    "Check if volume exists in ListVolumes"
-                )
+        if list_volume_response is None:
+            self.debug("Volume got deleted after timeout")
+            return
 
         self.assertEqual(
                     list_volume_response[0].state,
                     volumestate,
                     "Check volume state in ListVolumes"
                 )
+        return
 
     def browse_upload_volume(self):
         cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
@@ -718,11 +724,19 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                                             id=volumeid,
                                             type='DATADISK'
                                             )
+        self.debug(list_volume_response)
+
         self.assertEqual(
-                        list_volume_response,
-                        None,
-                        "Check if volume exists in ListVolumes"
-                    )
+                            isinstance(list_volume_response, list),
+                            True,
+                            "Check VOLUME is deleted from list Volumes"
+                        )
+        self.assertEqual(
+                            list_volume_response,
+                            None,
+                            "Check VOLUME is deleted from list Volumes"
+                        )
+
         return
 
     def download_volume(self,volumeid):
@@ -1682,6 +1696,50 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
 
+
+
+    def uploadwithimagestoreid(self):
+
+        sscmd=listImageStores.listImageStoresCmd()
+        sscmd.zoneid=self.zone.id
+        sscmdresponse=self.apiclient.listImageStores(sscmd)
+
+        cmd = getUploadParamsForVolume.getUploadParamsForVolumeCmd()
+        cmd.zoneid = self.zone.id
+        cmd.format = self.uploadvolumeformat
+        cmd.name=self.volname+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.account=self.account.name
+        cmd.domainid=self.domain.id
+        cmd.imagestoreuuid=sscmdresponse[0].id
+        getuploadparamsresponce=self.apiclient.getUploadParamsForVolume(cmd)
+
+        signt=getuploadparamsresponce.signature
+        posturl=getuploadparamsresponce.postURL
+        metadata=getuploadparamsresponce.metadata
+        expiredata=getuploadparamsresponce.expires
+        self.globalurl=getuploadparamsresponce.postURL
+        #url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
+        url=self.uploadurl
+
+        uploadfile = url.split('/')[-1]
+        r = requests.get(url, stream=True)
+        with open(uploadfile, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024): 
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+                    f.flush()
+
+        files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
+
+        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+
+        results = requests.post(posturl,files=files,headers=headers,verify=False)
+
+        print results.status_code
+        if results.status_code !=200: 
+            self.fail("Upload is not fine")
+
+        self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
     def uploadwithsamedisplaytext(self,voldetails):
 
 
@@ -1788,6 +1846,44 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.fail("Upload is not fine")
 
         self.validate_uploaded_volume(getuploadparamsresponce.id,'Uploaded')
+
+
+
+    def posturlwithdeletedvolume(self,getuploadparamsresponce):
+
+        signt=getuploadparamsresponce.signature
+        posturl=getuploadparamsresponce.postURL
+        metadata=getuploadparamsresponce.metadata
+        expiredata=getuploadparamsresponce.expires
+        self.validate_uploaded_volume(getuploadparamsresponce.id,'UploadAbandoned')
+
+        cmd = deleteVolume.deleteVolumeCmd()
+        cmd.id = getuploadparamsresponce.id
+
+        self.apiclient.deleteVolume(cmd)
+
+        success = False
+
+        url=self.extuploadurl
+
+        uploadfile = url.split('/')[-1]
+        r = requests.get(url, stream=True)
+        with open(uploadfile, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024): 
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+                    f.flush()
+
+        files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
+
+        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+
+        results = requests.post(posturl,files=files,headers=headers,verify=False)
+
+        print results.status_code
+        if results.status_code ==200: 
+            return("FAIL")
+        return("PASS")
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_01_Browser_volume_Life_cycle_tpath(self):
@@ -2068,10 +2164,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.debug("========================= Test 33 Upload Volume with custom offering id=========================")
             self.uploadwithcustomoffering()
 
-
-            self.debug("========================= Test 34 Upload Volume with tampered post URL=========================")
-            invaliduploadvolume=self.invalidposturl()
-
         except Exception as e:
             self.fail("Exception occurred  : %s" % e)
         return
@@ -2083,7 +2175,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         """
         try:
 
-            self.debug("========================= Test 35 Upload volume with Multiple SSVM=========================")
+            self.debug("========================= Test 34 Upload volume with Multiple SSVM=========================")
 
             testresult=self.uploadvolwithmultissvm()
             if testresult==0:
@@ -2103,7 +2195,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         """
 
         try:
-            self.debug("========================= Test 36 Upload volume with extended file extenstions=========================")
+            self.debug("========================= Test 35 Upload volume with extended file extenstions=========================")
             if self.uploadvolumeformat=="OVA":
                  raise unittest.SkipTest("This test is need not be executed on VMWARE")
             self.uploadwithextendedfileextentions()
@@ -2118,7 +2210,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         """
         Test Browser_Upload_Volume_Storage_Cleanup_Config_Validation
         """
-        self.debug("========================= Test 37 Validate storage.cleanup.enabled and storage.cleanup.interval ========================= ")
+        self.debug("========================= Test 36 Validate storage.cleanup.enabled and storage.cleanup.interval ========================= ")
         config1 = Configurations.list(
                                      self.apiclient,
                                      name='storage.cleanup.enabled'
@@ -2151,7 +2243,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         Test Browser_Upload_Volume_Negative_Scenarios
         """
         try:
-            self.debug("========================= Test 34 Upload Volume with tampered post URL=========================")
+            self.debug("========================= Test 37 Upload Volume with tampered post URL=========================")
             invaliduploadvolume=self.invalidposturl()
 
         except Exception as e:
@@ -2165,3 +2257,41 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
+
+
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_09_Browser_Upload_Volume_PostURL_with_Deleted_Uploadvolume_Details(self):
+        """
+        Test Browser_Upload_Volume_PostURL_with_Deleted_Uploadvolume_Details
+        """
+        self.debug("========================= Test 38 PostURL_with_Deleted_Upload_Abondaned volume details=========================")
+        browse_up_vol=self.onlyupload()
+        res=self.posturlwithdeletedvolume(browse_up_vol)
+
+        if res=="FAIL":
+            self.fail("Verify - PostURL_with_Deleted_Uploadvolume_Details ")
+
+        return
+
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_10_Browser_Upload_Volume_API_with_imagepoolid(self):
+        """
+        Test Browser_Upload_Volume_API_with_imagepoolid
+        """
+        self.debug("========================= Test 39 Test Browser_Upload_Volume_API_with_imagepoolid=========================")
+        self.uploadwithimagestoreid()
+
+        return
+
+    @classmethod
+    def tearDownClass(self):
+        try:
+            self.apiclient = super(TestBrowseUploadVolume,self).getClsTestClient().getApiClient()
+            cleanup_resources(self.apiclient, self._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+
