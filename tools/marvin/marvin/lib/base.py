@@ -1003,6 +1003,13 @@ class Snapshot:
             cmd.projectid = projectid
         return Snapshot(apiclient.createSnapshot(cmd).__dict__)
 
+    @classmethod
+    def deletesnap(cls, apiclient, snapid):
+        """Delete Snapshot"""
+        cmd = deleteSnapshot.deleteSnapshotCmd()
+        cmd.id = snapid
+        return apiclient.deleteSnapshot(cmd)
+
     def delete(self, apiclient):
         """Delete Snapshot"""
         cmd = deleteSnapshot.deleteSnapshotCmd()
@@ -4794,33 +4801,5 @@ class Usage:
         cmd = generateUsageRecords.generateUsageRecordsCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.generateUsageRecords(cmd))
-
-class TrafficType:
-    """Manage different traffic types in the setup"""
-
-    def __init__(self, items):
-        self.__dict__.update(items)
-
-    @classmethod
-    def list(cls, apiclient, **kwargs):
-        """Lists traffic types"""
-
-        cmd = listTrafficTypes.listTrafficTypesCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
-        return(apiclient.listTrafficTypes(cmd))
-
-class StorageNetworkIpRange:
-    """Manage Storage Network Ip Range"""
-
-    def __init__(self, items):
-        self.__dict__.update(items)
-
-    @classmethod
-    def list(cls, apiclient, **kwargs):
-        """Lists Storage Network IP Ranges"""
-
-        cmd = listStorageNetworkIpRange.listStorageNetworkIpRangeCmd()
-        [setattr(cmd, k, v) for k, v in kwargs.items()]
-        return(apiclient.listStorageNetworkIpRange(cmd))
 
 
