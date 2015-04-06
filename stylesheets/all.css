@@ -1,0 +1,174 @@
+/*
+* Licensed to the Apache Software Foundation (ASF) under one or more
+* contributor license agreements.  See the NOTICE file distributed with
+* this work for additional information regarding copyright ownership.
+* The ASF licenses this file to You under the Apache License, Version 2.0
+* (the "License"); you may not use this file except in compliance with
+* the License.  You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
+/*
+* Based on CSS from the Apache Wookie Project's Web site.
+*/
+
+
+body {
+  background-color: #FCFDFD;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 11pt;
+  margin: 0;
+}
+
+a {
+  color: #339;
+  text-decoration: none;
+}
+
+a:visited {
+ color: #369;
+}
+
+a:hover {
+ color: #ddf;
+ background-color: #6badff;
+}
+
+p {
+    line-height: 140%
+}
+
+code,pre {
+    padding: 2px 2px;
+    color: #00003D;
+    background-color: #F1FFFF;
+    border: 1px solid #E1E1E8;
+    line-height: 140%
+}
+
+h1,h2,h3,h4,h5,h6 {
+  color: #8a8a8a;
+}
+
+#content {
+ margin-top: 15px;
+ margin-left: 235px;
+ margin-right: 150px;
+ padding: 0 8px 40px;
+ color: black;
+ background: #FCFDFD;
+}
+
+#content h1,h2,h3,h4,h5,h6 {
+  color: #8a8a8a;
+  border-bottom: 1px solid #000000;
+  font-weight: normal;
+  margin: 10px 0 15px;
+  padding: 5px 0;
+}
+
+#content h1 {
+  font-size: 18pt;
+  border: 1px solid #69afd8;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+  padding: 15px;
+}
+
+#content h2 {
+  font-size: 16pt;
+}
+
+#content h3,h4,h5,h6 {
+  border-bottom: none;
+  color: #69afd8;
+  font-size: 14pt;
+  margin-bottom: 0;
+}
+
+#navigation {
+  border: 1px solid #69afd8;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+  font-size: 85%;
+  color: #003;
+  float: left;
+  padding: 8px;
+  width: 200px;
+  background: #FCFDFD;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+#navigation img {
+  padding-bottom: 15px;
+  padding-top: 15px;
+  padding-right: 10px;
+  padding-left: 10px;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+}
+
+#navigation h1 {
+  color: #000;
+  font-size: 1.1em;
+  padding: 0;
+  margin-top: 0.8em;
+  margin-bottom: 0.5em;
+  border-bottom: 1px dotted #3487ef;
+}
+
+#navigation ul {
+  margin: 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+#navigation li {
+  margin: 0;
+  padding: 0;
+}
+
+#navigation li a {
+  margin: 0;
+  color: #003;
+  text-decoration:none;
+}
+
+#navigation li a:visited {
+  color: #226;
+}
+
+#navigation li a:hover {
+  background-color: #6badff;
+  color: #000;
+}
+
+#footer {
+ margin-top: 15px;
+ margin-left: 235px;
+ margin-right: 150px;
+ border: 1px solid #000000;
+ -moz-border-radius: 10px;
+ border-radius: 10px;
+ background-color:#c6dcf3;
+  color:#336;
+  font-size: 80%;
+  padding: 0 8px;
+}
+
+/* definition lists */
+dd {}
+dl {}
+dt {
+  display: inline;
+  float: left;
+}

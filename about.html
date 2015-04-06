@@ -127,234 +127,43 @@
     <div class="container">
         <div class="bs-docs-section">
             <div class="row">
-  <div class="col-lg-12">
-    <div class="bs-example">
-      <div class="jumbotron">
-        <div class="row">
-          <div class="col-lg-8">
-            <h1>Apache CloudStack&#8482;</h1>
-            
-            <p>Open Source Cloud Computing&#8482;</p>
-
-          </div>
-
-          <div class="col-lg-4">
-
-            <img src="images/monkey.png" style="width: 210px;" alt="">
-
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-lg-6">
-    <div class="panel panel-default">
-      <div class="panel-heading">
-
-      Latest Announcement
-
-      <a href="https://blogs.apache.org/cloudstack/feed/entries/atom"><img src="/images/feed-icon-14x14.png" class="pull-right" alt=""></a>
-
-      </div>
-
-      <div id="headline" class="panel-body">
-      </div>
-    </div>
-    <div class="panel panel-default">
-      <div class="panel-heading">
-
-        About CloudStack
-
-      </div>
-
-      <div class="panel-body">
-
-<p>
-Apache CloudStack is open source software designed to deploy and manage large networks of virtual machines, as a highly available, highly scalable Infrastructure as a Service (IaaS) cloud computing platform. CloudStack is used by a number of service providers to offer public cloud services, and by many companies to provide an on-premises (private) cloud offering, or as part of a hybrid cloud solution.
-</p>
-
-<p>
-CloudStack is a turnkey solution that includes the entire "stack" of features most organizations want with an IaaS cloud: compute orchestration, Network-as-a-Service, user and account management, a full and open native API, resource accounting, and a first-class User Interface (UI).
-</p>
-
-<p>
-CloudStack currently supports the most popular hypervisors: VMware, KVM, XenServer, Xen Cloud Platform (XCP) and Hyper-V.
-</p>
-
-<p>
-Users can manage their cloud with an easy to use Web interface, command line tools, and/or a full-featured RESTful API. In addition, CloudStack provides an API that's compatible with AWS EC2 and S3 for organizations that wish to deploy hybrid clouds.
-</p>
-
-<a href="about.html"><button type="button" class="btn btn-info">Learn More</button></a>
-
-      </div>
-
-    </div>
-
-    <div class="panel panel-default">
-      <div class="panel-heading">
-
-Join Us
-
-      </div>
-
-	<div class="panel-body">
-
-	<p>
-	Learn more about getting involved with Apache CloudStack on the <a href="contribute.html">Contributing to Apache CloudStack</a> page, or go straight to our <a href="developers.html">Developer Resources</a> page.
-	</p>
-	</div>
-
-</div>
-</div>
-
-<div class="col-lg-6">
-	<div class="panel panel-default">
-		<div class="panel-heading">
-			Get CloudStack
-		</div>
-		<div class="panel-body">
-
-		<p class="text-warning">Apache CloudStack 4.4.2 is out!</p>
-		<p class="text-warning">Apache CloudStack 4.3.2 is out!</p>
-
-		<p>
-		Looking for other versions of Apache CloudStack? You can find our archives on the download page as well.
-		</p>
-
-		<a href="downloads.html"><button type="button" class="btn btn-success">Download Now</button></a>
-
+	<div class="col-lg-12">
+		<div class="page-header">
+			<h1 id="indicators">Apache CloudStack: About</h1>
 		</div>
 
 	</div>
-
-	<div class="panel panel-default">
-		<div class="panel-heading">
-		CloudStack Events
-		</div>
-
-		<div class="panel-body" id="events">
-
-			<h4>2015 CloudStack Days</h4>
-
-			<p>
-			In 2015, five CloudStack Days events will be held across the globe. Each one-day event will feature morning plenary sessions, afternoon breakout sessions in user and developer tracks and a hackathon. Learn more at: 
-			</p>
-
-			<p>
-				<ul>
-					<li>CloudStack Days <a href="http://events.linuxfoundation.org/events/cloudstack-seattle">Seattle 2015</a></li>
-					<li>CloudStack Days <a href="http://events.linuxfoundation.org/events/cloudstack-austin">Austin 2015</a></li>
-					<li>CloudStack Days <a href="http://events.linuxfoundation.org/events/cloudstack-tokyo">Tokyo 2015</a></li>
-					<li>CloudStack Days <a href="http://events.linuxfoundation.org/events/cloudstack-dublin">Dublin 2015</a></li>
-				</ul>
-			</p>
-			<p>
-				View <a href="https://www.youtube.com/playlist?list=PLbzoR-pLrL6ruJrhXZ-jSSYw0m3WfK4ea">videos</a> from the CloudStack Collaboration Conference Europe 2014
-			</p>
-
-			<h4>Upcoming CloudStack Related Events</h4>
-
-		</div>
-
-	</div>
-
-	<div class="panel panel-default">
-		<div class="panel-heading">
-			What are people saying?
-		</div>
-		<div class="panel-body">
-
-			<a class="twitter-timeline" href="https://twitter.com/search?q=cloudstack" data-widget-id="383337162126544896" data-chrome="nofooter transparent noheader noborders noscrollbar">Tweets about "cloudstack"</a>
-			<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
-
-		</div>
-
-	</div>
-
 </div>
 
-</div>
+<h1 id="what-is-apache-cloudstack">What is Apache CloudStack?</h1>
 
-<script>
-var maxEntries = 3; // if 0 then there will be no limit
+<p>Apache CloudStack is a top-level project of the Apache Software Foundation (ASF). The project develops open source software for deploying public and private Infrastructure-as-a-Service (IaaS) clouds.</p>
 
-function slug(str){
- return str.replace(/\s/g,'-').replace(/[^a-zA-Z0-9\-]/g,'').toLowerCase();
-}
-/**
- * This function appends rss feed items to divs with the same slug
- * Name is the title of the feed, when slugged i use it as a div id
- * File is the rss feed
- */
-function newFeed(id, file) {
- $.getJSON("//query.yahooapis.com/v1/public/yql?q=select%20*%20from%20xml%20where%20url%3D%22"+encodeURIComponent(file)+"%22&format=json&callback=?", function(d) {
-  var count = 0;
-  $(d.query.results.feed.entry).each(function() {
-    if(maxEntries == 0 || maxEntries>count){
-     var title = this.title.content;
-     var content = this.content.content;
-     var pubDate = new Date(this.published);
-     // Format however you want, I only went for link and title
-     var anItem = "<h4>"+title+"</h4><p>"+pubDate+"</p>"+content+"<hr />";
-     $("#"+id).append(anItem);
-     if (count==0)
-      $("#headline").append("<p>"+title+"<br/><a href='#news'>Read more here.</a></p>");
-     count++;
-    }
-   });
- });
-};
-</script>
+<p>CloudStack provides an open and flexible cloud orchestration platform to deliver reliable and scalable private and public clouds. What's that <em>mean</em>, exactly?</p>
 
-<p><a name='news'></a><br /> </p><p> </p>
+<h1 id="features-and-functionality">Features and Functionality</h1>
 
-<div class="panel panel-default">
-	<div class="panel-heading">
-		Project Announcements
-	</div>
-	<div class="panel-body">
-		<div id="feed">
-		</div>
+<p>Apache CloudStack is a Java-based project that provides a management server and agents (if needed) for hypervisor hosts so that you can run an IaaS cloud. Some, but not all, of the features and functionality provided by CloudStack:</p>
 
-	</div>
+<ul>
+  <li>Works with hosts running XenServer/XCP, KVM, Hyper-V, and/or VMware ESXi with vSphere</li>
+  <li>Provides a friendly Web-based UI for managing the cloud</li>
+  <li>Provides a native <a href="/docs/api/">API</a></li>
+  <li>May provide an Amazon S3/EC2 compatible API (optional)</li>
+  <li>Manages storage for instances running on the hypervisors (primary storage) as well as templates, snapshots, and ISO images (secondary storage)</li>
+  <li>Orchestrates network services from the data link layer (L2) to some application layer (L7) services, such as DHCP, NAT, firewall, VPN, and so on</li>
+  <li>Accounting of network, compute, and storage resources</li>
+  <li>Multi-tenancy/account separation</li>
+  <li>User management</li>
+</ul>
 
-</div>
+<p>In short, organizations can use Apache CloudStack to deploy a full-featured public or private IaaS cloud.</p>
 
-<script>
-newFeed("feed", "https://blogs.apache.org/cloudstack/feed/entries/atom?cat=%2FAnnouncements");
-</script>
+<h1 id="people-of-apache-cloudstack">People of Apache CloudStack</h1>
 
-<script>
-var maxEvents = 3; // if 0 then there will be no limit
+<p>Apache projects are managed by a <a href="http://www.apache.org/dev/pmc.html#what-is-a-pmc">Project Management Committee</a> (PMC), and much of the work is done by the project's <a href="http://www.apache.org/dev/committers.html">committers</a>. Note that committer status is <em>not</em> limited to developers, but is conferred to individuals who have made sustained contributions of high quality, and have shown a committment to mentoring other contributors and following <a href="http://theapacheway.com">The Apache Way</a>.</p>
 
-/**
- * This function appends rss feed items to divs with the same slug
- * Name is the title of the feed, when slugged i use it as a div id
- * File is the rss feed
- */
-function newEventList(id, file) {
- $.getJSON("//query.yahooapis.com/v1/public/yql?q=select%20*%20from%20xml%20where%20url%3D%22"+encodeURIComponent(file)+"%22&format=json&callback=?", function(d) {
-  var count = 0;
-  $(d.query.results.feed.entry).each(function() {
-    if(maxEvents == 0 || maxEvents>count){
-     var title = this.title;
-     var link = this.link.href;
-     var anItem = "<p><a href='"+link+"' target='_blank'>"+title+"</a></p>";
-     $("#"+id).append(anItem);
-     count++;
-    }
-   });
-   $("#events").append("<p><small>For more events, take a look at the <a href='http://lanyrd.com/topics/apache-cloudstack/' target='_blank'>Apache CloudStack topic page</a> on Lanyrd.</small></p>");
- });
-};
-
-newEventList("events", "http://lanyrd.com/topics/apache-cloudstack/feed/");
-
-</script>
+<p>The current Vice President of Apache CloudStack and chair of the PMC is Hugo Trippaers, a full list of PMC members and contributors is available on the page <em><a href="/who.html">Who We Are</a></em>.</p>
 
 
             <footer>

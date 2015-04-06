@@ -127,234 +127,237 @@
     <div class="container">
         <div class="bs-docs-section">
             <div class="row">
-  <div class="col-lg-12">
-    <div class="bs-example">
-      <div class="jumbotron">
-        <div class="row">
-          <div class="col-lg-8">
-            <h1>Apache CloudStack&#8482;</h1>
-            
-            <p>Open Source Cloud Computing&#8482;</p>
 
-          </div>
+<div class="col-lg-12">
 
-          <div class="col-lg-4">
+<div class="page-header">
 
-            <img src="images/monkey.png" style="width: 210px;" alt="">
-
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-lg-6">
-    <div class="panel panel-default">
-      <div class="panel-heading">
-
-      Latest Announcement
-
-      <a href="https://blogs.apache.org/cloudstack/feed/entries/atom"><img src="/images/feed-icon-14x14.png" class="pull-right" alt=""></a>
-
-      </div>
-
-      <div id="headline" class="panel-body">
-      </div>
-    </div>
-    <div class="panel panel-default">
-      <div class="panel-heading">
-
-        About CloudStack
-
-      </div>
-
-      <div class="panel-body">
-
-<p>
-Apache CloudStack is open source software designed to deploy and manage large networks of virtual machines, as a highly available, highly scalable Infrastructure as a Service (IaaS) cloud computing platform. CloudStack is used by a number of service providers to offer public cloud services, and by many companies to provide an on-premises (private) cloud offering, or as part of a hybrid cloud solution.
-</p>
-
-<p>
-CloudStack is a turnkey solution that includes the entire "stack" of features most organizations want with an IaaS cloud: compute orchestration, Network-as-a-Service, user and account management, a full and open native API, resource accounting, and a first-class User Interface (UI).
-</p>
-
-<p>
-CloudStack currently supports the most popular hypervisors: VMware, KVM, XenServer, Xen Cloud Platform (XCP) and Hyper-V.
-</p>
-
-<p>
-Users can manage their cloud with an easy to use Web interface, command line tools, and/or a full-featured RESTful API. In addition, CloudStack provides an API that's compatible with AWS EC2 and S3 for organizations that wish to deploy hybrid clouds.
-</p>
-
-<a href="about.html"><button type="button" class="btn btn-info">Learn More</button></a>
-
-      </div>
-
-    </div>
-
-    <div class="panel panel-default">
-      <div class="panel-heading">
-
-Join Us
-
-      </div>
-
-	<div class="panel-body">
-
-	<p>
-	Learn more about getting involved with Apache CloudStack on the <a href="contribute.html">Contributing to Apache CloudStack</a> page, or go straight to our <a href="developers.html">Developer Resources</a> page.
-	</p>
-	</div>
-
-</div>
-</div>
-
-<div class="col-lg-6">
-	<div class="panel panel-default">
-		<div class="panel-heading">
-			Get CloudStack
-		</div>
-		<div class="panel-body">
-
-		<p class="text-warning">Apache CloudStack 4.4.2 is out!</p>
-		<p class="text-warning">Apache CloudStack 4.3.2 is out!</p>
-
-		<p>
-		Looking for other versions of Apache CloudStack? You can find our archives on the download page as well.
-		</p>
-
-		<a href="downloads.html"><button type="button" class="btn btn-success">Download Now</button></a>
-
-		</div>
-
-	</div>
-
-	<div class="panel panel-default">
-		<div class="panel-heading">
-		CloudStack Events
-		</div>
-
-		<div class="panel-body" id="events">
-
-			<h4>2015 CloudStack Days</h4>
-
-			<p>
-			In 2015, five CloudStack Days events will be held across the globe. Each one-day event will feature morning plenary sessions, afternoon breakout sessions in user and developer tracks and a hackathon. Learn more at: 
-			</p>
-
-			<p>
-				<ul>
-					<li>CloudStack Days <a href="http://events.linuxfoundation.org/events/cloudstack-seattle">Seattle 2015</a></li>
-					<li>CloudStack Days <a href="http://events.linuxfoundation.org/events/cloudstack-austin">Austin 2015</a></li>
-					<li>CloudStack Days <a href="http://events.linuxfoundation.org/events/cloudstack-tokyo">Tokyo 2015</a></li>
-					<li>CloudStack Days <a href="http://events.linuxfoundation.org/events/cloudstack-dublin">Dublin 2015</a></li>
-				</ul>
-			</p>
-			<p>
-				View <a href="https://www.youtube.com/playlist?list=PLbzoR-pLrL6ruJrhXZ-jSSYw0m3WfK4ea">videos</a> from the CloudStack Collaboration Conference Europe 2014
-			</p>
-
-			<h4>Upcoming CloudStack Related Events</h4>
-
-		</div>
-
-	</div>
-
-	<div class="panel panel-default">
-		<div class="panel-heading">
-			What are people saying?
-		</div>
-		<div class="panel-body">
-
-			<a class="twitter-timeline" href="https://twitter.com/search?q=cloudstack" data-widget-id="383337162126544896" data-chrome="nofooter transparent noheader noborders noscrollbar">Tweets about "cloudstack"</a>
-			<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
-
-		</div>
-
-	</div>
+<h1 id="indicators">Apache CloudStack Users</h1>
 
 </div>
 
 </div>
 
-<script>
-var maxEntries = 3; // if 0 then there will be no limit
-
-function slug(str){
- return str.replace(/\s/g,'-').replace(/[^a-zA-Z0-9\-]/g,'').toLowerCase();
-}
-/**
- * This function appends rss feed items to divs with the same slug
- * Name is the title of the feed, when slugged i use it as a div id
- * File is the rss feed
- */
-function newFeed(id, file) {
- $.getJSON("//query.yahooapis.com/v1/public/yql?q=select%20*%20from%20xml%20where%20url%3D%22"+encodeURIComponent(file)+"%22&format=json&callback=?", function(d) {
-  var count = 0;
-  $(d.query.results.feed.entry).each(function() {
-    if(maxEntries == 0 || maxEntries>count){
-     var title = this.title.content;
-     var content = this.content.content;
-     var pubDate = new Date(this.published);
-     // Format however you want, I only went for link and title
-     var anItem = "<h4>"+title+"</h4><p>"+pubDate+"</p>"+content+"<hr />";
-     $("#"+id).append(anItem);
-     if (count==0)
-      $("#headline").append("<p>"+title+"<br/><a href='#news'>Read more here.</a></p>");
-     count++;
-    }
-   });
- });
-};
-</script>
-
-<p><a name='news'></a><br /> </p><p> </p>
-
-<div class="panel panel-default">
-	<div class="panel-heading">
-		Project Announcements
-	</div>
-	<div class="panel-body">
-		<div id="feed">
-		</div>
-
-	</div>
-
 </div>
 
-<script>
-newFeed("feed", "https://blogs.apache.org/cloudstack/feed/entries/atom?cat=%2FAnnouncements");
-</script>
+<p>The following organisations are known users of Apache CloudStack (or a commercial distribution of CloudStack)</p>
 
-<script>
-var maxEvents = 3; // if 0 then there will be no limit
+<p>Our users include many major service providers running CloudStack to offer public cloud services, product vendors who incorporate or integrate with Cloudstack in their own products, organisations who have used Cloudstack to build their own private clouds, and systems integrators that offer CloudStack related services.</p>
 
-/**
- * This function appends rss feed items to divs with the same slug
- * Name is the title of the feed, when slugged i use it as a div id
- * File is the rss feed
- */
-function newEventList(id, file) {
- $.getJSON("//query.yahooapis.com/v1/public/yql?q=select%20*%20from%20xml%20where%20url%3D%22"+encodeURIComponent(file)+"%22&format=json&callback=?", function(d) {
-  var count = 0;
-  $(d.query.results.feed.entry).each(function() {
-    if(maxEvents == 0 || maxEvents>count){
-     var title = this.title;
-     var link = this.link.href;
-     var anItem = "<p><a href='"+link+"' target='_blank'>"+title+"</a></p>";
-     $("#"+id).append(anItem);
-     count++;
-    }
-   });
-   $("#events").append("<p><small>For more events, take a look at the <a href='http://lanyrd.com/topics/apache-cloudstack/' target='_blank'>Apache CloudStack topic page</a> on Lanyrd.</small></p>");
- });
-};
+<p><strong>Are you using CloudStack ?</strong></p>
 
-newEventList("events", "http://lanyrd.com/topics/apache-cloudstack/feed/");
+<p>If you are using CloudStack in your organisation and your company isn’t listed here, please complete our brief adoption <a href="/survey.html">survey</a>. We’re happy to keep your company name anonymous if you require.</p>
 
-</script>
+<p><strong>Noticed Something wrong ?</strong></p>
+
+<p>If you noticed something wrong  with your entry here (or if you’d like us to remove it), please complete our adoption <a href="/survey.html">survey</a>. We will use the information you give us in this survey to update the contents of this page</p>
+
+<ul>
+  <li><a href="http://www.actonmagic.com">ActOnMagic</a></li>
+  <li><a href="http://www.appcore.com">Appcore</a></li>
+  <li><a href="http://www.ayaline.com">Ayaline</a></li>
+  <li><a href="http://btcloud.bt.com">BT</a></li>
+  <li><a href="http://www.cloudops.com">CloudOps</a></li>
+  <li><a href="http://www.companycloud.nl">DATACENTER Services</a></li>
+  <li><a href="http://www.datacentrix.co.za">DataCentrix</a></li>
+  <li><a href="http://www.datapipe.com">Datapipe</a></li>
+  <li><a href="http://www.dataways.gr">DATAWAYS SA</a></li>
+  <li><a href="http://www.enlanube.com.co">En La Nube</a></li>
+  <li><a href="http://www.exaserve.com">Exaserve</a></li>
+  <li><a href="http://inria.fr">INRIA</a></li>
+  <li><a href="http://kumo.com.co">Kumo</a></li>
+  <li><a href="http://m5cloud.com">M5 Hosting Inc</a></li>
+  <li><a href="http://nectar.org.au">Melbourne University</a></li>
+  <li><a href="http://neobitti.fi">Neobitti</a></li>
+  <li><a href="http://stacksquare.com">Overweb srl</a></li>
+  <li><a href="http://www.reliablenetworks.com">Reliable Networks</a></li>
+  <li><a href="http://www.redbridge.se">Redbridge</a></li>
+  <li><a href="https://www.safeswisscloud.ch">SafeSwiss Cloud</a></li>
+  <li><a href="http://www.sjcloud.cn/index.xhtml">SJC Inc</a></li>
+  <li><a href="http://tucha.ua">Tucha</a></li>
+  <li><a href="http://www.upcnet.es">UPCnet</a></li>
+  <li><a href="http://www.wirenc.com">wirenc.com</a></li>
+  <li><a href="http://youngsoft.com">Youngsoft Inc</a></li>
+  <li>
+    <p><a href="http://zeromachine.net">Zeromachine</a></p>
+  </li>
+  <li>1 degreenorth</li>
+  <li>5th Planet</li>
+  <li>Accudata Systems</li>
+  <li>Acentrix</li>
+  <li>ActiveEon</li>
+  <li>Add Value</li>
+  <li>Alcatel-Lucent</li>
+  <li>Amdocs</li>
+  <li>Amysta</li>
+  <li>Angani</li>
+  <li>Anolim</li>
+  <li>Apalia</li>
+  <li>Appcara Inc.</li>
+  <li>Appcore</li>
+  <li>Appdel</li>
+  <li>AppFirst</li>
+  <li>Apple</li>
+  <li>AppSphere</li>
+  <li>Ascenty</li>
+  <li>ASG</li>
+  <li>AST Modular</li>
+  <li>Autodesk</li>
+  <li>AXEKA</li>
+  <li>Axelaris</li>
+  <li>Backbone Technology</li>
+  <li>Bechtle AG</li>
+  <li>Bell Canada</li>
+  <li>BigREDGroup</li>
+  <li>British Telecom (BT)</li>
+  <li>BT Cloud</li>
+  <li>BT Engage IT</li>
+  <li>Business Connexion</li>
+  <li>CA Technologies</li>
+  <li>CANCOM</li>
+  <li>Caringo</li>
+  <li>Centracon</li>
+  <li>CentralWay</li>
+  <li>China Telecom</li>
+  <li>Citrix Systems</li>
+  <li>Clavis IT</li>
+  <li>Cloud3</li>
+  <li>CloudCentral</li>
+  <li>Cloudera</li>
+  <li>Cloudian, Inc.</li>
+  <li>CloudOps</li>
+  <li>Cloudsoft Corporation</li>
+  <li>Colt</li>
+  <li>COMBIS</li>
+  <li>COMLINE Computer + Softwarelösungen</li>
+  <li>COMPAREX</li>
+  <li>Comping</li>
+  <li>Computer Services Group</li>
+  <li>Contegix</li>
+  <li>Control Circle</li>
+  <li>Convergence Group</li>
+  <li>CumuLogic, Inc</li>
+  <li>Datacentrix</li>
+  <li>Datapipe</li>
+  <li>DBR360</li>
+  <li>Dell</li>
+  <li>Digital China Advanced Systems</li>
+  <li>Disney</li>
+  <li>DU</li>
+  <li>e-Contact</li>
+  <li>Edmunds.com</li>
+  <li>Encloud</li>
+  <li>Ennit</li>
+  <li>EnterpriseDB</li>
+  <li>Entisys Solutions</li>
+  <li>Evry</li>
+  <li>EXA Serve</li>
+  <li>Exoscale</li>
+  <li>Experteq IT Services</li>
+  <li>FPG Technologies &amp; Solutions</li>
+  <li>Fritz &amp; Macziol</li>
+  <li>Fujitsu FIP Corporation</li>
+  <li>GigaSpaces Technologies</li>
+  <li>Globo.com</li>
+  <li>GreenQloud</li>
+  <li>Gridstore</li>
+  <li>Haaga Helia</li>
+  <li>Hillstone Networks, Inc</li>
+  <li>Hokkaido University</li>
+  <li>Homeaway</li>
+  <li>Host.net</li>
+  <li>Hostbill</li>
+  <li>Huawei</li>
+  <li>IDC Frontier</li>
+  <li>Ikoula</li>
+  <li>IndiQus Technologies</li>
+  <li>InMobi</li>
+  <li>Interoute</li>
+  <li>ISWest</li>
+  <li>Janz IT</li>
+  <li>Joe’s Cloud Computing</li>
+  <li>Juniper Networks</li>
+  <li>KDDI</li>
+  <li>KIVBF</li>
+  <li>KocSistem</li>
+  <li>Kommunale Informatoinsverarbeitung Baden-Franken</li>
+  <li>KT/Korea Telecom</li>
+  <li>Kumo</li>
+  <li>Kyuden Infocom</li>
+  <li>Kyushu University</li>
+  <li>LCS</li>
+  <li>LeaseWeb</li>
+  <li>Logicworks</li>
+  <li>Makro Factory oHG</li>
+  <li>MCPc</li>
+  <li>Microland Ltd</li>
+  <li>MittelstandsCLOUD</li>
+  <li>MK Netzdienste</li>
+  <li>NAMU Tech</li>
+  <li>NEOS</li>
+  <li>NetStandard</li>
+  <li>Networkers AG</li>
+  <li>Nokia</li>
+  <li>NTT</li>
+  <li>NVision Group</li>
+  <li>OpenERP</li>
+  <li>Opscode  (now Chef)</li>
+  <li>Orange</li>
+  <li>OverBright</li>
+  <li>Ozona Consulting</li>
+  <li>PCextreme</li>
+  <li>PosAm</li>
+  <li>PPTV</li>
+  <li>PromonLogicalis</li>
+  <li>Proteus</li>
+  <li>Quality Software (Hostbill)</li>
+  <li>RealCloud (PKN)</li>
+  <li>Redapt</li>
+  <li>RedBridge</li>
+  <li>RightScale, Inc.</li>
+  <li>Royal Melbourne Institute of Technology (RMIT)</li>
+  <li>Safe Swiss Cloud</li>
+  <li>SAP</li>
+  <li>Scalr</li>
+  <li>Schuberg Philis</li>
+  <li>ScienceLogic, Inc.</li>
+  <li>SCSK</li>
+  <li>sepago GmbH</li>
+  <li>ShapeBlue</li>
+  <li>Shopzilla</li>
+  <li>Slovak Telekom</li>
+  <li>SoftLayer</li>
+  <li>SoftwareONE</li>
+  <li>SolidFire</li>
+  <li>SSI</li>
+  <li>StackIQ</li>
+  <li>Stratosec</li>
+  <li>SunGard AS</li>
+  <li>SwiftStack</li>
+  <li>Taiwan Mobile</li>
+  <li>Targus Technologies</li>
+  <li>Tata</li>
+  <li>Tendril</li>
+  <li>TNTG Limited</li>
+  <li>TomTom</li>
+  <li>Trader Media Group</li>
+  <li>TrendMicro/TCloud Computing</li>
+  <li>UniSystems</li>
+  <li>University of Melbourne</li>
+  <li>University of Sao Paolo</li>
+  <li>UShareSoft</li>
+  <li>Verio</li>
+  <li>Verizon</li>
+  <li>Vision Solutions, Inc.</li>
+  <li>VMTurbo</li>
+  <li>WebMD</li>
+  <li>X-IO Technologies</li>
+  <li>Xtendsys</li>
+  <li>Zajil Telecom</li>
+  <li>Zenoss</li>
+  <li>Zynga</li>
+</ul>
+
 
 
             <footer>

@@ -127,234 +127,74 @@
     <div class="container">
         <div class="bs-docs-section">
             <div class="row">
-  <div class="col-lg-12">
-    <div class="bs-example">
-      <div class="jumbotron">
-        <div class="row">
-          <div class="col-lg-8">
-            <h1>Apache CloudStack&#8482;</h1>
-            
-            <p>Open Source Cloud Computing&#8482;</p>
 
-          </div>
+<div class="col-lg-12">
 
-          <div class="col-lg-4">
+<div class="page-header">
 
-            <img src="images/monkey.png" style="width: 210px;" alt="">
-
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-lg-6">
-    <div class="panel panel-default">
-      <div class="panel-heading">
-
-      Latest Announcement
-
-      <a href="https://blogs.apache.org/cloudstack/feed/entries/atom"><img src="/images/feed-icon-14x14.png" class="pull-right" alt=""></a>
-
-      </div>
-
-      <div id="headline" class="panel-body">
-      </div>
-    </div>
-    <div class="panel panel-default">
-      <div class="panel-heading">
-
-        About CloudStack
-
-      </div>
-
-      <div class="panel-body">
-
-<p>
-Apache CloudStack is open source software designed to deploy and manage large networks of virtual machines, as a highly available, highly scalable Infrastructure as a Service (IaaS) cloud computing platform. CloudStack is used by a number of service providers to offer public cloud services, and by many companies to provide an on-premises (private) cloud offering, or as part of a hybrid cloud solution.
-</p>
-
-<p>
-CloudStack is a turnkey solution that includes the entire "stack" of features most organizations want with an IaaS cloud: compute orchestration, Network-as-a-Service, user and account management, a full and open native API, resource accounting, and a first-class User Interface (UI).
-</p>
-
-<p>
-CloudStack currently supports the most popular hypervisors: VMware, KVM, XenServer, Xen Cloud Platform (XCP) and Hyper-V.
-</p>
-
-<p>
-Users can manage their cloud with an easy to use Web interface, command line tools, and/or a full-featured RESTful API. In addition, CloudStack provides an API that's compatible with AWS EC2 and S3 for organizations that wish to deploy hybrid clouds.
-</p>
-
-<a href="about.html"><button type="button" class="btn btn-info">Learn More</button></a>
-
-      </div>
-
-    </div>
-
-    <div class="panel panel-default">
-      <div class="panel-heading">
-
-Join Us
-
-      </div>
-
-	<div class="panel-body">
-
-	<p>
-	Learn more about getting involved with Apache CloudStack on the <a href="contribute.html">Contributing to Apache CloudStack</a> page, or go straight to our <a href="developers.html">Developer Resources</a> page.
-	</p>
-	</div>
-
-</div>
-</div>
-
-<div class="col-lg-6">
-	<div class="panel panel-default">
-		<div class="panel-heading">
-			Get CloudStack
-		</div>
-		<div class="panel-body">
-
-		<p class="text-warning">Apache CloudStack 4.4.2 is out!</p>
-		<p class="text-warning">Apache CloudStack 4.3.2 is out!</p>
-
-		<p>
-		Looking for other versions of Apache CloudStack? You can find our archives on the download page as well.
-		</p>
-
-		<a href="downloads.html"><button type="button" class="btn btn-success">Download Now</button></a>
-
-		</div>
-
-	</div>
-
-	<div class="panel panel-default">
-		<div class="panel-heading">
-		CloudStack Events
-		</div>
-
-		<div class="panel-body" id="events">
-
-			<h4>2015 CloudStack Days</h4>
-
-			<p>
-			In 2015, five CloudStack Days events will be held across the globe. Each one-day event will feature morning plenary sessions, afternoon breakout sessions in user and developer tracks and a hackathon. Learn more at: 
-			</p>
-
-			<p>
-				<ul>
-					<li>CloudStack Days <a href="http://events.linuxfoundation.org/events/cloudstack-seattle">Seattle 2015</a></li>
-					<li>CloudStack Days <a href="http://events.linuxfoundation.org/events/cloudstack-austin">Austin 2015</a></li>
-					<li>CloudStack Days <a href="http://events.linuxfoundation.org/events/cloudstack-tokyo">Tokyo 2015</a></li>
-					<li>CloudStack Days <a href="http://events.linuxfoundation.org/events/cloudstack-dublin">Dublin 2015</a></li>
-				</ul>
-			</p>
-			<p>
-				View <a href="https://www.youtube.com/playlist?list=PLbzoR-pLrL6ruJrhXZ-jSSYw0m3WfK4ea">videos</a> from the CloudStack Collaboration Conference Europe 2014
-			</p>
-
-			<h4>Upcoming CloudStack Related Events</h4>
-
-		</div>
-
-	</div>
-
-	<div class="panel panel-default">
-		<div class="panel-heading">
-			What are people saying?
-		</div>
-		<div class="panel-body">
-
-			<a class="twitter-timeline" href="https://twitter.com/search?q=cloudstack" data-widget-id="383337162126544896" data-chrome="nofooter transparent noheader noborders noscrollbar">Tweets about "cloudstack"</a>
-			<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
-
-		</div>
-
-	</div>
+<h1 id="indicators">Apache CloudStack: Security</h1>
 
 </div>
 
 </div>
 
-<script>
-var maxEntries = 3; // if 0 then there will be no limit
-
-function slug(str){
- return str.replace(/\s/g,'-').replace(/[^a-zA-Z0-9\-]/g,'').toLowerCase();
-}
-/**
- * This function appends rss feed items to divs with the same slug
- * Name is the title of the feed, when slugged i use it as a div id
- * File is the rss feed
- */
-function newFeed(id, file) {
- $.getJSON("//query.yahooapis.com/v1/public/yql?q=select%20*%20from%20xml%20where%20url%3D%22"+encodeURIComponent(file)+"%22&format=json&callback=?", function(d) {
-  var count = 0;
-  $(d.query.results.feed.entry).each(function() {
-    if(maxEntries == 0 || maxEntries>count){
-     var title = this.title.content;
-     var content = this.content.content;
-     var pubDate = new Date(this.published);
-     // Format however you want, I only went for link and title
-     var anItem = "<h4>"+title+"</h4><p>"+pubDate+"</p>"+content+"<hr />";
-     $("#"+id).append(anItem);
-     if (count==0)
-      $("#headline").append("<p>"+title+"<br/><a href='#news'>Read more here.</a></p>");
-     count++;
-    }
-   });
- });
-};
-</script>
-
-<p><a name='news'></a><br /> </p><p> </p>
-
-<div class="panel panel-default">
-	<div class="panel-heading">
-		Project Announcements
-	</div>
-	<div class="panel-body">
-		<div id="feed">
-		</div>
-
-	</div>
-
 </div>
 
-<script>
-newFeed("feed", "https://blogs.apache.org/cloudstack/feed/entries/atom?cat=%2FAnnouncements");
-</script>
+<p>The Apache CloudStack project understands that as a core infrastructure project, the application security of Apache CloudStack is of critical importance to the community and users.</p>
 
-<script>
-var maxEvents = 3; // if 0 then there will be no limit
+<h2 id="apache-cloudstack-security-team">Apache CloudStack Security Team</h2>
 
-/**
- * This function appends rss feed items to divs with the same slug
- * Name is the title of the feed, when slugged i use it as a div id
- * File is the rss feed
- */
-function newEventList(id, file) {
- $.getJSON("//query.yahooapis.com/v1/public/yql?q=select%20*%20from%20xml%20where%20url%3D%22"+encodeURIComponent(file)+"%22&format=json&callback=?", function(d) {
-  var count = 0;
-  $(d.query.results.feed.entry).each(function() {
-    if(maxEvents == 0 || maxEvents>count){
-     var title = this.title;
-     var link = this.link.href;
-     var anItem = "<p><a href='"+link+"' target='_blank'>"+title+"</a></p>";
-     $("#"+id).append(anItem);
-     count++;
-    }
-   });
-   $("#events").append("<p><small>For more events, take a look at the <a href='http://lanyrd.com/topics/apache-cloudstack/' target='_blank'>Apache CloudStack topic page</a> on Lanyrd.</small></p>");
- });
-};
+<p>The PMC has decided to create a "Security Team" for CloudStack.  The Security Team's charter is to manage the response to vulnerabilities reported with Apache CloudStack.  This includes communication with the report, issue verification, issue correction, public communication creation, and vendor coordination.  The Security Team may ask assistance from other community members to help verify or correct a reported issue.</p>
 
-newEventList("events", "http://lanyrd.com/topics/apache-cloudstack/feed/");
+<p>Members of the PMC are eligible to join the security team, but lurking is discouraged.</p>
 
-</script>
+<p>Community members engaged by the Security Team are expected to hold the issue in confidence until public announcement of the vulnerability.  This protects the users of the software and gives reasonable time for the response process to be implemented.  Further information can be found on the ASF's <a href="http://www.apache.org/foundation/how-it-works.html">How it Works</a> page.</p>
+
+<p>The CloudStack security team works closely with, and under the direction of, the <a href="http://www.apache.org/security/">ASF security team</a>.</p>
+
+<h2 id="reporting-potential-vulnerabilities-in-apache-cloudstack">Reporting Potential Vulnerabilities in Apache CloudStack</h2>
+
+<p>If you've found an issue that you believe is a security vulnerability in a released version of CloudStack, please report it to <a href="&#109;&#097;&#105;&#108;&#116;&#111;:&#115;&#101;&#099;&#117;&#114;&#105;&#116;&#121;&#064;&#099;&#108;&#111;&#117;&#100;&#115;&#116;&#097;&#099;&#107;&#046;&#097;&#112;&#097;&#099;&#104;&#101;&#046;&#111;&#114;&#103;">&#115;&#101;&#099;&#117;&#114;&#105;&#116;&#121;&#064;&#099;&#108;&#111;&#117;&#100;&#115;&#116;&#097;&#099;&#107;&#046;&#097;&#112;&#097;&#099;&#104;&#101;&#046;&#111;&#114;&#103;</a> with details about the vulnerability, how it might be exploited, and any additional information that might be useful.</p>
+
+<p>Upon notification, the ACS security team will initiate the security response procedure. If the issue is validated, the team generally takes 2-4 weeks from notification to public announcement of the vulnerability. During this time, the team will communicate with you as they proceed through the response procedure, and ask that the issue not be announced before an agreed-upon date.</p>
+
+<p>The security team asks that you <strong>please do not create publicly-viewable JIRA tickets related to the issue</strong>. If validated, a JIRA ticket with the security flag set will be created for tracking the issue in a non-public manner.</p>
+
+<h2 id="procedure-for-responding-to-potential-security-issues">Procedure for Responding to Potential Security Issues</h2>
+
+<ul>
+  <li> Upon receiving notice of a potential security issue, a security team member will create a bug to track the investigation, this bug must be flagged as a security issue. Security flag should mean contents of ticket are not visible to non-security team members
+  <li> Security team investigates the issue to confirm/deny the presence of a vulnerability within CloudStack
+  <li> If the issue is determined not to be a vulnerability the reporter will be notified and the issue will be closed as invalid
+  <li> If issue is confirmed as a CloudStack vulnerability:
+  <ul>
+    <li> Security team notifies the Apache Security team
+    <li> Security team assigns a risk rating to the vulnerability using the Common Vulnerability Scoring System
+    <li> Security team works with reporter to get a chance to investigate and mitigate the issue in a timely manner before public announcement. This should be between 15-30 days, depending on the severity and complexity of the issue
+    <li> Security team works with Apache Security Team to reserve a CVE Identifier for future public release
+    <li> Security team works with appropriate code maintainer(s) to create patch to mitigate the issue
+    <li> Testing is conducted to verify patch mitigates issue and does not cause regression errors
+    <li> Security team creates a vulnerability announcement
+    <li> Patch is committed to trunk and other supported branches that are affected.  The commit should not refer to a particular vulnerability
+    <li> A new CloudStack release or hotfix is prepared and tested, containing the new security patch
+    <li> Distributor coordination is implemented to enable a coordinated announcement
+    <li> Security team posts vulnerability announcement to...
+    <ul>
+      <li> CloudStack dev list
+      <li> CloudStack users list
+      <li> The Bugtraq mailing list
+    
+    <li> After announcement, CHANGES and NEWS files need to be updated to reflect the vulnerability and fix. This must happen AFTER the announcement.
+    <li> Also after announcement, modify the Jira ticket so that the issue is now publicly viewable.
+  
+  <li> After the vulnerability is addressed, the CloudStack community should review development processes to see how the community can minimize the chance of similar vulnerabilities being introduced in the future.
+
+
+## For further information
+
+Further information about Apache CloudStack's security practices can be found in the [CloudStack Security wiki page](https://cwiki.apache.org/confluence/display/CLOUDSTACK/CloudStack+Security).
+
+</li></li></li></li></li></li></ul></li></li></li></li></li></li></li></li></li></li></li></ul></li></li></li></li></ul>
 
 
             <footer>
