@@ -142,7 +142,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     (exp_val, act_val))
         return return_flag
 
-    def validate_uploaded_template(self,up_templateid,templatestate):
+    def validate_uploaded_template(self,up_templateid,templatestate,zid):
 
         config = Configurations.list(
                                      self.apiclient,
@@ -156,7 +156,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     self.apiclient,
                     id=up_templateid,
                     templatefilter="all",
-                    zoneid=self.zone.id)
+                    zoneid=zid)
 
         self.assertNotEqual(
                     list_template_response,
@@ -216,7 +216,59 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         if results.status_code !=200: 
             self.fail("Upload is not fine")
 
-        self.validate_uploaded_template(getuploadparamsresponce.id,'Download Complete')
+        self.validate_uploaded_template(getuploadparamsresponce.id,'Download Complete',self.zone.id)
+
+        return(getuploadparamsresponce)
+
+
+    def browse_upload_template_multiplezones(self,lzones):
+
+        cmd = getUploadParamsForTemplate.getUploadParamsForTemplateCmd()
+        cmd.zoneid ="-1"
+        cmd.format = self.uploadtemplateformat
+        cmd.name=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.account=self.account.name
+        cmd.domainid=self.domain.id
+        cmd.displaytext=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.hypervisor=self.templatehypervisor
+        cmd.ostypeid=self.templateostypeid
+        #cmd.isdynamicallyscalable="false"
+        #cmd.type="template"
+        getuploadparamsresponce=self.apiclient.getUploadParamsForTemplate(cmd)
+
+        signt=getuploadparamsresponce.signature
+        posturl=getuploadparamsresponce.postURL
+        metadata=getuploadparamsresponce.metadata
+        expiredata=getuploadparamsresponce.expires
+        #url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
+        url=self.uploadurl
+
+        uploadfile = url.split('/')[-1]
+        r = requests.get(url, stream=True)
+        with open(uploadfile, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024): 
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+                    f.flush()
+
+        #uploadfile='rajani-thin-volume.vhd'
+
+        #files={'file':('rajani-thin-volume.vhd',open(uploadfile,'rb'),'application/octet-stream')}
+
+        #headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+
+        files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
+
+        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+
+        results = requests.post(posturl,files=files,headers=headers,verify=False)
+
+        print results.status_code
+        if results.status_code !=200: 
+            self.fail("Upload is not fine")
+
+        for z1 in lzones:
+            self.validate_uploaded_template(getuploadparamsresponce.id,'Download Complete',z1.id)
 
         return(getuploadparamsresponce)
 
@@ -412,11 +464,8 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
 
     def restore_vm(self,vmdetails):
-        #TODO: SIMENH: add another test the data on the restored VM.
         """Test recover Virtual Machine
         """
-
-        #cmd = recoverVirtualMachine.recoverVirtualMachineCmd()
         cmd = restoreVirtualMachine.restoreVirtualMachineCmd()
         cmd.virtualmachineid = vmdetails.id
         self.apiclient.recoverVirtualMachine(cmd)
@@ -444,6 +493,24 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                         )
 
         return
+
+    def restore_vm_fail(self,vmdetails):
+
+        cmd = restoreVirtualMachine.restoreVirtualMachineCmd()
+        cmd.virtualmachineid = vmdetails.id
+        success= False
+        try:
+            self.apiclient.recoverVirtualMachine(cmd)
+        except Exception as ex:
+            if "isn't available in the zone" in str(ex):
+                success = True
+        self.assertEqual(
+                success,
+                True,
+                "Restore VM with Deleted Template - Verify Restore VM is handled when template with which VM created id deleted")
+
+        return
+
 
     def deletevolume(self,volumeid):
         """Delete a Volume attached to a VM
@@ -1127,33 +1194,19 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
     def delete_template(self,templatedetails):
 
-        self.debug(templatedetails)
         list_template_response = Template.list(
                                     self.apiclient,
                                     templatefilter="all",
                                     id=templatedetails.id,
                                     zoneid=self.zone.id)
-        self.debug(list_template_response[0])
 
-        self.assertEqual(
-                        isinstance(list_template_response[0], list),
-                        True,
-                        "Check for list template response return valid list"
-                        )
+        if list_template_response is None:
+            self.debug("Template is not available")
+            return
 
-
-        template_response = list_template_response[0]
-
-        self.assertEqual(
-                            template_response.id,
-                            templatedetails.id,
-                            "Template id %s in the list is not matching with created template id %s" %
-                            (template_response.id, templatedetails.id)
-                        )
-
-                # Delete the template
-        templatedetails.delete(self.apiclient)
-        self.debug("Delete template: %s successful" % templatedetails)
+        cmd = deleteTemplate.deleteTemplateCmd()
+        cmd.id = templatedetails.id
+        self.apiclient.deleteTemplate(cmd)
 
         list_template_response = Template.list(
                                     self.apiclient,
@@ -1223,8 +1276,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
             vm1details=self.deploy_vm(browseup_template)
 
-            vm1details=self.deploy_vm(self.template)
-
             self.vmoperations(vm1details)
 
             self.debug("========================= Test 3: Attach DATA DISK to the VM ")
@@ -1261,9 +1312,9 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.recover_destroyed_vm(vm2details)
             self.expunge_vm(vm2details)
 
-            #self.debug("========================= Test 9:  Delete the Uploaded Template========================= ")
-            #self.debug(browseup_template)
-            #self.delete_template(browseup_template)
+            self.debug("========================= Test 9:  Delete the Uploaded Template========================= ")
+            self.debug(browseup_template)
+            self.delete_template(browseup_template)
 
             self.debug("========================= Test 10:  Upload Multiple templates========================= ")
 
@@ -1322,6 +1373,47 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         return
 
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_03_Browser_template_upload_multiple_zones(self):
+        """
+        Test Browser_template_upload_multiple_zones
+        """
+
+        cmd = listZones.listZonesCmd()
+        zonelist=self.apiclient.listZones(cmd)
+        if len(zonelist) <2:
+            raise self.skipTest("Only one zone available hence skipping")
+        try:
+
+            self.debug("========================= Test 14: Upload Browser based template into multiple zones ========================= ")
+            browseup_template=self.browse_upload_template_multiplezones(zonelist)
+
+        except Exception as e:
+            self.fail("Exception occurred  : %s" % e)
+        return
+
+
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_04_Browser_template_ResetVM_With_Deleted_Template(self):
+        """
+        Test Browser_template_upload_ResetVM_With_Deleted_Template
+        """
+        try:
+
+            self.debug("========================= Test 15: Test Browser_template_upload_ResetVM_With_Deleted_Template ========================= ")
+
+            browseup_template=self.browse_upload_template()
+
+            vm1details=self.deploy_vm(browseup_template)
+
+            self.delete_template(browseup_template)
+
+            self.restore_vm_fail(vm1details)
+
+        except Exception as e:
+            self.fail("Exception occurred  : %s" % e)
+        return
 
     @classmethod
     def tearDownClass(self):
