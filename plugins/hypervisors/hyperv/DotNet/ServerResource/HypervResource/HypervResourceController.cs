@@ -1215,8 +1215,8 @@ namespace HypervResource
                     ComputerSystem vm = wmiCallsV2.GetComputerSystem(vmName);
                     if (vm == null || vm.EnabledState == 2)
                     {
-                        // VM is not available or vm in running state
-                        return ReturnCloudStackTypedJArray(new { result = false, details = "VM is running on host, bailing out", vm = vmName, contextMap = contextMap }, CloudStackTypes.StopAnswer);
+                        // VM is not available or vm is not in running state
+                        return ReturnCloudStackTypedJArray(new { result = false, details = "VM is not available or vm is not running on host, bailing out", vm = vmName, contextMap = contextMap }, CloudStackTypes.StopAnswer);
                     }
                 }
                 try
