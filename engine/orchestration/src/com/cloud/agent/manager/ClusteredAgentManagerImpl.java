@@ -357,19 +357,12 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     @Override
-    public boolean reconnect(final long hostId) {
-        Boolean result;
-        try {
-            result = propagateAgentEvent(hostId, Event.ShutdownRequested);
-            if (result != null) {
-                return result;
-            }
-        } catch (final AgentUnavailableException e) {
-            s_logger.debug("cannot propagate agent reconnect because agent is not available", e);
-            return false;
+    public void reconnect(final long hostId) throws CloudRuntimeException, AgentUnavailableException {
+        Boolean result = propagateAgentEvent(hostId, Event.ShutdownRequested);
+        if (result!=null && !result) {
+            throw new CloudRuntimeException("Failed to propagating agent change request event:" + Event.ShutdownRequested + " to host:" + hostId);
         }
-
-        return super.reconnect(hostId);
+        super.reconnect(hostId);
     }
 
     public void notifyNodesInCluster(final AgentAttache attache) {

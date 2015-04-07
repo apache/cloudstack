@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.host;
 
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -100,17 +103,18 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         try {
-            Host result = _resourceService.reconnectHost(this);
-            if (result != null) {
-                HostResponse response = _responseGenerator.createHostResponse(result);
-                response.setResponseName(getCommandName());
-                this.setResponseObject(response);
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reconnect host");
-            }
-        } catch (Exception ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+            Host result =_resourceService.reconnectHost(this);
+            HostResponse response = _responseGenerator.createHostResponse(result);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        }catch (InvalidParameterValueException e) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
+        }
+        catch (CloudRuntimeException e) {
+            s_logger.warn("Exception: ", e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
+        }catch (AgentUnavailableException e) {
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
         }
     }
 }

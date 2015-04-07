@@ -18,6 +18,8 @@ package com.cloud.resource;
 
 import java.util.List;
 
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.dc.DataCenter;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -50,7 +52,7 @@ public interface ResourceService {
 
     Host cancelMaintenance(CancelMaintenanceCmd cmd);
 
-    Host reconnectHost(ReconnectHostCmd cmd);
+    Host reconnectHost(ReconnectHostCmd cmd) throws CloudRuntimeException, AgentUnavailableException;
 
     /**
      * We will automatically create a cloud.com cluster to attach to the external cluster and return a hyper host to perform

@@ -512,7 +512,11 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         });
         HostVO host = _hostDao.findById(lbDeviceVo.getHostId());
 
-        _agentMgr.reconnect(host.getId());
+        try {
+            _agentMgr.reconnect(host.getId());
+        } catch (Exception e ) {
+            s_logger.debug("failed to reconnect host "+host);
+        }
         return lbDeviceVo;
     }
 

@@ -986,33 +986,28 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     @Override
-    public boolean reconnect(final long hostId) {
+    public void reconnect(final long hostId) throws CloudRuntimeException, AgentUnavailableException{
         HostVO host;
 
         host = _hostDao.findById(hostId);
         if (host == null || host.getRemoved() != null) {
-            s_logger.warn("Unable to find host " + hostId);
-            return false;
+            throw new CloudRuntimeException("Unable to find host " + hostId);
         }
 
         if (host.getStatus() == Status.Disconnected) {
-            s_logger.info("Host is already disconnected, no work to be done");
-            return true;
+            throw new CloudRuntimeException("Host is already disconnected, no work to be done");
         }
 
         if (host.getStatus() != Status.Up && host.getStatus() != Status.Alert && host.getStatus() != Status.Rebalancing) {
-            s_logger.info("Unable to disconnect host because it is not in the correct state: host=" + hostId + "; Status=" + host.getStatus());
-            return false;
+            throw  new CloudRuntimeException("Unable to disconnect host because it is not in the correct state: host=" + hostId + "; Status=" + host.getStatus());
         }
 
         final AgentAttache attache = findAttache(hostId);
         if (attache == null) {
-            s_logger.info("Unable to disconnect host because it is not connected to this server: " + hostId);
-            return false;
+            throw new CloudRuntimeException("Unable to disconnect host because it is not connected to this server: " + hostId);
         }
 
         disconnectWithoutInvestigation(attache, Event.ShutdownRequested);
-        return true;
     }
 
     @Override
@@ -1049,7 +1044,13 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             }
             return true;
         } else if (event == Event.ShutdownRequested) {
-            return reconnect(hostId);
+            //should throw a exception here as well.instead of eating this up.
+           try {
+               reconnect(hostId);
+           } catch (CloudRuntimeException e) {
+               return false;
+           }
+            return true;
         }
         return false;
     }

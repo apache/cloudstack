@@ -767,7 +767,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 // set up a new alert
                 AlertVO newAlert = new AlertVO();
                 newAlert.setType(alertType.getType());
-                newAlert.setSubject(subject);
+                //do not have a seperate column for content.
+                //appending the message to the subject for now.
+                newAlert.setSubject(subject+content);
                 newAlert.setClusterId(clusterId);
                 newAlert.setPodId(podId);
                 newAlert.setDataCenterId(dataCenterId);

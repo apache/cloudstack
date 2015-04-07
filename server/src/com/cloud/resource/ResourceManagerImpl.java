@@ -1157,15 +1157,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public Host reconnectHost(final ReconnectHostCmd cmd) {
-        final Long hostId = cmd.getId();
+    public Host reconnectHost(ReconnectHostCmd cmd) throws CloudRuntimeException, AgentUnavailableException{
+        Long hostId = cmd.getId();
 
         final HostVO host = _hostDao.findById(hostId);
         if (host == null) {
             throw new InvalidParameterValueException("Host with id " + hostId.toString() + " doesn't exist");
         }
 
-        return _agentMgr.reconnect(hostId) ? host : null;
+        _agentMgr.reconnect(hostId);
+        return host;
     }
 
     @Override
