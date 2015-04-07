@@ -578,7 +578,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             if (BroadcastDomainType.getSchemeValue(broadcastUri) != BroadcastDomainType.Vlan) {
                 throw new InternalErrorException("Unable to assign a public IP to a VIF on network " + nic.getBroadcastUri());
             }
-            int vlanId = Integer.parseInt(BroadcastDomainType.getValue(broadcastUri));
+            String vlanId = BroadcastDomainType.getValue(broadcastUri);
             int publicNicInfo = -1;
             publicNicInfo = getVmFreeNicIndex(vmName);
             if (publicNicInfo > 0) {
@@ -608,11 +608,11 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             if (BroadcastDomainType.getSchemeValue(broadcastUri) != BroadcastDomainType.Vlan) {
                 throw new InternalErrorException("Unable to unassign a public IP to a VIF on network " + nic.getBroadcastUri());
             }
-            int vlanId = Integer.parseInt(BroadcastDomainType.getValue(broadcastUri));
+            String vlanId = BroadcastDomainType.getValue(broadcastUri);
             int publicNicInfo = -1;
             publicNicInfo = getVmNics(vmName, vlanId);
             if (publicNicInfo > 0) {
-                modifyNicVlan(vmName, 2, publicNicInfo, false, "");
+                modifyNicVlan(vmName, "2", publicNicInfo, false, "");
             }
             return new UnPlugNicAnswer(cmd, true, "success");
         } catch (Exception e) {
@@ -696,7 +696,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                 if (BroadcastDomainType.getSchemeValue(broadcastUri) != BroadcastDomainType.Vlan) {
                     throw new InternalErrorException("Unable to assign a public IP to a VIF on network " + ip.getBroadcastUri());
                 }
-                int vlanId = Integer.parseInt(BroadcastDomainType.getValue(broadcastUri));
+                String vlanId = BroadcastDomainType.getValue(broadcastUri);
                 int publicNicInfo = -1;
                 publicNicInfo = getVmNics(routerName, vlanId);
 
@@ -744,7 +744,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         try {
             URI broadcastUri = nic.getBroadcastUri();
-            int vlanId = Integer.parseInt(BroadcastDomainType.getValue(broadcastUri));
+            String vlanId = BroadcastDomainType.getValue(broadcastUri);
             int ethDeviceNum = getVmNics(domrName, vlanId);
             if (ethDeviceNum > 0) {
                 nic.setDeviceId(ethDeviceNum);
@@ -770,7 +770,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                 if (BroadcastDomainType.getSchemeValue(broadcastUri) != BroadcastDomainType.Vlan) {
                     throw new InternalErrorException("Invalid Broadcast URI " + ip.getBroadcastUri());
                 }
-                int vlanId = Integer.parseInt(BroadcastDomainType.getValue(broadcastUri));
+                String vlanId = BroadcastDomainType.getValue(broadcastUri);
                 int publicNicInfo = -1;
                 publicNicInfo = getVmNics(routerName, vlanId);
                 if (publicNicInfo < 0) {
@@ -798,7 +798,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         try {
             String broadcastUri = pubIp.getBroadcastUri();
-            int vlanId = Integer.parseInt(BroadcastDomainType.getValue(broadcastUri));
+            String vlanId = BroadcastDomainType.getValue(broadcastUri);
             int ethDeviceNum = getVmNics(routerName, vlanId);
             if (ethDeviceNum > 0) {
                 pubIp.setNicDevId(ethDeviceNum);
@@ -820,7 +820,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         try {
             URI broadcastUri = nic.getBroadcastUri();
-            int vlanId = Integer.parseInt(BroadcastDomainType.getValue(broadcastUri));
+            String vlanId = BroadcastDomainType.getValue(broadcastUri);
             int ethDeviceNum = getVmNics(routerName, vlanId);
             if (ethDeviceNum > 0) {
                 nic.setDeviceId(ethDeviceNum);
@@ -1845,10 +1845,13 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         return nicposition;
     }
 
-    protected int getVmNics(String vmName, int vlanid) {
+    protected int getVmNics(String vmName, String vlanid) {
         GetVmConfigCommand vmConfig = new GetVmConfigCommand(vmName);
         URI agentUri = null;
         int nicposition = -1;
+        if(vlanid.equalsIgnoreCase("untagged")) {
+            vlanid = "-1";
+        }
         try {
             String cmdName = GetVmConfigCommand.class.getName();
             agentUri =
@@ -1866,8 +1869,8 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             GetVmConfigAnswer ans = ((GetVmConfigAnswer)result[0]);
             List<NicDetails> nics = ans.getNics();
             for (NicDetails nic : nics) {
-                if (nic.getVlanid() == vlanid) {
-                    nicposition = nics.indexOf(nic);
+                nicposition++;
+                if (nicposition > 1 && nic.getVlanid().equals(vlanid)) {
                     break;
                 }
             }
@@ -1875,7 +1878,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         return nicposition;
     }
 
-    protected void modifyNicVlan(String vmName, int vlanId, String macAddress) {
+    protected void modifyNicVlan(String vmName, String vlanId, String macAddress) {
         ModifyVmNicConfigCommand modifynic = new ModifyVmNicConfigCommand(vmName, vlanId, macAddress);
         URI agentUri = null;
         try {
@@ -1895,7 +1898,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
     }
 
-    protected void modifyNicVlan(String vmName, int vlanId, int pos, boolean enable, String switchLabelName) {
+    protected void modifyNicVlan(String vmName, String vlanId, int pos, boolean enable, String switchLabelName) {
         ModifyVmNicConfigCommand modifyNic = new ModifyVmNicConfigCommand(vmName, vlanId, pos, enable);
         modifyNic.setSwitchLableName(switchLabelName);
         URI agentUri = null;
@@ -1923,7 +1926,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         if (BroadcastDomainType.getSchemeValue(broadcastUri) != BroadcastDomainType.Vlan) {
             throw new InternalErrorException("Unable to assign a public IP to a VIF on network " + broadcastId);
         }
-        int vlanId = Integer.parseInt(BroadcastDomainType.getValue(broadcastUri));
+        String vlanId = BroadcastDomainType.getValue(broadcastUri);
 
         int publicNicInfo = -1;
         publicNicInfo = getVmNics(vmName, vlanId);

@@ -44,13 +44,13 @@ public class GetVmConfigAnswer extends Answer {
 
     public class NicDetails {
         String macAddress;
-        int vlanid;
+        String vlanid;
         boolean state;
 
         public NicDetails() {
         }
 
-        public NicDetails(String macAddress, int vlanid, boolean state) {
+        public NicDetails(String macAddress, String vlanid, boolean state) {
             this.macAddress = macAddress;
             this.vlanid = vlanid;
             this.state = state;
@@ -60,7 +60,7 @@ public class GetVmConfigAnswer extends Answer {
             return macAddress;
         }
 
-        public int getVlanid() {
+        public String getVlanid() {
             return vlanid;
         }
 

@@ -22,7 +22,7 @@ package com.cloud.agent.api;
 
 public class ModifyVmNicConfigCommand extends Command {
     String vmName;
-    int vlan;
+    String vlan;
     String macAddress;
     int index;
     boolean enable;
@@ -31,19 +31,19 @@ public class ModifyVmNicConfigCommand extends Command {
     protected ModifyVmNicConfigCommand() {
     }
 
-    public ModifyVmNicConfigCommand(String vmName, int vlan, String macAddress) {
+    public ModifyVmNicConfigCommand(String vmName, String vlan, String macAddress) {
         this.vmName = vmName;
         this.vlan = vlan;
         this.macAddress = macAddress;
     }
 
-    public ModifyVmNicConfigCommand(String vmName, int vlan, int position) {
+    public ModifyVmNicConfigCommand(String vmName, String vlan, int position) {
         this.vmName = vmName;
         this.vlan = vlan;
         this.index = position;
     }
 
-    public ModifyVmNicConfigCommand(String vmName, int vlan, int position, boolean enable) {
+    public ModifyVmNicConfigCommand(String vmName, String vlan, int position, boolean enable) {
         this.vmName = vmName;
         this.vlan = vlan;
         this.index = position;
