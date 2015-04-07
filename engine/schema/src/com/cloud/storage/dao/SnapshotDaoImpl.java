@@ -317,6 +317,13 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     }
 
     @Override
+    public List<SnapshotVO> listAllByStatusIncludingRemoved(Snapshot.State... status) {
+        SearchCriteria<SnapshotVO> sc = this.StatusSearch.create();
+        sc.setParameters("status", (Object[])status);
+        return listIncludingRemovedBy(sc, null);
+    }
+
+    @Override
     public boolean updateState(State currentState, Event event, State nextState, SnapshotVO snapshot, Object data) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
